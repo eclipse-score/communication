@@ -482,8 +482,8 @@ TEST_F(EventDataControlCompositeFixture, QmConsumerViolation)
     auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
-        auto slot_index = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
-        upper_limit = (*qm_)[slot_index.value()].GetTimeStamp();
+        auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
+        upper_limit = (*qm_)[slot_indicator.GetIndex()].GetTimeStamp();
     }
 
     // When allocating one additional slot
@@ -512,8 +512,8 @@ TEST_F(EventDataControlCompositeFixture, AllocationIgnoresQMAfterContractViolati
     auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
-        auto slot_index = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
-        upper_limit = (*qm_)[slot_index.value()].GetTimeStamp();
+        auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
+        upper_limit = (*qm_)[slot_indicator.GetIndex()].GetTimeStamp();
     }
     score::cpp::ignore = unit_->AllocateNextSlot();
     ASSERT_TRUE(unit_->IsQmControlDisconnected());
@@ -553,8 +553,8 @@ TEST_F(EventDataControlCompositeFixture, AsilBConsumerViolation)
     auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
-        auto slotindex = asil_->ReferenceNextEvent(0, *transaction_log_index_asil_, upper_limit);
-        upper_limit = (*asil_)[slotindex.value()].GetTimeStamp();
+        auto slot_indicator = asil_->ReferenceNextEvent(0, *transaction_log_index_asil_, upper_limit);
+        upper_limit = (*asil_)[slot_indicator.GetIndex()].GetTimeStamp();
     }
 
     // When allocating one additional slot
@@ -635,11 +635,11 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                 // QM List
                 if (used_slots_qm.size() < 5 && RandomTrueOrFalse())
                 {
-                    auto slot = qm.ReferenceNextEvent(start_ts, transaction_log_index_qm);
-                    if (slot.has_value())
+                    auto slot_indicator = qm.ReferenceNextEvent(start_ts, transaction_log_index_qm);
+                    if (slot_indicator.IsValid())
                     {
-                        score::cpp::ignore = used_slots_qm.emplace(slot.value());
-                        start_ts = EventSlotStatus{qm[slot.value()]}.GetTimeStamp();
+                        score::cpp::ignore = used_slots_qm.emplace(slot_indicator.GetIndex());
+                        start_ts = EventSlotStatus{qm[slot_indicator.GetIndex()]}.GetTimeStamp();
                     }
                 }
                 else
@@ -660,11 +660,11 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                 // ASIL List
                 if (used_slots_asil.size() < 5 && RandomTrueOrFalse())
                 {
-                    auto slot = asil.ReferenceNextEvent(start_ts, transaction_log_index_asil);
-                    if (slot.has_value())
+                    auto slot_indicator = asil.ReferenceNextEvent(start_ts, transaction_log_index_asil);
+                    if (slot_indicator.IsValid())
                     {
-                        score::cpp::ignore = used_slots_asil.emplace(slot.value());
-                        start_ts = EventSlotStatus{qm[slot.value()]}.GetTimeStamp();
+                        score::cpp::ignore = used_slots_asil.emplace(slot_indicator.GetIndex());
+                        start_ts = EventSlotStatus{qm[slot_indicator.GetIndex()]}.GetTimeStamp();
                     }
                 }
                 else

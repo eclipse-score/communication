@@ -96,7 +96,7 @@ Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const noexcept
     return slot_collector.value().GetNumNewSamplesAvailable();
 }
 
-SlotCollector::SlotIndices ProxyEventCommon::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
+SlotCollector::SlotIndicators ProxyEventCommon::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
 {
     auto& slot_collector = test_slot_collector_.has_value()
                                ? test_slot_collector_

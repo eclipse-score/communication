@@ -54,10 +54,10 @@ class SlotDecrementerFixture : public ::testing::Test
 
         // Reference the slot which indicates that a consumer is currently reading it. Use timestamp - 1 to ensure that
         // we find the slot that we just marked as ready first.
-        auto client_slot_result = event_data_control_.ReferenceNextEvent(timestamp - 1, transaction_log_index_);
-        EXPECT_TRUE(client_slot_result.has_value());
+        auto current_slot_indicator = event_data_control_.ReferenceNextEvent(timestamp - 1, transaction_log_index_);
+        EXPECT_TRUE(current_slot_indicator.IsValid());
 
-        return client_slot_result.value();
+        return current_slot_indicator.GetIndex();
     }
 
     EventSlotStatus::SubscriberCount GetSlotReferenceCount(const SlotIndexType event_slot_index)

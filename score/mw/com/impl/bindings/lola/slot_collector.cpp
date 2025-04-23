@@ -35,24 +35,27 @@ std::size_t SlotCollector::GetNumNewSamplesAvailable() const noexcept
     return event_data_control_.get().GetNumNewEvents(last_ts_);
 }
 
-SlotCollector::SlotIndices SlotCollector::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
+SlotCollector::SlotIndicators SlotCollector::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
 {
-    const auto collected_slots_end_const_iterator = CollectSlots(max_count);
+    // CollectSlots() returns an iterator pointing to one past the end (end being the oldest collected slot, begin being
+    // the newest/youngest collected slot)
+    auto collected_slots_end_iterator = CollectSlots(max_count);
 
-    EventSlotStatus::EventTimeStamp highest_delivered{last_ts_};
-    for (auto slot = std::make_reverse_iterator(collected_slots_end_const_iterator); slot != collected_slots_.crend();
-         ++slot)
+    EventSlotStatus::EventTimeStamp newest_delivered{last_ts_};
+    // we are iterating the collected slots from the oldest event (smallest timestamp) to the newest event
+    // (largest timestamp) here.
+    for (auto slot = std::make_reverse_iterator(collected_slots_end_iterator); slot != collected_slots_.crend(); ++slot)
     {
-        const EventSlotStatus slot_status{event_data_control_.get()[*slot]};
-        highest_delivered = std::max(highest_delivered, slot_status.GetTimeStamp());
+        const EventSlotStatus slot_status{slot->GetSlot().load()};
+        newest_delivered = std::max(newest_delivered, slot_status.GetTimeStamp());
     }
 
-    last_ts_ = highest_delivered;
+    last_ts_ = newest_delivered;
 
-    return {std::make_reverse_iterator(collected_slots_end_const_iterator), collected_slots_.crend()};
+    return {std::make_reverse_iterator(collected_slots_end_iterator), collected_slots_.rend()};
 }
 
-SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const std::size_t max_count) noexcept
+SlotCollector::SlotIndicatorVector::iterator SlotCollector::CollectSlots(const std::size_t max_count) noexcept
 {
     EventSlotStatus::EventTimeStamp current_highest = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
     auto collected_slot = collected_slots_.begin();
@@ -61,15 +64,15 @@ SlotCollector::SlotIndexVector::const_iterator SlotCollector::CollectSlots(const
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(collected_slot != collected_slots_.cend());
     for (std::size_t count = 0U; count < max_count; ++count)
     {
-        const std::optional<SlotIndexType> slot =
+        ControlSlotIndicator slot =
             event_data_control_.get().ReferenceNextEvent(last_ts_, transaction_log_index_, current_highest);
-        if (!(slot.has_value()))
+        if (!(slot.IsValid()))
         {
             break;
         }
-        const EventSlotStatus event_status{event_data_control_.get()[*slot]};
+        const EventSlotStatus event_status{slot.GetSlot().load()};
         current_highest = event_status.GetTimeStamp();
-        *collected_slot = *slot;
+        *collected_slot = slot;
         ++collected_slot;
 
         if (collected_slot == collected_slots_.end())

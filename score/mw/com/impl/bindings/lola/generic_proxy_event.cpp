@@ -125,7 +125,7 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
 {
     const auto max_sample_count = tracker.GetNumAvailableGuards();
 
-    const auto slot_indices = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
+    const auto slot_indicators = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
 
     auto& event_control = proxy_event_common_.GetEventControl();
 
@@ -149,10 +149,8 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
     const void* const event_slots_raw_array = meta_info_.event_slots_raw_array_.get(event_slots_raw_array_size.value());
 
     // AMP assert that the event_slots_raw_array address is according to sample_alignment
-    for (auto slot = slot_indices.begin; slot != slot_indices.end; ++slot)
+    for (auto slot_indicator = slot_indicators.begin; slot_indicator != slot_indicators.end; ++slot_indicator)
     {
-        const auto slot_index = *slot;
-
         // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic) The pointer event_slots_raw_array points
         // to the memory managed by a DynamicArray which has been type erased. The DynamicArray wraps a regular pointer
         // array so elements may be accessed by using offsets to regular pointers to elements. Therefore, the pointer
@@ -173,13 +171,16 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         // coverity[autosar_cpp14_a5_3_2_violation] The check above ensures that array is not NULL
         // coverity[autosar_cpp14_m5_0_15_violation] False-positive, get access through array indexing
         // coverity[autosar_cpp14_a4_7_1_violation]
-        const auto* const object_start_address = &event_slots_array[aligned_size * slot_index];
+        const auto* const object_start_address = &event_slots_array[aligned_size * slot_indicator->GetIndex()];
         /* NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic) deviation ends here */
 
-        const EventSlotStatus event_slot_status{event_control.data_control[*slot]};
+        const EventSlotStatus event_slot_status{slot_indicator->GetSlot().load()};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
-        SamplePtr<void> sample{object_start_address, event_control.data_control, *slot, transaction_log_index.value()};
+        SamplePtr<void> sample{object_start_address,
+                               event_control.data_control,
+                               slot_indicator->GetIndex(),
+                               transaction_log_index.value()};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));
@@ -197,7 +198,8 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         receiver(std::move(sample_binding_independent), sample_timestamp);
     }
 
-    const auto num_collected_slots = static_cast<std::size_t>(std::distance(slot_indices.begin, slot_indices.end));
+    const auto num_collected_slots =
+        static_cast<std::size_t>(std::distance(slot_indicators.begin, slot_indicators.end));
     return num_collected_slots;
 }
 

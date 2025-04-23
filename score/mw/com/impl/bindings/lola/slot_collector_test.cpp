@@ -38,7 +38,7 @@ class SlotCollectorWithFakeMem : public ::testing::Test
         return slot.GetIndex();
     }
 
-    std::size_t CalculateNumberOfCollectedSlots(const SlotCollector::SlotIndices& indices)
+    std::size_t CalculateNumberOfCollectedSlots(const SlotCollector::SlotIndicators& indices)
     {
         return static_cast<std::size_t>(std::distance(indices.begin, indices.end));
     }
@@ -59,7 +59,7 @@ TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
     const auto slot_indices = slot_collector.GetNewSamplesSlotIndices(max_count);
 
     EXPECT_EQ(CalculateNumberOfCollectedSlots(slot_indices), 1);
-    EXPECT_EQ(*slot_indices.begin, 0);
+    EXPECT_EQ(slot_indices.begin->GetIndex(), 0);
 }
 
 TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
@@ -84,11 +84,11 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
 
     EXPECT_EQ(CalculateNumberOfCollectedSlots(slot_indices), 3);
 
-    std::size_t count = 0;
+    SlotIndexType current_slot_index = 0;
     for (auto it = slot_indices.begin; it != slot_indices.end; ++it)
     {
-        EXPECT_EQ(*it, count);
-        count++;
+        EXPECT_EQ(it->GetIndex(), current_slot_index);
+        current_slot_index++;
     }
 
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 0);

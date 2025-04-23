@@ -150,9 +150,13 @@ class EventDataControlImpl final
     /// \details This method will perform retries (bounded) on data-races. I.e. if a viable slot failed to be marked
     /// for reading because of a data race, retries are made.
     ///
-    /// \return Will return the index of an event, if one exists > last_search_time, empty otherwise
+    /// \return Will return a valid ControlSlotIndicator indicating/pointing to an event, which is the youngest/newest
+    ///         one between last_search_time and upper_limit. I.e. its timestamp is between last_search_time and
+    ///         upper_limit and any other event with timestamp between last_search_time and upper_limit has a smaller
+    ///         timestamp (is older).
+    ///         If no such event exists, an invalid ControlSlotIndicator is returned.
     /// \post DereferenceEvent() is invoked to withdraw read-ownership
-    std::optional<SlotIndexType> ReferenceNextEvent(
+    ControlSlotIndicator ReferenceNextEvent(
         const EventSlotStatus::EventTimeStamp last_search_time,
         const TransactionLogSet::TransactionLogIndex transaction_log_index,
         const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX) noexcept;

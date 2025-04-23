@@ -229,10 +229,10 @@ template <template <class> class AtomicIndirectorType>
 auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
     const EventSlotStatus::EventTimeStamp last_search_time,
     const TransactionLogSet::TransactionLogIndex transaction_log_index,
-    const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> std::optional<SlotIndexType>
+    const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> ControlSlotIndicator
 {
     // function can only finish with result, if use count was able to be increased
-    std::optional<SlotIndexType> possible_index{};
+    ControlSlotIndicator possible_slot{};
 
     auto& transaction_log = transaction_log_set_.GetTransactionLog(transaction_log_index);
 
@@ -240,29 +240,28 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
     std::uint64_t counter = 0U;
     for (; counter < MAX_REFERENCE_RETRIES; counter++)
     {
-        possible_index.reset();
+        // resetting possible slot for this iteration
+        possible_slot.Reset();
 
         // initialize candidate_slot_status with last_search_time. candidate_slot_status.timestamp always reflects
         // "highest new timestamp". The sentinel, if we did find a possible candidate is always possible_index.
         EventSlotStatus candidate_slot_status{last_search_time, 0U};
 
-        std::size_t current_index = 0U;
+        SlotIndexType current_index = 0U;
         // Suppres "AUTOSAR C++14 A5-3-2" finding rule. This rule states: "Null pointers shall not be dereferenced.".
         // The "slot" variable must never be a null pointer, since DynamicArray allocates its elements when it is
         // created.
         // coverity[autosar_cpp14_a5_3_2_violation]
-        for (const auto& slot : state_slots_)
+        for (auto& slot : state_slots_)
         {
             // coverity[autosar_cpp14_a5_3_2_violation]
             const EventSlotStatus slot_status{slot.load(std::memory_order_relaxed)};
             if (slot_status.IsTimeStampBetween(candidate_slot_status.GetTimeStamp(), upper_limit))
             {
-                possible_index = current_index;
+                possible_slot = {current_index, slot};
                 candidate_slot_status = slot_status;
             }
 
-            static_assert(std::is_same_v<decltype(state_slots_.size()), decltype(current_index)>,
-                          "ReferenceNextEvent: current_index overflow dangerous.");
             // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
             // not lead to data loss.".
             // As we are looping on the state slots, and current_index is incremented after handling each slot
@@ -271,7 +270,7 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
             ++current_index;
         }
 
-        if (!possible_index.has_value())
+        if (!possible_slot.IsValid())
         {
             return {};  // no sample within searched timestamp range exists.
         }
@@ -294,14 +293,14 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
         // coverity[autosar_cpp14_a4_7_1_violation : FALSE]
         ++status_new_val;
 
-        auto candidate_slot_status_value_type = static_cast<EventSlotStatus::value_type&>(candidate_slot_status);
+        auto candidate_slot_status_value = static_cast<EventSlotStatus::value_type&>(candidate_slot_status);
 
-        auto possible_index_value = possible_index.value();
-        auto& slot_value = state_slots_[possible_index_value];
+        auto possible_index_value = possible_slot.GetIndex();
+        auto& slot_value = possible_slot.GetSlot();
 
         transaction_log.ReferenceTransactionBegin(possible_index_value);
         if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_weak(
-                slot_value, candidate_slot_status_value_type, status_new_val, std::memory_order_acq_rel))
+                slot_value, candidate_slot_status_value, status_new_val, std::memory_order_acq_rel))
         {
             transaction_log.ReferenceTransactionCommit(possible_index_value);
             break;
@@ -313,7 +312,7 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
 
     if (counter < MAX_REFERENCE_RETRIES)
     {
-        return possible_index;
+        return possible_slot;
     }
 
     ++num_ref_misses;

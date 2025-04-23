@@ -69,61 +69,65 @@ TYPED_TEST_SUITE(SamplePtrGenericTypeTest, MyTypes, );
 
 TYPED_TEST(SamplePtrGenericTypeTest, DereferencesAssignedSlot)
 {
-    auto slot = SamplePtrTest::AllocateSlot();
+    auto slot_index = SamplePtrTest::AllocateSlot();
 
-    auto client_slot_result =
+    auto client_slot_indicator =
         SamplePtrTest::event_data_control_.ReferenceNextEvent(0, SamplePtrTest::transaction_log_index_);
-    ASSERT_TRUE(client_slot_result.has_value());
-    auto client_slot = *client_slot_result;
+    ASSERT_TRUE(client_slot_indicator.IsValid());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{
-        &dummy_val, SamplePtrTest::event_data_control_, client_slot, SamplePtrTest::transaction_log_index_};
+    SamplePtr<TypeParam> sample_ptr{&dummy_val,
+                                    SamplePtrTest::event_data_control_,
+                                    client_slot_indicator.GetIndex(),
+                                    SamplePtrTest::transaction_log_index_};
 
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot_index]}.GetReferenceCount(), 1);
     sample_ptr = nullptr;
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot]}.GetReferenceCount(), 0);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot_index]}.GetReferenceCount(), 0);
 }
 
 TYPED_TEST(SamplePtrGenericTypeTest, ProperMoveConstruction)
 {
-    auto slot = SamplePtrTest::AllocateSlot();
+    auto slot_index = SamplePtrTest::AllocateSlot();
 
-    auto client_slot_result =
+    auto client_slot_indicator =
         SamplePtrTest::event_data_control_.ReferenceNextEvent(0, SamplePtrTest::transaction_log_index_);
-    ASSERT_TRUE(client_slot_result.has_value());
-    auto client_slot = *client_slot_result;
+    ASSERT_TRUE(client_slot_indicator.IsValid());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{
-        &dummy_val, SamplePtrTest::event_data_control_, client_slot, SamplePtrTest::transaction_log_index_};
+    SamplePtr<TypeParam> sample_ptr{&dummy_val,
+                                    SamplePtrTest::event_data_control_,
+                                    client_slot_indicator.GetIndex(),
+                                    SamplePtrTest::transaction_log_index_};
 
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot_index]}.GetReferenceCount(), 1);
     SamplePtr<TypeParam> another_sample_ptr{std::move(sample_ptr)};
     sample_ptr = nullptr;
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot]}.GetReferenceCount(), 1);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot_index]}.GetReferenceCount(), 1);
     another_sample_ptr = nullptr;
-    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot]}.GetReferenceCount(), 0);
+    EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot_index]}.GetReferenceCount(), 0);
 }
 
 TYPED_TEST(SamplePtrGenericTypeTest, ProperMoveAssignment)
 {
     auto slot = SamplePtrTest::AllocateSlot(1);
 
-    auto client_slot_result =
+    auto client_slot_indicator =
         SamplePtrTest::event_data_control_.ReferenceNextEvent(0, SamplePtrTest::transaction_log_index_);
-    ASSERT_TRUE(client_slot_result.has_value());
-    auto client_slot = *client_slot_result;
+    ASSERT_TRUE(client_slot_indicator.IsValid());
     uint8_t dummy_val{};
-    SamplePtr<TypeParam> sample_ptr{
-        &dummy_val, SamplePtrTest::event_data_control_, client_slot, SamplePtrTest::transaction_log_index_};
+    SamplePtr<TypeParam> sample_ptr{&dummy_val,
+                                    SamplePtrTest::event_data_control_,
+                                    client_slot_indicator.GetIndex(),
+                                    SamplePtrTest::transaction_log_index_};
 
     auto slot2 = SamplePtrTest::AllocateSlot(2);
 
-    auto client_slot2_result =
+    auto client_slot2_indicator =
         SamplePtrTest::event_data_control_.ReferenceNextEvent(1, SamplePtrTest::transaction_log_index_);
-    ASSERT_TRUE(client_slot2_result.has_value());
-    auto client_slot2 = *client_slot2_result;
-    SamplePtr<TypeParam> sample_ptr2{
-        &dummy_val, SamplePtrTest::event_data_control_, client_slot2, SamplePtrTest::transaction_log_index_};
+    ASSERT_TRUE(client_slot2_indicator.IsValid());
+    SamplePtr<TypeParam> sample_ptr2{&dummy_val,
+                                     SamplePtrTest::event_data_control_,
+                                     client_slot2_indicator.GetIndex(),
+                                     SamplePtrTest::transaction_log_index_};
 
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot]}.GetReferenceCount(), 1);
     EXPECT_EQ(EventSlotStatus{SamplePtrTest::event_data_control_[slot2]}.GetReferenceCount(), 1);
@@ -156,11 +160,11 @@ TEST_F(SamplePtrTest, ArrayOp)
 {
     // Given an SamplePtr on an allocated slot
     AllocateSlot();
-    auto client_slot_result = event_data_control_.ReferenceNextEvent(0, transaction_log_index_);
-    ASSERT_TRUE(client_slot_result.has_value());
-    auto client_slot = *client_slot_result;
+    auto client_slot_indicator = event_data_control_.ReferenceNextEvent(0, transaction_log_index_);
+    ASSERT_TRUE(client_slot_indicator.IsValid());
     DummyStruct dummy_val{22, 44};
-    SamplePtr<DummyStruct> sample_ptr{&dummy_val, event_data_control_, client_slot, transaction_log_index_};
+    SamplePtr<DummyStruct> sample_ptr{
+        &dummy_val, event_data_control_, client_slot_indicator.GetIndex(), transaction_log_index_};
 
     // When accessing the data via ->
     auto val1 = sample_ptr->member1_;
@@ -175,11 +179,11 @@ TEST_F(SamplePtrTest, StarOp)
 {
     // Given an SamplePtr on an allocated slot
     AllocateSlot();
-    auto client_slot_result = event_data_control_.ReferenceNextEvent(0, transaction_log_index_);
-    ASSERT_TRUE(client_slot_result.has_value());
-    auto client_slot = *client_slot_result;
+    auto client_slot_indicator = event_data_control_.ReferenceNextEvent(0, transaction_log_index_);
+    ASSERT_TRUE(client_slot_indicator.IsValid());
     DummyStruct dummy_val{22, 44};
-    SamplePtr<DummyStruct> sample_ptr{&dummy_val, event_data_control_, client_slot, transaction_log_index_};
+    SamplePtr<DummyStruct> sample_ptr{
+        &dummy_val, event_data_control_, client_slot_indicator.GetIndex(), transaction_log_index_};
 
     // When accessing the data via *
     auto val1 = *sample_ptr;

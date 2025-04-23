@@ -32,18 +32,18 @@ namespace score::mw::com::impl::lola
 class SlotCollector final
 {
   public:
-    using SlotIndexVector = std::vector<SlotIndexType>;
+    using SlotIndicatorVector = std::vector<ControlSlotIndicator>;
 
-    class SlotIndices
+    class SlotIndicators
     {
       public:
         // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
         // be private.". There are no class invariants to maintain which could be violated by directly accessing member
         // variables.
         // coverity[autosar_cpp14_m11_0_1_violation]
-        SlotCollector::SlotIndexVector::const_reverse_iterator begin;
+        SlotCollector::SlotIndicatorVector::reverse_iterator begin;
         // coverity[autosar_cpp14_m11_0_1_violation]
-        SlotCollector::SlotIndexVector::const_reverse_iterator end;
+        SlotCollector::SlotIndicatorVector::reverse_iterator end;
     };
 
     /// Create a SlotCollector for the specified service instance and event.
@@ -74,14 +74,19 @@ class SlotCollector final
     ///
     /// \param max_count The maximum number of callbacks that shall be executed.
     /// \return Number of samples received.
-    SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
+    SlotIndicators GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
 
   private:
-    SlotIndexVector::const_iterator CollectSlots(const std::size_t max_count) noexcept;
+    /// \brief Collects up to max_count slots (events) in collected_slots_, which have a timestamp > last_ts_
+    ///        (are younger than last_ts_) and returns an iterator to one past the last collected (oldest) slot
+    /// \param max_count maximum number of slots to collect.
+    /// \return an iterator to one past the oldest collected slot (smallest timestamp).
+    SlotIndicatorVector::iterator CollectSlots(const std::size_t max_count) noexcept;
 
     std::reference_wrapper<EventDataControl> event_data_control_;
     EventSlotStatus::EventTimeStamp last_ts_;
-    SlotIndexVector collected_slots_;  // Pre-allocated scratchpad memory to present the events in-order to the user.
+    SlotIndicatorVector
+        collected_slots_;  // Pre-allocated scratchpad memory to present the events in-order to the user.
     TransactionLogSet::TransactionLogIndex transaction_log_index_;
 };
 

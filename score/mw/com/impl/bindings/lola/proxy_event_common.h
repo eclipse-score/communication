@@ -69,11 +69,13 @@ class ProxyEventCommon final
     /// GetNumNewSamplesAvailable() is only called when the event is in the subscribed state.
     Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
 
-    /// \brief Get the indicies of the slots containing samples that are pending for reception.
+    /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
+    ///        I.e. returned SlotIndicators begin starts with the oldest slots/events first and ends at the
+    ///        newest/youngest slots.
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
-    SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
+    SlotCollector::SlotIndicators GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
 
     ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
     ResultBlank UnsetReceiveHandler();

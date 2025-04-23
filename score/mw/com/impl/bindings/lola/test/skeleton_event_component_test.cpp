@@ -122,7 +122,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             score::memory::shared::SharedMemoryFactory::Open(path_builder.GetDataChannelShmName(instance_id), false);
 
         auto* storage = static_cast<ServiceDataStorage*>(memory->getUsableBaseAddress());
-        auto* value = storage->events_.at(fake_element_fq_id_).template get<EventDataStorage<std::uint32_t>>();
+        auto* values = storage->events_.at(fake_element_fq_id_).template get<EventDataStorage<std::uint32_t>>();
 
         auto path = path_builder.GetControlChannelShmName(instance_id, QualityType::kASIL_QM);
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
@@ -130,9 +130,9 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
 
         auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
         event_data_control.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot = event_data_control.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
-        EXPECT_TRUE(slot.has_value());
-        return value->at(slot.value());
+        auto slot_indicator = event_data_control.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
+        EXPECT_TRUE(slot_indicator.IsValid());
+        return values->at(slot_indicator.GetIndex());
     }
 
     std::size_t GetFreeSampleSlots() const

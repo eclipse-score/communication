@@ -274,7 +274,7 @@ TEST_F(EventDataControlFixture, FindNextSlotBlocksAllocation)
 
     // When finding the next slot
     auto event = unit.ReferenceNextEvent(0, transaction_log_index);
-    ASSERT_TRUE(event);
+    ASSERT_TRUE(event.IsValid());
 
     // Then we cannot allocate the slot again
     ASSERT_FALSE(unit.AllocateNextSlot().IsValid());
@@ -297,11 +297,11 @@ TEST_F(EventDataControlFixture, DISABLED_MultipleReceiverRefCountCheck)
         {
             // We can increase the ref-count
             auto receive_slot = unit.ReferenceNextEvent(0, transaction_log_index, EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX);
-            ASSERT_TRUE(receive_slot.has_value());
-            EXPECT_EQ(unit[*receive_slot].GetTimeStamp(), 1);
+            ASSERT_TRUE(receive_slot.IsValid());
+            EXPECT_EQ(unit[receive_slot.GetIndex()].GetTimeStamp(), 1);
 
             // and decrease the ref-count
-            unit.DereferenceEvent(receive_slot.value(), transaction_log_index);
+            unit.DereferenceEvent(receive_slot.GetIndex(), transaction_log_index);
         }
     };
 
@@ -345,7 +345,7 @@ TEST_F(EventDataControlFixture, FailingToUpdateSlotValueCausesReferenceNextEvent
     auto event = unit_mock.ReferenceNextEvent(0, transaction_log_index);
 
     // No event will be found
-    ASSERT_FALSE(event.has_value());
+    ASSERT_FALSE(event.IsValid());
 }
 
 TEST_F(EventDataControlFixture, GetNumNewEvents_Zero)
@@ -578,10 +578,10 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
             if (used_slots.size() < params.max_referenced_samples_per_receiver && RandomTrueOrFalse())
             {
                 auto slot = unit_.ReferenceNextEvent(start_ts, transaction_log_index);
-                if (slot.has_value())
+                if (slot.IsValid())
                 {
-                    start_ts = EventSlotStatus{unit_[slot.value()]}.GetTimeStamp();
-                    used_slots.insert(slot.value());
+                    start_ts = EventSlotStatus{unit_[slot.GetIndex()]}.GetTimeStamp();
+                    used_slots.insert(slot.GetIndex());
                 }
             }
             else
@@ -662,11 +662,11 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
                    used_slots.size() < params.max_referenced_samples_per_receiver)
             {
                 auto slot = unit_.ReferenceNextEvent(start_ts, transaction_log_index, highest_ts);
-                if (slot.has_value())
+                if (slot.IsValid())
                 {
-                    highest_ts = EventSlotStatus{unit_[slot.value()]}.GetTimeStamp();
-                    used_slots.insert(slot.value());
-                    slot_last = slot;
+                    highest_ts = EventSlotStatus{unit_[slot.GetIndex()]}.GetTimeStamp();
+                    used_slots.insert(slot.GetIndex());
+                    slot_last = slot.GetIndex();
                 }
                 counter1++;
             }
