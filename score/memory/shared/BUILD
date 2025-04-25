@@ -559,7 +559,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//platform/aas/lib/containers:__pkg__",
+        "//score/containers:__pkg__",
         "//score/memory/shared:__subpackages__",
         "//platform/aas/mw/com/impl:__subpackages__",
         # "@ddad//score/memory:__subpackages__",

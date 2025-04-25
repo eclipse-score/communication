@@ -267,7 +267,7 @@ The underlying `shm_open()` call uses the `O_EXCL` and `O_CREAT` flags, ensuring
 
 From a safety standpoint, `ASIL-B` applications should avoid creating shared memory objects with `world-readable` or `world-writable` permissions in order to reduce security risks. For more details check [Access Control concepts](broken_link_a/ui/api/v1/download/contentBrowsing/ipnext-platform-documentation/master/html/features/dac/README.html)
 
-![Named memory allocation](broken_link_k/swh/safe-posix-platform/score/memory/design/shared_memory/named_memory_allocation.uxf?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
+![Named memory allocation](broken_link_k/swh/safe-posix-platform/score/memory/design/shared_memory/named_memory_allocation.uxf?ref=897553326c7c5317cd79d4ffb6323b32849e2758)
 
 ### Anonymous Shared Memory
 Anonymous shared memory created with `SharedMemoryFactory::CreateAnonymous(...)` does not have a representation in the file system. In fact, there is no way for a random process to identify an anonymous shared memory object. Thus, there are no corresponding implementations of `SharedMemoryFactory::Open(...)` and `SharedMemoryFactory::CreateOrOpen(...)`. To share an anonymous shared memory object with another process it must be actively shared at runtime by:
