@@ -50,7 +50,7 @@ namespace detail
 ///          multiple readers can concurrently access the map also parallel to a writer.
 ///          Lock-Free algo is based on multi-versioning/swap mechanism in conjunction with atomics.
 ///          Detailed description can be found here:
-///          platform/aas/lib/memory/design/shared_memory/Readme.md - chapter Bounds_Checking_Performance
+///          score/memory/design/shared_memory/Readme.md - chapter Bounds_Checking_Performance
 
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units

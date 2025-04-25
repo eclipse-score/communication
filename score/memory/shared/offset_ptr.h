@@ -89,7 +89,7 @@ bool EnableOffsetPtrBoundsChecking(const bool enable);
 /// process can find the memory address of the pointed-to object in its own memory mapped region.
 ///
 /// The full documentation of OffsetPtr is contained within
-/// platform/aas/lib/memory/design/shared_memory/OffsetPtrDesign.md
+/// score/memory/design/shared_memory/OffsetPtrDesign.md
 template <typename PointedType>
 
 // Suppress "AUTOSAR C++14 A12-0-1", The rule states: "If a class declares a copy or move operation, or a destructor,
