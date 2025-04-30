@@ -16,10 +16,10 @@ namespace score::mw::com::impl::lola
 {
 
 SlotDecrementer::SlotDecrementer(EventDataControl* event_data_control,
-                                 const SlotIndexType event_slot_index,
+                                 ControlSlotIndicator control_slot_indicator,
                                  const TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
     : event_data_control_{event_data_control},
-      event_slot_index_{event_slot_index},
+      control_slot_indicator_{control_slot_indicator},
       transaction_log_idx_{transaction_log_idx}
 {
 }
@@ -31,7 +31,7 @@ SlotDecrementer::~SlotDecrementer() noexcept
 
 SlotDecrementer::SlotDecrementer(SlotDecrementer&& other) noexcept
     : event_data_control_{other.event_data_control_},
-      event_slot_index_{other.event_slot_index_},
+      control_slot_indicator_{std::move(other.control_slot_indicator_)},
       transaction_log_idx_{other.transaction_log_idx_}
 {
     other.event_data_control_ = nullptr;
@@ -48,7 +48,7 @@ SlotDecrementer& SlotDecrementer::operator=(SlotDecrementer&& other) noexcept
     {
         internal_delete();
         event_data_control_ = other.event_data_control_;
-        event_slot_index_ = other.event_slot_index_;
+        control_slot_indicator_ = other.control_slot_indicator_;
         transaction_log_idx_ = other.transaction_log_idx_;
 
         other.event_data_control_ = nullptr;
@@ -60,7 +60,7 @@ void SlotDecrementer::internal_delete() noexcept
 {
     if (event_data_control_ != nullptr)
     {
-        event_data_control_->DereferenceEvent(event_slot_index_, transaction_log_idx_);
+        event_data_control_->DereferenceEvent(control_slot_indicator_, transaction_log_idx_);
     }
 }
 

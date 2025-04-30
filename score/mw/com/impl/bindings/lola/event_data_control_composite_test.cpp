@@ -616,8 +616,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     };
 
     auto receiver = [&last_send_time_stamp, &qm, &asil]() {
-        std::set<SlotIndexType> used_slots_qm{};
-        std::set<SlotIndexType> used_slots_asil{};
+        std::vector<ControlSlotIndicator> used_slots_qm{};
+        std::vector<ControlSlotIndicator> used_slots_asil{};
         EventSlotStatus::EventTimeStamp start_ts{1};
 
         TransactionLogSet::TransactionLogIndex transaction_log_index_qm =
@@ -638,8 +638,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                     auto slot_indicator = qm.ReferenceNextEvent(start_ts, transaction_log_index_qm);
                     if (slot_indicator.IsValid())
                     {
-                        score::cpp::ignore = used_slots_qm.emplace(slot_indicator.GetIndex());
-                        start_ts = EventSlotStatus{qm[slot_indicator.GetIndex()]}.GetTimeStamp();
+                        score::cpp::ignore = used_slots_qm.emplace_back(slot_indicator);
+                        start_ts = EventSlotStatus{slot_indicator.GetSlot().load()}.GetTimeStamp();
                     }
                 }
                 else
@@ -663,8 +663,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                     auto slot_indicator = asil.ReferenceNextEvent(start_ts, transaction_log_index_asil);
                     if (slot_indicator.IsValid())
                     {
-                        score::cpp::ignore = used_slots_asil.emplace(slot_indicator.GetIndex());
-                        start_ts = EventSlotStatus{qm[slot_indicator.GetIndex()]}.GetTimeStamp();
+                        score::cpp::ignore = used_slots_asil.emplace_back(slot_indicator);
+                        start_ts = EventSlotStatus{slot_indicator.GetSlot().load()}.GetTimeStamp();
                     }
                 }
                 else

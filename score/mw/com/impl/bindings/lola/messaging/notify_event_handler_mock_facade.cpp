@@ -10,12 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-<<<<<<< HEAD
 #include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock_facade.h"
-=======
-<<<<<<< HEAD:score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock.cpp
-#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock.h"
-=======
-#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock_facade.h"
->>>>>>> lola: fix test namespaces and adapted naming.:score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock_facade.cpp
->>>>>>> lola: fix test namespaces and adapted naming.

@@ -16,12 +16,12 @@
 ///
 
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
-#include "score/language/safecpp/safe_math/safe_math.h"
-#include "score/memory/shared/pointer_arithmetic_util.h"
-
-#include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
+
+#include "score/language/safecpp/safe_math/safe_math.h"
+#include "score/memory/shared/pointer_arithmetic_util.h"
+#include "score/mw/log/logging.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -177,10 +177,8 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         const EventSlotStatus event_slot_status{slot_indicator->GetSlot().load()};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
-        SamplePtr<void> sample{object_start_address,
-                               event_control.data_control,
-                               slot_indicator->GetIndex(),
-                               transaction_log_index.value()};
+        SamplePtr<void> sample{
+            object_start_address, event_control.data_control, *slot_indicator, transaction_log_index.value()};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

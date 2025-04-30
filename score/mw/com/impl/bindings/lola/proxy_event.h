@@ -187,14 +187,14 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(transaction_log_index.has_value(),
                                  "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
 
-    for (auto slot_indicator = slot_indicators.begin; slot_indicator != slot_indicators.end; ++slot_indicator)
+    for (auto slot_indicator_it = slot_indicators.begin; slot_indicator_it != slot_indicators.end; ++slot_indicator_it)
     {
-        const SampleType& sample_data{samples_.at(slot_indicator->GetIndex())};
-        const EventSlotStatus event_slot_status{slot_indicator->GetSlot().load()};
+        const SampleType& sample_data{samples_.at(slot_indicator_it->GetIndex())};
+        const EventSlotStatus event_slot_status{slot_indicator_it->GetSlot().load()};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
         SamplePtr<SampleType> sample{
-            &sample_data, event_control.data_control, slot_indicator->GetIndex(), transaction_log_index.value()};
+            &sample_data, event_control.data_control, *slot_indicator_it, transaction_log_index.value()};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

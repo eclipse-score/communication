@@ -114,15 +114,16 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
 
             auto& event_data_control = event_data_control_composite_result->GetQmEventDataControl();
 
-            const auto event_slot_index = lola_ptr.GetReferencedSlot();
-            event_data_control.ReferenceSpecificEvent(event_slot_index.GetIndex(),
+            auto slot_indicator = lola_ptr.GetReferencedSlot();
+            event_data_control.ReferenceSpecificEvent(slot_indicator.GetIndex(),
                                                       lola::TransactionLogSet::kSkeletonIndexSentinel);
             const auto* const managed_object = lola::SampleAllocateePtrView{lola_ptr}.GetManagedObject();
 
-            lola::SamplePtr<SampleType> sample_ptr{managed_object,
-                                                   event_data_control,
-                                                   event_slot_index.GetIndex(),
-                                                   lola::TransactionLogSet::kSkeletonIndexSentinel};
+            lola::SamplePtr<SampleType> sample_ptr{
+                managed_object,
+                event_data_control,
+                lola::ControlSlotIndicator(slot_indicator.GetIndex(), slot_indicator.GetSlotQM()),
+                lola::TransactionLogSet::kSkeletonIndexSentinel};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
         },
         [](std::unique_ptr<SampleType>& ptr) -> TypeErasedSamplePtr {

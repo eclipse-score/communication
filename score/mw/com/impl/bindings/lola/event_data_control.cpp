@@ -350,13 +350,14 @@ std::size_t EventDataControlImpl<AtomicIndirectorType>::GetNumNewEvents(
 
 template <template <class> class AtomicIndirectorType>
 auto EventDataControlImpl<AtomicIndirectorType>::DereferenceEvent(
-    const SlotIndexType event_slot_index,
+    ControlSlotIndicator slot_indicator,
     const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept -> void
 {
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(slot_indicator.IsValid());
     auto& transaction_log = transaction_log_set_.GetTransactionLog(transaction_log_index);
-    transaction_log.DereferenceTransactionBegin(event_slot_index);
-    DereferenceEventWithoutTransactionLogging(event_slot_index);
-    transaction_log.DereferenceTransactionCommit(event_slot_index);
+    transaction_log.DereferenceTransactionBegin(slot_indicator.GetIndex());
+    score::cpp::ignore = slot_indicator.GetSlot().fetch_sub(1U, std::memory_order_acq_rel);
+    transaction_log.DereferenceTransactionCommit(slot_indicator.GetIndex());
 }
 
 template <template <class> class AtomicIndirectorType>

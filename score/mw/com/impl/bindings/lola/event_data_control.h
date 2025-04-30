@@ -170,15 +170,16 @@ class EventDataControlImpl final
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will also record the transaction in the TransactionLog corresponding to transaction_log_index
-    void DereferenceEvent(const SlotIndexType event_slot_index,
+    void DereferenceEvent(ControlSlotIndicator slot_indicator,
                           const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
 
-    /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free)
+    /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
-    /// \details Will not record the transaction in any TransactionLog. This function should be called by the
-    /// TransactionLog::DereferenceSlotCallback created by ProxyEventCommon. In that case, the transaction will be
-    /// recorded within TransactionLog::Rollback before calling the callback.
+    /// \details Will not record the transaction in any TransactionLog. This function is called by the
+    /// TransactionLog::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions resp.
+    /// RollbackSkeletonTracingTransactions. In these cases, the transaction will be recorded within
+    /// TransactionLog::RollbackIncrementTransactions resp. RollbackSubscribeTransactions before calling the callback.
     void DereferenceEventWithoutTransactionLogging(const SlotIndexType event_slot_index) noexcept;
 
     /// \brief Directly access EventSlotStatus for one specific slot
@@ -219,8 +220,8 @@ class EventDataControlImpl final
 
     // Shared Memory ready :)!
     // we don't implement a smarter structure and just iterate through it, because we believe that by
-    // cache optimization this is way faster then e.g. a tree, since a tree also needs to be
-    // implement wait-free.
+    // cache optimization this is way faster than e.g. a tree, since a tree also needs to be
+    // implemented wait-free.
     EventControlSlots state_slots_;
 
     TransactionLogSet transaction_log_set_;
@@ -234,7 +235,7 @@ class EventDataControlImpl final
     template <template <typename> class T>
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // In order that users do not depend on implementation details, we only expose on user facing classes the bare
-    // necessary. Thus we have friend classes that expose internals for our implementation. Design decision for better
+    // necessary. Thus, we have friend classes that expose internals for our implementation. Design decision for better
     // encapsulation.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class detail_event_data_control_composite::EventDataControlCompositeImpl;

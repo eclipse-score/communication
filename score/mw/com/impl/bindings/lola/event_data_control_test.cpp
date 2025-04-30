@@ -27,8 +27,8 @@
 #include <limits>
 #include <mutex>
 #include <random>
-#include <set>
 #include <thread>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -301,7 +301,7 @@ TEST_F(EventDataControlFixture, DISABLED_MultipleReceiverRefCountCheck)
             EXPECT_EQ(unit[receive_slot.GetIndex()].GetTimeStamp(), 1);
 
             // and decrease the ref-count
-            unit.DereferenceEvent(receive_slot.GetIndex(), transaction_log_index);
+            unit.DereferenceEvent(receive_slot, transaction_log_index);
         }
     };
 
@@ -567,7 +567,7 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
         // randomly increases or decreases ref-count
         const auto& params = GetParam();
 
-        std::set<SlotIndexType> used_slots{};
+        std::vector<ControlSlotIndicator> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{1};
 
         TransactionLogSet::TransactionLogIndex transaction_log_index =
@@ -581,7 +581,7 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
                 if (slot.IsValid())
                 {
                     start_ts = EventSlotStatus{unit_[slot.GetIndex()]}.GetTimeStamp();
-                    used_slots.insert(slot.GetIndex());
+                    used_slots.push_back(slot);
                 }
             }
             else
@@ -647,7 +647,7 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
         // randomly increases or decreases ref-count
         const auto& params = GetParam();
 
-        std::set<SlotIndexType> used_slots{};
+        std::vector<ControlSlotIndicator> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{0};
 
         TransactionLogSet::TransactionLogIndex transaction_log_index =
@@ -665,7 +665,7 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
                 if (slot.IsValid())
                 {
                     highest_ts = EventSlotStatus{unit_[slot.GetIndex()]}.GetTimeStamp();
-                    used_slots.insert(slot.GetIndex());
+                    used_slots.push_back(slot);
                     slot_last = slot.GetIndex();
                 }
                 counter1++;

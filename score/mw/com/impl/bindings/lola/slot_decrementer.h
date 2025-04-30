@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SLOT_DECREMENTER_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SLOT_DECREMENTER_H
 
+#include "score/mw/com/impl/bindings/lola/control_slot_indicator.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
@@ -24,7 +25,7 @@ class SlotDecrementer
 {
   public:
     SlotDecrementer(EventDataControl* event_data_control,
-                    const SlotIndexType event_slot_index,
+                    ControlSlotIndicator control_slot_indicator,
                     const TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept;
     ~SlotDecrementer() noexcept;
 
@@ -37,7 +38,7 @@ class SlotDecrementer
     void internal_delete() noexcept;
 
     EventDataControl* event_data_control_;
-    SlotIndexType event_slot_index_;
+    ControlSlotIndicator control_slot_indicator_;
     TransactionLogSet::TransactionLogIndex transaction_log_idx_;
 };
 
