@@ -84,7 +84,8 @@ QualityAwareContainer<KnownInstancesContainer> GetAlreadyExistingInstances(
                     // Suppress "AUTOSAR C++14 M6-4-5" rule finding. This rule declares: "An unconditional throw or
                     // break statement shall terminate every non-empty switch-clause". We don't need a break statement
                     // at the end of default case as we use return. An error return is needed here to keep it robust for
-                    // the future. coverity[autosar_cpp14_m6_4_5_violation]
+                    // the future.
+                    // coverity[autosar_cpp14_m6_4_5_violation]
                     case QualityType::kInvalid:
                     default:
                     {
