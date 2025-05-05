@@ -130,7 +130,8 @@ auto EventDataControlImpl<AtomicIndirectorType>::FindOldestUnusedSlot() noexcept
          // coverity[autosar_cpp14_m5_0_15_violation]
          // coverity[autosar_cpp14_m5_2_10_violation]
          ++it,
-                              ++current_index)
+                              // coverity[autosar_cpp14_a4_7_1_violation]
+         ++current_index)
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
         const EventSlotStatus status{it->load(std::memory_order_acquire)};

@@ -17,6 +17,7 @@
 
 #include <score/assert.hpp>
 
+#include <limits>
 #include <mutex>
 
 namespace score::mw::com::impl::lola
@@ -226,9 +227,11 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
 std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogSet::TransactionLogIndex>>
 TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
 {
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_transaction_logs_.size() <= std::numeric_limits<std::uint8_t>::max(),
+                           "proxy_transaction_logs_.size() does not fit uint8_t");
     //  The size of the transaction logs reflects the size of max subscribers and therefore the potential upper-bound
     //  of concurrent proxies accessing these transaction_logs, from which we deduce our max retry count!
-    std::uint8_t max_retry_count{static_cast<std::uint8_t>(proxy_transaction_logs_.size())};
+    const std::uint8_t max_retry_count{static_cast<std::uint8_t>(proxy_transaction_logs_.size())};
     std::uint8_t retries{0};
     while (retries < max_retry_count)
     {
@@ -255,6 +258,10 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
                 transaction_log_node.MarkNeedsRollback(false);
                 return std::make_pair(it, index);
             }
+            // Suppress "AUTOSAR C++14 A4-7-1" rule: "An integer expression shall not lead to data loss.".
+            // The size check above guarantees that proxy_transaction_logs_ fits within the range of a uint8_t.
+            // The index variable is incremented safely as its type matches the underlying type of the size check.
+            // coverity[autosar_cpp14_a4_7_1_violation]
             index++;
         }
         retries++;
