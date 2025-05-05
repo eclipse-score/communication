@@ -256,6 +256,10 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
             {
                 // coverity[autosar_cpp14_a5_3_2_violation]
                 transaction_log_node.MarkNeedsRollback(false);
+                // Suppress "AUTOSAR C++14 M6-5-3" rule finding: "The loop-counter shall not be modified within
+                // condition or statement.".
+                // This is false-positive, the loop-counter is not changed.
+                // coverity[autosar_cpp14_m6_5_3_violation : FALSE]
                 return std::make_pair(it, index);
             }
             // Suppress "AUTOSAR C++14 A4-7-1" rule: "An integer expression shall not lead to data loss.".
