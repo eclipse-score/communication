@@ -17,7 +17,7 @@
 
 #include <limits>
 
-namespace score::mw::com::impl::lola 
+namespace score::mw::com::impl::lola
 {
 
 /// \brief A unique identifier for identifying / retrieving a TransactionLog
@@ -40,8 +40,8 @@ using TransactionLogId = uid_t;
 // variables being given values that are not subsequently used".
 // This constant definition is used by other units to represent an invalid/initial TransactionLogId.
 // coverity[autosar_cpp14_a0_1_1_violation ]
-constexpr uid_t kInvalidTransactionLogId { std::numeric_limits<TransactionLogId>::max() };
+constexpr uid_t kInvalidTransactionLogId{std::numeric_limits<TransactionLogId>::max()};
 
-} // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola
 
-#endif // SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ID_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ID_H
