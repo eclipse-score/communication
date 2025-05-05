@@ -22,6 +22,7 @@
 
 #include <exception>
 #include <sstream>
+#include <tuple>
 
 namespace score::mw::com::impl
 {
@@ -124,8 +125,8 @@ auto operator==(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) no
 
 auto operator<(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) noexcept -> bool
 {
-    return (((lhs.instance_deployment_->service_ < rhs.instance_deployment_->service_) ||
-             (*lhs.instance_deployment_ < *rhs.instance_deployment_)));
+    return std::tie(lhs.instance_deployment_->service_, *lhs.instance_deployment_) <
+           std::tie(rhs.instance_deployment_->service_, *rhs.instance_deployment_);
 }
 
 InstanceIdentifierView::InstanceIdentifierView(const InstanceIdentifier& identifier) : identifier_{identifier} {}

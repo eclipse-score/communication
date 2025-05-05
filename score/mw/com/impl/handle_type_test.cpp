@@ -193,9 +193,9 @@ TEST(HandleTypeWithInstanceIdFromConfigTest, LessCompareable)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const auto instance = make_InstanceIdentifier(kServiceInstanceDeployment1, kTestTypeDeployment);
-
-    const auto lessInstance = make_InstanceIdentifier(kServiceInstanceDeployment2, kTestTypeDeployment);
+    const auto lessInstance = make_InstanceIdentifier(kServiceInstanceDeployment1, kTestTypeDeployment);
+    const auto instance = make_InstanceIdentifier(kServiceInstanceDeployment2, kTestTypeDeployment);
+    ASSERT_LT(lessInstance, instance);
 
     const auto unit = make_HandleType(instance);
     const auto less = make_HandleType(lessInstance);

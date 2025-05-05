@@ -83,7 +83,7 @@ auto operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeploy
         const auto* const rhsSomeIpBindingInfo = std::get_if<SomeIpServiceInstanceDeployment>(&rhs.bindingInfo_);
         if ((lhsSomeIpBindingInfo != nullptr) && (rhsSomeIpBindingInfo != nullptr))
         {
-            bindingLess = lhsSomeIpBindingInfo->instance_id_ == rhsSomeIpBindingInfo->instance_id_;
+            bindingLess = lhsSomeIpBindingInfo->instance_id_ < rhsSomeIpBindingInfo->instance_id_;
         }
     }
     return (((lhs.asilLevel_ < rhs.asilLevel_) && bindingLess));

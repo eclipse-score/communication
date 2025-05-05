@@ -80,7 +80,7 @@ std::vector<HandleType> GetKnownHandles(EnrichedInstanceIdentifier enriched_inst
 ServiceDiscoveryClient::ServiceDiscoveryClient(concurrency::Executor& long_running_threads) noexcept
     : ServiceDiscoveryClient(long_running_threads,
                              std::make_unique<os::InotifyInstanceImpl>(),
-                             std::make_unique<os::internal::UnistdImpl>(),
+                             os::Unistd::Default(),
                              filesystem::FilesystemFactory{}.CreateInstance())
 {
 }
