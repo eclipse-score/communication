@@ -232,11 +232,11 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
     //  The size of the transaction logs reflects the size of max subscribers and therefore the potential upper-bound
     //  of concurrent proxies accessing these transaction_logs, from which we deduce our max retry count!
     const std::uint8_t max_retry_count{static_cast<std::uint8_t>(proxy_transaction_logs_.size())};
-    std::uint8_t retries{0};
+    std::uint8_t retries{0U};
     while (retries < max_retry_count)
     {
         // we iterate using iterators as it minimizes bounds-checking to start/end!
-        TransactionLogSet::TransactionLogIndex index{0};
+        TransactionLogSet::TransactionLogIndex index{0U};
 
         // autosar_cpp14_m5_0_15_violation
         // This rule has an explicit exception for using ++/-- operators on iterators, which is what is happening here.
