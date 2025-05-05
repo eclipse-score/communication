@@ -131,6 +131,7 @@ auto EventDataControlImpl<AtomicIndirectorType>::FindOldestUnusedSlot() noexcept
          // coverity[autosar_cpp14_m5_2_10_violation]
          ++it,
                               // coverity[autosar_cpp14_a4_7_1_violation]
+                              // coverity[autosar_cpp14_m6_5_5_violation]
          ++current_index)
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
