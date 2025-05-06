@@ -39,7 +39,11 @@ using TransactionLogId = uid_t;
 // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
 // variables being given values that are not subsequently used".
 // This constant definition is used by other units to represent an invalid/initial TransactionLogId.
-// coverity[autosar_cpp14_a0_1_1_violation ]
+// Suppress "AUTOSAR C++14 A2-10-4". This rule states: "The identifier name of a non-member object with static storage
+// duration or static function shall not be reused within a namespace.".
+// This variable is declared only once within this namespace and does not violate the rule.
+// coverity[autosar_cpp14_a2_10_4_violation]
+// coverity[autosar_cpp14_a0_1_1_violation]
 constexpr uid_t kInvalidTransactionLogId{std::numeric_limits<TransactionLogId>::max()};
 
 }  // namespace score::mw::com::impl::lola
