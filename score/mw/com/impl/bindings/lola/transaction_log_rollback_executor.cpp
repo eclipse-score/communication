@@ -23,6 +23,12 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings.
+// This rule states: "The std::terminate() function shall not be called implicitly".
+// The coverity tool reports: "fun_call_w_exception: Called function throws an exception of type
+// std::bad_optional_access." and points on statement `for (auto& element : service_data_control.event_controls_)`.
+// This is a false positive; no optional is involved in this statement.
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void MarkTransactionLogsNeedRollback(ServiceDataControl& service_data_control,
                                      const TransactionLogId transaction_log_id) noexcept
 {

@@ -63,6 +63,12 @@ TransactionLogSet::TransactionLogSet(const TransactionLogIndex max_number_of_log
         "kSkeletonIndexSentinel is a reserved sentinel value so the max_number_of_logs must be reduced.");
 }
 
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly".
+// The coverity tool reports: "An exception of type std::bad_optional_access is thrown but the throw list noexcept
+// doesn't allow it to be thrown. terminate() could be called implicitly."
+// This is a false-positive, no optional is involved in this function
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLogSet::MarkTransactionLogsNeedRollback(const TransactionLogId& transaction_log_id) noexcept
 {
     for (auto& transaction_log_node : proxy_transaction_logs_)
