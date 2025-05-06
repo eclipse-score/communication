@@ -85,7 +85,7 @@
             "B-receiver": 5,
             "B-sender": 12
         },
-        "shm-size-calc-mode": "ESTIMATION"
+        "shm-size-calc-mode": "SIMULATION"
     },
     "tracing": {
         "enable": false,
