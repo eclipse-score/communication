@@ -84,8 +84,7 @@ QualityAwareContainer<KnownInstancesContainer> GetAlreadyExistingInstances(
                     // Suppress "AUTOSAR C++14 M6-4-5" rule finding. This rule declares: "An unconditional throw or
                     // break statement shall terminate every non-empty switch-clause". We don't need a break statement
                     // at the end of default case as we use return. An error return is needed here to keep it robust for
-                    // the future.
-                    // coverity[autosar_cpp14_m6_4_5_violation]
+                    // the future. coverity[autosar_cpp14_m6_4_5_violation]
                     case QualityType::kInvalid:
                     default:
                     {
@@ -349,13 +348,7 @@ auto FlagFileCrawler::AddWatchToInotifyInstance(const EnrichedInstanceIdentifier
 
                 // The resulting integer representing permissions is a decimal number. The "regular" format e.g. 666 for
                 // read/write for all is in octal format. So we convert to octal.
-
-                // Suppress "AUTOSAR C++14 M8-4-4" rule finding. This rule states: "A function identifier shall either
-                // be used to call the function or it shall be preceded by &.". This is a false-positive, the
-                // suppression has to be removed after fixing broken_link_j/Ticket-186944
-                // coverity[autosar_cpp14_m8_4_4_violation: FALSE]
                 std::stringstream permissions_integer_as_octal_string{};
-                // coverity[autosar_cpp14_m8_4_4_violation: FALSE]
                 permissions_integer_as_octal_string << std::oct << permissions_integer;
                 mw::log::LogError("lola")
                     << "Current file permissions are:" << permissions_integer_as_octal_string.str();

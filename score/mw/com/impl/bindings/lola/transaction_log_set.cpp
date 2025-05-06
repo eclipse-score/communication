@@ -17,7 +17,6 @@
 
 #include <score/assert.hpp>
 
-#include <limits>
 #include <mutex>
 
 namespace score::mw::com::impl::lola
@@ -63,12 +62,6 @@ TransactionLogSet::TransactionLogSet(const TransactionLogIndex max_number_of_log
         "kSkeletonIndexSentinel is a reserved sentinel value so the max_number_of_logs must be reduced.");
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly".
-// The coverity tool reports: "An exception of type std::bad_optional_access is thrown but the throw list noexcept
-// doesn't allow it to be thrown. terminate() could be called implicitly."
-// This is a false-positive, no optional is involved in this function
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLogSet::MarkTransactionLogsNeedRollback(const TransactionLogId& transaction_log_id) noexcept
 {
     for (auto& transaction_log_node : proxy_transaction_logs_)
@@ -233,16 +226,14 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
 std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogSet::TransactionLogIndex>>
 TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_transaction_logs_.size() <= std::numeric_limits<std::uint8_t>::max(),
-                           "proxy_transaction_logs_.size() does not fit uint8_t");
     //  The size of the transaction logs reflects the size of max subscribers and therefore the potential upper-bound
     //  of concurrent proxies accessing these transaction_logs, from which we deduce our max retry count!
-    const std::uint8_t max_retry_count{static_cast<std::uint8_t>(proxy_transaction_logs_.size())};
-    std::uint8_t retries{0U};
+    std::uint8_t max_retry_count{static_cast<std::uint8_t>(proxy_transaction_logs_.size())};
+    std::uint8_t retries{0};
     while (retries < max_retry_count)
     {
         // we iterate using iterators as it minimizes bounds-checking to start/end!
-        TransactionLogSet::TransactionLogIndex index{0U};
+        TransactionLogSet::TransactionLogIndex index{0};
 
         // autosar_cpp14_m5_0_15_violation
         // This rule has an explicit exception for using ++/-- operators on iterators, which is what is happening here.
@@ -262,16 +253,8 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
             {
                 // coverity[autosar_cpp14_a5_3_2_violation]
                 transaction_log_node.MarkNeedsRollback(false);
-                // Suppress "AUTOSAR C++14 M6-5-3" rule finding: "The loop-counter shall not be modified within
-                // condition or statement.".
-                // This is false-positive, the loop-counter is not changed.
-                // coverity[autosar_cpp14_m6_5_3_violation : FALSE]
                 return std::make_pair(it, index);
             }
-            // Suppress "AUTOSAR C++14 A4-7-1" rule: "An integer expression shall not lead to data loss.".
-            // The size check above guarantees that proxy_transaction_logs_ fits within the range of a uint8_t.
-            // The index variable is incremented safely as its type matches the underlying type of the size check.
-            // coverity[autosar_cpp14_a4_7_1_violation]
             index++;
         }
         retries++;
