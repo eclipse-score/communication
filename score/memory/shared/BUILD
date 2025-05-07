@@ -574,7 +574,12 @@ cc_library(
         "fake/my_memory_resource.h",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],
+    visibility = [
+        "@score-baselibs//score/containers:__pkg__",
+        "@score-baselibs//score/memory/shared:__subpackages__",
+        "//platform/aas/mw/com/impl:__subpackages__",
+        # "@ddad@score-baselibs//score/memory:__subpackages__",
+    ],
     deps = [
         ":types",
         "@score-baselibs//score/language/futurecpp",
