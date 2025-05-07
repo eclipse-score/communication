@@ -12,19 +12,67 @@
 # *******************************************************************************
 module(name = "communication")
 
-bazel_dep(name = "toolchains_llvm", version = "1.3.0")
+bazel_dep(name = "toolchains_llvm", version = "1.3.0", dev_dependency=True)
 
 # Configure and register the toolchain.
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency=True)
 
 llvm.toolchain(
     llvm_version = "16.0.0",
     cxx_standard = {"": "c++17"},
+    stdlib ={"": "dynamic-stdc++"},
+    compile_flags = {"": [
+        "-march=nehalem",
+        "-ffp-model=strict",
+        # Security
+        "-U_FORTIFY_SOURCE",  # https://github.com/google/sanitizers/issues/247
+        "-fstack-protector",
+        "-fno-omit-frame-pointer",
+        # Diagnostics
+        "-fcolor-diagnostics",
+        "-Wno-deprecated-declarations",
+        "-Wno-error=self-assign-overloaded",
+        "-Wthread-safety",
+    ]},
+    link_libs ={"":[
+        "-lrt",
+    ]},
 )
 
 use_repo(llvm, "llvm_toolchain")
 
-register_toolchains("@llvm_toolchain//:all")
+#register_toolchains("@llvm_toolchain//:all")
+
 
 bazel_dep(name = "googletest", version = "1.15.0")
 bazel_dep(name = "google_benchmark", version = "1.9.1")
+
+bazel_dep(name = "rules_rust", version = "0.61.0")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+crate.spec(package = "futures", version = "0.3.31")
+crate.spec(package = "libc", version = "0.2.155")
+
+crate.from_specs(name = "crate_index")
+use_repo(crate, "crate_index")
+
+archive_override(
+    module_name = "rules_boost",
+    urls = "https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz",
+    strip_prefix = "rules_boost-master",
+)
+
+bazel_dep(name = "download_utils", version = "1.0.1")
+download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
+download_archive(
+    name = "json_schema_validator",
+    urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
+    build = "//third_party/json_schema_validator:json_schema_validator.BUILD",
+    strip_prefix = "json-schema-validator-2.1.0",
+)
+
+bazel_dep(name = "nlohmann_json", version = "3.11.3")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+
+bazel_dep(name = "score-baselibs", version = "0.0.0")
