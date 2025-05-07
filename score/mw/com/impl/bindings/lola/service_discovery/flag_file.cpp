@@ -71,10 +71,6 @@ auto GetMatchingFlagFilePaths(const EnrichedInstanceIdentifier& enriched_instanc
     score::cpp::ignore =
         std::for_each(begin(directory_iterator),
                       end(directory_iterator),
-                      // Suppress "AUTOSAR C++14 A0-1-3" rule finding. This rule states: "Every function defined in an
-                      // anonymous namespace, or static function with internal linkage, or private member function shall
-                      // be used.". Rationale: False-positive, this lambda function is used by std::for_each.
-                      // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
                       [&flag_file_paths, quality_type](const filesystem::DirectoryEntry& entry) noexcept {
                           const auto file_status = entry.Status();
                           const auto substring_iterator = entry.GetPath().Native().find(quality_type);

@@ -22,16 +22,11 @@ std::pair<std::mutex&, bool> RollbackSynchronization::GetMutex(const ServiceData
     auto search = synchronisation_data_map_.find(proxy_element_control);
     if (search != synchronisation_data_map_.end())
     {
-        // Suppress "AUTOSAR C++14 A18-9-2" rule finding: "Forwarding values to other functions shall be done via: (1)
-        // std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding reference.".
-        // No need to use std::move here as Return Value Optimization (RVO) will handle it efficiently.
-        // coverity[autosar_cpp14_a18_9_2_violation]
         return {search->second, true};
     }
     auto [iterator, inserted] = synchronisation_data_map_.emplace(
         std::piecewise_construct, std::forward_as_tuple(proxy_element_control), std::forward_as_tuple());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted, "Error inserting mutex into synchronisation_data_map_");
-    // coverity[autosar_cpp14_a18_9_2_violation]
     return {iterator->second, false};
 }
 
