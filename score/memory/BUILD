@@ -10,12 +10,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
-
 package(default_visibility = [
     # "@ddad@score-baselibs//score/memory:__subpackages__",
 ])
 
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
 cc_library(
     name = "string_literal",
     hdrs = ["string_literal.h"],
@@ -42,7 +52,11 @@ cc_library(
     name = "endianness",
     srcs = ["endianness.cpp"],
     hdrs = ["endianness.h"],
-    features = COMPILER_WARNING_FEATURES,
+    features = [
+        "treat_warnings_as_errors",
+        "strict_warnings",
+        "additional_warnings",
+    ],
     tags = ["FFI"],
     visibility = [
         "//platform/aas/lib/serialization:__subpackages__",
@@ -60,7 +74,11 @@ cc_library(
     hdrs = [
         "string_comparison_adaptor.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
+    features = [
+        "treat_warnings_as_errors",
+        "strict_warnings",
+        "additional_warnings",
+    ],
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
@@ -98,7 +116,11 @@ cc_library(
     hdrs = [
         "split_string_view.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
+    features = [
+        "treat_warnings_as_errors",
+        "strict_warnings",
+        "additional_warnings",
+    ],
     tags = ["FFI"],
     visibility = [
         "@score-baselibs//score/mw/log:__subpackages__",
@@ -112,7 +134,11 @@ cc_library(
     hdrs = [
         "pmr_ring_buffer.h",
     ],
-    features = COMPILER_WARNING_FEATURES,
+    features = [
+        "treat_warnings_as_errors",
+        "strict_warnings",
+        "additional_warnings",
+    ],
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
