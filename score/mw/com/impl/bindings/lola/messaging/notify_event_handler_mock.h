@@ -44,7 +44,8 @@ class NotifyEventHandlerMock : public INotifyEventHandler
                 (const QualityType asil_level,
                  const ElementFqId event_id,
                  const IMessagePassingService::HandlerRegistrationNoType registration_no,
-                 const pid_t target_node_id), (override));
+                 const pid_t target_node_id),
+                (override));
     MOCK_METHOD(void,
                 NotifyOutdatedNodeId,
                 (QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id),

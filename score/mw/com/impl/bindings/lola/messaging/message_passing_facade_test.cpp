@@ -241,6 +241,19 @@ TEST_F(MessagePassingFacadeFixture, RegisterEventNotificationWillDispatchToNotif
         QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, std::move(eventUpdateNotificationHandler), OUR_PID);
 }
 
+TEST_F(MessagePassingFacadeFixture, ReregisterEventNotificationWillDispatchToNotifyEventHandler)
+{
+    // Given a Facade created for QM only
+    PrepareFacade(false);
+
+    // Expecting that ReregisterEventNotification will be called on the NotifyEventHandlerMock
+    EXPECT_CALL(notify_event_handler_mock_,
+                ReregisterEventNotification(QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, OUR_PID));
+
+    // when calling ReregisterEventNotification
+    unit_.value().ReregisterEventNotification(QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, OUR_PID);
+}
+
 TEST_F(MessagePassingFacadeFixture, UnregisterEventNotificationWillDispatchToNotifyEventHandler)
 {
     // Given a Facade created for QM only
