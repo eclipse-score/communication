@@ -209,6 +209,11 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     }
     const auto slot = event_data_control_composite_->AllocateNextSlot();
 
+    // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
+    // parenthesized if the operands contain binary operators".
+    // This suppression is unnecessary as the operands do not contain binary operators.
+    // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
+    // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
     if (!qm_disconnect_ && event_data_control_composite_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
     {
         qm_disconnect_ = true;
@@ -253,8 +258,8 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                            "Defensive programming as event_data_control_composite_ is set by Register above.");
     current_timestscore_ = event_data_control_composite_.value().GetLatestTimestamp();
-    const bool tracing_globally_enabled = impl::Runtime::getInstance().GetTracingRuntime() != nullptr &&
-                                          impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled();
+    const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
+                                           (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
     const bool tracing_for_skeleton_event_enabled =
         skeleton_event_tracing_data_.enable_send || skeleton_event_tracing_data_.enable_send_with_allocate;
     if (tracing_globally_enabled && tracing_for_skeleton_event_enabled)

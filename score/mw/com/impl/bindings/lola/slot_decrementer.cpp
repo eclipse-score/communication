@@ -37,6 +37,11 @@ SlotDecrementer::SlotDecrementer(SlotDecrementer&& other) noexcept
     other.event_data_control_ = nullptr;
 }
 
+// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
+// or respectively copy base classes and data members of a class, without any side effects." Due to architectural
+// decisions, SlotDecrementer must perform a cleanup and update references to itself in its events and fields.
+// Therefore, side effects are required.
+// coverity[autosar_cpp14_a6_2_1_violation]
 SlotDecrementer& SlotDecrementer::operator=(SlotDecrementer&& other) noexcept
 {
     if (this != &other)
