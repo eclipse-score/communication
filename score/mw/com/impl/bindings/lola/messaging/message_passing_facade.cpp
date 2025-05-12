@@ -13,24 +13,27 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_facade.h"
 
 #include "score/os/errno_logging.h"
-#include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 #include "score/mw/com/message_passing/receiver_factory.h"
 #include "score/mw/log/logging.h"
 
+#include <score/assert.hpp>
 #include <score/utility.hpp>
 
 #include <utility>
 
 score::mw::com::impl::lola::MessagePassingFacade::MessagePassingFacade(
+    score::cpp::stop_source& stop_source,
+    std::unique_ptr<INotifyEventHandler> notify_event_handler,
     IMessagePassingControl& msgpass_ctrl,
     const AsilSpecificCfg config_asil_qm,
     const score::cpp::optional<AsilSpecificCfg> config_asil_b) noexcept
     : score::mw::com::impl::lola::IMessagePassingService{},
       message_passing_ctrl_(msgpass_ctrl),
       asil_b_capability_{config_asil_b.has_value()},
-      stop_source_{},
-      notify_event_handler_{msgpass_ctrl, asil_b_capability_, stop_source_.get_token()}
+      stop_source_{stop_source},
+      notify_event_handler_{std::move(notify_event_handler)}
 {
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(notify_event_handler_ != nullptr);
     score::cpp::ignore = asil_b_capability_;
 
     // Suppress "AUTOSAR C++14 M12-1-1", The rule states: "An object’s dynamic type shall not be used from the body of
@@ -93,7 +96,7 @@ void score::mw::com::impl::lola::MessagePassingFacade::InitializeMessagePassingR
     receiver.receiver_ = message_passing::ReceiverFactory::Create(
         receiverName, *receiver.thread_pool_, allowed_user_ids, receiver_config);
 
-    notify_event_handler_.RegisterMessageReceivedCallbacks(asil_level, *receiver.receiver_);
+    notify_event_handler_->RegisterMessageReceivedCallbacks(asil_level, *receiver.receiver_);
 
     auto result = receiver.receiver_->StartListening();
     if (result.has_value() == false)
@@ -108,7 +111,7 @@ void score::mw::com::impl::lola::MessagePassingFacade::InitializeMessagePassingR
 void score::mw::com::impl::lola::MessagePassingFacade::NotifyEvent(const QualityType asil_level,
                                                                  const ElementFqId event_id) noexcept
 {
-    notify_event_handler_.NotifyEvent(asil_level, event_id);
+    notify_event_handler_->NotifyEvent(asil_level, event_id);
 }
 
 score::mw::com::impl::lola::IMessagePassingService::HandlerRegistrationNoType
@@ -118,14 +121,14 @@ score::mw::com::impl::lola::MessagePassingFacade::RegisterEventNotification(
     std::weak_ptr<ScopedEventReceiveHandler> callback,
     const pid_t target_node_id) noexcept
 {
-    return notify_event_handler_.RegisterEventNotification(asil_level, event_id, std::move(callback), target_node_id);
+    return notify_event_handler_->RegisterEventNotification(asil_level, event_id, std::move(callback), target_node_id);
 }
 
 void score::mw::com::impl::lola::MessagePassingFacade::ReregisterEventNotification(QualityType asil_level,
                                                                                  ElementFqId event_id,
                                                                                  pid_t target_node_id) noexcept
 {
-    notify_event_handler_.ReregisterEventNotification(asil_level, event_id, target_node_id);
+    notify_event_handler_->ReregisterEventNotification(asil_level, event_id, target_node_id);
 }
 
 void score::mw::com::impl::lola::MessagePassingFacade::UnregisterEventNotification(
@@ -134,12 +137,12 @@ void score::mw::com::impl::lola::MessagePassingFacade::UnregisterEventNotificati
     const IMessagePassingService::HandlerRegistrationNoType registration_no,
     const pid_t target_node_id) noexcept
 {
-    notify_event_handler_.UnregisterEventNotification(asil_level, event_id, registration_no, target_node_id);
+    notify_event_handler_->UnregisterEventNotification(asil_level, event_id, registration_no, target_node_id);
 }
 
 void score::mw::com::impl::lola::MessagePassingFacade::NotifyOutdatedNodeId(QualityType asil_level,
                                                                           pid_t outdated_node_id,
                                                                           pid_t target_node_id) noexcept
 {
-    notify_event_handler_.NotifyOutdatedNodeId(asil_level, outdated_node_id, target_node_id);
+    notify_event_handler_->NotifyOutdatedNodeId(asil_level, outdated_node_id, target_node_id);
 }

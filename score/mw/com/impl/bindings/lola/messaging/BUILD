@@ -98,7 +98,7 @@ cc_library(
     deps = [
         ":i_message_passing_control",
         ":i_message_passing_service",
-        ":notify_event_handler",
+        ":i_notify_event_handler",
         ":thread_abstraction",
         "@score-baselibs//score/concurrency:thread_pool",
         "@score-baselibs//score/os:errno_logging",
@@ -185,6 +185,32 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "notify_event_handler_mock",
+    testonly = True,
+    srcs = ["notify_event_handler_mock.cpp"],
+    hdrs = ["notify_event_handler_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":i_notify_event_handler",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "notify_event_handler_facade",
+    testonly = True,
+    srcs = ["notify_event_handler_facade.cpp"],
+    hdrs = ["notify_event_handler_facade.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":i_notify_event_handler",
+        ":notify_event_handler_mock",
+    ],
+)
+
 cc_test(
     name = "message_passing_unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -205,6 +231,8 @@ cc_test(
     deps = [
         ":messaging",
         ":mock",
+        ":notify_event_handler_facade",
+        ":notify_event_handler_mock",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@score-baselibs//score/os/mocklib:unistd_mock",
         "//score/mw/com/message_passing",

@@ -30,10 +30,6 @@ namespace score::mw::com::impl::lola
 ///          It gets (Un)RegisterEventNotification() calls from proxy instances
 class INotifyEventHandler
 {
-    using NotifyEventUpdateMessage = ElementFqIdMessage<MessageType::kNotifyEvent>;
-    using RegisterEventNotificationMessage = ElementFqIdMessage<MessageType::kRegisterEventNotifier>;
-    using UnregisterEventNotificationMessage = ElementFqIdMessage<MessageType::kUnregisterEventNotifier>;
-
   public:
     INotifyEventHandler() = default;
     virtual ~INotifyEventHandler() = default;
@@ -92,6 +88,10 @@ class INotifyEventHandler
                                       pid_t target_node_id) noexcept = 0;
 
   protected:
+    using NotifyEventUpdateMessage = ElementFqIdMessage<MessageType::kNotifyEvent>;
+    using RegisterEventNotificationMessage = ElementFqIdMessage<MessageType::kRegisterEventNotifier>;
+    using UnregisterEventNotificationMessage = ElementFqIdMessage<MessageType::kUnregisterEventNotifier>;
+
     INotifyEventHandler(const INotifyEventHandler&) = default;
     INotifyEventHandler& operator=(const INotifyEventHandler&) & = default;
     INotifyEventHandler(INotifyEventHandler&&) noexcept = default;

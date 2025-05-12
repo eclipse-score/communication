@@ -13,6 +13,8 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_facade.h"
 
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_control_mock.h"
+#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_facade.h"
+#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock.h"
 #include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 #include "score/mw/com/message_passing/receiver_factory.h"
 #include "score/mw/com/message_passing/receiver_mock.h"
@@ -20,11 +22,9 @@
 
 #include "score/language/safecpp/scoped_function/scope.h"
 
-#include <score/optional.hpp>
-
 #include <gtest/gtest.h>
-
 #include <memory>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl::lola::test
@@ -91,7 +91,11 @@ class MessagePassingFacadeFixture : public ::testing::Test
         EXPECT_CALL(receiver_mock_, StartListening())
             .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(ARBITRARY_POSIX_ERROR))));
 
-        MessagePassingFacade facade{message_passing_control_mock_, asilCfg, score::cpp::nullopt};
+        MessagePassingFacade facade{stop_source_,
+                                    std::make_unique<NotifyEventHandlerFacade>(notify_event_handler_mock_),
+                                    message_passing_control_mock_,
+                                    asilCfg,
+                                    score::cpp::nullopt};
     }
 
     void PrepareFacade(bool also_activate_asil)
@@ -128,6 +132,8 @@ class MessagePassingFacadeFixture : public ::testing::Test
 
         // when creating our MessagePassingFacade
         unit_.emplace(
+            stop_source_,
+            std::make_unique<NotifyEventHandlerFacade>(notify_event_handler_mock_),
             message_passing_control_mock_,
             asilCfg,
             also_activate_asil ? score::cpp::optional<MessagePassingFacade::AsilSpecificCfg>{asilCfg} : score::cpp::nullopt);
@@ -136,8 +142,10 @@ class MessagePassingFacadeFixture : public ::testing::Test
     message_passing::ReceiverMock receiver_mock_{};
     MessagePassingControlMock message_passing_control_mock_{};
     ThreadHWConcurrencyMock concurrency_mock_{};
+    score::cpp::stop_source stop_source_{};
 
-    score::cpp::optional<MessagePassingFacade> unit_;
+    NotifyEventHandlerMock notify_event_handler_mock_{};
+    std::optional<MessagePassingFacade> unit_;
 };
 
 /// \brief Test for heap allocation is needed to stimulate "deleting Dtor" for gcov func coverage.
@@ -164,7 +172,12 @@ TEST_F(MessagePassingFacadeFixture, CreationQMOnlyHeap)
         .WillRepeatedly(Return(score::cpp::expected_blank<score::os::Error>{}));
 
     // when creating our MessagePassingFacade
-    auto unit_on_heap = std::make_unique<MessagePassingFacade>(message_passing_control_mock_, asilCfg, score::cpp::nullopt);
+    auto unit_on_heap =
+        std::make_unique<MessagePassingFacade>(stop_source_,
+                                               std::make_unique<NotifyEventHandlerFacade>(notify_event_handler_mock_),
+                                               message_passing_control_mock_,
+                                               asilCfg,
+                                               score::cpp::nullopt);
     EXPECT_TRUE(unit_on_heap);
 }
 
@@ -181,51 +194,34 @@ TEST_F(MessagePassingFacadeFixture, ListeningFailure)
     EXPECT_DEATH(PrepareFacadeWithListenError(), ".*");
 }
 
-// test case tests forwarding of call of NotifyEvent() to
-// NotifyEventHandler::NotifyEvent().
-// Since we do NOT want to introduce a mock for the NotifyEventHandler owned by the MessagePassingFacade, because
-// it would introduce polymorphism and injection APIs in the MessagePassingFacade only for testing this simple call-
-// forwarding for coverage completeness, we just stimulate the simplest possible call to verify coverage.
-TEST_F(MessagePassingFacadeFixture, NotifyEvent)
+TEST_F(MessagePassingFacadeFixture, NotifyEventWillDispatchToNotifyEventHandler)
 {
-    // we have a Facade created for QM only
+    // Given a Facade created for QM only
     PrepareFacade(false);
 
-    // expect, that GetNodeIdentifier() will get called (by the internal NotifyEventHandler owned bei UuT)
-    EXPECT_CALL(message_passing_control_mock_, GetNodeIdentifier()).WillOnce(Return(OUR_PID));
+    // Expecting that NotifyEvent will be called on the NotifyEventHandlerMock
+    EXPECT_CALL(notify_event_handler_mock_, NotifyEvent(QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID));
 
-    // when calling NotifyEvent, we will cover call forwarding to NotifyEventHandler
+    // when calling NotifyEvent
     unit_.value().NotifyEvent(QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID);
 }
 
-// test case tests forwarding of call of NotifyOutdatedNodeId() to
-// NotifyEventHandler::NotifyOutdatedNodeId().
-// Since we do NOT want to introduce a mock for the NotifyEventHandler owned by the MessagePassingFacade, because
-// it would introduce polymorphism and injection APIs in the MessagePassingFacade only for testing this simple call-
-// forwarding for coverage completeness, we just stimulate the simplest possible call to verify coverage.
-TEST_F(MessagePassingFacadeFixture, NotifyOutdatedNodeId)
+TEST_F(MessagePassingFacadeFixture, NotifyOutdatedNodeIdWillDispatchToNotifyEventHandler)
 {
-    // we have a Facade created for QM only
+    // Given a Facade created for QM only
     PrepareFacade(false);
 
+    // Expecting that NotifyOutdatedNodeId will be called on the NotifyEventHandlerMock
     const pid_t target_node_id{1};
     const pid_t outdated_node_id{42};
+    EXPECT_CALL(notify_event_handler_mock_,
+                NotifyOutdatedNodeId(QualityType::kASIL_QM, outdated_node_id, target_node_id));
 
-    // expect, that GetMessagePassingSender() will get called (by the internal NotifyEventHandler owned bei UuT)
-    EXPECT_CALL(message_passing_control_mock_, GetMessagePassingSender(QualityType::kASIL_QM, target_node_id))
-        .WillOnce(Return(std::make_shared<message_passing::SenderMock>()));
-
-    // when calling NotifyEvent, we will cover call forwarding to NotifyEventHandler
+    // when calling NotifyOutdatedNodeId
     unit_.value().NotifyOutdatedNodeId(QualityType::kASIL_QM, outdated_node_id, target_node_id);
 }
 
-// test case tests forwarding of call of RegisterEventNotification() to
-// NotifyEventHandler::RegisterEventNotification().
-// Since we do NOT want to introduce a mock for the NotifyEventHandler owned by the MessagePassingFacade, because
-// it would introduce polymorphism and injection APIs in the MessagePassingFacade only for testing this simple call-
-// forwarding for coverage completeness, we just stimulate the simplest possible call and annotate a call expectation
-// of a call done by SubscribeEventHandler. If this call happens, we are sure, that the call forwarding was correct.
-TEST_F(MessagePassingFacadeFixture, RegisterEventNotification)
+TEST_F(MessagePassingFacadeFixture, RegisterEventNotificationWillDispatchToNotifyEventHandler)
 {
     safecpp::Scope<> event_receive_handler_scope{};
     auto eventUpdateNotificationHandler =
@@ -233,29 +229,28 @@ TEST_F(MessagePassingFacadeFixture, RegisterEventNotification)
             return;
         });
 
-    // we have a Facade created for QM only
+    // Given a Facade created for QM only
     PrepareFacade(false);
 
-    // expect, that GetNodeIdentifier() will get called (by the internal NotifyEventHandler owned bei UuT)
-    EXPECT_CALL(message_passing_control_mock_, GetNodeIdentifier()).WillOnce(Return(OUR_PID));
+    // Expecting that RegisterEventNotification will be called on the NotifyEventHandlerMock
+    EXPECT_CALL(notify_event_handler_mock_,
+                RegisterEventNotification(QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, _, OUR_PID));
 
-    // when calling RegisterEventNotification, we will cover call forwarding to NotifyEventHandler
+    // when calling RegisterEventNotification
     unit_.value().RegisterEventNotification(
         QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, std::move(eventUpdateNotificationHandler), OUR_PID);
 }
 
-// test case tests forwarding of call of UnregisterEventNotification() to
-// NotifyEventHandler::RegisterEventNotification().
-// Since we do NOT want to introduce a mock for the NotifyEventHandler owned by the MessagePassingFacade, because
-// it would introduce polymorphism and injection APIs in the MessagePassingFacade only for testing this simple call-
-// forwarding for coverage completeness, we just stimulate the simplest possible call and annotate a call expectation
-// of a call done by NotifyEventHandler. If this call happens, we are sure, that the call forwarding was correct.
-TEST_F(MessagePassingFacadeFixture, UnregisterEventNotification)
+TEST_F(MessagePassingFacadeFixture, UnregisterEventNotificationWillDispatchToNotifyEventHandler)
 {
-    IMessagePassingService::HandlerRegistrationNoType invalid_registration_no = 7882;
-
-    // we have a Facade created for QM only
+    // Given a Facade created for QM only
     PrepareFacade(false);
+
+    // Expecting that UnregisterEventNotification will be called on the NotifyEventHandlerMock
+    IMessagePassingService::HandlerRegistrationNoType invalid_registration_no = 7882;
+    EXPECT_CALL(
+        notify_event_handler_mock_,
+        UnregisterEventNotification(QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, invalid_registration_no, OUR_PID));
 
     // when calling UnregisterEventNotification, we will cover call forwarding to NotifyEventHandler
     unit_.value().UnregisterEventNotification(
