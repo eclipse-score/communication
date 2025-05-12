@@ -118,7 +118,7 @@ std::optional<pid_t> TryUpdatePidForExistingUid(
 }
 
 }  // namespace
-namespace detail_uid_pid_mapping
+namespace detail
 {
 
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding. The rule states: "The One Definition Rule shall not be violated."
@@ -190,5 +190,5 @@ template std::optional<pid_t> RegisterPid<memory::shared::AtomicIndirectorReal>(
     const uid_t uid,
     const pid_t pid);
 
-}  // namespace detail_uid_pid_mapping
+}  // namespace detail
 }  // namespace score::mw::com::impl::lola

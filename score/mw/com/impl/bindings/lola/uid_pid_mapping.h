@@ -57,7 +57,7 @@ class UidPidMappingEntry
     pid_t pid_{};
 };
 
-namespace detail_uid_pid_mapping
+namespace detail
 {
 
 /// \brief implementation for UidPidMapping::RegisterPid, which allows selecting the AtomicIndirectorType for
@@ -75,7 +75,7 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<UidPidMappingEn
                                  const uid_t uid,
                                  const pid_t pid);
 
-}  // namespace detail_uid_pid_mapping
+}  // namespace detail
 
 /// \brief class holding uid to pid mappings for a concrete service instance.
 /// \details an instance of this class is stored in shared-memory within a given ServiceDataControl, which represents a
@@ -130,7 +130,7 @@ class UidPidMapping
         // element. Therefore, the provided assertions check this rule requirement, whether the iterators return a
         // result other than nullptr.
         // coverity[autosar_cpp14_a5_3_2_violation]
-        return detail_uid_pid_mapping::RegisterPid<memory::shared::AtomicIndirectorReal>(
+        return detail::RegisterPid<memory::shared::AtomicIndirectorReal>(
             mapping_entries_.begin(), mapping_entries_.end(), uid, pid);
     };
 
