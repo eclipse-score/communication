@@ -13,11 +13,13 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
+#include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
 #include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/bindings/lola/uid_pid_mapping.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 
@@ -25,7 +27,9 @@
 
 #include <score/jthread.hpp>
 #include <gtest/gtest.h>
+#include <sys/types.h>
 #include <memory>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -335,6 +339,22 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToGetL
     WithTransactionLogRollbackExecutor();
 
     ON_CALL(runtime_mock_guard_.mock_, GetBindingRuntime(BindingType::kLoLa)).WillByDefault(Return(nullptr));
+    EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
+}
+
+TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToRegisterPidTerminates)
+{
+    WithTransactionLogRollbackExecutor();
+
+    // Given that RegisterPid will return an empty result when called
+    RegisterPidFake register_pid_fake{};
+    const std::optional<pid_t> empty_register_pid_result{};
+    register_pid_fake.InjectRegisterPidResult(empty_register_pid_result);
+    UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>::InjectRegisterPidFake(
+        register_pid_fake);
+
+    // When calling RollbackTransactionLogs
+    // Then the program terminates
     EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
 }
 
