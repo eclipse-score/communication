@@ -103,6 +103,7 @@ SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& parent, const score::
 template <typename SampleDataType>
 SkeletonField<SampleDataType>::SkeletonField(SkeletonField&& other) noexcept
     : SkeletonFieldBase(static_cast<SkeletonFieldBase&&>(other)),
+      // coverity[autosar_cpp14_a12_8_3_violation] false-positive; base class was moved-from for a proper init
       initial_field_value_{std::move(other.initial_field_value_)}
 {
     // Since the address of this event has changed, we need update the address stored in the parent skeleton.
