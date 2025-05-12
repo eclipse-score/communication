@@ -146,9 +146,6 @@ class NotifyEventHandler final : public HandlerBase
     using EventUpdateNotifierMapType = std::unordered_map<ElementFqId, std::vector<RegisteredNotificationHandler>>;
     using EventUpdateNodeIdMapType = std::unordered_map<ElementFqId, std::set<pid_t>>;
     using EventUpdateRegistrationCountMapType = std::unordered_map<ElementFqId, NodeCounter>;
-    /// \brief tmp buffer for copying ids under lock.
-    /// \todo Make its size configurable?
-    using NodeIdTmpBufferType = std::array<pid_t, 20>;
 
     struct EventNotificationControlData
     {
