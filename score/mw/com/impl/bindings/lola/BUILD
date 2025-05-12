@@ -407,6 +407,19 @@ cc_library(
         "@score-baselibs//score/containers:dynamic_array",
         "@score-baselibs//score/memory/shared:atomic_indirector",
         "@score-baselibs//score/memory/shared:types",
+        ":uid_pid_mapping_entry"
+    ],
+)
+
+cc_library(
+    name = "uid_pid_mapping_entry",
+    srcs = ["uid_pid_mapping_entry.cpp"],
+    hdrs = ["uid_pid_mapping_entry.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["@score-baselibs//score/mw/log"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
     ],
 )
 
