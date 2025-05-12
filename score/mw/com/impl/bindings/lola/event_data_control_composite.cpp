@@ -83,8 +83,10 @@ auto EventDataControlCompositeImpl<AtomicIndirectorType>::GetNextFreeMultiSlot()
          // coverity[autosar_cpp14_m5_2_10_violation]
          ++it_slots_qm,
                                            // coverity[autosar_cpp14_m5_0_15_violation]
+                                           // coverity[autosar_cpp14_m6_5_5_violation]
          ++it_slots_asil_b,
                                            // coverity[autosar_cpp14_a12_8_3_violation : FALSE]
+                                           // coverity[autosar_cpp14_m6_5_5_violation]
          ++current_index)
     {
         const EventSlotStatus slot_qm{it_slots_qm->load(std::memory_order_acquire)};
