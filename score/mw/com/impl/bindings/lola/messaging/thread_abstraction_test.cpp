@@ -15,6 +15,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <thread>
 
 namespace score::mw::com::impl::lola
 {

@@ -14,7 +14,6 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGEPASSINGFACADE_H
 
 #include "score/concurrency/thread_pool.h"
-#include "score/os/unistd.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_control.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"

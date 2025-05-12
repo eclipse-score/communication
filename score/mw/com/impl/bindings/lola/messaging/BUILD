@@ -15,27 +15,132 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 cc_library(
     name = "messaging",
     srcs = [
-        "handler_base.cpp",
-        "i_message_passing_control.cpp",
-        "i_message_passing_service.cpp",
-        "message_passing_control.cpp",
-        "message_passing_facade.cpp",
-        "notify_event_handler.cpp",
-        "thread_abstraction.cpp",
     ],
     hdrs = [
-        "handler_base.h",
-        "i_message_passing_control.h",
-        "i_message_passing_service.h",
-        "message_passing_control.h",
-        "message_passing_facade.h",
-        "notify_event_handler.h",
-        "thread_abstraction.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
+        ":handler_base",
+        ":i_message_passing_control",
+        ":i_message_passing_service",
+        ":message_passing_control",
+        ":message_passing_facade",
+        ":notify_event_handler",
+        ":thread_abstraction",
+    ],
+)
+
+cc_library(
+    name = "handler_base",
+    srcs = [
+        "handler_base.cpp",
+    ],
+    hdrs = [
+        "handler_base.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/message_passing",
+    ],
+)
+
+cc_library(
+    name = "i_message_passing_control",
+    srcs = [
+        "i_message_passing_control.cpp",
+    ],
+    hdrs = [
+        "i_message_passing_control.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/message_passing",
+    ],
+)
+
+cc_library(
+    name = "message_passing_control",
+    srcs = [
+        "message_passing_control.cpp",
+    ],
+    hdrs = [
+        "message_passing_control.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        ":i_message_passing_control",
+        "@score-baselibs//score/concurrency:thread_pool",
+    ],
+)
+
+cc_library(
+    name = "i_message_passing_service",
+    srcs = [
+        "i_message_passing_service.cpp",
+    ],
+    hdrs = [
+        "i_message_passing_service.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        "//score/mw/com/impl:scoped_event_receive_handler",
+        "//score/mw/com/impl/bindings/lola:element_fq_id",
+        "//score/mw/com/impl/configuration",
+    ],
+)
+
+cc_library(
+    name = "message_passing_facade",
+    srcs = [
+        "message_passing_facade.cpp",
+    ],
+    hdrs = [
+        "message_passing_facade.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        ":i_message_passing_control",
+        ":i_message_passing_service",
+        ":notify_event_handler",
+        ":thread_abstraction",
+        "@score-baselibs//score/concurrency:thread_pool",
+        "//score/mw/com/impl:scoped_event_receive_handler",
+        "//score/mw/com/impl/bindings/lola:element_fq_id",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/message_passing",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "notify_event_handler",
+    srcs = [
+        "notify_event_handler.cpp",
+    ],
+    hdrs = [
+        "notify_event_handler.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        ":handler_base",
+        ":i_message_passing_control",
+        ":i_message_passing_service",
         "@score-baselibs//score/os:errno_logging",
         "@score-baselibs//score/os:unistd",
         "//score/mw/com/impl:scoped_event_receive_handler",
@@ -45,6 +150,21 @@ cc_library(
         "//score/mw/com/message_passing",
         "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "thread_abstraction",
+    srcs = [
+        "thread_abstraction.cpp",
+    ],
+    hdrs = [
+        "thread_abstraction.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
     ],
 )
 
@@ -106,12 +226,12 @@ cc_test(
     ],
     tags = ["unit"],
     visibility = [
-        "//score/mw/com/impl/bindings/lola:__pkg__",
+        # "//score/mw/com/impl/bindings/lola:__pkg__",
         # "@ddad//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
     deps = [
-        ":messaging",
         ":mock",
+        ":notify_event_handler",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "//score/mw/com/message_passing",
         "//score/mw/com/message_passing:mock",

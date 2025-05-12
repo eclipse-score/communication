@@ -25,7 +25,6 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include <utility>
 
 namespace score::mw::com::impl::lola
 {

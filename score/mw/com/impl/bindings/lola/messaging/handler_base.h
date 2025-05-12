@@ -13,15 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_HANDLERBASE_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_HANDLERBASE_H
 
-#include "score/mw/com/impl/bindings/lola/messaging/messages/message_common.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/message_passing/i_receiver.h"
-#include "score/mw/com/message_passing/message.h"
-
-#include <atomic>
-#include <shared_mutex>
-#include <unordered_map>
-#include <utility>
 
 namespace score::mw::com::impl::lola
 {
