@@ -834,6 +834,27 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "transaction_log_rollback_executor_test",
+    srcs = ["transaction_log_rollback_executor_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        # "@ddad//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":rollback_synchronization",
+        ":runtime_mock",
+        ":skeleton",
+        ":transaction_log_rollback_executor",
+        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
+        "//score/mw/com/impl:runtime",
+        "//score/mw/com/impl:runtime_mock",
+        "//score/mw/com/impl/bindings/lola/messaging:message_passing_unit_test",
+        "//score/mw/com/impl/bindings/lola/messaging:mock",
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     size = "small",
@@ -858,7 +879,6 @@ cc_test(
         "subscription_state_machine_methods_test.cpp",
         "subscription_state_machine_states_test.cpp",
         "transaction_log_registration_guard_test.cpp",
-        "transaction_log_rollback_executor_test.cpp",
         "transaction_log_set_test.cpp",
         "transaction_log_slot_test.cpp",
         "transaction_log_test.cpp",
@@ -929,6 +949,7 @@ test_suite(
         ":shm_path_builder_test",
         ":skeleton_test",
         ":slot_decrementer_test",
+        ":transaction_log_rollback_executor_test",
         ":uid_pid_mapping_test",
         ":unit_test",
         "//score/mw/com/impl/bindings/lola/messaging:unit_test_suite",
