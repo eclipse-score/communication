@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -140,6 +141,9 @@ cc_library(
         "notify_event_handler.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":node_identifier_copier",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
@@ -149,6 +153,23 @@ cc_library(
         "@score-baselibs//score/os:errno_logging",
         "@score-baselibs//score/os:unistd",
         "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "node_identifier_copier",
+    srcs = [
+        "node_identifier_copier.cpp",
+    ],
+    hdrs = [
+        "node_identifier_copier.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        "//score/mw/com/impl/bindings/lola:element_fq_id",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -268,10 +289,21 @@ cc_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "node_identifier_copier_test",
+    srcs = ["node_identifier_copier_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        # "@ddad//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [":node_identifier_copier"],
+)
+
 test_suite(
     name = "unit_test_suite",
     tests = [
         ":message_passing_unit_test",
+        ":node_identifier_copier_test",
         ":other_unit_test",
         "//score/mw/com/impl/bindings/lola/messaging/messages:unit_test_suite",
     ],
