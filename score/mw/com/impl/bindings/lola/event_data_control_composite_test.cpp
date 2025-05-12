@@ -145,6 +145,15 @@ class EventDataControlCompositeFixture : public ::testing::Test
         }
     }
 
+    void ReadyAllQmSlotsOnly()
+    {
+        for (SlotIndexType counter = 0; counter < kSlotCount; ++counter)
+        {
+            auto slot_indicator = slot_indicators_[counter];
+            qm_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()}, counter + 1u);
+        }
+    }
+
     memory::shared::NewDeleteDelegateMemoryResource memory_{kMemoryResourceId};
     std::array<ControlSlotCompositeIndicator, kSlotCount> slot_indicators_{};
 
@@ -428,10 +437,24 @@ TEST_F(EventDataControlCompositeFixture, SkipsEventIfUsedInAsilList)
     EXPECT_EQ(allocation.GetIndex(), 2);
 }
 
-TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllused)
+TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsed)
 {
-    // Given an EventDataControlComposite with all slots are used
+    // Given an EventDataControlComposite in which all slots are used
     WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    AllocateAllSlots();
+
+    // When allocating one additional slot
+    const auto allocation = unit_->AllocateNextSlot();
+
+    // Then no slot is found
+    EXPECT_FALSE(allocation.IsValidQM());
+    EXPECT_FALSE(allocation.IsValidAsilB());
+}
+
+TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsedQMOnly)
+{
+    // Given an EventDataControlComposite containing only a QM EventDataControl in which all slots are used
+    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
     AllocateAllSlots();
 
     // When allocating one additional slot
@@ -500,6 +523,23 @@ TEST_F(EventDataControlCompositeFixture, AllocationIgnoresQMAfterContractViolati
 
     // Then still a slot could be allocated for ASIL-B
     EXPECT_TRUE(allocation.IsValidAsilB());
+}
+
+TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsedAfterQmDisconnect)
+{
+    // Given an EventDataControlComposite containing only a QM EventDataControl in which all slots are used
+    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    AllocateAllSlots();
+
+    // and given that QmControlDisconnect has occurred by trying to allocate a slot when all are currently occupied
+    score::cpp::ignore = unit_->AllocateNextSlot();
+
+    // When allocating one additional slot
+    const auto allocation = unit_->AllocateNextSlot();
+
+    // Then no slot is found
+    EXPECT_FALSE(allocation.IsValidQM());
+    EXPECT_FALSE(allocation.IsValidAsilB());
 }
 
 TEST_F(EventDataControlCompositeFixture, AsilBConsumerViolation)
