@@ -108,7 +108,7 @@ std::pair<std::uint8_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
 NotifyEventHandler::NotifyEventHandler(IMessagePassingControl& mp_control,
                                        const bool asil_b_capability,
                                        const score::cpp::stop_token& token) noexcept
-    : HandlerBase{},
+    : INotifyEventHandler{},
       // Currently using 2 threads for decoupled local event notification. Could be even minimized to 1, if needed.
       // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be noexcept,
       // noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"

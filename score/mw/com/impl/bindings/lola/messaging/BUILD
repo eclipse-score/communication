@@ -22,30 +22,13 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
-        ":handler_base",
         ":i_message_passing_control",
         ":i_message_passing_service",
+        ":i_notify_event_handler",
         ":message_passing_control",
         ":message_passing_facade",
         ":notify_event_handler",
         ":thread_abstraction",
-    ],
-)
-
-cc_library(
-    name = "handler_base",
-    srcs = [
-        "handler_base.cpp",
-    ],
-    hdrs = [
-        "handler_base.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    deps = [
-        "//score/mw/com/impl/configuration",
-        "//score/mw/com/message_passing",
     ],
 )
 
@@ -118,11 +101,33 @@ cc_library(
         ":notify_event_handler",
         ":thread_abstraction",
         "@score-baselibs//score/concurrency:thread_pool",
+        "@score-baselibs//score/os:errno_logging",
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola:element_fq_id",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/message_passing",
         "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "i_notify_event_handler",
+    srcs = [
+        "i_notify_event_handler.cpp",
+    ],
+    hdrs = [
+        "i_notify_event_handler.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        ":i_message_passing_service",
+        "//score/mw/com/impl:scoped_event_receive_handler",
+        "//score/mw/com/impl/bindings/lola:element_fq_id",
+        "//score/mw/com/impl/bindings/lola/messaging/messages",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/message_passing",
     ],
 )
 
@@ -138,16 +143,11 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
-        ":handler_base",
         ":i_message_passing_control",
         ":i_message_passing_service",
+        ":i_notify_event_handler",
         "@score-baselibs//score/os:errno_logging",
         "@score-baselibs//score/os:unistd",
-        "//score/mw/com/impl:scoped_event_receive_handler",
-        "//score/mw/com/impl/bindings/lola:element_fq_id",
-        "//score/mw/com/impl/bindings/lola/messaging/messages",
-        "//score/mw/com/impl/configuration",
-        "//score/mw/com/message_passing",
         "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
     ],
