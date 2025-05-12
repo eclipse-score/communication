@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>8</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>248</x>
+      <y>256</y>
+      <w>536</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>mw::com::impl::Runtime
+--
+-runtime_bindings_ : std:unordered_map&lt;BindingType, std::unique_ptr&lt;IRuntimeBinding&gt; &gt;
+--
+_+Initialize() : void_
+_+Initialize(int argc, score::StringLiteral argv) : void_
+_+Initialize(std::string const&amp;) : void_
+_+getInstance() : Runtime&amp;_
+
++Runtime(Configuration&amp;&amp; config)
++resolve(const InstanceSpecifier&amp;) : std::vector&lt;InstanceIdentifier&gt;
++getBindingRuntime(BindingType binding) : IRuntimeBinding*
+-- 
+Notes:
+Runtime is not copyable.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>360</x>
+      <y>504</y>
+      <w>264</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>/mw::com::impl::IRuntimeBinding/
+--
+/+GetBindingType() : BindingType/
+/+GetServiceDiscoveryClient() : IServiceDiscoveryClient&amp;/
+/+GetTracingRuntime() : tracing::ITracingRuntimeBinding*/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>688</x>
+      <y>504</y>
+      <w>672</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;plumbing&gt;&gt;
+RuntimeBindingFactory
+--
+_+CreateBindingRuntimes(configuration : Configuration&amp;) :_
+_std::unordered_map&lt;score::mw::com::impl::BindingType, std::unique_ptr&lt;score::mw::com::impl::IRuntimeBinding&gt;&gt;_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1024</x>
+      <y>112</y>
+      <w>128</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>BindingType
+&lt;&lt;enumeration&gt;&gt;
+--
+- LoLa = 0
+- Fake = 1</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>384</x>
+      <y>832</y>
+      <w>544</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>mw::com::impl::lola:Runtime
+--
+-lola_message_passing_control_ : lola::MessagePassingControl
+-lola_messaging_ : lola::MessagePassingFacade
+--
++GetLolaMessaging() : lola::IMessagePassingService&amp;
++HasAsilBSupport() : bool
++GetMessagePassingCfg(const QualityType asil_level) : MessagePassingFacade::AsilSpecificCfg
++GetRollbackSynchronization() : RollbackSynchronization&amp;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>512</x>
+      <y>776</y>
+      <w>24</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>376</x>
+      <y>448</y>
+      <w>48</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+bg=black
+m2=0..n</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>920</x>
+      <y>576</y>
+      <w>104</w>
+      <h>328</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+creates</panel_attributes>
+    <additional_attributes>10.0;390.0;110.0;390.0;110.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>320</x>
+      <y>112</y>
+      <w>448</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>/mw::com::impl::IRuntime/
+--
+/+resolve(const InstanceSpecifier&amp;) = 0: std::vector&lt;InstanceIdentifier&gt;/
+/+getBindingRuntime(BindingType binding) = 0: IRuntimeBinding*/
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>440</x>
+      <y>168</y>
+      <w>24</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>0</x>
+      <y>832</y>
+      <w>376</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>mw::com::impl::lola:RuntimeMock
+--
++GetLolaMessaging() : lola::IMessagePassingService&amp;
++HasAsilBSupport() : bool
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>248</x>
+      <y>696</y>
+      <w>88</w>
+      <h>152</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>90.0;10.0;10.0;10.0;10.0;170.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>808</x>
+      <y>256</y>
+      <w>408</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>mw::com::impl::RuntimeMock
+--
++resolve(const InstanceSpecifier&amp;) : std::vector&lt;InstanceIdentifier&gt;
++GetBindingRuntime(BindingType binding) : IRuntimeBinding*
+--
+Mock for unit-testing/mocking of Runtime func.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>760</x>
+      <y>136</y>
+      <w>144</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;160.0;10.0;160.0;150.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>320</x>
+      <y>664</y>
+      <w>384</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>/lola::IRuntime/
+--
+/+HasAsilBSupport() : bool = 0/
+/+GetLolaMessaging() : lola::IMessagePassingService&amp; = 0/
+/+GetShmSizeCalculationMode() : ShmSizeCalculationMode = 0/
+/+GetRollbackSynchronization() : RollbackSynchronization&amp; = 0/
+/+GetPid() : pid_t = 0/
+/+GetUid() : uid_t = 0/
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>472</x>
+      <y>576</y>
+      <w>24</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>776</x>
+      <y>432</y>
+      <w>96</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+uses</panel_attributes>
+    <additional_attributes>70.0;90.0;70.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+</diagram>

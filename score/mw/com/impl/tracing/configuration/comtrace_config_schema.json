@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "title": "JSON Schema for ComTrace configuration.",
+  "type": "object",
+  "default": {},
+  "required": [],
+  "additionalProperties": false,
+  "properties": {
+    "services": {
+      "title": "Array of ServiceInterface configurations.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "title": "Configuration of a single ServiceInterface",
+        "type": "object",
+        "required": [
+          "shortname_path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "shortname_path": {
+            "$ref": "#/$defs/shortname_path"
+          },
+          "methods": {
+            "title": "Array of ServiceInterface method configurations.",
+            "type": "array",
+            "default": [],
+            "items": {
+              "title": "Configuration of a single ServiceInterface method.",
+              "type": "object",
+              "required": [
+                "shortname"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "shortname": {
+                  "$ref": "#/$defs/shortname"
+                },
+                "trace_request_send": {
+                  "$ref": "#/$defs/trace_request_send"
+                },
+                "trace_request_received": {
+                  "$ref": "#/$defs/trace_request_received"
+                },
+                "trace_response_send": {
+                  "$ref": "#/$defs/trace_response_send"
+                },
+                "trace_response_received": {
+                  "$ref": "#/$defs/trace_response_received"
+                }
+              }
+            }
+          },
+          "events": {
+            "title": "Array of ServiceInterface event configurations.",
+            "type": "array",
+            "default": [],
+            "items": {
+              "title": "Configuration of a single ServiceInterface event.",
+              "type": "object",
+              "required": [
+                "shortname"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "shortname": {
+                  "$ref": "#/$defs/shortname"
+                },
+                "trace_subscribe_send": {
+                  "$ref": "#/$defs/trace_subscribe_send"
+                },
+                "trace_subscribe_received": {
+                  "$ref": "#/$defs/trace_subscribe_received"
+                },
+                "trace_unsubscribe_send": {
+                  "$ref": "#/$defs/trace_unsubscribe_send"
+                },
+                "trace_unsubscribe_received": {
+                  "$ref": "#/$defs/trace_unsubscribe_received"
+                },
+                "trace_subscription_state_changed": {
+                  "$ref": "#/$defs/trace_subscription_state_changed"
+                },
+                "trace_subscription_state_change_handler_registered": {
+                  "$ref": "#/$defs/trace_subscription_state_change_handler_registered"
+                },
+                "trace_subscription_state_change_handler_deregistered": {
+                  "$ref": "#/$defs/trace_subscription_state_change_handler_deregistered"
+                },
+                "trace_subscription_state_change_handler_callback": {
+                  "$ref": "#/$defs/trace_subscription_state_change_handler_callback"
+                },
+                "trace_send": {
+                  "$ref": "#/$defs/trace_send"
+                },
+                "trace_send_allocate": {
+                  "$ref": "#/$defs/trace_send_allocate"
+                },
+                "trace_get_new_samples": {
+                  "$ref": "#/$defs/trace_get_new_samples"
+                },
+                "trace_get_new_samples_callback": {
+                  "$ref": "#/$defs/trace_get_new_samples_callback"
+                },
+                "trace_receive_handler_registered": {
+                  "$ref": "#/$defs/trace_receive_handler_registered"
+                },
+                "trace_receive_handler_deregistered": {
+                  "$ref": "#/$defs/trace_receive_handler_deregistered"
+                },
+                "trace_receive_handler_callback": {
+                  "$ref": "#/$defs/trace_receive_handler_callback"
+                }
+              }
+            }
+          },
+          "fields": {
+            "title": "Array of ServiceInterface field configurations.",
+            "type": "array",
+            "default": [],
+            "items": {
+              "title": "Configuration of a single ServiceInterface field.",
+              "type": "object",
+              "default": {},
+              "anyOf": [
+                {
+                  "required": [
+                    "shortname",
+                    "notifier"
+                  ]
+                },
+                {
+                  "required": [
+                    "shortname",
+                    "getter"
+                  ]
+                },
+                {
+                  "required": [
+                    "shortname",
+                    "setter"
+                  ]
+                }
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "shortname": {
+                  "$ref": "#/$defs/shortname"
+                },
+                "notifier": {
+                  "title": "Configuration of the field notifier event.",
+                  "type": "object",
+                  "default": {},
+                  "required": [],
+                  "additionalProperties": false,
+                  "properties": {
+                    "trace_subscribe_send": {
+                      "$ref": "#/$defs/trace_subscribe_send"
+                    },
+                    "trace_subscribe_received": {
+                      "$ref": "#/$defs/trace_subscribe_received"
+                    },
+                    "trace_unsubscribe_send": {
+                      "$ref": "#/$defs/trace_unsubscribe_send"
+                    },
+                    "trace_unsubscribe_received": {
+                      "$ref": "#/$defs/trace_unsubscribe_received"
+                    },
+                    "trace_subscription_state_changed": {
+                      "$ref": "#/$defs/trace_subscription_state_changed"
+                    },
+                    "trace_subscription_state_change_handler_registered": {
+                      "$ref": "#/$defs/trace_subscription_state_change_handler_registered"
+                    },
+                    "trace_subscription_state_change_handler_deregistered": {
+                      "$ref": "#/$defs/trace_subscription_state_change_handler_deregistered"
+                    },
+                    "trace_subscription_state_change_handler_callback": {
+                      "$ref": "#/$defs/trace_subscription_state_change_handler_callback"
+                    },
+                    "trace_update": {
+                      "$ref": "#/$defs/trace_update"
+                    },
+                    "trace_get_new_samples": {
+                      "$ref": "#/$defs/trace_get_new_samples"
+                    },
+                    "trace_get_new_samples_callback": {
+                      "$ref": "#/$defs/trace_get_new_samples_callback"
+                    },
+                    "trace_receive_handler_registered": {
+                      "$ref": "#/$defs/trace_receive_handler_registered"
+                    },
+                    "trace_receive_handler_deregistered": {
+                      "$ref": "#/$defs/trace_receive_handler_deregistered"
+                    },
+                    "trace_receive_handler_callback": {
+                      "$ref": "#/$defs/trace_receive_handler_callback"
+                    }
+                  }
+                },
+                "getter": {
+                  "title": "Configuration of the field getter method.",
+                  "type": "object",
+                  "default": {},
+                  "required": [],
+                  "additionalProperties": false,
+                  "properties": {
+                    "trace_request_send": {
+                      "$ref": "#/$defs/trace_request_send"
+                    },
+                    "trace_request_received": {
+                      "$ref": "#/$defs/trace_request_received"
+                    },
+                    "trace_response_send": {
+                      "$ref": "#/$defs/trace_response_send"
+                    },
+                    "trace_response_received": {
+                      "$ref": "#/$defs/trace_response_received"
+                    },
+                    "trace_get_handler_registered": {
+                      "$ref": "#/$defs/trace_get_handler_registered"
+                    },
+                    "trace_get_handler_completed": {
+                      "$ref": "#/$defs/trace_get_handler_completed"
+                    }
+                  }
+                },
+                "setter": {
+                  "title": "Configuration of the field setter method.",
+                  "type": "object",
+                  "default": {},
+                  "required": [],
+                  "additionalProperties": false,
+                  "properties": {
+                    "trace_request_send": {
+                      "$ref": "#/$defs/trace_request_send"
+                    },
+                    "trace_request_received": {
+                      "$ref": "#/$defs/trace_request_received"
+                    },
+                    "trace_response_send": {
+                      "$ref": "#/$defs/trace_response_send"
+                    },
+                    "trace_response_received": {
+                      "$ref": "#/$defs/trace_response_received"
+                    },
+                    "trace_set_handler_registered": {
+                      "$ref": "#/$defs/trace_set_handler_registered"
+                    },
+                    "trace_set_handler_completed": {
+                      "$ref": "#/$defs/trace_set_handler_completed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "shortname": {
+      "title": "ARXML model element shortname.",
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+    },
+    "shortname_path": {
+      "title": "Full qualified ARXML shortname path.",
+      "type": "string",
+      "pattern": "^[a-zA-Z\\/][a-zA-Z0-9_\\/]*$"
+    },
+    "trace_request_send": {
+      "title": "Configure tracing of transmitted method or field getter/setter requests. true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_request_received": {
+      "title": "Configure tracing of received method or field getter/setter requests. true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_response_send": {
+      "title": "Configure tracing of transmitted method or field getter/setter responses. true: Enable tracing, false: Disable tracing (default).\nThis trace-point is triggered on completion of the future/promise by the skeleton-side service method implementation.",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_response_received": {
+      "title": "Configure tracing of received method or field getter/setter responses. true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_subscribe_send": {
+      "title": "Configure tracing of transmitted event or field notifier subscription requests using the API Subscribe(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_subscribe_received": {
+      "title": "Configure tracing of received event or field notifier subscription requests. true: Enable tracing, false: Disable tracing (default).\nThis trace-point does not belong to an AUTOSAR API. It is rather a logical trace-point triggered on processing of subscription requests on skeleton-side.",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_unsubscribe_send": {
+      "title": "Configure tracing of transmitted event or field notifier unsubscribe requests using the API Unsubscribe(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_unsubscribe_received": {
+      "title": "Configure tracing of received event or field notifier unsubscribe requests. true: Enable tracing, false: Disable tracing (default).\nThis trace-point does not belong to an AUTOSAR API. It is rather a logical trace-point triggered on processing of unsubscribe requests on skeleton-side.",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_subscription_state_changed": {
+      "title": "Configure tracing of subscription state changes. true: Enable tracing, false: Disable tracing (default).\nThis trace-point does not belong to an AUTOSAR API. It is rather a logical trace-point triggered on modification of the subscription state on proxy-side.",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_subscription_state_change_handler_registered": {
+      "title": "Configure tracing of SubscriptionStateChangeHandler registration using the API SetSubscriptionStateChangeHandler(SubscriptionStateChangeHandler handler). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_subscription_state_change_handler_deregistered": {
+      "title": "Configure tracing of SubscriptionStateChangeHandler deregistration using the API UnsetSubscriptionStateChangeHandler(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_subscription_state_change_handler_callback": {
+      "title": "Configure tracing of SubscriptionStateChangeHandler callback execution. The callback is registered via 'handler' parameter of API SetSubscriptionStateChangeHandler(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_send": {
+      "title": "Configure tracing of transmitted event samples using the API Send(SampleType const&). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_send_allocate": {
+      "title": "Configure tracing of transmitted event samples using the API Send(SampleAllocateePtr). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_update": {
+      "title": "Configure tracing of field updates using the API Update(FieldType const&). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_get_new_samples": {
+      "title": "Configure tracing of callable registration using the API GetNewSamples(). true: Enable tracing, false: Disable tracing (default).\nOnly valid since AUTOSAR version R20-11.",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_get_new_samples_callback": {
+      "title": "Configure tracing of GetNewSamplesCallable callback execution. The callback is registered via parameter 'f' of API GetNewSamples(). true: Enable tracing, false: Disable tracing (default).\nWith AUTOSAR version R18-03: Trace emplacement of single event sample into the SampleContainer in context of GetCachedSamples() API.\nSince AUTOSAR version R19-03: Trace execution of the user provided callable f given to the GetNewSamples() API.",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_receive_handler_registered": {
+      "title": "Configure tracing of ReceiveHandler registration using the API SetReceiveHandler(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_receive_handler_deregistered": {
+      "title": "Configure tracing of ReceiveHandler deregistration using the API UnsetReceiveHandler(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_receive_handler_callback": {
+      "title": "Configure tracing of ReceiveHandler callback execution. The callback is registered via 'handler' parameter of API SetReceiveHandler(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_set_handler_registered": {
+      "title": "Configure tracing of Field SetHandler registration using the API RegisterSetHandler(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_set_handler_completed": {
+      "title": "Configure tracing of Field SetHandler completion of the returned future by setting the result. true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_get_handler_registered": {
+      "title": "Configure tracing of Field GetHandler registration using the API RegisterGetHandler(). true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    },
+    "trace_get_handler_completed": {
+      "title": "Configure tracing of Field GetHandler completion of the returned future by setting the result. true: Enable tracing, false: Disable tracing (default).",
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

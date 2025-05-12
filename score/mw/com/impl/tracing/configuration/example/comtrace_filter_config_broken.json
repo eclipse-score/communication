@@ -1,0 +1,54 @@
+{
+  "services": [
+    {
+      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "events": [
+        {
+          "shortname": "Event_1",
+          "trace_subscribe_send": true,
+          "trace_subscribe_received": true,
+          "trace_unsubscribe_send": true,
+          "trace_unsubscribe_received": true,
+          "trace_subscription_state_changed": true,
+          "trace_subscription_state_change_handler_registered": true,
+          "trace_subscription_state_change_handler_deregistered": true,
+          "trace_subscription_state_change_handler_callback": true,
+          "trace_send": true,
+          "trace_send_allocate": true,
+          "trace_get_new_samples": true,
+          "trace_get_new_samples_callback": true,
+          "trace_receive_handler_registered": true,
+          "trace_receive_handler_deregistered": true,
+          "trace_receive_handler_callback": true
+        },
+        {
+          "shortname": "Event_2",
+          "trace_subscribe_send": true,
+          "trace_subscribe_received": false,
+          "trace_unsubscribe_send": true,
+          "trace_unsubscribe_received": false,
+          "trace_subscription_state_changed": true,
+          "trace_subscription_state_change_handler_registered": false,
+          "trace_subscription_state_change_handler_deregistered": true,
+          "trace_subscription_state_change_handler_callback": false,
+          "trace_send": true,
+          "trace_send_allocate": false,
+          "trace_get_new_samples": true,
+          "trace_get_new_samples_callback": false,
+          "trace_receive_handler_registered": true,
+          "trace_receive_handler_deregistered": false,
+          "trace_receive_handler_callback": true
+        },
+        {
+          "shortname": "Event_3",
+          "trace_subscribe_send": true,
+          "trace_subscribe_received": false,
+          "trace_unsubscribe_send": true,
+          "trace_unsubscribe_received": false,
+          "trace_subscription_state_changed": true,
+          "trace_subscription_state_change_handler_registered": false
+        }
+      ],
+      "fields": [
+        {
+

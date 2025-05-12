@@ -1,0 +1,713 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="13.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1870</x>
+      <y>2050</y>
+      <w>410</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::ShortMessage
+--
++ payload: std::uint64_t;
++ payload: MediumMessagePayload
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2240</x>
+      <y>1450</y>
+      <w>950</w>
+      <h>290</h>
+    </coordinates>
+    <panel_attributes>template=ChannelTraits
+mw::com::message_passing::Receiver
+--
++Receiver(identifier : std::string_view, executor : concurrency::Executor&amp;, allowed_uids : const score::cpp::span&lt;const uid_t&gt;,
+                      receiver_config : const ReceiverConfig&amp;, allocator : const allocator_type&amp;)
++Register(MessageId id, ShortMessageReceivedCallback callback) : void
++Register(MessageId id, MediumMessageReceivedCallback callback) : void
++StartListening(): score::cpp::expected_blank&lt;score::os::Error&gt;
+
+- MessageLoop(score::cpp::stop_token token, std::size_t thread,
+               std::size_t max_threads) : void
+- ExecuteMessageHandler(ShortMessage)
+- ExecuteMessageHandler(MediumMessage)
+--
+- known_commands_: std::unordered_map&lt;MessageId, score::cpp::callback&lt;void(std::uint32_t)&gt; &gt;
+--
+Notes: Creates/Opens an OS specific underlying communication channel
+and receives specified messages.
+If a handler has been registered for a specific message, it is invoked.
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1640</x>
+      <y>1450</y>
+      <w>570</w>
+      <h>270</h>
+    </coordinates>
+    <panel_attributes>template=ChannelTraits
+mw::com::message_passing::Sender
+--
++ Sender(identifier : std::string_view, token : const score::cpp::stop_token&amp;,
+                const SenderConfig&amp;, logging_callback : LoggingCallback)
++ Send(ShortMessage): score::cpp::expected&lt;Error&gt;
++ Send(MediumMessage): score::cpp::expected&lt;Error&gt;
++ HasNonBlockingGuarantee() : bool
+--
+--
+Notes: Opens an OS specific underlying communication
+channel and transmits the specified message.
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>720</x>
+      <y>1150</y>
+      <w>320</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>Notes:
+SenderFactoryImpl creates 
+Sender  Object with ResmgrSenderTraits/MqueueSenderTraits
+as ChannelTraits</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1910</x>
+      <y>1710</y>
+      <w>70</w>
+      <h>360</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+sends</panel_attributes>
+    <additional_attributes>10.0;340.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2250</x>
+      <y>1730</y>
+      <w>90</w>
+      <h>340</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+receives</panel_attributes>
+    <additional_attributes>10.0;320.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2370</x>
+      <y>1790</y>
+      <w>410</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>/mw::com::message_passing::BaseMessage/
+--
+using MessageId std::uint8_t
+
++ id: std::uint8_t
++ sender_pid: pid_t //depending on OS will be transmitted
+                    // explicit or implicit
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.baselet.element.old.element.Relation</type>
+    <coordinates>
+      <x>2240</x>
+      <y>1890</y>
+      <w>220</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>200;30;30;160</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2760</x>
+      <y>2060</y>
+      <w>410</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::MediumMessage
+--
++ using MediumMessagePayload std::array&lt;uint8_t, 16&gt;;
++ payload: MediumMessagePayload
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.baselet.element.old.element.Relation</type>
+    <coordinates>
+      <x>2640</x>
+      <y>1890</y>
+      <w>310</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>30;30;290;170</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2400</x>
+      <y>1200</y>
+      <w>780</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>/mw::com::message_passing::IReceiver/
+--
+using ShortMessageReceivedCallback = score::cpp::callback&lt;void(ShortMessagePayload const, pid_t const)&gt;
+using MediumMessageReceivedCallback = score::cpp::callback&lt;void(MediumMessagePayload const, pid_t const)&gt;
+
+/+Register(MessageId id, ShortMessageReceivedCallback callback) : void/
+/+Register(MessageId id, MediumMessageReceivedCallback callback) : void/
+/+StartListening(): score::cpp::expected_blank&lt;score::os::Error&gt;/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.baselet.element.old.element.Relation</type>
+    <coordinates>
+      <x>2750</x>
+      <y>1310</y>
+      <w>50</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>30;30;30;140</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1240</x>
+      <y>1200</y>
+      <w>960</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>/mw::com::message_passing::ISender/
+--
+/+Send(ShortMessage): score::cpp::expected_blank&lt;score::os::Error&gt;/
+/+Send(MediumMessage): score::cpp::expected_blank&lt;score::os::Error&gt;/
+/+HasNonBlockingGuarantee() : bool/
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.baselet.element.old.element.Relation</type>
+    <coordinates>
+      <x>1790</x>
+      <y>1280</y>
+      <w>50</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>30;30;30;180</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2940</x>
+      <y>1730</y>
+      <w>90</w>
+      <h>350</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+receives</panel_attributes>
+    <additional_attributes>10.0;330.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1690</x>
+      <y>1710</y>
+      <w>1120</w>
+      <h>530</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+sends</panel_attributes>
+    <additional_attributes>1100.0;450.0;1100.0;510.0;10.0;510.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2600</x>
+      <y>860</y>
+      <w>680</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::ReceiverFactory
+--
+
+_+Create(identifier : std::string_view , executor : concurrency::Executor&amp;,_
+_    allowed_uids : const score::cpp::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
+_    score::cpp::pmr::memory_resource* memory_resource) :  std::unique_ptr&lt;IReceiver&gt;_
+_+InjectReceiverMock(IReceiver* mock) : void_
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2750</x>
+      <y>1030</y>
+      <w>80</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+creates</panel_attributes>
+    <additional_attributes>10.0;170.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1720</x>
+      <y>960</y>
+      <w>760</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::SenderFactory
+--
+--
+_+Create(identifier :std::string_view, token : const score::cpp::stop_token&amp;,_
+_             const SenderConfig&amp;, logging_callback : LoggingCallback,_
+_             memory_resource : score::cpp::pmr::memory_resource*) :  std::unique_ptr&lt;ISender&gt;_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2100</x>
+      <y>1080</y>
+      <w>80</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+creates</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>920</x>
+      <y>960</y>
+      <w>760</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::SenderFactoryImpl
+--
+--
+_+Create(identifier :std::string_view, token : const score::cpp::stop_token&amp;,_
+_             const SenderConfig&amp;, logging_callback : LoggingCallback,_
+_             memory_resource : score::cpp::pmr::memory_resource*) :  std::unique_ptr&lt;ISender&gt;_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1320</x>
+      <y>1080</y>
+      <w>80</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+creates</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>3470</x>
+      <y>860</y>
+      <w>690</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::ReceiverFactoryImpl
+--
+
+_+Create(identifier : std::string_view , executor : concurrency::Executor&amp;,_
+_    allowed_uids : const score::cpp::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
+_    score::cpp::pmr::memory_resource* memory_resource) :  std::unique_ptr&lt;IReceiver&gt;_
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>3170</x>
+      <y>1030</y>
+      <w>590</w>
+      <h>250</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+creates</panel_attributes>
+    <additional_attributes>10.0;230.0;570.0;230.0;570.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>880</x>
+      <y>1460</y>
+      <w>740</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::NonBlockingSender
+--
+--
++ NonBlockingSender(wrapped_sender : score::cpp::pmr::unique_ptr&lt;ISender&gt;,
+    max_queue_size : const std::size_t,
+    executor : concurrency::Executor&amp; )
++ Send(message : const message_passing::ShortMessage&amp;) : score::cpp::expected_blank&lt;score::os::Error&gt;
++ Send(message : const message_passing::MediumMessage&amp;): score::cpp::expected_blank&lt;score::os::Error&gt;
++ HasNonBlockingGuarantee() const : bool
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.baselet.element.old.element.Relation</type>
+    <coordinates>
+      <x>1310</x>
+      <y>1280</y>
+      <w>50</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>30;30;30;180</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2120</x>
+      <y>0</y>
+      <w>770</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::QnxResourcePath
+--
+--
++ QnxResourcePath(identifier : const std::string_view)
++ c_str() : const char*
+_+kMaxIdentifierLen : std::size_t_
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2630</x>
+      <y>490</y>
+      <w>940</w>
+      <h>260</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::ResmgrReceiverTraits
+--
+_+kConcurrency : std::size_t_
+_+INVALID_FILE_DESCRIPTOR : ResmgrReceiverState_
+
+--
+_+open_receiver(identifier : const std::string_view ,_
+_    allowed_uids : const score::cpp::pmr::vector&lt;uid_t&gt;&amp;,_
+_   max_number_message_in_queue : const std::int32_t) : score::cpp::expected&lt;file_descriptor_type, score::os::Error&gt;_
+_+close_receiver(const file_descriptor_type file_descriptor,_
+_    const std::string_view /*identifier*/) : void_
+_+ stop_receive(const file_descriptor_type file_descriptor) : void_
+_+receive_next(const file_descriptor_type file_descriptor,_
+_    const std::size_t thread,_
+_    ShortMessageProcessor fShort,_
+_    MediumMessageProcessor fMedium) : score::cpp::expected&lt;bool, score::os::Error&gt;_
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>910</x>
+      <y>580</y>
+      <w>770</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::ResmgrSenderTraits
+--
+_file_descriptor_type : int32_t_
+--
+_+try_open(identifier : const std::string_view) : score::cpp::expected&lt;file_descriptor_type, score::os::Error&gt;_
+_+close_sender(file_descriptor : const file_descriptor_type) : void_
+_+prepare_payload(const MessageFormat&amp; message) : MessageFormat&amp;_
+_+try_send(_
+_    file_descriptor : const file_descriptor_type,_
+_    message : const MessageFormat&amp;) : score::cpp::expected_blank&lt;score::os::Error&gt;_
+_+has_non_blocking_guarantee() : bool_
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>1400</x>
+      <y>790</y>
+      <w>630</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>Notes:
+MessagePassing is a unidirectional 1:N communication mechanism.
+The MessagePassing implementation should be optimized OS specific.
+
+We will have a MQueue based implementation for POSIX/Linux.
+We explicitly designed/optimized for small messages, because QNX has
+a very efficient mechanism with QNX Pulses for transfer of such ultra
+short messages. So for a QNX deployment we could implement ShortMessages
+via Pulses.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1010</x>
+      <y>740</y>
+      <w>60</w>
+      <h>240</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+uses</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;220.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>2140</x>
+      <y>830</y>
+      <w>320</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>Notes:
+Sender factory allows creations of both mocks 
+and production version of ISender objects 
+(uses SenderFactoryImpl internally to 
+create ISender Objects)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1620</x>
+      <y>100</y>
+      <w>910</w>
+      <h>500</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+</panel_attributes>
+    <additional_attributes>10.0;480.0;10.0;100.0;890.0;100.0;890.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>2970</x>
+      <y>240</y>
+      <w>420</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::ResmgrReceiverState
+--
++[kConcurrency] : dispatch_context_t*
++side_channel_coid_ : const std::int32_t
+
++message_queue_mutex_ : std::mutex 
++message_queue_ : score::memory::PmrRingBuffer&lt;MessageData&gt; 
++message_queue_owned_ : bool 
++allowed_uids_ : const score::cpp::pmr::vector&lt;uid_t&gt;&amp; 
+--
++ResmgrReceiverState(max_message_queue_size : std::size_t,
+    side_channel_coid : std::int32_t,
+    allowed_uids : const score::cpp::pmr::vector&lt;uid_t&gt;&amp;)
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>3020</x>
+      <y>430</y>
+      <w>30</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>3560</x>
+      <y>620</y>
+      <w>190</w>
+      <h>260</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+uses</panel_attributes>
+    <additional_attributes>10.0;20.0;170.0;20.0;170.0;240.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>3960</x>
+      <y>1060</y>
+      <w>320</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>Notes:
+ReceiverFactoryImpl creates 
+Receiver Object with ResmgrReceiverTraits/MqueueReceiverTraits
+as ChannelTraits</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>2500</x>
+      <y>100</y>
+      <w>1410</w>
+      <h>780</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+</panel_attributes>
+    <additional_attributes>1390.0;760.0;1390.0;100.0;10.0;100.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>0</x>
+      <y>960</y>
+      <w>770</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::MqueueSenderTraits
+--
+_file_descriptor_type : mqd_t_
+--
+_+try_open(identifier : const std::string_view) : score::cpp::expected&lt;file_descriptor_type, score::os::Error&gt;_
+_+close_sender(file_descriptor : const file_descriptor_type) : void_
+_+prepare_payload(const MessageFormat&amp; message) : message_passing::RawMessageBuffer&amp;_
+_+try_send(_
+_    file_descriptor : const file_descriptor_type,_
+_    buffer : const score::mw::com::message_passing::RawMessageBuffer&amp;) : score::cpp::expected_blank&lt;score::os::Error&gt;_
+_+has_non_blocking_guarantee() : bool_
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>760</x>
+      <y>1020</y>
+      <w>180</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+uses</panel_attributes>
+    <additional_attributes>10.0;20.0;160.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>4150</x>
+      <y>930</y>
+      <w>210</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+uses</panel_attributes>
+    <additional_attributes>190.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>4340</x>
+      <y>870</y>
+      <w>770</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>mw::com::message_passing::MqueueReceiverTraits
+--
+_file_descriptor_type : INVALID_FILE_DESCRIPTOR_
+--
+_+open_receiver(identifier : const std::string_view ,_
+_    allowed_uids : const score::cpp::pmr::vector&lt;uid_t&gt;&amp;,_
+_   max_number_message_in_queue : const std::int32_t) : score::cpp::expected&lt;file_descriptor_type, score::os::Error&gt;_
+_+close_receiver(const file_descriptor_type file_descriptor,_
+_    const std::string_view /*identifier*/) : void_
+_+ stop_receive(const file_descriptor_type file_descriptor) : void_
+_+receive_next(const file_descriptor_type file_descriptor,_
+_    const std::size_t thread,_
+_    ShortMessageProcessor fShort,_
+_    MediumMessageProcessor fMedium) : score::cpp::expected&lt;bool, score::os::Error&gt;_
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1600</x>
+      <y>1080</y>
+      <w>150</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.
+uses</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0;130.0;60.0;130.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>3310</x>
+      <y>1460</y>
+      <w>490</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>ReceiverConfig
+--
++max_number_message_in_queue : std::int32_t    
++message_loop_delay : std::optional&lt;std::chrono::milliseconds&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>880</x>
+      <y>1640</y>
+      <w>590</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>SenderConfig
+--
++max_numbers_of_retry : std::int32_t    
++send_retry_delay : std::chrono::milliseconds
++connect_retry_delay : std::chrono::milliseconds</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

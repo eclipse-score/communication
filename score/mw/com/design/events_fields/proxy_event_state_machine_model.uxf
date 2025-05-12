@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="13.3">
+  <zoom_level>6</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>318</x>
+      <y>90</y>
+      <w>492</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>lola::SubscriptionStateMachine
+--
+template &lt;typename... Ts&gt;
+_+Create(Ts&amp;&amp;... params) : std::shared_ptr&lt;SubscriptionStateMachine&gt; _
++GetSharedPtr() : std::shared_ptr&lt;SubscriptionStateMachine&gt;
+
++GetCurrentState() : SubscriptionStateMachineState
++SubscribeEvent(max_sample_count : std::size_t) : void
++UnsubscribeEvent() : void
++SubscriptionStateChangeEvent(state_change_result : IMessagePassingService::SubscriptionStateChange ) : void
++SetReceiveHandler(handler : EventReceiveHandler) : void
++UnsetReceiveHandler() : void
++MarkProxyForDestruction() : void
+-SubscriptionStateMachine(Proxy&amp;, ElementFqId, pid_t, 
+                                           std::function&lt;void(SlotCollector&amp;&amp;)&gt; set_slot_collector, 
+                                           std::function&lt;void()&gt; remove_slot_collector)
+--
+-states_ : std::array&lt;std::unique_ptr&lt;SubscriptionStateBase&gt;, SubscriptionStateMachineState::STATE_COUNT)&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>276</x>
+      <y>336</y>
+      <w>558</w>
+      <h>132</h>
+    </coordinates>
+    <panel_attributes>/lola::SubscriptionStateBase/
+--
++SubscriptionStateBase(V : SubscriptionStateMachine&amp;) noexcept;
+
+/+SubscribeEvent(const std::size_t max_sample_count) : TriggerResult/
+/+UnsubscribeEvent() : TriggerResult/
+/+SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult/
+/+SetReceiveHandler(handler : EventReceiveHandler) : void/
+/+UnsetReceiveHandler() : void/
++OnEntry() : void
++OnExit(): void
+--
+-state_machine_ : SubscriptionStateMachine&amp; 
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>210</x>
+      <y>528</y>
+      <w>402</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>/lola::NotSubscribedState/
+--
++NotSubscribedState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++UnsubscribeEvent() : TriggerResult
++SetReceiveHandler(handler : EventReceiveHandler) : void
++UnsetReceiveHandler() : void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>234</x>
+      <y>690</y>
+      <w>522</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lola::NotSubscribedAwaitNoneState
+--
++NotSubscribedAwaitNoneState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
++SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
++OnEntry() : void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>276</x>
+      <y>612</y>
+      <w>18</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>396</x>
+      <y>462</y>
+      <w>18</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>234</x>
+      <y>786</y>
+      <w>522</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lola::NotSubscribedAwaitSubscribeResultState
+--
++NotSubscribedAwaitSubscribeResultState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
++SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>216</x>
+      <y>612</y>
+      <w>30</w>
+      <h>222</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;350.0;30.0;350.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>234</x>
+      <y>870</y>
+      <w>522</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lola::NotSubscribedAwaitUnsubscribeAckState
+--
++NotSubscribedAwaitUnsubscribeAckState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
++SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
++OnEntry() : void
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>228</x>
+      <y>120</y>
+      <w>102</w>
+      <h>246</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>150.0;10.0;10.0;10.0;10.0;390.0;80.0;390.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>384</x>
+      <y>264</y>
+      <w>30</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+bg=black
+m2=1..n</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>210</x>
+      <y>612</y>
+      <w>36</w>
+      <h>288</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;460.0;40.0;460.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1152</x>
+      <y>528</y>
+      <w>528</w>
+      <h>102</h>
+    </coordinates>
+    <panel_attributes>lola::SubscribedState
+--
++SubscribedState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
++UnsubscribeEvent() : TriggerResult
++SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
++SetReceiveHandler(handler : EventReceiveHandler) : void
++UnsetReceiveHandler() : void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>828</x>
+      <y>402</y>
+      <w>612</w>
+      <h>138</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;1000.0;210.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>624</x>
+      <y>528</y>
+      <w>516</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>/lola::SubscriptionPendingState/
+--
++SubscriptionPendingState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
++SetReceiveHandler(handler : EventReceiveHandler) : void
++UnsetReceiveHandler() : void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>684</x>
+      <y>462</y>
+      <w>18</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>804</x>
+      <y>690</y>
+      <w>522</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lola::SubscriptionPendingAwaitSubscribeResultState
+--
++SubscriptionPendingAwaitSubscribeResultState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
++UnsubscribeEvent() : TriggerResult
++SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>804</x>
+      <y>786</y>
+      <w>522</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lola::SubscriptionPendingAwaitUnsubscribeAckState
+--
++SubscriptionPendingAwaitUnsubscribeAckState(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++UnsubscribeEvent() : TriggerResult
++SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
++OnExit(): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>804</x>
+      <y>876</y>
+      <w>558</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lola::SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples
+--
++SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples(subscription_event_state_machine : SubscriptionStateMachine&amp;)
+
++UnsubscribeEvent() : TriggerResult
++SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>906</x>
+      <y>612</y>
+      <w>18</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>792</x>
+      <y>612</y>
+      <w>24</w>
+      <h>204</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;320.0;20.0;320.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>780</x>
+      <y>612</y>
+      <w>36</w>
+      <h>288</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;460.0;40.0;460.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1038</x>
+      <y>198</y>
+      <w>306</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>/lola::BaseMessagePassingManager/
+--
++BaseMessagePassingManager(QualityType, ElementFqId, pid_t)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1248</x>
+      <y>282</y>
+      <w>426</w>
+      <h>78</h>
+    </coordinates>
+    <panel_attributes>lola::SubscriptionDispatchManager
+--
++SubscriptionDispatchManager(QualityType, ElementFqId, pid_t)
+
++Subscribe(max_samples: std::uint8_t, IMessagePassingService::SubscriptionStateCallback) : void
++Unsubscribe() : void
++GetMaxSamples() : score::cpp::optional&lt;std::uint8_t&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>918</x>
+      <y>288</y>
+      <w>276</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lola::EventReceiveHandlerManager
+--
++EventReceiveHandlerManager(QualityType, ElementFqId, pid_t)
+
++Register(EventReceiveHandler handler) : void
++Unregister() : void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1092</x>
+      <y>234</y>
+      <w>78</w>
+      <h>66</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>110.0;10.0;10.0;90.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1188</x>
+      <y>234</y>
+      <w>240</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;380.0;80.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>426</x>
+      <y>264</y>
+      <w>504</w>
+      <h>54</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+bg=black
+m2=1</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0;820.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>804</x>
+      <y>120</y>
+      <w>786</w>
+      <h>174</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+bg=black
+m2=1</panel_attributes>
+    <additional_attributes>10.0;10.0;1290.0;10.0;1290.0;270.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>900</x>
+      <y>144</y>
+      <w>258</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>SubscriptionData
+--
++next_max_sample_count_ : score::cpp::optional&lt;std::uint8_t&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>804</x>
+      <y>150</y>
+      <w>108</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-
+bg=black
+m2=1</panel_attributes>
+    <additional_attributes>10.0;10.0;160.0;10.0</additional_attributes>
+  </element>
+</diagram>

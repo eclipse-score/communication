@@ -1,0 +1,95 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 1234,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "eventId": 20
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft",
+                            "fieldId": 30
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instanceId": 1234,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "shm-size": 10000,
+                    "events": [
+                        {
+                            "eventName": "CurrentPressureFrontLeft",
+                            "numberOfSampleSlots": 50,
+                            "maxSubscribers": 5,
+                            "numberOfIpcTracingSlots": 0
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "fieldName": "CurrentTemperatureFrontLeft",
+                            "numberOfSampleSlots": 60,
+                            "maxSubscribers": 6,
+                            "numberOfIpcTracingSlots": 1
+                        }
+                    ],
+                    "allowedConsumer": {
+                        "QM": [
+                            42,
+                            43
+                        ],
+                        "B": [
+                            54,
+                            55
+                        ]
+                    },
+                    "allowedProvider": {
+                        "QM": [
+                            15
+                        ],
+                        "B": [
+                            15
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "global": {
+        "asil-level": "B",
+        "queue-size": {
+            "QM-receiver": 8,
+            "B-receiver": 5,
+            "B-sender": 12
+        },
+        "shm-size-calc-mode": "ESTIMATION"
+    },
+    "tracing": {
+        "enable": true,
+        "applicationInstanceID": "ara_com_example",
+        "traceFilterConfigPath": "score/mw/com/impl/tracing/configuration/example/comtrace_filter_config_small.json"
+    }
+}
