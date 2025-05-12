@@ -13,6 +13,7 @@
 #ifndef BASELIBS_SCORE_MEMORY_SHARED_OFFSET_PTR_H
 #define BASELIBS_SCORE_MEMORY_SHARED_OFFSET_PTR_H
 
+#include "score/memory/shared/memory_region_bounds.h"
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/offset_ptr_bounds_check.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
@@ -185,7 +186,7 @@ class OffsetPtr
     template <class T = PointedType, class = detail_offset_ptr::enable_if_type_is_not_void<T, PointedType>>
     pointer get() const
     {
-        return GetPointerWithBoundsCheck(this, offset_, memory_resource_identifier_, sizeof(PointedType));
+        return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     }
 
     template <typename ExplicitPointedType,
@@ -201,13 +202,13 @@ class OffsetPtr
         // is the same as the original type before casting to a void pointer.
         // coverity[autosar_cpp14_m5_2_8_violation]
         return static_cast<ExplicitPointedType*>(
-            GetPointerWithBoundsCheck(this, offset_, memory_resource_identifier_, sizeof(ExplicitPointedType)));
+            GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(ExplicitPointedType)));
     }
 
     template <class T = PointedType, class = detail_offset_ptr::enable_if_type_is_void<T, PointedType>>
     pointer get(const std::size_t explicit_pointed_type_size) const
     {
-        return GetPointerWithBoundsCheck(this, offset_, memory_resource_identifier_, explicit_pointed_type_size);
+        return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, explicit_pointed_type_size);
     }
 
     template <class T = PointedType, class = detail_offset_ptr::enable_if_type_is_not_void<T, PointedType>>
@@ -217,14 +218,14 @@ class OffsetPtr
     // coverity[autosar_cpp14_a13_5_2_violation]
     operator pointer() const
     {
-        return GetPointerWithBoundsCheck(this, offset_, memory_resource_identifier_, sizeof(PointedType));
+        return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     }
     // NOLINTEND(google-explicit-constructor): see above
 
     template <class T = PointedType, class = detail_offset_ptr::enable_if_type_is_not_void<T, PointedType>>
     pointer operator->() const
     {
-        return GetPointerWithBoundsCheck(this, offset_, memory_resource_identifier_, sizeof(PointedType));
+        return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     }
 
     explicit operator bool() const noexcept
@@ -243,9 +244,8 @@ class OffsetPtr
     // namespace, or static function with internal linkage, or private member function shall be used.".
     // Rationale: False-positive, this function is used in this file.
     // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
-    static std::pair<difference_type, MemoryResourceRegistry::MemoryResourceIdentifier> CopyFrom(
-        const OffsetPtr<OtherPointedType>& source_offset_ptr,
-        OffsetPtr<PointedType>& target_offset_ptr);
+    static std::pair<difference_type, MemoryRegionBounds> CopyFrom(const OffsetPtr<OtherPointedType>& source_offset_ptr,
+                                                                   OffsetPtr<PointedType>& target_offset_ptr);
 
     /// \brief Calculates the absolute pointer of the pointed-to object from the OffsetPtr's variant with a bounds
     /// check.
@@ -254,11 +254,10 @@ class OffsetPtr
     /// to prevent other processes corrupting these variables when the OffsetPtr is in shared memory. Any member
     /// variables of OffsetPtr which are provided to the function i.e. offset and memory_resource_identifier should be
     /// provided as copies.
-    static pointer GetPointerWithBoundsCheck(
-        const void* const offset_ptr_address,
-        const difference_type offset,
-        const MemoryResourceRegistry::MemoryResourceIdentifier memory_resource_identifier,
-        const std::size_t pointed_type_size);
+    static pointer GetPointerWithBoundsCheck(const void* const offset_ptr_address,
+                                             const difference_type offset,
+                                             const MemoryRegionBounds& offset_ptr_memory_bounds_when_not_in_shm,
+                                             const std::size_t pointed_type_size);
 
     /// \brief Calculates the absolute pointer of the pointed-to object from the OffsetPtr's variant without a bounds
     /// check.
@@ -282,14 +281,14 @@ class OffsetPtr
     /// address.
     detail_offset_ptr::difference_type offset_;
 
-    /// \brief Memory resource identifier used to identify which memory region an OffsetPtr belongs to in case it's
-    /// copied out of the memory region.
+    /// \brief Memory region bounds used for bounds checking OffsetPtr if it's been copied out of the memory region.
     ///
     /// When an OffsetPtr is in a shared memory region, we can perform BoundsChecks by getting the memory bounds of that
     /// region from the MemoryResourceRegistry using the address of the OffsetPtr. If the OffsetPtr is copied out of the
-    /// region, we still need to do these checks before dereferencing the OffsetPtr. We can use this identifier in such
-    /// a case (the identifier can only be corrupted by another process when the OffsetPtr is in shared memory).
-    MemoryResourceRegistry::MemoryResourceIdentifier memory_resource_identifier_;
+    /// region, we still need to do these checks before dereferencing the OffsetPtr. We can use these memory bounds
+    /// directly in such a case (the memory bounds can only be corrupted by another process when the OffsetPtr is in
+    /// shared memory).
+    MemoryRegionBounds memory_bounds_;
 
     // Friend declarations - They need to be friends to be able to get raw pointers without doing bounds checks.
     template <typename T1, typename T2, typename>
@@ -362,7 +361,7 @@ template <typename PointedType>
 // coverity[autosar_cpp14_m8_4_2_violation : FALSE]
 // coverity[autosar_cpp14_m3_9_1_violation : FALSE]
 OffsetPtr<PointedType>::OffsetPtr(pointer ptr) noexcept
-    : offset_{CalculateOffsetFromPointer(this, ptr)}, memory_resource_identifier_{0U}
+    : offset_{CalculateOffsetFromPointer(this, ptr)}, memory_bounds_{}
 {
 }
 
@@ -373,16 +372,16 @@ template <typename PointedType>
 // copy of the offset will not work. It also requires different functionality depending on whether it's being copied
 // to/from a managed memory region or not.
 // coverity[autosar_cpp14_a12_8_1_violation]
-OffsetPtr<PointedType>::OffsetPtr(const OffsetPtr<PointedType>& other) : offset_{}, memory_resource_identifier_{0U}
+OffsetPtr<PointedType>::OffsetPtr(const OffsetPtr<PointedType>& other) : offset_{}, memory_bounds_{}
 {
-    std::tie(offset_, memory_resource_identifier_) = CopyFrom(other, *this);
+    std::tie(offset_, memory_bounds_) = CopyFrom(other, *this);
 }
 
 template <typename PointedType>
 template <typename OtherPointedType>
-OffsetPtr<PointedType>::OffsetPtr(const OffsetPtr<OtherPointedType>& other) : offset_{}, memory_resource_identifier_{0U}
+OffsetPtr<PointedType>::OffsetPtr(const OffsetPtr<OtherPointedType>& other) : offset_{}, memory_bounds_{}
 {
-    std::tie(offset_, memory_resource_identifier_) = CopyFrom<OtherPointedType>(other, *this);
+    std::tie(offset_, memory_bounds_) = CopyFrom<OtherPointedType>(other, *this);
 }
 
 template <typename PointedType>
@@ -391,7 +390,7 @@ template <typename PointedType>
 auto OffsetPtr<PointedType>::operator=(pointer ptr) -> OffsetPtr&
 {
     offset_ = CalculateOffsetFromPointer(this, ptr);
-    memory_resource_identifier_ = 0U;
+    memory_bounds_.Reset();
     return *this;
 }
 
@@ -403,7 +402,7 @@ auto OffsetPtr<PointedType>::operator=(const OffsetPtr& other) -> OffsetPtr&
     {
         return *this;
     }
-    std::tie(offset_, memory_resource_identifier_) = CopyFrom(other, *this);
+    std::tie(offset_, memory_bounds_) = CopyFrom(other, *this);
     return *this;
 }
 
@@ -411,7 +410,7 @@ template <typename PointedType>
 template <typename OtherPointedType>
 auto OffsetPtr<PointedType>::operator=(const OffsetPtr<OtherPointedType>& other) -> OffsetPtr&
 {
-    std::tie(offset_, memory_resource_identifier_) = CopyFrom<OtherPointedType>(other, *this);
+    std::tie(offset_, memory_bounds_) = CopyFrom<OtherPointedType>(other, *this);
     return *this;
 }
 
@@ -465,11 +464,10 @@ template <typename PointedType>
 template <typename OtherPointedType>
 auto OffsetPtr<PointedType>::CopyFrom(const OffsetPtr<OtherPointedType>& source_offset_ptr,
                                       OffsetPtr<PointedType>& target_offset_ptr)
-    -> std::pair<difference_type, MemoryResourceRegistry::MemoryResourceIdentifier>
+    -> std::pair<difference_type, MemoryRegionBounds>
 {
-    // memory_resource_identifier is empty by default unless bounds checks is enabled and the OffsetPtr is being copied
-    // to the stack
-    MemoryResourceRegistry::MemoryResourceIdentifier memory_resource_identifier{0U};
+    // memory_bounds is empty by default unless bounds checks is enabled and the OffsetPtr is being copied to the stack
+    MemoryRegionBounds memory_bounds{};
 
     if (detail_offset_ptr::IsBoundsCheckingEnabled())
     {
@@ -484,11 +482,11 @@ auto OffsetPtr<PointedType>::CopyFrom(const OffsetPtr<OtherPointedType>& source_
             !source_offset_ptr_bounds.has_value() && !target_offset_ptr_bounds.has_value();
         if (copying_from_shm_to_stack)
         {
-            memory_resource_identifier = source_offset_ptr_bounds.value().second;
+            memory_bounds = source_offset_ptr_bounds.value();
         }
         else if (copying_from_stack_to_stack)
         {
-            memory_resource_identifier = source_offset_ptr.memory_resource_identifier_;
+            memory_bounds = source_offset_ptr.memory_bounds_;
         }
     }
 
@@ -496,11 +494,11 @@ auto OffsetPtr<PointedType>::CopyFrom(const OffsetPtr<OtherPointedType>& source_
         OffsetPtr<OtherPointedType>::GetPointerWithoutBoundsCheck(&source_offset_ptr, source_offset_ptr.offset_);
     if (other_pointed_to_object == nullptr)
     {
-        return {detail_offset_ptr::kNullPtrRepresentation, 0U};
+        return {detail_offset_ptr::kNullPtrRepresentation, {}};
     }
     auto* const pointed_to_object = static_cast<PointedType*>(other_pointed_to_object);
     const auto offset = CalculateOffsetFromPointer(&target_offset_ptr, pointed_to_object);
-    return {offset, memory_resource_identifier};
+    return {offset, memory_bounds};
 }
 
 template <typename PointedType>
@@ -508,7 +506,7 @@ template <typename PointedType>
 auto OffsetPtr<PointedType>::GetPointerWithBoundsCheck(
     const void* const offset_ptr_address,
     const detail_offset_ptr::difference_type offset,
-    const MemoryResourceRegistry::MemoryResourceIdentifier memory_resource_identifier,
+    const MemoryRegionBounds& offset_ptr_memory_bounds_when_not_in_shm,
     const std::size_t pointed_type_size) -> pointer
 {
     if (detail_offset_ptr::IsBoundsCheckingEnabled())
@@ -521,7 +519,7 @@ auto OffsetPtr<PointedType>::GetPointerWithBoundsCheck(
             // SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED instead of death tests (since death tests are very slow).
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(DoesOffsetPtrInSharedMemoryPassBoundsChecks(offset_ptr_address,
                                                                        offset,
-                                                                       offset_ptr_bounds.value().first,
+                                                                       offset_ptr_bounds.value(),
                                                                        pointed_type_size,
                                                                        sizeof(OffsetPtr<PointedType>)));
         }
@@ -531,7 +529,7 @@ auto OffsetPtr<PointedType>::GetPointerWithBoundsCheck(
             // SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED instead of death tests (since death tests are very slow).
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(offset_ptr_address,
                                                                           offset,
-                                                                          memory_resource_identifier,
+                                                                          offset_ptr_memory_bounds_when_not_in_shm,
                                                                           pointed_type_size,
                                                                           sizeof(OffsetPtr<PointedType>)));
         }
@@ -574,7 +572,7 @@ auto OffsetPtr<PointedType>::pointer_to(const void* const r) noexcept -> OffsetP
 template <typename PointedType>
 auto OffsetPtr<PointedType>::operator*() const -> reference
 {
-    const pointer ptr = GetPointerWithBoundsCheck(this, offset_, memory_resource_identifier_, sizeof(PointedType));
+    const pointer ptr = GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr != nullptr, "Cannot dereference a nullptr.");
     reference ref = *ptr;
     return ref;

@@ -114,11 +114,10 @@ Unchanged
 --
 known_regions: MemoryRegionMap
 --
-using MemoryBounds = pair&lt;uintptr_t, uintptr_t&gt;
 + insert_resource(std::pair&lt;std::unit64_t, ManagedMemoryResource*&gt;): void
 + remove_resource(std::uint64_t identifier): void
-+ GetBoundsFromAddress(uintptr_t): optional&lt;pair&lt;MemoryBounds, MemoryResourceIdentifier&gt;&gt;
-+ GetBoundsFromIdentifier(uint64 identifier): Result&lt;MemoryBounds&gt;
++ GetBoundsFromAddress(uintptr_t): optional&lt;pair&lt;MemoryRegionBounds, MemoryResourceIdentifier&gt;&gt;
++ GetBoundsFromIdentifier(uint64 identifier): Result&lt;MemoryRegionBounds&gt;
 --
 Notes:
 * known_regions is a map for memory regions (i.e. storing the start and end 

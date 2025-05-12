@@ -14,6 +14,7 @@
 #define BASELIBS_SCORE_MEMORY_SHARED_MEMORYREGIONMAP_H
 
 #include "score/memory/shared/atomic_indirector.h"
+#include "score/memory/shared/memory_region_bounds.h"
 
 #include <array>
 #include <atomic>
@@ -70,28 +71,21 @@ class MemoryRegionMapImpl final
     friend test::MemoryRegionMapAttorney;
 
   public:
-    using MemoryResourceIdentifier = std::uint64_t;
-    using MemoryBounds = std::pair<std::uintptr_t, std::uintptr_t>;
-
     MemoryRegionMapImpl() noexcept;
 
     /// \brief Searches within the existing/known memory regions for a region, which contains the given pointer/address.
     /// \param pointer ptr/address to be checked
     /// \return either a pair of start-address/end-address of the region which contains the pointer or an empty value
     ///         if there is no known region containing this pointer.
-    std::optional<std::pair<MemoryBounds, MemoryResourceIdentifier>> GetBoundsFromAddress(
-        const std::uintptr_t pointer) const noexcept;
+    std::optional<MemoryRegionBounds> GetBoundsFromAddress(const std::uintptr_t pointer) const noexcept;
 
     /// \brief Creates a new regions version based on the latest version and adds the given region to it and then marks
     ///        it as the latest regions version. Only adds the provided range if it doesn't overlap with another range
     ///        that was already added via UpdateKnownRegions
     /// \param memory_range_start
     /// \param memory_range_end
-    /// \param memory_resource_identifier identifier for identifying the memory resource in the MemoryResourceRegistry
     /// \return true, if the range was inserted. Otherwise, false.
-    bool UpdateKnownRegion(const std::uintptr_t memory_range_start,
-                           const std::uintptr_t memory_range_end,
-                           const MemoryResourceIdentifier memory_resource_identifier) noexcept;
+    bool UpdateKnownRegion(const std::uintptr_t memory_range_start, const std::uintptr_t memory_range_end) noexcept;
 
     /// \brief Removes the region with the given start address from the current/latest regions version and creates a new
     ///        regions version from it and marks it as the latest one.
@@ -160,8 +154,7 @@ class MemoryRegionMapImpl final
     std::optional<std::uint8_t> AcquireRegionVersionForOverwrite() noexcept;
 
     /// \brief We have an array of different versions of known regions to support our lock-free CAS based read access
-    std::array<std::map<std::uintptr_t, std::pair<std::uintptr_t, MemoryResourceIdentifier>>, VERSION_COUNT>
-        known_regions_versions_{};
+    std::array<std::map<std::uintptr_t, std::uintptr_t>, VERSION_COUNT> known_regions_versions_{};
 
     /// \brief refcounters for the different versions of known regions in known_regions_versions_
     mutable std::array<std::atomic<RegionVersionRefCountType>, VERSION_COUNT> known_regions_versions_refcounts_{};

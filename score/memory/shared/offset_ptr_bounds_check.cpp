@@ -28,17 +28,17 @@ namespace
 /// \param ptr pointer target
 /// \param memory_bounds
 /// \return true in case the pointed to address is within the bounds.
-bool IsPointerWithinMemoryBounds(const void* const ptr, const MemoryResourceRegistry::MemoryBounds& memory_bounds)
+bool IsPointerWithinMemoryBounds(const void* const ptr, const MemoryRegionBounds& memory_bounds)
 {
     const auto ptr_as_integer = CastPointerToInteger(ptr);
-    return ((ptr_as_integer >= memory_bounds.first) && (ptr_as_integer <= memory_bounds.second));
+    return ((ptr_as_integer >= memory_bounds.GetStartAddress()) && (ptr_as_integer <= memory_bounds.GetEndAddress()));
 }
 
 }  // namespace
 
 bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_address,
                                                  const std::ptrdiff_t offset,
-                                                 const MemoryResourceRegistry::MemoryBounds& offset_ptr_memory_bounds,
+                                                 const MemoryRegionBounds& offset_ptr_memory_bounds,
                                                  const std::size_t pointed_type_size,
                                                  const std::size_t offset_ptr_size) noexcept
 {
@@ -49,8 +49,8 @@ bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_ad
         ::score::mw::log::LogError("shm") << __func__ << __LINE__ << "OffsetPtr at"
                                         << CastPointerToInteger(offset_ptr_address)
                                         << "does not fit completely in memory region: ["
-                                        << offset_ptr_memory_bounds.first << ":" << offset_ptr_memory_bounds.second
-                                        << "]";
+                                        << offset_ptr_memory_bounds.GetStartAddress() << ":"
+                                        << offset_ptr_memory_bounds.GetEndAddress() << "]";
         return false;
     }
 
@@ -62,8 +62,8 @@ bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_ad
                                         << CastPointerToInteger(offset_ptr_address) << "is pointing to address "
                                         << CastPointerToInteger(pointed_to_start_address)
                                         << "which lies outside the OffsetPtr's memory region: ["
-                                        << offset_ptr_memory_bounds.first << ":" << offset_ptr_memory_bounds.second
-                                        << "]";
+                                        << offset_ptr_memory_bounds.GetStartAddress() << ":"
+                                        << offset_ptr_memory_bounds.GetEndAddress() << "]";
         return false;
     }
 
@@ -75,8 +75,8 @@ bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_ad
                                         << CastPointerToInteger(offset_ptr_address) << "is pointing to address "
                                         << CastPointerToInteger(pointed_to_end_address)
                                         << "which does not fit completely within the OffsetPtr's memory region: ["
-                                        << offset_ptr_memory_bounds.first << ":" << offset_ptr_memory_bounds.second
-                                        << "]";
+                                        << offset_ptr_memory_bounds.GetStartAddress() << ":"
+                                        << offset_ptr_memory_bounds.GetEndAddress() << "]";
         return false;
     }
     return true;
@@ -88,12 +88,11 @@ bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_ad
 // before calling value(), an exception will never be called and therefore there will never be an implicit
 // std::terminate call.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(
-    const void* const offset_ptr_address,
-    const std::ptrdiff_t offset,
-    const MemoryResourceRegistry::MemoryResourceIdentifier memory_resource_identifier,
-    const std::size_t pointed_type_size,
-    const std::size_t offset_ptr_size) noexcept
+bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(const void* const offset_ptr_address,
+                                                    const std::ptrdiff_t offset,
+                                                    const MemoryRegionBounds& offset_ptr_memory_bounds,
+                                                    const std::size_t pointed_type_size,
+                                                    const std::size_t offset_ptr_size) noexcept
 {
     // Check that the entire OffsetPtr lies outside a memory region
     const auto* const offset_ptr_end_address = AddOffsetToPointer(offset_ptr_address, offset_ptr_size);
@@ -104,19 +103,15 @@ bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(
         ::score::mw::log::LogError("shm") << __func__ << __LINE__ << "OffsetPtr at"
                                         << CastPointerToInteger(offset_ptr_address)
                                         << "is overlapping the start of memory region: ["
-                                        << offset_ptr_end_address_bounds.value().first.first << ":"
-                                        << offset_ptr_end_address_bounds.value().first.second << "]";
+                                        << offset_ptr_end_address_bounds.value().GetStartAddress() << ":"
+                                        << offset_ptr_end_address_bounds.value().GetEndAddress() << "]";
         return false;
     }
 
-    // If the OffsetPtr is not within a memory resource, we check if it contains a memory_resource_identifier_
-    // which indicates that it was previosuly in a shared memory region and was copied out.
-    if (memory_resource_identifier != 0U)
+    // If the OffsetPtr is not within a memory resource, we check if it contains valid memory bounds
+    // which indicates that it was previously in a shared memory region and was copied out.
+    if (offset_ptr_memory_bounds.has_value())
     {
-        const auto offset_ptr_memory_bounds_from_identifier =
-            MemoryResourceRegistry::getInstance().GetBoundsFromIdentifier(memory_resource_identifier);
-        const auto& offset_ptr_memory_bounds = offset_ptr_memory_bounds_from_identifier.value();
-
         // Check that the start address of the pointed-to object lies inside the shared memory region.
         const auto* const pointed_to_start_address = AddOffsetToPointer(offset_ptr_address, offset);
         if (!IsPointerWithinMemoryBounds(pointed_to_start_address, offset_ptr_memory_bounds))
@@ -124,8 +119,8 @@ bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(
             ::score::mw::log::LogError("shm")
                 << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
                 << "is pointing to address " << CastPointerToInteger(pointed_to_start_address)
-                << "which lies outside the OffsetPtr's memory region: [" << offset_ptr_memory_bounds.first << ":"
-                << offset_ptr_memory_bounds.second << "]";
+                << "which lies outside the OffsetPtr's memory region: [" << offset_ptr_memory_bounds.GetStartAddress()
+                << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
             return false;
         }
 
@@ -137,7 +132,7 @@ bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(
                 << __func__ << __LINE__ << "OffsetPtr at" << CastPointerToInteger(offset_ptr_address)
                 << "is pointing to address " << CastPointerToInteger(pointed_to_end_address)
                 << "which does not fit completely within the OffsetPtr's memory region: ["
-                << offset_ptr_memory_bounds.first << ":" << offset_ptr_memory_bounds.second << "]";
+                << offset_ptr_memory_bounds.GetStartAddress() << ":" << offset_ptr_memory_bounds.GetEndAddress() << "]";
             return false;
         }
     }

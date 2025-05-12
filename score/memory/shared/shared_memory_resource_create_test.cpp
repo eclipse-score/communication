@@ -553,8 +553,8 @@ TEST_F(SharedMemoryResourceCreateTest, CreatingSharedMemoryFillsRegistryKnownReg
     const auto known_memory_regions_result =
         MemoryResourceRegistry::getInstance().GetBoundsFromAddress(dataRegion.data());
     ASSERT_TRUE(known_memory_regions_result.has_value());
-    const auto& known_memory_regions = known_memory_regions_result->first;
-    auto known_memory_region_size = known_memory_regions.second - known_memory_regions.first;
+    const auto& known_memory_regions = known_memory_regions_result.value();
+    auto known_memory_region_size = known_memory_regions.GetEndAddress() - known_memory_regions.GetStartAddress();
     EXPECT_EQ(memory_resource_registry_attorney_.known_regions_size(), 1);
     EXPECT_EQ(known_memory_region_size,
               TestValues::some_share_memory_size + SharedMemoryResourceTestAttorney::GetNeededManagementSpace());

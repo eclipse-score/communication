@@ -13,6 +13,7 @@
 #ifndef BASELIBS_SCORE_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H
 #define BASELIBS_SCORE_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H
 
+#include "score/memory/shared/memory_region_bounds.h"
 #include "score/memory/shared/memory_resource_registry.h"
 
 #include <cstddef>
@@ -23,16 +24,15 @@ namespace score::memory::shared
 
 bool DoesOffsetPtrInSharedMemoryPassBoundsChecks(const void* const offset_ptr_address,
                                                  const std::ptrdiff_t offset,
-                                                 const MemoryResourceRegistry::MemoryBounds& offset_ptr_memory_bounds,
+                                                 const MemoryRegionBounds& offset_ptr_memory_bounds,
                                                  const std::size_t pointed_type_size,
                                                  const std::size_t offset_ptr_size) noexcept;
 
-bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(
-    const void* const offset_ptr_address,
-    const std::ptrdiff_t offset,
-    const MemoryResourceRegistry::MemoryResourceIdentifier memory_resource_identifier,
-    const std::size_t pointed_type_size,
-    const std::size_t offset_ptr_size) noexcept;
+bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(const void* const offset_ptr_address,
+                                                    const std::ptrdiff_t offset,
+                                                    const MemoryRegionBounds& offset_ptr_memory_bounds,
+                                                    const std::size_t pointed_type_size,
+                                                    const std::size_t offset_ptr_size) noexcept;
 
 }  // namespace score::memory::shared
 

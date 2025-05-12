@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/memory/shared/memory_region_map.h"
 
+#include "memory_region_bounds.h"
 #include "score/memory/shared/atomic_indirector.h"
 #include "score/memory/shared/atomic_mock.h"
 
@@ -28,8 +29,6 @@ namespace score::memory::shared::test
 
 using ::testing::_;
 using ::testing::Return;
-
-using MemoryResourceIdentifier = MemoryRegionMap::MemoryResourceIdentifier;
 
 class MemoryRegionMapAttorney
 {
@@ -155,18 +154,12 @@ TEST_F(MemoryRegionMapTest, ReturnsNullMemoryBoundsIfKnownRegionsEmpty)
 
 TEST_F(MemoryRegionMapTest, ReturnsMemoryBoundsForPointersInBounds)
 {
-    const MemoryResourceIdentifier first_memory_resource_id{0U};
-    const MemoryResourceIdentifier second_memory_resource_id{1U};
-
-    const auto firstMemoryBounds =
-        std::make_pair<std::uintptr_t, std::uintptr_t>(std::uintptr_t{50U}, std::uintptr_t{100});
-    const auto secondMemoryBounds =
-        std::make_pair<std::uintptr_t, std::uintptr_t>(std::uintptr_t{150U}, std::uintptr_t{200});
+    const MemoryRegionBounds firstMemoryBounds{50U, 100};
+    const MemoryRegionBounds secondMemoryBounds{150U, 200};
 
     // Given 2 memory ranges are inserted into the MemoryRegionMap
-    EXPECT_TRUE(unit_.UpdateKnownRegion(firstMemoryBounds.first, firstMemoryBounds.second, first_memory_resource_id));
-    EXPECT_TRUE(
-        unit_.UpdateKnownRegion(secondMemoryBounds.first, secondMemoryBounds.second, second_memory_resource_id));
+    EXPECT_TRUE(unit_.UpdateKnownRegion(firstMemoryBounds.GetStartAddress(), firstMemoryBounds.GetEndAddress()));
+    EXPECT_TRUE(unit_.UpdateKnownRegion(secondMemoryBounds.GetStartAddress(), secondMemoryBounds.GetEndAddress()));
 
     // When checking the memory bounds for pointers inside the memory bounds
     const auto firstFoundMemoryBounds0 = unit_.GetBoundsFromAddress(std::uintptr_t{50});
@@ -186,19 +179,12 @@ TEST_F(MemoryRegionMapTest, ReturnsMemoryBoundsForPointersInBounds)
     ASSERT_TRUE(secondFoundMemoryBounds1.has_value());
     ASSERT_TRUE(secondFoundMemoryBounds2.has_value());
 
-    EXPECT_EQ(firstFoundMemoryBounds0.value().first, firstMemoryBounds);
-    EXPECT_EQ(firstFoundMemoryBounds1.value().first, firstMemoryBounds);
-    EXPECT_EQ(firstFoundMemoryBounds2.value().first, firstMemoryBounds);
-    EXPECT_EQ(secondFoundMemoryBounds0.value().first, secondMemoryBounds);
-    EXPECT_EQ(secondFoundMemoryBounds1.value().first, secondMemoryBounds);
-    EXPECT_EQ(secondFoundMemoryBounds2.value().first, secondMemoryBounds);
-
-    EXPECT_EQ(firstFoundMemoryBounds0.value().second, first_memory_resource_id);
-    EXPECT_EQ(firstFoundMemoryBounds1.value().second, first_memory_resource_id);
-    EXPECT_EQ(firstFoundMemoryBounds2.value().second, first_memory_resource_id);
-    EXPECT_EQ(secondFoundMemoryBounds0.value().second, second_memory_resource_id);
-    EXPECT_EQ(secondFoundMemoryBounds1.value().second, second_memory_resource_id);
-    EXPECT_EQ(secondFoundMemoryBounds2.value().second, second_memory_resource_id);
+    EXPECT_EQ(firstFoundMemoryBounds0.value(), firstMemoryBounds);
+    EXPECT_EQ(firstFoundMemoryBounds1.value(), firstMemoryBounds);
+    EXPECT_EQ(firstFoundMemoryBounds2.value(), firstMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds0.value(), secondMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds1.value(), secondMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds2.value(), secondMemoryBounds);
 
     EXPECT_FALSE(notFoundMemoryBounds.has_value());
 }
@@ -213,16 +199,13 @@ TEST_P(MemoryRegionMapUpdateRegionParamaterisedFixture,
 {
     MemoryRegionMap unit{};
     const auto ranges_to_insert = GetParam();
-    MemoryResourceIdentifier memory_resource_id{0U};
 
     for (const auto& range_pair : ranges_to_insert)
     {
         const auto& range_to_insert = range_pair.first;
         const bool should_update_succeed = range_pair.second;
 
-        EXPECT_EQ(unit.UpdateKnownRegion(range_to_insert.first, range_to_insert.second, memory_resource_id),
-                  should_update_succeed);
-        memory_resource_id++;
+        EXPECT_EQ(unit.UpdateKnownRegion(range_to_insert.first, range_to_insert.second), should_update_succeed);
     }
 }
 
@@ -279,21 +262,15 @@ INSTANTIATE_TEST_SUITE_P(MemoryRegionMapUpdateRegionParamaterisedFixture,
 
 TEST_F(MemoryRegionMapTest, GetBoundsFromAddressWillNotReturnRangeForRegionWhichFailedToInsert)
 {
-    const auto validMemoryBounds =
-        std::make_pair<std::uintptr_t, std::uintptr_t>(std::uintptr_t{50U}, std::uintptr_t{100});
-    const MemoryResourceIdentifier valid_memory_resource_id{0U};
-
-    const auto invalidMemoryBounds =
-        std::make_pair<std::uintptr_t, std::uintptr_t>(std::uintptr_t{10U}, std::uintptr_t{60U});
-    const MemoryResourceIdentifier invalid_memory_resource_id{1U};
+    const MemoryRegionBounds validMemoryBounds{50U, 100U};
+    const MemoryRegionBounds invalidMemoryBounds{10U, 60U};
 
     // Given a memory range is inserted into the MemoryRegionMap
-    EXPECT_TRUE(unit_.UpdateKnownRegion(validMemoryBounds.first, validMemoryBounds.second, valid_memory_resource_id));
+    EXPECT_TRUE(unit_.UpdateKnownRegion(validMemoryBounds.GetStartAddress(), validMemoryBounds.GetEndAddress()));
 
     // When inserting a memory region which overlaps with the existing memory range
     // Then the region cannot be inserted
-    EXPECT_FALSE(
-        unit_.UpdateKnownRegion(invalidMemoryBounds.first, invalidMemoryBounds.second, invalid_memory_resource_id));
+    EXPECT_FALSE(unit_.UpdateKnownRegion(invalidMemoryBounds.GetStartAddress(), invalidMemoryBounds.GetEndAddress()));
 
     // and when calling GetBoundsFromAddress for a value within the invalid range but not within the valid range
     // Then an empty optional should be returned
@@ -302,22 +279,20 @@ TEST_F(MemoryRegionMapTest, GetBoundsFromAddressWillNotReturnRangeForRegionWhich
 
 TEST_F(MemoryRegionMapTest, InsertAndRemove)
 {
-    const auto memoryBounds = std::make_pair<std::uintptr_t, std::uintptr_t>(std::uintptr_t{50U}, std::uintptr_t{100});
-    const MemoryResourceIdentifier memory_resource_id{0U};
+    const MemoryRegionBounds memoryBounds{50U, 100U};
 
     // Given a memory region is inserted into the MemoryRegionMap
-    EXPECT_TRUE(unit_.UpdateKnownRegion(memoryBounds.first, memoryBounds.second, memory_resource_id));
+    EXPECT_TRUE(unit_.UpdateKnownRegion(memoryBounds.GetStartAddress(), memoryBounds.GetEndAddress()));
 
     // When checking the memory bounds for pointers inside the memory regions
     auto foundMemoryBounds = unit_.GetBoundsFromAddress(std::uintptr_t{50U});
 
     // Then the correct bounds should be returned
     ASSERT_TRUE(foundMemoryBounds.has_value());
-    EXPECT_EQ(foundMemoryBounds.value().first, memoryBounds);
-    EXPECT_EQ(foundMemoryBounds.value().second, memory_resource_id);
+    EXPECT_EQ(foundMemoryBounds.value(), memoryBounds);
 
     // ... and when removing the memory bounds again
-    unit_.RemoveKnownRegion(memoryBounds.first);
+    unit_.RemoveKnownRegion(memoryBounds.GetStartAddress());
 
     // and when checking memory bounds for pointers inside the memory regions
     foundMemoryBounds = unit_.GetBoundsFromAddress(std::uintptr_t{50U});
@@ -328,24 +303,19 @@ TEST_F(MemoryRegionMapTest, InsertAndRemove)
 
 TEST_F(MemoryRegionMapTest, Clear)
 {
-    const auto firstMemoryBounds =
-        std::make_pair<std::uintptr_t, std::uintptr_t>(std::uintptr_t{50U}, std::uintptr_t{100});
-    const auto secondMemoryBounds =
-        std::make_pair<std::uintptr_t, std::uintptr_t>(std::uintptr_t{150U}, std::uintptr_t{200});
-    const MemoryResourceIdentifier first_memory_resource_id{0U};
-    const MemoryResourceIdentifier second_memory_resource_id{1U};
+    const MemoryRegionBounds firstMemoryBounds{50U, 100U};
+    const MemoryRegionBounds secondMemoryBounds{150U, 200U};
 
     // Given 2 memory ranges are inserted into the MemoryRegionMap
-    EXPECT_TRUE(unit_.UpdateKnownRegion(firstMemoryBounds.first, firstMemoryBounds.second, first_memory_resource_id));
-    EXPECT_TRUE(
-        unit_.UpdateKnownRegion(secondMemoryBounds.first, secondMemoryBounds.second, second_memory_resource_id));
+    EXPECT_TRUE(unit_.UpdateKnownRegion(firstMemoryBounds.GetStartAddress(), firstMemoryBounds.GetEndAddress()));
+    EXPECT_TRUE(unit_.UpdateKnownRegion(secondMemoryBounds.GetStartAddress(), secondMemoryBounds.GetEndAddress()));
 
     // and when we clear the map
     unit_.ClearKnownRegions();
 
     // and then check for the bounds of the previously inserted regions
-    const auto firstFoundMemoryBounds = unit_.GetBoundsFromAddress(firstMemoryBounds.first);
-    const auto secondFoundMemoryBounds = unit_.GetBoundsFromAddress(secondMemoryBounds.first);
+    const auto firstFoundMemoryBounds = unit_.GetBoundsFromAddress(firstMemoryBounds.GetStartAddress());
+    const auto secondFoundMemoryBounds = unit_.GetBoundsFromAddress(secondMemoryBounds.GetStartAddress());
 
     // Then the regions shouldn't be there
     EXPECT_FALSE(firstFoundMemoryBounds.has_value());
@@ -369,18 +339,15 @@ TEST_F(MemoryRegionMapTest, ConcurrentAccess)
 {
     struct RegionWithFlag
     {
-        RegionWithFlag(std::pair<std::uintptr_t, std::uintptr_t> region,
-                       MemoryResourceIdentifier memory_resource_identifier,
-                       bool insertedFlag) noexcept
-            : region_(std::move(region)), memory_resource_id_{memory_resource_identifier}, inserted_(insertedFlag){};
+        RegionWithFlag(MemoryRegionBounds region, bool insertedFlag) noexcept
+            : region_(region), inserted_(insertedFlag){};
 
         RegionWithFlag(RegionWithFlag&& other) noexcept
         {
             std::swap(region_, other.region_);
             inserted_.store(other.inserted_);
         };
-        std::pair<std::uintptr_t, std::uintptr_t> region_;
-        MemoryResourceIdentifier memory_resource_id_;
+        MemoryRegionBounds region_;
         std::atomic_bool inserted_;
     };
     using namespace std::chrono_literals;
@@ -390,23 +357,19 @@ TEST_F(MemoryRegionMapTest, ConcurrentAccess)
     memory_regions.reserve(100);
     // each with a size of 50 bytes
     constexpr std::uint8_t MEM_REGION_SIZE{50};
-    MemoryResourceIdentifier memory_resource_id_{0U};
 
     for (unsigned int i = 0; i < 100; i++)
     {
         memory_regions.emplace_back(
-            std::pair<std::uintptr_t, std::uintptr_t>(
-                {static_cast<uintptr_t>(i * 100), static_cast<uintptr_t>(i * 100 + MEM_REGION_SIZE)}),
-            memory_resource_id_,
+            MemoryRegionBounds{static_cast<uintptr_t>(i * 100 + 1U), static_cast<uintptr_t>(i * 100 + MEM_REGION_SIZE)},
             false);
-        memory_resource_id_++;
     }
 
     // and one writer thread, which first inserts and afterwards removes these memory regions
     auto writer_activity = [&memory_regions, this]() {
         for (auto& reg : memory_regions)
         {
-            EXPECT_TRUE(unit_.UpdateKnownRegion(reg.region_.first, reg.region_.second, reg.memory_resource_id_));
+            EXPECT_TRUE(unit_.UpdateKnownRegion(reg.region_.GetStartAddress(), reg.region_.GetEndAddress()));
             reg.inserted_.store(true, std::memory_order_seq_cst);
             std::this_thread::sleep_for(2ms);
         }
@@ -415,7 +378,7 @@ TEST_F(MemoryRegionMapTest, ConcurrentAccess)
         {
             // we have inserted it in the 1st run ... let's be hyper-cautious
             ASSERT_TRUE(reg.inserted_);
-            unit_.RemoveKnownRegion(reg.region_.first);
+            unit_.RemoveKnownRegion(reg.region_.GetStartAddress());
             reg.inserted_.store(false, std::memory_order_seq_cst);
             std::this_thread::sleep_for(2ms);
         }
@@ -431,7 +394,7 @@ TEST_F(MemoryRegionMapTest, ConcurrentAccess)
             const auto random_index = distrib(gen);
             const auto& region = memory_regions[static_cast<std::size_t>(random_index)];
             const bool inserted_before = region.inserted_.load(std::memory_order_seq_cst);
-            const auto bounds = unit_.GetBoundsFromAddress(region.region_.first);
+            const auto bounds = unit_.GetBoundsFromAddress(region.region_.GetStartAddress());
             const bool inserted_after = region.inserted_.load(std::memory_order_seq_cst);
 
             if (bounds.has_value())
@@ -439,12 +402,7 @@ TEST_F(MemoryRegionMapTest, ConcurrentAccess)
                 // if map contains region ...
                 // expect that inserted flag directly before or after the lookup was true
                 EXPECT_TRUE(inserted_before || inserted_after);
-
-                const auto& memory_bounds = bounds->first;
-                const auto memory_resource_identifier = bounds->second;
-                EXPECT_EQ(memory_bounds.first, region.region_.first);
-                EXPECT_EQ(memory_bounds.second, region.region_.second);
-                EXPECT_EQ(memory_resource_identifier, region.memory_resource_id_);
+                EXPECT_EQ(*bounds, region.region_);
             }
             else
             {
@@ -500,11 +458,10 @@ using MemoryRegionMapDeathTest = MemoryRegionMapTest;
 TEST_F(MemoryRegionMapDeathTest, RemovingNonExistantRegionTerminates)
 {
     const uint8_t start_address{50};
-    const auto memoryBounds = std::make_pair<std::uintptr_t, std::uintptr_t>(start_address, std::uintptr_t{100U});
-    const MemoryResourceIdentifier memory_resource_id{0U};
+    const MemoryRegionBounds memoryBounds{start_address, 100U};
 
     // Given a memory region is inserted into the MemoryRegionMap
-    EXPECT_TRUE(unit_.UpdateKnownRegion(memoryBounds.first, memoryBounds.second, memory_resource_id));
+    EXPECT_TRUE(unit_.UpdateKnownRegion(memoryBounds.GetStartAddress(), memoryBounds.GetEndAddress()));
 
     // When removing a memory range that hasn't been inserted
     // Then the program terminates
@@ -546,15 +503,13 @@ TEST_F(MockMemoryRegionMapDeathTest, ExceedingMaxConcurrentReadersWhenAcquiringV
 
 TEST_F(MockMemoryRegionMapDeathTest, FailingToAcquireWriteVersionWhenUpdatingRegionTerminates)
 {
-    const MemoryResourceIdentifier memory_resource_id{0U};
-
     // Given that the operation to update the chosen version's ref count to indicate that it is being currently
     // written to fails every time
     ExpectAcquireRegionVersionForOverwriteCannotAcquireRegion(is_death_test_);
 
     // When trying to update a known region
     // Then the program terminates
-    EXPECT_DEATH(unit_.UpdateKnownRegion(std::uintptr_t{50U}, std::uintptr_t{100}, memory_resource_id), ".*");
+    EXPECT_DEATH(unit_.UpdateKnownRegion(std::uintptr_t{50U}, std::uintptr_t{100}), ".*");
 }
 
 TEST_F(MockMemoryRegionMapDeathTest, FailingToAcquireWriteVersionWhenRemovingRegionTerminates)

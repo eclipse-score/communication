@@ -23,6 +23,6 @@ config_setting(
         ":use_typedshmd": "True",
     },
     visibility = [
-        "//score/memory/shared/typedshm/typedshm_wrapper:__subpackages__",
+        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:__subpackages__",
     ],
 )

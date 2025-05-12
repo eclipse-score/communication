@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/memory/shared/memory_resource_proxy.h"
 
+#include "score/memory/shared/memory_region_bounds.h"
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
 
@@ -28,10 +29,10 @@ namespace
 {
 
 bool IsMemoryResourceProxyWithinMemoryBounds(const MemoryResourceProxy* const ptr,
-                                             const std::pair<std::uintptr_t, std::uintptr_t>& memory_bounds)
+                                             const MemoryRegionBounds& memory_bounds)
 {
     const auto ptr_as_integer = CastPointerToInteger(static_cast<const void*>(ptr));
-    return ((ptr_as_integer >= memory_bounds.first) && (ptr_as_integer <= memory_bounds.second));
+    return ((ptr_as_integer >= memory_bounds.GetStartAddress()) && (ptr_as_integer <= memory_bounds.GetEndAddress()));
 }
 
 }  // namespace
@@ -92,8 +93,8 @@ void MemoryResourceProxy::PerformBoundsCheck(const std::uint64_t memory_identifi
     {
         score::mw::log::LogError("shm") << __func__ << __LINE__ << "MemoryResourceProxy at"
                                       << CastPointerToInteger(static_cast<const void*>(this))
-                                      << "is out of memory bounds: [" << memory_bounds->first << ":"
-                                      << memory_bounds->second << "]";
+                                      << "is out of memory bounds: [" << memory_bounds->GetStartAddress() << ":"
+                                      << memory_bounds->GetEndAddress() << "]";
         std::terminate();
     }
 }

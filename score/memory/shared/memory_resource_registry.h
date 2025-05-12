@@ -14,6 +14,7 @@
 #define BASELIBS_SCORE_MEMORY_SHARED_MEMORYRESOURCEREGISTRY_H
 
 #include "score/memory/shared/managed_memory_resource.h"
+#include "score/memory/shared/memory_region_bounds.h"
 #include "score/memory/shared/memory_region_map.h"
 
 #include "score/result/result.h"
@@ -53,8 +54,7 @@ class MemoryResourceRegistryAttorney;
 class MemoryResourceRegistry final
 {
   public:
-    using MemoryResourceIdentifier = MemoryRegionMap::MemoryResourceIdentifier;
-    using MemoryBounds = MemoryRegionMap::MemoryBounds;
+    using MemoryResourceIdentifier = std::uint64_t;
 
     ~MemoryResourceRegistry() = default;
     MemoryResourceRegistry(const MemoryResourceRegistry& other) = delete;
@@ -80,13 +80,12 @@ class MemoryResourceRegistry final
     /// \brief Get the memory bounds of the memory resource in which the provided pointer resides, if there is one.
     /// \return Returns the memory bounds of a memory resource if the pointer resides within the bounds of a memory
     ///         resource that has been registered with the MemoryResourceRegistry. Otherwise, returns an empty optional.
-    std::optional<std::pair<MemoryBounds, MemoryResourceIdentifier>> GetBoundsFromAddress(
-        const void* const pointer) const noexcept;
+    std::optional<MemoryRegionBounds> GetBoundsFromAddress(const void* const pointer) const noexcept;
 
     /// \brief Get the memory bounds of the memory resource corresponding to the provided identifier.
     /// \return Returns the memory bounds of a memory resource if a resource corresponding to the provided identifier
     ///         has been registered with the MemoryResourceRegistry. Otherwise, returns an error.
-    score::Result<MemoryBounds> GetBoundsFromIdentifier(const MemoryResourceIdentifier identifier) const noexcept;
+    score::Result<MemoryRegionBounds> GetBoundsFromIdentifier(const MemoryResourceIdentifier identifier) const noexcept;
 
   private:
     static void CheckResourceInput(score::memory::shared::ManagedMemoryResource* const resource);

@@ -260,10 +260,10 @@ class MemoryResourceRegistryMemoryBoundsTest : public MemoryResourceRegistryTest
     void* const secondBoundsStart_{reinterpret_cast<void*>(150)};
     void* const secondBoundsEnd_{reinterpret_cast<void*>(200)};
 
-    const std::pair<std::uintptr_t, std::uintptr_t> firstMemoryBounds{CastPointerToInteger(firstBoundsStart_),
-                                                                      CastPointerToInteger(firstBoundsEnd_)};
-    const std::pair<std::uintptr_t, std::uintptr_t> secondMemoryBounds{CastPointerToInteger(secondBoundsStart_),
-                                                                       CastPointerToInteger(secondBoundsEnd_)};
+    const MemoryRegionBounds firstMemoryBounds{CastPointerToInteger(firstBoundsStart_),
+                                               CastPointerToInteger(firstBoundsEnd_)};
+    const MemoryRegionBounds secondMemoryBounds{CastPointerToInteger(secondBoundsStart_),
+                                                CastPointerToInteger(secondBoundsEnd_)};
 
     BasicMemoryResource resource_{{CastPointerToInteger(firstBoundsStart_), CastPointerToInteger(firstBoundsEnd_)}};
     BasicMemoryResource resource2_{{CastPointerToInteger(secondBoundsStart_), CastPointerToInteger(secondBoundsEnd_)}};
@@ -303,19 +303,12 @@ TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsMemoryBoundsForPointersInB
     ASSERT_TRUE(secondFoundMemoryBounds1.has_value());
     ASSERT_TRUE(secondFoundMemoryBounds2.has_value());
 
-    EXPECT_EQ(firstFoundMemoryBounds0.value().first, firstMemoryBounds);
-    EXPECT_EQ(firstFoundMemoryBounds1.value().first, firstMemoryBounds);
-    EXPECT_EQ(firstFoundMemoryBounds2.value().first, firstMemoryBounds);
-    EXPECT_EQ(secondFoundMemoryBounds0.value().first, secondMemoryBounds);
-    EXPECT_EQ(secondFoundMemoryBounds1.value().first, secondMemoryBounds);
-    EXPECT_EQ(secondFoundMemoryBounds2.value().first, secondMemoryBounds);
-
-    EXPECT_EQ(firstFoundMemoryBounds0.value().second, memory_resource_id0_);
-    EXPECT_EQ(firstFoundMemoryBounds1.value().second, memory_resource_id0_);
-    EXPECT_EQ(firstFoundMemoryBounds2.value().second, memory_resource_id0_);
-    EXPECT_EQ(secondFoundMemoryBounds0.value().second, memory_resource_id1_);
-    EXPECT_EQ(secondFoundMemoryBounds1.value().second, memory_resource_id1_);
-    EXPECT_EQ(secondFoundMemoryBounds2.value().second, memory_resource_id1_);
+    EXPECT_EQ(firstFoundMemoryBounds0.value(), firstMemoryBounds);
+    EXPECT_EQ(firstFoundMemoryBounds1.value(), firstMemoryBounds);
+    EXPECT_EQ(firstFoundMemoryBounds2.value(), firstMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds0.value(), secondMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds1.value(), secondMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds2.value(), secondMemoryBounds);
 }
 
 TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsNullMemoryBoundsForPointersOutOfBounds)
@@ -347,10 +340,8 @@ TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsMemoryBoundsFromIdentifier
     ASSERT_TRUE(firstFoundMemoryBounds.has_value());
     ASSERT_TRUE(secondFoundMemoryBounds.has_value());
 
-    EXPECT_EQ(firstFoundMemoryBounds->first, firstMemoryBounds.first);
-    EXPECT_EQ(firstFoundMemoryBounds->second, firstMemoryBounds.second);
-    EXPECT_EQ(secondFoundMemoryBounds->first, secondFoundMemoryBounds->first);
-    EXPECT_EQ(secondFoundMemoryBounds->second, secondFoundMemoryBounds->second);
+    EXPECT_EQ(firstFoundMemoryBounds, firstMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds, secondFoundMemoryBounds);
 }
 
 TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsErrorForInvalidIdentifier)
@@ -423,8 +414,8 @@ TEST_F(MemoryResourceRegistryOverlappingMemoryBoundsTest, CannotGetBoundsWithPoi
 
     // Then the returned region should be correct
     ASSERT_TRUE(region_from_identifier.has_value());
-    EXPECT_EQ(region_from_identifier->first, start_address);
-    EXPECT_EQ(region_from_identifier->second, end_address);
+    EXPECT_EQ(region_from_identifier->GetStartAddress(), start_address);
+    EXPECT_EQ(region_from_identifier->GetEndAddress(), end_address);
 
     // and when get the bounds for a pointer within the region
     auto* const pointer_in_region = reinterpret_cast<void*>(15);

@@ -10,8 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("//bazel:unit_tests.bzl", "cc_gtest_unit_test")
-load("//score/os:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
+load("@score-baselibs//score/os:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "sealedshm",
@@ -25,15 +25,15 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//score/memory/shared:__subpackages__",
-        "//score/memory/shared/test:__subpackages__",
+        "@score-baselibs//score/memory/shared:__subpackages__",
+        "@score-baselibs//score/memory/shared/test:__subpackages__",
     ],
     deps = [
-        "//score/os:errno_logging",
+        "@score-baselibs//score/os:errno_logging",
         "@score-baselibs//score/language/futurecpp",
     ] + select({
         "@platforms//os:qnx": [
-            "//score/os/qnx:mman",
+            "@score-baselibs//score/os/qnx:mman",
         ],
         "//conditions:default": [],
     }),
@@ -51,10 +51,10 @@ cc_library(
         "sealed_shm_mock.h",
     ],
     visibility = [
-        "//score/memory/shared:__pkg__",
+        "@score-baselibs//score/memory/shared:__pkg__",
     ],
     deps = [
-        "//score/os:errno_logging",
+        "@score-baselibs//score/os:errno_logging",
         "@googletest//:gtest",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -66,15 +66,15 @@ cc_gtest_unit_test(
         "sealed_shm_test.cpp",
     ],
     visibility = [
-        "//score/memory:__pkg__",
-        # "@ddad//score/memory:__pkg__",
+        "@score-baselibs//score/memory:__pkg__",
+        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":sealedshm",
         ":sealedshm_mock",
-        "//score/os:stat",
+        "@score-baselibs//score/os:stat",
     ] + select({
         "@platforms//os:linux": [],
-        "@platforms//os:qnx": ["//score/os/mocklib/qnx:mman_mock"],
+        "@platforms//os:qnx": ["@score-baselibs//score/os/mocklib/qnx:mman_mock"],
     }),
 )

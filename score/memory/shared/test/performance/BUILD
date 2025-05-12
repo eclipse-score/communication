@@ -14,10 +14,10 @@ cc_binary(
     name = "OffsetPtrBenchmark",
     srcs = ["offset_ptr_benchmark.cpp"],
     visibility = [
-        # "@ddad//score/memory/shared/test:__subpackages__",
+        # "@ddad@score-baselibs//score/memory/shared/test:__subpackages__",
     ],
-    deps = ["//score/memory/shared"] + [
-        "//score/mw/log",
+    deps = ["@score-baselibs//score/memory/shared"] + [
+        "@score-baselibs//score/mw/log",
         "//third_party/boost:program_options",
     ],
 )

@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 package(default_visibility = [
-    # "@ddad//score/memory:__subpackages__",
+    # "@ddad@score-baselibs//score/memory:__subpackages__",
 ])
 
 # *******************************************************************************
@@ -43,7 +43,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
-        # "@ddad//score/memory:__subpackages__",
+        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -61,7 +61,7 @@ cc_library(
     visibility = [
         "//platform/aas/lib/serialization:__subpackages__",
         "//platform/aas/pas/sysmon/library:__subpackages__",
-        # "@ddad//score/memory:__subpackages__",
+        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -123,8 +123,8 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//score/mw/log:__subpackages__",
-        # "@ddad//score/memory:__subpackages__",
+        "@score-baselibs//score/mw/log:__subpackages__",
+        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -142,7 +142,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public",
-        # "@ddad//score/memory:__subpackages__",
+        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/language/futurecpp",
@@ -227,13 +227,13 @@ test_cases_common = [
     ":pmr_ring_buffer_unit_test",
     ":split_string_view_unit_test",
     ":string_comparison_adaptor_unit_test",
-    "//score/memory/shared/flock:unit_test",
-    "//score/memory/shared:unit_test",
-    "//score/memory/shared:shared_memory_factory_test",
-    "//score/memory/shared:pointer_arithmetic_util_precondition_violation_test",
-    "//score/memory/shared:offset_ptr_precondition_violation_test",
-    "//score/memory/shared:offset_ptr_test",
-    "//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test",
+    "@score-baselibs//score/memory/shared/flock:unit_test",
+    "@score-baselibs//score/memory/shared:unit_test",
+    "@score-baselibs//score/memory/shared:shared_memory_factory_test",
+    "@score-baselibs//score/memory/shared:pointer_arithmetic_util_precondition_violation_test",
+    "@score-baselibs//score/memory/shared:offset_ptr_precondition_violation_test",
+    "@score-baselibs//score/memory/shared:offset_ptr_test",
+    "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test",
 ]
 
 test_suite(

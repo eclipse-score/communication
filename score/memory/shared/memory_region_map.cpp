@@ -34,9 +34,8 @@ namespace
 {
 
 bool DoesRegionIteratorOverlapWithExistingRegionInMap(
-    const std::map<std::uintptr_t, std::pair<std::uintptr_t, MemoryRegionMap::MemoryResourceIdentifier>>::const_iterator
-        region_it,
-    const std::map<std::uintptr_t, std::pair<std::uintptr_t, MemoryRegionMap::MemoryResourceIdentifier>>& map) noexcept
+    const std::map<std::uintptr_t, std::uintptr_t>::const_iterator region_it,
+    const std::map<std::uintptr_t, std::uintptr_t>& map) noexcept
 {
     if (map.size() == 1U)
     {
@@ -49,7 +48,7 @@ bool DoesRegionIteratorOverlapWithExistingRegionInMap(
     {
         auto previous_region_it = std::prev(region_it);
 
-        const auto previous_region_end_address = previous_region_it->second.first;
+        const auto previous_region_end_address = previous_region_it->second;
         const auto current_region_start_address = region_it->first;
 
         if (current_region_start_address < previous_region_end_address)
@@ -64,7 +63,7 @@ bool DoesRegionIteratorOverlapWithExistingRegionInMap(
     if (next_region_it != map.cend())
     {
         const auto next_region_start_address = next_region_it->first;
-        const auto current_region_end_address = region_it->second.first;
+        const auto current_region_end_address = region_it->second;
 
         if (current_region_end_address > next_region_start_address)
         {
@@ -135,10 +134,8 @@ template <template <class> class AtomicIndirectorType>
 // process will terminate if an invalid index is provided and do not rely on any stack unwinding in case of an implicit
 // terminate.
 // coverity[autosar_cpp14_a15_5_3_violation]
-bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(
-    const std::uintptr_t memory_range_start,
-    const std::uintptr_t memory_range_end,
-    const MemoryResourceIdentifier memory_resource_identifier) noexcept
+bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(const std::uintptr_t memory_range_start,
+                                                                  const std::uintptr_t memory_range_end) noexcept
 {
     // acquire a version slot, which is unused to copy the current (latest) version into it
     auto new_version_idx = AcquireRegionVersionForOverwrite();
@@ -147,8 +144,7 @@ bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(
         //  copy latest known regions into our new version
         auto& new_known_regions = known_regions_versions_.at(static_cast<std::size_t>(new_version_idx.value()));
         new_known_regions = known_regions_versions_.at(static_cast<std::size_t>(latest_known_region_version_));
-        const auto insertion_result =
-            new_known_regions.insert({memory_range_start, {memory_range_end, memory_resource_identifier}});
+        const auto insertion_result = new_known_regions.insert({memory_range_start, memory_range_end});
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(insertion_result.second);
 
         // Check that the inserted range does not overlap with the previous memory region in the ordered map
@@ -237,7 +233,7 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::ClearKnownRegions() noexcept
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation] See rationale for std::array:at() autosar_cpp14_a15_5_3_violation above
 auto MemoryRegionMapImpl<AtomicIndirectorType>::GetBoundsFromAddress(const std::uintptr_t pointer) const noexcept
-    -> std::optional<std::pair<MemoryBounds, MemoryResourceIdentifier>>
+    -> std::optional<MemoryRegionBounds>
 {
     auto latest_regions_version_index = AcquireLatestRegionVersionForRead();
 
@@ -266,14 +262,13 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::GetBoundsFromAddress(const std::
     --it;
 
     const auto start_address = it->first;
-    const auto end_address = it->second.first;
-    const auto memory_resource_identifier = it->second.second;
+    const auto end_address = it->second;
 
     const bool pointer_in_memory_bounds = ((pointer >= start_address) && (pointer <= end_address));
     if (pointer_in_memory_bounds)
     {
-        const auto memory_bounds = std::make_pair(start_address, end_address);
-        return std::make_pair(memory_bounds, memory_resource_identifier);
+        const MemoryRegionBounds memory_bounds{start_address, end_address};
+        return memory_bounds;
     }
     else
     {

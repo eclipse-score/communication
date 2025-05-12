@@ -11,13 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("//score/os:common_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score-baselibs//score/os:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 selects.config_setting_group(
     name = "QNX_AND_USE_TYPED_SHMD",
     match_all = [
         "@platforms//os:qnx",
-        "//score/memory/shared/flags:config_use_typedshmd",
+        "@score-baselibs//score/memory/shared/flags:config_use_typedshmd",
     ],
 )
 
@@ -30,7 +30,7 @@ cc_library(
         "typed_memory.h",
     ],
     defines = select({
-        "//score/memory/shared/flags:config_use_typedshmd": [
+        "@score-baselibs//score/memory/shared/flags:config_use_typedshmd": [
             "USE_TYPEDSHMD",
             "ALLOW_QM",
         ],
@@ -42,13 +42,13 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-        "//score/memory/shared:user_permission",
-        "//score/os:errno_logging",
-        "//score/os/utils/acl",
+        "@score-baselibs//score/memory/shared:user_permission",
+        "@score-baselibs//score/os:errno_logging",
+        "@score-baselibs//score/os/utils/acl",
         "@score-baselibs//score/language/futurecpp",
     ] + select({
         ":QNX_AND_USE_TYPED_SHMD": [
-            "//score/os/qnx:mman",
+            "@score-baselibs//score/os/qnx:mman",
             # "@ddad//platform/aas/intc/typedmemd/code/clientlib:typedmemd_clientlib",
             # "@ddad//platform/aas/intc/typedmemd/code/clientlib:typedmemd_clientlib_interface",
         ],
@@ -66,16 +66,16 @@ cc_test(
         "unit",
     ],
     target_compatible_with = select({
-        "//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
+        "@score-baselibs//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = [
-        "//score/memory:__pkg__",
-        # "@ddad//score/memory:__pkg__",
+        "@score-baselibs//score/memory:__pkg__",
+        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
-        "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
-        "//score/os/mocklib/qnx:mman_mock",
+        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
+        "@score-baselibs//score/os/mocklib/qnx:mman_mock",
         "@googletest//:gtest_main",
         # "@ddad//platform/aas/intc/typedmemd/code/clientlib/mock:typedsharedmemory_mock",
     ],

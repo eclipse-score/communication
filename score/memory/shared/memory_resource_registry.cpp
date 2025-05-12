@@ -80,9 +80,7 @@ auto score::memory::shared::MemoryResourceRegistry::insert_resource(
         const auto memory_range_start_as_integer = CastPointerToInteger(memory_range_start);
         const auto memory_range_end_as_integer = CastPointerToInteger(memory_range_end);
 
-        const auto memory_resource_identifier = input.first;
-        return region_map_.UpdateKnownRegion(
-            memory_range_start_as_integer, memory_range_end_as_integer, memory_resource_identifier);
+        return region_map_.UpdateKnownRegion(memory_range_start_as_integer, memory_range_end_as_integer);
     }
     return result.second;
 }
@@ -111,7 +109,7 @@ auto score::memory::shared::MemoryResourceRegistry::clear() noexcept -> void
 }
 
 auto score::memory::shared::MemoryResourceRegistry::GetBoundsFromIdentifier(
-    const MemoryResourceIdentifier identifier) const noexcept -> score::Result<MemoryBounds>
+    const MemoryResourceIdentifier identifier) const noexcept -> score::Result<MemoryRegionBounds>
 {
     std::shared_lock<std::shared_timed_mutex> lock{this->mutex_};
     const auto resource_it = this->registry_.find(identifier);
@@ -127,7 +125,7 @@ auto score::memory::shared::MemoryResourceRegistry::GetBoundsFromIdentifier(
 }
 
 auto score::memory::shared::MemoryResourceRegistry::GetBoundsFromAddress(const void* const pointer) const noexcept
-    -> std::optional<std::pair<MemoryBounds, MemoryResourceIdentifier>>
+    -> std::optional<MemoryRegionBounds>
 {
     const auto pointer_as_integer = CastPointerToInteger(pointer);
     return region_map_.GetBoundsFromAddress(pointer_as_integer);
