@@ -404,10 +404,11 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
+        ":register_pid_fake",
+        ":uid_pid_mapping_entry",
         "@score-baselibs//score/containers:dynamic_array",
         "@score-baselibs//score/memory/shared:atomic_indirector",
         "@score-baselibs//score/memory/shared:types",
-        ":uid_pid_mapping_entry"
     ],
 )
 
@@ -420,6 +421,18 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
+    ],
+)
+
+cc_library(
+    name = "register_pid_fake",
+    srcs = ["register_pid_fake.cpp"],
+    hdrs = ["register_pid_fake.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":uid_pid_mapping_entry",
+        "@score-baselibs//score/containers:dynamic_array",
     ],
 )
 

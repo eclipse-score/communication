@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_UID_PID_MAPPING_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_UID_PID_MAPPING_H
 
+#include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
 #include "score/mw/com/impl/bindings/lola/uid_pid_mapping_entry.h"
 
 #include "score/containers/dynamic_array.h"
@@ -94,6 +95,12 @@ class UidPidMapping
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != mapping_entries_.begin());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != mapping_entries_.end());
+
+        if (register_pid_fake_ != nullptr)
+        {
+            return register_pid_fake_->RegisterPid(mapping_entries_.begin(), mapping_entries_.end(), uid, pid);
+        }
+
         // Suppress the rule AUTOSAR C++14 A5-3-2: "Null pointers shall not be dereferenced.".
         // Whereas, both begin() and end() iterators of "mapping_entries_" (DynamicArray type) return pointer to
         // element. Therefore, the provided assertions check this rule requirement, whether the iterators return a
@@ -103,11 +110,20 @@ class UidPidMapping
             mapping_entries_.begin(), mapping_entries_.end(), uid, pid);
     };
 
+    static void InjectRegisterPidFake(RegisterPidFake& register_pid_fake)
+    {
+        register_pid_fake_ = &register_pid_fake;
+    }
+
   private:
     using mapping_entry_alloc = typename std::allocator_traits<Allocator>::template rebind_alloc<UidPidMappingEntry>;
 
     score::containers::DynamicArray<UidPidMappingEntry, mapping_entry_alloc> mapping_entries_;
+    static RegisterPidFake* register_pid_fake_;
 };
+
+template <typename Allocator>
+RegisterPidFake* UidPidMapping<Allocator>::register_pid_fake_{nullptr};
 
 }  // namespace score::mw::com::impl::lola
 
