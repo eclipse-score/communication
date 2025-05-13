@@ -160,7 +160,8 @@ TEST(MemoryRegionBoundsEqualToOperatorTest, ComparingTwoMemoryRegionBoundsWithDi
 
     // When comparing the two
     // Then the result is false
-    EXPECT_NE(memory_region_bounds_1, memory_region_bounds_2);
+    EXPECT_FALSE(memory_region_bounds_1 == memory_region_bounds_2);
+    EXPECT_TRUE(memory_region_bounds_1 != memory_region_bounds_2);
 }
 
 TEST(MemoryRegionBoundsEqualToOperatorTest, ComparingTwoMemoryRegionBoundsWithDifferentEndAddressesReturnsFalse)
@@ -171,7 +172,8 @@ TEST(MemoryRegionBoundsEqualToOperatorTest, ComparingTwoMemoryRegionBoundsWithDi
 
     // When comparing the two
     // Then the result is false
-    EXPECT_NE(memory_region_bounds_1, memory_region_bounds_2);
+    EXPECT_FALSE(memory_region_bounds_1 == memory_region_bounds_2);
+    EXPECT_TRUE(memory_region_bounds_1 != memory_region_bounds_2);
 }
 
 }  // namespace
