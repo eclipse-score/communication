@@ -397,7 +397,7 @@ cc_library(
     hdrs = ["proxy_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -413,7 +413,7 @@ cc_library(
     hdrs = ["proxy_event_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -429,7 +429,7 @@ cc_library(
     hdrs = ["proxy_field_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -445,7 +445,7 @@ cc_library(
     hdrs = ["skeleton_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -461,7 +461,7 @@ cc_library(
     hdrs = ["skeleton_event_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
@@ -477,7 +477,7 @@ cc_library(
     hdrs = ["skeleton_field_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [

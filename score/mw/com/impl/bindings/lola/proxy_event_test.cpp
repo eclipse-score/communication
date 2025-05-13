@@ -235,9 +235,9 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
     EXPECT_EQ(num_samples.value(), 1);
     EXPECT_EQ(num_samples.value(), num_callbacks_called);
 
-    const EventSlotStatus::EventTimeStamp input_timestscore_2{1U};
+    const EventSlotStatus::EventTimeStamp input_timestscore_future_cpp_2{1U};
     const std::uint32_t input_value_2{42U};
-    this->PutData(input_value_2, input_timestscore_2);
+    this->PutData(input_value_2, input_timestscore_future_cpp_2);
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(0));
     TrackerGuardFactory new_guard_factory{this->sample_reference_tracker_.Allocate(37U)};

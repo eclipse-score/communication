@@ -114,7 +114,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
     std::optional<EventDataControlComposite> event_data_control_composite_;
-    EventSlotStatus::EventTimeStamp current_timestscore_;
+    EventSlotStatus::EventTimeStamp current_timestscore_future_cpp_;
     bool qm_disconnect_;
     impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data_;
     /// \brief optional guard for tracing transaction log registration/un-registration - optional as only needed, when
@@ -135,7 +135,7 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
       event_properties_{properties},
       event_data_storage_{nullptr},
       event_data_control_composite_{std::nullopt},
-      current_timestscore_{1U},
+      current_timestscore_future_cpp_{1U},
       qm_disconnect_{false},
       skeleton_event_tracing_data_{skeleton_event_tracing_data},
       transaction_log_registration_guard_{}
@@ -177,8 +177,8 @@ ResultBlank SkeletonEvent<SampleType>::Send(impl::SampleAllocateePtr<SampleType>
     // not lead to data loss.".
     // The current logic will not exceed the maximum value.
     // coverity[autosar_cpp14_a4_7_1_violation]
-    ++current_timestscore_;
-    event_data_control_composite_->EventReady(slot, current_timestscore_);
+    ++current_timestscore_future_cpp_;
+    event_data_control_composite_->EventReady(slot, current_timestscore_future_cpp_);
 
     if (send_trace_callback.has_value())
     {
@@ -257,7 +257,7 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                            "Defensive programming as event_data_control_composite_ is set by Register above.");
-    current_timestscore_ = event_data_control_composite_.value().GetLatestTimestamp();
+    current_timestscore_future_cpp_ = event_data_control_composite_.value().GetLatestTimestamp();
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
     const bool tracing_for_skeleton_event_enabled =
