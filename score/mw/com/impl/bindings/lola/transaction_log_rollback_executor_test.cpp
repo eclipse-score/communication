@@ -13,13 +13,11 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
-#include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
 #include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
+#include "score/mw/com/impl/bindings/lola/runtime.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
-#include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
-#include "score/mw/com/impl/bindings/lola/uid_pid_mapping.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 
@@ -27,9 +25,6 @@
 
 #include <score/jthread.hpp>
 #include <gtest/gtest.h>
-#include <sys/types.h>
-#include <memory>
-#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -76,22 +71,13 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
             .WillByDefault(Return(&lola_runtime_mock_));
         ON_CALL(lola_runtime_mock_, GetPid()).WillByDefault(Return(kDummyCurrentConsumerPid));
         ON_CALL(lola_runtime_mock_, GetLolaMessaging).WillByDefault(ReturnRef(message_passing_service_mock_));
-        ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization_));
-    }
-
-    TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
-    {
-        service_data_control_ = std::make_unique<ServiceDataControl>(memory_resource_mock_.getMemoryResourceProxy());
-        unit_ = std::make_unique<TransactionLogRollbackExecutor>(
-            *service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId);
 
         AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
-        return *this;
     }
 
     void AddEvent(const ElementFqId element_fq_id, const SkeletonEventProperties skeleton_event_properties) noexcept
     {
-        const auto emplace_result = service_data_control_->event_controls_.emplace(
+        const auto emplace_result = service_data_control_.event_controls_.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(element_fq_id),
             std::forward_as_tuple(skeleton_event_properties.number_of_slots,
@@ -103,21 +89,21 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     void AddUidPidMapping(uid_t uid, pid_t pid) noexcept
     {
-        const auto result_pid = service_data_control_->uid_pid_mapping_.RegisterPid(uid, pid);
+        const auto result_pid = service_data_control_.uid_pid_mapping_.RegisterPid(uid, pid);
         ASSERT_TRUE(result_pid.has_value());
         ASSERT_EQ(result_pid.value(), pid);
     }
 
     EventDataControl& GetEventDataControl(const ElementFqId element_fq_id) noexcept
     {
-        auto find_result = service_data_control_->event_controls_.find(element_fq_id);
-        EXPECT_NE(find_result, service_data_control_->event_controls_.cend());
+        auto find_result = service_data_control_.event_controls_.find(element_fq_id);
+        EXPECT_NE(find_result, service_data_control_.event_controls_.cend());
         return find_result->second.data_control;
     }
 
-    void InsertServiceDataControl() noexcept
+    void InsertServiceDataControl(RollbackSynchronization& rollback_synchronization) noexcept
     {
-        auto rollback_mutex = rollback_synchronization_.GetMutex(service_data_control_.get());
+        auto rollback_mutex = rollback_synchronization.GetMutex(&service_data_control_);
         // we expect that the mutex did not yet exist, but has been created by our call.
         ASSERT_FALSE(rollback_mutex.second);
     }
@@ -142,33 +128,40 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     RuntimeMockGuard runtime_mock_guard_{};
     lola::RuntimeMock lola_runtime_mock_{};
     memory::shared::SharedMemoryResourceHeapAllocatorMock memory_resource_mock_{kMemoryResourceId};
+    ServiceDataControl service_data_control_{memory_resource_mock_.getMemoryResourceProxy()};
     MessagePassingServiceMock message_passing_service_mock_{};
-
-    std::unique_ptr<ServiceDataControl> service_data_control_{nullptr};
-    std::unique_ptr<TransactionLogRollbackExecutor> unit_{nullptr};
-    RollbackSynchronization rollback_synchronization_{};
 };
 
 using TransactionLogRegisterProxyElementFixture = TransactionLogRollbackExecutorFixture;
 TEST_F(TransactionLogRegisterProxyElementFixture, RegisteringProxyElementLeadsToActiveLogNode)
 {
-    WithTransactionLogRollbackExecutor();
-    RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
+    auto& event_data_control = GetEventDataControl(kDummyElementFqId);
+    auto& transaction_log_set = event_data_control.GetTransactionLogSet();
+    const auto transaction_log_index = transaction_log_set.RegisterProxyElement(kDummyTransactionLogId).value();
+
+    auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
+    auto& transaction_log_node = transaction_logs.at(transaction_log_index);
+
+    EXPECT_TRUE(transaction_log_node.IsActive());
+    EXPECT_FALSE(transaction_log_node.NeedsRollback());
 }
 
 using TransactionLogRollbackExecutorRollbackLogsFixture = TransactionLogRollbackExecutorFixture;
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillDoNothingWhenServiceDataControlAlreadyInMap)
 {
+    RollbackSynchronization rollback_synchronization{};
     // Given our current service instance (which the TransactionLogRollbackExecutor unit under test deals with) is
     // already registered within the global RollbackSynchronization
-    WithTransactionLogRollbackExecutor();
-    InsertServiceDataControl();
+    InsertServiceDataControl(rollback_synchronization);
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
 
     // and given our unit based on a transaction log set with one active log node
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
     auto& transaction_log_node = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
 
     // when calling RollbackTransactionLogs()
-    auto result = unit_->RollbackTransactionLogs();
+    auto result = unit.RollbackTransactionLogs();
     // expect, that it succeeded
     EXPECT_TRUE(result.has_value());
     // and expect, that the log node is still there and active (nothing has changed)
@@ -179,49 +172,59 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillDoNothingWhenServi
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture,
        WillCreateRollbackSynchronizationEntryWhenRollbackSynchronizationEntryDoesNotAlreadyExist)
 {
-    WithTransactionLogRollbackExecutor();
+    // given an empty RollbackSynchronization
+    RollbackSynchronization rollback_synchronization{};
+    // which gets returned by the lola runtime
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
 
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
     // when RollbackTransactionLogs() has been called
-    unit_->RollbackTransactionLogs();
-
+    unit.RollbackTransactionLogs();
     // expect, that the synchronization mutex for service_data_control_ exists afterward
-    auto [mutex, mutex_existed] = rollback_synchronization_.GetMutex(service_data_control_.get());
+    auto [mutex, mutex_existed] = rollback_synchronization.GetMutex(&service_data_control_);
     EXPECT_EQ(mutex_existed, true);
 }
 
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillNotifyProviderOutdatedPidWhenPidAlreadyRegistered)
 {
-    WithTransactionLogRollbackExecutor();
-
     // given, we already have an existing uid/pid mapping registered for our uid (= kDummyTransactionLogId)
     AddUidPidMapping(kDummyTransactionLogId, kDummyOldConsumerPid);
+    RollbackSynchronization rollback_synchronization{};
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
 
     // expect, that the provider will get notified about the old/previous pid being outdated
     EXPECT_CALL(message_passing_service_mock_,
                 NotifyOutdatedNodeId(kDummyQualityType, kDummyOldConsumerPid, kDummyProviderPid));
-
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
     // when RollbackTransactionLogs() is called.
-    auto result = unit_->RollbackTransactionLogs();
+    auto result = unit.RollbackTransactionLogs();
     EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillNotNotifyProviderOutdatedPidWhenPidNotAlreadyRegistered)
 {
-    WithTransactionLogRollbackExecutor();
-
     // given, we don't have yet an existing uid/pid mapping registered for our uid (= kDummyTransactionLogId)
+    RollbackSynchronization rollback_synchronization{};
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
 
     // expect, that NO provider notification happens about an old/previous pid being outdated
     EXPECT_CALL(message_passing_service_mock_, NotifyOutdatedNodeId(_, _, _)).Times(0);
-
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
     // when RollbackTransactionLogs() is called.
-    auto result = unit_->RollbackTransactionLogs();
+    auto result = unit.RollbackTransactionLogs();
     EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, RollbackTransactionLogsCanBeCalledMultiThreaded)
 {
-    WithTransactionLogRollbackExecutor();
+    RollbackSynchronization rollback_synchronization{};
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
+
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
 
     // We do the registration in a pre-step so that the threads are created as close as possible to each other to
     // increase the chance of thread contention.
@@ -236,8 +239,8 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, RollbackTransactionLog
     std::vector<score::cpp::jthread> threads{};
     for (std::size_t i = 0; i < kMaxSubscribers; ++i)
     {
-        threads.emplace_back([this]() noexcept {
-            unit_->RollbackTransactionLogs();
+        threads.emplace_back([&unit]() noexcept {
+            unit.RollbackTransactionLogs();
         });
     }
 
@@ -257,24 +260,28 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, RollbackTransactionLog
 
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, CallingRollbackTransactionLogsWillRollBackOneLogPerCall)
 {
-    WithTransactionLogRollbackExecutor();
+    RollbackSynchronization rollback_synchronization{};
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
+
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
 
     auto& transaction_log_node_0 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
     auto& transaction_log_node_1 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
 
-    ASSERT_TRUE(unit_->RollbackTransactionLogs().has_value());
+    ASSERT_TRUE(unit.RollbackTransactionLogs().has_value());
 
     EXPECT_FALSE(transaction_log_node_0.IsActive());
     EXPECT_FALSE(transaction_log_node_0.NeedsRollback());
     EXPECT_TRUE(transaction_log_node_1.IsActive());
     EXPECT_TRUE(transaction_log_node_1.NeedsRollback());
 
-    ASSERT_TRUE(unit_->RollbackTransactionLogs().has_value());
+    ASSERT_TRUE(unit.RollbackTransactionLogs().has_value());
 
     EXPECT_FALSE(transaction_log_node_1.IsActive());
     EXPECT_FALSE(transaction_log_node_1.NeedsRollback());
 
-    ASSERT_TRUE(unit_->RollbackTransactionLogs().has_value());
+    ASSERT_TRUE(unit.RollbackTransactionLogs().has_value());
 }
 
 /// \brief test case checks, that rollback of transaction logs for a given service instance is only done
@@ -288,15 +295,20 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, CallingRollbackTransac
 ///
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillOnlyRollBackLogsInFirstCall)
 {
-    // Given a unit under test for a given service instance and given proxy application (identified by
+    // Given an empty/default constructed RollbackSynchronization and a LoLa runtime always returning it
+    RollbackSynchronization rollback_synchronization{};
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
+
+    // and given a unit under test for a given service instance and given proxy application (identified by
     // kDummyTransactionLogId)
-    WithTransactionLogRollbackExecutor();
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
 
     // when we register a proxy-element
     auto& transaction_log_node_0 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
 
     // expect, that a rollback of transaction logs is successful
-    ASSERT_TRUE(unit_->RollbackTransactionLogs().has_value());
+    ASSERT_TRUE(unit.RollbackTransactionLogs().has_value());
     // and that the transaction log for the previously registered proxy element is NOT active/does NOT need a rollback
     EXPECT_FALSE(transaction_log_node_0.IsActive());
     EXPECT_FALSE(transaction_log_node_0.NeedsRollback());
@@ -304,7 +316,7 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillOnlyRollBackLogsIn
     // when we register the same proxy element a 2nd time (simulating a 2nd local proxy for the same service instance)
     auto& transaction_log_node_1 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
     // expect, that call to RollbackTransactionLogs() succeeds
-    ASSERT_TRUE(unit_->RollbackTransactionLogs().has_value());
+    ASSERT_TRUE(unit.RollbackTransactionLogs().has_value());
     // and expect, that it did nothing -> i.e. the transaction log of the 2nd registered proxy element is still active
     EXPECT_TRUE(transaction_log_node_1.IsActive());
     // and it does NOT need rollback.
@@ -313,21 +325,26 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillOnlyRollBackLogsIn
 
 TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillReturnErrorIfAnyLogsFailToRollBack)
 {
-    WithTransactionLogRollbackExecutor();
+    // Given an empty/default constructed RollbackSynchronization and a LoLa runtime always returning it
+    RollbackSynchronization rollback_synchronization{};
+    ON_CALL(lola_runtime_mock_, GetRollbackSynchronization()).WillByDefault(ReturnRef(rollback_synchronization));
+
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
 
     auto& transaction_log_node_0 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
     auto& transaction_log_node_1 = RegisterProxyElementWithTransactionLogSet(kDummyElementFqId, kDummyTransactionLogId);
 
     transaction_log_node_1.GetTransactionLog().SubscribeTransactionBegin(0U);
 
-    ASSERT_TRUE(unit_->RollbackTransactionLogs().has_value());
+    ASSERT_TRUE(unit.RollbackTransactionLogs().has_value());
 
     EXPECT_FALSE(transaction_log_node_0.IsActive());
     EXPECT_FALSE(transaction_log_node_0.NeedsRollback());
     EXPECT_TRUE(transaction_log_node_1.IsActive());
     EXPECT_TRUE(transaction_log_node_1.NeedsRollback());
 
-    ASSERT_FALSE(unit_->RollbackTransactionLogs().has_value());
+    ASSERT_FALSE(unit.RollbackTransactionLogs().has_value());
 
     EXPECT_TRUE(transaction_log_node_1.IsActive());
     EXPECT_TRUE(transaction_log_node_1.NeedsRollback());
@@ -336,26 +353,10 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillReturnErrorIfAnyLo
 using TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture = TransactionLogRollbackExecutorFixture;
 TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToGetLolaRuntimeTerminates)
 {
-    WithTransactionLogRollbackExecutor();
-
     ON_CALL(runtime_mock_guard_.mock_, GetBindingRuntime(BindingType::kLoLa)).WillByDefault(Return(nullptr));
-    EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
-}
-
-TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToRegisterPidTerminates)
-{
-    WithTransactionLogRollbackExecutor();
-
-    // Given that RegisterPid will return an empty result when called
-    RegisterPidFake register_pid_fake{};
-    const std::optional<pid_t> empty_register_pid_result{};
-    register_pid_fake.InjectRegisterPidResult(empty_register_pid_result);
-    UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>::InjectRegisterPidFake(
-        register_pid_fake);
-
-    // When calling RollbackTransactionLogs
-    // Then the program terminates
-    EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
+    TransactionLogRollbackExecutor unit{
+        service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId};
+    EXPECT_DEATH(unit.RollbackTransactionLogs(), ".*");
 }
 
 }  // namespace

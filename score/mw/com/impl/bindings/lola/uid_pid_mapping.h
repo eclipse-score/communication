@@ -13,21 +13,51 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_UID_PID_MAPPING_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_UID_PID_MAPPING_H
 
-#include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
-#include "score/mw/com/impl/bindings/lola/uid_pid_mapping_entry.h"
-
 #include "score/containers/dynamic_array.h"
 #include "score/memory/shared/atomic_indirector.h"
 
 #include <sys/types.h>
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <utility>
 
 namespace score::mw::com::impl::lola
 {
 
-namespace detail
+class UidPidMappingEntry
+{
+  public:
+    enum class MappingEntryStatus : std::uint16_t
+    {
+        kUnused = 0u,
+        kUsed,
+        kUpdating,
+        kInvalid,  // this is a value, which we shall NOT see in an entry!
+    };
+
+    // \brief our key-type is a combination of 4 byte status and 4 byte uid
+    using key_type = std::uint64_t;
+    // \brief we use key_type for our lock-free sync algo -> atomic access needs to be always lock-free therefore
+    static_assert(std::atomic<key_type>::is_always_lock_free);
+    // \brief we are encoding the uid into our key-type and have foreseen 4 byte for it!
+    static_assert(sizeof(uid_t) <= 4);
+
+    /// \brief Load key atomically and return its parts as a pair.
+    /// \return parts, which make up the key
+    std::pair<MappingEntryStatus, uid_t> GetStatusAndUidAtomic() noexcept;
+    void SetStatusAndUidAtomic(MappingEntryStatus status, uid_t uid) noexcept;
+    static key_type CreateKey(MappingEntryStatus status, uid_t uid) noexcept;
+    // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
+    // be private.". There are no class invariants to maintain so member variable can be safely accessed directly.
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    std::atomic<key_type> key_uid_status_{};
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    pid_t pid_{};
+};
+
+namespace detail_uid_pid_mapping
 {
 
 /// \brief implementation for UidPidMapping::RegisterPid, which allows selecting the AtomicIndirectorType for
@@ -45,7 +75,7 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<UidPidMappingEn
                                  const uid_t uid,
                                  const pid_t pid);
 
-}  // namespace detail
+}  // namespace detail_uid_pid_mapping
 
 /// \brief class holding uid to pid mappings for a concrete service instance.
 /// \details an instance of this class is stored in shared-memory within a given ServiceDataControl, which represents a
@@ -95,35 +125,20 @@ class UidPidMapping
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != mapping_entries_.begin());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != mapping_entries_.end());
-
-        if (register_pid_fake_ != nullptr)
-        {
-            return register_pid_fake_->RegisterPid(mapping_entries_.begin(), mapping_entries_.end(), uid, pid);
-        }
-
         // Suppress the rule AUTOSAR C++14 A5-3-2: "Null pointers shall not be dereferenced.".
         // Whereas, both begin() and end() iterators of "mapping_entries_" (DynamicArray type) return pointer to
         // element. Therefore, the provided assertions check this rule requirement, whether the iterators return a
         // result other than nullptr.
         // coverity[autosar_cpp14_a5_3_2_violation]
-        return detail::RegisterPid<memory::shared::AtomicIndirectorReal>(
+        return detail_uid_pid_mapping::RegisterPid<memory::shared::AtomicIndirectorReal>(
             mapping_entries_.begin(), mapping_entries_.end(), uid, pid);
     };
-
-    static void InjectRegisterPidFake(RegisterPidFake& register_pid_fake)
-    {
-        register_pid_fake_ = &register_pid_fake;
-    }
 
   private:
     using mapping_entry_alloc = typename std::allocator_traits<Allocator>::template rebind_alloc<UidPidMappingEntry>;
 
     score::containers::DynamicArray<UidPidMappingEntry, mapping_entry_alloc> mapping_entries_;
-    static RegisterPidFake* register_pid_fake_;
 };
-
-template <typename Allocator>
-RegisterPidFake* UidPidMapping<Allocator>::register_pid_fake_{nullptr};
 
 }  // namespace score::mw::com::impl::lola
 

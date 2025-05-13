@@ -1466,6 +1466,15 @@ class SkeletonCreateFixture : public Test
             .WillByDefault(Return(usage_marker_file_descriptor_));
         ON_CALL(*stat_mock_, chmod(StrEq(service_usage_marker_file_path_.data()), _))
             .WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(*stat_mock_, stat(_, _, _))
+            .WillByDefault([](const char* const file, os::StatBuffer& buf, const bool resolve_symlinks) {
+                return os::Stat::Default()->stat(file, buf, resolve_symlinks);
+            });
+    }
+
+    void TearDown() override
+    {
+        filesystem::FilesystemFactory{}.CreateInstance().standard->RemoveAll(partial_restart_directory_path_);
     }
 
 #if defined(__QNXNTO__)
