@@ -102,8 +102,12 @@ std::size_t TrackerGuardFactory::GetNumAvailableGuards() const noexcept
 
 std::optional<SampleReferenceGuard> TrackerGuardFactory::TakeGuard() noexcept
 {
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the branch when the condition is false as not covered. However, the
+    // line in that branch is marked as covered indicating that the branch is indeed taken. Suppression can be removed
+    // when bug is fixed in Ticket-189467).
     if (num_available_guards_ > 0U)
     {
+        // LCOV_EXCL_BR_STOP
         --num_available_guards_;
         return makeSampleReferenceGuard(tracker_);
     }
