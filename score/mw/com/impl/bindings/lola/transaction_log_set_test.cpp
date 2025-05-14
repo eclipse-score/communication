@@ -127,13 +127,31 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
 };
 
 using TransactionLogSetRollbackFixture = TransactionLogSetFixture;
-TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnUnregisteredIdIdDoesNothing)
+TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnUnregisteredIdIdReturnsValidResult)
 {
+    // Given a TransactionLogSet which is initialized to contain kNumberOfLogs logs
     WithATransactionLogSet(kNumberOfLogs);
 
+    // When calling RollbackProxyTransactions with a transaction log id that was never registered
     const auto rollback_result = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
+
+    // Then a valid result is returned
     ASSERT_TRUE(rollback_result.has_value());
+}
+
+TEST_F(TransactionLogSetRollbackFixture, CallingRollbackWhenMaxLogsIsZeroReturnsValidResult)
+{
+    // Given a TransactionLogSet which is initialized to contain 0 logs
+    const std::size_t number_of_logs{0U};
+    WithATransactionLogSet(number_of_logs);
+
+    // When calling RollbackProxyTransactions with a transaction log id that was never registered
+    const auto rollback_result = unit_->RollbackProxyTransactions(
+        kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
+
+    // Then a valid result is returned
+    EXPECT_TRUE(rollback_result.has_value());
 }
 
 TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdWithoutMarkingNeedsRollbackIdDoesNothing)
@@ -368,6 +386,19 @@ TEST_F(TransactionLogSetRollbackFixture,
 }
 
 using TransactionLogSetRegisterFixture = TransactionLogSetFixture;
+TEST_F(TransactionLogSetRegisterFixture, RegisteringWhenMaxLogsIsZeroReturnsError)
+{
+    // Given a TransactionLogSet which is initialized to contain 0 logs
+    const std::size_t number_of_logs{0U};
+    WithATransactionLogSet(number_of_logs);
+
+    // When calling RegisterProxyElement
+    const auto transaction_log_index_result = unit_->RegisterProxyElement(kDummyTransactionLogId);
+
+    // Then an error is returned
+    EXPECT_FALSE(transaction_log_index_result.has_value());
+}
+
 TEST_F(TransactionLogSetRegisterFixture, RegisteringLessThanTheMaxNumberPassedToConstructorReturnsValidIndexes)
 {
     WithATransactionLogSet(kNumberOfLogs);
