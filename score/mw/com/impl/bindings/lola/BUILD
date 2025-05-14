@@ -429,6 +429,7 @@ cc_library(
     srcs = ["register_pid_fake.cpp"],
     hdrs = ["register_pid_fake.h"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":uid_pid_mapping_entry",
