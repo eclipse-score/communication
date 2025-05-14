@@ -10,12 +10,16 @@
     "https://bcr.bazel.build/modules/abseil-cpp/20240116.2/MODULE.bazel": "73939767a4686cd9a520d16af5ab440071ed75cec1a876bf2fcfaf1f71987a16",
     "https://bcr.bazel.build/modules/abseil-cpp/20240116.2/source.json": "750d5e29326fb59cbe61116a7b803c8a1d0a7090a9c8ed89888d188e3c473fc7",
     "https://bcr.bazel.build/modules/apple_support/1.15.1/MODULE.bazel": "a0556fefca0b1bb2de8567b8827518f94db6a6e7e7d632b4c48dc5f865bc7c85",
-    "https://bcr.bazel.build/modules/apple_support/1.15.1/source.json": "517f2b77430084c541bc9be2db63fdcbb7102938c5f64c17ee60ffda2e5cf07b",
+    "https://bcr.bazel.build/modules/apple_support/1.17.1/MODULE.bazel": "655c922ab1209978a94ef6ca7d9d43e940cd97d9c172fb55f94d91ac53f8610b",
+    "https://bcr.bazel.build/modules/apple_support/1.17.1/source.json": "6b2b8c74d14e8d485528a938e44bdb72a5ba17632b9e14ef6e68a5ee96c8347f",
     "https://bcr.bazel.build/modules/apple_support/1.5.0/MODULE.bazel": "50341a62efbc483e8a2a6aec30994a58749bd7b885e18dd96aa8c33031e558ef",
     "https://bcr.bazel.build/modules/bazel_features/1.1.1/MODULE.bazel": "27b8c79ef57efe08efccbd9dd6ef70d61b4798320b8d3c134fd571f78963dbcd",
+    "https://bcr.bazel.build/modules/bazel_features/1.10.0/MODULE.bazel": "f75e8807570484a99be90abcd52b5e1f390362c258bcb73106f4544957a48101",
     "https://bcr.bazel.build/modules/bazel_features/1.11.0/MODULE.bazel": "f9382337dd5a474c3b7d334c2f83e50b6eaedc284253334cf823044a26de03e8",
+    "https://bcr.bazel.build/modules/bazel_features/1.18.0/MODULE.bazel": "1be0ae2557ab3a72a57aeb31b29be347bcdc5d2b1eb1e70f39e3851a7e97041a",
     "https://bcr.bazel.build/modules/bazel_features/1.19.0/MODULE.bazel": "59adcdf28230d220f0067b1f435b8537dd033bfff8db21335ef9217919c7fb58",
-    "https://bcr.bazel.build/modules/bazel_features/1.19.0/source.json": "d7bf14517c1b25b9d9c580b0f8795fceeae08a7590f507b76aace528e941375d",
+    "https://bcr.bazel.build/modules/bazel_features/1.21.0/MODULE.bazel": "675642261665d8eea09989aa3b8afb5c37627f1be178382c320d1b46afba5e3b",
+    "https://bcr.bazel.build/modules/bazel_features/1.21.0/source.json": "3e8379efaaef53ce35b7b8ba419df829315a880cb0a030e5bb45c96d6d5ecb5f",
     "https://bcr.bazel.build/modules/bazel_features/1.9.1/MODULE.bazel": "8f679097876a9b609ad1f60249c49d68bfab783dd9be012faf9d82547b14815a",
     "https://bcr.bazel.build/modules/bazel_skylib/1.0.3/MODULE.bazel": "bcb0fd896384802d1ad283b4e4eb4d718eebd8cb820b0a2c3a347fb971afd9d8",
     "https://bcr.bazel.build/modules/bazel_skylib/1.1.1/MODULE.bazel": "1add3e7d93ff2e6998f9e118022c84d163917d912f5afafb3058e3d2f1545b5e",
@@ -27,8 +31,14 @@
     "https://bcr.bazel.build/modules/bazel_skylib/1.6.1/MODULE.bazel": "8fdee2dbaace6c252131c00e1de4b165dc65af02ea278476187765e1a617b917",
     "https://bcr.bazel.build/modules/bazel_skylib/1.7.1/MODULE.bazel": "3120d80c5861aa616222ec015332e5f8d3171e062e3e804a2a0253e1be26e59b",
     "https://bcr.bazel.build/modules/bazel_skylib/1.7.1/source.json": "f121b43eeefc7c29efbd51b83d08631e2347297c95aac9764a701f2a6a2bb953",
+    "https://bcr.bazel.build/modules/boringssl/0.0.0-20240530-2db0eb3/MODULE.bazel": "d0405b762c5e87cd445b7015f2b8da5400ef9a8dbca0bfefa6c1cea79d528a97",
+    "https://bcr.bazel.build/modules/boringssl/0.0.0-20240530-2db0eb3/source.json": "0d413869349e82e5d679802abe9ce23e0326bbf56daa97ae9e7dbdcec72982fc",
     "https://bcr.bazel.build/modules/buildozer/7.1.2/MODULE.bazel": "2e8dd40ede9c454042645fd8d8d0cd1527966aa5c919de86661e62953cd73d84",
     "https://bcr.bazel.build/modules/buildozer/7.1.2/source.json": "c9028a501d2db85793a6996205c8de120944f50a0d570438fcae0457a5f9d1f8",
+    "https://bcr.bazel.build/modules/bzip2/1.0.8/MODULE.bazel": "83ee443b286b0b91566e5ee77e74ba6445895f3135467893871560f9e4ebc159",
+    "https://bcr.bazel.build/modules/bzip2/1.0.8/source.json": "b64f3a2f973749cf5f6ee32b3d804af56a35a746228a7845ed5daa31c8cc8af1",
+    "https://bcr.bazel.build/modules/download_utils/1.0.1/MODULE.bazel": "f1d0afade59e37de978506d6bbf08d7fe5f94964e86944aaf58efcead827b41b",
+    "https://bcr.bazel.build/modules/download_utils/1.0.1/source.json": "05ddc5a3b1f7d8f3e5e0fd1617479e1cf72d63d59ab2b1f0463557a14fc6be0a",
     "https://bcr.bazel.build/modules/google_benchmark/1.8.2/MODULE.bazel": "a70cf1bba851000ba93b58ae2f6d76490a9feb74192e57ab8e8ff13c34ec50cb",
     "https://bcr.bazel.build/modules/google_benchmark/1.9.1/MODULE.bazel": "1abfd0395aea2db11943d817afb6c03208bee28b2e47eccc3042f67a22d3ce1b",
     "https://bcr.bazel.build/modules/google_benchmark/1.9.1/source.json": "5d68196f85589340f5ca834d0bea3a49129d8cebf486d51b3d29419b0437bbbc",
@@ -41,8 +51,11 @@
     "https://bcr.bazel.build/modules/jsoncpp/1.9.5/source.json": "4108ee5085dd2885a341c7fab149429db457b3169b86eb081fa245eadf69169d",
     "https://bcr.bazel.build/modules/libpfm/4.11.0/MODULE.bazel": "45061ff025b301940f1e30d2c16bea596c25b176c8b6b3087e92615adbd52902",
     "https://bcr.bazel.build/modules/libpfm/4.11.0/source.json": "caaffb3ac2b59b8aac456917a4ecf3167d40478ee79f15ab7a877ec9273937c9",
+    "https://bcr.bazel.build/modules/nlohmann_json/3.11.3/MODULE.bazel": "87023db2f55fc3a9949c7b08dc711fae4d4be339a80a99d04453c4bb3998eefc",
+    "https://bcr.bazel.build/modules/nlohmann_json/3.11.3/source.json": "296c63a90c6813e53b3812d24245711981fc7e563d98fe15625f55181494488a",
     "https://bcr.bazel.build/modules/platforms/0.0.10/MODULE.bazel": "8cb8efaf200bdeb2150d93e162c40f388529a25852b332cec879373771e48ed5",
-    "https://bcr.bazel.build/modules/platforms/0.0.10/source.json": "f22828ff4cf021a6b577f1bf6341cb9dcd7965092a439f64fc1bb3b7a5ae4bd5",
+    "https://bcr.bazel.build/modules/platforms/0.0.11/MODULE.bazel": "0daefc49732e227caa8bfa834d65dc52e8cc18a2faf80df25e8caea151a9413f",
+    "https://bcr.bazel.build/modules/platforms/0.0.11/source.json": "f7e188b79ebedebfe75e9e1d098b8845226c7992b307e28e1496f23112e8fc29",
     "https://bcr.bazel.build/modules/platforms/0.0.4/MODULE.bazel": "9b328e31ee156f53f3c416a64f8491f7eb731742655a47c9eec4703a71644aee",
     "https://bcr.bazel.build/modules/platforms/0.0.5/MODULE.bazel": "5733b54ea419d5eaf7997054bb55f6a1d0b5ff8aedf0176fef9eea44f3acda37",
     "https://bcr.bazel.build/modules/platforms/0.0.6/MODULE.bazel": "ad6eeef431dc52aefd2d77ed20a4b353f8ebf0f4ecdd26a807d2da5aa8cd0615",
@@ -62,11 +75,12 @@
     "https://bcr.bazel.build/modules/re2/2024-07-02/source.json": "547d0111a9d4f362db32196fef805abbf3676e8d6afbe44d395d87816c1130ca",
     "https://bcr.bazel.build/modules/rules_cc/0.0.1/MODULE.bazel": "cb2aa0747f84c6c3a78dad4e2049c154f08ab9d166b1273835a8174940365647",
     "https://bcr.bazel.build/modules/rules_cc/0.0.17/MODULE.bazel": "2ae1d8f4238ec67d7185d8861cb0a2cdf4bc608697c331b95bf990e69b62e64a",
-    "https://bcr.bazel.build/modules/rules_cc/0.0.17/source.json": "4db99b3f55c90ab28d14552aa0632533e3e8e5e9aea0f5c24ac0014282c2a7c5",
     "https://bcr.bazel.build/modules/rules_cc/0.0.2/MODULE.bazel": "6915987c90970493ab97393024c156ea8fb9f3bea953b2f3ec05c34f19b5695c",
     "https://bcr.bazel.build/modules/rules_cc/0.0.6/MODULE.bazel": "abf360251023dfe3efcef65ab9d56beefa8394d4176dd29529750e1c57eaa33f",
     "https://bcr.bazel.build/modules/rules_cc/0.0.8/MODULE.bazel": "964c85c82cfeb6f3855e6a07054fdb159aced38e99a5eecf7bce9d53990afa3e",
     "https://bcr.bazel.build/modules/rules_cc/0.0.9/MODULE.bazel": "836e76439f354b89afe6a911a7adf59a6b2518fafb174483ad78a2a2fde7b1c5",
+    "https://bcr.bazel.build/modules/rules_cc/0.1.1/MODULE.bazel": "2f0222a6f229f0bf44cd711dc13c858dad98c62d52bd51d8fc3a764a83125513",
+    "https://bcr.bazel.build/modules/rules_cc/0.1.1/source.json": "d61627377bd7dd1da4652063e368d9366fc9a73920bfa396798ad92172cf645c",
     "https://bcr.bazel.build/modules/rules_foreign_cc/0.10.1/MODULE.bazel": "b9527010e5fef060af92b6724edb3691970a5b1f76f74b21d39f7d433641be60",
     "https://bcr.bazel.build/modules/rules_foreign_cc/0.10.1/source.json": "9300e71df0cdde0952f10afff1401fa664e9fc5d9ae6204660ba1b158d90d6a6",
     "https://bcr.bazel.build/modules/rules_foreign_cc/0.9.0/MODULE.bazel": "c9e8c682bf75b0e7c704166d79b599f93b72cfca5ad7477df596947891feeef6",
@@ -79,7 +93,8 @@
     "https://bcr.bazel.build/modules/rules_jvm_external/5.1/source.json": "5abb45cc9beb27b77aec6a65a11855ef2b55d95dfdc358e9f312b78ae0ba32d5",
     "https://bcr.bazel.build/modules/rules_license/0.0.3/MODULE.bazel": "627e9ab0247f7d1e05736b59dbb1b6871373de5ad31c3011880b4133cafd4bd0",
     "https://bcr.bazel.build/modules/rules_license/0.0.7/MODULE.bazel": "088fbeb0b6a419005b89cf93fe62d9517c0a2b8bb56af3244af65ecfe37e7d5d",
-    "https://bcr.bazel.build/modules/rules_license/0.0.7/source.json": "355cc5737a0f294e560d52b1b7a6492d4fff2caf0bef1a315df5a298fca2d34a",
+    "https://bcr.bazel.build/modules/rules_license/1.0.0/MODULE.bazel": "a7fda60eefdf3d8c827262ba499957e4df06f659330bbe6cdbdb975b768bb65c",
+    "https://bcr.bazel.build/modules/rules_license/1.0.0/source.json": "a52c89e54cc311196e478f8382df91c15f7a2bfdf4c6cd0e2675cc2ff0b56efb",
     "https://bcr.bazel.build/modules/rules_pkg/0.7.0/MODULE.bazel": "df99f03fc7934a4737122518bb87e667e62d780b610910f0447665a7e2be62dc",
     "https://bcr.bazel.build/modules/rules_pkg/0.7.0/source.json": "c2557066e0c0342223ba592510ad3d812d4963b9024831f7f66fd0584dd8c66c",
     "https://bcr.bazel.build/modules/rules_proto/4.0.0/MODULE.bazel": "a7a7b6ce9bee418c1a760b3d84f83a299ad6952f9903c67f19e4edd964894e06",
@@ -95,23 +110,32 @@
     "https://bcr.bazel.build/modules/rules_python/0.33.2/MODULE.bazel": "3e036c4ad8d804a4dad897d333d8dce200d943df4827cb849840055be8d2e937",
     "https://bcr.bazel.build/modules/rules_python/0.33.2/source.json": "e539592cd3aae4492032cecea510e46ca16eeb972271560b922cae9893944e2f",
     "https://bcr.bazel.build/modules/rules_python/0.4.0/MODULE.bazel": "9208ee05fd48bf09ac60ed269791cf17fb343db56c8226a720fbb1cdf467166c",
+    "https://bcr.bazel.build/modules/rules_rust/0.61.0/MODULE.bazel": "0318a95777b9114c8740f34b60d6d68f9cfef61e2f4b52424ca626213d33787b",
+    "https://bcr.bazel.build/modules/rules_rust/0.61.0/source.json": "d1bc743b5fa2e2abb35c436df7126a53dab0c3f35890ae6841592b2253786a63",
+    "https://bcr.bazel.build/modules/rules_shell/0.3.0/MODULE.bazel": "de4402cd12f4cc8fda2354fce179fdb068c0b9ca1ec2d2b17b3e21b24c1a937b",
+    "https://bcr.bazel.build/modules/rules_shell/0.3.0/source.json": "c55ed591aa5009401ddf80ded9762ac32c358d2517ee7820be981e2de9756cf3",
     "https://bcr.bazel.build/modules/stardoc/0.5.1/MODULE.bazel": "1a05d92974d0c122f5ccf09291442580317cdd859f07a8655f1db9a60374f9f8",
     "https://bcr.bazel.build/modules/stardoc/0.5.3/MODULE.bazel": "c7f6948dae6999bf0db32c1858ae345f112cacf98f174c7a8bb707e41b974f1c",
     "https://bcr.bazel.build/modules/stardoc/0.5.3/source.json": "cd53fe968dc8cd98197c052db3db6d82562960c87b61e7a90ee96f8e4e0dda97",
     "https://bcr.bazel.build/modules/toolchains_llvm/1.3.0/MODULE.bazel": "6e02731e51f7eb2ec4b01c5e79e722bf738a631f6e03d9b4917cbf2cb027bee1",
     "https://bcr.bazel.build/modules/toolchains_llvm/1.3.0/source.json": "4ce0373a89c6df34dd37cd67285bb871d8e225d30dcb67dd093e077a04bbbb71",
     "https://bcr.bazel.build/modules/upb/0.0.0-20220923-a547704/MODULE.bazel": "7298990c00040a0e2f121f6c32544bab27d4452f80d9ce51349b1a28f3005c43",
+    "https://bcr.bazel.build/modules/xz/5.4.5.bcr.5/MODULE.bazel": "b93d7035ac14c900dfdf7624e42cfcbfc34415aa8d3c83a6f225867c48d28dad",
+    "https://bcr.bazel.build/modules/xz/5.4.5.bcr.5/source.json": "30c4e5c856087a60d92e2522eafd316c0661671f4478ca94c6b7bd877010210a",
     "https://bcr.bazel.build/modules/zlib/1.2.11/MODULE.bazel": "07b389abc85fdbca459b69e2ec656ae5622873af3f845e1c9d80fe179f3effa0",
     "https://bcr.bazel.build/modules/zlib/1.2.12/MODULE.bazel": "3b1a8834ada2a883674be8cbd36ede1b6ec481477ada359cd2d3ddc562340b27",
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.3/MODULE.bazel": "af322bc08976524477c79d1e45e241b6efbeb918c497e8840b8ab116802dda79",
-    "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.3/source.json": "2be409ac3c7601245958cd4fcdff4288be79ed23bd690b4b951f500d54ee6e7d"
+    "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.5/MODULE.bazel": "eec517b5bbe5492629466e11dae908d043364302283de25581e3eb944326c4ca",
+    "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.5/source.json": "22bc55c47af97246cfc093d0acf683a7869377de362b5d1c552c2c2e16b7a806",
+    "https://bcr.bazel.build/modules/zstd/1.5.6/MODULE.bazel": "471ebe7d3cdd8c6469390fcf623eb4779ff55fbee0a87f1dc57a1def468b96d4",
+    "https://bcr.bazel.build/modules/zstd/1.5.6/source.json": "02010c3333fc89b44fe861db049968decb6e688411f7f9d4f6791d74f9adfb51"
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
     "@@apple_support~//crosstool:setup.bzl%apple_cc_configure_extension": {
       "general": {
-        "bzlTransitiveDigest": "ltCGFbl/LQQZXn/LEMXfKX7pGwyqNiOCHcmiQW0tmjM=",
-        "usagesDigest": "2Jj0sTGzjx2KfYRjWYbL6DZ1bi8HL2roIAGfOViiul8=",
+        "bzlTransitiveDigest": "7ii+gFxWSxHhQPrBxfMEHhtrGvHmBTvsh+KOyGunP/s=",
+        "usagesDigest": "R8xslr59tZnVLqBbEpbunVi3NfM8lkJZstFJkVyW4qk=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -136,21 +160,49 @@
         ]
       }
     },
-    "@@platforms//host:extension.bzl%host_platform": {
+    "@@rules_boost~//:boost/repositories.bzl%non_module_dependencies": {
       "general": {
-        "bzlTransitiveDigest": "xelQcPZH8+tmuOHVjL9vDxMnnQNMlwj0SlvgoqBkm4U=",
-        "usagesDigest": "hgylFkgWSg0ulUwWZzEM1aIftlUnbmw2ynWLdEfHnZc=",
+        "bzlTransitiveDigest": "x3KMtXr4KoRJ4XlFzBdXD6YURDOScGJ0XQXOZnhxLs4=",
+        "usagesDigest": "rVneKcq0YJimRFVlCQZ1Ll4PrtD8MtaTYkoYYPuUFLg=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
         "generatedRepoSpecs": {
-          "host_platform": {
-            "bzlFile": "@@platforms//host:extension.bzl",
-            "ruleClassName": "host_platform_repo",
-            "attributes": {}
+          "boost": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "build_file": "@@rules_boost~//:boost.BUILD",
+              "patch_cmds": [
+                "rm -f doc/pdf/BUILD"
+              ],
+              "patch_cmds_win": [
+                "Remove-Item -Force doc/pdf/BUILD"
+              ],
+              "patches": [
+                "@@rules_boost~//:zlib.patch"
+              ],
+              "patch_args": [
+                "-p1"
+              ],
+              "url": "https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.gz",
+              "sha256": "4d27e9efed0f6f152dc28db6430b9d3dfb40c0345da7342eaa5a987dde57bd95",
+              "strip_prefix": "boost-1.84.0"
+            }
           }
         },
-        "recordedRepoMappingEntries": []
+        "recordedRepoMappingEntries": [
+          [
+            "rules_boost~",
+            "bazel_tools",
+            "bazel_tools"
+          ],
+          [
+            "rules_boost~",
+            "com_github_nelhage_rules_boost",
+            "rules_boost~"
+          ]
+        ]
       }
     },
     "@@rules_foreign_cc~//foreign_cc:extensions.bzl%tools": {
@@ -493,10 +545,455 @@
         ]
       }
     },
+    "@@rules_rust~//crate_universe:extensions.bzl%crate": {
+      "general": {
+        "bzlTransitiveDigest": "4lIaNLyT0gNCOhOnhsVcgj3dS+knwLZwl7K4bfAT5bc=",
+        "usagesDigest": "RnbpCXyBymG1CEmpkYwdezo+lGwp9SoWkZcZhpx3tDk=",
+        "recordedFileInputs": {
+          "@@//MODULE.bazel": "890476dc72e9fc1f62275d4ebaf11e603eed30bcb3b821b7f6d90fe1d9891298",
+          "@@rules_rust~~rust_host_tools~rust_host_tools//rust_host_tools": "ENOENT"
+        },
+        "recordedDirentsInputs": {},
+        "envVariables": {
+          "CARGO_BAZEL_DEBUG": null,
+          "CARGO_BAZEL_GENERATOR_SHA256": null,
+          "CARGO_BAZEL_GENERATOR_URL": null,
+          "CARGO_BAZEL_ISOLATED": null,
+          "CARGO_BAZEL_REPIN": null,
+          "CARGO_BAZEL_REPIN_ONLY": null,
+          "REPIN": null
+        },
+        "generatedRepoSpecs": {
+          "crate_index": {
+            "bzlFile": "@@rules_rust~//crate_universe:extensions.bzl",
+            "ruleClassName": "_generate_repo",
+            "attributes": {
+              "contents": {
+                "BUILD.bazel": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\npackage(default_visibility = [\"//visibility:public\"])\n\nexports_files(\n    [\n        \"cargo-bazel.json\",\n        \"crates.bzl\",\n        \"defs.bzl\",\n    ] + glob(\n        allow_empty = True,\n        include = [\"*.bazel\"],\n    ),\n)\n\nfilegroup(\n    name = \"srcs\",\n    srcs = glob(\n        allow_empty = True,\n        include = [\n            \"*.bazel\",\n            \"*.bzl\",\n        ],\n    ),\n)\n\n# Workspace Member Dependencies\nalias(\n    name = \"futures-0.3.31\",\n    actual = \"@crate_index__futures-0.3.31//:futures\",\n    tags = [\"manual\"],\n)\n\nalias(\n    name = \"futures\",\n    actual = \"@crate_index__futures-0.3.31//:futures\",\n    tags = [\"manual\"],\n)\n\nalias(\n    name = \"libc-0.2.172\",\n    actual = \"@crate_index__libc-0.2.172//:libc\",\n    tags = [\"manual\"],\n)\n\nalias(\n    name = \"libc\",\n    actual = \"@crate_index__libc-0.2.172//:libc\",\n    tags = [\"manual\"],\n)\n",
+                "alias_rules.bzl": "\"\"\"Alias that transitions its target to `compilation_mode=opt`.  Use `transition_alias=\"opt\"` to enable.\"\"\"\n\nload(\"@rules_cc//cc:defs.bzl\", \"CcInfo\")\nload(\"@rules_rust//rust:rust_common.bzl\", \"COMMON_PROVIDERS\")\n\ndef _transition_alias_impl(ctx):\n    # `ctx.attr.actual` is a list of 1 item due to the transition\n    providers = [ctx.attr.actual[0][provider] for provider in COMMON_PROVIDERS]\n    if CcInfo in ctx.attr.actual[0]:\n        providers.append(ctx.attr.actual[0][CcInfo])\n    return providers\n\ndef _change_compilation_mode(compilation_mode):\n    def _change_compilation_mode_impl(_settings, _attr):\n        return {\n            \"//command_line_option:compilation_mode\": compilation_mode,\n        }\n\n    return transition(\n        implementation = _change_compilation_mode_impl,\n        inputs = [],\n        outputs = [\n            \"//command_line_option:compilation_mode\",\n        ],\n    )\n\ndef _transition_alias_rule(compilation_mode):\n    return rule(\n        implementation = _transition_alias_impl,\n        provides = COMMON_PROVIDERS,\n        attrs = {\n            \"actual\": attr.label(\n                mandatory = True,\n                doc = \"`rust_library()` target to transition to `compilation_mode=opt`.\",\n                providers = COMMON_PROVIDERS,\n                cfg = _change_compilation_mode(compilation_mode),\n            ),\n            \"_allowlist_function_transition\": attr.label(\n                default = \"@bazel_tools//tools/allowlists/function_transition_allowlist\",\n            ),\n        },\n        doc = \"Transitions a Rust library crate to the `compilation_mode=opt`.\",\n    )\n\ntransition_alias_dbg = _transition_alias_rule(\"dbg\")\ntransition_alias_fastbuild = _transition_alias_rule(\"fastbuild\")\ntransition_alias_opt = _transition_alias_rule(\"opt\")\n",
+                "defs.bzl": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\"\"\"\n# `crates_repository` API\n\n- [aliases](#aliases)\n- [crate_deps](#crate_deps)\n- [all_crate_deps](#all_crate_deps)\n- [crate_repositories](#crate_repositories)\n\n\"\"\"\n\nload(\"@bazel_tools//tools/build_defs/repo:git.bzl\", \"new_git_repository\")\nload(\"@bazel_tools//tools/build_defs/repo:http.bzl\", \"http_archive\")\nload(\"@bazel_tools//tools/build_defs/repo:utils.bzl\", \"maybe\")\nload(\"@bazel_skylib//lib:selects.bzl\", \"selects\")\nload(\"@rules_rust//crate_universe/private:local_crate_mirror.bzl\", \"local_crate_mirror\")\n\n###############################################################################\n# MACROS API\n###############################################################################\n\n# An identifier that represent common dependencies (unconditional).\n_COMMON_CONDITION = \"\"\n\ndef _flatten_dependency_maps(all_dependency_maps):\n    \"\"\"Flatten a list of dependency maps into one dictionary.\n\n    Dependency maps have the following structure:\n\n    ```python\n    DEPENDENCIES_MAP = {\n        # The first key in the map is a Bazel package\n        # name of the workspace this file is defined in.\n        \"workspace_member_package\": {\n\n            # Not all dependencies are supported for all platforms.\n            # the condition key is the condition required to be true\n            # on the host platform.\n            \"condition\": {\n\n                # An alias to a crate target.     # The label of the crate target the\n                # Aliases are only crate names.   # package name refers to.\n                \"package_name\":                   \"@full//:label\",\n            }\n        }\n    }\n    ```\n\n    Args:\n        all_dependency_maps (list): A list of dicts as described above\n\n    Returns:\n        dict: A dictionary as described above\n    \"\"\"\n    dependencies = {}\n\n    for workspace_deps_map in all_dependency_maps:\n        for pkg_name, conditional_deps_map in workspace_deps_map.items():\n            if pkg_name not in dependencies:\n                non_frozen_map = dict()\n                for key, values in conditional_deps_map.items():\n                    non_frozen_map.update({key: dict(values.items())})\n                dependencies.setdefault(pkg_name, non_frozen_map)\n                continue\n\n            for condition, deps_map in conditional_deps_map.items():\n                # If the condition has not been recorded, do so and continue\n                if condition not in dependencies[pkg_name]:\n                    dependencies[pkg_name].setdefault(condition, dict(deps_map.items()))\n                    continue\n\n                # Alert on any miss-matched dependencies\n                inconsistent_entries = []\n                for crate_name, crate_label in deps_map.items():\n                    existing = dependencies[pkg_name][condition].get(crate_name)\n                    if existing and existing != crate_label:\n                        inconsistent_entries.append((crate_name, existing, crate_label))\n                    dependencies[pkg_name][condition].update({crate_name: crate_label})\n\n    return dependencies\n\ndef crate_deps(deps, package_name = None):\n    \"\"\"Finds the fully qualified label of the requested crates for the package where this macro is called.\n\n    Args:\n        deps (list): The desired list of crate targets.\n        package_name (str, optional): The package name of the set of dependencies to look up.\n            Defaults to `native.package_name()`.\n\n    Returns:\n        list: A list of labels to generated rust targets (str)\n    \"\"\"\n\n    if not deps:\n        return []\n\n    if package_name == None:\n        package_name = native.package_name()\n\n    # Join both sets of dependencies\n    dependencies = _flatten_dependency_maps([\n        _NORMAL_DEPENDENCIES,\n        _NORMAL_DEV_DEPENDENCIES,\n        _PROC_MACRO_DEPENDENCIES,\n        _PROC_MACRO_DEV_DEPENDENCIES,\n        _BUILD_DEPENDENCIES,\n        _BUILD_PROC_MACRO_DEPENDENCIES,\n    ]).pop(package_name, {})\n\n    # Combine all conditional packages so we can easily index over a flat list\n    # TODO: Perhaps this should actually return select statements and maintain\n    # the conditionals of the dependencies\n    flat_deps = {}\n    for deps_set in dependencies.values():\n        for crate_name, crate_label in deps_set.items():\n            flat_deps.update({crate_name: crate_label})\n\n    missing_crates = []\n    crate_targets = []\n    for crate_target in deps:\n        if crate_target not in flat_deps:\n            missing_crates.append(crate_target)\n        else:\n            crate_targets.append(flat_deps[crate_target])\n\n    if missing_crates:\n        fail(\"Could not find crates `{}` among dependencies of `{}`. Available dependencies were `{}`\".format(\n            missing_crates,\n            package_name,\n            dependencies,\n        ))\n\n    return crate_targets\n\ndef all_crate_deps(\n        normal = False, \n        normal_dev = False, \n        proc_macro = False, \n        proc_macro_dev = False,\n        build = False,\n        build_proc_macro = False,\n        package_name = None):\n    \"\"\"Finds the fully qualified label of all requested direct crate dependencies \\\n    for the package where this macro is called.\n\n    If no parameters are set, all normal dependencies are returned. Setting any one flag will\n    otherwise impact the contents of the returned list.\n\n    Args:\n        normal (bool, optional): If True, normal dependencies are included in the\n            output list.\n        normal_dev (bool, optional): If True, normal dev dependencies will be\n            included in the output list..\n        proc_macro (bool, optional): If True, proc_macro dependencies are included\n            in the output list.\n        proc_macro_dev (bool, optional): If True, dev proc_macro dependencies are\n            included in the output list.\n        build (bool, optional): If True, build dependencies are included\n            in the output list.\n        build_proc_macro (bool, optional): If True, build proc_macro dependencies are\n            included in the output list.\n        package_name (str, optional): The package name of the set of dependencies to look up.\n            Defaults to `native.package_name()` when unset.\n\n    Returns:\n        list: A list of labels to generated rust targets (str)\n    \"\"\"\n\n    if package_name == None:\n        package_name = native.package_name()\n\n    # Determine the relevant maps to use\n    all_dependency_maps = []\n    if normal:\n        all_dependency_maps.append(_NORMAL_DEPENDENCIES)\n    if normal_dev:\n        all_dependency_maps.append(_NORMAL_DEV_DEPENDENCIES)\n    if proc_macro:\n        all_dependency_maps.append(_PROC_MACRO_DEPENDENCIES)\n    if proc_macro_dev:\n        all_dependency_maps.append(_PROC_MACRO_DEV_DEPENDENCIES)\n    if build:\n        all_dependency_maps.append(_BUILD_DEPENDENCIES)\n    if build_proc_macro:\n        all_dependency_maps.append(_BUILD_PROC_MACRO_DEPENDENCIES)\n\n    # Default to always using normal dependencies\n    if not all_dependency_maps:\n        all_dependency_maps.append(_NORMAL_DEPENDENCIES)\n\n    dependencies = _flatten_dependency_maps(all_dependency_maps).pop(package_name, None)\n\n    if not dependencies:\n        if dependencies == None:\n            fail(\"Tried to get all_crate_deps for package \" + package_name + \" but that package had no Cargo.toml file\")\n        else:\n            return []\n\n    crate_deps = list(dependencies.pop(_COMMON_CONDITION, {}).values())\n    for condition, deps in dependencies.items():\n        crate_deps += selects.with_or({\n            tuple(_CONDITIONS[condition]): deps.values(),\n            \"//conditions:default\": [],\n        })\n\n    return crate_deps\n\ndef aliases(\n        normal = False,\n        normal_dev = False,\n        proc_macro = False,\n        proc_macro_dev = False,\n        build = False,\n        build_proc_macro = False,\n        package_name = None):\n    \"\"\"Produces a map of Crate alias names to their original label\n\n    If no dependency kinds are specified, `normal` and `proc_macro` are used by default.\n    Setting any one flag will otherwise determine the contents of the returned dict.\n\n    Args:\n        normal (bool, optional): If True, normal dependencies are included in the\n            output list.\n        normal_dev (bool, optional): If True, normal dev dependencies will be\n            included in the output list..\n        proc_macro (bool, optional): If True, proc_macro dependencies are included\n            in the output list.\n        proc_macro_dev (bool, optional): If True, dev proc_macro dependencies are\n            included in the output list.\n        build (bool, optional): If True, build dependencies are included\n            in the output list.\n        build_proc_macro (bool, optional): If True, build proc_macro dependencies are\n            included in the output list.\n        package_name (str, optional): The package name of the set of dependencies to look up.\n            Defaults to `native.package_name()` when unset.\n\n    Returns:\n        dict: The aliases of all associated packages\n    \"\"\"\n    if package_name == None:\n        package_name = native.package_name()\n\n    # Determine the relevant maps to use\n    all_aliases_maps = []\n    if normal:\n        all_aliases_maps.append(_NORMAL_ALIASES)\n    if normal_dev:\n        all_aliases_maps.append(_NORMAL_DEV_ALIASES)\n    if proc_macro:\n        all_aliases_maps.append(_PROC_MACRO_ALIASES)\n    if proc_macro_dev:\n        all_aliases_maps.append(_PROC_MACRO_DEV_ALIASES)\n    if build:\n        all_aliases_maps.append(_BUILD_ALIASES)\n    if build_proc_macro:\n        all_aliases_maps.append(_BUILD_PROC_MACRO_ALIASES)\n\n    # Default to always using normal aliases\n    if not all_aliases_maps:\n        all_aliases_maps.append(_NORMAL_ALIASES)\n        all_aliases_maps.append(_PROC_MACRO_ALIASES)\n\n    aliases = _flatten_dependency_maps(all_aliases_maps).pop(package_name, None)\n\n    if not aliases:\n        return dict()\n\n    common_items = aliases.pop(_COMMON_CONDITION, {}).items()\n\n    # If there are only common items in the dictionary, immediately return them\n    if not len(aliases.keys()) == 1:\n        return dict(common_items)\n\n    # Build a single select statement where each conditional has accounted for the\n    # common set of aliases.\n    crate_aliases = {\"//conditions:default\": dict(common_items)}\n    for condition, deps in aliases.items():\n        condition_triples = _CONDITIONS[condition]\n        for triple in condition_triples:\n            if triple in crate_aliases:\n                crate_aliases[triple].update(deps)\n            else:\n                crate_aliases.update({triple: dict(deps.items() + common_items)})\n\n    return select(crate_aliases)\n\n###############################################################################\n# WORKSPACE MEMBER DEPS AND ALIASES\n###############################################################################\n\n_NORMAL_DEPENDENCIES = {\n    \"\": {\n        _COMMON_CONDITION: {\n            \"futures\": Label(\"@crate_index//:futures-0.3.31\"),\n            \"libc\": Label(\"@crate_index//:libc-0.2.172\"),\n        },\n    },\n}\n\n\n_NORMAL_ALIASES = {\n    \"\": {\n        _COMMON_CONDITION: {\n        },\n    },\n}\n\n\n_NORMAL_DEV_DEPENDENCIES = {\n    \"\": {\n    },\n}\n\n\n_NORMAL_DEV_ALIASES = {\n    \"\": {\n    },\n}\n\n\n_PROC_MACRO_DEPENDENCIES = {\n    \"\": {\n    },\n}\n\n\n_PROC_MACRO_ALIASES = {\n    \"\": {\n    },\n}\n\n\n_PROC_MACRO_DEV_DEPENDENCIES = {\n    \"\": {\n    },\n}\n\n\n_PROC_MACRO_DEV_ALIASES = {\n    \"\": {\n    },\n}\n\n\n_BUILD_DEPENDENCIES = {\n    \"\": {\n    },\n}\n\n\n_BUILD_ALIASES = {\n    \"\": {\n    },\n}\n\n\n_BUILD_PROC_MACRO_DEPENDENCIES = {\n    \"\": {\n    },\n}\n\n\n_BUILD_PROC_MACRO_ALIASES = {\n    \"\": {\n    },\n}\n\n\n_CONDITIONS = {\n    \"aarch64-apple-darwin\": [\"@rules_rust//rust/platform:aarch64-apple-darwin\"],\n    \"aarch64-unknown-linux-gnu\": [\"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\"],\n    \"wasm32-unknown-unknown\": [\"@rules_rust//rust/platform:wasm32-unknown-unknown\"],\n    \"wasm32-wasip1\": [\"@rules_rust//rust/platform:wasm32-wasip1\"],\n    \"x86_64-pc-windows-msvc\": [\"@rules_rust//rust/platform:x86_64-pc-windows-msvc\"],\n    \"x86_64-unknown-linux-gnu\": [\"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\"],\n    \"x86_64-unknown-nixos-gnu\": [\"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\"],\n}\n\n###############################################################################\n\ndef crate_repositories():\n    \"\"\"A macro for defining repositories for all generated crates.\n\n    Returns:\n      A list of repos visible to the module through the module extension.\n    \"\"\"\n    maybe(\n        http_archive,\n        name = \"crate_index__autocfg-1.4.0\",\n        sha256 = \"ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/autocfg/1.4.0/download\"],\n        strip_prefix = \"autocfg-1.4.0\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.autocfg-1.4.0.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-0.3.31\",\n        sha256 = \"65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures/0.3.31/download\"],\n        strip_prefix = \"futures-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-channel-0.3.31\",\n        sha256 = \"2dff15bf788c671c1934e366d07e30c1814a8ef514e1af724a602e8a2fbe1b10\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-channel/0.3.31/download\"],\n        strip_prefix = \"futures-channel-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-channel-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-core-0.3.31\",\n        sha256 = \"05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-core/0.3.31/download\"],\n        strip_prefix = \"futures-core-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-core-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-executor-0.3.31\",\n        sha256 = \"1e28d1d997f585e54aebc3f97d39e72338912123a67330d723fdbb564d646c9f\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-executor/0.3.31/download\"],\n        strip_prefix = \"futures-executor-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-executor-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-io-0.3.31\",\n        sha256 = \"9e5c1b78ca4aae1ac06c48a526a655760685149f0d465d21f37abfe57ce075c6\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-io/0.3.31/download\"],\n        strip_prefix = \"futures-io-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-io-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-macro-0.3.31\",\n        sha256 = \"162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-macro/0.3.31/download\"],\n        strip_prefix = \"futures-macro-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-macro-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-sink-0.3.31\",\n        sha256 = \"e575fab7d1e0dcb8d0c7bcf9a63ee213816ab51902e6d244a95819acacf1d4f7\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-sink/0.3.31/download\"],\n        strip_prefix = \"futures-sink-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-sink-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-task-0.3.31\",\n        sha256 = \"f90f7dce0722e95104fcb095585910c0977252f286e354b5e3bd38902cd99988\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-task/0.3.31/download\"],\n        strip_prefix = \"futures-task-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-task-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__futures-util-0.3.31\",\n        sha256 = \"9fa08315bb612088cc391249efdc3bc77536f16c91f6cf495e6fbe85b20a4a81\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/futures-util/0.3.31/download\"],\n        strip_prefix = \"futures-util-0.3.31\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.futures-util-0.3.31.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__libc-0.2.172\",\n        sha256 = \"d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/libc/0.2.172/download\"],\n        strip_prefix = \"libc-0.2.172\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.libc-0.2.172.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__memchr-2.7.4\",\n        sha256 = \"78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/memchr/2.7.4/download\"],\n        strip_prefix = \"memchr-2.7.4\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.memchr-2.7.4.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__pin-project-lite-0.2.16\",\n        sha256 = \"3b3cff922bd51709b605d9ead9aa71031d81447142d828eb4a6eba76fe619f9b\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/pin-project-lite/0.2.16/download\"],\n        strip_prefix = \"pin-project-lite-0.2.16\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.pin-project-lite-0.2.16.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__pin-utils-0.1.0\",\n        sha256 = \"8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/pin-utils/0.1.0/download\"],\n        strip_prefix = \"pin-utils-0.1.0\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.pin-utils-0.1.0.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__proc-macro2-1.0.95\",\n        sha256 = \"02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/proc-macro2/1.0.95/download\"],\n        strip_prefix = \"proc-macro2-1.0.95\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.proc-macro2-1.0.95.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__quote-1.0.40\",\n        sha256 = \"1885c039570dc00dcb4ff087a89e185fd56bae234ddc7f056a945bf36467248d\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/quote/1.0.40/download\"],\n        strip_prefix = \"quote-1.0.40\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.quote-1.0.40.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__slab-0.4.9\",\n        sha256 = \"8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/slab/0.4.9/download\"],\n        strip_prefix = \"slab-0.4.9\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.slab-0.4.9.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__syn-2.0.101\",\n        sha256 = \"8ce2b7fc941b3a24138a0a7cf8e858bfc6a992e7978a068a5c760deb0ed43caf\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/syn/2.0.101/download\"],\n        strip_prefix = \"syn-2.0.101\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.syn-2.0.101.bazel\"),\n    )\n\n    maybe(\n        http_archive,\n        name = \"crate_index__unicode-ident-1.0.18\",\n        sha256 = \"5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512\",\n        type = \"tar.gz\",\n        urls = [\"https://static.crates.io/crates/unicode-ident/1.0.18/download\"],\n        strip_prefix = \"unicode-ident-1.0.18\",\n        build_file = Label(\"@crate_index//crate_index:BUILD.unicode-ident-1.0.18.bazel\"),\n    )\n\n    return [\n       struct(repo=\"crate_index__futures-0.3.31\", is_dev_dep = False),\n       struct(repo=\"crate_index__libc-0.2.172\", is_dev_dep = False),\n    ]\n"
+              }
+            }
+          },
+          "crate_index__autocfg-1.4.0": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/autocfg/1.4.0/download"
+              ],
+              "strip_prefix": "autocfg-1.4.0",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"autocfg\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_root = \"src/lib.rs\",\n    edition = \"2015\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=autocfg\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"1.4.0\",\n)\n"
+            }
+          },
+          "crate_index__futures-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "65bc07b1a8bc7c85c5f2e110c476c7389b4554ba72af57d8445ea63a576b0876",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures/0.3.31/download"
+              ],
+              "strip_prefix": "futures-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures\",\n    deps = [\n        \"@crate_index__futures-channel-0.3.31//:futures_channel\",\n        \"@crate_index__futures-core-0.3.31//:futures_core\",\n        \"@crate_index__futures-executor-0.3.31//:futures_executor\",\n        \"@crate_index__futures-io-0.3.31//:futures_io\",\n        \"@crate_index__futures-sink-0.3.31//:futures_sink\",\n        \"@crate_index__futures-task-0.3.31//:futures_task\",\n        \"@crate_index__futures-util-0.3.31//:futures_util\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"alloc\",\n        \"async-await\",\n        \"default\",\n        \"executor\",\n        \"futures-executor\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-channel-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "2dff15bf788c671c1934e366d07e30c1814a8ef514e1af724a602e8a2fbe1b10",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-channel/0.3.31/download"
+              ],
+              "strip_prefix": "futures-channel-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures_channel\",\n    deps = [\n        \"@crate_index__futures-core-0.3.31//:futures_core\",\n        \"@crate_index__futures-sink-0.3.31//:futures_sink\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"alloc\",\n        \"futures-sink\",\n        \"sink\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-channel\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-core-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-core/0.3.31/download"
+              ],
+              "strip_prefix": "futures-core-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures_core\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"alloc\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-core\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-executor-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "1e28d1d997f585e54aebc3f97d39e72338912123a67330d723fdbb564d646c9f",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-executor/0.3.31/download"
+              ],
+              "strip_prefix": "futures-executor-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures_executor\",\n    deps = [\n        \"@crate_index__futures-core-0.3.31//:futures_core\",\n        \"@crate_index__futures-task-0.3.31//:futures_task\",\n        \"@crate_index__futures-util-0.3.31//:futures_util\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-executor\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-io-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "9e5c1b78ca4aae1ac06c48a526a655760685149f0d465d21f37abfe57ce075c6",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-io/0.3.31/download"
+              ],
+              "strip_prefix": "futures-io-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures_io\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-io\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-macro-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-macro/0.3.31/download"
+              ],
+              "strip_prefix": "futures-macro-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_proc_macro\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_proc_macro(\n    name = \"futures_macro\",\n    deps = [\n        \"@crate_index__proc-macro2-1.0.95//:proc_macro2\",\n        \"@crate_index__quote-1.0.40//:quote\",\n        \"@crate_index__syn-2.0.101//:syn\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-macro\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-sink-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "e575fab7d1e0dcb8d0c7bcf9a63ee213816ab51902e6d244a95819acacf1d4f7",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-sink/0.3.31/download"
+              ],
+              "strip_prefix": "futures-sink-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures_sink\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"alloc\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-sink\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-task-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "f90f7dce0722e95104fcb095585910c0977252f286e354b5e3bd38902cd99988",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-task/0.3.31/download"
+              ],
+              "strip_prefix": "futures-task-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures_task\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"alloc\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-task\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__futures-util-0.3.31": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "9fa08315bb612088cc391249efdc3bc77536f16c91f6cf495e6fbe85b20a4a81",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/futures-util/0.3.31/download"
+              ],
+              "strip_prefix": "futures-util-0.3.31",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"futures_util\",\n    deps = [\n        \"@crate_index__futures-channel-0.3.31//:futures_channel\",\n        \"@crate_index__futures-core-0.3.31//:futures_core\",\n        \"@crate_index__futures-io-0.3.31//:futures_io\",\n        \"@crate_index__futures-sink-0.3.31//:futures_sink\",\n        \"@crate_index__futures-task-0.3.31//:futures_task\",\n        \"@crate_index__memchr-2.7.4//:memchr\",\n        \"@crate_index__pin-project-lite-0.2.16//:pin_project_lite\",\n        \"@crate_index__pin-utils-0.1.0//:pin_utils\",\n        \"@crate_index__slab-0.4.9//:slab\",\n    ],\n    proc_macro_deps = [\n        \"@crate_index__futures-macro-0.3.31//:futures_macro\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"alloc\",\n        \"async-await\",\n        \"async-await-macro\",\n        \"channel\",\n        \"futures-channel\",\n        \"futures-io\",\n        \"futures-macro\",\n        \"futures-sink\",\n        \"io\",\n        \"memchr\",\n        \"sink\",\n        \"slab\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=futures-util\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.3.31\",\n)\n"
+            }
+          },
+          "crate_index__libc-0.2.172": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/libc/0.2.172/download"
+              ],
+              "strip_prefix": "libc-0.2.172",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\n    \"@rules_rust//cargo:defs.bzl\",\n    \"cargo_build_script\",\n    \"cargo_toml_env_vars\",\n)\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"libc\",\n    deps = [\n        \"@crate_index__libc-0.2.172//:build_script_build\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"default\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2021\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=libc\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.2.172\",\n)\n\ncargo_build_script(\n    name = \"_bs\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \"**/*.rs\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"default\",\n        \"std\",\n    ],\n    crate_name = \"build_script_build\",\n    crate_root = \"build.rs\",\n    data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    edition = \"2021\",\n    pkg_name = \"libc\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=libc\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    version = \"0.2.172\",\n    visibility = [\"//visibility:private\"],\n)\n\nalias(\n    name = \"build_script_build\",\n    actual = \":_bs\",\n    tags = [\"manual\"],\n)\n"
+            }
+          },
+          "crate_index__memchr-2.7.4": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/memchr/2.7.4/download"
+              ],
+              "strip_prefix": "memchr-2.7.4",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"memchr\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"alloc\",\n        \"default\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2021\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=memchr\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"2.7.4\",\n)\n"
+            }
+          },
+          "crate_index__pin-project-lite-0.2.16": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "3b3cff922bd51709b605d9ead9aa71031d81447142d828eb4a6eba76fe619f9b",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/pin-project-lite/0.2.16/download"
+              ],
+              "strip_prefix": "pin-project-lite-0.2.16",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"pin_project_lite\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=pin-project-lite\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.2.16\",\n)\n"
+            }
+          },
+          "crate_index__pin-utils-0.1.0": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/pin-utils/0.1.0/download"
+              ],
+              "strip_prefix": "pin-utils-0.1.0",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"pin_utils\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=pin-utils\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.1.0\",\n)\n"
+            }
+          },
+          "crate_index__proc-macro2-1.0.95": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/proc-macro2/1.0.95/download"
+              ],
+              "strip_prefix": "proc-macro2-1.0.95",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\n    \"@rules_rust//cargo:defs.bzl\",\n    \"cargo_build_script\",\n    \"cargo_toml_env_vars\",\n)\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"proc_macro2\",\n    deps = [\n        \"@crate_index__proc-macro2-1.0.95//:build_script_build\",\n        \"@crate_index__unicode-ident-1.0.18//:unicode_ident\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"default\",\n        \"proc-macro\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2021\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=proc-macro2\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"1.0.95\",\n)\n\ncargo_build_script(\n    name = \"_bs\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \"**/*.rs\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"default\",\n        \"proc-macro\",\n    ],\n    crate_name = \"build_script_build\",\n    crate_root = \"build.rs\",\n    data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    edition = \"2021\",\n    pkg_name = \"proc-macro2\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=proc-macro2\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    version = \"1.0.95\",\n    visibility = [\"//visibility:private\"],\n)\n\nalias(\n    name = \"build_script_build\",\n    actual = \":_bs\",\n    tags = [\"manual\"],\n)\n"
+            }
+          },
+          "crate_index__quote-1.0.40": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "1885c039570dc00dcb4ff087a89e185fd56bae234ddc7f056a945bf36467248d",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/quote/1.0.40/download"
+              ],
+              "strip_prefix": "quote-1.0.40",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"quote\",\n    deps = [\n        \"@crate_index__proc-macro2-1.0.95//:proc_macro2\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"default\",\n        \"proc-macro\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=quote\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"1.0.40\",\n)\n"
+            }
+          },
+          "crate_index__slab-0.4.9": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/slab/0.4.9/download"
+              ],
+              "strip_prefix": "slab-0.4.9",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\n    \"@rules_rust//cargo:defs.bzl\",\n    \"cargo_build_script\",\n    \"cargo_toml_env_vars\",\n)\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"slab\",\n    deps = [\n        \"@crate_index__slab-0.4.9//:build_script_build\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"default\",\n        \"std\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=slab\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"0.4.9\",\n)\n\ncargo_build_script(\n    name = \"_bs\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \"**/*.rs\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"default\",\n        \"std\",\n    ],\n    crate_name = \"build_script_build\",\n    crate_root = \"build.rs\",\n    data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    deps = [\n        \"@crate_index__autocfg-1.4.0//:autocfg\",\n    ],\n    edition = \"2018\",\n    pkg_name = \"slab\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=slab\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    version = \"0.4.9\",\n    visibility = [\"//visibility:private\"],\n)\n\nalias(\n    name = \"build_script_build\",\n    actual = \":_bs\",\n    tags = [\"manual\"],\n)\n"
+            }
+          },
+          "crate_index__syn-2.0.101": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "8ce2b7fc941b3a24138a0a7cf8e858bfc6a992e7978a068a5c760deb0ed43caf",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/syn/2.0.101/download"
+              ],
+              "strip_prefix": "syn-2.0.101",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"syn\",\n    deps = [\n        \"@crate_index__proc-macro2-1.0.95//:proc_macro2\",\n        \"@crate_index__quote-1.0.40//:quote\",\n        \"@crate_index__unicode-ident-1.0.18//:unicode_ident\",\n    ],\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_features = [\n        \"clone-impls\",\n        \"default\",\n        \"derive\",\n        \"full\",\n        \"parsing\",\n        \"printing\",\n        \"proc-macro\",\n    ],\n    crate_root = \"src/lib.rs\",\n    edition = \"2021\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=syn\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"2.0.101\",\n)\n"
+            }
+          },
+          "crate_index__unicode-ident-1.0.18": {
+            "bzlFile": "@@bazel_tools//tools/build_defs/repo:http.bzl",
+            "ruleClassName": "http_archive",
+            "attributes": {
+              "patch_args": [
+                "-p0"
+              ],
+              "patch_tool": "",
+              "patches": [],
+              "remote_patch_strip": 1,
+              "sha256": "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512",
+              "type": "tar.gz",
+              "urls": [
+                "https://static.crates.io/crates/unicode-ident/1.0.18/download"
+              ],
+              "strip_prefix": "unicode-ident-1.0.18",
+              "build_file_content": "###############################################################################\n# @generated\n# DO NOT MODIFY: This file is auto-generated by a crate_universe tool. To \n# regenerate this file, run the following:\n#\n#     bazel mod show_repo 'communication'\n###############################################################################\n\nload(\"@rules_rust//cargo:defs.bzl\", \"cargo_toml_env_vars\")\n\nload(\"@rules_rust//rust:defs.bzl\", \"rust_library\")\n\n# buildifier: disable=bzl-visibility\nload(\"@rules_rust//crate_universe/private:selects.bzl\", \"selects\")\n\npackage(default_visibility = [\"//visibility:public\"])\n\ncargo_toml_env_vars(\n    name = \"cargo_toml_env_vars\",\n    src = \"Cargo.toml\",\n)\n\nrust_library(\n    name = \"unicode_ident\",\n    compile_data = glob(\n        allow_empty = True,\n        include = [\"**\"],\n        exclude = [\n            \"**/* *\",\n            \".tmp_git_root/**/*\",\n            \"BUILD\",\n            \"BUILD.bazel\",\n            \"WORKSPACE\",\n            \"WORKSPACE.bazel\",\n        ],\n    ),\n    crate_root = \"src/lib.rs\",\n    edition = \"2018\",\n    rustc_env_files = [\n        \":cargo_toml_env_vars\",\n    ],\n    rustc_flags = [\n        \"--cap-lints=allow\",\n    ],\n    srcs = glob(\n        allow_empty = True,\n        include = [\"**/*.rs\"],\n    ),\n    tags = [\n        \"cargo-bazel\",\n        \"crate-name=unicode-ident\",\n        \"manual\",\n        \"noclippy\",\n        \"norustfmt\",\n    ],\n    target_compatible_with = select({\n        \"@rules_rust//rust/platform:aarch64-apple-darwin\": [],\n        \"@rules_rust//rust/platform:aarch64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:wasm32-unknown-unknown\": [],\n        \"@rules_rust//rust/platform:wasm32-wasip1\": [],\n        \"@rules_rust//rust/platform:x86_64-pc-windows-msvc\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-linux-gnu\": [],\n        \"@rules_rust//rust/platform:x86_64-unknown-nixos-gnu\": [],\n        \"//conditions:default\": [\"@platforms//:incompatible\"],\n    }),\n    version = \"1.0.18\",\n)\n"
+            }
+          }
+        },
+        "moduleExtensionMetadata": {
+          "useAllRepos": "NO",
+          "reproducible": false
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "bazel_features~",
+            "bazel_features_globals",
+            "bazel_features~~version_extension~bazel_features_globals"
+          ],
+          [
+            "bazel_features~",
+            "bazel_features_version",
+            "bazel_features~~version_extension~bazel_features_version"
+          ],
+          [
+            "rules_cc~",
+            "bazel_tools",
+            "bazel_tools"
+          ],
+          [
+            "rules_cc~",
+            "rules_cc",
+            "rules_cc~"
+          ],
+          [
+            "rules_rust~",
+            "bazel_features",
+            "bazel_features~"
+          ],
+          [
+            "rules_rust~",
+            "bazel_skylib",
+            "bazel_skylib~"
+          ],
+          [
+            "rules_rust~",
+            "bazel_tools",
+            "bazel_tools"
+          ],
+          [
+            "rules_rust~",
+            "rules_cc",
+            "rules_cc~"
+          ],
+          [
+            "rules_rust~",
+            "rules_rust",
+            "rules_rust~"
+          ]
+        ]
+      }
+    },
     "@@toolchains_llvm~//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
         "bzlTransitiveDigest": "DbHjmsbc+5UNcxe3NTxwxbUMxZqW/A99vu2JcopPuJk=",
-        "usagesDigest": "R2pKujbA2QRAQz4Nkh7Cpzj1pNbfFDOt+XL6z/xUzgo=",
+        "usagesDigest": "qLqTG0s9oBwsQk1Hu5mG4hT23h+ZCgSZ7p7iDDF/ZcQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -526,7 +1023,19 @@
             "attributes": {
               "absolute_paths": false,
               "archive_flags": {},
-              "compile_flags": {},
+              "compile_flags": {
+                "": [
+                  "-march=nehalem",
+                  "-ffp-model=strict",
+                  "-U_FORTIFY_SOURCE",
+                  "-fstack-protector",
+                  "-fno-omit-frame-pointer",
+                  "-fcolor-diagnostics",
+                  "-Wno-deprecated-declarations",
+                  "-Wno-error=self-assign-overloaded",
+                  "-Wthread-safety"
+                ]
+              },
               "conly_flags": {},
               "coverage_compile_flags": {},
               "coverage_link_flags": {},
@@ -541,13 +1050,19 @@
               "extra_exec_compatible_with": {},
               "extra_target_compatible_with": {},
               "link_flags": {},
-              "link_libs": {},
+              "link_libs": {
+                "": [
+                  "-lrt"
+                ]
+              },
               "llvm_versions": {
                 "": "16.0.0"
               },
               "opt_compile_flags": {},
               "opt_link_flags": {},
-              "stdlib": {},
+              "stdlib": {
+                "": "dynamic-stdc++"
+              },
               "target_settings": {},
               "unfiltered_compile_flags": {},
               "toolchain_roots": {},
