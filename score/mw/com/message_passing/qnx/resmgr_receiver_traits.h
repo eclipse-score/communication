@@ -124,7 +124,7 @@ class ResmgrReceiverTraits
         // broken_link_c/issue/57467 it's allowed for IPC API that is mw::com (aka LoLa)
         // NOLINTNEXTLINE(score-banned-function): See above
         const auto block_result = dispatch->dispatch_block(context_pointer);
-        if (!block_result.has_value())  // LCOV_EXCL_BR_LINE False positive: Ticket-181446
+        if (!block_result.has_value())
         {
             // shall not be a critical error; skip the dispatch_handler() but allow the next iteration
             return true;
@@ -136,13 +136,13 @@ class ResmgrReceiverTraits
         // NOLINTNEXTLINE(score-banned-function): See above
         const auto handler_result = dispatch->dispatch_handler(context_pointer);
 
-        if (!handler_result.has_value())  // LCOV_EXCL_BR_LINE False positive: Ticket-181446
+        if (!handler_result.has_value())
         {
             // shall not be a critical error, but there were no valid message to handle
             return true;
         }
 
-        if (context_data.to_terminate)  // LCOV_EXCL_BR_LINE False positive: Ticket-181446
+        if (context_data.to_terminate)
         {
             // we were asked to stop; do it in this thread
             return false;
@@ -155,12 +155,12 @@ class ResmgrReceiverTraits
             // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
             // coverity[autosar_cpp14_m0_1_3_violation : FALSE]
             std::lock_guard<std::mutex> guard(receiver_state.message_queue_mutex_);
-            if (receiver_state.message_queue_.empty())  // LCOV_EXCL_BR_LINE False positive: Ticket-181446
+            if (receiver_state.message_queue_.empty())
             {
                 // nothing to process yet
                 return true;
             }
-            if (receiver_state.message_queue_owned_)  // LCOV_EXCL_BR_LINE False positive: Ticket-181446
+            if (receiver_state.message_queue_owned_)
             {
                 // will be processed in another thread
                 return true;
@@ -176,7 +176,7 @@ class ResmgrReceiverTraits
                 // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
                 // coverity[autosar_cpp14_m0_1_3_violation : FALSE]
                 std::lock_guard<std::mutex> guard(receiver_state.message_queue_mutex_);
-                if (receiver_state.message_queue_.empty())  // LCOV_EXCL_BR_LINE False positive: Ticket-181446
+                if (receiver_state.message_queue_.empty())
                 {
                     // nothing to process already
                     receiver_state.message_queue_owned_ = false;
@@ -186,7 +186,7 @@ class ResmgrReceiverTraits
                 receiver_state.message_queue_.pop_front();
             }
 
-            if (message_data.type_ == MessageType::kShortMessage)  // LCOV_EXCL_BR_LINE False positive: Ticket-181446
+            if (message_data.type_ == MessageType::kShortMessage)
             {
                 // The unions are strictly prohibited by AUTOSAR Rule A9-5-1. But, in this case what we need to do
                 // is serialize two type alternatives in most efficient way possible. The union fits this purpose
@@ -323,7 +323,6 @@ class ResmgrReceiverTraits
         // coverity[autosar_cpp14_m11_0_1_violation]
         const FileDescriptorResourcesType& os_resources_;
 
-        // LCOV_EXCL_START False positive: Ticket-184253
         ResmgrReceiverState(const std::size_t max_message_queue_size,
                             const std::int32_t side_channel_coid,
                             const score::cpp::pmr::vector<uid_t>& allowed_uids,
@@ -336,7 +335,6 @@ class ResmgrReceiverTraits
               os_resources_(os_resources)
         {
         }
-        // LCOV_EXCL_STOP
     };
 
     struct ResmgrContextData
