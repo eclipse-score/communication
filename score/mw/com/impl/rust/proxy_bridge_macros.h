@@ -47,25 +47,25 @@ inline P* CreateProxyWrapper(const typename P::HandleType& handle)
 
 }  // namespace score::mw::com::impl::rust
 
-#define BEGIN_EXPORT_MW_COM_INTERFACE(uid, proxy_type, skeleton_type)                                       \
-    extern "C" {                                                                                            \
-                                                                                                            \
-    using _MwComProxyType = proxy_type;                                                                     \
-    using _MwComSkeletonType = skeleton_type;                                                               \
-                                                                                                            \
-    _MwComProxyType* mw_com_gen_ProxyWrapperClass_##uid##_create(const _MwComProxyType::HandleType& handle) \
-    {                                                                                                       \
-        return ::score::mw::com::impl::rust::CreateProxyWrapper<_MwComProxyType>(handle);                     \
-    }                                                                                                       \
-                                                                                                            \
-    void mw_com_gen_ProxyWrapperClass_##uid##_delete(_MwComProxyType* proxy)                                \
-    {                                                                                                       \
-        delete proxy;                                                                                       \
+#define BEGIN_EXPORT_MW_COM_INTERFACE(uid, proxy_type, skeleton_type)                                               \
+    extern "C" {                                                                                                    \
+                                                                                                                    \
+    using uid##MwComProxyType = proxy_type;                                                                         \
+    using uid##MwComSkeletonType = skeleton_type;                                                                   \
+                                                                                                                    \
+    uid##MwComProxyType* mw_com_gen_ProxyWrapperClass_##uid##_create(const uid##MwComProxyType::HandleType& handle) \
+    {                                                                                                               \
+        return ::score::mw::com::impl::rust::CreateProxyWrapper<uid##MwComProxyType>(handle);                         \
+    }                                                                                                               \
+                                                                                                                    \
+    void mw_com_gen_ProxyWrapperClass_##uid##_delete(uid##MwComProxyType* proxy)                                    \
+    {                                                                                                               \
+        delete proxy;                                                                                               \
     }
 
 #define EXPORT_MW_COM_EVENT(uid, event_type, event_name)                                                   \
     ::score::mw::com::impl::ProxyEvent<event_type>* mw_com_gen_ProxyWrapperClass_##uid##_##event_name##_get( \
-        _MwComProxyType* proxy) noexcept                                                                   \
+        uid##MwComProxyType* proxy) noexcept                                                               \
     {                                                                                                      \
         return &proxy->event_name;                                                                         \
     }
