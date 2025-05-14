@@ -1,0 +1,35 @@
+##################################################################################
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+##################################################################################
+---
+#
+# This configuration file contains user-defined extra checks for
+# clang-tidy which are subject to get performed for all source
+# files residing in this directory as well as its subdirectories.
+#
+
+# NOTE: Please *NEVER* specify a wildcard pattern for enabling checks,
+#       such as `bugprone-*` or `performance-*`! Only disabling checks
+#       would be acceptable, e.g. `-bugprone-*` or `-performance-*` etc.
+#       Reason for such guideline is that, in case wildcards get used for
+#       enabling checks, upgrading the clang-tidy binary to a newer version
+#       would then implicitly enable the new checks available in the upgraded
+#       clang-tidy binary. And then our (voting) CI jobs which are performing
+#       the extra clang-tidy checks are highly subject to fail and code would
+#       have to be made compliant again first. And that would block and also
+#       prolong the version upgrade unnecessarily. Furthermore it is easier
+#       to immediately spot which checks exactly will get performed in
+#       case each one gets listed explicitly, as done below.
+
+Checks: >
+  -*,
+  modernize-concat-nested-namespaces,
