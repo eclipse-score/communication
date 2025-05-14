@@ -20,7 +20,7 @@ namespace score::mw::com::impl
 
 /// \brief error codes, which can occur, when trying to create an InstanceIdentifier from a string representation
 /// \details These error codes and the corresponding error domain are a preparation for a later/upcoming implementation
-///          of static score::Result<InstanceIdentifier> InstanceIdentifier::Create(amp_string_view serializedFormat).
+///          of static score::Result<InstanceIdentifier> InstanceIdentifier::Create(score_future_cpp_string_view serializedFormat).
 ///          Right now, it isn't used from core functionality.
 enum class configuration_errc : score::result::ErrorCode
 {

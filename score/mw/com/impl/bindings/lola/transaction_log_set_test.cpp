@@ -19,6 +19,7 @@
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
 #include <gtest/gtest.h>
+#include <memory>
 
 namespace score::mw::com::impl::lola
 {
@@ -54,6 +55,13 @@ class RuntimeMockGuard
 class TransactionLogSetFixture : public TransactionLogSetHelperFixture
 {
   protected:
+    TransactionLogSetFixture& WithATransactionLogSet(std::size_t number_of_logs)
+    {
+        unit_ = std::make_unique<TransactionLogSet>(
+            number_of_logs, kDummyNumberOfSlots, memory_resource_.getMemoryResourceProxy());
+        return *this;
+    }
+
     TransactionLog::DereferenceSlotCallback GetDereferenceSlotCallbackWrapper() noexcept
     {
         // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only stores a
@@ -75,12 +83,13 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
     TransactionLogSet::TransactionLogIndex RegisterProxyElementWithSubscribeTransaction(
         const TransactionLogId& transaction_log_id) noexcept
     {
-        const auto transaction_log_index = unit_.RegisterProxyElement(transaction_log_id).value();
-        auto& transaction_log = unit_.GetTransactionLog(transaction_log_index);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(unit_ != nullptr);
+        const auto transaction_log_index = unit_->RegisterProxyElement(transaction_log_id).value();
+        auto& transaction_log = unit_->GetTransactionLog(transaction_log_index);
         transaction_log.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
         transaction_log.SubscribeTransactionCommit();
 
-        auto& transaction_logs = TransactionLogSetAttorney{unit_}.GetProxyTransactionLogs();
+        auto& transaction_logs = TransactionLogSetAttorney{*unit_}.GetProxyTransactionLogs();
         auto& transaction_log_node = transaction_logs.at(transaction_log_index);
 
         EXPECT_TRUE(transaction_log_node.IsActive());
@@ -93,14 +102,15 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
         const TransactionLogId& transaction_log_id,
         const TransactionLog::SlotIndexType slot_index) noexcept
     {
-        const auto transaction_log_index = unit_.RegisterProxyElement(transaction_log_id).value();
-        auto& transaction_log = unit_.GetTransactionLog(transaction_log_index);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(unit_ != nullptr);
+        const auto transaction_log_index = unit_->RegisterProxyElement(transaction_log_id).value();
+        auto& transaction_log = unit_->GetTransactionLog(transaction_log_index);
         transaction_log.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
         transaction_log.SubscribeTransactionCommit();
         transaction_log.ReferenceTransactionBegin(slot_index);
         transaction_log.ReferenceTransactionCommit(slot_index);
 
-        auto& transaction_logs = TransactionLogSetAttorney{unit_}.GetProxyTransactionLogs();
+        auto& transaction_logs = TransactionLogSetAttorney{*unit_}.GetProxyTransactionLogs();
         auto& transaction_log_node = transaction_logs.at(transaction_log_index);
 
         EXPECT_TRUE(transaction_log_node.IsActive());
@@ -110,7 +120,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
     }
 
     memory::shared::SharedMemoryResourceHeapAllocatorMock memory_resource_{1U};
-    TransactionLogSet unit_{kNumberOfLogs, kDummyNumberOfSlots, memory_resource_.getMemoryResourceProxy()};
+    std::unique_ptr<TransactionLogSet> unit_{nullptr};
 
     StrictMock<MockFunction<void(TransactionLog::SlotIndexType)>> dereference_slot_callback_{};
     StrictMock<MockFunction<void(TransactionLog::MaxSampleCountType)>> unsubscribe_callback_{};
@@ -119,7 +129,9 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
 using TransactionLogSetRollbackFixture = TransactionLogSetFixture;
 TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnUnregisteredIdIdDoesNothing)
 {
-    const auto rollback_result = unit_.RollbackProxyTransactions(
+    WithATransactionLogSet(kNumberOfLogs);
+
+    const auto rollback_result = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
     ASSERT_TRUE(rollback_result.has_value());
 }
@@ -128,28 +140,33 @@ TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdWithoutMar
 {
     const TransactionLog::SlotIndexType slot_index{1U};
 
+    WithATransactionLogSet(kNumberOfLogs);
+
     // Expecting that both callbacks will not be called
     EXPECT_CALL(unsubscribe_callback_, Call(kSubscriptionMaxSampleCount)).Times(0);
     EXPECT_CALL(dereference_slot_callback_, Call(slot_index)).Times(0);
 
     // When registering a TransactionLog
-    const auto transaction_log_index = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
 
     // and MarkTransactionLogsNeedRollback is not called
 
     // and RollbackProxyTransactions is called
-    const auto rollback_result = unit_.RollbackProxyTransactions(
+    const auto rollback_result = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
     ASSERT_TRUE(rollback_result.has_value());
 
     // Then the TransactionLog still remains
     const bool expect_needs_rollback{false};
-    ExpectProxyTransactionLogExistsAtIndex(unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
+    ExpectProxyTransactionLogExistsAtIndex(
+        *unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
 }
 
 TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdRollsBackLogAndResetsElement)
 {
     const TransactionLog::SlotIndexType slot_index{1U};
+
+    WithATransactionLogSet(kNumberOfLogs);
 
     // Expecting that both callbacks will be called once
     EXPECT_CALL(unsubscribe_callback_, Call(kSubscriptionMaxSampleCount));
@@ -159,22 +176,24 @@ TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdRollsBackL
     score::cpp::ignore = RegisterProxyElementWithSubscribeAndReferenceTransactions(kDummyTransactionLogId, slot_index);
 
     // When MarkTransactionLogsNeedRollback is called
-    unit_.MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
+    unit_->MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
 
     // and RollbackProxyTransactions is called
-    const auto rollback_result = unit_.RollbackProxyTransactions(
+    const auto rollback_result = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
 
     // Then no error should be returned
     ASSERT_TRUE(rollback_result.has_value());
 
     // And the transaction log should be cleared
-    ExpectTransactionLogSetEmpty(unit_);
+    ExpectTransactionLogSetEmpty(*unit_);
 }
 
 TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdRollsBackFirstLogWithProvidedId)
 {
     const TransactionLog::SlotIndexType slot_index{1U};
+
+    WithATransactionLogSet(kNumberOfLogs);
 
     // Expecting that the unsubscribe callback will be called for both instances
     EXPECT_CALL(unsubscribe_callback_, Call(kSubscriptionMaxSampleCount)).Times(2);
@@ -188,10 +207,10 @@ TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdRollsBackF
     const auto transaction_log_index_2 = RegisterProxyElementWithSubscribeTransaction(kDummyTransactionLogId);
 
     // When MarkTransactionLogsNeedRollback is called
-    unit_.MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
+    unit_->MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
 
     // and RollbackProxyTransactions is called
-    const auto rollback_result = unit_.RollbackProxyTransactions(
+    const auto rollback_result = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
 
     // Then no error should be returned
@@ -200,22 +219,24 @@ TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdRollsBackF
     // And the only the second transaction log should remain
     const bool expect_needs_rollback{true};
     ExpectProxyTransactionLogExistsAtIndex(
-        unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
+        *unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
 
     // and when RollbackProxyTransactions is called again
-    const auto rollback_result_2 = unit_.RollbackProxyTransactions(
+    const auto rollback_result_2 = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
 
     // Then no error should be returned
     ASSERT_TRUE(rollback_result_2.has_value());
 
     // And the transaction log should be cleared
-    ExpectTransactionLogSetEmpty(unit_);
+    ExpectTransactionLogSetEmpty(*unit_);
 }
 
 TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdOnlyRollsBackLogsMarkedForRollback)
 {
     const TransactionLog::SlotIndexType slot_index{1U};
+
+    WithATransactionLogSet(kNumberOfLogs);
 
     // Expecting that the unsubscribe callback will be called once
     EXPECT_CALL(unsubscribe_callback_, Call(kSubscriptionMaxSampleCount));
@@ -227,14 +248,14 @@ TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdOnlyRollsB
     score::cpp::ignore = RegisterProxyElementWithSubscribeTransaction(kDummyTransactionLogId);
 
     // When MarkTransactionLogsNeedRollback is called
-    unit_.MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
+    unit_->MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
 
     // and then a second TransactionLog is registered with successful transactions
     const auto transaction_log_index_2 =
         RegisterProxyElementWithSubscribeAndReferenceTransactions(kDummyTransactionLogId, slot_index);
 
     // When RollbackProxyTransactions is called
-    const auto rollback_result = unit_.RollbackProxyTransactions(
+    const auto rollback_result = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
 
     // Then no error should be returned
@@ -243,7 +264,7 @@ TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdOnlyRollsB
     // And the second transaction log should remain
     const bool expect_needs_rollback{false};
     ExpectProxyTransactionLogExistsAtIndex(
-        unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
+        *unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
 }
 
 TEST_F(TransactionLogSetRollbackFixture,
@@ -251,22 +272,24 @@ TEST_F(TransactionLogSetRollbackFixture,
 {
     const std::size_t slot_index{1U};
 
+    WithATransactionLogSet(kNumberOfLogs);
+
     // Expecting that both callbacks are never called
     EXPECT_CALL(unsubscribe_callback_, Call(_)).Times(0);
     EXPECT_CALL(dereference_slot_callback_, Call(slot_index)).Times(0);
 
     // When registering a TransactionLog
-    const auto transaction_log_index = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
 
     // and a subscribe transaction is begun but never finished, indicating a crash
-    auto& transaction_log = unit_.GetTransactionLog(transaction_log_index);
+    auto& transaction_log = unit_->GetTransactionLog(transaction_log_index);
     transaction_log.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
 
     // When MarkTransactionLogsNeedRollback is called
-    unit_.MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
+    unit_->MarkTransactionLogsNeedRollback(kDummyTransactionLogId);
 
     // and RollbackProxyTransactions is called
-    const auto rollback_result = unit_.RollbackProxyTransactions(
+    const auto rollback_result = unit_->RollbackProxyTransactions(
         kDummyTransactionLogId, GetDereferenceSlotCallbackWrapper(), GetUnsubscribeCallbackWrapper());
 
     // Then an error should be returned
@@ -275,12 +298,15 @@ TEST_F(TransactionLogSetRollbackFixture,
 
     // And the transaction log should not be cleared
     const bool expect_needs_rollback{true};
-    ExpectProxyTransactionLogExistsAtIndex(unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
+    ExpectProxyTransactionLogExistsAtIndex(
+        *unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
 }
 
 TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnUnregisteredSkeletonTransactionLogIdDoesNothing)
 {
-    const auto rollback_result = unit_.RollbackSkeletonTracingTransactions(GetDereferenceSlotCallbackWrapper());
+    WithATransactionLogSet(kNumberOfLogs);
+
+    const auto rollback_result = unit_->RollbackSkeletonTracingTransactions(GetDereferenceSlotCallbackWrapper());
     ASSERT_TRUE(rollback_result.has_value());
 }
 
@@ -289,26 +315,28 @@ TEST_F(TransactionLogSetRollbackFixture,
 {
     const std::size_t slot_index{kDummyNumberOfSlots - 1U};
 
+    WithATransactionLogSet(kNumberOfLogs);
+
     // Expecting that the dereference callback will be called once
     EXPECT_CALL(dereference_slot_callback_, Call(slot_index));
 
     // When registering a TransactionLog
-    const auto transaction_log_index = unit_.RegisterSkeletonTracingElement();
+    const auto transaction_log_index = unit_->RegisterSkeletonTracingElement();
 
-    auto& transaction_log = unit_.GetTransactionLog(transaction_log_index);
+    auto& transaction_log = unit_->GetTransactionLog(transaction_log_index);
 
     // and a successful reference transaction is recorded
     transaction_log.ReferenceTransactionBegin(slot_index);
     transaction_log.ReferenceTransactionCommit(slot_index);
 
     // When RollbackSkeletonTracingTransactions is called
-    const auto rollback_result = unit_.RollbackSkeletonTracingTransactions(GetDereferenceSlotCallbackWrapper());
+    const auto rollback_result = unit_->RollbackSkeletonTracingTransactions(GetDereferenceSlotCallbackWrapper());
 
     // Then no error should be returned
     ASSERT_TRUE(rollback_result.has_value());
 
     // And the transaction log should be cleared
-    EXPECT_FALSE(TransactionLogSetAttorney{unit_}.GetSkeletonTransactionLog().has_value());
+    EXPECT_FALSE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
 
 TEST_F(TransactionLogSetRollbackFixture,
@@ -316,49 +344,55 @@ TEST_F(TransactionLogSetRollbackFixture,
 {
     const std::size_t slot_index{1U};
 
+    WithATransactionLogSet(kNumberOfLogs);
+
     // Expecting that the dereference callback is never called
     EXPECT_CALL(dereference_slot_callback_, Call(slot_index)).Times(0);
 
     // When registering a TransactionLog
-    const auto transaction_log_index = unit_.RegisterSkeletonTracingElement();
+    const auto transaction_log_index = unit_->RegisterSkeletonTracingElement();
 
     // and a reference transaction is begun but never finished, indicating a crash
-    auto& transaction_log = unit_.GetTransactionLog(transaction_log_index);
+    auto& transaction_log = unit_->GetTransactionLog(transaction_log_index);
     transaction_log.ReferenceTransactionBegin(slot_index);
 
     // When RollbackProxyTransactions is called
-    const auto rollback_result = unit_.RollbackSkeletonTracingTransactions(GetDereferenceSlotCallbackWrapper());
+    const auto rollback_result = unit_->RollbackSkeletonTracingTransactions(GetDereferenceSlotCallbackWrapper());
 
     // Then an error should be returned
     ASSERT_FALSE(rollback_result.has_value());
     EXPECT_EQ(rollback_result.error(), ComErrc::kCouldNotRestartProxy);
 
     // And the transaction log should not be cleared
-    EXPECT_TRUE(TransactionLogSetAttorney{unit_}.GetSkeletonTransactionLog().has_value());
+    EXPECT_TRUE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
 
 using TransactionLogSetRegisterFixture = TransactionLogSetFixture;
 TEST_F(TransactionLogSetRegisterFixture, RegisteringLessThanTheMaxNumberPassedToConstructorReturnsValidIndexes)
 {
+    WithATransactionLogSet(kNumberOfLogs);
+
     for (std::size_t i = 0; i < kNumberOfLogs; ++i)
     {
         const TransactionLogId transaction_log_id{static_cast<uid_t>(i)};
-        const auto transaction_log_index_result = unit_.RegisterProxyElement(transaction_log_id);
+        const auto transaction_log_index_result = unit_->RegisterProxyElement(transaction_log_id);
         EXPECT_TRUE(transaction_log_index_result.has_value());
     }
 }
 
 TEST_F(TransactionLogSetRegisterFixture, RegisteringMoreThanTheMaxNumberPassedToConstructorReturnsError)
 {
+    WithATransactionLogSet(kNumberOfLogs);
+
     for (std::size_t i = 0; i < kNumberOfLogs; ++i)
     {
         const TransactionLogId transaction_log_id{static_cast<uid_t>(i)};
-        const auto transaction_log_index_result = unit_.RegisterProxyElement(transaction_log_id);
+        const auto transaction_log_index_result = unit_->RegisterProxyElement(transaction_log_id);
         EXPECT_TRUE(transaction_log_index_result.has_value());
     }
 
     const TransactionLogId transaction_log_id{static_cast<uid_t>(kNumberOfLogs)};
-    const auto transaction_log_index_result = unit_.RegisterProxyElement(transaction_log_id);
+    const auto transaction_log_index_result = unit_->RegisterProxyElement(transaction_log_id);
     EXPECT_FALSE(transaction_log_index_result.has_value());
 }
 
@@ -366,74 +400,92 @@ TEST_F(TransactionLogSetRegisterFixture, CallingRegisterProxyWillCreateATransact
 {
     const bool expect_needs_rollback{false};
 
-    const auto transaction_log_index = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
-    ExpectProxyTransactionLogExistsAtIndex(unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
+    WithATransactionLogSet(kNumberOfLogs);
+
+    const auto transaction_log_index = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
+    ExpectProxyTransactionLogExistsAtIndex(
+        *unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
 }
 
 TEST_F(TransactionLogSetRegisterFixture, RegisterWithSameIdCanBeReCalledAfterUnregistering)
 {
     const bool expect_needs_rollback{false};
 
-    const auto transaction_log_index = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
-    unit_.Unregister(transaction_log_index);
-    const auto transaction_log_index_2 = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
+    WithATransactionLogSet(kNumberOfLogs);
+
+    const auto transaction_log_index = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
+    unit_->Unregister(transaction_log_index);
+    const auto transaction_log_index_2 = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
     ExpectProxyTransactionLogExistsAtIndex(
-        unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
+        *unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
 }
 
 TEST_F(TransactionLogSetRegisterFixture, CallingRegisterWithSameIdWillReturnDifferentIndices)
 {
     const bool expect_needs_rollback{false};
 
-    const auto transaction_log_index = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
-    ExpectProxyTransactionLogExistsAtIndex(unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
+    WithATransactionLogSet(kNumberOfLogs);
 
-    const auto transaction_log_index_2 = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
+    ExpectProxyTransactionLogExistsAtIndex(
+        *unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
+
+    const auto transaction_log_index_2 = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
     EXPECT_NE(transaction_log_index, transaction_log_index_2);
 
     const bool expect_other_slots_empty{false};
     ExpectProxyTransactionLogExistsAtIndex(
-        unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback, expect_other_slots_empty);
+        *unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback, expect_other_slots_empty);
 }
 
 TEST_F(TransactionLogSetRegisterFixture, CallingRegisterSkeletonWillCreateATransactionLogAndReturnTheIndex)
 {
-    const auto transaction_log_index = unit_.RegisterSkeletonTracingElement();
+    WithATransactionLogSet(kNumberOfLogs);
+
+    const auto transaction_log_index = unit_->RegisterSkeletonTracingElement();
     EXPECT_EQ(transaction_log_index, TransactionLogSet::kSkeletonIndexSentinel);
-    EXPECT_TRUE(TransactionLogSetAttorney{unit_}.GetSkeletonTransactionLog().has_value());
+    EXPECT_TRUE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
 
 TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveProxyTransactionLog)
 {
-    const auto transaction_log_index = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
-    unit_.Unregister(transaction_log_index);
-    ExpectTransactionLogSetEmpty(unit_);
+    WithATransactionLogSet(kNumberOfLogs);
+
+    const auto transaction_log_index = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
+    unit_->Unregister(transaction_log_index);
+    ExpectTransactionLogSetEmpty(*unit_);
 }
 
 TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterAfterRegisteringTwiceWithSameIdOnlyUnregistersOneAtATime)
 {
     const bool expect_needs_rollback{false};
 
-    const auto transaction_log_index = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
-    const auto transaction_log_index_2 = unit_.RegisterProxyElement(kDummyTransactionLogId).value();
+    WithATransactionLogSet(kNumberOfLogs);
 
-    unit_.Unregister(transaction_log_index);
+    const auto transaction_log_index = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index_2 = unit_->RegisterProxyElement(kDummyTransactionLogId).value();
+
+    unit_->Unregister(transaction_log_index);
     ExpectProxyTransactionLogExistsAtIndex(
-        unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
+        *unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
 
-    unit_.Unregister(transaction_log_index_2);
-    ExpectTransactionLogSetEmpty(unit_);
+    unit_->Unregister(transaction_log_index_2);
+    ExpectTransactionLogSetEmpty(*unit_);
 }
 
 TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveSkeletonTransactionLog)
 {
-    const auto transaction_log_index = unit_.RegisterSkeletonTracingElement();
-    unit_.Unregister(transaction_log_index);
-    EXPECT_FALSE(TransactionLogSetAttorney{unit_}.GetSkeletonTransactionLog().has_value());
+    WithATransactionLogSet(kNumberOfLogs);
+
+    const auto transaction_log_index = unit_->RegisterSkeletonTracingElement();
+    unit_->Unregister(transaction_log_index);
+    EXPECT_FALSE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
 
 TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLogsConcurrently)
 {
+    WithATransactionLogSet(kNumberOfLogs);
+
     auto& unit = unit_;
     std::vector<score::cpp::jthread> threads{};
     auto thread_count = kNumberOfLogs;
@@ -445,11 +497,11 @@ TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLo
         threads.emplace_back([&unit, thread_number = TransactionLogSet::TransactionLogIndex(i + 1U)]() noexcept {
             for (auto loop_count = 0U; loop_count < 50U; loop_count++)
             {
-                auto register_result = unit.RegisterProxyElement(thread_number);
+                auto register_result = unit->RegisterProxyElement(thread_number);
                 ASSERT_TRUE(register_result.has_value());
                 using namespace std::chrono_literals;
                 std::this_thread::sleep_for(5ms);
-                unit.Unregister(register_result.value());
+                unit->Unregister(register_result.value());
             }
         });
     }
@@ -466,7 +518,7 @@ TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLo
 
     // then all acquired TransactionLogNodes have been correctly unregistered by the threads and thus the
     // TransactionLogSet is "empty" again.
-    ExpectTransactionLogSetEmpty(unit_);
+    ExpectTransactionLogSetEmpty(*unit_);
 }
 
 }  // namespace
