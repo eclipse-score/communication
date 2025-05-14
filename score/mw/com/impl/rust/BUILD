@@ -25,6 +25,22 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "proxy_bridge_macros",
+    srcs = ["proxy_bridge_macros.cpp"],
+    hdrs = ["proxy_bridge_macros.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//visibility:public", # platform_only
+        # "@ddad//platform/aas:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl",
+        "//score/mw/com/impl/plumbing:sample_ptr",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
 rust_library(
     name = "proxy_bridge_rs",
     srcs = ["proxy_bridge.rs"],
@@ -36,5 +52,27 @@ rust_library(
         ":proxy_bridge_cpp",
         "//score/mw/com/impl/plumbing:sample_ptr_rs",
         "@crate_index//:futures",
+    ],
+)
+
+rust_library(
+    name = "macros",
+    srcs = ["macros.rs"],
+    deps = [
+        ":proxy_bridge_rs",
+        "//score/mw/com/impl/plumbing:sample_ptr_rs",
+    ],
+)
+
+rust_library(
+    name = "mw_com",
+    srcs = ["mw_com.rs"],
+    visibility = [
+        "//visibility:public", # platform_only
+        # "@ddad//platform/aas:__subpackages__",
+    ],
+    deps = [
+        ":macros",
+        ":proxy_bridge_rs",
     ],
 )

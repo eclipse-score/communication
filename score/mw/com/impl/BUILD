@@ -41,6 +41,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
+        "//score/mw/com/impl/rust:__pkg__",
         "//score/mw/com/impl/test:__pkg__",
         "//score/mw/com/impl/test/uat:__pkg__",
         "//score/mw/com/impl/tracing:__subpackages__",
