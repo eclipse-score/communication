@@ -99,6 +99,8 @@ std::shared_ptr<message_passing::ISender> MessagePassingControl::CreateNewSender
     auto new_sender_unique_p = message_passing::SenderFactory::Create(
         senderName.data(), stop_source_.get_token(), sender_config, std::move(logging_callback), memory_resource);
 
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
+    // both branches (true / false) being covered. Suppression can be removed when bug is fixed in Ticket-188259).
     // In case we are ASIL-B ourselves, are sending towards an ASIL-QM receiver and the OS specific sender
     // doesn't warrant non-blocking sending in any case, we wrap the sender with wrapper, which gives the guarantee
     // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
@@ -109,6 +111,7 @@ std::shared_ptr<message_passing::ISender> MessagePassingControl::CreateNewSender
     if (asil_b_capability_ && (not new_sender_unique_p->HasNonBlockingGuarantee()) &&
         (asil_level == QualityType::kASIL_QM))
     {
+        // LCOV_EXCL_BR_STOP
         new_sender_unique_p =
             score::cpp::pmr::make_unique<message_passing::NonBlockingSender>(score::cpp::pmr::get_default_resource(),
                                                                       std::move(new_sender_unique_p),
