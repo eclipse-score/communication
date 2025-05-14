@@ -38,7 +38,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -57,7 +57,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -73,7 +73,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [

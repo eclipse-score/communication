@@ -23,7 +23,7 @@ class AnyStringViewFixture : public ::testing::Test
 {
   public:
     std::string_view std_string_view_{"foo"};
-    score::cpp::string_view score_string_view_{"foo"};
+    score::cpp::string_view score_future_cpp_string_view_{"foo"};
     std::string string_{"foo"};
 };
 
@@ -36,18 +36,18 @@ TEST_F(AnyStringViewFixture, ConvertStdToStd)
 TEST_F(AnyStringViewFixture, ConvertStdToAmp)
 {
     score::cpp::string_view unit = AnyStringView{std_string_view_};
-    EXPECT_EQ(unit, score_string_view_);
+    EXPECT_EQ(unit, score_future_cpp_string_view_);
 }
 
 TEST_F(AnyStringViewFixture, ConvertAmpToAmp)
 {
-    score::cpp::string_view unit = AnyStringView{score_string_view_};
-    EXPECT_EQ(unit, score_string_view_);
+    score::cpp::string_view unit = AnyStringView{score_future_cpp_string_view_};
+    EXPECT_EQ(unit, score_future_cpp_string_view_);
 }
 
 TEST_F(AnyStringViewFixture, ConvertAmpToStd)
 {
-    std::string_view unit = AnyStringView{score_string_view_};
+    std::string_view unit = AnyStringView{score_future_cpp_string_view_};
     EXPECT_EQ(unit, std_string_view_);
 }
 
@@ -60,13 +60,13 @@ TEST_F(AnyStringViewFixture, ConvertLiteralToStd)
 TEST_F(AnyStringViewFixture, ConvertLiteralToAmp)
 {
     score::cpp::string_view unit = AnyStringView{"foo"};
-    EXPECT_EQ(unit, score_string_view_);
+    EXPECT_EQ(unit, score_future_cpp_string_view_);
 }
 
 TEST_F(AnyStringViewFixture, ConvertStringToAmp)
 {
     score::cpp::string_view unit = AnyStringView{string_};
-    EXPECT_EQ(unit, score_string_view_);
+    EXPECT_EQ(unit, score_future_cpp_string_view_);
 }
 
 TEST_F(AnyStringViewFixture, ConvertStringToStd)
@@ -94,7 +94,7 @@ TEST_F(AnyStringViewFixture, ConvertImplicitStdToStd)
 
 TEST_F(AnyStringViewFixture, ConvertImplicitAmpToStd)
 {
-    std::string_view unit = SomeFunction(score_string_view_);
+    std::string_view unit = SomeFunction(score_future_cpp_string_view_);
     EXPECT_EQ(unit, std_string_view_);
 }
 

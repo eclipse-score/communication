@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_HEAP_ALLOCATOR_MOCK_H
-#define BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_HEAP_ALLOCATOR_MOCK_H
+#ifndef SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_HEAP_ALLOCATOR_MOCK_H
+#define SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_HEAP_ALLOCATOR_MOCK_H
 
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
@@ -75,4 +75,4 @@ class SharedMemoryResourceHeapAllocatorMock : public ISharedMemoryResource
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_HEAP_ALLOCATOR_MOCK_H
+#endif  // SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_HEAP_ALLOCATOR_MOCK_H

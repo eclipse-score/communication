@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_FACTORY_MOCK_H
-#define BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_FACTORY_MOCK_H
+#ifndef SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_FACTORY_MOCK_H
+#define SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_FACTORY_MOCK_H
 
 #include "score/memory/shared/i_shared_memory_factory.h"
 #include "score/memory/shared/typedshm/typedshm_wrapper/typed_memory.h"
@@ -63,4 +63,4 @@ class SharedMemoryFactoryMock : public ISharedMemoryFactory
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_FACTORY_MOCK_H
+#endif  // SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_FACTORY_MOCK_H

@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_SHAREDMEMORYTESTRESOURCES_H
-#define BASELIBS_SCORE_MEMORY_SHARED_SHAREDMEMORYTESTRESOURCES_H
+#ifndef SCORE_LIB_MEMORY_SHARED_SHAREDMEMORYTESTRESOURCES_H
+#define SCORE_LIB_MEMORY_SHARED_SHAREDMEMORYTESTRESOURCES_H
 
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/offset_ptr.h"
@@ -238,4 +238,4 @@ class SharedMemoryResourceTest : public ::testing::TestWithParam<bool>
 
 }  // namespace score::memory::shared::test
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_SHAREDMEMORYTESTRESOURCES_H
+#endif  // SCORE_LIB_MEMORY_SHARED_SHAREDMEMORYTESTRESOURCES_H

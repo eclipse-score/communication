@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_LOCK_FILE_H
-#define BASELIBS_SCORE_MEMORY_SHARED_LOCK_FILE_H
+#ifndef SCORE_LIB_MEMORY_SHARED_LOCK_FILE_H
+#define SCORE_LIB_MEMORY_SHARED_LOCK_FILE_H
 
 #include <cstdint>
 #include <optional>
@@ -71,4 +71,4 @@ class LockFile
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_LOCK_FILE_H
+#endif  // SCORE_LIB_MEMORY_SHARED_LOCK_FILE_H

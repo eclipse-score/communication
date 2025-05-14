@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_STRING_H
-#define BASELIBS_SCORE_MEMORY_SHARED_STRING_H
+#ifndef SCORE_LIB_MEMORY_SHARED_STRING_H
+#define SCORE_LIB_MEMORY_SHARED_STRING_H
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
@@ -36,24 +36,40 @@ using BasicString = std::basic_string<CharT, Traits, score::memory::shared::Poly
 
 // Provide custom operator==/operator!= implementations to be interoperable with std::string in this regard
 template <typename CharT, typename Traits>
+// A13-5-5: "Comparison operators shall be non-member functions with identical parameter types and noexcept."
+// Rule concerns code uniformity, not functional safety; implementation safely ensures correct string comparison
+// semantics (size equality + data comparison) while enabling necessary std::string interoperability.
+// coverity[autosar_cpp14_a13_5_5_violation]
 inline bool operator==(const BasicString<CharT, Traits>& lhs, const std::string& rhs) noexcept
 {
     return ((lhs.size() == rhs.size()) && (lhs.compare(0U, lhs.size(), rhs.data()) == 0));
 }
 
 template <typename CharT, typename Traits>
+// A13-5-5: "Comparison operators shall be non-member functions with identical parameter types and noexcept."
+// Rule concerns code uniformity, not functional safety; implementation safely ensures correct string comparison
+// semantics (size equality + data comparison) while enabling necessary std::string interoperability.
+// coverity[autosar_cpp14_a13_5_5_violation]
 inline bool operator!=(const BasicString<CharT, Traits>& lhs, const std::string& rhs) noexcept
 {
     return !operator==(lhs, rhs);
 }
 
 template <typename CharT, typename Traits>
+// A13-5-5: "Comparison operators shall be non-member functions with identical parameter types and noexcept."
+// Rule concerns code uniformity, not functional safety; implementation safely ensures correct string comparison
+// semantics (size equality + data comparison) while enabling necessary std::string interoperability.
+// coverity[autosar_cpp14_a13_5_5_violation]
 inline bool operator==(const std::string& lhs, const BasicString<CharT, Traits>& rhs) noexcept
 {
     return ((lhs.size() == rhs.size()) && (lhs.compare(0U, lhs.size(), rhs.data()) == 0));
 }
 
 template <typename CharT, typename Traits>
+// A13-5-5: "Comparison operators shall be non-member functions with identical parameter types and noexcept."
+// Rule concerns code uniformity, not functional safety; implementation safely ensures correct string comparison
+// semantics (size equality + data comparison) while enabling necessary std::string interoperability.
+// coverity[autosar_cpp14_a13_5_5_violation]
 inline bool operator!=(const std::string& lhs, const BasicString<CharT, Traits>& rhs) noexcept
 {
     return !operator==(lhs, rhs);
@@ -67,4 +83,4 @@ using String = BasicString<char>;
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_STRING_H
+#endif  // SCORE_LIB_MEMORY_SHARED_STRING_H

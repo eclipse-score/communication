@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_NEW_DELETE_DELEGATE_RESOURCE_H
-#define BASELIBS_SCORE_MEMORY_SHARED_NEW_DELETE_DELEGATE_RESOURCE_H
+#ifndef SCORE_LIB_MEMORY_SHARED_NEW_DELETE_DELEGATE_RESOURCE_H
+#define SCORE_LIB_MEMORY_SHARED_NEW_DELETE_DELEGATE_RESOURCE_H
 
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -91,4 +91,4 @@ class NewDeleteDelegateMemoryResource : public score::memory::shared::ManagedMem
 };
 
 }  // namespace score::memory::shared
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_NEW_DELETE_DELEGATE_RESOURCE_H
+#endif  // SCORE_LIB_MEMORY_SHARED_NEW_DELETE_DELEGATE_RESOURCE_H

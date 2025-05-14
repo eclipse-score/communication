@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_H
-#define BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_H
+#ifndef SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_H
+#define SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_H
 
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/memory/shared/lock_file.h"
@@ -422,4 +422,4 @@ void* do_allocation_algorithm(const void* const alloc_start,
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_H
+#endif  // SCORE_LIB_MEMORY_SHARED_SHARED_MEMORY_RESOURCE_H

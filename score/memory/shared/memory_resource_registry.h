@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_MEMORYRESOURCEREGISTRY_H
-#define BASELIBS_SCORE_MEMORY_SHARED_MEMORYRESOURCEREGISTRY_H
+#ifndef SCORE_LIB_MEMORY_SHARED_MEMORYRESOURCEREGISTRY_H
+#define SCORE_LIB_MEMORY_SHARED_MEMORYRESOURCEREGISTRY_H
 
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/memory_region_bounds.h"
@@ -112,4 +112,4 @@ class MemoryResourceRegistry final
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_MEMORYRESOURCEREGISTRY_H
+#endif  // SCORE_LIB_MEMORY_SHARED_MEMORYRESOURCEREGISTRY_H

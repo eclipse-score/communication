@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_MAP_H
-#define BASELIBS_SCORE_MEMORY_SHARED_MAP_H
+#ifndef SCORE_LIB_MEMORY_SHARED_MAP_H
+#define SCORE_LIB_MEMORY_SHARED_MAP_H
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
@@ -55,4 +55,4 @@ using Map = std::
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_MAP_H
+#endif  // SCORE_LIB_MEMORY_SHARED_MAP_H

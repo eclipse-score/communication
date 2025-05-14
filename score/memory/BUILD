@@ -21,8 +21,8 @@ cc_library(
     hdrs = ["string_literal.h"],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
-        # "@ddad//visibility:public",
+        "//visibility:public", # platform_only
+        # "@ddad//platform/aas:__subpackages__",
     ],
 )
 
@@ -32,7 +32,7 @@ cc_library(
     hdrs = ["any_string_view.h"],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
@@ -115,7 +115,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [

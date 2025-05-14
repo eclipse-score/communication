@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_FLOCK_FLOCK_MUTEX_H
-#define BASELIBS_SCORE_MEMORY_SHARED_FLOCK_FLOCK_MUTEX_H
+#ifndef SCORE_LIB_MEMORY_SHARED_FLOCK_FLOCK_MUTEX_H
+#define SCORE_LIB_MEMORY_SHARED_FLOCK_FLOCK_MUTEX_H
 
 #include "score/memory/shared/lock_file.h"
 
@@ -39,4 +39,4 @@ class FlockMutex
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_FLOCK_FLOCK_MUTEX_H
+#endif  // SCORE_LIB_MEMORY_SHARED_FLOCK_FLOCK_MUTEX_H

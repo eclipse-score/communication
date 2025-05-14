@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_ANY_STRING_VIEW_H
-#define BASELIBS_SCORE_MEMORY_ANY_STRING_VIEW_H
+#ifndef SCORE_LIB_MEMORY_ANY_STRING_VIEW_H
+#define SCORE_LIB_MEMORY_ANY_STRING_VIEW_H
 
 #include "score/string_view.hpp"
 
@@ -64,4 +64,4 @@ class AnyStringView
 
 }  // namespace score::memory
 
-#endif  // BASELIBS_SCORE_MEMORY_ANY_STRING_VIEW_H
+#endif  // SCORE_LIB_MEMORY_ANY_STRING_VIEW_H

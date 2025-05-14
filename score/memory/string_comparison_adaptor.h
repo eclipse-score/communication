@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_STRING_COMPARISON_ADAPTOR_H
-#define BASELIBS_SCORE_MEMORY_STRING_COMPARISON_ADAPTOR_H
+#ifndef SCORE_LIB_MEMORY_STRING_COMPARISON_ADAPTOR_H
+#define SCORE_LIB_MEMORY_STRING_COMPARISON_ADAPTOR_H
 
 #include "score/memory/string_literal.h"
 
@@ -53,8 +53,8 @@ class StringComparisonAdaptor
 
     /// @brief Constructors for string view
     // NOLINTNEXTLINE(google-explicit-constructor): IMPLICIT CONVERSION JUSTIFICATION
-    StringComparisonAdaptor(const score::cpp::string_view& score_str_view);
-    StringComparisonAdaptor& operator=(const score::cpp::string_view& score_str_view);
+    StringComparisonAdaptor(const score::cpp::string_view& score_future_cpp_str_view);
+    StringComparisonAdaptor& operator=(const score::cpp::string_view& score_future_cpp_str_view);
 
     /// @brief Constructors for std::string view
     // NOLINTNEXTLINE(google-explicit-constructor): IMPLICIT CONVERSION JUSTIFICATION
@@ -116,4 +116,4 @@ class hash<score::memory::StringComparisonAdaptor>
 
 }  // namespace std
 
-#endif  // BASELIBS_SCORE_MEMORY_STRING_COMPARISON_ADAPTOR_H
+#endif  // SCORE_LIB_MEMORY_STRING_COMPARISON_ADAPTOR_H

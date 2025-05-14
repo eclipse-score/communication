@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_USER_PERMISSION_H
-#define BASELIBS_SCORE_MEMORY_SHARED_USER_PERMISSION_H
+#ifndef SCORE_LIB_MEMORY_SHARED_USER_PERMISSION_H
+#define SCORE_LIB_MEMORY_SHARED_USER_PERMISSION_H
 
 #include "score/os/acl.h"
 
@@ -35,4 +35,4 @@ using UserPermissions = std::variant<UserPermissionsMap, WorldReadable, WorldWri
 
 }  // namespace score::memory::shared::permission
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_USER_PERMISSION_H
+#endif  // SCORE_LIB_MEMORY_SHARED_USER_PERMISSION_H

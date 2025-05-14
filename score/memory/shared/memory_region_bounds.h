@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_MEMORY_REGION_BOUNDS_H
-#define BASELIBS_SCORE_MEMORY_SHARED_MEMORY_REGION_BOUNDS_H
+#ifndef SCORE_LIB_MEMORY_SHARED_MEMORY_REGION_BOUNDS_H
+#define SCORE_LIB_MEMORY_SHARED_MEMORY_REGION_BOUNDS_H
 
 #include <cstdint>
 
@@ -46,4 +46,4 @@ bool operator!=(const MemoryRegionBounds& lhs, const MemoryRegionBounds& rhs) no
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_MEMORY_REGION_BOUNDS_H
+#endif  // SCORE_LIB_MEMORY_SHARED_MEMORY_REGION_BOUNDS_H

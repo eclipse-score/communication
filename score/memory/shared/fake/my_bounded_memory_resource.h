@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_FAKE_MYBOUNDEDMEMORYRESOURCE_H
-#define BASELIBS_SCORE_MEMORY_SHARED_FAKE_MYBOUNDEDMEMORYRESOURCE_H
+#ifndef SCORE_LIB_MEMORY_SHARED_FAKE_MYBOUNDEDMEMORYRESOURCE_H
+#define SCORE_LIB_MEMORY_SHARED_FAKE_MYBOUNDEDMEMORYRESOURCE_H
 
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -105,4 +105,4 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
 
 }  // namespace score::memory::shared::test
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_FAKE_MYBOUNDEDMEMORYRESOURCE_H
+#endif  // SCORE_LIB_MEMORY_SHARED_FAKE_MYBOUNDEDMEMORYRESOURCE_H

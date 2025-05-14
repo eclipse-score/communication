@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
-#define BASELIBS_SCORE_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
+#ifndef SCORE_LIB_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
+#define SCORE_LIB_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
 
 #include "score/mw/log/log_types.h"
 #include "score/mw/log/logging.h"
@@ -251,4 +251,4 @@ auto SubtractUnsignedFromSigned(SignedInteger signed_value, std::make_unsigned_t
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
+#endif  // SCORE_LIB_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H

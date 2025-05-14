@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_POLYMORPHICOFFSETPTRALLOCATOR_H
-#define BASELIBS_SCORE_MEMORY_SHARED_POLYMORPHICOFFSETPTRALLOCATOR_H
+#ifndef SCORE_LIB_MEMORY_SHARED_POLYMORPHICOFFSETPTRALLOCATOR_H
+#define SCORE_LIB_MEMORY_SHARED_POLYMORPHICOFFSETPTRALLOCATOR_H
 
 #include "score/language/safecpp/safe_math/details/multiplication/multiplication.h"
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -171,4 +171,4 @@ bool operator!=(const PolymorphicOffsetPtrAllocator<T>& lhs, const PolymorphicOf
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_POLYMORPHICOFFSETPTRALLOCATOR_H
+#endif  // SCORE_LIB_MEMORY_SHARED_POLYMORPHICOFFSETPTRALLOCATOR_H

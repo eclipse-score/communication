@@ -32,8 +32,8 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
-        # "@ddad//visibility:public",
+        "//visibility:public", # platform_only
+        # "@ddad//platform/aas:__subpackages__",
     ],
     deps = [":atomic_interface"],
 )
@@ -58,7 +58,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -73,7 +73,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -91,7 +91,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -109,7 +109,7 @@ cc_library(
     hdrs = ["shared_memory_resource_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -166,7 +166,7 @@ cc_library(
     hdrs = ["shared_memory_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -241,7 +241,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -256,7 +256,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
@@ -272,7 +272,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -305,7 +305,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -331,7 +331,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
 )
@@ -347,7 +347,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -375,7 +375,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -392,7 +392,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -409,7 +409,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -430,7 +430,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
@@ -445,7 +445,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public",
+        "//visibility:public", # platform_only
         # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [

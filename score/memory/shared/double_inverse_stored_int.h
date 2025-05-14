@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_DOUBLEINVERSESTOREDINT_H
-#define BASELIBS_SCORE_MEMORY_SHARED_DOUBLEINVERSESTOREDINT_H
+#ifndef SCORE_LIB_MEMORY_SHARED_DOUBLEINVERSESTOREDINT_H
+#define SCORE_LIB_MEMORY_SHARED_DOUBLEINVERSESTOREDINT_H
 
 #include <climits>
 #include <exception>
@@ -112,4 +112,4 @@ class DoubleInverseStoredInt
 }  // namespace memory
 }  // namespace score
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_DOUBLEINVERSESTOREDINT_H
+#endif  // SCORE_LIB_MEMORY_SHARED_DOUBLEINVERSESTOREDINT_H

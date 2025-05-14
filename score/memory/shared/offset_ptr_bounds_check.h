@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H
-#define BASELIBS_SCORE_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H
+#ifndef SCORE_LIB_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H
+#define SCORE_LIB_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H
 
 #include "score/memory/shared/memory_region_bounds.h"
 #include "score/memory/shared/memory_resource_registry.h"
@@ -36,4 +36,4 @@ bool DoesOffsetPtrNotInSharedMemoryPassBoundsChecks(const void* const offset_ptr
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H
+#endif  // SCORE_LIB_MEMORY_SHARED_OFFSET_PTR_BOUNDS_CHECK_H

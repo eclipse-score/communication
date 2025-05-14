@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_MANAGED_MEMORY_RESOURCE_H
-#define BASELIBS_SCORE_MEMORY_SHARED_MANAGED_MEMORY_RESOURCE_H
+#ifndef SCORE_LIB_MEMORY_SHARED_MANAGED_MEMORY_RESOURCE_H
+#define SCORE_LIB_MEMORY_SHARED_MANAGED_MEMORY_RESOURCE_H
 
 #include <score/memory_resource.hpp>
 #include <type_traits>
@@ -160,4 +160,4 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_MANAGEDMEMORYRESOURCE_H
+#endif  // SCORE_LIB_MEMORY_SHARED_MANAGEDMEMORYRESOURCE_H

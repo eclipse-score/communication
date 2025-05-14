@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_SEALED_SHM_MOCK_H
-#define BASELIBS_SCORE_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_SEALED_SHM_MOCK_H
+#ifndef SCORE_LIB_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_SEALED_SHM_MOCK_H
+#define SCORE_LIB_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_SEALED_SHM_MOCK_H
 
 #include "score/expected.hpp"
 #include "score/memory/shared/sealedshm/sealedshm_wrapper/i_sealed_shm.h"
@@ -36,4 +36,4 @@ class SealedShmMock : public score::memory::shared::ISealedShm
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_SEALED_SHM_MOCK_H
+#endif  // SCORE_LIB_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_SEALED_SHM_MOCK_H

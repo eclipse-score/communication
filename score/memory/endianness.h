@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_ENDIANNESS_H
-#define BASELIBS_SCORE_MEMORY_ENDIANNESS_H
+#ifndef SCORE_LIB_MEMORY_ENDIANNESS_H
+#define SCORE_LIB_MEMORY_ENDIANNESS_H
 
 #include <cstdint>
 
@@ -85,4 +85,4 @@ auto BigEndianToHostEndianness(const ValueType value) noexcept -> ValueType
 
 }  // namespace score::memory
 
-#endif  // BASELIBS_SCORE_MEMORY_ENDIANNESS_H
+#endif  // SCORE_LIB_MEMORY_ENDIANNESS_H

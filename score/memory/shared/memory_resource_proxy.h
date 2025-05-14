@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_MEMORY_RESOURCE_PROXY_H
-#define BASELIBS_SCORE_MEMORY_SHARED_MEMORY_RESOURCE_PROXY_H
+#ifndef SCORE_LIB_MEMORY_SHARED_MEMORY_RESOURCE_PROXY_H
+#define SCORE_LIB_MEMORY_SHARED_MEMORY_RESOURCE_PROXY_H
 
 #include <cstddef>
 #include <cstdint>
@@ -86,4 +86,4 @@ class MemoryResourceProxy
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_MEMORY_RESOURCE_PROXY_H
+#endif  // SCORE_LIB_MEMORY_SHARED_MEMORY_RESOURCE_PROXY_H

@@ -38,14 +38,14 @@ StringComparisonAdaptor& StringComparisonAdaptor::operator=(std::string&& str)
     return *this;
 }
 
-StringComparisonAdaptor::StringComparisonAdaptor(const score::cpp::string_view& score_str_view)
-    : str_{std::string_view{score_str_view.data(), score_str_view.size()}}
+StringComparisonAdaptor::StringComparisonAdaptor(const score::cpp::string_view& score_future_cpp_str_view)
+    : str_{std::string_view{score_future_cpp_str_view.data(), score_future_cpp_str_view.size()}}
 {
 }
 
-StringComparisonAdaptor& StringComparisonAdaptor::operator=(const score::cpp::string_view& score_str_view)
+StringComparisonAdaptor& StringComparisonAdaptor::operator=(const score::cpp::string_view& score_future_cpp_str_view)
 {
-    str_ = std::string_view{score_str_view.data(), score_str_view.size()};
+    str_ = std::string_view{score_future_cpp_str_view.data(), score_future_cpp_str_view.size()};
     return *this;
 }
 

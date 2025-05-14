@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_VECTOR_H
-#define BASELIBS_SCORE_MEMORY_SHARED_VECTOR_H
+#ifndef SCORE_LIB_MEMORY_SHARED_VECTOR_H
+#define SCORE_LIB_MEMORY_SHARED_VECTOR_H
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
@@ -50,4 +50,4 @@ inline bool operator==(std::vector<T> lhs, const Vector<T>& rhs) noexcept
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_VECTOR_H
+#endif  // SCORE_LIB_MEMORY_SHARED_VECTOR_H

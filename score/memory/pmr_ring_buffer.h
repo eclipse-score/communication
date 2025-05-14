@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_PMR_RING_BUFFER_H
-#define BASELIBS_SCORE_MEMORY_PMR_RING_BUFFER_H
+#ifndef SCORE_LIB_MEMORY_PMR_RING_BUFFER_H
+#define SCORE_LIB_MEMORY_PMR_RING_BUFFER_H
 
 #include "score/vector.hpp"
 
@@ -192,4 +192,4 @@ class PmrRingBuffer
 
 }  // namespace score::memory
 
-#endif  // BASELIBS_SCORE_MEMORY_PMR_RING_BUFFER_H
+#endif  // SCORE_LIB_MEMORY_PMR_RING_BUFFER_H

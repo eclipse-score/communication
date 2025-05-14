@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_I_SEALED_SHM_H
-#define BASELIBS_SCORE_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_I_SEALED_SHM_H
+#ifndef SCORE_LIB_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_I_SEALED_SHM_H
+#define SCORE_LIB_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_I_SEALED_SHM_H
 
 #include "score/expected.hpp"
 #include "score/os/errno.h"
@@ -50,4 +50,4 @@ class ISealedShm
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_I_SEALED_SHM_H
+#endif  // SCORE_LIB_MEMORY_SHARED_SEALEDSHM_SEALEDSHM_WRAPPER_I_SEALED_SHM_H

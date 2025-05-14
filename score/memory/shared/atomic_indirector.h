@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef BASELIBS_SCORE_MEMORY_SHARED_ATOMICINDIRECTOR_H
-#define BASELIBS_SCORE_MEMORY_SHARED_ATOMICINDIRECTOR_H
+#ifndef SCORE_LIB_MEMORY_SHARED_ATOMICINDIRECTOR_H
+#define SCORE_LIB_MEMORY_SHARED_ATOMICINDIRECTOR_H
 
 #include "score/memory/shared/i_atomic.h"
 
@@ -125,6 +125,8 @@ class AtomicIndirectorMock
     template <typename... Args>
     static auto fetch_add(std::atomic<T>& /*value*/, Args&&... args) noexcept -> T
     {
+        // test code; not used in production
+        // coverity[autosar_cpp14_m5_0_3_violation]
         return mock_object_->fetch_add(std::forward<Args>(args)...);
     }
 
@@ -175,4 +177,4 @@ IAtomic<T>* AtomicIndirectorMock<T>::mock_object_{nullptr};
 
 }  // namespace score::memory::shared
 
-#endif  // BASELIBS_SCORE_MEMORY_SHARED_ATOMICINDIRECTOR_H
+#endif  // SCORE_LIB_MEMORY_SHARED_ATOMICINDIRECTOR_H
