@@ -15,34 +15,6 @@
 use std::default::Default;
 use std::ffi::c_char;
 
-extern "C" {
-    // Scheme: mw_com_gen_<cppclassname>(_<cpptypeparam>)*(_<fieldname>)?_<method>
-
-    // The following two functions are per-proxy
-    fn mw_com_gen_ProxyWrapperClass_mw_com_example_IpcBridge_create(
-        handle: &proxy_bridge_rs::HandleType,
-    ) -> *mut proxy_bridge_rs::ProxyWrapperClass;
-    fn mw_com_gen_ProxyWrapperClass_mw_com_example_IpcBridge_delete(
-        proxy: *mut proxy_bridge_rs::ProxyWrapperClass,
-    );
-    // The following function is per-event per-proxy.
-    fn mw_com_gen_ProxyWrapperClass_mw_com_example_IpcBridge_map_api_lanes_stamped_get(
-        proxy: *mut proxy_bridge_rs::ProxyWrapperClass,
-    ) -> *mut proxy_bridge_rs::NativeProxyEvent<MapApiLanesStamped>;
-    // The following four functions are needed per sample type.
-    fn mw_com_gen_ProxyEvent_MapApiLanesStamped_get_new_sample(
-        proxy_event: *mut proxy_bridge_rs::NativeProxyEvent<MapApiLanesStamped>,
-        sample_out: *mut sample_ptr_rs::SamplePtr<MapApiLanesStamped>,
-    ) -> bool;
-    fn mw_com_gen_MapApiLanesStamped_get_size() -> u32;
-    fn mw_com_gen_SamplePtr_MapApiLanesStamped_get(
-        sample_ptr: *const sample_ptr_rs::SamplePtr<MapApiLanesStamped>,
-    ) -> *const MapApiLanesStamped;
-    fn mw_com_gen_SamplePtr_MapApiLanesStamped_delete(
-        sample_ptr: *mut sample_ptr_rs::SamplePtr<MapApiLanesStamped>,
-    );
-}
-
 pub const MAX_SUCCESSORS: libc::size_t = 16;
 pub const MAX_LANES: libc::size_t = 16;
 
@@ -221,86 +193,8 @@ pub struct MapApiLanesStamped {
     hash_value: libc::size_t,
 }
 
-impl proxy_bridge_rs::EventOps for MapApiLanesStamped {
-    fn get_sample_ref(ptr: &sample_ptr_rs::SamplePtr<Self>) -> &Self {
-        unsafe { &*mw_com_gen_SamplePtr_MapApiLanesStamped_get(ptr) }
-    }
+mw_com::import_interface!(mw_com_IpcBridge, IpcBridge, {
+    map_api_lanes_stamped_: Event<crate::MapApiLanesStamped>
+});
 
-    fn delete_sample_ptr(mut ptr: sample_ptr_rs::SamplePtr<Self>) {
-        unsafe {
-            mw_com_gen_SamplePtr_MapApiLanesStamped_delete(&mut ptr);
-        }
-    }
-
-    unsafe fn get_new_sample(
-        proxy_event: *mut proxy_bridge_rs::NativeProxyEvent<Self>,
-    ) -> Option<sample_ptr_rs::SamplePtr<Self>> {
-        let mut sample_ptr = std::mem::MaybeUninit::uninit();
-        unsafe {
-            if mw_com_gen_ProxyEvent_MapApiLanesStamped_get_new_sample(
-                proxy_event,
-                sample_ptr.as_mut_ptr(),
-            ) {
-                Some(sample_ptr.assume_init())
-            } else {
-                None
-            }
-        }
-    }
-}
-
-pub type MapApiLanesStampedEvent =
-    proxy_bridge_rs::ProxyEvent<MapApiLanesStamped, proxy_bridge_rs::ProxyManager<IpcBridgeProxy>>;
-
-/// "Generated" proxy. This struct keeps all events when a service is first instantiated. The
-/// underlying proxy on C++ side will be alive as long as at least one event is alive. This is done
-/// by keeping a reference from every event to the proxy adapter. If the last event is dropped, the
-/// proxy will be destroyed as well.
-///
-/// Therefore, you may destructure it and hand the events to different parts of your program if you
-/// wish to do so.
-pub struct IpcBridgeProxy {
-    pub map_api_lanes_stamped: MapApiLanesStampedEvent,
-}
-
-impl proxy_bridge_rs::ProxyOps for IpcBridgeProxy {
-    fn create(handle: &proxy_bridge_rs::HandleType) -> *mut proxy_bridge_rs::ProxyWrapperClass {
-        unsafe { mw_com_gen_ProxyWrapperClass_mw_com_example_IpcBridge_create(handle) }
-    }
-
-    unsafe fn delete(proxy: *mut proxy_bridge_rs::ProxyWrapperClass) {
-        unsafe {
-            mw_com_gen_ProxyWrapperClass_mw_com_example_IpcBridge_delete(proxy);
-        }
-    }
-}
-
-impl IpcBridgeProxy {
-    /// Retrieve an instance to map_api_lanes_stamped, given a managed proxy.
-    fn map_api_lanes_stamped(
-        manager: proxy_bridge_rs::ProxyManager<IpcBridgeProxy>,
-    ) -> proxy_bridge_rs::ProxyEvent<
-        MapApiLanesStamped,
-        proxy_bridge_rs::ProxyManager<IpcBridgeProxy>,
-    > {
-        unsafe {
-            let sample_size = mw_com_gen_MapApiLanesStamped_get_size();
-            assert_eq!(std::mem::size_of::<MapApiLanesStamped>(), sample_size as usize,
-                       "Sample sizes differ, maybe the definitions between C++ and Rust diverged? Aborting.");
-            proxy_bridge_rs::ProxyEvent::new(manager, "map_api_lanes_stamped", |proxy| {
-                mw_com_gen_ProxyWrapperClass_mw_com_example_IpcBridge_map_api_lanes_stamped_get(
-                    proxy.get_native_proxy(),
-                )
-            })
-        }
-    }
-
-    /// Create a new instance of a proxy, connected to the service instance represented by the
-    /// handle.
-    pub fn new(handle: &proxy_bridge_rs::HandleType) -> Result<Self, ()> {
-        let proxy_manager = proxy_bridge_rs::ProxyManager::<IpcBridgeProxy>::new(handle)?;
-        Ok(Self {
-            map_api_lanes_stamped: Self::map_api_lanes_stamped(proxy_manager.clone()),
-        })
-    }
-}
+mw_com::import_type!(mw_com_MapApiLanesStamped, crate::MapApiLanesStamped);

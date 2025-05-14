@@ -71,10 +71,10 @@ fn main() {
         }
     };
 
-    let lib_gen_rs::IpcBridgeProxy {
-        map_api_lanes_stamped,
-    } = lib_gen_rs::IpcBridgeProxy::new(&handles[0]).expect("Failed to create the proxy");
-    let mut subscribed_map_api_lanes_stamped = map_api_lanes_stamped
+    let lib_gen_rs::IpcBridge::Proxy {
+        map_api_lanes_stamped_,
+    } = lib_gen_rs::IpcBridge::Proxy::new(&handles[0]).expect("Failed to create the proxy");
+    let mut subscribed_map_api_lanes_stamped = map_api_lanes_stamped_
         .subscribe(1)
         .expect("Failed to subscribe");
     println!("Subscribed!");

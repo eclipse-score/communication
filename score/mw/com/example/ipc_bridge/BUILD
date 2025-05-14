@@ -70,6 +70,7 @@ rust_library(
     deps = [
         ":lib_gen_cpp",
         "//score/mw/com/impl/plumbing:sample_ptr_rs",
+        "//score/mw/com/impl/rust:mw_com",
         "//score/mw/com/impl/rust:proxy_bridge_rs",
         "@crate_index//:libc",
     ],
@@ -94,5 +95,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":datatype",
+        "//score/mw/com/impl/rust:proxy_bridge_macros",
     ],
 )
