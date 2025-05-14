@@ -664,6 +664,7 @@ cc_library(
         "@score-baselibs//score/result",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/lola:runtime",
+        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
     ],
 )

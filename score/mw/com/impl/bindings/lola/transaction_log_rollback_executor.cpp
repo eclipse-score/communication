@@ -15,7 +15,10 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/runtime.h"
 
+#include "score/mw/log/logging.h"
+
 #include <score/assert.hpp>
+#include <exception>
 
 namespace score::mw::com::impl::lola
 {
@@ -65,7 +68,13 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
     // service_data_control_.uid_pid_mapping_
     const auto current_pid = lola_runtime.GetPid();
     const auto previous_pid = service_data_control_.uid_pid_mapping_.RegisterPid(transaction_log_id_, current_pid);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(previous_pid.has_value(), "Couldn't Register current PID for UID within shared-memory!");
+    if (!(previous_pid.has_value()))
+    {
+        score::mw::log::LogFatal("lola") << "Couldn't Register current PID for UID within shared memory. This can occurr "
+                                          "if there is too high contention accessing the registry. Terminating.";
+        std::terminate();
+    }
+
     if (previous_pid.value() != current_pid)
     {
         // we found an old/outdated PID for our UID in the shared-memory of the service-instance. Notify provider, that
