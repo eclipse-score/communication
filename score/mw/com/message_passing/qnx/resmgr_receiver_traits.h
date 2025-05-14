@@ -330,7 +330,11 @@ class ResmgrReceiverTraits
                             const FileDescriptorResourcesType& os_resources)
             : context_pointers_(),
               side_channel_coid_(side_channel_coid),
+              // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and after
+              // are covered so this is clearly an error by the tool. Suppression can be removed when bug is fixed in
+              // Ticket-184253).
               message_queue_(max_message_queue_size, allowed_uids.get_allocator()),
+              // LCOV_EXCL_STOP
               message_queue_owned_(false),
               allowed_uids_(allowed_uids),
               os_resources_(os_resources)
