@@ -536,8 +536,10 @@ std::uint32_t score::mw::com::impl::lola::NotifyEventHandler::NotifyEventLocally
 
     // copy handlers to tmp-storage
     // tmp-storage for all handlers (weak_ptrs), which will get filled under read-lock
+    // LCOV_EXCL_START (this is a bug. remove this supression when this ticket is closed Ticket-184255)
     std::array<std::weak_ptr<ScopedEventReceiveHandler>, kMaxReceiveHandlersPerEvent> handler_weak_ptrs{
         {{}, {}, {}, {}, {}}};
+    // LCOV_EXCL_STOP
     std::uint8_t number_weak_ptrs_copied{0U};
     auto& handlers_for_event = search->second;
     auto handler_it = handlers_for_event.cbegin();
