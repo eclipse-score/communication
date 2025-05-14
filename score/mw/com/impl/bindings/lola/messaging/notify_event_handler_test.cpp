@@ -663,6 +663,22 @@ TEST_F(NotifyEventHandlerFixture, CallingUnreregisterEventNotificationWillNotSen
         QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, registration_number, REMOTE_NODE_ID);
 }
 
+TEST_F(NotifyEventHandlerFixture, ReregisterNotification_LocalEvent_OK)
+{
+    // given a NotifyEventHandler without ASIL support
+    WithANotifyEventHandler(false);
+
+    // expecting that NO MessagePassingSender is retrieved which is required in order to send a
+    // RegisterNotificationMessage
+    EXPECT_CALL(mp_control_mock_, GetMessagePassingSender(_, _)).Times(0);
+
+    score::cpp::ignore = unit_.value().RegisterEventNotification(
+        QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, notify_event_callback_counter_store_local_.handler, LOCAL_NODE_ID);
+
+    // when re-registering the same event with the same local id which is already registered
+    unit_.value().ReregisterEventNotification(QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, LOCAL_NODE_ID);
+}
+
 TEST_F(NotifyEventHandlerFixture, ReregisterNotification_RemoteEvent_OK)
 {
     // given a NotifyEventHandler without ASIL support
@@ -955,6 +971,28 @@ TEST_F(NotifyEventHandlerFixture, ReceiveEventNotification_OneNotifier)
 
     // expect, that notify_event_callback_counter_ is 1
     EXPECT_EQ(notify_event_callback_counter_store_remote_.counter, 1);
+}
+
+TEST_F(NotifyEventHandlerFixture, StopBeforeReceiveEventNotification_OneNotifier)
+{
+    // given a NotifyEventHandler without ASIL support
+    WithANotifyEventHandler(false).WithMessagePassingSenders({REMOTE_NODE_ID});
+
+    // with registered receive-handlers
+    unit_.value().RegisterMessageReceivedCallbacks(QualityType::kASIL_QM, receiver_mock_);
+
+    // and there is a locally registered event notification for a remote event
+    score::cpp::ignore = unit_.value().RegisterEventNotification(
+        QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, notify_event_callback_counter_store_remote_.handler, REMOTE_NODE_ID);
+
+    // and a NotifyEventMessage (id = kNotifyEvent) is received for this event id
+    message_passing::ShortMessagePayload payload = ElementFqIdToShortMsgPayload(SOME_ELEMENT_FQ_ID);
+    // when requesting the stop tocken to stop
+    source_.request_stop();
+    event_notify_message_received_(payload, REMOTE_NODE_ID);
+
+    // expect, that notify_event_callback_counter_ is 0
+    EXPECT_EQ(notify_event_callback_counter_store_remote_.counter, 0);
 }
 
 TEST_F(NotifyEventHandlerFixture, ReceiveEventNotification_ZeroNotifier)
