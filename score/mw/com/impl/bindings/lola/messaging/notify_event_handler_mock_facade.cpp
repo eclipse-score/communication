@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_facade.h"
+#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock_facade.h"

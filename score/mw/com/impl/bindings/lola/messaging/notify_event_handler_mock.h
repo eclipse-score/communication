@@ -10,14 +10,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_MOCK_H
-#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_MOCK_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_NOTIFY_EVENT_HANDLER_MOCK_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_NOTIFY_EVENT_HANDLER_MOCK_H
 
 #include "score/mw/com/impl/bindings/lola/messaging/i_notify_event_handler.h"
 
 #include <gmock/gmock.h>
 
-namespace score::mw::com::impl::lola
+namespace score::mw::com::impl::lola::test
 {
 
 class NotifyEventHandlerMock : public INotifyEventHandler
@@ -52,6 +52,6 @@ class NotifyEventHandlerMock : public INotifyEventHandler
                 (noexcept, override));
 };
 
-}  // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola::test
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_MOCK_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_NOTIFY_EVENT_HANDLER_MOCK_H

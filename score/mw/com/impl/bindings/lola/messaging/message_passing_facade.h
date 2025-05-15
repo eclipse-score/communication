@@ -77,7 +77,7 @@ class MessagePassingFacade final : public IMessagePassingService
     /// without applying singleton pattern.
     ///
     /// \param stop_source Stop source for stopping the NotifyEventHandler
-    /// \param msgpass_ctrl message passing control used for access to node_identifier, etc.
+    /// \param notify_event_handler instance to which to dispatch event-notification related calls to.
     /// \param msgpass_ctrl message passing control used for access to node_identifier, etc.
     /// \param config_asil_qm configuration props for ASIL-QM (mandatory) communication path
     /// \param config_asil_b optional (only needed for ASIL-B enabled MessagePassingFacade) configuration props for

@@ -12,9 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 
+#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler.h"
+
 #include "score/memory/shared/offset_ptr.h"
 #include "score/os/unistd.h"
-#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler.h"
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
@@ -36,26 +37,27 @@ Runtime::Runtime(const Configuration& config,
       long_running_threads_{long_running_threads},
       lola_message_passing_control_{Runtime::HasAsilBSupport(),
                                     config.GetGlobalConfiguration().GetSenderMessageQueueSize()},
-      lola_messagine_stop_source_{},
-      lola_messaging_{lola_messagine_stop_source_,
-                      std::make_unique<NotifyEventHandler>(lola_message_passing_control_,
-                                                           Runtime::HasAsilBSupport(),
-                                                           lola_messagine_stop_source_.get_token()),
-                      lola_message_passing_control_,
-                      // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and after
-                      // are covered so this is clearly an error by the tool. Suppression can be removed when bug is fixed in
-                      // Ticket-184253).
-                      // Suppress "AUTOSAR C++14 M12-1-1", The rule states: "An object’s dynamic type shall not be used
-                      // from the body of its constructor or destructor".
-                      // This is false positive, GetMessagePassingCfg is not a virtual function.
-                      // coverity[autosar_cpp14_m12_1_1_violation]
-                      Runtime::GetMessagePassingCfg(QualityType::kASIL_QM),
-                      // LCOV_EXCL_STOP
-                      Runtime::HasAsilBSupport()
-                          // coverity[autosar_cpp14_m12_1_1_violation]
-                          ? score::cpp::optional<MessagePassingFacade::AsilSpecificCfg>{Runtime::GetMessagePassingCfg(
-                                QualityType::kASIL_B)}
-                          : score::cpp::nullopt},
+      lola_messaging_stop_source_{},
+      lola_messaging_{
+          lola_messaging_stop_source_,
+          std::make_unique<NotifyEventHandler>(lola_message_passing_control_,
+                                               Runtime::HasAsilBSupport(),
+                                               lola_messaging_stop_source_.get_token()),
+          lola_message_passing_control_,
+          // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and after
+          // are covered so this is clearly an error by the tool. Suppression can be removed when bug is fixed in
+          // Ticket-184253).
+          // Suppress "AUTOSAR C++14 M12-1-1", The rule states: "An object’s dynamic type shall not be used
+          // from the body of its constructor or destructor".
+          // This is false positive, GetMessagePassingCfg is not a virtual function.
+          // coverity[autosar_cpp14_m12_1_1_violation]
+          Runtime::GetMessagePassingCfg(QualityType::kASIL_QM),
+          // LCOV_EXCL_STOP
+          Runtime::HasAsilBSupport()
+              // coverity[autosar_cpp14_m12_1_1_violation]
+              ? score::cpp::optional<MessagePassingFacade::AsilSpecificCfg>{Runtime::GetMessagePassingCfg(
+                    QualityType::kASIL_B)}
+              : score::cpp::nullopt},
       service_discovery_client_{long_running_threads_},
       tracing_runtime_{std::move(lola_tracing_runtime)},
       rollback_data_{},

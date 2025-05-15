@@ -15,10 +15,6 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "messaging",
-    srcs = [
-    ],
-    hdrs = [
-    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
@@ -121,7 +117,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
     deps = [
         ":i_message_passing_service",
         "//score/mw/com/impl:scoped_event_receive_handler",
@@ -145,7 +141,6 @@ cc_library(
         ":node_identifier_copier",
     ],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         ":i_message_passing_control",
         ":i_message_passing_service",
@@ -167,7 +162,6 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         "//score/mw/com/impl/bindings/lola:element_fq_id",
         "@score-baselibs//score/language/futurecpp",
@@ -184,7 +178,6 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
     ],
 )
@@ -212,7 +205,7 @@ cc_library(
     srcs = ["notify_event_handler_mock.cpp"],
     hdrs = ["notify_event_handler_mock.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/impl:__subpackages__"],
+    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__subpackages__"],
     deps = [
         ":i_notify_event_handler",
         "@googletest//:gtest",
@@ -222,10 +215,10 @@ cc_library(
 cc_library(
     name = "notify_event_handler_facade",
     testonly = True,
-    srcs = ["notify_event_handler_facade.cpp"],
-    hdrs = ["notify_event_handler_facade.h"],
+    srcs = ["notify_event_handler_mock_facade.cpp"],
+    hdrs = ["notify_event_handler_mock_facade.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/impl:__subpackages__"],
+    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__subpackages__"],
     deps = [
         ":i_notify_event_handler",
         ":notify_event_handler_mock",
@@ -246,7 +239,6 @@ cc_test(
     ],
     tags = ["unit"],
     visibility = [
-        "//score/mw/com/impl/bindings/lola:__pkg__",
         # "@ddad//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
     deps = [

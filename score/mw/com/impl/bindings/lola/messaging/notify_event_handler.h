@@ -37,6 +37,12 @@
 
 namespace score::mw::com::impl::lola
 {
+
+namespace test
+{
+class NotifyEventHandlerAttorney;
+}
+
 /// \brief Handles event-notification functionality of MessagePassingFacade.
 ///
 /// \details Functional aspects, which MessagePassingFacade provides are split into different composites/handlers. This
@@ -48,7 +54,7 @@ class NotifyEventHandler final : public INotifyEventHandler
     // This class provides a view to the private members of this class for testing-only. We need this in order to
     // simulate race conditions in a deterministic way in unit tests.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class NotifyEventHandlerAttorney;
+    friend class test::NotifyEventHandlerAttorney;
 
   public:
     /// See documentation in NotifyEventHandler

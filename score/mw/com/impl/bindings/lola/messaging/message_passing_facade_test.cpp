@@ -13,8 +13,8 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_facade.h"
 
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_control_mock.h"
-#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_facade.h"
 #include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock.h"
+#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock_facade.h"
 #include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 #include "score/mw/com/message_passing/receiver_factory.h"
 #include "score/mw/com/message_passing/receiver_mock.h"
@@ -92,7 +92,7 @@ class MessagePassingFacadeFixture : public ::testing::Test
             .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(ARBITRARY_POSIX_ERROR))));
 
         MessagePassingFacade facade{stop_source_,
-                                    std::make_unique<NotifyEventHandlerFacade>(notify_event_handler_mock_),
+                                    std::make_unique<NotifyEventHandlerMockFacade>(notify_event_handler_mock_),
                                     message_passing_control_mock_,
                                     asilCfg,
                                     score::cpp::nullopt};
@@ -133,7 +133,7 @@ class MessagePassingFacadeFixture : public ::testing::Test
         // when creating our MessagePassingFacade
         unit_.emplace(
             stop_source_,
-            std::make_unique<NotifyEventHandlerFacade>(notify_event_handler_mock_),
+            std::make_unique<NotifyEventHandlerMockFacade>(notify_event_handler_mock_),
             message_passing_control_mock_,
             asilCfg,
             also_activate_asil ? score::cpp::optional<MessagePassingFacade::AsilSpecificCfg>{asilCfg} : score::cpp::nullopt);
@@ -172,12 +172,12 @@ TEST_F(MessagePassingFacadeFixture, CreationQMOnlyHeap)
         .WillRepeatedly(Return(score::cpp::expected_blank<score::os::Error>{}));
 
     // when creating our MessagePassingFacade
-    auto unit_on_heap =
-        std::make_unique<MessagePassingFacade>(stop_source_,
-                                               std::make_unique<NotifyEventHandlerFacade>(notify_event_handler_mock_),
-                                               message_passing_control_mock_,
-                                               asilCfg,
-                                               score::cpp::nullopt);
+    auto unit_on_heap = std::make_unique<MessagePassingFacade>(
+        stop_source_,
+        std::make_unique<NotifyEventHandlerMockFacade>(notify_event_handler_mock_),
+        message_passing_control_mock_,
+        asilCfg,
+        score::cpp::nullopt);
     EXPECT_TRUE(unit_on_heap);
 }
 

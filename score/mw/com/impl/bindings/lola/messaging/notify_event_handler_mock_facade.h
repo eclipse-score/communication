@@ -10,15 +10,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_FACADE_H
-#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_FACADE_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_MOCK_FACADE_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_MOCK_FACADE_H
 
 #include "score/mw/com/impl/bindings/lola/messaging/i_notify_event_handler.h"
 #include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler_mock.h"
 
 #include <gmock/gmock.h>
 
-namespace score::mw::com::impl::lola
+namespace score::mw::com::impl::lola::test
 {
 
 /// \brief Facade class which dispatches to a mock object which is owned by the caller
@@ -28,23 +28,22 @@ namespace score::mw::com::impl::lola
 /// test, however, this cannot be guaranteed when handing ownership to the class under test. Therefore, the test can
 /// create the mock object and provide a facade object to the class under test (which will dispatch any calls to the
 /// mock object).
-class NotifyEventHandlerFacade : public INotifyEventHandler
+class NotifyEventHandlerMockFacade : public INotifyEventHandler
 {
   public:
-    NotifyEventHandlerFacade(NotifyEventHandlerMock& notify_event_handler_mock)
-        : notify_event_handler_mock_{notify_event_handler_mock}
+    NotifyEventHandlerMockFacade(NotifyEventHandlerMock& notify_event_handler_mock) : mock_{notify_event_handler_mock}
     {
     }
 
     void RegisterMessageReceivedCallbacks(const QualityType asil_level,
                                           message_passing::IReceiver& receiver) noexcept override
     {
-        notify_event_handler_mock_.RegisterMessageReceivedCallbacks(asil_level, receiver);
+        mock_.RegisterMessageReceivedCallbacks(asil_level, receiver);
     }
 
     void NotifyEvent(const QualityType asil_level, const ElementFqId event_id) noexcept override
     {
-        notify_event_handler_mock_.NotifyEvent(asil_level, event_id);
+        mock_.NotifyEvent(asil_level, event_id);
     }
 
     IMessagePassingService::HandlerRegistrationNoType RegisterEventNotification(
@@ -53,14 +52,14 @@ class NotifyEventHandlerFacade : public INotifyEventHandler
         std::weak_ptr<ScopedEventReceiveHandler> callback,
         const pid_t target_node_id) noexcept override
     {
-        return notify_event_handler_mock_.RegisterEventNotification(asil_level, event_id, callback, target_node_id);
+        return mock_.RegisterEventNotification(asil_level, event_id, callback, target_node_id);
     }
 
     void ReregisterEventNotification(QualityType asil_level,
                                      ElementFqId event_id,
                                      pid_t target_node_id) noexcept override
     {
-        notify_event_handler_mock_.ReregisterEventNotification(asil_level, event_id, target_node_id);
+        mock_.ReregisterEventNotification(asil_level, event_id, target_node_id);
     }
 
     void UnregisterEventNotification(const QualityType asil_level,
@@ -68,18 +67,18 @@ class NotifyEventHandlerFacade : public INotifyEventHandler
                                      const IMessagePassingService::HandlerRegistrationNoType registration_no,
                                      const pid_t target_node_id) override
     {
-        notify_event_handler_mock_.UnregisterEventNotification(asil_level, event_id, registration_no, target_node_id);
+        mock_.UnregisterEventNotification(asil_level, event_id, registration_no, target_node_id);
     }
 
     void NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id) noexcept override
     {
-        notify_event_handler_mock_.NotifyOutdatedNodeId(asil_level, outdated_node_id, target_node_id);
+        mock_.NotifyOutdatedNodeId(asil_level, outdated_node_id, target_node_id);
     }
 
   private:
-    NotifyEventHandlerMock& notify_event_handler_mock_;
+    NotifyEventHandlerMock& mock_;
 };
 
-}  // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola::test
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_FACADE_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_MOCK_FACADE_H

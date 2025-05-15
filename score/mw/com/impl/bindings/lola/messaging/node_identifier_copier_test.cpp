@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace score::mw::com::impl::lola
+namespace score::mw::com::impl::lola::test
 {
 
 const ElementFqId kDummyElementFqId{2U, 3U, 4U, ElementType::EVENT};
@@ -311,4 +311,4 @@ TEST_F(CopyNodeIdentiersMapWithMoreNodesThanMaxBufferSizeFixture,
     EXPECT_TRUE(ArePidsInNodeBuffer(expected_copied_ids));
 }
 
-}  // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola::test

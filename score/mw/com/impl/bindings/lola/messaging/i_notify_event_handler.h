@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_H
-#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_I_NOTIFY_EVENT_HANDLER_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_I_NOTIFY_EVENT_HANDLER_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
@@ -27,7 +27,9 @@ namespace score::mw::com::impl::lola
 ///
 /// \details Functional aspects, which MessagePassingFacade provides are split into different composites/handlers. This
 ///          class implements the handling of event-notification functionality:
-///          It gets (Un)RegisterEventNotification() calls from proxy instances
+///          - It processes (Un)RegisterEventNotification() calls from proxy instances and dispatches the notification
+///            callbacks back to the proxy.
+///          - It processes NotifyEvent() calls from skeleton instances.
 class INotifyEventHandler
 {
   public:
@@ -100,4 +102,4 @@ class INotifyEventHandler
 
 }  // namespace score::mw::com::impl::lola
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_I_NOTIFY_EVENT_HANDLER_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_I_NOTIFY_EVENT_HANDLER_H
