@@ -33,7 +33,7 @@ namespace score::mw::com::impl::lola
 class ControlSlotCompositeIndicator
 {
   public:
-    enum class CompositeSlotTagType : std::uint8_t
+    enum CompositeSlotTagType
     {
         QM,
         ASIL_B

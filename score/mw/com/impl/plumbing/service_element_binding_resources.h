@@ -40,7 +40,7 @@ lola::ElementFqId GetElementFqIdFromLolaConfig(const LolaServiceTypeDeployment& 
 {
     const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
 
-    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
+    // coverity[autosar_cpp14_a7_1_8_violation: FALSE] this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
     if constexpr (element_type == lola::ElementType::EVENT)
     {
@@ -48,7 +48,7 @@ lola::ElementFqId GetElementFqIdFromLolaConfig(const LolaServiceTypeDeployment& 
         return lola::ElementFqId{
             lola_service_type_deployment.service_id_, event_id, lola_service_instance_id.GetId(), element_type};
     }
-    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
+    // coverity[autosar_cpp14_a7_1_8_violation: FALSE] this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
     if constexpr (element_type == lola::ElementType::FIELD)
     {

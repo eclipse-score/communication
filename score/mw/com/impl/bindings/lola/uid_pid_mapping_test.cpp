@@ -77,7 +77,7 @@ TEST(UidPidMapping, RegisterMaxRetryFailure)
     EXPECT_CALL(atomic_mock, compare_exchange_weak(_, _, _)).Times(kMaxRetries).WillRepeatedly(Return(false));
 
     // when trying to register a new uid 42 (not among the registered uids)
-    auto result = lola::detail::RegisterPid<memory::shared::AtomicIndirectorMock>(
+    auto result = lola::detail_uid_pid_mapping::RegisterPid<memory::shared::AtomicIndirectorMock>(
         mapping_entries.begin(), mapping_entries.end(), 42, 142);
     // expect, that an empty optional is returned.
     EXPECT_FALSE(result.has_value());
@@ -114,7 +114,8 @@ TEST(UidPidMapping, RegisterUpdatesPidWhenEntryIsInUpdatingStateForSameUid)
     mapping_entries.at(0).pid_ = old_pid;
 
     // When tried to register
-    auto result = lola::detail::RegisterPid(mapping_entries.begin(), mapping_entries.end(), test_uid, new_pid);
+    auto result =
+        lola::detail_uid_pid_mapping::RegisterPid(mapping_entries.begin(), mapping_entries.end(), test_uid, new_pid);
 
     // Then the operation should succeed and return the new PID
     EXPECT_TRUE(result.has_value());
@@ -166,7 +167,7 @@ TEST(DetailRegisterPidEmpty, NoNullPointerDereferenceInCaseOfEmptyMappingEntries
     constexpr std::uint16_t pid{1U};
 
     EXPECT_EQ(empty.size(), 0);
-    auto result = detail::RegisterPid(empty.begin(), empty.end(), uid, pid);
+    auto result = detail_uid_pid_mapping::RegisterPid(empty.begin(), empty.end(), uid, pid);
 
     EXPECT_FALSE(result.has_value());
 }

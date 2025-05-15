@@ -21,6 +21,7 @@
 
 #include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
+#include "score/os/utils/interprocess/interprocess_mutex.h"
 #include "score/result/result.h"
 
 #include <atomic>

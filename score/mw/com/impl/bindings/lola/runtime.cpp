@@ -35,22 +35,17 @@ Runtime::Runtime(const Configuration& config,
       long_running_threads_{long_running_threads},
       lola_message_passing_control_{Runtime::HasAsilBSupport(),
                                     config.GetGlobalConfiguration().GetSenderMessageQueueSize()},
-      lola_messaging_{
-          lola_message_passing_control_,
-          // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and after
-          // are covered so this is clearly an error by the tool. Suppression can be removed when bug is fixed in
-          // Ticket-184253).
-          // Suppress "AUTOSAR C++14 M12-1-1", The rule states: "An object’s dynamic type shall not be used
-          // from the body of its constructor or destructor".
-          // This is false positive, GetMessagePassingCfg is not a virtual function.
-          // coverity[autosar_cpp14_m12_1_1_violation]
-          Runtime::GetMessagePassingCfg(QualityType::kASIL_QM),
-          // LCOV_EXCL_STOP
-          Runtime::HasAsilBSupport()
-              // coverity[autosar_cpp14_m12_1_1_violation]
-              ? score::cpp::optional<MessagePassingFacade::AsilSpecificCfg>{Runtime::GetMessagePassingCfg(
-                    QualityType::kASIL_B)}
-              : score::cpp::nullopt},
+      lola_messaging_{lola_message_passing_control_,
+                      // Suppress "AUTOSAR C++14 M12-1-1", The rule states: "An object’s dynamic type shall not be used
+                      // from the body of its constructor or destructor".
+                      // This is false positive, GetMessagePassingCfg is not a virtual function.
+                      // coverity[autosar_cpp14_m12_1_1_violation]
+                      Runtime::GetMessagePassingCfg(QualityType::kASIL_QM),
+                      Runtime::HasAsilBSupport()
+                          // coverity[autosar_cpp14_m12_1_1_violation]
+                          ? score::cpp::optional<MessagePassingFacade::AsilSpecificCfg>{Runtime::GetMessagePassingCfg(
+                                QualityType::kASIL_B)}
+                          : score::cpp::nullopt},
       service_discovery_client_{long_running_threads_},
       tracing_runtime_{std::move(lola_tracing_runtime)},
       rollback_data_{},

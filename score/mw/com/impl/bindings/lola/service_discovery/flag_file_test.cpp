@@ -120,8 +120,7 @@ TEST_F(FlagFileTest, ExistingMatchingFlagFileIsRemovedAtConstructionAsilQm)
 {
     InSequence in_sequence{};
 
-    ASSERT_TRUE(
-        filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path1.ParentPath(), kAllPerms).has_value());
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path1.ParentPath()).has_value());
     filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path1, kUserWriteRestRead);
     EXPECT_CALL(filesystem_factory_fake_.GetStandard(), Remove(flag_file_path1));
     EXPECT_CALL(filesystem_factory_fake_.GetStreams(), Open(flag_file_path1, std::ios_base::out));
@@ -137,8 +136,7 @@ TEST_F(FlagFileTest, ExistingMatchingFlagFileIsRemovedAtConstructionAsilB)
 {
     InSequence in_sequence{};
 
-    ASSERT_TRUE(
-        filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path2.ParentPath(), kAllPerms).has_value());
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path2.ParentPath()).has_value());
     filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path2, kUserWriteRestRead);
     EXPECT_CALL(filesystem_factory_fake_.GetStandard(), Remove(flag_file_path2));
     EXPECT_CALL(filesystem_factory_fake_.GetStreams(), Open(flag_file_path2, std::ios_base::out));
@@ -165,8 +163,7 @@ TEST_F(FlagFileTest, FailsToRemoveExistingMatchingFlagFileAtConstruction)
 
 TEST_F(FlagFileTest, FlagFileConstructionCopesWithExistingPath)
 {
-    ASSERT_TRUE(
-        filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path1.ParentPath(), kAllPerms).has_value());
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path1.ParentPath()).has_value());
 
     const auto flag_file = FlagFile::Make(kEnrichedInstanceIdentifier1, disambiguator_, filesystem_);
     EXPECT_TRUE(flag_file.has_value());
@@ -246,14 +243,16 @@ TEST_F(FlagFileTest, CreateSearchPathReturnsPathIfAlreadyExists)
     EXPECT_EQ(path.value(), flag_file_path1.ParentPath());
 }
 
-TEST_F(FlagFileTest, CreateSearchPathFailsIfAlreadyExistsWithWrongPermissions)
+TEST_F(FlagFileTest, CreateSearchPathReturnsPathAndHealsPermissionsIfAlreadyExistsWithWrongPermissions)
 {
-    ASSERT_TRUE(filesystem_factory_fake_.GetUtils()
-                    .CreateDirectories(flag_file_path1.ParentPath(), kUserWriteRestRead)
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path1.ParentPath()).has_value());
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard()
+                    .Permissions(flag_file_path1.ParentPath(), kUserWriteRestRead, filesystem::PermOptions::kReplace)
                     .has_value());
 
     const auto path = FlagFile::CreateSearchPath(kEnrichedInstanceIdentifier1, filesystem_);
-    ASSERT_FALSE(path.has_value());
+    ASSERT_TRUE(path.has_value());
+    EXPECT_EQ(path.value(), flag_file_path1.ParentPath());
 }
 
 TEST_F(FlagFileTest, CreateSearchPathReturnsErrorIfCannotCreateDirectoryRepeatedly)
@@ -270,7 +269,9 @@ TEST_F(FlagFileTest, CreateSearchPathReturnsPathIfItAppearsDuringBackoffTime)
 {
     EXPECT_CALL(filesystem_factory_fake_.GetUtils(), CreateDirectories(_, _))
         .WillOnce(InvokeWithoutArgs([this]() {
-            filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path1.ParentPath(), kAllPerms);
+            filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path1.ParentPath());
+            filesystem_factory_fake_.GetStandard().Permissions(
+                flag_file_path1.ParentPath(), kUserWriteRestRead, filesystem::PermOptions::kReplace);
             return MakeUnexpected(filesystem::ErrorCode::kCouldNotCreateDirectory);
         }))
         .WillRepeatedly(DoDefault());

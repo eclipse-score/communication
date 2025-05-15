@@ -15,10 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/mw/log/logging.h"
-
 #include <score/assert.hpp>
-#include <exception>
 
 namespace score::mw::com::impl::lola
 {
@@ -26,12 +23,6 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings.
-// This rule states: "The std::terminate() function shall not be called implicitly".
-// The coverity tool reports: "fun_call_w_exception: Called function throws an exception of type
-// std::bad_optional_access." and points on statement `for (auto& element : service_data_control.event_controls_)`.
-// This is a false positive; no optional is involved in this statement.
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void MarkTransactionLogsNeedRollback(ServiceDataControl& service_data_control,
                                      const TransactionLogId transaction_log_id) noexcept
 {
@@ -68,13 +59,7 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
     // service_data_control_.uid_pid_mapping_
     const auto current_pid = lola_runtime.GetPid();
     const auto previous_pid = service_data_control_.uid_pid_mapping_.RegisterPid(transaction_log_id_, current_pid);
-    if (!(previous_pid.has_value()))
-    {
-        score::mw::log::LogFatal("lola") << "Couldn't Register current PID for UID within shared memory. This can occurr "
-                                          "if there is too high contention accessing the registry. Terminating.";
-        std::terminate();
-    }
-
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(previous_pid.has_value(), "Couldn't Register current PID for UID within shared-memory!");
     if (previous_pid.value() != current_pid)
     {
         // we found an old/outdated PID for our UID in the shared-memory of the service-instance. Notify provider, that
