@@ -41,7 +41,7 @@ mod ffi {
     /// This type represents bmw::mw::com::InstanceSpecifier as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
-    pub(super) struct NativeInstanceSpecifier {
+    pub struct NativeInstanceSpecifier {
         _dummy: [u8; 0],
     }
 
@@ -160,6 +160,8 @@ unsafe extern fn mw_com_impl_delete_boxed_fnmut(ptr: *mut ffi::FatPtr) {
 
 // Re-export ffi types used in the public API of this module for when they're needed by the
 // generated code.
+pub use ffi::NativeInstanceSpecifier;
+
 pub use ffi::HandleType;
 pub use ffi::ProxyWrapperClass;
 pub use ffi::ProxyEvent as NativeProxyEvent;
@@ -524,6 +526,12 @@ impl<T: EventOps, P> Drop for ProxyEventStream<'_, T, P> {
 /// The main way to create this is by converting from a `str`.
 pub struct InstanceSpecifier {
     inner: *mut ffi::NativeInstanceSpecifier,
+}
+
+impl InstanceSpecifier {
+    pub fn as_native(&self) -> *const NativeInstanceSpecifier {
+        self.inner
+    }
 }
 
 impl TryFrom<&'_ str> for InstanceSpecifier {

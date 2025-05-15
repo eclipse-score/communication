@@ -13,6 +13,11 @@
 load("@rules_rust//rust:defs.bzl", "rust_library")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
+rust_library(
+    name = "common",
+    srcs = ["common.rs"],
+)
+
 cc_library(
     name = "proxy_bridge_cpp",
     srcs = ["proxy_bridge.cpp"],
@@ -54,6 +59,18 @@ rust_library(
 )
 
 rust_library(
+    name = "skeleton_bridge_rs",
+    srcs = ["skeleton_bridge.rs"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+        # "@ddad//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":common",
+    ],
+)
+
+rust_library(
     name = "macros",
     srcs = ["macros.rs"],
     deps = [
@@ -69,7 +86,9 @@ rust_library(
         "//visibility:public", # platform_only
     ],
     deps = [
+        ":common",
         ":macros",
         ":proxy_bridge_rs",
+        ":skeleton_bridge_rs",
     ],
 )
