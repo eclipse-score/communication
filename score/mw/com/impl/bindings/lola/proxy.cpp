@@ -78,7 +78,7 @@ PlaceSharedLockOnUsageMarkerFileWithRetry(memory::shared::LockFile& service_inst
         std::make_unique<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>(
             service_instance_usage_marker_file);
     constexpr std::chrono::milliseconds kRetryBackoffTime{200U};
-    std::uint8_t retry_counter{0U};
+    std::uint8_t retry_counter{0};
 
     // We use while true and manually break within the loop to prevent sleeping an additional time in case retry_counter
     // exceeds max_retries.
