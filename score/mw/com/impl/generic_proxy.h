@@ -62,7 +62,7 @@ class GenericProxy : public ProxyBase
     EventMap& GetEvents() noexcept;
 
   private:
-    GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleType instance_handle);
+    using ProxyBase::ProxyBase;
 
     void FillEventMap(const std::vector<score::cpp::string_view>& event_names) noexcept;
 
