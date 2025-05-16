@@ -37,15 +37,19 @@
                   "$ref": "#/$defs/shortname"
                 },
                 "trace_request_send": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_request_send"
                 },
                 "trace_request_received": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_request_received"
                 },
                 "trace_response_send": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_response_send"
                 },
                 "trace_response_received": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_response_received"
                 }
               }
@@ -70,24 +74,30 @@
                   "$ref": "#/$defs/trace_subscribe_send"
                 },
                 "trace_subscribe_received": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscribe_received"
                 },
                 "trace_unsubscribe_send": {
                   "$ref": "#/$defs/trace_unsubscribe_send"
                 },
                 "trace_unsubscribe_received": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_unsubscribe_received"
                 },
                 "trace_subscription_state_changed": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_changed"
                 },
                 "trace_subscription_state_change_handler_registered": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_change_handler_registered"
                 },
                 "trace_subscription_state_change_handler_deregistered": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_change_handler_deregistered"
                 },
                 "trace_subscription_state_change_handler_callback": {
+                  "_lola_support" : false,
                   "$ref": "#/$defs/trace_subscription_state_change_handler_callback"
                 },
                 "trace_send": {
@@ -158,24 +168,30 @@
                       "$ref": "#/$defs/trace_subscribe_send"
                     },
                     "trace_subscribe_received": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscribe_received"
                     },
                     "trace_unsubscribe_send": {
                       "$ref": "#/$defs/trace_unsubscribe_send"
                     },
                     "trace_unsubscribe_received": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_unsubscribe_received"
                     },
                     "trace_subscription_state_changed": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_changed"
                     },
                     "trace_subscription_state_change_handler_registered": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_change_handler_registered"
                     },
                     "trace_subscription_state_change_handler_deregistered": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_change_handler_deregistered"
                     },
                     "trace_subscription_state_change_handler_callback": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_subscription_state_change_handler_callback"
                     },
                     "trace_update": {
@@ -206,21 +222,27 @@
                   "additionalProperties": false,
                   "properties": {
                     "trace_request_send": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_request_send"
                     },
                     "trace_request_received": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_request_received"
                     },
                     "trace_response_send": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_response_send"
                     },
                     "trace_response_received": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_response_received"
                     },
                     "trace_get_handler_registered": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_get_handler_registered"
                     },
                     "trace_get_handler_completed": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_get_handler_completed"
                     }
                   }
@@ -233,21 +255,27 @@
                   "additionalProperties": false,
                   "properties": {
                     "trace_request_send": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_request_send"
                     },
                     "trace_request_received": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_request_received"
                     },
                     "trace_response_send": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_response_send"
                     },
                     "trace_response_received": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_response_received"
                     },
                     "trace_set_handler_registered": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_set_handler_registered"
                     },
                     "trace_set_handler_completed": {
+                      "_lola_support" : false,
                       "$ref": "#/$defs/trace_set_handler_completed"
                     }
                   }
