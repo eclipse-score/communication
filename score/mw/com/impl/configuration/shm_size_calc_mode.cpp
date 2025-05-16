@@ -12,13 +12,13 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/shm_size_calc_mode.h"
 
-namespace score::mw::com::impl
-{
-
-std::ostream& operator<<(std::ostream& ostream_out, const ShmSizeCalculationMode& mode)
+std::ostream& score::mw::com::impl::operator<<(std::ostream& ostream_out, const ShmSizeCalculationMode& mode)
 {
     switch (mode)
     {
+        case ShmSizeCalculationMode::kEstimation:
+            ostream_out << "ESTIMATION";
+            break;
         case ShmSizeCalculationMode::kSimulation:
             ostream_out << "SIMULATION";
             break;
@@ -29,5 +29,3 @@ std::ostream& operator<<(std::ostream& ostream_out, const ShmSizeCalculationMode
 
     return ostream_out;
 }
-
-}  // namespace score::mw::com::impl

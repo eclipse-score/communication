@@ -15,9 +15,9 @@
 
 #include "score/concurrency/thread_pool.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/messaging/handler_base.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_control.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
-#include "score/mw/com/impl/bindings/lola/messaging/i_notify_event_handler.h"
 #include "score/mw/com/impl/bindings/lola/messaging/messages/message_common.h"
 #include "score/mw/com/impl/bindings/lola/messaging/messages/message_element_fq_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -37,58 +37,80 @@
 
 namespace score::mw::com::impl::lola
 {
-
-namespace test
-{
-class NotifyEventHandlerAttorney;
-}
-
 /// \brief Handles event-notification functionality of MessagePassingFacade.
 ///
 /// \details Functional aspects, which MessagePassingFacade provides are split into different composites/handlers. This
 ///          class implements the handling of event-notification functionality:
 ///          It gets (Un)RegisterEventNotification() calls from proxy instances
-class NotifyEventHandler final : public INotifyEventHandler
+class NotifyEventHandler final : public HandlerBase
 {
+    using NotifyEventUpdateMessage = ElementFqIdMessage<MessageType::kNotifyEvent>;
+    using RegisterEventNotificationMessage = ElementFqIdMessage<MessageType::kRegisterEventNotifier>;
+    using UnregisterEventNotificationMessage = ElementFqIdMessage<MessageType::kUnregisterEventNotifier>;
+
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // This class provides a view to the private members of this class for testing-only. We need this in order to
     // simulate race conditions in a deterministic way in unit tests.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class test::NotifyEventHandlerAttorney;
+    friend class NotifyEventHandlerAttorney;
 
   public:
-    /// See documentation in NotifyEventHandler
+    /// \brief ctor of NotifyEventHandler
+    /// \param mp_control
+    /// \param asil_b_capability shall ASIL_B supported beside QM or not?
+    /// \param token stop_token to preempt async/long-running activities of this handler.
     NotifyEventHandler(IMessagePassingControl& mp_control,
                        const bool asil_b_capability,
                        const score::cpp::stop_token& token) noexcept;
 
-    /// See documentation in NotifyEventHandler
+    /// \brief Registers message received callbacks for messages handled by NotifyEventHandler at _receiver_
+    /// \param asil_level asil level of given _receiver_
+    /// \param receiver receiver, where to register
     void RegisterMessageReceivedCallbacks(const QualityType asil_level,
                                           message_passing::IReceiver& receiver) noexcept override;
 
-    /// See documentation in NotifyEventHandler
-    void NotifyEvent(const QualityType asil_level, const ElementFqId event_id) noexcept override;
+    /// \brief Notify that event _event_id_ has been updated.
+    ///
+    /// \details This API is used by process local instances of LoLa skeleton-event in its implementation of ara::com
+    /// event update functionality.
+    ///
+    /// \param asil_level needed/intended ASIL level. ASIL_B can only be used, if calling process is ASIL_B qualified
+    ///                   and target provides service/event ASIL_B qualified.
+    /// \param event_id identification of event to notify
+    /// \param max_samples maximum number of event samples, which shall be used/buffered from caller perspective
+    void NotifyEvent(const QualityType asil_level, const ElementFqId event_id) noexcept;
 
-    /// See documentation in NotifyEventHandler
+    /// \brief Add event update notification callback
+    /// \details This API is used by process local LoLa proxy-events.
+    /// \param asil_level needed/intended ASIL level. ASIL_B can only be used, if calling process is ASIL_B qualified
+    ///                   and target provides service/event ASIL_B qualified.
+    /// \param event_id fully qualified event id, for which event notification shall be registered
+    /// \param callback callback to be registered
+    /// \param target_node_id node id (pid) of providing LoLa process.
     IMessagePassingService::HandlerRegistrationNoType RegisterEventNotification(
         const QualityType asil_level,
         const ElementFqId event_id,
         std::weak_ptr<ScopedEventReceiveHandler> callback,
-        const pid_t target_node_id) noexcept override;
+        const pid_t target_node_id) noexcept;
 
-    /// See documentation in NotifyEventHandler
-    void ReregisterEventNotification(QualityType asil_level,
-                                     ElementFqId event_id,
-                                     pid_t target_node_id) noexcept override;
+    /// \brief Re-registers an event update notifications for event _event_id_ in case target_node_id is a remote pid.
+    /// \details see see IMessagePassingService::ReregisterEventNotification
+    void ReregisterEventNotification(QualityType asil_level, ElementFqId event_id, pid_t target_node_id) noexcept;
 
-    /// See documentation in NotifyEventHandler
+    /// \brief Unregister an event update notification callback, which has been registered with
+    ///        RegisterEventNotification()
+    /// \param asil_level needed/intended ASIL level. ASIL_B can only be used, if calling process is ASIL_B qualified
+    //                    and target provides service/event ASIL_B qualified.
+    /// \param event_id fully qualified event id, for which event notification shall be unregistered
+    /// \param registration_no registration handle, which has been returned by
+    ///        RegisterEventNotification.
+    /// \param target_node_id node id (pid) of event providing LoLa process.
     void UnregisterEventNotification(const QualityType asil_level,
                                      const ElementFqId event_id,
                                      const IMessagePassingService::HandlerRegistrationNoType registration_no,
-                                     const pid_t target_node_id) override;
+                                     const pid_t target_node_id);
 
-    /// See documentation in NotifyEventHandler
-    void NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id) noexcept override;
+    void NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id) noexcept;
 
   private:
     /**
@@ -124,6 +146,9 @@ class NotifyEventHandler final : public INotifyEventHandler
     using EventUpdateNotifierMapType = std::unordered_map<ElementFqId, std::vector<RegisteredNotificationHandler>>;
     using EventUpdateNodeIdMapType = std::unordered_map<ElementFqId, std::set<pid_t>>;
     using EventUpdateRegistrationCountMapType = std::unordered_map<ElementFqId, NodeCounter>;
+    /// \brief tmp buffer for copying ids under lock.
+    /// \todo Make its size configurable?
+    using NodeIdTmpBufferType = std::array<pid_t, 20>;
 
     struct EventNotificationControlData
     {

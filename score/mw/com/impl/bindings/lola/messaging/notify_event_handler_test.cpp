@@ -36,7 +36,7 @@
 #include <utility>
 #include <vector>
 
-namespace score::mw::com::impl::lola::test
+namespace score::mw::com::impl::lola
 {
 
 class NotifyEventHandlerAttorney
@@ -1164,4 +1164,4 @@ TEST_F(NotifyEventHandlerFixture, SendingOutdatedNodeIdMessageWillNotTerminateWh
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl::lola::test
+}  // namespace score::mw::com::impl::lola

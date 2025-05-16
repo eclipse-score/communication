@@ -104,10 +104,18 @@ TEST(GlobalConfigurationTest, GettingShmSizeCalcModeReturnsSetValue)
 {
     GlobalConfiguration global_configuration{};
 
-    const auto set_shm_calc_size_mod{ShmSizeCalculationMode::kSimulation};
-    global_configuration.SetShmSizeCalcMode(set_shm_calc_size_mod);
-    const auto get_shm_calc_size_mod = global_configuration.GetShmSizeCalcMode();
-    EXPECT_EQ(get_shm_calc_size_mod, set_shm_calc_size_mod);
+    {
+        const auto set_shm_calc_size_mod{ShmSizeCalculationMode::kEstimation};
+        global_configuration.SetShmSizeCalcMode(set_shm_calc_size_mod);
+        const auto get_shm_calc_size_mod = global_configuration.GetShmSizeCalcMode();
+        EXPECT_EQ(get_shm_calc_size_mod, set_shm_calc_size_mod);
+    }
+    {
+        const auto set_shm_calc_size_mod{ShmSizeCalculationMode::kSimulation};
+        global_configuration.SetShmSizeCalcMode(set_shm_calc_size_mod);
+        const auto get_shm_calc_size_mod = global_configuration.GetShmSizeCalcMode();
+        EXPECT_EQ(get_shm_calc_size_mod, set_shm_calc_size_mod);
+    }
 }
 
 TEST(GlobalConfigurationTest, GettingShmSizeCalcModeBeforeSetValueReturnsDefault)

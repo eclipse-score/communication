@@ -127,7 +127,7 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_B), 5);
     EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(), 12);
 
-    EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), ShmSizeCalculationMode::kSimulation);
+    EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), ShmSizeCalculationMode::kEstimation);
 }
 
 TEST(ConfigParserDeathTest, InvalidPathWillDie)
@@ -2527,6 +2527,8 @@ TEST_P(ShmSizeCalcMode, ValidShmSizeCalcMode)
 }
 
 const std::vector<std::tuple<std::string, ShmSizeCalculationMode>> valid_global_shm_size_calc_modes{
+    {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "shm-size-calc-mode": "ESTIMATION" }})json",
+     ShmSizeCalculationMode::kEstimation},
     {R"json({"serviceTypes": [], "serviceInstances": [], "global": { "shm-size-calc-mode": "SIMULATION" }})json",
      ShmSizeCalculationMode::kSimulation},
     {R"json({"serviceTypes": [], "serviceInstances": [] })json", ShmSizeCalculationMode::kSimulation},
@@ -3815,7 +3817,7 @@ TEST(ConfigParserDeathTest, KnownShmSizeCalcModeKeyWillNotDie)
             "B-receiver": 5,
             "B-sender": 12
         },
-        "shm-size-calc-mode": "SIMULATION"
+        "shm-size-calc-mode": "ESTIMATION"
     }
 }
 )"_json;

@@ -138,12 +138,8 @@ TrackerGuardFactory SampleReferenceTracker::Allocate(std::size_t num_samples) no
 {
     std::size_t num_allocated_samples{0U};
     std::size_t num_samples_available = GetNumAvailableSamples();
-
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all branches
-    // being marked by the tool as taken. Suppression can be removed when bug is fixed in Ticket-188259).
     while ((num_samples > 0U) && (num_samples_available > 0U))
     {
-        // LCOV_EXCL_BR_STOP
         const std::size_t num_samples_to_allocate = std::min(num_samples_available, num_samples);
         // A simple subtract won't be sufficient as some other thread might have acquired some samples as well.
         // Therefore, use compare_exchange_weak to make sure we still have the same number of samples available that

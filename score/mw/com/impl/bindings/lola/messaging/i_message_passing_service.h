@@ -17,6 +17,10 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
+#include "score/os/unistd.h"
+
+#include <score/callback.hpp>
+
 #include <cstdint>
 
 namespace score::mw::com::impl::lola

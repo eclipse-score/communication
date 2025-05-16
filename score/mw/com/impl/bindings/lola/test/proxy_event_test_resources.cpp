@@ -46,6 +46,27 @@ GenericProxyEventAttorney::GenericProxyEventAttorney(GenericProxyEvent& generic_
 {
 }
 
+Result<std::size_t> GenericProxyEventAttorney::GetNumNewSamplesAvailableImpl() const noexcept
+{
+    return generic_proxy_event_.GetNumNewSamplesAvailableImpl();
+}
+
+Result<std::size_t> GenericProxyEventAttorney::GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept
+{
+    return generic_proxy_event_.GetNewSamples(std::move(receiver), tracker);
+}
+
+Result<std::size_t> GenericProxyEventAttorney::GetNewSamplesImpl(Callback&& receiver,
+                                                                 TrackerGuardFactory& tracker) noexcept
+{
+    return generic_proxy_event_.GetNewSamplesImpl(std::move(receiver), tracker);
+}
+
+ProxyEventCommon& GenericProxyEventAttorney::GetProxyEventCommon() noexcept
+{
+    return generic_proxy_event_.proxy_event_common_;
+}
+
 ProxyEventCommonAttorney::ProxyEventCommonAttorney(ProxyEventCommon& proxy_event_common) noexcept
     : proxy_event_common_{proxy_event_common}
 {

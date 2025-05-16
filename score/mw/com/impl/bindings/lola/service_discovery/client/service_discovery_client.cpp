@@ -184,7 +184,7 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
             {
                 return score::MakeUnexpected(ComErrc::kServiceNotOffered, "Failed to create flag file for ASIL-B");
             }
-            flag_files.asil_b.emplace(std::move(asil_b_flag_file).value());
+            flag_files.asil_b = std::move(asil_b_flag_file).value();
         }
             // As a service provider if we support offering a service with ASIL_B quality level that means that
             // this is the highest quality level we support, so we also support the lower quality levels that's why
@@ -200,7 +200,7 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
             {
                 return score::MakeUnexpected(ComErrc::kServiceNotOffered, "Failed to create flag file for ASIL-QM");
             }
-            flag_files.asil_qm.emplace(std::move(asil_qm_flag_file).value());
+            flag_files.asil_qm = std::move(asil_qm_flag_file).value();
             break;
         }
         case QualityType::kInvalid:

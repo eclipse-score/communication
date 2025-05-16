@@ -490,6 +490,145 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
     EXPECT_GE(GetSize(asil_control_shm), CalculateLowerBoundControlShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
 }
 
+TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Estimation)
+{
+    RecordProperty("Verifies", "SCR-5899126");
+    RecordProperty("Description", "Check if the data_shm is calculated correctly.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event "fooEvent" and one field "fooField" registered
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    const auto instance_identifier = CreateInstanceIdentifier();
+
+    auto unit = CreateSkeleton(instance_identifier);
+    ASSERT_NE(unit, nullptr);
+
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+
+    // Expect, that the LoLa runtime returns that ShmSize calculation shall be done via estimation
+    EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode()).WillOnce(Return(ShmSizeCalculationMode::kEstimation));
+
+    // When offering a service and all events
+    const auto val = unit->PrepareOffer(events_, fields_, {});
+    mock_event_binding_.PrepareOffer();
+    mock_field_binding_.PrepareOffer();
+
+    // then expect, that it has a value!
+    EXPECT_TRUE(val.has_value());
+
+    // Then the respective Shared Memory file for Data is created with a size larger than already the pure payload
+    // within data-shm-object would occupy (this is a lower bound for consistency)
+    EXPECT_GE(GetSize(data_shm), CalculateLowerBoundDataShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
+
+    // Then the respective Shared Memory file for Control is created with a size larger than already the pure payload
+    // within control-shm-object would occupy (this is a lower bound for consistency)
+    EXPECT_GE(GetSize(control_shm), CalculateLowerBoundControlShmSize({{sizeof(TestSampleType), kNumberOfSlots}}));
+}
+
+/// \brief Testcase test once a calculation of shm-object size by "estimation" algo and then directly afterwards
+///        for the very same deployment a calculation by "simulation". We expect, that the sizes of the shm-objects
+///        based on "simulation" are always smaller, than the "estimated" sizes as during estimation we add a lot of
+///        "security buffers".
+TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_EstimationVsSimulation)
+{
+    RecordProperty("Verifies", "SCR-5899126");
+    RecordProperty("Description", "Check if the data_shm is calculated correctly.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a skeleton with one event "fooEvent" and one field "fooField" registered
+    WithAServiceInstanceDeploymentContainingSingleEventAndField(QualityType::kASIL_QM)
+        .WithAServiceTypeDeploymentContainingSingleEventAndField();
+    const auto instance_identifier = CreateInstanceIdentifier();
+
+    std::size_t data_size_estimated{};
+    std::size_t control_size_estimated{};
+
+    {
+        // When we instantiate it once
+        auto unit = CreateSkeleton(instance_identifier);
+        ASSERT_NE(unit, nullptr);
+
+        const auto* const lola_service_type_deployment =
+            std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
+        ASSERT_NE(lola_service_type_deployment, nullptr);
+
+        // where we expect, that the LoLa runtime returns that ShmSize calculation shall be done via estimation
+        EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode())
+            .WillOnce(Return(ShmSizeCalculationMode::kEstimation));
+
+        // When offering a service and all events
+        const auto val = unit->PrepareOffer(events_, fields_, {});
+        mock_event_binding_.PrepareOffer();
+        mock_field_binding_.PrepareOffer();
+
+        // then expect, that it has a value!
+        EXPECT_TRUE(val.has_value());
+
+        // then we store the sizes of Data and Control shm-objects for later comparison
+        data_size_estimated = GetSize(data_shm);
+        control_size_estimated = GetSize(control_shm);
+
+        // and call PrepareStopOffer so that also its shared-mem objects are cleaned up ...
+        unit->PrepareStopOffer({});
+    }
+
+    ASSERT_FALSE(fileExists(data_shm));
+    ASSERT_FALSE(fileExists(control_shm));
+    ASSERT_FALSE(fileExists(asil_control_shm));
+
+    {
+        // and then we instantiate it a 2nd time
+        auto unit = CreateSkeleton(instance_identifier);
+        ASSERT_NE(unit, nullptr);
+
+        const auto* const lola_service_type_deployment =
+            std::get_if<LolaServiceTypeDeployment>(&test::kValidMinimalTypeDeployment.binding_info_);
+        ASSERT_NE(lola_service_type_deployment, nullptr);
+
+        // where we now expect, that the LoLa runtime returns that ShmSize calculation shall be done via simulation
+        EXPECT_CALL(lola_runtime_mock_, GetShmSizeCalculationMode())
+            .WillOnce(Return(ShmSizeCalculationMode::kSimulation));
+
+        // Expecting that the event and field are offered during the simulation dry run
+        ON_CALL(mock_event_binding_, PrepareOffer())
+            .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
+                ElementFqId event_fqn{lola_service_type_deployment->service_id_,
+                                      test::kFooEventId,
+                                      test::kDefaultLolaInstanceId,
+                                      ElementType::EVENT};
+                unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+                return {};
+            }));
+        ON_CALL(mock_field_binding_, PrepareOffer())
+            .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
+                ElementFqId event_fqn{lola_service_type_deployment->service_id_,
+                                      test::kFooFieldId,
+                                      test::kDefaultLolaInstanceId,
+                                      ElementType::FIELD};
+                unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+                return {};
+            }));
+
+        // When offering a service and all events
+        const auto val = unit->PrepareOffer(events_, fields_, {});
+        mock_event_binding_.PrepareOffer();
+        mock_field_binding_.PrepareOffer();
+        // then expect, that it has a value!
+        EXPECT_TRUE(val.has_value());
+
+        // then the sizes for control and data are smaller than in the "estimation" case from the first instantiation
+        EXPECT_LT(GetSize(data_shm), data_size_estimated);
+        EXPECT_LT(GetSize(control_shm), control_size_estimated);
+    }
+}
+
 TEST_F(SkeletonComponentTestFixture,
        DataShmObjectSizeCalc_Simulation_QM_DoesNotTerminateWhenConfiguredSizeIsLargerThanEstimate)
 {

@@ -14,18 +14,19 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGEPASSINGFACADE_H
 
 #include "score/concurrency/thread_pool.h"
+#include "score/os/unistd.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_control.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
-#include "score/mw/com/impl/bindings/lola/messaging/i_notify_event_handler.h"
+#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 #include "score/mw/com/message_passing/i_receiver.h"
+#include "score/mw/com/message_passing/message.h"
 
 #include <score/callback.hpp>
 #include <score/memory.hpp>
 #include <score/optional.hpp>
-#include <score/stop_token.hpp>
 
 #include <sys/types.h>
 #include <cstdint>
@@ -76,8 +77,6 @@ class MessagePassingFacade final : public IMessagePassingService
     /// \details Used by com::impl::Runtime and instantiated only once, since we want to have "singleton" behavior,
     /// without applying singleton pattern.
     ///
-    /// \param stop_source Stop source for stopping the NotifyEventHandler
-    /// \param notify_event_handler instance to which to dispatch event-notification related calls to.
     /// \param msgpass_ctrl message passing control used for access to node_identifier, etc.
     /// \param config_asil_qm configuration props for ASIL-QM (mandatory) communication path
     /// \param config_asil_b optional (only needed for ASIL-B enabled MessagePassingFacade) configuration props for
@@ -86,9 +85,7 @@ class MessagePassingFacade final : public IMessagePassingService
     ///                MessagePassingFacade! This optional should only be set, in case the overall
     ///                application/process is implemented according to ASIL_B requirements and there is at least one
     ///                LoLa service deployment (proxy or skeleton) for the process, with asilLevel "ASIL_B".
-    MessagePassingFacade(score::cpp::stop_source& stop_source,
-                         std::unique_ptr<INotifyEventHandler> notify_event_handler,
-                         IMessagePassingControl& msgpass_ctrl,
+    MessagePassingFacade(IMessagePassingControl& msgpass_ctrl,
                          const AsilSpecificCfg config_asil_qm,
                          const score::cpp::optional<AsilSpecificCfg> config_asil_b) noexcept;
 
@@ -102,7 +99,6 @@ class MessagePassingFacade final : public IMessagePassingService
     /// \brief Notification, that the given _event_id_ with _asil_level_ has been updated.
     /// \details see IMessagePassingService::NotifyEvent
     void NotifyEvent(const QualityType asil_level, const ElementFqId event_id) noexcept override;
-
     /// \brief Registers a callback for event update notifications for event _event_id_
     /// \details see IMessagePassingService::RegisterEventNotification
     HandlerRegistrationNoType RegisterEventNotification(const QualityType asil_level,
@@ -155,12 +151,12 @@ class MessagePassingFacade final : public IMessagePassingService
     /// \brief does our instance support ASIL-B?
     bool asil_b_capability_;
 
-    score::cpp::stop_source& stop_source_;
+    score::cpp::stop_source stop_source_;
 
     /// \brief handler for notify-event-update, register-event-notification and unregister-event-notification messages.
     /// \attention Position of this handler member is important as it shall be destroyed AFTER the upcoming receiver
     ///            members to avoid race conditions, as those receivers are using this handler to dispatch messages.
-    std::unique_ptr<INotifyEventHandler> notify_event_handler_;
+    NotifyEventHandler notify_event_handler_;
 
     /// \brief message passing receiver control, where ASIL-QM qualified messages get received
     MessageReceiveCtrl msg_receiver_qm_;

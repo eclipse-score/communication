@@ -122,11 +122,6 @@ class UidPidMapping
     static RegisterPidFake* register_pid_fake_;
 };
 
-// A3-1-1: "It shall be possible to include any header file in multiple
-// translation units without violating the One Definition Rule."
-// false-positive: it's the correct syntax for defining a static member variable of a template class
-// see https://en.cppreference.com/w/cpp/language/variable_template
-// coverity[autosar_cpp14_a3_1_1_violation]
 template <typename Allocator>
 RegisterPidFake* UidPidMapping<Allocator>::register_pid_fake_{nullptr};
 
