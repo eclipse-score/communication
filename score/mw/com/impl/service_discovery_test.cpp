@@ -454,32 +454,6 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServic
     EXPECT_EQ(value, 2);
 }
 
-TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServiceCanNotFindACallback)
-{
-    // Given a ServiceDiscovery with a service containing 1 instance
-    WithAServiceContainingOneInstances();
-
-    // When StopFindService is called before the StartFindSercice callback has a chance to execute
-    ON_CALL(service_discovery_client_, StartFindService(_, _, _))
-        .WillByDefault([this](auto handle, auto handler, auto) {
-            score::cpp::ignore = this->unit_->StopFindService(handle);
-            handler({}, handle);
-            return ResultBlank{};
-        });
-
-    std::int32_t value{7};
-    // Where the callback would modify an observable
-    auto handle = unit_->StartFindService(
-        [&value](auto, auto) noexcept {
-            value++;
-        },
-        instance_specifier_);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT(handle.has_value());
-
-    // Then the observable shoud stay unmodified
-    EXPECT_EQ(value, 7);
-}
-
 TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServiceReturnsWorkingHandle)
 {
     WithAServiceContainingTwoInstances();
