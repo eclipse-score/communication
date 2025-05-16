@@ -429,6 +429,7 @@ cc_library(
     srcs = ["register_pid_fake.cpp"],
     hdrs = ["register_pid_fake.h"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":uid_pid_mapping_entry",
@@ -663,6 +664,7 @@ cc_library(
         "@score-baselibs//score/result",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/lola:runtime",
+        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
