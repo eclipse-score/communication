@@ -15,6 +15,8 @@
 
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_event.h"
+#include "score/mw/com/impl/skeleton_event.h"
+#include "score/mw/com/types.h"
 
 #include <score/assert.hpp>
 #include <optional>
@@ -55,6 +57,20 @@ inline P* CreateProxyWrapper(const typename P::HandleType& handle)
     }
 }
 
+template <typename S>
+inline S* CreateSkeletonWrapper(const ::score::mw::com::InstanceSpecifier& instance_specifier)
+{
+    if (auto result = S::Create(instance_specifier); result.has_value())
+    {
+        return new S{std::move(result).value()};
+    }
+    else
+    {
+        // Todo convert error and return that instead of a nullptr
+        return nullptr;
+    }
+}
+
 }  // namespace score::mw::com::impl::rust
 
 #define BEGIN_EXPORT_MW_COM_INTERFACE(uid, proxy_type, skeleton_type)                                               \
@@ -71,13 +87,40 @@ inline P* CreateProxyWrapper(const typename P::HandleType& handle)
     void mw_com_gen_ProxyWrapperClass_##uid##_delete(uid##MwComProxyType* proxy)                                    \
     {                                                                                                               \
         delete proxy;                                                                                               \
+    }                                                                                                               \
+                                                                                                                    \
+    uid##MwComSkeletonType* mw_com_gen_SkeletonWrapperClass_##uid##_create(                                         \
+        const ::score::mw::com::InstanceSpecifier& instance_specifier)                                                \
+    {                                                                                                               \
+        return ::score::mw::com::impl::rust::CreateSkeletonWrapper<uid##MwComSkeletonType>(instance_specifier);       \
+    }                                                                                                               \
+                                                                                                                    \
+    void mw_com_gen_SkeletonWrapperClass_##uid##_delete(uid##MwComSkeletonType* skeleton)                           \
+    {                                                                                                               \
+        delete skeleton;                                                                                            \
+    }                                                                                                               \
+                                                                                                                    \
+    bool mw_com_gen_SkeletonWrapperClass_##uid##_offer(uid##MwComSkeletonType* skeleton)                            \
+    {                                                                                                               \
+        return skeleton->OfferService().has_value();                                                                \
+    }                                                                                                               \
+                                                                                                                    \
+    void mw_com_gen_SkeletonWrapperClass_##uid##_stop_offer(uid##MwComSkeletonType* skeleton)                       \
+    {                                                                                                               \
+        skeleton->StopOfferService();                                                                               \
     }
 
-#define EXPORT_MW_COM_EVENT(uid, event_type, event_name)                                                   \
-    ::score::mw::com::impl::ProxyEvent<event_type>* mw_com_gen_ProxyWrapperClass_##uid##_##event_name##_get( \
-        uid##MwComProxyType* proxy) noexcept                                                               \
-    {                                                                                                      \
-        return &proxy->event_name;                                                                         \
+#define EXPORT_MW_COM_EVENT(uid, event_type, event_name)                                                         \
+    ::score::mw::com::impl::ProxyEvent<event_type>* mw_com_gen_ProxyWrapperClass_##uid##_##event_name##_get(       \
+        uid##MwComProxyType* proxy) noexcept                                                                     \
+    {                                                                                                            \
+        return &proxy->event_name;                                                                               \
+    }                                                                                                            \
+                                                                                                                 \
+    ::score::mw::com::impl::SkeletonEvent<event_type>* mw_com_gen_SkeletonWrapperClass_##uid##_##event_name##_get( \
+    uid##MwComSkeletonType* skeleton) noexcept                                                                   \
+    {                                                                                                            \
+        return &skeleton->event_name;                                                                            \
     }
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // extern "C"
@@ -103,6 +146,11 @@ inline P* CreateProxyWrapper(const typename P::HandleType& handle)
     void mw_com_gen_SamplePtr_##uid##_delete(::score::mw::com::impl::SamplePtr<type>* sample_ptr)                    \
     {                                                                                                              \
         sample_ptr->~SamplePtr<type>();                                                                            \
+    }                                                                                                              \
+                                                                                                                   \
+    bool mw_com_gen_SkeletonEvent_##uid##_send(::score::mw::com::impl::SkeletonEvent<type>* event, type* data)       \
+    {                                                                                                              \
+        return event->Send(std::move(*data)).has_value();                                                          \
     }                                                                                                              \
     }
 

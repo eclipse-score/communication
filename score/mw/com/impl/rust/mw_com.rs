@@ -16,10 +16,10 @@ pub mod proxy {
     pub use proxy_bridge_rs::{find_service, SamplePtr};
 }
 pub mod skeleton {
-    pub use skeleton_bridge_rs::{Offered, UnOffered, OfferState, send_skeleton_event};
+    pub use skeleton_bridge_rs::{Offered, UnOffered, OfferState, SkeletonOps, SkeletonEvent};
 }
 pub mod ffi {
     pub use proxy_bridge_rs::NativeInstanceSpecifier;
-    pub use skeleton_bridge_rs::{SkeletonWrapperClass, SkeletonEvent};
+    pub use skeleton_bridge_rs::SkeletonWrapperClass;
 }
 pub use common::{Error, Result};

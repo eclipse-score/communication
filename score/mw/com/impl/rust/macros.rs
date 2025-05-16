@@ -21,6 +21,16 @@ pub mod proxy_bridge {
     pub use sample_ptr_rs::SamplePtr;
 }
 
+#[doc(hidden)]
+pub mod skeleton_bridge {
+    pub use skeleton_bridge_rs::*;
+}
+
+#[doc(hidden)]
+pub mod common_types {
+    pub use common::*;
+}
+
 #[macro_export]
 macro_rules! import_type {
     ($uid:ident, $ctype:ty) => {
@@ -40,6 +50,8 @@ macro_rules! import_type {
                 pub unsafe fn delete(sample_ptr: *mut $crate::proxy_bridge::SamplePtr<$ctype>);
                 #[link_name=concat!("mw_com_gen_", stringify!($uid), "_get_size")]
                 pub safe fn get_size() -> u32;
+                #[link_name=concat!("mw_com_gen_SkeletonEvent_", stringify!($uid), "_send")]
+                pub unsafe fn send(skeleton_event: *mut $crate::skeleton_bridge::NativeSkeletonEvent<$ctype>, sample: *const $ctype) -> bool;
             }
         }
 
@@ -73,6 +85,19 @@ macro_rules! import_type {
                 $uid::get_size()
             }
         }
+
+        impl $crate::skeleton_bridge::SkeletonOps for $ctype {
+            fn send(&self, event: *mut $crate::skeleton_bridge::NativeSkeletonEvent<Self>) -> $crate::common_types::Result<()> {
+                // SAFETY: calling FFI functionalities
+                if unsafe {
+                    $uid::send(event, self as *const _)
+                } {
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            }
+        }
     };
 }
 
@@ -82,7 +107,9 @@ macro_rules! per_event_module {
         $(pub(crate) mod $ev_name {
             unsafe extern "C" {
                 #[link_name=concat!("mw_com_gen_ProxyWrapperClass_", stringify!($uid), "_", stringify!($ev_name), "_get")]
-                pub fn get(proxy: *mut $crate::proxy_bridge::ProxyWrapperClass) -> *mut $crate::proxy_bridge::NativeProxyEvent<$ev_ty>;
+                pub fn get_proxy(proxy: *mut $crate::proxy_bridge::ProxyWrapperClass) -> *mut $crate::proxy_bridge::NativeProxyEvent<$ev_ty>;
+                #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_", stringify!($ev_name), "_get")]
+                pub fn get_skeleton(proxy: *mut $crate::skeleton_bridge::SkeletonWrapperClass) -> *mut $crate::skeleton_bridge::NativeSkeletonEvent<$ev_ty>;
             }
         })*
     }
@@ -96,7 +123,7 @@ macro_rules! proxy_event_fn {
             assert_eq!(std::mem::size_of::<$ev_ty>(), sample_size as usize,
                        "Sample sizes differ, maybe the definitions between C++ and Rust diverged? Aborting.");
             unsafe {
-                $crate::proxy_bridge::ProxyEvent::new(manager, stringify!($ev_name), |proxy| ffi::$ev_name::get(proxy.get_native_proxy()))
+                $crate::proxy_bridge::ProxyEvent::new(manager, stringify!($ev_name), |proxy| ffi::$ev_name::get_proxy(proxy.get_native_proxy()))
             }
         })*
     }
@@ -113,6 +140,14 @@ macro_rules! import_interface {
                     pub safe fn create(handle: &$crate::proxy_bridge::HandleType) -> *mut $crate::proxy_bridge::ProxyWrapperClass;
                     #[link_name=concat!("mw_com_gen_ProxyWrapperClass_", stringify!($uid), "_delete")]
                     pub unsafe fn delete(proxy: *mut $crate::proxy_bridge::ProxyWrapperClass);
+                    #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_delete")]
+                    pub unsafe fn delete_skeleton(skeleton: *mut $crate::skeleton_bridge::SkeletonWrapperClass);
+                    #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_create")]
+                    pub unsafe fn create_skeleton(instance_specifier: *const $crate::proxy_bridge::NativeInstanceSpecifier) -> *mut $crate::skeleton_bridge::SkeletonWrapperClass;
+                    #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_offer")]
+                    pub fn offer(skeleton: *mut $crate::skeleton_bridge::SkeletonWrapperClass) -> bool;
+                    #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_stop_offer")]
+                    pub fn stop_offer(skeleton: *mut $crate::skeleton_bridge::SkeletonWrapperClass);
                 }
                 $crate::per_event_module!($uid, $(($ev_name: $ev_ty)),*);
             }
@@ -136,6 +171,80 @@ macro_rules! import_interface {
                 unsafe fn delete(proxy: *mut $crate::proxy_bridge::ProxyWrapperClass) {
                     unsafe {
                         ffi::delete(proxy);
+                    }
+                }
+            }
+
+            pub struct SkeletonLifecycleWrapper {
+                skeleton_wrapper: *mut $crate::skeleton_bridge::SkeletonWrapperClass,
+            }
+
+            impl Drop for SkeletonLifecycleWrapper {
+                fn drop(&mut self) {
+                    // SAFETY: calling FFI functionalities
+                    unsafe {
+                        ffi::delete_skeleton(self.skeleton_wrapper);
+                    }
+                }
+            }
+
+            pub struct Events<S: $crate::skeleton_bridge::OfferState> {
+                $(pub $ev_name: $crate::skeleton_bridge::SkeletonEvent<$ev_ty, S, SkeletonLifecycleWrapper>),*
+            }
+
+            pub struct Skeleton<S: $crate::skeleton_bridge::OfferState> {
+                skeleton: std::sync::Arc<SkeletonLifecycleWrapper>,
+                pub events: Events<S>,
+            }
+
+            impl Skeleton<$crate::skeleton_bridge::UnOffered> {
+                pub fn new(
+                    instance_specifier: &$crate::proxy_bridge::InstanceSpecifier,
+                ) -> $crate::common_types::Result<Self> {
+                    // SAFETY: calling FFI functionalities
+                    unsafe {
+                        let skeleton_wrapper = ffi::create_skeleton(instance_specifier.as_native());
+                        let skeleton = std::sync::Arc::new(SkeletonLifecycleWrapper { skeleton_wrapper });
+                        let events = Events {
+                            $($ev_name: $crate::skeleton_bridge::SkeletonEvent::new(
+                                ffi::$ev_name::get_skeleton(skeleton_wrapper),
+                                skeleton.clone())),*
+                        };
+
+                        Ok(Self { skeleton, events })
+                    }
+                }
+
+                pub fn offer_service(
+                    self,
+                ) -> $crate::common_types::Result<Skeleton<$crate::skeleton_bridge::Offered>> {
+                    // SAFETY: calling FFI functionalities
+                    unsafe {
+                        if ffi::offer(self.skeleton.skeleton_wrapper) {
+                            Ok(Skeleton {
+                                skeleton: self.skeleton,
+                                events: Events {
+                                    $($ev_name: $crate::skeleton_bridge::SkeletonEvent::offer(self.events.$ev_name)),*
+                                },
+                            })
+                        } else {
+                            Err(())
+                        }
+                    }
+                }
+            }
+
+            impl Skeleton<$crate::skeleton_bridge::Offered> {
+                pub fn stop_offer_service(self) -> Skeleton<$crate::skeleton_bridge::UnOffered> {
+                    // SAFETY: calling FFI functionalities
+                    unsafe {
+                        ffi::stop_offer(self.skeleton.skeleton_wrapper);
+                        Skeleton {
+                            skeleton: self.skeleton,
+                            events: Events {
+                                $($ev_name: $crate::skeleton_bridge::SkeletonEvent::stop_offer(self.events.$ev_name)),*
+                            },
+                        }
                     }
                 }
             }

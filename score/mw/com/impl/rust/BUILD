@@ -39,6 +39,7 @@ cc_library(
         "//visibility:public", # platform_only
     ],
     deps = [
+        "//score/mw/com:types",
         "//score/mw/com/impl",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "@score-baselibs//score/language/futurecpp",
@@ -74,7 +75,9 @@ rust_library(
     name = "macros",
     srcs = ["macros.rs"],
     deps = [
+        ":common",
         ":proxy_bridge_rs",
+        ":skeleton_bridge_rs",
         "//score/mw/com/impl/plumbing:sample_ptr_rs",
     ],
 )
