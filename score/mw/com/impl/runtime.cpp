@@ -247,11 +247,7 @@ Runtime::Runtime(std::pair<Configuration&&, score::cpp::optional<TracingFilterCo
     {
         if (tracing_filter_configuration_.has_value())
         {
-            // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and after
-            // are covered so this is clearly an error by the tool. Suppression can be removed when bug is fixed in
-            // Ticket-Ticket-184255).
             std::unordered_map<BindingType, tracing::ITracingRuntimeBinding*> tracing_runtime_bindings{};
-            // LCOV_EXCL_STOP
             for (auto& runtime_binding : runtime_bindings_)
             {
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(runtime_binding.second->GetTracingRuntime() != nullptr,

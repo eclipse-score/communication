@@ -45,10 +45,6 @@ class GenericProxyAttorney;
 /// It is the generic analogue of a Proxy, which contains strongly-typed events. While the Proxy is usually generated
 /// from the IDL, a GenericProxy can be manually instantiated at runtime based on deployment information.
 /// \todo The EventMap, events, needs to be populated with actual GenericProxyEvents.
-// Suppress "AUTOSAR C++14 A12-1-6" rule findings. This rule states: "Derived classes that do not need further
-// explicit initialization and require all the constructors from the base class shall use inheriting constructors.
-// As per requirement 14005999 constructor shall be private.
-// coverity[autosar_cpp14_a12_1_6_violation]
 class GenericProxy : public ProxyBase
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -66,7 +62,7 @@ class GenericProxy : public ProxyBase
     EventMap& GetEvents() noexcept;
 
   private:
-    GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleType instance_handle);
+    using ProxyBase::ProxyBase;
 
     void FillEventMap(const std::vector<score::cpp::string_view>& event_names) noexcept;
 

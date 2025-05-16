@@ -157,12 +157,8 @@ auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std:
 
         const auto major_version_number_exists = major_version_number != version_object.cend();
         const auto minor_version_number_exists = minor_version_number != version_object.cend();
-
-        // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines
-        // in both branches (true / false) being covered. Suppression can be removed when bug is fixed in Ticket-188259).
         if (major_version_number_exists && minor_version_number_exists)
         {
-            // LCOV_EXCL_BR_STOP
             return std::pair<std::uint32_t, std::uint32_t>{major_version_number->second.As<std::uint32_t>().value(),
                                                            minor_version_number->second.As<std::uint32_t>().value()};
         }

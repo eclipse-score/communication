@@ -86,11 +86,6 @@ Result<GenericProxy> GenericProxy::Create(HandleType instance_handle) noexcept
     return generic_proxy;
 }
 
-GenericProxy::GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleType instance_handle)
-    : ProxyBase{std::move(proxy_binding), std::move(instance_handle)}
-{
-}
-
 void GenericProxy::FillEventMap(const std::vector<score::cpp::string_view>& event_names) noexcept
 {
     for (const auto event_name : event_names)

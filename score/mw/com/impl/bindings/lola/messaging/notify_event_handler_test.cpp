@@ -667,9 +667,6 @@ TEST_F(NotifyEventHandlerFixture, ReregisterNotification_LocalEvent_OK)
 {
     // given a NotifyEventHandler without ASIL support
     WithANotifyEventHandler(false);
-
-    // expecting that NO MessagePassingSender is retrieved which is required in order to send a
-    // RegisterNotificationMessage
     EXPECT_CALL(mp_control_mock_, GetMessagePassingSender(_, _)).Times(0);
 
     score::cpp::ignore = unit_.value().RegisterEventNotification(
@@ -965,10 +962,13 @@ TEST_F(NotifyEventHandlerFixture, ReceiveEventNotification_OneNotifier)
     score::cpp::ignore = unit_.value().RegisterEventNotification(
         QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, notify_event_callback_counter_store_remote_.handler, REMOTE_NODE_ID);
 
+    std::cout << "before\n";
     // when a NotifyEventMessage (id = kNotifyEvent) is received for this event id
     message_passing::ShortMessagePayload payload = ElementFqIdToShortMsgPayload(SOME_ELEMENT_FQ_ID);
+    // source.request_stop();
     event_notify_message_received_(payload, REMOTE_NODE_ID);
 
+    std::cout << "after\n";
     // expect, that notify_event_callback_counter_ is 1
     EXPECT_EQ(notify_event_callback_counter_store_remote_.counter, 1);
 }

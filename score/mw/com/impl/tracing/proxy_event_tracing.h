@@ -65,12 +65,8 @@ auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_traci
                                         ReceiverType&& receiver) noexcept ->
     typename ProxyEventBinding<SampleType>::Callback
 {
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the branch when the condition is true as not covered. However, the
-    // lines in that branch are marked as covered indicating that the branch is indeed taken. Suppression can be removed
-    // when bug is fixed in Ticket-184256).
     if (proxy_event_tracing_data.enable_new_samples_callback)
     {
-        // LCOV_EXCL_BR_STOP
         typename ProxyEventBinding<SampleType>::Callback tracing_receiver =
             // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be done
             // via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
