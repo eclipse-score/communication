@@ -97,8 +97,8 @@ cc_library(
     deps = [
         ":i_shared_memory_resource",
         ":new_delete_delegate_resource",
-        "@score-baselibs//score/language/futurecpp",
         "@googletest//:gtest",
+        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -114,8 +114,8 @@ cc_library(
     ],
     deps = [
         ":i_shared_memory_resource",
-        "@score-baselibs//score/language/futurecpp",
         "@googletest//:gtest",
+        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -638,6 +638,10 @@ cc_gtest_unit_test(
         "memory_region_bounds_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+        # "@ddad@score-baselibs//score/memory:__pkg__",
+    ],
     deps = [
         ":memory_region_bounds",
     ],
