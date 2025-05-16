@@ -10,12 +10,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-use std::path::Path;
+use std::path::PathBuf;
 use std::pin::pin;
 use std::thread::sleep;
 use std::time::Duration;
 
+use clap::{Parser, ValueEnum};
 use futures::{Stream, StreamExt};
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, ValueEnum)]
+enum Mode {
+    /// Act as a data sender
+    Send,
+    /// Equivalent to send
+    Skeleton,
+    /// Act as a data receiver
+    Recv,
+    /// Equivalent to recv
+    Proxy,
+}
+
+#[derive(Parser)]
+struct Arguments {
+    /// Set to either send/skeleton or recv/proxy to determine the role of the process
+    #[arg(value_enum, short, long)]
+    mode: Mode,
+    #[arg(
+        short,
+        long,
+        default_value = "./platform/aas/mw/com/example/ipc_bridge/etc/mw_com_config.json"
+    )]
+    service_instance_manifest: PathBuf,
+}
 
 const SERVICE_DISCOVERY_SLEEP_DURATION: Duration = Duration::from_secs(1);
 const DATA_RECEPTION_COUNT: usize = 100;
@@ -43,23 +69,7 @@ fn run<F: std::future::Future<Output = ()> + Send>(future: F) {
     futures::executor::block_on(future);
 }
 
-fn main() {
-    println!(
-        "[Rust] Size of MapApiLanesStamped: {}",
-        std::mem::size_of::<lib_gen_rs::MapApiLanesStamped>()
-    );
-    println!(
-        "[Rust] Size of MapApiLanesStamped::lane_boundaries: {}",
-        std::mem::size_of_val(&lib_gen_rs::MapApiLanesStamped::default().lane_boundaries)
-    );
-    proxy_bridge_rs::initialize(Some(Path::new(
-        "./platform/aas/mw/com/example/ipc_bridge/etc/mw_com_config.json",
-    )));
-
-    let instance_specifier =
-        proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
-            .expect("Instance specifier creation failed");
-
+fn run_recv_mode(instance_specifier: proxy_bridge_rs::InstanceSpecifier) {
     let handles = loop {
         let handles = proxy_bridge_rs::find_service(instance_specifier.clone())
             .expect("Instance specifier resolution failed");
@@ -85,4 +95,73 @@ fn main() {
         map_api_lanes_stamped_stream,
         DATA_RECEPTION_COUNT,
     ));
+}
+
+fn run_send_mode(instance_specifier: proxy_bridge_rs::InstanceSpecifier) {
+    let skeleton = lib_gen_rs::IpcBridge::Skeleton::new(&instance_specifier)
+        .expect("BigDataSkeleton creation failed");
+
+    let skeleton = skeleton.offer_service().expect("Failed offering from rust");
+    let mut x: u32 = 1;
+    while x < 10 {
+        let mut sample: lib_gen_rs::MapApiLanesStamped = lib_gen_rs::MapApiLanesStamped::default();
+        sample.x = x;
+        skeleton
+            .events
+            .map_api_lanes_stamped_
+            .send(sample)
+            .expect("Failed sending event");
+
+        println!("published {} sleeping", x);
+        x += 1;
+        sleep(Duration::from_millis(100));
+    }
+
+    println!("stopping offering and sleeping for 5sec");
+    sleep(Duration::from_secs(5));
+    let skeleton = skeleton.stop_offer_service();
+
+    let skeleton = skeleton.offer_service().expect("Reoffering failed");
+    x = 0;
+    while x < 10 {
+        let mut sample: lib_gen_rs::MapApiLanesStamped = lib_gen_rs::MapApiLanesStamped::default();
+        sample.x = x;
+        skeleton
+            .events
+            .map_api_lanes_stamped_
+            .send(sample)
+            .expect("Failed sending event");
+
+        println!("published {} sleeping", x);
+        x += 1;
+        sleep(Duration::from_millis(100));
+    }
+}
+
+fn main() {
+    let args = Arguments::parse();
+    println!(
+        "[Rust] Size of MapApiLanesStamped: {}",
+        std::mem::size_of::<lib_gen_rs::MapApiLanesStamped>()
+    );
+    println!(
+        "[Rust] Size of MapApiLanesStamped::lane_boundaries: {}",
+        std::mem::size_of_val(&lib_gen_rs::MapApiLanesStamped::default().lane_boundaries)
+    );
+    proxy_bridge_rs::initialize(Some(&args.service_instance_manifest));
+
+    let instance_specifier =
+        proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
+            .expect("Instance specifier creation failed");
+
+    match args.mode {
+        Mode::Send | Mode::Skeleton => {
+            println!("Running in Send/Skeleton mode");
+            run_send_mode(instance_specifier);
+        }
+        Mode::Recv | Mode::Proxy => {
+            println!("Running in Recv/Proxy mode");
+            run_recv_mode(instance_specifier);
+        }
+    }
 }

@@ -85,6 +85,7 @@ rust_binary(
     deps = [
         ":lib_gen_rs",
         "//score/mw/com/impl/rust:proxy_bridge_rs",
+        "@crate_index//:clap",
         "@crate_index//:futures",
     ],
 )
