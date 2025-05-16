@@ -35,11 +35,18 @@ class SamplePtr final
     using pointer = const SampleType*;
     using element_type = SampleType;
 
+  private:
+    explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slog_decrementer) noexcept
+        : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
+    {
+    }
+
+  public:
     /// \brief default ctor giving invalid SamplePtr (owning no managed object, invalid event slot)
-    SamplePtr() noexcept : SamplePtr{nullptr} {}
+    SamplePtr() noexcept : SamplePtr{nullptr, std::nullopt} {}
 
     /// \brief ctor from nullptr_t also giving invalid SamplePtr like default ctor.
-    explicit SamplePtr(std::nullptr_t /* ptr */) noexcept : managed_object_{nullptr}, slot_decrementer_{} {}
+    explicit SamplePtr(std::nullptr_t /* ptr */) noexcept : SamplePtr{nullptr, std::nullopt} {}
 
     /// \brief ctor creates valid SamplePtr from its members.
     /// \param ptr pointer to managed object
@@ -49,7 +56,7 @@ class SamplePtr final
               EventDataControl& event_data_ctrl,
               const SlotIndexType slot_index,
               TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
-        : managed_object_{ptr}, slot_decrementer_{{&event_data_ctrl, slot_index, transaction_log_idx}}
+        : SamplePtr{ptr, std::make_optional<SlotDecrementer>(&event_data_ctrl, slot_index, transaction_log_idx)}
     {
     }
 

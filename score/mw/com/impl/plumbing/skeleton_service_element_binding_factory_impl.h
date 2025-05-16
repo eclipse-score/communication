@@ -50,7 +50,7 @@ lola::SkeletonEventProperties GetSkeletonEventPropertiesFromConfig(
     const std::string_view service_element_name)
 {
     const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
-    // coverity[autosar_cpp14_a7_1_8_violation: FALSE] this is a cpp-14 warning. if constexpr is cpp-17 syntax.
+    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
     if constexpr (element_type == lola::ElementType::EVENT)
     {
@@ -59,7 +59,7 @@ lola::SkeletonEventProperties GetSkeletonEventPropertiesFromConfig(
             lola_service_instance_deployment.events_.at(service_element_name_string).max_subscribers_.value(),
             lola_service_instance_deployment.events_.at(service_element_name_string).enforce_max_samples_.value()};
     }
-    // coverity[autosar_cpp14_a7_1_8_violation: FALSE] this is a cpp-14 warning. if constexpr is cpp-17 syntax.
+    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
     if constexpr (element_type == lola::ElementType::FIELD)
     {

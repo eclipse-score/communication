@@ -95,6 +95,11 @@ void ControlSlotCompositeIndicator::Reset()
 
 bool operator==(const ControlSlotCompositeIndicator& lhs, const ControlSlotCompositeIndicator& rhs) noexcept
 {
+    // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
+    // parenthesized if the operands contain binary operators".
+    // This a false-positive, all operands are parenthesized.
+    // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
+    // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
     return (lhs.IsValidQM() == rhs.IsValidQM()) && (lhs.IsValidAsilB() == rhs.IsValidAsilB()) &&
            ((lhs.IsValidQM() == false) || (lhs.GetIndex() == rhs.GetIndex())) &&
            ((lhs.IsValidQM() == false) || (&(lhs.GetSlotQM()) == &(rhs.GetSlotQM()))) &&
