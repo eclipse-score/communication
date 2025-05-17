@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cstdint>
+#include <sys/types.h>
 #include <type_traits>
 
 namespace score::mw::com::message_passing
