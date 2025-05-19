@@ -196,10 +196,10 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
     unit_->EventReady(slot_indicator, time_stamp);
 
     // When acquiring the latest timestamp
-    const auto time_stscore_future_cpp_obtained = unit_->GetLatestTimestamp();
+    const auto time_stamp_obtained = unit_->GetLatestTimestamp();
 
     // Then the timestamp is equal to 2
-    EXPECT_EQ(time_stscore_future_cpp_obtained, time_stamp);
+    EXPECT_EQ(time_stamp_obtained, time_stamp);
 }
 
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
@@ -781,12 +781,12 @@ TEST_F(EventDataControlCompositeGetTimestampFixture, GetEventSlotTimestampReturn
 
 TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilB)
 {
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_0{10U};
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_1{11U};
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_2{12U};
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_4{13U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_0{10U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_1{11U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_2{12U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_4{13U};
 
-    const EventSlotStatus::EventTimeStamp in_writing_slot_timestscore_future_cpp_3{0U};
+    const EventSlotStatus::EventTimeStamp in_writing_slot_timestamp_3{0U};
 
     // Given an EventDataControlComposite which only contains both a QM and ASIL B EventDataControl
     WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
@@ -795,27 +795,27 @@ TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilB)
     AllocateAllSlots();
 
     // And all except for 1 are marked as ready
-    unit_->EventReady(slot_indicators_[0], slot_timestscore_future_cpp_0);
-    unit_->EventReady(slot_indicators_[1], slot_timestscore_future_cpp_1);
-    unit_->EventReady(slot_indicators_[2], slot_timestscore_future_cpp_2);
-    unit_->EventReady(slot_indicators_[4], slot_timestscore_future_cpp_4);
+    unit_->EventReady(slot_indicators_[0], slot_timestamp_0);
+    unit_->EventReady(slot_indicators_[1], slot_timestamp_1);
+    unit_->EventReady(slot_indicators_[2], slot_timestamp_2);
+    unit_->EventReady(slot_indicators_[4], slot_timestamp_4);
 
     // When retrieving the timestamp of the slots
-    const auto actual_timestscore_future_cpp_0 = unit_->GetEventSlotTimestamp(0);
-    const auto actual_timestscore_future_cpp_1 = unit_->GetEventSlotTimestamp(1);
-    const auto actual_timestscore_future_cpp_2 = unit_->GetEventSlotTimestamp(2);
-    const auto actual_timestscore_future_cpp_3 = unit_->GetEventSlotTimestamp(3);
-    const auto actual_timestscore_future_cpp_4 = unit_->GetEventSlotTimestamp(4);
+    const auto actual_timestamp_0 = unit_->GetEventSlotTimestamp(0);
+    const auto actual_timestamp_1 = unit_->GetEventSlotTimestamp(1);
+    const auto actual_timestamp_2 = unit_->GetEventSlotTimestamp(2);
+    const auto actual_timestamp_3 = unit_->GetEventSlotTimestamp(3);
+    const auto actual_timestamp_4 = unit_->GetEventSlotTimestamp(4);
 
     // Then the returned values of the slots that were marked as ready should be the same as the value that was
     // passed to EventReady
-    EXPECT_EQ(actual_timestscore_future_cpp_0, slot_timestscore_future_cpp_0);
-    EXPECT_EQ(actual_timestscore_future_cpp_1, slot_timestscore_future_cpp_1);
-    EXPECT_EQ(actual_timestscore_future_cpp_2, slot_timestscore_future_cpp_2);
-    EXPECT_EQ(actual_timestscore_future_cpp_4, slot_timestscore_future_cpp_4);
+    EXPECT_EQ(actual_timestamp_0, slot_timestamp_0);
+    EXPECT_EQ(actual_timestamp_1, slot_timestamp_1);
+    EXPECT_EQ(actual_timestamp_2, slot_timestamp_2);
+    EXPECT_EQ(actual_timestamp_4, slot_timestamp_4);
 
     // and the slot that was not marked as ready should have the "InWriting" timestamp i.e. 0
-    EXPECT_EQ(actual_timestscore_future_cpp_3, in_writing_slot_timestscore_future_cpp_3);
+    EXPECT_EQ(actual_timestamp_3, in_writing_slot_timestamp_3);
 }
 
 TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilQM)
@@ -823,12 +823,12 @@ TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilQM
     // Given an EventDataControlComposite which only contains a QM EventDataControl
     WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
 
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_0{10U};
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_1{11U};
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_2{12U};
-    const EventSlotStatus::EventTimeStamp slot_timestscore_future_cpp_4{13U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_0{10U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_1{11U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_2{12U};
+    const EventSlotStatus::EventTimeStamp slot_timestamp_4{13U};
 
-    const EventSlotStatus::EventTimeStamp in_writing_slot_timestscore_future_cpp_3{0U};
+    const EventSlotStatus::EventTimeStamp in_writing_slot_timestamp_3{0U};
 
     // Given an EventDataControlComposite with all slots written at one time, and only one unused
     std::array<ControlSlotCompositeIndicator, 5U> slot_indicators{};
@@ -837,27 +837,27 @@ TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilQM
         slot_indicators[counter] = unit_->AllocateNextSlot();
     }
 
-    unit_->EventReady(slot_indicators[0], slot_timestscore_future_cpp_0);
-    unit_->EventReady(slot_indicators[1], slot_timestscore_future_cpp_1);
-    unit_->EventReady(slot_indicators[2], slot_timestscore_future_cpp_2);
-    unit_->EventReady(slot_indicators[4], slot_timestscore_future_cpp_4);
+    unit_->EventReady(slot_indicators[0], slot_timestamp_0);
+    unit_->EventReady(slot_indicators[1], slot_timestamp_1);
+    unit_->EventReady(slot_indicators[2], slot_timestamp_2);
+    unit_->EventReady(slot_indicators[4], slot_timestamp_4);
 
     // When retrieving the timestamp of the slots
-    const auto actual_timestscore_future_cpp_0 = unit_->GetEventSlotTimestamp(0);
-    const auto actual_timestscore_future_cpp_1 = unit_->GetEventSlotTimestamp(1);
-    const auto actual_timestscore_future_cpp_2 = unit_->GetEventSlotTimestamp(2);
-    const auto actual_timestscore_future_cpp_3 = unit_->GetEventSlotTimestamp(3);
-    const auto actual_timestscore_future_cpp_4 = unit_->GetEventSlotTimestamp(4);
+    const auto actual_timestamp_0 = unit_->GetEventSlotTimestamp(0);
+    const auto actual_timestamp_1 = unit_->GetEventSlotTimestamp(1);
+    const auto actual_timestamp_2 = unit_->GetEventSlotTimestamp(2);
+    const auto actual_timestamp_3 = unit_->GetEventSlotTimestamp(3);
+    const auto actual_timestamp_4 = unit_->GetEventSlotTimestamp(4);
 
     // Then the returned values of the slots that were marked as ready should be the same as the value that was
     // passed to EventReady
-    EXPECT_EQ(actual_timestscore_future_cpp_0, slot_timestscore_future_cpp_0);
-    EXPECT_EQ(actual_timestscore_future_cpp_1, slot_timestscore_future_cpp_1);
-    EXPECT_EQ(actual_timestscore_future_cpp_2, slot_timestscore_future_cpp_2);
-    EXPECT_EQ(actual_timestscore_future_cpp_4, slot_timestscore_future_cpp_4);
+    EXPECT_EQ(actual_timestamp_0, slot_timestamp_0);
+    EXPECT_EQ(actual_timestamp_1, slot_timestamp_1);
+    EXPECT_EQ(actual_timestamp_2, slot_timestamp_2);
+    EXPECT_EQ(actual_timestamp_4, slot_timestamp_4);
 
     // and the slot that was not marked as ready should have the "InWriting" timestamp i.e. max value of uint32_t
-    EXPECT_EQ(actual_timestscore_future_cpp_3, in_writing_slot_timestscore_future_cpp_3);
+    EXPECT_EQ(actual_timestamp_3, in_writing_slot_timestamp_3);
 }
 
 }  // namespace
