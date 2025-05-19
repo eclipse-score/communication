@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -31,7 +32,7 @@ namespace
 
 using TestSampleType = std::uint32_t;
 
-const std::size_t kMaxSampleCount{2U};
+constexpr std::size_t kMaxSampleCount{2U};
 
 constexpr EventSlotStatus::EventTimeStamp kDummyInputTimestamp{10U};
 constexpr TestSampleType kDummySampleValue{42U};
@@ -85,7 +86,6 @@ class LolaProxyEventFixture : public LolaProxyEventResources
     LolaProxyEventFixture& GivenAProxyEvent(const ElementFqId element_fq_id, const std::string& event_name)
     {
         test_proxy_event_ = std::make_unique<ProxyEventType>(*proxy_, element_fq_id, event_name);
-        proxy_event_attorney_ = std::make_unique<ProxyEventAttorneyType>(*test_proxy_event_);
         return *this;
     }
 
@@ -105,17 +105,26 @@ class LolaProxyEventFixture : public LolaProxyEventResources
         return *this;
     }
 
+    Result<std::size_t> GetNewSamples(std::function<void(impl::SamplePtr<typename LolaProxyEventFixture<T>::SampleType>,
+                                                         const tracing::ITracingRuntime::TracePointDataId)> receiver,
+                                      const std::size_t max_num_samples)
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(test_proxy_event_ != nullptr);
+        TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(max_num_samples)};
+        return test_proxy_event_->GetNewSamples(std::move(receiver), guard_factory);
+    }
+
     bool IsNumNewSamplesAvailableEqualTo(const std::size_t expected_num_samples)
     {
-        const auto num_samples_available = proxy_event_attorney_->GetNumNewSamplesAvailableImpl();
+        ProxyEventAttorneyType proxy_event_attorney{*test_proxy_event_};
+        const auto num_samples_available = proxy_event_attorney.GetNumNewSamplesAvailableImpl();
         EXPECT_TRUE(num_samples_available.has_value());
         EXPECT_EQ(num_samples_available.value(), expected_num_samples);
         return (num_samples_available.has_value() && (num_samples_available.value() == expected_num_samples));
     }
 
     std::unique_ptr<ProxyEventType> test_proxy_event_{nullptr};
-    std::unique_ptr<ProxyEventAttorneyType> proxy_event_attorney_{nullptr};
-    SampleReferenceTracker sample_reference_tracker_{100U};
+    SampleReferenceTracker sample_reference_tracker_{kMaxNumSamplesAllowed};
 };
 
 // Gtest will run all tests in the LolaProxyEventFixture once for every type, t,
@@ -144,9 +153,9 @@ TYPED_TEST(LolaProxyEventFixture, TestGetNewSamples)
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(1));
 
+    const std::size_t max_samples{1U};
     std::uint8_t num_callbacks_called{0U};
-    TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(1U)};
-    const auto num_callbacks = this->proxy_event_attorney_->GetNewSamplesImpl(
+    const auto num_callbacks = this->GetNewSamples(
         [this, slot, &num_callbacks_called](
             impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
             const tracing::ITracingRuntime::TracePointDataId timestamp) {
@@ -159,7 +168,7 @@ TYPED_TEST(LolaProxyEventFixture, TestGetNewSamples)
 
             EXPECT_EQ(timestamp, kDummyInputTimestamp);
         },
-        guard_factory);
+        max_samples);
     ASSERT_TRUE(num_callbacks.has_value());
     ASSERT_EQ(num_callbacks.value(), 1);
     ASSERT_EQ(num_callbacks.value(), num_callbacks_called);
@@ -187,11 +196,11 @@ TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(3));
 
+    const std::size_t max_samples{3U};
     std::uint8_t num_callbacks_called{0U};
     std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> results{};
-    TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(3U)};
     EventSlotStatus::EventTimeStamp received_send_time = 1;
-    const auto num_callbacks = this->proxy_event_attorney_->GetNewSamplesImpl(
+    const auto num_callbacks = this->GetNewSamples(
         [&results, &num_callbacks_called, &received_send_time](
             impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
             tracing::ITracingRuntime::TracePointDataId timestamp) {
@@ -206,7 +215,7 @@ TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
             EXPECT_EQ(timestamp, received_send_time);
             received_send_time++;
         },
-        guard_factory);
+        max_samples);
     ASSERT_TRUE(num_callbacks.has_value());
     EXPECT_EQ(num_callbacks.value(), 3);
     EXPECT_EQ(num_callbacks.value(), num_callbacks_called);
@@ -215,9 +224,8 @@ TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(0));
 
-    TrackerGuardFactory guard_factory_{this->sample_reference_tracker_.Allocate(15U)};
-    const auto no_new_sample =
-        this->proxy_event_attorney_->GetNewSamplesImpl([](auto, auto) noexcept {}, guard_factory_);
+    const std::size_t max_samples_2{15U};
+    const auto no_new_sample = this->GetNewSamples([](auto, auto) noexcept {}, max_samples_2);
     ASSERT_TRUE(no_new_sample.has_value());
     EXPECT_EQ(no_new_sample.value(), 0);
 }
@@ -239,9 +247,10 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(1));
 
+    const std::size_t max_samples{37U};
     std::uint8_t num_callbacks_called{0U};
     TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(37U)};
-    const auto num_samples = this->proxy_event_attorney_->GetNewSamplesImpl(
+    const auto num_samples = this->GetNewSamples(
         [&num_callbacks_called, input_timestamp](
             impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
             tracing::ITracingRuntime::TracePointDataId timestamp) {
@@ -253,7 +262,7 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
 
             EXPECT_EQ(timestamp, input_timestamp);
         },
-        guard_factory);
+        max_samples);
     ASSERT_TRUE(num_samples.has_value());
     EXPECT_EQ(num_samples.value(), 1);
     EXPECT_EQ(num_samples.value(), num_callbacks_called);
@@ -263,12 +272,11 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
     this->PutData(input_value_2, input_timestamp_2);
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(0));
-    TrackerGuardFactory new_guard_factory{this->sample_reference_tracker_.Allocate(37U)};
-    const auto new_num_samples = this->proxy_event_attorney_->GetNewSamplesImpl(
+    const auto new_num_samples = this->GetNewSamples(
         [](auto, auto) {
             FAIL() << "Callback was called although no sample was expected.";
         },
-        new_guard_factory);
+        max_samples);
     ASSERT_TRUE(num_samples.has_value());
     EXPECT_EQ(new_num_samples.value(), 0);
 }
@@ -278,9 +286,9 @@ TYPED_TEST(LolaProxyEventFixture, GetNewSamplesFailsWhenNotSubscribed)
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
         .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
 
-    TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(1U)};
-    const auto num_samples = this->test_proxy_event_->GetNewSamples(
-        [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) noexcept {}, guard_factory);
+    const std::size_t max_samples{1U};
+    const auto num_samples = this->GetNewSamples(
+        [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) noexcept {}, max_samples);
     ASSERT_FALSE(num_samples.has_value());
 }
 
@@ -302,7 +310,10 @@ TEST_F(LoLaTypedProxyEventTestFixture, SampleConstness)
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    using SamplesMemberType = typename std::remove_reference<decltype(proxy_event_attorney_->GetSamplesMember())>::type;
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+
+    ProxyEventAttorney<TestSampleType> proxy_event_attorney{*test_proxy_event_};
+    using SamplesMemberType = typename std::remove_reference<decltype(proxy_event_attorney.GetSamplesMember())>::type;
     static_assert(std::is_const<SamplesMemberType>::value, "Proxy should hold const slot data.");
 }
 
@@ -320,26 +331,25 @@ TYPED_TEST(LolaProxyEventFixture, TestProperEventAcquisition)
         .ThatIsSubscribedWithMaxSamples(2U)
         .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
 
-    SampleReferenceTracker sample_reference_tracker{2U};
-    TrackerGuardFactory guard_factory{sample_reference_tracker.Allocate(1U)};
+    const std::size_t max_samples{1U};
     EXPECT_EQ(this->test_proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
     auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
     EXPECT_TRUE(num_new_samples_avail.has_value());
     EXPECT_EQ(num_new_samples_avail.value(), 1);
-    const Result<std::size_t> count = this->test_proxy_event_->GetNewSamples(
-        [&sample_reference_tracker](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
-                                    const tracing::ITracingRuntime::TracePointDataId timestamp) {
-            EXPECT_EQ(sample_reference_tracker.GetNumAvailableSamples(), 1U);
+    const auto count = this->GetNewSamples(
+        [this](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
+               const tracing::ITracingRuntime::TracePointDataId timestamp) {
+            EXPECT_EQ(this->sample_reference_tracker_.GetNumAvailableSamples(), kMaxNumSamplesAllowed - 1U);
 
             const auto value = GetSamplePtrValue(sample.get());
             EXPECT_EQ(value, kDummySampleValue);
 
             EXPECT_EQ(timestamp, kDummyInputTimestamp);
         },
-        guard_factory);
+        max_samples);
     ASSERT_TRUE(count.has_value());
     EXPECT_EQ(*count, 1);
-    EXPECT_EQ(sample_reference_tracker.GetNumAvailableSamples(), 2U);
+    EXPECT_EQ(this->sample_reference_tracker_.GetNumAvailableSamples(), kMaxNumSamplesAllowed);
     this->test_proxy_event_->Unsubscribe();
 }
 
@@ -354,12 +364,12 @@ TYPED_TEST(LolaProxyEventFixture, FailOnUnsubscribed)
 
     SampleReferenceTracker sample_reference_tracker{2U};
     {
-        TrackerGuardFactory guard_factory{sample_reference_tracker.Allocate(1U)};
-        const Result<std::size_t> count = this->test_proxy_event_->GetNewSamples(
+        const std::size_t max_samples{1U};
+        const auto count = this->GetNewSamples(
             [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) {
                 FAIL() << "Callback called despite not having a valid subscription to the event.";
             },
-            guard_factory);
+            max_samples);
         ASSERT_FALSE(count.has_value());
     }
     EXPECT_EQ(sample_reference_tracker.GetNumAvailableSamples(), 2U);
@@ -378,14 +388,14 @@ TYPED_TEST(LolaProxyEventFixture, TransmitEventInShmArea)
     const EventSlotStatus::EventTimeStamp input_timestamp{1U};
     const auto slot = this->PutData(kDummySampleValue, input_timestamp);
 
+    const std::size_t max_samples{1U};
     SampleReferenceTracker sample_reference_tracker{2U};
-    TrackerGuardFactory guard_factory{sample_reference_tracker.Allocate(1U)};
     EXPECT_EQ(this->test_proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
     auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
     EXPECT_TRUE(num_new_samples_avail.has_value());
     EXPECT_EQ(num_new_samples_avail.value(), 1);
 
-    const auto num_samples = this->proxy_event_attorney_->GetNewSamplesImpl(
+    const auto num_samples = this->GetNewSamples(
         [this, slot, input_timestamp](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
                                       const tracing::ITracingRuntime::TracePointDataId timestamp) {
             EXPECT_FALSE((this->event_control_->data_control)[slot].IsInvalid());
@@ -395,13 +405,12 @@ TYPED_TEST(LolaProxyEventFixture, TransmitEventInShmArea)
 
             EXPECT_EQ(timestamp, input_timestamp);
         },
-        guard_factory);
+        max_samples);
     ASSERT_TRUE(num_samples.has_value());
     EXPECT_EQ(num_samples.value(), 1);
 
-    TrackerGuardFactory guard_factory2{sample_reference_tracker.Allocate(1U)};
-    const auto no_samples = this->proxy_event_attorney_->GetNewSamplesImpl(
-        [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) noexcept {}, guard_factory2);
+    const auto no_samples = this->GetNewSamples(
+        [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) noexcept {}, max_samples);
     ASSERT_TRUE(no_samples.has_value());
     EXPECT_EQ(no_samples.value(), 0);
 }
