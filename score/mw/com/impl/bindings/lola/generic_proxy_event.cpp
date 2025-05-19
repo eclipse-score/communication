@@ -50,18 +50,16 @@ SubscriptionState GenericProxyEvent::GetSubscriptionState() const noexcept
 
 inline Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailable() const noexcept
 {
-    /// \todo See comment in GetNewSamples() -> we can also dispatch to GetNumNewSamplesAvailableImpl() in case of
-    ///       kSubscriptionPending.
+    /// In case of LoLa binding we can also dispatch to GetNumNewSamplesAvailableImpl() in case of kSubscriptionPending!
+    /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
+    /// always access the samples even if the provider went down.
     const auto subscription_state = proxy_event_common_.GetSubscriptionState();
-    if (subscription_state == SubscriptionState::kSubscribed)
-    {
-        return GetNumNewSamplesAvailableImpl();
-    }
-    else
+    if (subscription_state == SubscriptionState::kNotSubscribed)
     {
         return MakeUnexpected(ComErrc::kNotSubscribed,
                               "Attempt to call GetNumNewSamplesAvailable without successful subscription.");
     }
+    return GetNumNewSamplesAvailableImpl();
 }
 
 inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept

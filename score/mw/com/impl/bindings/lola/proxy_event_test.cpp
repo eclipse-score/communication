@@ -110,6 +110,17 @@ class LolaProxyEventFixture : public LolaProxyEventResources
         return *this;
     }
 
+    LolaProxyEventFixture& ThatIsInSubscriptionPendingWithMaxSamples(const std::size_t max_sample_count)
+    {
+        ThatIsSubscribedWithMaxSamples(max_sample_count);
+        const bool is_available = false;
+        this->test_proxy_event_->NotifyServiceInstanceChangedAvailability(is_available,
+                                                                          ProxyMockedMemoryFixture::kDummyPid);
+        const auto new_subscription_state = this->test_proxy_event_->GetSubscriptionState();
+        EXPECT_EQ(new_subscription_state, SubscriptionState::kSubscriptionPending);
+        return *this;
+    }
+
     LolaProxyEventFixture& WithSkeletonEventData(
         const std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> data)
     {
@@ -456,9 +467,25 @@ TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsErrorWhenNotSu
 
     // When calling GetNumNewSamplesAvailable
     const auto num_new_samples = this->test_proxy_event_->GetNumNewSamplesAvailable();
-   
+
     // Then an error is returned
     ASSERT_FALSE(num_new_samples.has_value());
+}
+
+TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsNumberOfAvailableSamplesWhenInSubscriptionPending)
+{
+    // Given a ProxyEvent that is in SubscriptionPending state
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsInSubscriptionPendingWithMaxSamples(5U)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // When calling GetNumNewSamplesAvailable
+    const auto num_new_samples_available_result = this->test_proxy_event_->GetNumNewSamplesAvailable();
+
+    // Then the returned value will be equal to the number of SkeletonEvent samples
+    ASSERT_TRUE(num_new_samples_available_result.has_value());
+    ASSERT_EQ(num_new_samples_available_result.value(), 2U);
 }
 
 TYPED_TEST(LolaProxyEventFixture, GetBindingType)
