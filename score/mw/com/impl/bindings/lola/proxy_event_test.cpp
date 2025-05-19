@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <memory>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -91,6 +92,16 @@ class LolaProxyEventFixture : public LolaProxyEventResources
     LolaProxyEventFixture& ThatIsSubscribedWithMaxSamples(const std::size_t max_sample_count)
     {
         this->test_proxy_event_->Subscribe(max_sample_count);
+        return *this;
+    }
+
+    LolaProxyEventFixture& WithSkeletonEventData(
+        const std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> data)
+    {
+        for (const auto& datum : data)
+        {
+            score::cpp::ignore = this->PutData(datum.first, datum.second);
+        }
         return *this;
     }
 
@@ -166,20 +177,18 @@ TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(3U);
-
-    EventSlotStatus::EventTimeStamp send_time{1};
-    const std::vector<TestSampleType> values_to_send{1, 2, 3};
-    for (const auto value_to_send : values_to_send)
-    {
-        this->PutData(value_to_send, send_time);
-        send_time++;
-    }
+    std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> values_to_send{
+        {TestSampleType{1U}, EventSlotStatus::EventTimeStamp{1U}},
+        {TestSampleType{2U}, EventSlotStatus::EventTimeStamp{2U}},
+        {TestSampleType{3U}, EventSlotStatus::EventTimeStamp{3U}}};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(3U)
+        .WithSkeletonEventData(values_to_send);
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(3));
 
     std::uint8_t num_callbacks_called{0U};
-    std::vector<TestSampleType> results{};
+    std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> results{};
     TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(3U)};
     EventSlotStatus::EventTimeStamp received_send_time = 1;
     const auto num_callbacks = this->proxy_event_attorney_->GetNewSamplesImpl(
@@ -191,7 +200,7 @@ TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
             const auto value = GetSamplePtrValue(sample.get());
             EXPECT_GE(value, 0);
             EXPECT_LE(value, 3);
-            results.push_back(value);
+            results.push_back({value, timestamp});
             num_callbacks_called++;
 
             EXPECT_EQ(timestamp, received_send_time);
@@ -223,10 +232,10 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(2U);
-
     const EventSlotStatus::EventTimeStamp input_timestamp{17U};
-    this->PutData(kDummySampleValue, input_timestamp);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(2U)
+        .WithSkeletonEventData({{kDummySampleValue, input_timestamp}});
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(1));
 
@@ -266,8 +275,8 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
 
 TYPED_TEST(LolaProxyEventFixture, GetNewSamplesFailsWhenNotSubscribed)
 {
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-    this->PutData(kDummySampleValue);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
 
     TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(1U)};
     const auto num_samples = this->test_proxy_event_->GetNewSamples(
@@ -307,9 +316,9 @@ TYPED_TEST(LolaProxyEventFixture, TestProperEventAcquisition)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(2U);
-
-    this->PutData(kDummySampleValue, kDummyInputTimestamp);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(2U)
+        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
 
     SampleReferenceTracker sample_reference_tracker{2U};
     TrackerGuardFactory guard_factory{sample_reference_tracker.Allocate(1U)};
@@ -336,9 +345,8 @@ TYPED_TEST(LolaProxyEventFixture, TestProperEventAcquisition)
 
 TYPED_TEST(LolaProxyEventFixture, FailOnUnsubscribed)
 {
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-
-    this->PutData();
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
 
     auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
     EXPECT_FALSE(num_new_samples_avail.has_value());
