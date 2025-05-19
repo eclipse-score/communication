@@ -345,22 +345,6 @@ TYPED_TEST(LolaProxyEventFixture, GetNumNewSamplesFailsWhenNotSubscribed)
     EXPECT_EQ(num_new_samples.error(), ComErrc::kNotSubscribed);
 }
 
-using LoLaTypedProxyEventTestFixture = LolaProxyEventFixture<ProxyEventStruct>;
-
-TEST_F(LoLaTypedProxyEventTestFixture, SampleConstness)
-{
-    RecordProperty("Verifies", "SCR-6340729");
-    RecordProperty("Description", "Proxy shall interpret slot data as const");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-
-    ProxyEventAttorney<TestSampleType> proxy_event_attorney{*test_proxy_event_};
-    using SamplesMemberType = typename std::remove_reference<decltype(proxy_event_attorney.GetSamplesMember())>::type;
-    static_assert(std::is_const<SamplesMemberType>::value, "Proxy should hold const slot data.");
-}
-
 TYPED_TEST(LolaProxyEventGetNewSamplesFixture, FailOnUnsubscribed)
 {
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
@@ -548,6 +532,21 @@ TYPED_TEST(LolaProxyEventDeathFixture, FailOnEventNotFound)
     const std::string bad_event_name{"BadEventName"};
 
     EXPECT_DEATH(score::cpp::ignore = this->GivenAProxyEvent(bad_element_fq_id, bad_event_name), ".*");
+}
+
+using LoLaTypedProxyEventTestFixture = LolaProxyEventFixture<ProxyEventStruct>;
+TEST_F(LoLaTypedProxyEventTestFixture, SampleConstness)
+{
+    RecordProperty("Verifies", "SCR-6340729");
+    RecordProperty("Description", "Proxy shall interpret slot data as const");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+
+    ProxyEventAttorney<TestSampleType> proxy_event_attorney{*test_proxy_event_};
+    using SamplesMemberType = typename std::remove_reference<decltype(proxy_event_attorney.GetSamplesMember())>::type;
+    static_assert(std::is_const<SamplesMemberType>::value, "Proxy should hold const slot data.");
 }
 
 }  // namespace
