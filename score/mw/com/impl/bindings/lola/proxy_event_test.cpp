@@ -116,8 +116,8 @@ class LolaProxyEventFixture : public LolaProxyEventResources
 
     bool IsNumNewSamplesAvailableEqualTo(const std::size_t expected_num_samples)
     {
-        ProxyEventAttorneyType proxy_event_attorney{*test_proxy_event_};
-        const auto num_samples_available = proxy_event_attorney.GetNumNewSamplesAvailableImpl();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(test_proxy_event_ != nullptr);
+        const auto num_samples_available = test_proxy_event_->GetNumNewSamplesAvailable();
         EXPECT_TRUE(num_samples_available.has_value());
         EXPECT_EQ(num_samples_available.value(), expected_num_samples);
         return (num_samples_available.has_value() && (num_samples_available.value() == expected_num_samples));
