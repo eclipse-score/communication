@@ -13,11 +13,10 @@
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event_common.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
-
 #include "score/mw/com/impl/subscription_state.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <tuple>
 #include <type_traits>
 #include <vector>
 
