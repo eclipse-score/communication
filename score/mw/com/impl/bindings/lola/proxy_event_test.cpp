@@ -79,13 +79,11 @@ struct ProxyEventStruct
 {
     using SampleType = TestSampleType;
     using ProxyEventType = ProxyEvent<TestSampleType>;
-    using ProxyEventAttorneyType = ProxyEventAttorney<TestSampleType>;
 };
 struct GenericProxyEventStruct
 {
     using SampleType = void;
     using ProxyEventType = GenericProxyEvent;
-    using ProxyEventAttorneyType = GenericProxyEventAttorney;
 };
 
 /// \brief Templated test fixture for ProxyEvent functionality that works for both ProxyEvent and GenericProxyEvent
@@ -93,14 +91,12 @@ struct GenericProxyEventStruct
 /// \tparam T A tuple containing:
 ///     SampleType either a type such as std::uint32_t or void
 ///     ProxyEventType either ProxyEvent or GenericProxyEvent
-///     ProxyEventAttorneyType either ProxyEventAttorney or GenericProxyEventAttorney
 template <typename T>
 class LolaProxyEventFixture : public LolaProxyEventResources
 {
   public:
     using SampleType = typename T::SampleType;
     using ProxyEventType = typename T::ProxyEventType;
-    using ProxyEventAttorneyType = typename T::ProxyEventAttorneyType;
 
     LolaProxyEventFixture& GivenAProxyEvent(const ElementFqId element_fq_id, const std::string& event_name)
     {
