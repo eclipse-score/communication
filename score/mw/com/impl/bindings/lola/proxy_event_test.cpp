@@ -14,6 +14,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event_common.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
+#include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/subscription_state.h"
 
 #include <score/assert.hpp>
@@ -107,6 +108,7 @@ class LolaProxyEventFixture : public LolaProxyEventResources
     LolaProxyEventFixture& ThatIsSubscribedWithMaxSamples(const std::size_t max_sample_count)
     {
         this->test_proxy_event_->Subscribe(max_sample_count);
+        sample_reference_tracker_ = std::make_unique<SampleReferenceTracker>(max_sample_count);
         return *this;
     }
 
@@ -136,21 +138,13 @@ class LolaProxyEventFixture : public LolaProxyEventResources
                                       const std::size_t max_num_samples)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(test_proxy_event_ != nullptr);
-        TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(max_num_samples)};
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(sample_reference_tracker_ != nullptr);
+        TrackerGuardFactory guard_factory{this->sample_reference_tracker_->Allocate(max_num_samples)};
         return test_proxy_event_->GetNewSamples(std::move(receiver), guard_factory);
     }
 
-    bool IsNumNewSamplesAvailableEqualTo(const std::size_t expected_num_samples)
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT(test_proxy_event_ != nullptr);
-        const auto num_samples_available = test_proxy_event_->GetNumNewSamplesAvailable();
-        EXPECT_TRUE(num_samples_available.has_value());
-        EXPECT_EQ(num_samples_available.value(), expected_num_samples);
-        return (num_samples_available.has_value() && (num_samples_available.value() == expected_num_samples));
-    }
-
     std::unique_ptr<ProxyEventType> test_proxy_event_{nullptr};
-    SampleReferenceTracker sample_reference_tracker_{kMaxNumSamplesAllowed};
+    std::unique_ptr<SampleReferenceTracker> sample_reference_tracker_{};
 };
 
 // Gtest will run all tests in the LolaProxyEventFixture once for every type, t,
@@ -266,6 +260,51 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSam
     ASSERT_EQ(num_callbacks_called, 1U);
 }
 
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSampleLimitedByCurrentlyHeldSamples)
+{
+    this->RecordProperty("Verifies", "SCR-14035773, SCR-21350367, SCR-6225206");
+    this->RecordProperty(
+        "Description",
+        "Checks that GetNewSamples will get new samples from provider. Slot referencing works (req. SCR-6225206)");
+    this->RecordProperty("TestType", "Requirements-based test");
+    this->RecordProperty("Priority", "1");
+    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples with a max sample count of 2
+    const std::size_t max_sample_count_subscription{2U};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(max_sample_count_subscription)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // and given that GetNewSamples is called and one SamplePtr is saved
+    const std::size_t max_samples{1U};
+    impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> saved_sample_ptr{};
+    score::cpp::ignore = this->GetNewSamples(
+        [&saved_sample_ptr](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample_ptr,
+                            const tracing::ITracingRuntime::TracePointDataId) {
+            saved_sample_ptr = std::move(sample_ptr);
+        },
+        max_samples);
+
+    // and an additional 2 samples are provided by the SkeletonEvent
+    this->PutData(kDummySampleValue + 2U, kDummyInputTimestamp + 2U);
+    this->PutData(kDummySampleValue + 3U, kDummyInputTimestamp + 3U);
+
+    // When calling GetNewSamples with a max_samples of 2
+    const std::size_t max_samples_2{2U};
+    std::uint16_t num_callbacks_called{0U};
+    CallbackCountingReceiver<typename LolaProxyEventFixture<TypeParam>::SampleType> callback_counting_receiver{
+        num_callbacks_called};
+    const auto num_callbacks_result = this->GetNewSamples(callback_counting_receiver, max_samples_2);
+
+    // Then the returned value will be equal to the number of times the callback was called which is only once since the
+    // max sample count is 2 and a sample is already reserved since we're storing one SamplePtr
+    ASSERT_TRUE(num_callbacks_result.has_value());
+    ASSERT_EQ(num_callbacks_result.value(), 1U);
+    ASSERT_EQ(num_callbacks_called, 1U);
+}
+
 TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverWithDataFromProviderInCorrectOrder)
 {
     this->RecordProperty("Verifies", "SCR-14035773, SCR-21350367");
@@ -374,11 +413,13 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, ReturnsErrorWhenNotSubscribed)
 
     // When calling GetNewSamples
     const std::size_t max_samples{1U};
-    const auto num_samples_result = this->GetNewSamples(
+    SampleReferenceTracker sample_reference_tracker{};
+    TrackerGuardFactory guard_factory{sample_reference_tracker.Allocate(max_samples)};
+    const auto num_samples_result = this->test_proxy_event_->GetNewSamples(
         [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) {
             FAIL() << "Callback called despite not having a valid subscription to the event.";
         },
-        max_samples);
+        guard_factory);
 
     // Then an error is returned
     EXPECT_FALSE(num_samples_result.has_value());
