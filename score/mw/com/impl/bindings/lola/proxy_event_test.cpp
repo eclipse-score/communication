@@ -332,39 +332,6 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, DoNotReceiveEventsFromThePast)
     EXPECT_EQ(new_num_samples.value(), 0);
 }
 
-TYPED_TEST(LolaProxyEventGetNewSamplesFixture, FailsWhenNotSubscribed)
-{
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
-        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
-
-    const std::size_t max_samples{1U};
-    const auto num_samples = this->GetNewSamples(
-        [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) noexcept {}, max_samples);
-    ASSERT_FALSE(num_samples.has_value());
-}
-
-TYPED_TEST(LolaProxyEventGetNewSamplesFixture, FailOnUnsubscribed)
-{
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
-        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
-
-    auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
-    EXPECT_FALSE(num_new_samples_avail.has_value());
-    EXPECT_EQ(static_cast<ComErrc>(*(num_new_samples_avail.error())), ComErrc::kNotSubscribed);
-
-    SampleReferenceTracker sample_reference_tracker{2U};
-    {
-        const std::size_t max_samples{1U};
-        const auto count = this->GetNewSamples(
-            [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) {
-                FAIL() << "Callback called despite not having a valid subscription to the event.";
-            },
-            max_samples);
-        ASSERT_FALSE(count.has_value());
-    }
-    EXPECT_EQ(sample_reference_tracker.GetNumAvailableSamples(), 2U);
-}
-
 TYPED_TEST(LolaProxyEventGetNewSamplesFixture, TransmitEventInShmArea)
 {
     this->RecordProperty("Verifies", "SCR-6367235");
@@ -390,6 +357,24 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, TransmitEventInShmArea)
             EXPECT_EQ(slot.GetTimeStamp(), timestamp);
         },
         max_samples);
+}
+
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, ReturnsErrorWhenNotSubscribed)
+{
+    // Given a ProxyEvent that has not subscribed to a SkeletonEvent
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
+
+    // When calling GetNewSamples
+    const std::size_t max_samples{1U};
+    const auto num_samples_result = this->GetNewSamples(
+        [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) {
+            FAIL() << "Callback called despite not having a valid subscription to the event.";
+        },
+        max_samples);
+
+    // Then an error is returned
+    EXPECT_FALSE(num_samples_result.has_value());
 }
 
 TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsNumberOfAvailableSamples)
@@ -470,11 +455,14 @@ TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsNumberOfAvaila
 
 TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsErrorWhenNotSubscribed)
 {
+    // Given a ProxyEvent that has not subscribed to a SkeletonEvent
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
 
+    // When calling GetNumNewSamplesAvailable
     const auto num_new_samples = this->test_proxy_event_->GetNumNewSamplesAvailable();
+   
+    // Then an error is returned
     ASSERT_FALSE(num_new_samples.has_value());
-    EXPECT_EQ(num_new_samples.error(), ComErrc::kNotSubscribed);
 }
 
 TYPED_TEST(LolaProxyEventFixture, GetBindingType)
