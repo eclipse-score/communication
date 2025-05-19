@@ -17,6 +17,7 @@
 
 #include <score/assert.hpp>
 
+#include <array>
 #include <shared_mutex>
 
 namespace score::mw::com::impl::lola
