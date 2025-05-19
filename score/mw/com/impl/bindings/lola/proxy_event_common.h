@@ -61,8 +61,9 @@ class ProxyEventCommon final
 
     SubscriptionState GetSubscriptionState() const noexcept;
 
-    /// \brief Returns the number of new samples a call to GetNewSamples() (given that parameter max_count
-    ///        doesn't restrict it) would currently provide.
+    /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
+    /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
+    /// \see ProxyEvent::GetNumNewSamplesAvailable() for details.
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNumNewSamplesAvailable() is only called when the event is in the subscribed state.

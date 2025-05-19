@@ -73,7 +73,8 @@ class ProxyEventBindingBase
     /// \brief Remove any receive handler registered via SetReceiveHandler()
     virtual ResultBlank UnsetReceiveHandler() noexcept = 0;
 
-    /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide.
+    /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
+    /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
     /// \see ProxyEvent::GetNumNewSamplesAvailable()
     ///
     /// \return Either 0 if no new samples are available (and GetNewSamples() wouldn't return any) or N, where 1 <= N <=
