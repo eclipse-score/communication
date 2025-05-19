@@ -384,6 +384,29 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, ReturnsErrorWhenNotSubscribed)
     EXPECT_FALSE(num_samples_result.has_value());
 }
 
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSampleWhenInSubscriptionPending)
+{
+    // Given a ProxyEvent that is in SubscriptionPending state
+    const std::size_t max_sample_count_subscription{5U};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsInSubscriptionPendingWithMaxSamples(max_sample_count_subscription)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // When calling GetNewSamples with a max_samples higher than the number of samples available
+    const std::size_t max_samples{5U};
+    std::uint16_t num_callbacks_called{0U};
+    CallbackCountingReceiver<typename LolaProxyEventFixture<TypeParam>::SampleType> callback_counting_receiver{
+        num_callbacks_called};
+    const auto num_callbacks_result = this->GetNewSamples(callback_counting_receiver, max_samples);
+
+    // Then the returned value will be equal to the number of times the callback was called which is once per
+    // SkeletonEvent sample
+    ASSERT_TRUE(num_callbacks_result.has_value());
+    ASSERT_EQ(num_callbacks_result.value(), 2U);
+    ASSERT_EQ(num_callbacks_called, 2U);
+}
+
 TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsNumberOfAvailableSamples)
 {
     this->RecordProperty("Verifies", "SCR-21294278");

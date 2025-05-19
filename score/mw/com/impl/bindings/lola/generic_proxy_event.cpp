@@ -64,19 +64,16 @@ inline Result<std::size_t> GenericProxyEvent::GetNumNewSamplesAvailable() const 
 
 inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept
 {
-    /// \todo In case of LoLa binding we can also dispatch to GetNewSamplesImpl() in case of kSubscriptionPending!
-    ///       Because a pre-condition to kSubscriptionPending is, that we once had a successful subscribe.
-    ///       ... and then we can always access the samples even if the provider went down.
+    /// In case of LoLa binding we can also dispatch to GetNewSamplesImpl() in case of kSubscriptionPending!
+    /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
+    /// always access the samples even if the provider went down.
     const auto subscription_state = proxy_event_common_.GetSubscriptionState();
-    if (subscription_state == SubscriptionState::kSubscribed)
-    {
-        return GetNewSamplesImpl(std::move(receiver), tracker);
-    }
-    else
+    if (subscription_state == SubscriptionState::kNotSubscribed)
     {
         return MakeUnexpected(ComErrc::kNotSubscribed,
                               "Attempt to call GetNewSamples without successful subscription.");
     }
+    return GetNewSamplesImpl(std::move(receiver), tracker);
 }
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept
