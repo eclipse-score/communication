@@ -264,8 +264,8 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
         skeleton_event_tracing_data_.enable_send || skeleton_event_tracing_data_.enable_send_with_allocate;
     if (tracing_globally_enabled && tracing_for_skeleton_event_enabled)
     {
-        transaction_log_registration_guard_ =
-            TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl());
+        transaction_log_registration_guard_.emplace(
+            TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
     }
 
     return {};
