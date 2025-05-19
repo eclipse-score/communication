@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -75,7 +76,7 @@ struct GenericProxyEventStruct
 template <typename T>
 class LolaProxyEventFixture : public LolaProxyEventResources
 {
-  protected:
+  public:
     using SampleType = typename T::SampleType;
     using ProxyEventType = typename T::ProxyEventType;
     using ProxyEventAttorneyType = typename T::ProxyEventAttorneyType;
@@ -84,6 +85,12 @@ class LolaProxyEventFixture : public LolaProxyEventResources
     {
         test_proxy_event_ = std::make_unique<ProxyEventType>(*proxy_, element_fq_id, event_name);
         proxy_event_attorney_ = std::make_unique<ProxyEventAttorneyType>(*test_proxy_event_);
+        return *this;
+    }
+
+    LolaProxyEventFixture& ThatIsSubscribedWithMaxSamples(const std::size_t max_sample_count)
+    {
+        this->test_proxy_event_->Subscribe(max_sample_count);
         return *this;
     }
 
@@ -120,12 +127,9 @@ TYPED_TEST(LolaProxyEventFixture, TestGetNewSamples)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(1U);
 
     const auto slot = this->PutData(kDummySampleValue, kDummyInputTimestamp);
-
-    const std::size_t max_slots{1U};
-    this->test_proxy_event_->Subscribe(max_slots);
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(1));
 
@@ -162,7 +166,7 @@ TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(3U);
 
     EventSlotStatus::EventTimeStamp send_time{1};
     const std::vector<TestSampleType> values_to_send{1, 2, 3};
@@ -171,9 +175,6 @@ TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
         this->PutData(value_to_send, send_time);
         send_time++;
     }
-
-    const std::size_t max_slots{3U};
-    this->test_proxy_event_->Subscribe(max_slots);
 
     EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(3));
 
@@ -222,10 +223,7 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-
-    const std::size_t max_slots{2U};
-    this->test_proxy_event_->Subscribe(max_slots);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(2U);
 
     const EventSlotStatus::EventTimeStamp input_timestamp{17U};
     this->PutData(kDummySampleValue, input_timestamp);
@@ -309,14 +307,12 @@ TYPED_TEST(LolaProxyEventFixture, TestProperEventAcquisition)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(2U);
 
-    const std::size_t max_sample_count{2U};
     this->PutData(kDummySampleValue, kDummyInputTimestamp);
 
     SampleReferenceTracker sample_reference_tracker{2U};
     TrackerGuardFactory guard_factory{sample_reference_tracker.Allocate(1U)};
-    this->test_proxy_event_->Subscribe(max_sample_count);
     EXPECT_EQ(this->test_proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
     auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
     EXPECT_TRUE(num_new_samples_avail.has_value());
@@ -369,16 +365,13 @@ TYPED_TEST(LolaProxyEventFixture, TransmitEventInShmArea)
     this->RecordProperty("TestType ", "Requirements-based test");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(1U);
 
     const EventSlotStatus::EventTimeStamp input_timestamp{1U};
     const auto slot = this->PutData(kDummySampleValue, input_timestamp);
 
-    const std::size_t max_sample_count{1U};
-
     SampleReferenceTracker sample_reference_tracker{2U};
     TrackerGuardFactory guard_factory{sample_reference_tracker.Allocate(1U)};
-    this->test_proxy_event_->Subscribe(max_sample_count);
     EXPECT_EQ(this->test_proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
     auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
     EXPECT_TRUE(num_new_samples_avail.has_value());
@@ -451,8 +444,7 @@ TYPED_TEST(LolaProxyEventFixture, GetMaxSampleCountReturnsEmptyOptionalWhenNotSu
 TYPED_TEST(LolaProxyEventFixture, GetMaxSampleCountReturnsMaxSampleCountFromSubscribeCall)
 {
     // Given a mocked Proxy, Skeleton and proxy event which is currently subscribed
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-    this->test_proxy_event_->Subscribe(kMaxSampleCount);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(kMaxSampleCount);
 
     // When calling GetMaxSampleCount
     const auto actual_max_sample_count_result = this->test_proxy_event_->GetMaxSampleCount();
@@ -507,8 +499,7 @@ TYPED_TEST(LolaProxyEventFixture,
            CallingNotifyServiceInstanceChangedAvailabilityWhenSubscribedChangesToSubscriptionPending)
 {
     // Given a mocked Proxy, Skeleton and proxy event which is currently subscribed
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-    this->test_proxy_event_->Subscribe(kMaxSampleCount);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(kMaxSampleCount);
 
     // When calling NotifyServiceInstanceChangedAvailability with is_available == false
     const bool is_available = false;
@@ -524,8 +515,7 @@ TYPED_TEST(LolaProxyEventFixture,
            CallingNotifyServiceInstanceChangedAvailabilityWhenSubscriptionPendingTransitionsToSubscribed)
 {
     // Given a mocked Proxy, Skeleton and proxy event which is currently in subscription pending
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-    this->test_proxy_event_->Subscribe(kMaxSampleCount);
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(kMaxSampleCount);
     const bool is_available = false;
     this->test_proxy_event_->NotifyServiceInstanceChangedAvailability(is_available,
                                                                       ProxyMockedMemoryFixture::kDummyPid);
