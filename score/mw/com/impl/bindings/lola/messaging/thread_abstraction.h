@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_THREADABSTRACTION_H
 
 #include <cstdint>
+#include <thread>
 
 namespace score::mw::com::impl::lola
 {

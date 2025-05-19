@@ -17,7 +17,6 @@
 #include "score/mw/com/impl/bindings/lola/proxy_event_common.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
-#include "score/mw/com/impl/subscription_state.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime.h"
 
 #include "score/result/result.h"
@@ -132,16 +131,18 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
 template <typename SampleType>
 inline Result<std::size_t> ProxyEvent<SampleType>::GetNumNewSamplesAvailable() const noexcept
 {
-    /// In case of LoLa binding we can also dispatch to GetNumNewSamplesAvailableImpl() in case of kSubscriptionPending!
-    /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
-    /// always access the samples even if the provider went down.
+    /// \todo See comment in GetNewSamples() -> we can also dispatch to GetNumNewSamplesAvailableImpl() in case of
+    ///       kSubscriptionPending.
     const auto subscription_state = proxy_event_common_.GetSubscriptionState();
-    if (subscription_state == SubscriptionState::kNotSubscribed)
+    if (subscription_state == SubscriptionState::kSubscribed)
+    {
+        return GetNumNewSamplesAvailableImpl();
+    }
+    else
     {
         return MakeUnexpected(ComErrc::kNotSubscribed,
                               "Attempt to call GetNumNewSamplesAvailable without successful subscription.");
     }
-    return GetNumNewSamplesAvailableImpl();
 }
 
 template <typename SampleType>
@@ -154,16 +155,19 @@ template <typename SampleType>
 inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamples(Callback&& receiver,
                                                                  TrackerGuardFactory& tracker) noexcept
 {
-    /// In case of LoLa binding we can also dispatch to GetNewSamplesImpl() in case of kSubscriptionPending!
-    /// Because a pre-condition to kSubscriptionPending is that we once had a successful subscription... and then we can
-    /// always access the samples even if the provider went down.
+    /// \todo In case of LoLa binding we can also dispatch to GetNewSamplesImpl() in case of kSubscriptionPending!
+    ///       Because a pre-condition to kSubscriptionPending is, that we once had a successful subscribe.
+    ///       ... and then we can always access the samples even if the provider went down.
     const auto subscription_state = proxy_event_common_.GetSubscriptionState();
-    if (subscription_state == SubscriptionState::kNotSubscribed)
+    if (subscription_state == SubscriptionState::kSubscribed)
+    {
+        return GetNewSamplesImpl(std::move(receiver), tracker);
+    }
+    else
     {
         return MakeUnexpected(ComErrc::kNotSubscribed,
                               "Attempt to call GetNewSamples without successful subscription.");
     }
-    return GetNewSamplesImpl(std::move(receiver), tracker);
 }
 
 template <typename SampleType>

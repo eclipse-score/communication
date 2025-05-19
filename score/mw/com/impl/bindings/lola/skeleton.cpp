@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/util/arithmetic_utils.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
 #include "score/memory/shared/new_delete_delegate_resource.h"
 #include "score/memory/shared/shared_memory_factory.h"
@@ -47,6 +48,9 @@ namespace score::mw::com::impl::lola
 
 namespace
 {
+constexpr std::size_t STL_CONTAINER_STORAGE_NEEDS = 1024U;
+constexpr std::size_t STL_CONTAINER_ELEMENT_STORAGE_NEEDS = 2U * sizeof(memory::shared::OffsetPtr<void>);
+constexpr std::size_t kMaxAllowedServiceElements{1000000U};
 
 const LolaServiceTypeDeployment& GetLolaServiceTypeDeployment(const InstanceIdentifier& identifier) noexcept
 {
@@ -87,6 +91,47 @@ LolaEventInstanceDeployment::SampleSlotCountType ExtractNumberOfSampleSlotsFromI
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_sample_slots_result.has_value(),
                            "Deployment does not contain number of sample slots");
     return number_of_sample_slots_result.value();
+}
+
+// For the moment, fields are equivalent to events in terms of shared memory footprint. Therefore, we can use the
+// same calculation to estimate the element size of an event or field.
+constexpr std::size_t CalculateServiceElementSize(const LolaEventInstanceDeployment::SampleSlotCountType max_samples)
+{
+    // Suppress "AUTOSAR C++14 A0-1-1": False positive: Variable is used at compile time.
+    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
+    constexpr auto kMapElementSize =
+        add_without_overflow<std::size_t,
+                             sizeof(decltype(ServiceDataControl::event_controls_)::value_type),
+                             STL_CONTAINER_ELEMENT_STORAGE_NEEDS>();
+
+    // the mapped type again is a vector, so add STL_CONTAINER_STORAGE_NEEDS
+    constexpr auto kMapElementWithContainerSize =
+        add_without_overflow<std::size_t, kMapElementSize, STL_CONTAINER_STORAGE_NEEDS>();
+
+    // and it contains max_samples_ control slots
+    // Assert that the calculation of max_samples_control_slots could never fail even if max_samples contained the
+    // largest possible value
+    // Suppress "AUTOSAR C++14 A0-1-1": False positive: Variable is used at compile time.
+    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
+    constexpr auto largest_possible_max_samples_control_slots =
+        multiply_without_overflow<std::size_t,
+                                  std::numeric_limits<LolaEventInstanceDeployment::SampleSlotCountType>::max(),
+                                  sizeof(EventDataControl::EventControlSlots::value_type)>();
+    const auto max_samples_control_slots =
+        static_cast<std::size_t>(max_samples) * sizeof(EventDataControl::EventControlSlots::value_type);
+
+    // Assert that the calculation of map_element_size could never fail even if max_samples_control_slots contained
+    // the largest possible values
+    // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be no dead code".
+    // Rationale: False positive: This is not dead code. The function static_assert_addition_does_not_overflow is
+    // evaluated at compile time.
+    // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+    static_assert_addition_does_not_overflow<std::size_t,
+                                             largest_possible_max_samples_control_slots,
+                                             kMapElementWithContainerSize>();
+    const auto service_element_size = max_samples_control_slots + kMapElementWithContainerSize;
+
+    return service_element_size;
 }
 
 ServiceDataControl* GetServiceDataControlSkeletonSide(const memory::shared::ManagedMemoryResource& control) noexcept
@@ -139,6 +184,180 @@ std::uint64_t CalculateMemoryResourceId(const LolaServiceTypeDeployment::Service
 {
     return ((static_cast<std::uint64_t>(lola_service_id) << 24U) +
             (static_cast<std::uint64_t>(lola_instance_id) << 8U) + static_cast<std::uint8_t>(object_type));
+}
+
+/// \brief Calculates (estimates) size needed for shm-object for control.
+/// \param instance_deployment deployment info needed for "max-samples" lookup
+/// \param events events the skeleton provides
+/// \return estimated size in bytes
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
+// 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
+// throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
+// [Ticket-173043](broken_link_j/Ticket-173043)
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+std::size_t EstimateControlShmResourceSize(const LolaServiceInstanceDeployment& instance_deployment,
+                                           const SkeletonBinding::SkeletonEventBindings& events,
+                                           const SkeletonBinding::SkeletonFieldBindings& fields) noexcept
+{
+    // Strategy to calculate the upper bound size needs of the data structures, we are going to place into ShmResource:
+    // We add size needs of the "management space" the SharedMemoryResource needs itself and then the size of the
+    // root data type, we place into the memory resource.
+    // For every potentially allocating STL-container embedded within the root data type, we:
+    // - add some placeholder STL_CONTAINER_STORAGE_NEEDS to compensate for "pre-allocation" the container impl. may do
+    // - for each element within such a container, we add its size and (in case it is a map) some potential overhead in
+    //   form of STL_CONTAINER_ELEMENT_STORAGE_NEEDS.
+    // Suppress "AUTOSAR C++14 A0-1-1": False positive: Variable is used at compile time.
+    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
+    constexpr auto kControlResourceSize =
+        add_without_overflow<std::size_t, sizeof(ServiceDataControl), STL_CONTAINER_ELEMENT_STORAGE_NEEDS>();
+
+    // ServiceDataControl contains an UidPidMapping, which again contains a DynamicArray with kMaxUidPidMappings
+    // elements of MappingEntries
+    // Suppress "AUTOSAR C++14 A0-1-1": False positive: Variable is used at compile time.
+    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
+    constexpr auto kMaxUidPidMappingsSize =
+        multiply_without_overflow<std::size_t,
+                                  sizeof(UidPidMappingEntry),
+                                  static_cast<std::size_t>(ServiceDataControl::kMaxUidPidMappings)>();
+
+    constexpr auto kCombinedControlAndMappingsSize =
+        add_without_overflow<std::size_t, kControlResourceSize, kMaxUidPidMappingsSize>();
+
+    // Check that the total number of events and fields doesn't exceed the maximum allowed
+    const auto number_of_service_elements = events.size() + fields.size();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_service_elements < kMaxAllowedServiceElements,
+                           "More events and fields have been configured than is allowed.");
+
+    // We check at compile time that total_size would never overflow even if the maximum number of
+    // service elements were provided, each with the maximum number of sample slots
+    // Suppress "AUTOSAR C++14 A0-1-1": False positive: Variable is used at compile time.
+    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
+    constexpr auto max_possible_service_element_size =
+        CalculateServiceElementSize(std::numeric_limits<LolaEventInstanceDeployment::SampleSlotCountType>::max());
+    // Suppress "AUTOSAR C++14 A0-1-1": False positive: Variable is used at compile time.
+    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
+    constexpr auto kMaxPossibleServiceElementSize =
+        multiply_without_overflow<std::size_t, max_possible_service_element_size, kMaxAllowedServiceElements>();
+
+    // Suppress "AUTOSAR C++14 M0-1-9" rule violations. The rule states "There shall be no dead code".
+    // Rationale: False positive: This is not dead code. The function static_assert_addition_does_not_overflow is
+    // evaluated at compile time.
+    // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
+    static_assert_addition_does_not_overflow<std::size_t,
+                                             kMaxPossibleServiceElementSize,
+                                             kCombinedControlAndMappingsSize>();
+
+    std::size_t total_size{kCombinedControlAndMappingsSize};
+    for (const auto& event : events)
+    {
+        const auto number_of_sample_slots = ExtractNumberOfSampleSlotsFromInstanceDeployment(
+            instance_deployment.events_, std::string{event.first.data(), event.first.size()});
+
+        const auto event_size = CalculateServiceElementSize(number_of_sample_slots);
+
+        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
+        // loss.".
+        // Rationale: This can never overflow: We have a static assert above to check that total_size can never overflow
+        // even with worst case max_samples and number of service elements.
+        // coverity[autosar_cpp14_a4_7_1_violation]
+        total_size += event_size;
+    }
+
+    for (const auto& field : fields)
+    {
+        const auto number_of_sample_slots = ExtractNumberOfSampleSlotsFromInstanceDeployment(
+            instance_deployment.fields_, std::string{field.first.data(), field.first.size()});
+
+        const auto field_size = CalculateServiceElementSize(number_of_sample_slots);
+
+        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
+        // loss.".
+        // Rationale: This can never overflow: We have a static assert above to check that total_size can never overflow
+        // even with worst case max_samples and number of service elements.
+        // coverity[autosar_cpp14_a4_7_1_violation]
+        total_size += field_size;
+    }
+    return total_size;
+}
+
+/// \brief Calculates (estimates) size needed for shm-object for data.
+/// \param instance_deployment deployment info needed for "max-samples" lookup
+/// \param events events the skeleton provides
+/// \return estimated size in bytes
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
+// 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
+// throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
+// [Ticket-173043](broken_link_j/Ticket-173043)
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+std::size_t EstimateDataShmResourceSize(const LolaServiceInstanceDeployment& instance_deployment,
+                                        const SkeletonBinding::SkeletonEventBindings& events,
+                                        const SkeletonBinding::SkeletonFieldBindings& fields) noexcept
+{
+    // Explanation of estimation algo/approach -> see comment in EstimateControlShmResourceSize()
+
+    std::size_t data_resource_size{};
+    data_resource_size += sizeof(score::mw::com::impl::lola::ServiceDataStorage);
+    // since ServiceDataStorage contains two std::maps ->
+    data_resource_size += (2U * STL_CONTAINER_STORAGE_NEEDS);
+
+    // For the moment, fields are equivalent to events in terms of shared memory footprint. Therefore, we can use the
+    // same calculation to estimate the element size of an event or field.
+    constexpr auto CalculateEventMapElementSize = [](const std::size_t max_samples,
+                                                     const std::size_t max_size) -> std::size_t {
+        // 1st the storage size per event_map_element
+        std::size_t event_map_element_size = sizeof(decltype(ServiceDataStorage::events_)::value_type);
+        event_map_element_size += STL_CONTAINER_ELEMENT_STORAGE_NEEDS;
+        // the mapped type again is a vector, so add STL_CONTAINER_STORAGE_NEEDS
+        event_map_element_size += STL_CONTAINER_STORAGE_NEEDS;
+        // and it contains max_samples_ data slots
+        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
+        // not lead to data loss.".
+        // The result of the integer operation will be stored in a std::size_t which is the biggest integer type.
+        // And the current logic will not exceed the maximum value.
+        // coverity[autosar_cpp14_a4_7_1_violation]
+        event_map_element_size += (max_samples * max_size);
+        // 2nd the storage size per meta_info_map_element
+        std::size_t meta_info_map_element_size = sizeof(decltype(ServiceDataStorage::events_metainfo_)::value_type);
+        meta_info_map_element_size += STL_CONTAINER_ELEMENT_STORAGE_NEEDS;
+        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
+        // not lead to data loss.".
+        // The result of the integer operation will be stored in a std::size_t which is the biggest integer type.
+        // And the current logic will not exceed the maximum value.
+        // coverity[autosar_cpp14_a4_7_1_violation]
+        return event_map_element_size + meta_info_map_element_size;
+    };
+    for (const auto& event : events)
+    {
+        const auto search = instance_deployment.events_.find(std::string(event.first.data(), event.first.size()));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != instance_deployment.events_.cend(),
+                               "Deployment doesn't contain event with given name!");
+        const auto max_samples = static_cast<std::size_t>(search->second.GetNumberOfSampleSlots().value());
+        const auto max_size = event.second.get().GetMaxSize();
+        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
+        // not lead to data loss.".
+        // The result of the integer operation will be stored in a std::size_t which is the biggest integer type.
+        // And the current logic will not exceed the maximum value.
+        // coverity[autosar_cpp14_a4_7_1_violation]
+        data_resource_size += CalculateEventMapElementSize(max_samples, max_size);
+    }
+
+    for (const auto& field : fields)
+    {
+        const auto search = instance_deployment.fields_.find(std::string(field.first.data(), field.first.size()));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != instance_deployment.fields_.cend(),
+                               "Deployment doesn't contain field with given name!");
+        const auto max_samples = static_cast<std::size_t>(search->second.GetNumberOfSampleSlots().value());
+        const auto max_size = field.second.get().GetMaxSize();
+        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
+        // not lead to data loss.".
+        // The result of the integer operation will be stored in a std::size_t which is the biggest integer type.
+        // And the current logic will not exceed the maximum value.
+        // coverity[autosar_cpp14_a4_7_1_violation]
+        data_resource_size += CalculateEventMapElementSize(max_samples, max_size);
+    }
+    return data_resource_size;
 }
 
 bool CreatePartialRestartDirectory(const score::filesystem::Filesystem& filesystem,
@@ -738,16 +957,29 @@ Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizesBySi
     return ShmResourceStorageSizes{control_data_size, control_qm_size, control_asil_b_size};
 }
 
+Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizesByEstimation(
+    SkeletonEventBindings& events,
+    SkeletonFieldBindings& fields) const noexcept
+{
+    const auto control_qm_size = EstimateControlShmResourceSize(lola_service_instance_deployment_, events, fields);
+    const auto control_asil_b_size = detail_skeleton::HasAsilBSupport(identifier_)
+                                         ? score::cpp::optional<std::size_t>{control_qm_size}
+                                         : score::cpp::optional<std::size_t>{};
+
+    const auto data_size = EstimateDataShmResourceSize(lola_service_instance_deployment_, events, fields);
+
+    return ShmResourceStorageSizes{data_size, control_qm_size, control_asil_b_size};
+}
+
 Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizes(SkeletonEventBindings& events,
                                                                              SkeletonFieldBindings& fields) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(GetLoLaRuntime().GetShmSizeCalculationMode() == ShmSizeCalculationMode::kSimulation,
-                           "No other shm size calculation mode is currently suppored");
-    const auto required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
+    const auto result = GetLoLaRuntime().GetShmSizeCalculationMode() == ShmSizeCalculationMode::kSimulation
+                            ? CalculateShmResourceStorageSizesBySimulation(events, fields)
+                            : CalculateShmResourceStorageSizesByEstimation(events, fields);
 
-    const std::size_t control_asil_b_size_result = required_shm_storage_size.control_asil_b_size.has_value()
-                                                       ? required_shm_storage_size.control_asil_b_size.value()
-                                                       : 0U;
+    const std::size_t control_asil_b_size_result =
+        result.control_asil_b_size.has_value() ? result.control_asil_b_size.value() : 0U;
 
     // Suppress "AUTOSAR C++14 A18-9-2" rule finding: "Forwarding values to other functions shall be done via:
     // (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
@@ -757,26 +989,24 @@ Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizes(Ske
     score::mw::log::LogInfo("lola") << "Calculated sizes of shm-objects for service_id:instance_id " << lola_service_id_
                                   << ":"
                                   // coverity[autosar_cpp14_a18_9_2_violation]
-                                  << lola_instance_id_
-                                  << " are as follows:\nQM-Ctrl: " << required_shm_storage_size.control_qm_size
-                                  << ", ASIL_B-Ctrl: " << control_asil_b_size_result
-                                  << ", Data: " << required_shm_storage_size.data_size;
+                                  << lola_instance_id_ << " are as follows:\nQM-Ctrl: " << result.control_qm_size
+                                  << ", ASIL_B-Ctrl: " << control_asil_b_size_result << ", Data: " << result.data_size;
 
     if (lola_service_instance_deployment_.shared_memory_size_.has_value())
     {
-        if (lola_service_instance_deployment_.shared_memory_size_.value() < required_shm_storage_size.data_size)
+        if (lola_service_instance_deployment_.shared_memory_size_.value() < result.data_size)
         {
             score::mw::log::LogWarn("lola")
                 << "Skeleton::CalculateShmResourceStorageSizes() calculates a needed shm-size for DATA of: "
-                << required_shm_storage_size.data_size << " bytes, but user configured value in deployment is smaller: "
+                << result.data_size << " bytes, but user configured value in deployment is smaller: "
                 << lola_service_instance_deployment_.shared_memory_size_.value();
         }
         return {lola_service_instance_deployment_.shared_memory_size_.value(),
-                required_shm_storage_size.control_qm_size,
-                required_shm_storage_size.control_asil_b_size};
+                result.control_qm_size,
+                result.control_asil_b_size};
     }
 
-    return required_shm_storage_size;
+    return result;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called

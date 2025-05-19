@@ -226,7 +226,7 @@ Runtime& Runtime::getInstanceInternal() noexcept
             auto tracing_config = ParseTraceConfig(initialization_config_.value());
             auto configuration_pair =
                 std::make_pair(std::move(initialization_config_.value()), std::move(tracing_config));
-            initialization_config_.reset();
+            initialization_config_ = {};
             return configuration_pair;
         }
     })()};

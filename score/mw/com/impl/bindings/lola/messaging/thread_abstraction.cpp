@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
-
 #include <thread>
 
 namespace score::mw::com::impl::lola

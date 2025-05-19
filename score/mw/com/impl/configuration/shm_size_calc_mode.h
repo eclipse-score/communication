@@ -21,7 +21,8 @@ namespace score::mw::com::impl
 
 enum class ShmSizeCalculationMode : std::uint8_t
 {
-    kSimulation,
+    kEstimation = 0x00,
+    kSimulation = 0x01,
 };
 
 std::ostream& operator<<(std::ostream& ostream_out, const ShmSizeCalculationMode& mode);

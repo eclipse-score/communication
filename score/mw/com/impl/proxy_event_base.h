@@ -117,15 +117,12 @@ class ProxyEventBase
         return tracker_->GetNumAvailableSamples();
     }
 
-    /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
-    /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
+    /// \brief Returns the number of new samples a call to GetNewSamples() (given parameter max_num_samples
+    /// doesn't restrict it) would currently provide.
     ///
-    /// \details E.g. If there are 10 available / valid samples, but the max_sample_count set in the Subscribe() call
-    /// was 2, then GetNumNewSamplesAvailable() would return 10 while a call to GetNewSamples(2) would only receive 2
-    /// samples.
-    //  This is a proprietary extension to the official ara::com API. It is useful in resource sensitive
-    /// setups, where the user wants to work in polling mode only without registered async receive-handlers.
-    /// For further details see //score/mw/com/design/extensions/README.md.
+    /// \details This is a proprietary extension to the official ara::com API. It is useful in resource sensitive
+    ///          setups, where the user wants to work in polling mode only without registered async receive-handlers.
+    ///          For further details see //score/mw/com/design/extensions/README.md.
     ///
     /// \return Either 0 if no new samples are available (and GetNewSamples() wouldn't return any) or N, where 1 <= N <=
     /// actual new samples. I.e. an implementation is allowed to report a lower number than actual new samples, which

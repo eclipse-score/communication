@@ -187,6 +187,7 @@ auto EventDataControlCompositeImpl<AtomicIndirectorType>::AllocateNextMultiSlot(
 template <template <class> class AtomicIndirectorType>
 auto EventDataControlCompositeImpl<AtomicIndirectorType>::AllocateNextSlot() noexcept -> ControlSlotCompositeIndicator
 {
+
     if (asil_b_control_ == nullptr)
     {
         auto qm_control_slot_indicator = asil_qm_control_->AllocateNextSlot();

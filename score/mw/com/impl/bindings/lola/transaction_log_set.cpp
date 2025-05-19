@@ -212,9 +212,6 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
 {
     std::vector<TransactionLogSet::TransactionLogCollection::iterator> found_node_iterators{};
 
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the branch as "Decision couldn't be analyzed" despite all lines within
-    // the for loop being covered. We also have a test in case proxy_transaction_logs_.size() == 0. Suppression can be
-    // removed when bug is fixed in Ticket-188259).
     // autosar_cpp14_m5_0_15_violation
     // This rule has an explicit exception for using ++/-- operators on iterators, which is what is happening here.
     //
@@ -227,7 +224,6 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
     // coverity[autosar_cpp14_a5_3_2_violation : FALSE]
     for (auto it = proxy_transaction_logs_.begin(); it != proxy_transaction_logs_.end(); it++)
     {
-        // LCOV_EXCL_BR_STOP
         // coverity[autosar_cpp14_a5_3_2_violation : FALSE]
         const bool acquired = it->TryAcquireForRead(target_transaction_log_id);
         if (acquired)
@@ -255,10 +251,6 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
         // we iterate using iterators as it minimizes bounds-checking to start/end!
         TransactionLogSet::TransactionLogIndex index{0U};
 
-        // LCOV_EXCL_BR_START (Tool incorrectly marks the branch as "Decision couldn't be analyzed" despite all lines
-        // within the for loop being covered. The case in which proxy_transaction_logs_.size() == 0 will never be
-        // reached since the containing while loop is only entered when the size() > 0. Suppression can be removed when
-        // bug is fixed in Ticket-188259).
         // autosar_cpp14_m5_0_15_violation
         // This rule has an explicit exception for using ++/-- operators on iterators, which is what is happening here.
         //
@@ -271,7 +263,6 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
         // coverity[autosar_cpp14_a5_3_2_violation : FALSE]
         for (auto it = proxy_transaction_logs_.begin(); it != proxy_transaction_logs_.end(); it++)
         {
-            // LCOV_EXCL_BR_STOP
             auto& transaction_log_node = *it;
             const auto acquired = transaction_log_node.TryAcquire(transaction_log_id);
             if (acquired)

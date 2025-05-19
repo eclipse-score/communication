@@ -12,12 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler.h"
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/os/errno_logging.h"
 #include "score/mw/com/impl/bindings/lola/messaging/messages/message_element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/messages/message_outdated_nodeid.h"
-#include "score/mw/com/impl/bindings/lola/messaging/node_identifier_copier.h"
 
-#include "score/os/errno_logging.h"
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
@@ -27,22 +25,20 @@
 #include <memory>
 #include <utility>
 
-namespace score::mw::com::impl::lola
-{
 namespace
 {
 
 constexpr std::uint8_t kMaxReceiveHandlersPerEvent{5U};
-
-}  // namespace
+}
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". Failing to create a thread will cause the program to terminate.
 // coverity[autosar_cpp14_a15_5_3_violation]
-NotifyEventHandler::NotifyEventHandler(IMessagePassingControl& mp_control,
-                                       const bool asil_b_capability,
-                                       const score::cpp::stop_token& token) noexcept
-    : INotifyEventHandler{},
+score::mw::com::impl::lola::NotifyEventHandler::NotifyEventHandler(
+    score::mw::com::impl::lola::IMessagePassingControl& mp_control,
+    const bool asil_b_capability,
+    const score::cpp::stop_token& token) noexcept
+    : HandlerBase{},
       // Currently using 2 threads for decoupled local event notification. Could be even minimized to 1, if needed.
       // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be noexcept,
       // noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
@@ -56,8 +52,9 @@ NotifyEventHandler::NotifyEventHandler(IMessagePassingControl& mp_control,
 {
 }
 
-void NotifyEventHandler::RegisterMessageReceivedCallbacks(const QualityType asil_level,
-                                                          score::mw::com::message_passing::IReceiver& receiver) noexcept
+void score::mw::com::impl::lola::NotifyEventHandler::RegisterMessageReceivedCallbacks(
+    const QualityType asil_level,
+    score::mw::com::message_passing::IReceiver& receiver) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -93,7 +90,8 @@ void NotifyEventHandler::RegisterMessageReceivedCallbacks(const QualityType asil
             }));
 }
 
-void NotifyEventHandler::NotifyEvent(const QualityType asil_level, const ElementFqId event_id) noexcept
+void score::mw::com::impl::lola::NotifyEventHandler::NotifyEvent(const QualityType asil_level,
+                                                               const ElementFqId event_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -127,7 +125,8 @@ void NotifyEventHandler::NotifyEvent(const QualityType asil_level, const Element
     }
 }
 
-IMessagePassingService::HandlerRegistrationNoType NotifyEventHandler::RegisterEventNotification(
+score::mw::com::impl::lola::IMessagePassingService::HandlerRegistrationNoType
+score::mw::com::impl::lola::NotifyEventHandler::RegisterEventNotification(
     const QualityType asil_level,
     const ElementFqId event_id,
     std::weak_ptr<ScopedEventReceiveHandler> callback,
@@ -176,9 +175,10 @@ IMessagePassingService::HandlerRegistrationNoType NotifyEventHandler::RegisterEv
     return registration_no;
 }
 
-void NotifyEventHandler::ReregisterEventNotification(score::mw::com::impl::QualityType asil_level,
-                                                     ElementFqId event_id,
-                                                     pid_t target_node_id) noexcept
+void score::mw::com::impl::lola::NotifyEventHandler::ReregisterEventNotification(
+    score::mw::com::impl::QualityType asil_level,
+    score::mw::com::impl::lola::ElementFqId event_id,
+    pid_t target_node_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -236,9 +236,9 @@ void NotifyEventHandler::ReregisterEventNotification(score::mw::com::impl::Quali
     }
 }
 
-void NotifyEventHandler::RegisterEventNotificationRemote(const QualityType asil_level,
-                                                         const ElementFqId event_id,
-                                                         const pid_t target_node_id) noexcept
+void score::mw::com::impl::lola::NotifyEventHandler::RegisterEventNotificationRemote(const QualityType asil_level,
+                                                                                   const ElementFqId event_id,
+                                                                                   const pid_t target_node_id) noexcept
 {
     auto& control_data = asil_level == QualityType::kASIL_QM ? control_data_qm_ : control_data_asil_;
     std::unique_lock<std::shared_mutex> remote_reg_write_lock(control_data.event_update_remote_registrations_mutex_);
@@ -276,9 +276,10 @@ void NotifyEventHandler::RegisterEventNotificationRemote(const QualityType asil_
     }
 }
 
-void NotifyEventHandler::SendRegisterEventNotificationMessage(const QualityType asil_level,
-                                                              const ElementFqId event_id,
-                                                              const pid_t target_node_id) const noexcept
+void score::mw::com::impl::lola::NotifyEventHandler::SendRegisterEventNotificationMessage(
+    const QualityType asil_level,
+    const ElementFqId event_id,
+    const pid_t target_node_id) const noexcept
 {
     const auto message = RegisterEventNotificationMessage{event_id, mp_control_.GetNodeIdentifier()};
     // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function shall
@@ -298,7 +299,7 @@ void NotifyEventHandler::SendRegisterEventNotificationMessage(const QualityType 
     }
 }
 
-void NotifyEventHandler::UnregisterEventNotification(
+void score::mw::com::impl::lola::NotifyEventHandler::UnregisterEventNotification(
     const QualityType asil_level,
     const ElementFqId event_id,
     const IMessagePassingService::HandlerRegistrationNoType registration_no,
@@ -323,7 +324,7 @@ void NotifyEventHandler::UnregisterEventNotification(
     }
 }
 
-bool NotifyEventHandler::RemoveHandlerForNotification(
+bool score::mw::com::impl::lola::NotifyEventHandler::RemoveHandlerForNotification(
     const QualityType asil_level,
     const ElementFqId event_id,
     const IMessagePassingService::HandlerRegistrationNoType registration_no) noexcept
@@ -355,9 +356,9 @@ bool NotifyEventHandler::RemoveHandlerForNotification(
     return found;
 }
 
-void NotifyEventHandler::NotifyOutdatedNodeId(QualityType asil_level,
-                                              pid_t outdated_node_id,
-                                              pid_t target_node_id) noexcept
+void score::mw::com::impl::lola::NotifyEventHandler::NotifyOutdatedNodeId(QualityType asil_level,
+                                                                        pid_t outdated_node_id,
+                                                                        pid_t target_node_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -381,7 +382,7 @@ void NotifyEventHandler::NotifyOutdatedNodeId(QualityType asil_level,
     }
 }
 
-void NotifyEventHandler::UnregisterEventNotificationRemote(
+void score::mw::com::impl::lola::NotifyEventHandler::UnregisterEventNotificationRemote(
     const QualityType asil_level,
     const ElementFqId event_id,
     const IMessagePassingService::HandlerRegistrationNoType registration_no,
@@ -454,7 +455,7 @@ void NotifyEventHandler::UnregisterEventNotificationRemote(
 // implicitly". std::terminate() is implicitly called from 'nodeIdentifiersTmp.at()'. As we already ensured via bounds
 // check, that the index doesn't go out of rang so no way for calling std::out_of_range which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void NotifyEventHandler::NotifyEventRemote(
+void score::mw::com::impl::lola::NotifyEventHandler::NotifyEventRemote(
     const QualityType asil_level,
     const ElementFqId event_id,
     NotifyEventHandler::EventNotificationControlData& event_notification_ctrl) noexcept
@@ -520,9 +521,9 @@ void NotifyEventHandler::NotifyEventRemote(
     }
 }
 
-std::uint32_t NotifyEventHandler::NotifyEventLocally(const score::cpp::stop_token& token,
-                                                     const QualityType asil_level,
-                                                     const ElementFqId event_id)
+std::uint32_t score::mw::com::impl::lola::NotifyEventHandler::NotifyEventLocally(const score::cpp::stop_token& token,
+                                                                               const QualityType asil_level,
+                                                                               const ElementFqId event_id)
 {
     auto& control_data = asil_level == QualityType::kASIL_QM ? control_data_qm_ : control_data_asil_;
     std::uint32_t handlers_called{0U};
@@ -590,9 +591,10 @@ std::uint32_t NotifyEventHandler::NotifyEventLocally(const score::cpp::stop_toke
     return handlers_called;
 }
 
-void NotifyEventHandler::HandleNotifyEventMsg(const message_passing::ShortMessagePayload msg_payload,
-                                              const QualityType asil_level,
-                                              const pid_t sender_node_id)
+void score::mw::com::impl::lola::NotifyEventHandler::HandleNotifyEventMsg(
+    const message_passing::ShortMessagePayload msg_payload,
+    const QualityType asil_level,
+    const pid_t sender_node_id)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -610,9 +612,10 @@ void NotifyEventHandler::HandleNotifyEventMsg(const message_passing::ShortMessag
     }
 }
 
-void NotifyEventHandler::HandleRegisterNotificationMsg(const message_passing::ShortMessagePayload msg_payload,
-                                                       const QualityType asil_level,
-                                                       const pid_t sender_node_id)
+void score::mw::com::impl::lola::NotifyEventHandler::HandleRegisterNotificationMsg(
+    const message_passing::ShortMessagePayload msg_payload,
+    const QualityType asil_level,
+    const pid_t sender_node_id)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -644,9 +647,10 @@ void NotifyEventHandler::HandleRegisterNotificationMsg(const message_passing::Sh
     }
 }
 
-void NotifyEventHandler::HandleUnregisterNotificationMsg(const message_passing::ShortMessagePayload msg_payload,
-                                                         const QualityType asil_level,
-                                                         const pid_t sender_node_id)
+void score::mw::com::impl::lola::NotifyEventHandler::HandleUnregisterNotificationMsg(
+    const message_passing::ShortMessagePayload msg_payload,
+    const QualityType asil_level,
+    const pid_t sender_node_id)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -672,9 +676,10 @@ void NotifyEventHandler::HandleUnregisterNotificationMsg(const message_passing::
     }
 }
 
-void NotifyEventHandler::HandleOutdatedNodeIdMsg(const message_passing::ShortMessagePayload msg_payload,
-                                                 const QualityType asil_level,
-                                                 const pid_t sender_node_id)
+void score::mw::com::impl::lola::NotifyEventHandler::HandleOutdatedNodeIdMsg(
+    const message_passing::ShortMessagePayload msg_payload,
+    const QualityType asil_level,
+    const pid_t sender_node_id)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (asil_level == QualityType::kASIL_QM) || ((asil_level == QualityType::kASIL_B) && asil_b_capability_),
@@ -699,5 +704,3 @@ void NotifyEventHandler::HandleOutdatedNodeIdMsg(const message_passing::ShortMes
 
     mp_control_.RemoveMessagePassingSender(asil_level, message.pid_to_unregister);
 }
-
-}  // namespace score::mw::com::impl::lola
