@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -36,6 +37,21 @@ constexpr std::size_t kMaxSampleCount{2U};
 
 constexpr EventSlotStatus::EventTimeStamp kDummyInputTimestamp{10U};
 constexpr TestSampleType kDummySampleValue{42U};
+
+template <typename SampleType>
+class CallbackCountingReceiver
+{
+  public:
+    CallbackCountingReceiver(std::uint16_t& num_callbacks_called) : num_callbacks_called_{num_callbacks_called} {}
+
+    void operator()(impl::SamplePtr<SampleType>, const tracing::ITracingRuntime::TracePointDataId)
+    {
+        num_callbacks_called_++;
+    }
+
+  private:
+    std::reference_wrapper<std::uint16_t> num_callbacks_called_;
+};
 
 /// \brief Function that returns the value pointed to by a pointer
 template <typename T>
@@ -133,106 +149,148 @@ using MyTypes = ::testing::Types<ProxyEventStruct, GenericProxyEventStruct>;
 TYPED_TEST_SUITE(LolaProxyEventFixture, MyTypes, );
 
 template <typename T>
+using LolaProxyEventGetNewSamplesFixture = LolaProxyEventFixture<T>;
+TYPED_TEST_SUITE(LolaProxyEventGetNewSamplesFixture, MyTypes, );
+
+template <typename T>
 using LolaProxyEventDeathFixture = LolaProxyEventFixture<T>;
 TYPED_TEST_SUITE(LolaProxyEventDeathFixture, MyTypes, );
 
-TYPED_TEST(LolaProxyEventFixture, TestGetNewSamples)
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSample)
 {
-    this->RecordProperty("Verifies", "SCR-21294278, SCR-14035773, SCR-21350367, SCR-18200533");
-    this->RecordProperty("Description",
-                         "Checks that GetNewSamples will get new samples from provider and GetNumNewSamplesAvailable "
-                         "reflects the number of new samples available. The value of the TracePointDataId will be the "
-                         "timestamp of the event slot.");
+    this->RecordProperty("Verifies", "SCR-14035773, SCR-21350367, SCR-6225206");
+    this->RecordProperty(
+        "Description",
+        "Checks that GetNewSamples will get new samples from provider. Slot referencing works (req. SCR-6225206)");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(1U);
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples with a max sample count larger
+    // than number of samples available
+    const std::size_t max_sample_count_subscription{5U};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(max_sample_count_subscription)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
 
-    const auto slot = this->PutData(kDummySampleValue, kDummyInputTimestamp);
+    // When calling GetNewSamples with a max_samples higher than the number of samples available
+    const std::size_t max_samples{5U};
+    std::uint16_t num_callbacks_called{0U};
+    CallbackCountingReceiver<typename LolaProxyEventFixture<TypeParam>::SampleType> callback_counting_receiver{
+        num_callbacks_called};
+    const auto num_callbacks_result = this->GetNewSamples(callback_counting_receiver, max_samples);
 
-    EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(1));
-
-    const std::size_t max_samples{1U};
-    std::uint8_t num_callbacks_called{0U};
-    const auto num_callbacks = this->GetNewSamples(
-        [this, slot, &num_callbacks_called](
-            impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
-            const tracing::ITracingRuntime::TracePointDataId timestamp) {
-            ASSERT_TRUE(sample);
-            EXPECT_FALSE((this->event_control_->data_control)[slot].IsInvalid());
-
-            const auto value = GetSamplePtrValue(sample.get());
-            EXPECT_EQ(value, kDummySampleValue);
-            num_callbacks_called++;
-
-            EXPECT_EQ(timestamp, kDummyInputTimestamp);
-        },
-        max_samples);
-    ASSERT_TRUE(num_callbacks.has_value());
-    ASSERT_EQ(num_callbacks.value(), 1);
-    ASSERT_EQ(num_callbacks.value(), num_callbacks_called);
-
-    EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(0));
+    // Then the returned value will be equal to the number of times the callback was called which is once per
+    // SkeletonEvent sample
+    ASSERT_TRUE(num_callbacks_result.has_value());
+    ASSERT_EQ(num_callbacks_result.value(), 2U);
+    ASSERT_EQ(num_callbacks_called, 2U);
 }
 
-TYPED_TEST(LolaProxyEventFixture, ReceiveEventsInOrder)
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSampleLimitedBySubscription)
 {
-    this->RecordProperty("Verifies", "SCR-21294278, SCR-14035773, SCR-21350367");
-    this->RecordProperty("Description",
-                         "Sends multiple events and checks that reported number of new samples is correct and they are "
-                         "received in order.");
+    this->RecordProperty("Verifies", "SCR-14035773, SCR-21350367, SCR-6225206");
+    this->RecordProperty(
+        "Description",
+        "Checks that GetNewSamples will get new samples from provider. Slot referencing works (req. SCR-6225206)");
     this->RecordProperty("TestType", "Requirements-based test");
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> values_to_send{
-        {TestSampleType{1U}, EventSlotStatus::EventTimeStamp{1U}},
-        {TestSampleType{2U}, EventSlotStatus::EventTimeStamp{2U}},
-        {TestSampleType{3U}, EventSlotStatus::EventTimeStamp{3U}}};
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples with a max sample count smaller
+    // than number of samples available
+    const std::size_t max_sample_count_subscription{1U};
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
-        .ThatIsSubscribedWithMaxSamples(3U)
+        .ThatIsSubscribedWithMaxSamples(max_sample_count_subscription)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // When calling GetNewSamples with a max_samples higher than the number of samples available
+    const std::size_t max_samples{5U};
+    std::uint16_t num_callbacks_called{0U};
+    CallbackCountingReceiver<typename LolaProxyEventFixture<TypeParam>::SampleType> callback_counting_receiver{
+        num_callbacks_called};
+    const auto num_callbacks_result = this->GetNewSamples(callback_counting_receiver, max_samples);
+
+    // Then the returned value will be equal to the number of times the callback was called which is once per
+    // SkeletonEvent sample (limited by the max sample count set in subscription)
+    ASSERT_TRUE(num_callbacks_result.has_value());
+    ASSERT_EQ(num_callbacks_result.value(), 1U);
+    ASSERT_EQ(num_callbacks_called, 1U);
+}
+
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSampleLimitedByMaxSampleCount)
+{
+    this->RecordProperty("Verifies", "SCR-14035773, SCR-21350367, SCR-6225206");
+    this->RecordProperty(
+        "Description",
+        "Checks that GetNewSamples will get new samples from provider. Slot referencing works (req. SCR-6225206)");
+    this->RecordProperty("TestType", "Requirements-based test");
+    this->RecordProperty("Priority", "1");
+    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples with a max sample count larger
+    // than number of samples available
+    const std::size_t max_sample_count_subscription{5U};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(max_sample_count_subscription)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // When calling GetNewSamples with a max_samples smaller than the number of samples available
+    const std::size_t max_samples{1U};
+    std::uint16_t num_callbacks_called{0U};
+    CallbackCountingReceiver<typename LolaProxyEventFixture<TypeParam>::SampleType> callback_counting_receiver{
+        num_callbacks_called};
+    const auto num_callbacks_result = this->GetNewSamples(callback_counting_receiver, max_samples);
+
+    // Then the returned value will be equal to the number of times the callback was called which is once per
+    // SkeletonEvent sample (limited by the max sample count set in GetNewSamples)
+    ASSERT_TRUE(num_callbacks_result.has_value());
+    ASSERT_EQ(num_callbacks_result.value(), 1U);
+    ASSERT_EQ(num_callbacks_called, 1U);
+}
+
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverWithDataFromProviderInCorrectOrder)
+{
+    this->RecordProperty("Verifies", "SCR-14035773, SCR-21350367");
+    this->RecordProperty("Description", "Checks that GetNewSamples will get new samples from provider.");
+    this->RecordProperty("TestType", "Requirements-based test");
+    this->RecordProperty("Priority", "1");
+    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples with a max sample count larger
+    // than number of samples available
+    std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> values_to_send{
+        {kDummySampleValue, kDummyInputTimestamp},
+        {kDummySampleValue + 1U, kDummyInputTimestamp + 1U},
+        {kDummySampleValue + 2U, kDummyInputTimestamp + 2U}};
+    const std::size_t max_sample_count_subscription{5U};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(max_sample_count_subscription)
         .WithSkeletonEventData(values_to_send);
 
-    EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(3));
-
-    const std::size_t max_samples{3U};
-    std::uint8_t num_callbacks_called{0U};
-    std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> results{};
-    EventSlotStatus::EventTimeStamp received_send_time = 1;
-    const auto num_callbacks = this->GetNewSamples(
-        [&results, &num_callbacks_called, &received_send_time](
-            impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
-            tracing::ITracingRuntime::TracePointDataId timestamp) {
+    // When calling GetNewSamples with a max_samples higher than the number of samples available
+    const std::size_t max_samples{5U};
+    std::vector<std::pair<TestSampleType, EventSlotStatus::EventTimeStamp>> received_samples{};
+    score::cpp::ignore = this->GetNewSamples(
+        [&received_samples](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
+                            const tracing::ITracingRuntime::TracePointDataId timestamp) {
             ASSERT_TRUE(sample);
 
             const auto value = GetSamplePtrValue(sample.get());
-            EXPECT_GE(value, 0);
-            EXPECT_LE(value, 3);
-            results.push_back({value, timestamp});
-            num_callbacks_called++;
-
-            EXPECT_EQ(timestamp, received_send_time);
-            received_send_time++;
+            received_samples.emplace_back(value, timestamp);
         },
         max_samples);
-    ASSERT_TRUE(num_callbacks.has_value());
-    EXPECT_EQ(num_callbacks.value(), 3);
-    EXPECT_EQ(num_callbacks.value(), num_callbacks_called);
-    EXPECT_EQ(results.size(), 3);
-    EXPECT_EQ(values_to_send, results);
 
-    EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(0));
-
-    const std::size_t max_samples_2{15U};
-    const auto no_new_sample = this->GetNewSamples([](auto, auto) noexcept {}, max_samples_2);
-    ASSERT_TRUE(no_new_sample.has_value());
-    EXPECT_EQ(no_new_sample.value(), 0);
+    // Then the data provided to the receiver will be the same data provided by the SkeletonEvent and in the same order
+    EXPECT_EQ(values_to_send, received_samples);
 }
 
-TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, DoNotReceiveEventsFromThePast)
 {
-    this->RecordProperty("Verifies", "SCR-21294278, SCR-14035773, SCR-21350367");
+    this->RecordProperty("Verifies", "SCR-14035773, SCR-21350367");
     this->RecordProperty("Description",
                          "Sends multiple events and checks that reported number of new samples is correct and no "
                          "samples of the past are reported/received.");
@@ -240,48 +298,34 @@ TYPED_TEST(LolaProxyEventFixture, DoNotReceiveEventsFromThePast)
     this->RecordProperty("Priority", "1");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const EventSlotStatus::EventTimeStamp input_timestamp{17U};
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing one sample
+    constexpr EventSlotStatus::EventTimeStamp input_timestamp{17U};
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
         .ThatIsSubscribedWithMaxSamples(2U)
         .WithSkeletonEventData({{kDummySampleValue, input_timestamp}});
 
-    EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(1));
-
+    // and given that GetNewSamples was called once
     const std::size_t max_samples{37U};
-    std::uint8_t num_callbacks_called{0U};
-    TrackerGuardFactory guard_factory{this->sample_reference_tracker_.Allocate(37U)};
-    const auto num_samples = this->GetNewSamples(
-        [&num_callbacks_called, input_timestamp](
-            impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
-            tracing::ITracingRuntime::TracePointDataId timestamp) {
-            ASSERT_TRUE(sample);
+    score::cpp::ignore = this->GetNewSamples([](auto, auto) noexcept {}, max_samples);
 
-            const auto value = GetSamplePtrValue(sample.get());
-            EXPECT_EQ(value, kDummySampleValue);
-            num_callbacks_called++;
-
-            EXPECT_EQ(timestamp, input_timestamp);
-        },
-        max_samples);
-    ASSERT_TRUE(num_samples.has_value());
-    EXPECT_EQ(num_samples.value(), 1);
-    EXPECT_EQ(num_samples.value(), num_callbacks_called);
-
-    constexpr EventSlotStatus::EventTimeStamp input_timestamp_2{1U};
+    // and new data is provided by the SkeletonEvent which is older than the previous data
+    constexpr EventSlotStatus::EventTimeStamp input_timestamp_2{input_timestamp - 1U};
     constexpr TestSampleType input_value_2{kDummySampleValue + 1U};
     this->PutData(input_value_2, input_timestamp_2);
 
-    EXPECT_TRUE(this->IsNumNewSamplesAvailableEqualTo(0));
+    // When calling GetNewSamples
     const auto new_num_samples = this->GetNewSamples(
         [](auto, auto) {
             FAIL() << "Callback was called although no sample was expected.";
         },
         max_samples);
-    ASSERT_TRUE(num_samples.has_value());
+
+    // Then no data should be received and the receiver should never be called
+    ASSERT_TRUE(new_num_samples.has_value());
     EXPECT_EQ(new_num_samples.value(), 0);
 }
 
-TYPED_TEST(LolaProxyEventFixture, GetNewSamplesFailsWhenNotSubscribed)
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, FailsWhenNotSubscribed)
 {
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
         .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
@@ -317,43 +361,7 @@ TEST_F(LoLaTypedProxyEventTestFixture, SampleConstness)
     static_assert(std::is_const<SamplesMemberType>::value, "Proxy should hold const slot data.");
 }
 
-TYPED_TEST(LolaProxyEventFixture, TestProperEventAcquisition)
-{
-    this->RecordProperty("Verifies", "SCR-5898932, SSR-6225206");
-    this->RecordProperty("Description",
-                         "Checks whether a proxy is acquiring data from shared memory (req. SCR-5898932) and slot "
-                         "referencing works (req. SSR-6225206).");
-    this->RecordProperty("TestType", "Requirements-based test");
-    this->RecordProperty("Priority", "1");
-    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
-        .ThatIsSubscribedWithMaxSamples(2U)
-        .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
-
-    const std::size_t max_samples{1U};
-    EXPECT_EQ(this->test_proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
-    auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
-    EXPECT_TRUE(num_new_samples_avail.has_value());
-    EXPECT_EQ(num_new_samples_avail.value(), 1);
-    const auto count = this->GetNewSamples(
-        [this](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
-               const tracing::ITracingRuntime::TracePointDataId timestamp) {
-            EXPECT_EQ(this->sample_reference_tracker_.GetNumAvailableSamples(), kMaxNumSamplesAllowed - 1U);
-
-            const auto value = GetSamplePtrValue(sample.get());
-            EXPECT_EQ(value, kDummySampleValue);
-
-            EXPECT_EQ(timestamp, kDummyInputTimestamp);
-        },
-        max_samples);
-    ASSERT_TRUE(count.has_value());
-    EXPECT_EQ(*count, 1);
-    EXPECT_EQ(this->sample_reference_tracker_.GetNumAvailableSamples(), kMaxNumSamplesAllowed);
-    this->test_proxy_event_->Unsubscribe();
-}
-
-TYPED_TEST(LolaProxyEventFixture, FailOnUnsubscribed)
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, FailOnUnsubscribed)
 {
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
         .WithSkeletonEventData({{kDummySampleValue, kDummyInputTimestamp}});
@@ -375,44 +383,31 @@ TYPED_TEST(LolaProxyEventFixture, FailOnUnsubscribed)
     EXPECT_EQ(sample_reference_tracker.GetNumAvailableSamples(), 2U);
 }
 
-TYPED_TEST(LolaProxyEventFixture, TransmitEventInShmArea)
+TYPED_TEST(LolaProxyEventGetNewSamplesFixture, TransmitEventInShmArea)
 {
     this->RecordProperty("Verifies", "SCR-6367235");
-    this->RecordProperty("Description",
-                         "A valid SampleAllocateePtr and SamplePtr shall reference a valid and correct slot.");
+    this->RecordProperty("Description", "A valid SamplePtr shall reference a valid and correct slot.");
     this->RecordProperty("TestType ", "Requirements-based test");
     this->RecordProperty("DerivationTechnique", "Analysis of requirements");
 
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_).ThatIsSubscribedWithMaxSamples(1U);
 
+    // and given that the SkeletonEvent contains one sample in a given slot
     const EventSlotStatus::EventTimeStamp input_timestamp{1U};
-    const auto slot = this->PutData(kDummySampleValue, input_timestamp);
+    const auto slot_index = this->PutData(kDummySampleValue, input_timestamp);
 
+    // When calling GetNewSamples
     const std::size_t max_samples{1U};
-    SampleReferenceTracker sample_reference_tracker{2U};
-    EXPECT_EQ(this->test_proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
-    auto num_new_samples_avail = this->test_proxy_event_->GetNumNewSamplesAvailable();
-    EXPECT_TRUE(num_new_samples_avail.has_value());
-    EXPECT_EQ(num_new_samples_avail.value(), 1);
-
-    const auto num_samples = this->GetNewSamples(
-        [this, slot, input_timestamp](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType> sample,
-                                      const tracing::ITracingRuntime::TracePointDataId timestamp) {
-            EXPECT_FALSE((this->event_control_->data_control)[slot].IsInvalid());
-
-            const auto value = GetSamplePtrValue(sample.get());
-            EXPECT_EQ(value, kDummySampleValue);
-
-            EXPECT_EQ(timestamp, input_timestamp);
+    score::cpp::ignore = this->GetNewSamples(
+        [this, slot_index](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>,
+                           const tracing::ITracingRuntime::TracePointDataId timestamp) {
+            // Then the retrieved data is pointing to the same valid slot
+            const auto& slot = (this->event_control_->data_control)[slot_index];
+            EXPECT_FALSE(slot.IsInvalid());
+            EXPECT_EQ(slot.GetTimeStamp(), timestamp);
         },
         max_samples);
-    ASSERT_TRUE(num_samples.has_value());
-    EXPECT_EQ(num_samples.value(), 1);
-
-    const auto no_samples = this->GetNewSamples(
-        [](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>, auto) noexcept {}, max_samples);
-    ASSERT_TRUE(no_samples.has_value());
-    EXPECT_EQ(no_samples.value(), 0);
 }
 
 TYPED_TEST(LolaProxyEventFixture, GetBindingType)
