@@ -16,6 +16,9 @@
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/subscription_state.h"
 
+#include <score/assert.hpp>
+#include <score/utility.hpp>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstddef>
@@ -151,6 +154,10 @@ TYPED_TEST_SUITE(LolaProxyEventFixture, MyTypes, );
 template <typename T>
 using LolaProxyEventGetNewSamplesFixture = LolaProxyEventFixture<T>;
 TYPED_TEST_SUITE(LolaProxyEventGetNewSamplesFixture, MyTypes, );
+
+template <typename T>
+using LolaProxyEventGetNumNewSamplesAvailableFixture = LolaProxyEventFixture<T>;
+TYPED_TEST_SUITE(LolaProxyEventGetNumNewSamplesAvailableFixture, MyTypes, );
 
 template <typename T>
 using LolaProxyEventDeathFixture = LolaProxyEventFixture<T>;
@@ -336,15 +343,6 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, FailsWhenNotSubscribed)
     ASSERT_FALSE(num_samples.has_value());
 }
 
-TYPED_TEST(LolaProxyEventFixture, GetNumNewSamplesFailsWhenNotSubscribed)
-{
-    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-
-    const auto num_new_samples = this->test_proxy_event_->GetNumNewSamplesAvailable();
-    ASSERT_FALSE(num_new_samples.has_value());
-    EXPECT_EQ(num_new_samples.error(), ComErrc::kNotSubscribed);
-}
-
 TYPED_TEST(LolaProxyEventGetNewSamplesFixture, FailOnUnsubscribed)
 {
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
@@ -392,6 +390,91 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, TransmitEventInShmArea)
             EXPECT_EQ(slot.GetTimeStamp(), timestamp);
         },
         max_samples);
+}
+
+TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsNumberOfAvailableSamples)
+{
+    this->RecordProperty("Verifies", "SCR-21294278");
+    this->RecordProperty("Description",
+                         "Checks that GetNumNewSamplesAvailable reflects the number of new samples available.");
+    this->RecordProperty("TestType", "Requirements-based test");
+    this->RecordProperty("Priority", "1");
+    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(5U)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // When calling GetNumNewSamplesAvailable
+    const auto num_new_samples_available_result = this->test_proxy_event_->GetNumNewSamplesAvailable();
+
+    // Then the returned value will be equal to the number of SkeletonEvent samples
+    ASSERT_TRUE(num_new_samples_available_result.has_value());
+    ASSERT_EQ(num_new_samples_available_result.value(), 2U);
+}
+
+TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsNumberOfAvailableSamplesSinceLastGetNewSamples)
+{
+    this->RecordProperty("Verifies", "SCR-21294278");
+    this->RecordProperty("Description",
+                         "Checks that GetNumNewSamplesAvailable reflects the number of new samples available.");
+    this->RecordProperty("TestType", "Requirements-based test");
+    this->RecordProperty("Priority", "1");
+    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(5U)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // and that a single sample was already retrieved via GetNewSamples
+    const std::size_t max_samples{1U};
+    score::cpp::ignore = this->GetNewSamples([](auto, auto) noexcept {}, max_samples);
+
+    // When calling GetNumNewSamplesAvailable
+    const auto num_new_samples_available_result = this->test_proxy_event_->GetNumNewSamplesAvailable();
+
+    // Then the old data will be invalidated and the returned value will be 0
+    ASSERT_TRUE(num_new_samples_available_result.has_value());
+    ASSERT_EQ(num_new_samples_available_result.value(), 0U);
+}
+
+TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsNumberOfAvailableSamplesIgnoringLimitInSubscription)
+{
+    this->RecordProperty("Verifies", "SCR-21294278");
+    this->RecordProperty("Description",
+                         "Checks that GetNumNewSamplesAvailable reflects the number of new samples available.");
+    this->RecordProperty("TestType", "Requirements-based test");
+    this->RecordProperty("Priority", "1");
+    this->RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a ProxyEvent that has subscribed to a SkeletonEvent containing two samples with a max sample count smaller
+    // than number of samples available
+    const std::size_t max_sample_count_subscription{1U};
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_)
+        .ThatIsSubscribedWithMaxSamples(max_sample_count_subscription)
+        .WithSkeletonEventData(
+            {{kDummySampleValue, kDummyInputTimestamp}, {kDummySampleValue + 1U, kDummyInputTimestamp + 1U}});
+
+    // When calling GetNumNewSamplesAvailable
+    const auto num_new_samples_available_result = this->test_proxy_event_->GetNumNewSamplesAvailable();
+
+    // Then the returned value will be equal to the number of SkeletonEvent samples (ignoring the limit by the max
+    // sample count set in subscription)
+    ASSERT_TRUE(num_new_samples_available_result.has_value());
+    ASSERT_EQ(num_new_samples_available_result.value(), 2U);
+}
+
+TYPED_TEST(LolaProxyEventGetNumNewSamplesAvailableFixture, ReturnsErrorWhenNotSubscribed)
+{
+    this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
+
+    const auto num_new_samples = this->test_proxy_event_->GetNumNewSamplesAvailable();
+    ASSERT_FALSE(num_new_samples.has_value());
+    EXPECT_EQ(num_new_samples.error(), ComErrc::kNotSubscribed);
 }
 
 TYPED_TEST(LolaProxyEventFixture, GetBindingType)
