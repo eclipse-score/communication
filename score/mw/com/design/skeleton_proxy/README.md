@@ -9,7 +9,7 @@ case of strongly typed proxies. The special case of "generic proxies" is describ
 
 <a name="classdiagram"></a>
 
-![Skeleton Proxy Binding](broken_link_k/swh/ddad_score/mw/com/design/skeleton_proxy/skeleton_proxy_binding_model.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+![Skeleton Proxy Binding](./skeleton_proxy_binding_model.png)
 
 The overall structure foresees proxies (`DummyProxy`) and skeletons (`DummySkeleton`), which are generated from IDL.
 Both inherit from a respective base class, where otherwise redundant code that can be reused by any proxy or skeleton is
@@ -87,7 +87,7 @@ binding. The mechanism to initialize the `pImpl` is conceptually the same as wit
 The following sequence shows the instantiation of a service class up to its service offering based on our `LoLa`
 (shared-mem) binding:
 
-![Skeleton Creation and Offer Sequence](broken_link_k/swh/ddad_score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+![Skeleton Creation and Offer Sequence](./skeleton_create_offer_seq.png)
 
 #### Binding independent level Registration of skeleton events/fields at their parent skeleton
 

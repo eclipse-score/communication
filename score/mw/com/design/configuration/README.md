@@ -173,7 +173,7 @@ initialization from a default manifest or configuration path, an explicit user p
 a directly handed over JSON.
 The sequence during startup would look like this:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/configuration/sequence_startup_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="./sequence_startup_view.png" />
 
 During this call a singleton instance of `score::mw::com::impl::Runtime` gets created, which gets the parsed/validated
 configuration in the form of `score::mw::com::detail::Configuration`.
@@ -185,4 +185,4 @@ configuration in the form of `score::mw::com::detail::Configuration`.
 Details can
 be seen in the following class diagram:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/configuration/structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="./structural_view.png" />

@@ -24,14 +24,14 @@ creation/instantiation of binding specific runtimes is done by `impl::Runtime` w
 
 The class diagram of this design is as follows:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/runtime/structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="./structural_view.png" />
 
 Since `impl::IRuntimeBinding` is only a **_very coarse grained_** interface and binding specific runtimes will have each
 very specific methods/types, the binding specific code, which needs to access its specific binding runtime needs to do
 a "downcast", when it gets a `IRuntimeBinding` instance from the binding independent `impl::Runtime`. The sequence is
 shown in the following sequence diagram:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/runtime/sequence_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="./sequence_view.png" />
 
 ## Static dependencies
 Binding specific runtimes might use infrastructure in the form of static instances. E.g. the `lola::Runtime` uses

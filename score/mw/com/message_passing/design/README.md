@@ -14,7 +14,7 @@ for performance reasons, to also have OS specific implementations (e.g. QNX mess
 
 You can find the proposed structured view as follows:
 
-![Structural View](broken_link_k/swh/ddad_score/mw/com/message_passing/design/structured_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+![Structural View](./structured_view.png)
 
 The main idea behind it is quite simple. We have a producer of data (`Sender`) and a consumer of data (`Receiver`).
 Between these two classes we create an **uni-directional** data exchange channel. We do this by adding the responsibility
@@ -71,7 +71,7 @@ this queue is configured big enough for respective use-cases, thus that no messa
 
 You can find the respective sequence diagram here:
 
-![Sequence View](broken_link_k/swh/ddad_score/mw/com/message_passing/design/sequence_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+![Sequence View](./sequence_view.png)
 
 ### Detailed Design
 #### Sender and Receiver Traits

@@ -53,9 +53,9 @@ will be represented by a flag file, and the path towards these files represent a
 ## Implementation
 
 The following section gives a written explanation for the structural view that is illustrated in
-[Structural View](structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+[Structural View](structural_view.png)
 
-![Structural View](broken_link_k/swh/ddad_score/mw/com/design/service_discovery/structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+![Structural View](./structural_view.png)
 
 All possible user interactions with service discovery related functionalities are service specific. Since an API user
 should not bother about implementation specific representations of services (e.g. the service identifier),
@@ -113,11 +113,11 @@ The current designs foresees two different binding implementations:
 1. One based on shared memory (see [Shared Memory Service Registry](#shared-memory-service-registry))
 2. One based on VSome/IP (see [SOME/IP Service Registry](#someip-service-registry))
 
-As shown in [Sequential View](./sequence_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d) the `DummyProxy` interacts directly with the
+As shown in [Sequential View](./sequence_view.png) the `DummyProxy` interacts directly with the
 `ServiceDiscovery` which directly dispatches the requests - based on the `InstanceIdentifier` - to either one or both
 bindings.
 
-![Sequence View](broken_link_k/swh/ddad_score/mw/com/design/service_discovery/sequence_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+![Sequence View](./sequence_view.png)
 
 In the special case of starting an asynchronous search for service instances (aka `StartFindService()`) a unique handle
 (`FindServiceHandle`) needs to be returned, to enable the user to later stop this search. This identifier needs to be
