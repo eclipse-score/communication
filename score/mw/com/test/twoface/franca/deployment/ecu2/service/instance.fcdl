@@ -1,0 +1,21 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+package bmw.components
+
+import bmw.components.* from "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/system_description/Ecu2Blackbox.fcdl"
+import bmw.examples.* from "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/application/ServiceApp.fcdl"
+
+realization Ecu2Service realizes Ecu2BlackboxRoot.Ecu2BlackboxInstance {
+    contains ServiceApp as ServiceAppInstance
+    //delegate provided PPortEcuExampleInterface to ServiceAppInstance.PPortAppExampleInterface
+}

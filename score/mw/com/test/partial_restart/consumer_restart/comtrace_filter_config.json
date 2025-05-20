@@ -1,0 +1,39 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+{
+  "services": [
+    {
+      "shortname_path": "/bmw/mw/com/test/small",
+      "events": [
+        {
+          "shortname": "simple_event",
+          "trace_subscribe_send": false,
+          "trace_subscribe_received": false,
+          "trace_unsubscribe_send": false,
+          "trace_unsubscribe_received": false,
+          "trace_subscription_state_changed": false,
+          "trace_subscription_state_change_handler_registered": false,
+          "trace_subscription_state_change_handler_deregistered": false,
+          "trace_subscription_state_change_handler_callback": false,
+          "trace_send": true,
+          "trace_send_allocate": true,
+          "trace_get_new_samples": false,
+          "trace_get_new_samples_callback": false,
+          "trace_receive_handler_registered": false,
+          "trace_receive_handler_deregistered": false,
+          "trace_receive_handler_callback": false
+        }
+      ],
+      "fields": []
+    }
+  ]
+}

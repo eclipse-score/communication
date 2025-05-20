@@ -1,0 +1,23 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+package bmw.components
+
+import BMW.* from "platform:/resource/AASModel/system_description/boardnet/ecus/generic_no_someip/System_no_someip_component.fcdl"
+import bmw.platform.mw.* from "bigdata.fcdl"
+
+/**
+	@description: bigdata application component as a non-SOME/IP service
+*/
+realization BDA realizes System.Root_Ecu_Software_Blackbox_NoSomeip {
+	contains bigdata as Instance
+}

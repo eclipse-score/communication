@@ -1,0 +1,81 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/bmw/mw/com/test/service_discovery_offer_and_search",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 3428,
+          "fields": [
+            {
+              "fieldName": "test_field",
+              "fieldId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/service_discovery_offer_and_search_service_first",
+      "serviceTypeName": "/bmw/mw/com/test/service_discovery_offer_and_search",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1024,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "test_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "test/service_discovery_offer_and_search_service_second",
+      "serviceTypeName": "/bmw/mw/com/test/service_discovery_offer_and_search",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1025,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "test_field",
+              "maxSubscribers": 1,
+              "numberOfSampleSlots": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+

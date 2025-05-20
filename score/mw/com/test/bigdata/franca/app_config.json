@@ -1,0 +1,85 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+{
+    "Applications": {
+        "bigdata": {
+            "args": [
+                {
+                    "variant": "base",
+                    "config": {
+                        "executable": "/opt/bigdata/bin/bigdata",
+                        "cwd": "/opt/bigdata"
+                    }
+                }
+            ],
+            "scheduling": [
+                {
+                    "variant": "base",
+                    "config": {
+                        "priority": 0,
+                        "policy": "SCHED_OTHER"
+                    }
+                },
+                {
+                    "variant": "linux",
+                    "config": {
+                        "priority": 0,
+                        "policy": "SCHED_OTHER"
+                    }
+                },
+                {
+                    "variant": "qnx",
+                    "config": {
+                        "priority": 1,
+                        "policy": "SCHED_OTHER"
+                    }
+                }
+            ],
+            "resources": [
+                {
+                    "variant": "base",
+                    "config": {}
+                },
+                {
+                    "variant": "linux",
+                    "config": {
+                        "cgroups": ["/sys/fs/cgroup/unified/platform.slice/com"]
+                    }
+                }
+            ],
+            "user": [
+                {
+                    "variant": "base",
+                    "config": {
+                        "username": "bigdata_send",
+                        "uid": 4001,
+                        "groupname": "bigdata_send",
+                        "gid": 4001
+                    }
+                }
+            ],
+            "mac_configuration": [
+                {
+                    "variant": "base",
+                    "config": {}
+                },
+                {
+                    "variant": "qnx",
+                    "config": {
+                        "policy_path": "/proc/boot/secpol.bin",
+                        "application_type": "lib_mw_com_lola_t"
+                    }
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,68 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+package our.name_space
+
+typeCollection {
+    array SomeArray of UInt8[5,5]
+    array MultiDimArray of SomeArray[5,5]
+    array SomeVector of Int32[0, 10]
+    array MultiDimVector of SomeVector[0, 10]
+
+    typedef MyType is UInt8
+
+    enumeration MyEnum {
+        kFirst = 0
+        kSecond = 1
+    }
+
+    struct SomeStruct {
+        UInt8 foo
+        UInt16 bar
+        SomeArray access_array
+        MultiDimArray multi_dim_array
+        // TODO String access_string - not supported due to a bug in the LLVM STL for QNX: []
+        SomeVector access_vector
+        MultiDimVector multi_dim_vector
+        MyType my_type
+        MyEnum my_enum
+    }
+
+    struct CollectionOfTypes {
+        UInt8 a
+        UInt16 b
+        UInt32 c
+        UInt64 d
+        Int8 e
+        Int16 f
+        Int32 g
+        Int64 h
+        Boolean i
+        Float j
+        Double k
+        SomeStruct l
+    }
+}
+
+interface SomeInterface {
+    version {
+        major 1
+        minor 0
+    }
+
+    broadcast Value {
+        out {
+            CollectionOfTypes data
+        }
+    }
+
+}

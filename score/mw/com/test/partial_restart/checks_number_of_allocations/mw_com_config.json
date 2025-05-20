@@ -1,0 +1,76 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/bmw/mw/com/test/small",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 8265,
+          "events": [
+            {
+              "eventName": "simple_event",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/bmw/adp/DummyServiceType",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6433,
+          "events": []
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "partial_restart/small_but_great",
+      "serviceTypeName": "/bmw/mw/com/test/small",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "B",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "simple_event",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 1,
+              "enableIpcTracing": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B"
+  }
+}

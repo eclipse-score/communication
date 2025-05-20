@@ -1,0 +1,32 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+package bmw.components
+
+import "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/execution_manager_depl_spec.fdepl"
+import "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/system_description/Ecu2Blackbox.fcdl"
+import "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/network_IPC_deployment_spec.fdepl"
+import "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/diagnostics_general_deployment_spec.fdepl"
+
+define app_deployment for device bmw.components.Ecu2 as Ecu2DeviceDepl{
+	AvailableFunctionGroups = {"MachineState{Startup,Running,Shutdown,Restart,PlatformOnly,Off,Driving}",
+        "CountryVariant{RestOfWorld,China,Off}"}
+     InitialState = {"MachineState{Driving}"}
+}
+
+define network.ipc for device bmw.components.Ecu2 as Ecu2DeviceDeploymentIpc {
+
+}
+
+define diagnostics.general for device bmw.components.Ecu2 as Ecu2DeviceDeploymentDiagnosis {
+    PhysicalDiagnosticAddress = 2
+}

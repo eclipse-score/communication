@@ -1,0 +1,154 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/bmw/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6432,
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "eventId": 1
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "eventId": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/bmw/adp/DummyServiceType",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6433,
+          "events": [
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "xpad/cp60/MapApiLanesStamped1",
+      "serviceTypeName": "/bmw/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              1000,
+              0
+            ]
+          },
+          "asil-level": "QM",
+        "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "xpad/cp60/MapApiLanesStamped2",
+      "serviceTypeName": "/bmw/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              1000,
+              0
+            ]
+          },
+          "asil-level": "QM",
+        "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "xpad/cp60/MapApiLanesStamped3",
+      "serviceTypeName": "/bmw/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              1000,
+              0
+            ]
+          },
+          "asil-level": "QM",
+        "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

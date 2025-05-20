@@ -81,3 +81,5 @@ git_override(
     remote = "git@github.com:eclipse-score/baselibs.git",
     commit = "9498064967db802c76b631b1b53d72eaaebd462a",
 )
+
+bazel_dep(name = "boost.system", version = "1.83.0")

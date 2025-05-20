@@ -1,0 +1,42 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+package bmw.components
+
+import bmw.components.* from "Ecu2Blackbox.fcdl"
+import network.* from "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/network_ethernet_deployment_spec.cdepl"
+import network.* from "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/network_SOMEIP_deployment_spec.fdepl"
+import "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/network_IPC_deployment_spec.fdepl"
+import system.* from "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/architecture_deployment_spec.fdepl"
+import bmw.examples.* from "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/interface/deployment/ExampleInterface.fdepl"
+import bmw.examples.* from "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/interface/ExampleInterface.fidl"
+
+define network.someip for service Ecu2BlackboxRoot.Ecu2BlackboxInstance as Ecu2BlackboxInstanceDeployment {
+
+
+}
+
+define architecture for device bmw.components.Ecu2 as RosPcDeviceDeployment {
+    partition Ecu2BlackboxInstanceDeployment
+
+    adapter Ethernet on network.ethernet {
+
+        unicast network_endpoint InternalMock {
+            EthernetNetworkEndpointAddressSourceIPv4 = fixed
+            EthernetNetworkEndpointNetworkMaskIPv4 = '255.255.255.128'
+            EthernetNetworkEndpointPriority = 1
+            EthernetNetworkEndpointTtlIPv4 = 0
+            EthernetNetworkEndpointUnicastAddressIPv4 = '160.48.199.77'
+
+        }
+    }
+}

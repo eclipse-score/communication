@@ -1,0 +1,40 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+type lib_mw_com_lola_t;
+
+allow lib_mw_com_lola_t self:ability {
+    nonroot # Vector ara::com
+    map_fixed # Vector ara::com
+    pathspace # Vector ara::com
+    prot_exec # Vector ara::com
+    public_channel # Vector ara::com
+    xthread_threadctl:11 # Vector ara::com
+};
+
+allow lib_mw_com_lola_t {
+    datarouter_t # Handles routing of data
+    devb_loopback_t # loopback device drivers
+    devb_ufs_qualcomm_t # UFS device driver
+    fsevmgr_t # For managing file system events
+    pipe_t # Communication through named pipes
+    qtsafefsd_t # Reading of configuration files
+}:channel connect;
+
+allow {
+    datarouter_t
+} lib_mw_com_lola_t:channel connect;
+
+allow_attach lib_mw_com_lola_t {
+    /mw_com/message_passing/LoLa* # Logging infrastructure
+    /mw_com/message_passing/logging-*
+};

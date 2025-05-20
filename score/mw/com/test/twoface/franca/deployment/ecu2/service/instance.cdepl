@@ -1,0 +1,38 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+package bmw.components
+
+import "instance.fcdl"
+import "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/execution_manager_depl_spec.fdepl"
+import "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/network_IPC_deployment_spec.fdepl"
+import "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/interface/deployment/ExampleInterface.fdepl"
+
+import system.* from "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/architecture_deployment_spec.fdepl"
+import bmw.components.* from "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/system_description/Ecu2Blackbox.fcdl"
+import bmw.components.* from "platform:/resource/AASModel/platform/aas/mw/com/test/twoface/franca/system_description/Ecu2Blackbox.cdepl"
+
+define architecture for realization Ecu2BlackboxRoot.Ecu2BlackboxInstance as Ecu2ServiceMPadDeployment with whitebox_component
+Ecu2Service blackbox_service Ecu2BlackboxInstanceDeployment {
+    service Ecu2ServiceAppDeployment
+}
+
+define app_deployment for service Ecu2Service.ServiceAppInstance as Ecu2ServiceAppDeployment {
+    FunctionGroupStates = "MachineState{Driving}"
+	SchedulingPolicyKind = Other
+	SchedulingPriority = 0
+
+	provide PPortAppExampleInterface on network.ipc {
+		use bmw.examples.ExampleInterfaceIpcDeployment
+		IpcInstanceID = 1
+	}
+}

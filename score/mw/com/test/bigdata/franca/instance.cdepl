@@ -1,0 +1,35 @@
+// *******************************************************************************>
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+// SPDX-License-Identifier: Apache-2.0 #
+// *******************************************************************************
+
+
+
+package bmw.platform.mw
+
+import "instance.fcdl"
+
+import system.* from "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/architecture_deployment_spec.fdepl"
+import BMW.* from "platform:/resource/AASModel/system_description/boardnet/ecus/generic_no_someip/System_no_someip_component.fcdl"
+import BMW.* from "platform:/resource/AASModel/system_description/boardnet/ecus/generic_no_someip/Root_Ecu_no_someip_Deployment.cdepl"
+import "platform:/resource/AASModel/platform/aas/tools/franca/deployment_specifications/execution_manager_depl_spec.fdepl"
+
+/**
+	@description: bigdata application deployment, running as a skeleton under AM
+*/
+define architecture for realization System.Root_Ecu_Software_Blackbox_NoSomeip as BDAMPadDeployment with
+whitebox_component bmw.components.BDA blackbox_service Root_Ecu_no_someip_deployment {
+    service BDAAppDeployment
+}
+
+define app_deployment for service BDA.Instance as BDAAppDeployment {
+    FunctionGroupStates = "MachineState{Startup,StartupStep2,StartupStep3,Running,PlatformOnly}"
+	SchedulingPolicyKind = Other
+	SchedulingPriority = 0
+	StartupOptions = {"-m", "send", "-t",  "40"}
+}
