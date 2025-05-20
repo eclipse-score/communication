@@ -18,7 +18,10 @@ cc_library(
     name = "json_schema_validator_lib",
     srcs = glob(["src/*"]),
     hdrs = ["src/nlohmann/json-schema.hpp"],
-    features = ["third_party_warnings"],
+    features = [
+        "third_party_warnings",
+        "-treat_warnings_as_errors",
+    ],
     includes = ["src"],
     deps = ["@nlohmann_json//:json"],
 )
