@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <memory>
 
 namespace score::memory::shared::test
 {
@@ -31,7 +32,7 @@ constexpr std::uintptr_t kInvalidEndAddress{0U};
 TEST(MemoryRegionBoundsTest, DefaultConstructingHasNoValue)
 {
     // When default constructing a MemoryRegionBounds
-    const MemoryRegionBounds memory_region_bounds{};
+    MemoryRegionBounds memory_region_bounds{};
 
     // Then it has no value
     EXPECT_FALSE(memory_region_bounds.has_value());
@@ -40,7 +41,7 @@ TEST(MemoryRegionBoundsTest, DefaultConstructingHasNoValue)
 TEST(MemoryRegionBoundsTest, ConstructingWithValuesMarksHasValue)
 {
     // When constructing a MemoryRegionBounds with valid bounds
-    const MemoryRegionBounds memory_region_bounds{kValidStartAddress, kValidEndAddress};
+    MemoryRegionBounds memory_region_bounds{kValidStartAddress, kValidEndAddress};
 
     // Then it has a value
     EXPECT_TRUE(memory_region_bounds.has_value());
@@ -49,7 +50,7 @@ TEST(MemoryRegionBoundsTest, ConstructingWithValuesMarksHasValue)
 TEST(MemoryRegionBoundsTest, ConstructingWithInvalidValuesMarksHasNoValue)
 {
     // When constructing a MemoryRegionBounds with invalid bounds (representing nullptrs)
-    const MemoryRegionBounds memory_region_bounds{kInvalidStartAddress, kInvalidEndAddress};
+    MemoryRegionBounds memory_region_bounds{kInvalidStartAddress, kInvalidEndAddress};
 
     // Then it has no value
     EXPECT_FALSE(memory_region_bounds.has_value());
@@ -58,7 +59,7 @@ TEST(MemoryRegionBoundsTest, ConstructingWithInvalidValuesMarksHasNoValue)
 TEST(MemoryRegionBoundsTest, GettingAddressesReturnsValuesPassedToConstructor)
 {
     // Given a MemoryRegionBounds constructed with valid bounds
-    const MemoryRegionBounds memory_region_bounds{kValidStartAddress, kValidEndAddress};
+    MemoryRegionBounds memory_region_bounds{kValidStartAddress, kValidEndAddress};
 
     // When getting the start and end addresses
     const auto actual_start_address = memory_region_bounds.GetStartAddress();
@@ -143,20 +144,19 @@ TEST(MemoryRegionBoundsDeathTest, SettingOneValidAndOneInvalidValueTerminates)
 TEST(MemoryRegionBoundsEqualToOperatorTest, ComparingTwoMemoryRegionBoundsWithSameValidAddressesReturnsTrue)
 {
     // Given two MemoryRegionBounds constructed with the same valid bounds
-    const MemoryRegionBounds memory_region_bounds_1{kValidStartAddress, kValidEndAddress};
-    const MemoryRegionBounds memory_region_bounds_2{kValidStartAddress, kValidEndAddress};
+    MemoryRegionBounds memory_region_bounds_1{kValidStartAddress, kValidEndAddress};
+    MemoryRegionBounds memory_region_bounds_2{kValidStartAddress, kValidEndAddress};
 
     // When comparing the two
     // Then the result is true
-    EXPECT_TRUE(memory_region_bounds_1 == memory_region_bounds_2);
-    EXPECT_FALSE(memory_region_bounds_1 != memory_region_bounds_2);
+    EXPECT_EQ(memory_region_bounds_1, memory_region_bounds_2);
 }
 
 TEST(MemoryRegionBoundsEqualToOperatorTest, ComparingTwoMemoryRegionBoundsWithDifferentStartAddressesReturnsFalse)
 {
     // Given two MemoryRegionBounds constructed with the same valid end address but different start addresses
-    const MemoryRegionBounds memory_region_bounds_1{kValidStartAddress, kValidEndAddress};
-    const MemoryRegionBounds memory_region_bounds_2{kValidStartAddress + 1U, kValidEndAddress};
+    MemoryRegionBounds memory_region_bounds_1{kValidStartAddress, kValidEndAddress};
+    MemoryRegionBounds memory_region_bounds_2{kValidStartAddress + 1U, kValidEndAddress};
 
     // When comparing the two
     // Then the result is false
@@ -167,8 +167,8 @@ TEST(MemoryRegionBoundsEqualToOperatorTest, ComparingTwoMemoryRegionBoundsWithDi
 TEST(MemoryRegionBoundsEqualToOperatorTest, ComparingTwoMemoryRegionBoundsWithDifferentEndAddressesReturnsFalse)
 {
     // Given two MemoryRegionBounds constructed with the same valid start address but different end addresses
-    const MemoryRegionBounds memory_region_bounds_1{kValidStartAddress, kValidEndAddress};
-    const MemoryRegionBounds memory_region_bounds_2{kValidStartAddress, kValidEndAddress + 1U};
+    MemoryRegionBounds memory_region_bounds_1{kValidStartAddress, kValidEndAddress};
+    MemoryRegionBounds memory_region_bounds_2{kValidStartAddress, kValidEndAddress + 1U};
 
     // When comparing the two
     // Then the result is false
