@@ -17,7 +17,6 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
-#include <memory>
 #include <optional>
 #include <utility>
 
@@ -35,13 +34,6 @@ class SamplePtr final
     using pointer = const SampleType*;
     using element_type = SampleType;
 
-  private:
-    explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slog_decrementer) noexcept
-        : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
-    {
-    }
-
-  public:
     /// \brief default ctor giving invalid SamplePtr (owning no managed object, invalid event slot)
     SamplePtr() noexcept : SamplePtr{nullptr, std::nullopt} {}
 
@@ -111,6 +103,11 @@ class SamplePtr final
     }
 
   private:
+    explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slog_decrementer) noexcept
+        : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
+    {
+    }
+
     pointer managed_object_;
     std::optional<SlotDecrementer> slot_decrementer_;
 };

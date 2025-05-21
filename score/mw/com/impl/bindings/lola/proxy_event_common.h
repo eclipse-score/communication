@@ -61,8 +61,9 @@ class ProxyEventCommon final
 
     SubscriptionState GetSubscriptionState() const noexcept;
 
-    /// \brief Returns the number of new samples a call to GetNewSamples() (given that parameter max_count
-    ///        doesn't restrict it) would currently provide.
+    /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
+    /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
+    /// \see ProxyEvent::GetNumNewSamplesAvailable() for details.
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNumNewSamplesAvailable() is only called when the event is in the subscribed state.
@@ -98,7 +99,7 @@ class ProxyEventCommon final
     // coverity[autosar_cpp14_a0_1_3_violation]
     void InjectSlotCollector(SlotCollector&& slot_collector)
     {
-        test_slot_collector_ = std::move(slot_collector);
+        test_slot_collector_.emplace(std::move(slot_collector));
     };
     score::cpp::optional<SlotCollector> test_slot_collector_;
 

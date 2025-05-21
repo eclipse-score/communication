@@ -853,6 +853,19 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "proxy_event_test",
+    srcs = ["proxy_event_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        # "@ddad//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "slot_decrementer_test",
     srcs = ["slot_decrementer_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
@@ -881,7 +894,6 @@ cc_gtest_unit_test(
         "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/lola/messaging:message_passing_unit_test",
         "//score/mw/com/impl/bindings/lola/messaging:mock",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
     ],
@@ -899,7 +911,6 @@ cc_test(
         "event_slot_status_test.cpp",
         "event_subscription_control_test.cpp",
         "proxy_event_common_test.cpp",
-        "proxy_event_test.cpp",
         "runtime_test.cpp",
         "sample_allocatee_ptr_test.cpp",
         "sample_ptr_test.cpp",
@@ -977,6 +988,7 @@ test_suite(
         ":event_data_control_unit_tests",
         ":generic_proxy_event_test",
         ":partial_restart_path_builder_test",
+        ":proxy_event_test",
         ":proxy_test",
         ":shm_path_builder_test",
         ":skeleton_test",

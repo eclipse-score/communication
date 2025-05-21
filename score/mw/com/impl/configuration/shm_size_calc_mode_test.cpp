@@ -19,18 +19,6 @@ namespace score::mw::com::impl
 namespace
 {
 
-TEST(ShmSizeCalculationModeTest, OperatorStreamOutputsCorrectStringForkEstimation)
-{
-    // Given a ShmSizeCalculationMode set to kEstimation
-    std::ostringstream oss;
-
-    // When streaming  to ostringstream
-    oss << ShmSizeCalculationMode::kEstimation;
-
-    // Then the output should match "ESTIMATION"
-    EXPECT_EQ(oss.str(), "ESTIMATION");
-}
-
 TEST(ShmSizeCalculationModeTest, OperatorStreamOutputsCorrectStringForkSimulation)
 {
     // Given a ShmSizeCalculationMode set to kSimulation

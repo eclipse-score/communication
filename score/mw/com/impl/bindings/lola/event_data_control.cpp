@@ -142,18 +142,16 @@ auto EventDataControlImpl<AtomicIndirectorType>::FindOldestUnusedSlot() noexcept
             selected_slot = {current_index, *it};
             break;
         }
-        else if ((status.GetReferenceCount() == static_cast<EventSlotStatus::SubscriberCount>(0)) &&
-                 (status.IsInWriting() == false))
+
+        const auto are_proxies_referencing_slot =
+            status.GetReferenceCount() != static_cast<EventSlotStatus::SubscriberCount>(0U);
+        if (!are_proxies_referencing_slot && !status.IsInWriting())
         {
             if (status.GetTimeStamp() < oldest_time_stamp)
             {
                 oldest_time_stamp = status.GetTimeStamp();
                 selected_slot = {current_index, *it};
             }
-        }
-        else
-        {
-            ; /* Not an unused slot, skip it. */
         }
     }
     return selected_slot;

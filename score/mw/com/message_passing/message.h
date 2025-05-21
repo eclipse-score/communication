@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_MESSAGE_PASSING_SHORT_MESSAGE_H
 #define SCORE_MW_COM_MESSAGE_PASSING_SHORT_MESSAGE_H
 
+#include <sys/types.h>
 #include <array>
 #include <cstdint>
 #include <type_traits>
