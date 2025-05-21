@@ -97,8 +97,8 @@ cc_library(
     deps = [
         ":i_shared_memory_resource",
         ":new_delete_delegate_resource",
-        "@score-baselibs//score/language/futurecpp",
         "@googletest//:gtest",
+        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -114,8 +114,8 @@ cc_library(
     ],
     deps = [
         ":i_shared_memory_resource",
-        "@score-baselibs//score/language/futurecpp",
         "@googletest//:gtest",
+        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
