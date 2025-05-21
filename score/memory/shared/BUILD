@@ -638,10 +638,6 @@ cc_gtest_unit_test(
         "memory_region_bounds_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
-    ],
     deps = [
         ":memory_region_bounds",
     ],
