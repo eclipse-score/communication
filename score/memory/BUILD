@@ -208,6 +208,7 @@ test_cases_common = [
     "@score-baselibs//score/memory/shared:offset_ptr_precondition_violation_test",
     "@score-baselibs//score/memory/shared:offset_ptr_test",
     "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test",
+    "@score-baselibs//score/memory/shared:memory_region_bounds_test",
 ]
 
 test_suite(
