@@ -91,7 +91,6 @@ constexpr auto kPermissionChecksKey = "permission-checks"sv;
 constexpr auto kSomeIpBinding = "SOME/IP"sv;
 constexpr auto kShmBinding = "SHM"sv;
 constexpr auto kShmSizeCalcModeSimulation = "SIMULATION"sv;
-constexpr auto kShmSizeCalcModeEstimation = "ESTIMATION"sv;
 
 constexpr auto kTracingTraceFilterConfigPathDefaultValue = "./etc/mw_com_trace_filter.json"sv;
 constexpr auto kStrictPermission = "strict"sv;
@@ -211,11 +210,7 @@ auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<
     {
         const auto& shm_size_calc_mode_value = shm_size_calc_mode->second.As<std::string>().value().get();
 
-        if (shm_size_calc_mode_value == kShmSizeCalcModeEstimation)
-        {
-            return ShmSizeCalculationMode::kEstimation;
-        }
-        else if (shm_size_calc_mode_value == kShmSizeCalcModeSimulation)
+        if (shm_size_calc_mode_value == kShmSizeCalcModeSimulation)
         {
             return ShmSizeCalculationMode::kSimulation;
         }

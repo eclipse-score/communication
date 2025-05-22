@@ -13,11 +13,9 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_IMESSAGEPASSINGCONTROL_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_IMESSAGEPASSINGCONTROL_H
 
-#include "score/os/unistd.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/message_passing/i_sender.h"
 
-#include <cstdint>
 #include <memory>
 #include <string>
 

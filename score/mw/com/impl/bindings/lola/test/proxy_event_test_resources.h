@@ -76,12 +76,6 @@ class GenericProxyEventAttorney
 
     GenericProxyEventAttorney(GenericProxyEvent& generic_proxy_event) noexcept;
 
-    Result<std::size_t> GetNumNewSamplesAvailableImpl() const noexcept;
-    Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept;
-    Result<std::size_t> GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker) noexcept;
-
-    ProxyEventCommon& GetProxyEventCommon() noexcept;
-
     auto& GetMetaInfoMember()
     {
         return generic_proxy_event_.meta_info_;
@@ -98,21 +92,6 @@ class ProxyEventAttorney
     using Callback = typename ProxyEvent<T>::Callback;
 
     ProxyEventAttorney(ProxyEvent<T>& proxy_event) noexcept : proxy_event_{proxy_event} {}
-
-    Result<std::size_t> GetNumNewSamplesAvailableImpl() const noexcept
-    {
-        return proxy_event_.GetNumNewSamplesAvailableImpl();
-    }
-
-    Result<std::size_t> GetNewSamplesImpl(Callback&& receiver, TrackerGuardFactory& tracker) noexcept
-    {
-        return proxy_event_.GetNewSamplesImpl(std::move(receiver), tracker);
-    }
-
-    ProxyEventCommon& GetProxyEventCommon() noexcept
-    {
-        return proxy_event_.proxy_event_common_;
-    }
 
     auto& GetSamplesMember()
     {

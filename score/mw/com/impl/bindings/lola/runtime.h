@@ -23,6 +23,8 @@
 
 #include "score/concurrency/executor.h"
 
+#include <score/stop_token.hpp>
+
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -86,6 +88,8 @@ class Runtime final : public IRuntime
     const Configuration& configuration_;
     concurrency::Executor& long_running_threads_;
     MessagePassingControl lola_message_passing_control_;
+
+    score::cpp::stop_source lola_messaging_stop_source_;
     MessagePassingFacade lola_messaging_;
     ServiceDiscoveryClient service_discovery_client_;
     std::unique_ptr<lola::tracing::TracingRuntime> tracing_runtime_;
