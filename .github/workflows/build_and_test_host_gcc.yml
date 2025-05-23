@@ -1,0 +1,36 @@
+# *******************************************************************************
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow configuration for S-CORE CI - Bazel Build & Test communication module
+# This workflow runs Bazel build and test when triggered by specific pull request events.
+
+name: Bazel Build & Test communication module (with host toolchain GCC12.2)
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+jobs:
+    build_and_test_gcc_host_gcc12:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4.2.2
+        - name: Setup Bazel
+          uses: bazel-contrib/setup-bazel@0.9.1
+        - name: Bazel build communication targets
+          run: |
+            bazel build //...
+        - name: Bazel test communication targets
+          run: |
+            bazel test //... --build_tests_only

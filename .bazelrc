@@ -15,6 +15,7 @@
 common --@score-baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=True
 common --@score-baselibs//score/json:base_library=nlohmann
 common --//score/mw/com/flags:tracing_library=stub
+common --extra_toolchains=@gcc_toolchain//:host_gcc_12
 build --incompatible_strict_action_env
 test --test_tag_filters=-manual
 

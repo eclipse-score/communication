@@ -12,7 +12,7 @@
 # *******************************************************************************
 module(name = "communication")
 
-bazel_dep(name = "score_toolchains_gcc", version = "0.3")
+bazel_dep(name = "score_toolchains_gcc", version = "0.4")
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc")
 gcc.toolchain(
@@ -35,7 +35,6 @@ gcc.warning_flags(
 )
 
 use_repo(gcc, "gcc_toolchain", "gcc_toolchain_gcc")
-register_toolchains("@gcc_toolchain//:host_gcc_12")
 
 bazel_dep(name = "googletest", version = "1.15.0")
 bazel_dep(name = "google_benchmark", version = "1.9.1")
