@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/rust/proxy_bridge_macros.h"
+#include "score/mw/com/impl/rust/bridge_macros.h"

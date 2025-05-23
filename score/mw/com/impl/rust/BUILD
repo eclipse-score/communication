@@ -31,9 +31,9 @@ cc_library(
 )
 
 cc_library(
-    name = "proxy_bridge_macros",
-    srcs = ["proxy_bridge_macros.cpp"],
-    hdrs = ["proxy_bridge_macros.h"],
+    name = "bridge_macros",
+    srcs = ["bridge_macros.cpp"],
+    hdrs = ["bridge_macros.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
@@ -44,6 +44,17 @@ cc_library(
         "//score/mw/com/impl/plumbing:sample_ptr",
         "@score-baselibs//score/language/futurecpp",
     ],
+)
+
+cc_library(
+    name = "proxy_bridge_macros",
+    hdrs = ["proxy_bridge_macros.h"],
+    deprecation = "Please change your dependency to //score/mw/com/impl/rust:bridge_macros",
+    visibility = [
+        "//visibility:public", # platform_only
+        # "@ddad//platform/aas:__subpackages__",
+    ],
+    deps = [":bridge_macros"],
 )
 
 rust_library(
