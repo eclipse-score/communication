@@ -50,7 +50,7 @@ const DATA_RECEPTION_COUNT: usize = 100;
 /// sample that is received.
 async fn get_samples<
     'a,
-    S: Stream<Item = proxy_bridge_rs::SamplePtr<'a, lib_gen_rs::MapApiLanesStamped>> + 'a,
+    S: Stream<Item = mw_com::proxy::SamplePtr<'a, lib_gen_rs::MapApiLanesStamped>> + 'a,
 >(
     map_api_lanes_stamped: S,
     count: usize,
@@ -69,9 +69,9 @@ fn run<F: std::future::Future<Output = ()> + Send>(future: F) {
     futures::executor::block_on(future);
 }
 
-fn run_recv_mode(instance_specifier: proxy_bridge_rs::InstanceSpecifier) {
+fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
     let handles = loop {
-        let handles = proxy_bridge_rs::find_service(instance_specifier.clone())
+        let handles = mw_com::proxy::find_service(instance_specifier.clone())
             .expect("Instance specifier resolution failed");
         if handles.len() > 0 {
             break handles;
@@ -97,7 +97,7 @@ fn run_recv_mode(instance_specifier: proxy_bridge_rs::InstanceSpecifier) {
     ));
 }
 
-fn run_send_mode(instance_specifier: proxy_bridge_rs::InstanceSpecifier) {
+fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier) {
     let skeleton = lib_gen_rs::IpcBridge::Skeleton::new(&instance_specifier)
         .expect("BigDataSkeleton creation failed");
 
@@ -148,11 +148,10 @@ fn main() {
         "[Rust] Size of MapApiLanesStamped::lane_boundaries: {}",
         std::mem::size_of_val(&lib_gen_rs::MapApiLanesStamped::default().lane_boundaries)
     );
-    proxy_bridge_rs::initialize(Some(&args.service_instance_manifest));
+    mw_com::initialize(Some(&args.service_instance_manifest));
 
-    let instance_specifier =
-        proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
-            .expect("Instance specifier creation failed");
+    let instance_specifier = mw_com::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
+        .expect("Instance specifier creation failed");
 
     match args.mode {
         Mode::Send | Mode::Skeleton => {

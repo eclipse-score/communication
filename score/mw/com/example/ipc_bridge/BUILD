@@ -69,9 +69,7 @@ rust_library(
     srcs = ["lib_gen.rs"],
     deps = [
         ":lib_gen_cpp",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
         "//score/mw/com/impl/rust:mw_com",
-        "//score/mw/com/impl/rust:proxy_bridge_rs",
         "@crate_index//:libc",
     ],
 )
@@ -84,7 +82,7 @@ rust_binary(
     rustc_flags = ["-Clink-arg=-lstdc++"],
     deps = [
         ":lib_gen_rs",
-        "//score/mw/com/impl/rust:proxy_bridge_rs",
+        "//score/mw/com/impl/rust:mw_com",
         "@crate_index//:clap",
         "@crate_index//:futures",
     ],
