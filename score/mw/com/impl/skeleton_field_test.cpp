@@ -454,8 +454,7 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBind
     ASSERT_TRUE(slot_result.has_value());
 }
 
-/// \todo When Ticket-102921 is implemented, Allocate() should propagate an error code rather than returning a nullptr.
-TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBindingReturnsNullptr)
+TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBindingReturnsError)
 {
     RecordProperty("Verifies", "SCR-17434933");
     RecordProperty("Description",
