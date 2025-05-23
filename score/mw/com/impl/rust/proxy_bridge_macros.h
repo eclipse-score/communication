@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/proxy_event.h"
 
 #include <score/assert.hpp>
+#include <optional>
 
 namespace score::mw::com::impl::rust
 {
@@ -25,23 +26,20 @@ template <typename T>
 inline bool GetSampleFromEvent(::score::mw::com::impl::ProxyEvent<T>& proxy_event,
                                ::score::mw::com::impl::SamplePtr<T>* sample_ptr) noexcept
 {
-    bool received = false;
+    std::optional<::score::mw::com::impl::SamplePtr<T>> sample_ptr_guard{};
     const auto result = proxy_event.GetNewSamples(
-        [sample_ptr, &received](::score::mw::com::impl::SamplePtr<T> sample_ptr_in) {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(!received, "Received multiple samples in one event");
-            new (sample_ptr)::score::mw::com::impl::SamplePtr<T>{std::move(sample_ptr_in)};
-            received = true;
+        [&sample_ptr_guard](::score::mw::com::impl::SamplePtr<T> sample_ptr_in) {
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(!sample_ptr_guard, "Received multiple samples in one event");
+            sample_ptr_guard = std::move(sample_ptr_in);
         },
         1);
-    if (received && !result.has_value())
+
+    if (sample_ptr_guard.has_value() && result.has_value())
     {
-        delete sample_ptr;
-        return false;
+        new (sample_ptr)::score::mw::com::impl::SamplePtr<T>{std::move(sample_ptr_guard).value()};
+        return true;
     }
-    else
-    {
-        return received;
-    }
+    return false;
 }
 
 template <typename P>
