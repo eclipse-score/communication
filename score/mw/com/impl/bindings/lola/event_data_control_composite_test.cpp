@@ -196,10 +196,10 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
     unit_->EventReady(slot_indicator, time_stamp);
 
     // When acquiring the latest timestamp
-    const auto time_stscore_future_cpp_obtained = unit_->GetLatestTimestamp();
+    const auto time_stamp_obtained = unit_->GetLatestTimestamp();
 
     // Then the timestamp is equal to 2
-    EXPECT_EQ(time_stscore_future_cpp_obtained, time_stamp);
+    EXPECT_EQ(time_stamp_obtained, time_stamp);
 }
 
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
