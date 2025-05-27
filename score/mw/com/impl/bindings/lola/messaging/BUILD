@@ -141,7 +141,6 @@ cc_library(
         ":node_identifier_copier",
     ],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
     deps = [
         ":i_message_passing_control",
         ":i_message_passing_service",
@@ -163,7 +162,6 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
     deps = [
         "//score/mw/com/impl/bindings/lola:element_fq_id",
         "@score-baselibs//score/language/futurecpp",

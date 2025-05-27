@@ -70,8 +70,8 @@ class ProxyEventCommon final
     Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
 
     /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
-    ///        I.e. returned SlotIndicators begin starts with the oldest slots/events first and ends at the
-    ///        newest/youngest slots.
+    ///        I.e. returned SlotIndicators begin with the oldest slots/events (lowest timestamp) first and end at the
+    ///        newest/youngest (largest timestamp) slots.
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.

@@ -264,8 +264,8 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
 
             // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
             // not lead to data loss.".
-            // As we are looping on the state slots, and current_index is incremented after handling each slot
-            // so no way for an overflow as long as both variables have same data type.
+            // On construction of state_slots_, it is already assured, that the number of slots/size can never
+            // be larger than a SlotIndexType, so no way an overflow can happen.
             // coverity[autosar_cpp14_a4_7_1_violation : FALSE]
             ++current_index;
         }
@@ -293,7 +293,7 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
         // coverity[autosar_cpp14_a4_7_1_violation : FALSE]
         ++status_new_val;
 
-        auto candidate_slot_status_value = static_cast<EventSlotStatus::value_type&>(candidate_slot_status);
+        auto& candidate_slot_status_value = static_cast<EventSlotStatus::value_type&>(candidate_slot_status);
 
         auto possible_index_value = possible_slot.GetIndex();
         auto& slot_value = possible_slot.GetSlot();

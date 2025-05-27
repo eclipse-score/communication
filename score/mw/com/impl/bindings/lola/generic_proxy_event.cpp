@@ -17,11 +17,11 @@
 
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 
-#include <score/assert.hpp>
-
 #include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/mw/log/logging.h"
+
+#include <score/assert.hpp>
 
 namespace score::mw::com::impl::lola
 {

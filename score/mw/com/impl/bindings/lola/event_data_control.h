@@ -152,8 +152,8 @@ class EventDataControlImpl final
     ///
     /// \return Will return a valid ControlSlotIndicator indicating/pointing to an event, which is the youngest/newest
     ///         one between last_search_time and upper_limit. I.e. its timestamp is between last_search_time and
-    ///         upper_limit and any other event with timestamp between last_search_time and upper_limit has a smaller
-    ///         timestamp (is older).
+    ///         upper_limit and all other events with timestamps between last_search_time and upper_limit have a smaller
+    ///         timestamp (are older).
     ///         If no such event exists, an invalid ControlSlotIndicator is returned.
     /// \post DereferenceEvent() is invoked to withdraw read-ownership
     ControlSlotIndicator ReferenceNextEvent(
@@ -177,7 +177,7 @@ class EventDataControlImpl final
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will not record the transaction in any TransactionLog. This function is called by the
-    /// TransactionLog::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions resp.
+    /// TransactionLog::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
     /// RollbackSkeletonTracingTransactions. In these cases, the transaction will be recorded within
     /// TransactionLog::RollbackIncrementTransactions resp. RollbackSubscribeTransactions before calling the callback.
     void DereferenceEventWithoutTransactionLogging(const SlotIndexType event_slot_index) noexcept;
