@@ -33,9 +33,9 @@ bool IsShortNameValid(const score::cpp::string_view shortname) noexcept
     // coverity[autosar_cpp14_a3_3_2_violation]
     static std::regex check_characters_regex("^[A-Za-z_/][A-Za-z_/0-9]*", std::regex_constants::basic);
     // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_duplicate_slashes_regex("/$", std::regex_constants::basic);
+    static std::regex check_trailing_slash_regex("/$", std::regex_constants::basic);
     // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_trailing_slash_regex("/{2,}", std::regex_constants::extended);
+    static std::regex check_duplicate_slashes_regex("/{2,}", std::regex_constants::extended);
 
     const bool all_characters_valid = std::regex_match(shortname.begin(), shortname.end(), check_characters_regex);
     const bool duplicate_slashes_found =
