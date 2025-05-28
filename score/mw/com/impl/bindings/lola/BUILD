@@ -635,10 +635,6 @@ cc_library(
     srcs = ["transaction_log_set.cpp"],
     hdrs = ["transaction_log_set.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
-    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [

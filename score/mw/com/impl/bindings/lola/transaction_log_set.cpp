@@ -12,10 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
-#include "score/mw/com/impl/com_error.h"
-
 #include "score/result/result.h"
-#include "score/mw/log/logging.h"
+#include "score/mw/com/impl/com_error.h"
 
 #include <score/assert.hpp>
 
@@ -42,9 +40,7 @@ bool TransactionLogSet::TransactionLogNode::TryAcquireForRead(TransactionLogId t
 
 void TransactionLogSet::TransactionLogNode::Reset() noexcept
 {
-    /// \todo Once the long term solutions to address the bug ticket (Ticket-187920) are implemented, this can be reverted
-    /// to a production assert and the log statement removed.
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(!transaction_log_.ContainsTransactions(),
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!transaction_log_.ContainsTransactions(),
                            "Cannot Reset TransactionLog as it still contains some old transactions.");
     if (transaction_log_.ContainsTransactions())
     {
