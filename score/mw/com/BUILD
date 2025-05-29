@@ -12,7 +12,6 @@
 # *******************************************************************************
 load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
-load("//platform/aas/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 
 cc_library(
     name = "com_error_domain",
@@ -110,7 +109,7 @@ test_suite(
     visibility = ["//platform/aas/mw:__pkg__"],
 )
 
-clang_tidy_extra_checks(
-    name = "clang_tidy_extra_checks",
-    tidy_config_file = ".clang-tidy-extra",
+exports_files(
+    [".clang-tidy-extra"],
+    visibility = ["//visibility:public"],
 )
