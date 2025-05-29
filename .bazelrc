@@ -22,4 +22,5 @@ test --test_tag_filters=-manual
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
 common --registry=https://bcr.bazel.build
 
-build:clang_tidy --aspects=//tools/lint:linters.bzl%clang_tidy --output_groups=rules_lint_human --keep_going
+build:clang --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+build:clang_tidy --config=clang --aspects=//tools/lint:linters.bzl%clang_tidy --output_groups=rules_lint_human --keep_going

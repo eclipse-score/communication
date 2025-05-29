@@ -97,6 +97,24 @@ llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
     cxx_standard = {"": "c++17"},
     llvm_version = "19.1.0",
+    compile_flags = {"": [
+        "-march=nehalem",
+        "-ffp-model=strict",
+        # Security
+        "-U_FORTIFY_SOURCE",  # https://github.com/google/sanitizers/issues/247
+        "-fstack-protector",
+        "-fno-omit-frame-pointer",
+        # Diagnostics
+        "-fcolor-diagnostics",
+        "-Wno-deprecated-declarations",
+        "-Wno-error=self-assign-overloaded",
+        "-Wthread-safety",
+    ]},
+    link_libs ={"":[
+        "-lrt",
+    ]},
 )
 use_repo(llvm, "llvm_toolchain")
 use_repo(llvm, "llvm_toolchain_llvm")
+
+register_toolchains("@llvm_toolchain//:all")
