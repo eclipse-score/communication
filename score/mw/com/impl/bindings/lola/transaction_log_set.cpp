@@ -46,9 +46,12 @@ void TransactionLogSet::TransactionLogNode::Reset() noexcept
     /// to a production assert and the log statement removed.
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(!transaction_log_.ContainsTransactions(),
                            "Cannot Reset TransactionLog as it still contains some old transactions.");
-    score::mw::log::LogWarn("lola")
-        << "TransactionLog still contains some old transactions. This is likely because the "
-           "GenericTraceAPI is still tracing some data and has not yet called the trace done callback.";
+    if (transaction_log_.ContainsTransactions())
+    {
+        score::mw::log::LogWarn("lola")
+            << "TransactionLog still contains some old transactions. This is likely because the "
+               "GenericTraceAPI is still tracing some data and has not yet called the trace done callback.";
+    }
     needs_rollback_ = false;
     Release();
 }
