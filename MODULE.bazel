@@ -12,9 +12,9 @@
 # *******************************************************************************
 module(name = "communication")
 
-bazel_dep(name = "score_toolchains_gcc", version = "0.4")
+bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency=True)
 
-gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc")
+gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
 gcc.toolchain(
     url = "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/0.0.1/x86_64-unknown-linux-gnu_gcc12.tar.gz",
     sha256 = "457f5f20f57528033cb840d708b507050d711ae93e009388847e113b11bf3600",
