@@ -211,8 +211,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_python/0.4.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.61.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_shell/0.3.0/MODULE.bazel": "not found",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_gcc/0.3/MODULE.bazel": "3d18d990324c9b0187779922c64740cde64380c0761592990e52089100913cac",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_gcc/0.3/source.json": "e430597a4876860cf191694e9be21fe8fec71f3458e18ac3cedc1034f225d987",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_gcc/0.4/MODULE.bazel": "370458c92c6cd9f91ea316d7658a5b82ee7422e22186328c86c570947508dc64",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_gcc/0.4/source.json": "2a15ebc5b338c0223d172e2b1eca9d459c20f767ab406661ff82f76da8434bc3",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/stardoc/0.5.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/stardoc/0.5.3/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/upb/0.0.0-20220923-a547704/MODULE.bazel": "not found",
@@ -643,7 +643,7 @@
         "bzlTransitiveDigest": "4lIaNLyT0gNCOhOnhsVcgj3dS+knwLZwl7K4bfAT5bc=",
         "usagesDigest": "RnbpCXyBymG1CEmpkYwdezo+lGwp9SoWkZcZhpx3tDk=",
         "recordedFileInputs": {
-          "@@//MODULE.bazel": "6a59df01402a69d199cbbaffc979581c58707447c9c151061e5391d60c94c50c",
+          "@@//MODULE.bazel": "7087e8d7abf96ddc5518f2adaf57df86b47167754b4798e2f946b17b71daa7f8",
           "@@rules_rust~~rust_host_tools~rust_host_tools//rust_host_tools": "ENOENT"
         },
         "recordedDirentsInputs": {},
@@ -1086,7 +1086,7 @@
     "@@score_toolchains_gcc~//extentions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "625W04EMFCSpzHutpEkupks7tjaCN8GaZyYPK67p5KE=",
-        "usagesDigest": "BC7VXBx/wl/aY2n0LB2RTPRQhKXY2rUi+GR+gWxRzFo=",
+        "usagesDigest": "ITF9M8VqfYU63yBH4D5y5q8pgd2GZu1lIeiQ9M+kAcM=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
