@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 alias(
@@ -199,10 +199,12 @@ cc_library(
     ],
 )
 
-test_suite(
-    name = "unit_test_suite_host",
-    tests = [
+cc_unit_test_suites_for_host_and_qnx(
+    name = "unit_test_suite",
+    cc_unit_tests = [
         ":unit_test",
+        ":resmgr_factory_test",
+        ":resmgr_traits_test",
     ],
     visibility = ["//score/mw/com:__pkg__"],
 )

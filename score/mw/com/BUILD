@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 load("@score-baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 
@@ -100,14 +100,19 @@ cc_gtest_unit_test(
     ],
 )
 
-test_suite(
-    name = "unit_test_suite_host",
-    tests = [
+cc_unit_test_suites_for_host_and_qnx(
+    name = "unit_test_suite",
+    cc_unit_tests = [
         ":unit_test",
-        "//score/mw/com/impl:unit_test_suite_host",
-        "//score/mw/com/message_passing:unit_test_suite_host",
     ],
-    visibility = ["//platform/aas/mw:__pkg__"],
+    test_suites_from_sub_packages = [
+        "//score/mw/com/impl:unit_test_suite",
+        "//score/mw/com/message_passing:unit_test_suite",
+    ],
+    visibility = [
+        "//platform/aas/mw:__pkg__",
+        # "@ddad//score/mw/com:__pkg__",
+    ],
 )
 
 clang_tidy_extra_checks(

@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -1016,9 +1016,9 @@ cc_test(
     ],
 )
 
-test_suite(
+cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
-    tests = [
+    cc_unit_tests = [
         ":dynamic_array_bounds_checking_test",
         ":event_data_control_unit_tests",
         ":generic_proxy_event_test",
@@ -1032,11 +1032,13 @@ test_suite(
         ":type_erased_sample_ptrs_guard_test",
         ":uid_pid_mapping_test",
         ":unit_test",
-        "//score/mw/com/impl/bindings/lola/messaging:unit_test_suite",
-        "//score/mw/com/impl/bindings/lola/service_discovery:unit_test_suite",
         "//score/mw/com/impl/bindings/lola/test:proxy_component_test",
         "//score/mw/com/impl/bindings/lola/test:skeleton_component_test",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_component_test",
+    ],
+    test_suites_from_sub_packages = [
+        "//score/mw/com/impl/bindings/lola/messaging:unit_test_suite",
+        "//score/mw/com/impl/bindings/lola/service_discovery:unit_test_suite",
         "//score/mw/com/impl/bindings/lola/tracing:unit_test_suite",
     ],
     visibility = [

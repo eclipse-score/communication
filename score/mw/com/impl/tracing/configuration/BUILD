@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
@@ -397,9 +397,9 @@ cc_gtest_unit_test(
     ],
 )
 
-test_suite(
+cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
-    tests = [
+    cc_unit_tests = [
         ":hash_helper_utility_test",
         ":proxy_event_trace_point_type_test",
         ":proxy_field_trace_point_type_test",

@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
@@ -820,15 +820,17 @@ cc_test(
     ],
 )
 
-test_suite(
-    name = "unit_test_suite_host",
-    tests = [
+cc_unit_test_suites_for_host_and_qnx(
+    name = "unit_test_suite",
+    cc_unit_tests = [
         ":flag_owner_test",
         ":generic_proxy_test",
         ":sample_reference_tracker_test",
         ":service_discovery_test",
         ":unit_test",
         ":unit_test_runtime_single_exec",
+    ],
+    test_suites_from_sub_packages = [
         "//score/mw/com/impl/bindings/lola:unit_test_suite",
         "//score/mw/com/impl/configuration:unit_test_suite",
         "//score/mw/com/impl/plumbing:unit_test_suite",

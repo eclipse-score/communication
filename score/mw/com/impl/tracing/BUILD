@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
@@ -380,9 +380,9 @@ cc_gtest_unit_test(
     ],
 )
 
-test_suite(
+cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
-    tests = [
+    cc_unit_tests = [
         ":common_event_tracing_test",
         ":proxy_event_tracing_data_test",
         ":proxy_event_tracing_test",
@@ -393,6 +393,8 @@ test_suite(
         ":trace_error_test",
         ":tracing_runtime_test",
         ":type_erased_sample_ptr_test",
+    ],
+    test_suites_from_sub_packages = [
         "//score/mw/com/impl/tracing/configuration:unit_test_suite",
         "//score/mw/com/impl/tracing/test:unit_test_suite",
     ],
