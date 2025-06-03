@@ -903,7 +903,8 @@ TEST_F(TraceDoneCallbackFixture,
 
     std::stringstream text_snippet{};
     text_snippet << "Lola TracingRuntime: TraceDoneCB with TraceContextId " << trace_context_id_val
-                 << " was not pending but has been called anyway. Ignoring callback.";
+                 << " was not pending but has been called anyway. This is expected to occur if the trace done "
+                    "callback is called after an event/field has been stop offered. Ignoring callback.";
 
     // Then a warning message should be logged (mw::log)
     auto first_offset = log_output.find(log_warn_snippet);
@@ -950,7 +951,8 @@ TEST_F(TraceDoneCallbackFixture, ServiceElementTracingIsUnchangedAfterCallingTra
 
     std::stringstream text_snippet{};
     text_snippet << "Lola TracingRuntime: TraceDoneCB with TraceContextId " << different_trace_context_id
-                 << " was not pending but has been called anyway. Ignoring callback.";
+                 << " was not pending but has been called anyway. This is expected to occur if the trace done "
+                    "callback is called after an event/field has been stop offered. Ignoring callback.";
 
     // Then a warning message should be logged (mw::log)
     auto first_offset = log_output.find(log_warn_snippet);

@@ -105,7 +105,8 @@ bool TracingRuntime::RegisterWithGenericTraceApi() noexcept
             {
                 score::mw::log::LogWarn("lola")
                     << "Lola TracingRuntime: TraceDoneCB with TraceContextId" << trace_context_id
-                    << "was not pending but has been called anyway. Ignoring callback.";
+                    << "was not pending but has been called anyway. This is expected to occur if the trace done "
+                       "callback is called after an event/field has been stop offered. Ignoring callback.";
                 return;
             }
             ClearTypeErasedSamplePtr(trace_context_id);
