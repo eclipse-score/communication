@@ -696,6 +696,23 @@ cc_library(
 )
 
 cc_library(
+    name = "type_erased_sample_ptrs_guard",
+    srcs = ["type_erased_sample_ptrs_guard.cpp"],
+    hdrs = ["type_erased_sample_ptrs_guard.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "//score/mw/com/impl/tracing:service_element_tracing_data",
+    ],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        "//score/mw/com/impl:binding_type",
+        "//score/mw/com/impl:runtime",
+        "//score/mw/com/impl/tracing:i_tracing_runtime_binding",
+    ],
+)
+
+cc_library(
     name = "event_data_control_test_resources",
     testonly = True,
     srcs = ["event_data_control_test_resources.cpp"],
@@ -753,6 +770,22 @@ cc_gtest_unit_test(
         ":proxy",
         "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "type_erased_sample_ptrs_guard_test",
+    srcs = ["type_erased_sample_ptrs_guard_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        # "@ddad//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":type_erased_sample_ptrs_guard",
+        "//score/mw/com/impl:runtime",
+        "//score/mw/com/impl:runtime_mock",
+        "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
+        "//score/mw/com/impl/tracing:tracing_runtime_mock",
     ],
 )
 
@@ -994,6 +1027,7 @@ test_suite(
         ":skeleton_test",
         ":slot_decrementer_test",
         ":transaction_log_rollback_executor_test",
+        ":type_erased_sample_ptrs_guard_test",
         ":uid_pid_mapping_test",
         ":unit_test",
         "//score/mw/com/impl/bindings/lola/messaging:unit_test_suite",
