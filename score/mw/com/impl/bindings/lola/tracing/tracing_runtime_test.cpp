@@ -90,9 +90,14 @@ constexpr std::uint8_t kFakeNumberOfIpcTracingSlotsPerServiceElement{7U};
 constexpr auto kNumberOfTotalConfiguredTracingSlots{kNumberOfTracingServiceElements *
                                                     kFakeNumberOfIpcTracingSlotsPerServiceElement};
 
-mock_binding::SamplePtr<TestSampleType> kMockBindingSamplePointer = std::make_unique<TestSampleType>(42U);
-impl::SamplePtr<TestSampleType> kDummySamplePtr{std::move(kMockBindingSamplePointer), SampleReferenceGuard{}};
-impl::tracing::TypeErasedSamplePtr kDummyTypeErasedSamplePtr{std::move(kDummySamplePtr)};
+impl::tracing::TypeErasedSamplePtr CreateMockTypeErasedSamplePtr()
+{
+    mock_binding::SamplePtr<TestSampleType> mock_binding_sample_ptr = std::make_unique<TestSampleType>(42U);
+    impl::SamplePtr<TestSampleType> dummy_sample_ptr{std::move(mock_binding_sample_ptr), SampleReferenceGuard{}};
+    impl::tracing::TypeErasedSamplePtr dummy_type_erased_sample_ptr{std::move(dummy_sample_ptr)};
+    return dummy_type_erased_sample_ptr;
+}
+impl::tracing::TypeErasedSamplePtr kDummyTypeErasedSamplePtr{CreateMockTypeErasedSamplePtr()};
 
 class TracingRuntimeFixture : public ::testing::Test
 {
@@ -408,29 +413,57 @@ TEST_F(TracingRuntimeTypeErasedSamplePtrFixture, ServiceElementTracingIsActiveAf
     EXPECT_TRUE(tracing_runtime_.IsTracingSlotUsed(completed_service_context_id.value()));
 }
 
-TEST_F(TracingRuntimeTypeErasedSamplePtrFixture, ServiceElementTracingIsInactiveAfterClearingTypeErasedSamplePtr)
+TEST_F(TracingRuntimeTypeErasedSamplePtrFixture, ClearTypeErasedSamplePtrSetsSlotForTraceContextIdAsUnused)
 {
-    // Given a TracingRuntimeObject
-
-    // When registering a service element
+    // Given a TracingRuntimeObject with a registered service element
     const auto service_element_tracing_data =
         tracing_runtime_.RegisterServiceElement(kFakeNumberOfIpcTracingSlotsPerServiceElement);
 
-    // and when setting the type erased sample ptr
-    const auto trace_context_id =
-        tracing_runtime_.EmplaceTypeErasedSamplePtr(std::move(kDummyTypeErasedSamplePtr), service_element_tracing_data);
+    // and given that 2 type erased sample ptr have been successfully emplaced
+    impl::tracing::TypeErasedSamplePtr dummy_type_erased_sample_ptr_2{CreateMockTypeErasedSamplePtr()};
+    const auto trace_context_id_1 =
+        tracing_runtime_.EmplaceTypeErasedSamplePtr(std::move(kDummyTypeErasedSamplePtr), service_element_tracing_data)
+            .value();
+    const auto trace_context_id_2 =
+        tracing_runtime_
+            .EmplaceTypeErasedSamplePtr(std::move(dummy_type_erased_sample_ptr_2), service_element_tracing_data)
+            .value();
+    EXPECT_TRUE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_1));
+    EXPECT_TRUE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_2));
 
-    // and setting the type erased sample ptr which will return a trace_context_id with value
-    const auto trace_context_id_val = trace_context_id.value();
+    // When clearing the type erased sample ptr corresponding to the first TraceContextId
+    tracing_runtime_.ClearTypeErasedSamplePtr(trace_context_id_1);
 
-    // and the service element is active
-    EXPECT_TRUE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_val));
+    // Then the slot corresponding to that TraceContextId is unused
+    EXPECT_FALSE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_1));
+    EXPECT_TRUE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_2));
+}
 
-    // and when clearing the type erased sample ptr
-    tracing_runtime_.ClearTypeErasedSamplePtr(trace_context_id_val);
+TEST_F(TracingRuntimeTypeErasedSamplePtrFixture,
+       AllServiceElementTracingSlotsAreUnusedAfterClearingTypeErasedSamplePtrs)
+{
+    // Given a TracingRuntimeObject with a registered service element
+    const auto service_element_tracing_data =
+        tracing_runtime_.RegisterServiceElement(kFakeNumberOfIpcTracingSlotsPerServiceElement);
 
-    // then the service element is inactive
-    EXPECT_FALSE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_val));
+    // and given that 2 type erased sample ptr have been successfully emplaced
+    impl::tracing::TypeErasedSamplePtr dummy_type_erased_sample_ptr_2{CreateMockTypeErasedSamplePtr()};
+    const auto trace_context_id_1 =
+        tracing_runtime_.EmplaceTypeErasedSamplePtr(std::move(kDummyTypeErasedSamplePtr), service_element_tracing_data)
+            .value();
+    const auto trace_context_id_2 =
+        tracing_runtime_
+            .EmplaceTypeErasedSamplePtr(std::move(dummy_type_erased_sample_ptr_2), service_element_tracing_data)
+            .value();
+    EXPECT_TRUE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_1));
+    EXPECT_TRUE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_2));
+
+    // When clearing all type erased sample ptr corresponding to the ServiceElementTracingData
+    tracing_runtime_.ClearTypeErasedSamplePtrs(service_element_tracing_data);
+
+    // Then all slots corresponding to that ServiceElementTracingData are unused
+    EXPECT_FALSE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_1));
+    EXPECT_FALSE(tracing_runtime_.IsTracingSlotUsed(trace_context_id_2));
 }
 
 using TracingRuntimeTypeErasedSamplePtrDeathTest = TracingRuntimeTypeErasedSamplePtrFixture;

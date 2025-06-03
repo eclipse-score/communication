@@ -67,6 +67,10 @@ class TracingRuntime : public ITracingRuntimeBinding
                 (TypeErasedSamplePtr, const impl::tracing::ServiceElementTracingData),
                 (noexcept, override));
     MOCK_METHOD(void, ClearTypeErasedSamplePtr, (TraceContextId), (noexcept, override));
+    MOCK_METHOD(void,
+                ClearTypeErasedSamplePtrs,
+                (const impl::tracing::ServiceElementTracingData&),
+                (noexcept, override));
 };
 
 }  // namespace score::mw::com::impl::tracing::mock_binding

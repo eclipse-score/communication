@@ -26,9 +26,12 @@
 #include <score/optional.hpp>
 #include <score/string_view.hpp>
 
+#include <cstddef>
 #include <mutex>
+#include <optional>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace score::mw::com::impl::lola::tracing
 {
@@ -135,6 +138,8 @@ class TracingRuntime : public impl::tracing::ITracingRuntimeBinding
         const impl::tracing::ServiceElementTracingData service_element_tracing_data) noexcept override;
 
     void ClearTypeErasedSamplePtr(const TraceContextId trace_context_id) noexcept override;
+    void ClearTypeErasedSamplePtrs(
+        const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept override;
 
     bool IsTracingSlotUsed(const TraceContextId trace_context_id) noexcept;
 
@@ -152,8 +157,11 @@ class TracingRuntime : public impl::tracing::ITracingRuntimeBinding
         std::mutex mutex;
     };
 
-    std::optional<TraceContextId> GetTraceContextId(
-        const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept;
+    auto GetTraceContextIdsForServiceElement(
+        const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
+        -> std::vector<TraceContextId>;
+    auto GetTraceContextId(const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
+        -> std::optional<TraceContextId>;
 
     const Configuration& configuration_;
     score::cpp::optional<analysis::tracing::TraceClientId> trace_client_id_;

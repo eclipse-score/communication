@@ -109,6 +109,8 @@ class ITracingRuntimeBinding
         TypeErasedSamplePtr type_erased_sample_ptr,
         const ServiceElementTracingData service_element_tracing_data) noexcept = 0;
     virtual void ClearTypeErasedSamplePtr(const TraceContextId trace_context_id) noexcept = 0;
+    virtual void ClearTypeErasedSamplePtrs(
+        const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept = 0;
 
   protected:
     ITracingRuntimeBinding(ITracingRuntimeBinding&&) noexcept = default;

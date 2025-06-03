@@ -24,6 +24,8 @@
 #include <exception>
 #include <limits>
 #include <mutex>
+#include <utility>
+#include <vector>
 
 namespace score::mw::com::impl::lola::tracing
 {
@@ -358,14 +360,15 @@ bool TracingRuntime::IsTracingSlotUsed(const TraceContextId trace_context_id) no
     return element.sample_ptr.has_value();
 }
 
-std::optional<impl::tracing::ITracingRuntimeBinding::TraceContextId> TracingRuntime::GetTraceContextId(
+auto TracingRuntime::GetTraceContextIdsForServiceElement(
     const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
+    -> std::vector<TraceContextId>
 {
     const auto range_start = service_element_tracing_data.service_element_range_start;
     const auto range_size = service_element_tracing_data.number_of_service_element_tracing_slots;
 
     // LCOV_EXCL_START (We don't have the infrastructure to test the failure case of this static assert at compile time.
-    // This check is anyway defensive programming so prevent about accidental changes that could be made to the code in
+    // This check is anyway defensive programming to prevent accidental changes that could be made to the code in
     // the future but currently has no way of failing in production.
     static_assert(
         (std::numeric_limits<decltype(range_start)>::max() + std::numeric_limits<decltype(range_size)>::max() <=
@@ -374,12 +377,24 @@ std::optional<impl::tracing::ITracingRuntimeBinding::TraceContextId> TracingRunt
         "TraceContextId, then we could get an overflow.");
     // LCOV_EXCL_STOP
 
+    std::vector<TraceContextId> trace_context_ids(range_size);
     for (std::size_t range_index = 0U; range_index < range_size; ++range_index)
     {
-        const auto global_idx = static_cast<TraceContextId>(range_start + range_index);
-        if (!IsTracingSlotUsed(global_idx))
+        trace_context_ids.push_back(static_cast<TraceContextId>(range_start + range_index));
+    }
+    return trace_context_ids;
+}
+
+auto TracingRuntime::GetTraceContextId(
+    const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
+    -> std::optional<TraceContextId>
+{
+    const auto trace_context_ids = GetTraceContextIdsForServiceElement(service_element_tracing_data);
+    for (const auto trace_context_id : trace_context_ids)
+    {
+        if (!IsTracingSlotUsed(trace_context_id))
         {
-            return global_idx;
+            return trace_context_id;
         }
     }
 
@@ -429,6 +444,16 @@ void TracingRuntime::ClearTypeErasedSamplePtr(const TraceContextId trace_context
     auto& [sample_ptr, mutex] = type_erased_sample_ptrs_.at(static_cast<std::size_t>(trace_context_id));
     std::lock_guard<std::mutex> lock(mutex);
     sample_ptr = {};
+}
+
+void TracingRuntime::ClearTypeErasedSamplePtrs(
+    const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
+{
+    const auto trace_context_ids = GetTraceContextIdsForServiceElement(service_element_tracing_data);
+    for (const auto trace_context_id : trace_context_ids)
+    {
+        ClearTypeErasedSamplePtr(trace_context_id);
+    }
 }
 
 }  // namespace score::mw::com::impl::lola::tracing
