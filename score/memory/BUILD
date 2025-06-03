@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
 load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
@@ -195,24 +196,25 @@ cc_test(
     ],
 )
 
-test_cases_common = [
-    ":any_string_view_test",
-    ":endianness_unit_test",
-    ":pmr_ring_buffer_unit_test",
-    ":split_string_view_unit_test",
-    ":string_comparison_adaptor_unit_test",
-    "@score-baselibs//score/memory/shared/flock:unit_test",
-    "@score-baselibs//score/memory/shared:unit_test",
-    "@score-baselibs//score/memory/shared:shared_memory_factory_test",
-    "@score-baselibs//score/memory/shared:pointer_arithmetic_util_precondition_violation_test",
-    "@score-baselibs//score/memory/shared:offset_ptr_precondition_violation_test",
-    "@score-baselibs//score/memory/shared:offset_ptr_test",
-    "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test",
-    "@score-baselibs//score/memory/shared:memory_region_bounds_test",
-]
-
-test_suite(
-    name = "unit_test_suite_host",
-    tests = test_cases_common,
-    visibility = ["//platform/aas/lib:__pkg__"],
+cc_unit_test_suites_for_host_and_qnx(
+    name = "unit_test_suite",
+    cc_unit_tests = [
+        ":any_string_view_test",
+        ":endianness_unit_test",
+        ":pmr_ring_buffer_unit_test",
+        ":split_string_view_unit_test",
+        ":string_comparison_adaptor_unit_test",
+        "@score-baselibs//score/memory/shared/flock:unit_test",
+        "@score-baselibs//score/memory/shared:unit_test",
+        "@score-baselibs//score/memory/shared:shared_memory_factory_test",
+        "@score-baselibs//score/memory/shared:pointer_arithmetic_util_precondition_violation_test",
+        "@score-baselibs//score/memory/shared:offset_ptr_precondition_violation_test",
+        "@score-baselibs//score/memory/shared:offset_ptr_test",
+        "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test",
+        "@score-baselibs//score/memory/shared:memory_region_bounds_test",
+        # "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typed_memory_test" # TODO: This test depends on @ddad
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
 )
