@@ -76,6 +76,8 @@ class ITracingRuntime
                               const void* const local_data_ptr,
                               const std::size_t local_data_size) noexcept = 0;
 
+    virtual ITracingRuntimeBinding& GetTracingRuntimeBinding(const BindingType binding_type) const noexcept = 0;
+
   protected:
     ITracingRuntime(ITracingRuntime&&) noexcept = default;
     ITracingRuntime& operator=(ITracingRuntime&&) noexcept = default;

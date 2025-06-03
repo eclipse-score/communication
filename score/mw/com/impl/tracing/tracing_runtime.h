@@ -158,6 +158,8 @@ class TracingRuntime : public ITracingRuntime
                       const void* const local_data_ptr,
                       const std::size_t local_data_size) noexcept override;
 
+    ITracingRuntimeBinding& GetTracingRuntimeBinding(const BindingType binding_type) const noexcept override;
+
   private:
     detail_tracing_runtime::TracingRuntimeAtomicState atomic_state_;
 
@@ -168,7 +170,6 @@ class TracingRuntime : public ITracingRuntime
     ResultBlank ProcessTraceCallResult(const ServiceElementInstanceIdentifierView& service_element_instance_identifier,
                                        const analysis::tracing::TraceResult& trace_call_result,
                                        ITracingRuntimeBinding& tracing_runtime_binding) noexcept;
-    ITracingRuntimeBinding& GetTracingRuntimeBinding(const BindingType binding_type) const noexcept;
 
     std::unordered_map<BindingType, ITracingRuntimeBinding*> tracing_runtime_bindings_;
 };
