@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_H
 
+#include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
@@ -21,6 +22,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -35,6 +37,7 @@
 #include <score/utility.hpp>
 
 #include <mutex>
+#include <optional>
 #include <tuple>
 #include <utility>
 
@@ -120,7 +123,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data_;
     /// \brief optional guard for tracing transaction log registration/un-registration - optional as only needed, when
     /// tracing is enabled.
-    score::cpp::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_;
+    std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_;
+    std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_;
 };
 
 template <typename SampleType>
@@ -139,7 +143,8 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
       current_timestamp_{1U},
       qm_disconnect_{false},
       skeleton_event_tracing_data_{skeleton_event_tracing_data},
-      transaction_log_registration_guard_{}
+      transaction_log_registration_guard_{},
+      type_erased_sample_ptrs_guard_{}
 {
 }
 
@@ -267,8 +272,8 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     {
         score::cpp::ignore = transaction_log_registration_guard_.emplace(
             TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
+        type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
     }
-
     return {};
 }
 
@@ -281,6 +286,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void SkeletonEvent<SampleType>::PrepareStopOffer() noexcept
 {
+    type_erased_sample_ptrs_guard_.reset();
     if (event_data_control_composite_.has_value())
     {
         transaction_log_registration_guard_.reset();

@@ -77,7 +77,6 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
   public:
     void SetUp() override
     {
-        ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
         ON_CALL(tracing_runtime_mock_, IsTracingEnabled()).WillByDefault(Return(true));
     }
 
@@ -98,8 +97,6 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
         EXPECT_TRUE(event_data_control_compositve.has_value());
         return event_data_control_compositve.value().GetEventSlotTimestamp(slot);
     }
-
-    impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
 };
 
 using SkeletonEventTracingSendFixture = SkeletonEventTracingFixture;
@@ -596,6 +593,32 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillNotRemov
 
     // Then the TransactionLog is still not registered
     ASSERT_FALSE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
+}
+
+TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillCallDestroyTypeErasedSamplePtrs)
+{
+    // Given a SkeletonEventTracingData with a trace point enabled.
+    impl::tracing::SkeletonEventTracingData expected_enabled_trace_points{};
+    expected_enabled_trace_points.enable_send = true;
+    expected_enabled_trace_points.service_element_tracing_data.service_element_range_start = 5U;
+    expected_enabled_trace_points.service_element_tracing_data.number_of_service_element_tracing_slots = 10U;
+
+    // Expecting that ClearTypeErasedSamplePtrs will be called on the TracingRuntime
+    EXPECT_CALL(tracing_runtime_binding_mock_,
+                ClearTypeErasedSamplePtrs(expected_enabled_trace_points.service_element_tracing_data));
+
+    // Given a skeleton event in an offered service
+    const bool enforce_max_samples{true};
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            enforce_max_samples,
+                            expected_enabled_trace_points);
+    skeleton_event_->PrepareOffer();
+
+    // When calling PrepareStopOffer
+    skeleton_event_->PrepareStopOffer();
 }
 
 }  // namespace

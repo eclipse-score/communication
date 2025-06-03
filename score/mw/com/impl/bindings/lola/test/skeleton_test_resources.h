@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -33,6 +34,7 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/skeleton_binding.h"
+#include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
 
 #include "score/filesystem/factory/filesystem_factory_fake.h"
 #include "score/filesystem/filesystem.h"
@@ -374,6 +376,8 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     os::MockGuard<os::StatMock> stat_mock_{};
     os::MockGuard<os::UnistdMock> unistd_mock_{};
     filesystem::FilesystemFactoryFake filesystem_fake_{};
+    impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
+    impl::tracing::mock_binding::TracingRuntime tracing_runtime_binding_mock_{};
 
     memory::shared::SharedMemoryFactoryMock shared_memory_factory_mock_{};
     ShmPathBuilderMock* shm_path_builder_mock_{nullptr};

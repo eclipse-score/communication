@@ -33,6 +33,7 @@ namespace
 using ::testing::_;
 using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::StrEq;
 
 const score::os::Fcntl::Open kCreateOrOpenFlags{score::os::Fcntl::Open::kCreate | score::os::Fcntl::Open::kReadOnly};
@@ -135,6 +136,10 @@ SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
     ON_CALL(runtime_mock_, GetBindingRuntime(BindingType::kLoLa)).WillByDefault(::testing::Return(&lola_runtime_mock_));
     memory::shared::SharedMemoryFactory::InjectMock(&shared_memory_factory_mock_);
     ON_CALL(*data_shared_memory_resource_mock_, IsShmInTypedMemory()).WillByDefault(::testing::Return(false));
+
+    ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
+    ON_CALL(tracing_runtime_mock_, GetTracingRuntimeBinding(BindingType::kLoLa))
+        .WillByDefault(ReturnRef(tracing_runtime_binding_mock_));
 }
 
 SkeletonMockedMemoryFixture::~SkeletonMockedMemoryFixture()

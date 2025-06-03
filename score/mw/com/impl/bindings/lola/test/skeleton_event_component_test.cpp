@@ -19,9 +19,11 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
+#include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
+#include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
 
 #include <score/string_view.hpp>
 
@@ -59,6 +61,21 @@ namespace
 
 using SkeletonEventSampleType = std::uint32_t;
 
+class RuntimeMockGuard
+{
+  public:
+    RuntimeMockGuard() noexcept
+    {
+        impl::Runtime::InjectMock(&runtime_mock_);
+    }
+    ~RuntimeMockGuard() noexcept
+    {
+        impl::Runtime::InjectMock(nullptr);
+    }
+
+    impl::RuntimeMock runtime_mock_{};
+};
+
 template <std::size_t MaxSamples>
 class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
 {
@@ -67,11 +84,16 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
 
     void SetUp() override
     {
-        impl::Runtime::InjectMock(&runtime_mock_);
-        ON_CALL(runtime_mock_, GetBindingRuntime).WillByDefault(::testing::Return(&lola_runtime_mock_));
+        ON_CALL(runtime_mock_guard_.runtime_mock_, GetBindingRuntime)
+            .WillByDefault(::testing::Return(&lola_runtime_mock_));
         ON_CALL(lola_runtime_mock_, GetLolaMessaging)
             .WillByDefault(::testing::ReturnRef(message_passing_service_mock_));
-        ON_CALL(runtime_mock_, GetServiceDiscovery()).WillByDefault(::testing::ReturnRef(service_discovery_mock_));
+        ON_CALL(runtime_mock_guard_.runtime_mock_, GetServiceDiscovery())
+            .WillByDefault(::testing::ReturnRef(service_discovery_mock_));
+        ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingRuntime())
+            .WillByDefault(::testing::Return(&tracing_runtime_mock_));
+        ON_CALL(tracing_runtime_mock_, GetTracingRuntimeBinding(BindingType::kLoLa))
+            .WillByDefault(::testing::ReturnRef(tracing_runtime_binding_mock_));
 
         SkeletonBinding::SkeletonEventBindings events{};
         SkeletonBinding::SkeletonFieldBindings fields{};
@@ -100,7 +122,6 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
             "/dev/shm/lola-ctl-0000000000000002-00016-b");
         ASSERT_TRUE(is_regular_file_ctl_b.has_value());
         EXPECT_FALSE(is_regular_file_ctl_b.value());
-        impl::Runtime::InjectMock(nullptr);
     }
 
     InstanceIdentifier GetValidInstanceIdentifier() noexcept
@@ -203,6 +224,14 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
                                                               QualityType::kASIL_B,
                                                               instance_specifier_};
 
+    /// mocks used by test
+    RuntimeMockGuard runtime_mock_guard_;
+    lola::RuntimeMock lola_runtime_mock_;
+    impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
+    impl::tracing::mock_binding::TracingRuntime tracing_runtime_binding_mock_{};
+    MessagePassingServiceMock message_passing_service_mock_;
+    ServiceDiscoveryMock service_discovery_mock_{};
+
     std::unique_ptr<Skeleton> parent_skeleton_{
         Skeleton::Create(GetValidInstanceIdentifier(),
                          filesystem::FilesystemFactory{}.CreateInstance(),
@@ -213,12 +242,6 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         fake_element_fq_id_,
         fake_event_name_,
         SkeletonEventProperties{MaxSamples, max_subscribers_, enforce_max_samples_}};
-
-    /// mocks used by test
-    impl::RuntimeMock runtime_mock_;
-    lola::RuntimeMock lola_runtime_mock_;
-    MessagePassingServiceMock message_passing_service_mock_;
-    ServiceDiscoveryMock service_discovery_mock_{};
 };
 
 using SkeletonEventComponentTestFixture = SkeletonEventComponentTestTemplateFixture<5>;
@@ -303,7 +326,8 @@ TEST_F(SkeletonEventComponentDeathTest, CallingSendWillTerminateWhenLolaRuntimeD
 {
     auto test_function = [this] {
         // Expecting that when getting the binding runtime from the runtime, a nullptr is returned
-        EXPECT_CALL(runtime_mock_, GetBindingRuntime(BindingType::kLoLa)).WillOnce(::testing::Return(nullptr));
+        EXPECT_CALL(runtime_mock_guard_.runtime_mock_, GetBindingRuntime(BindingType::kLoLa))
+            .WillOnce(::testing::Return(nullptr));
 
         // Given that an event has been offered
         const auto prepare_offer_result = skeleton_event_.PrepareOffer();

@@ -58,7 +58,9 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola:shm_path_builder_mock",
         "//score/mw/com/impl/bindings/lola:skeleton",
+        "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
         "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/tracing:tracing_runtime_mock",
         "@googletest//:gtest_main",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -169,6 +171,8 @@ cc_test(
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola:skeleton",
         "//score/mw/com/impl/bindings/lola/messaging:mock",
+        "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
+        "//score/mw/com/impl/tracing:tracing_runtime_mock",
         "@googletest//:gtest_main",
     ],
 )
