@@ -31,7 +31,6 @@
 #include <optional>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 
 namespace score::mw::com::impl::lola::tracing
 {
@@ -157,9 +156,16 @@ class TracingRuntime : public impl::tracing::ITracingRuntimeBinding
         std::mutex mutex;
     };
 
-    auto GetTraceContextIdsForServiceElement(
+    /// \brief Helper struct which stores the start and end TraceContextIds of a contiguous range of TraceContextIds
+    struct TraceContextIdContiguousRange
+    {
+        TraceContextId start;
+        TraceContextId end;
+    };
+
+    auto GetTraceContextIdRangeForServiceElement(
         const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
-        -> std::vector<TraceContextId>;
+        -> TraceContextIdContiguousRange;
     auto GetTraceContextId(const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
         -> std::optional<TraceContextId>;
 

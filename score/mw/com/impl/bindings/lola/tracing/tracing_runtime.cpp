@@ -25,7 +25,6 @@
 #include <limits>
 #include <mutex>
 #include <utility>
-#include <vector>
 
 namespace score::mw::com::impl::lola::tracing
 {
@@ -360,9 +359,9 @@ bool TracingRuntime::IsTracingSlotUsed(const TraceContextId trace_context_id) no
     return element.sample_ptr.has_value();
 }
 
-auto TracingRuntime::GetTraceContextIdsForServiceElement(
+auto TracingRuntime::GetTraceContextIdRangeForServiceElement(
     const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
-    -> std::vector<TraceContextId>
+    -> TraceContextIdContiguousRange
 {
     const auto range_start = service_element_tracing_data.service_element_range_start;
     const auto range_size = service_element_tracing_data.number_of_service_element_tracing_slots;
@@ -377,20 +376,16 @@ auto TracingRuntime::GetTraceContextIdsForServiceElement(
         "TraceContextId, then we could get an overflow.");
     // LCOV_EXCL_STOP
 
-    std::vector<TraceContextId> trace_context_ids(range_size);
-    for (std::size_t range_index = 0U; range_index < range_size; ++range_index)
-    {
-        trace_context_ids.push_back(static_cast<TraceContextId>(range_start + range_index));
-    }
-    return trace_context_ids;
+    return {range_start, static_cast<TraceContextId>(range_start + range_size)};
 }
 
 auto TracingRuntime::GetTraceContextId(
     const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
     -> std::optional<TraceContextId>
 {
-    const auto trace_context_ids = GetTraceContextIdsForServiceElement(service_element_tracing_data);
-    for (const auto trace_context_id : trace_context_ids)
+    const auto trace_context_id_range = GetTraceContextIdRangeForServiceElement(service_element_tracing_data);
+    for (auto trace_context_id = trace_context_id_range.start; trace_context_id != trace_context_id_range.end;
+         ++trace_context_id)
     {
         if (!IsTracingSlotUsed(trace_context_id))
         {
@@ -449,8 +444,9 @@ void TracingRuntime::ClearTypeErasedSamplePtr(const TraceContextId trace_context
 void TracingRuntime::ClearTypeErasedSamplePtrs(
     const impl::tracing::ServiceElementTracingData& service_element_tracing_data) noexcept
 {
-    const auto trace_context_ids = GetTraceContextIdsForServiceElement(service_element_tracing_data);
-    for (const auto trace_context_id : trace_context_ids)
+    const auto trace_context_id_range = GetTraceContextIdRangeForServiceElement(service_element_tracing_data);
+    for (auto trace_context_id = trace_context_id_range.start; trace_context_id != trace_context_id_range.end;
+         ++trace_context_id)
     {
         ClearTypeErasedSamplePtr(trace_context_id);
     }

@@ -121,8 +121,10 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     EventSlotStatus::EventTimeStamp current_timestamp_;
     bool qm_disconnect_;
     impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data_;
-    /// \brief optional guard for tracing transaction log registration/un-registration - optional as only needed, when
-    /// tracing is enabled.
+
+    /// \brief optional RAII guards for tracing transaction log registration/un-registration and cleanup of "pending"
+    /// type erased sample pointers which are created in PrepareOffer() and destroyed in PrepareStopoffer() - optional
+    /// as only needed when tracing is enabled and when they haven't been cleaned up via a call to PrepareStopoffer().
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_;
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_;
 };

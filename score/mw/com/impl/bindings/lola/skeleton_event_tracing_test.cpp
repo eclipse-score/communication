@@ -595,7 +595,7 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillNotRemov
     ASSERT_FALSE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
 }
 
-TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillCallDestroyTypeErasedSamplePtrs)
+TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillCallClearTypeErasedSamplePtrs)
 {
     // Given a SkeletonEventTracingData with a trace point enabled.
     impl::tracing::SkeletonEventTracingData expected_enabled_trace_points{};
