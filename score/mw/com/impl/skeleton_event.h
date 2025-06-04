@@ -150,6 +150,11 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonEvent&& other) noexcept : S
 }
 
 template <typename SampleDataType>
+// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
+// or respectively copy base classes and data members of a class, without any side effects."
+// Rationale: The parent skeleton stores a reference to the SkeletonEvent. The address that is pointed to must be
+// updated when the SkeletonEvent is moved. Therefore, side effects are required.
+// coverity[autosar_cpp14_a6_2_1_violation]
 auto SkeletonEvent<SampleDataType>::operator=(SkeletonEvent&& other) & noexcept -> SkeletonEvent<SampleDataType>&
 {
     if (this != &other)
