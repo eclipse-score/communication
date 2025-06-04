@@ -81,9 +81,13 @@ std::shared_ptr<message_passing::ISender> MessagePassingControl::GetMessagePassi
 }
 
 // false-positive: one definition rule is not violated, function is defined in src file
+// The only non-noexcept functions called are shared/unique ptr constructors.
+// These will only throw exceptions if the system is out of memory.
+// In this case, we can't recover anyway so accept that these calls will terminate
+// coverity[autosar_cpp14_a15_5_3_violation]
 // coverity[autosar_cpp14_a3_1_1_violation]
 std::shared_ptr<message_passing::ISender> MessagePassingControl::CreateNewSender(const QualityType& asil_level,
-                                                                                 const pid_t target_node_id)
+                                                                                 const pid_t target_node_id) noexcept
 {
     const std::string senderName = CreateMessagePassingName(asil_level, target_node_id);
 

@@ -72,7 +72,7 @@ class MessagePassingControl final : public IMessagePassingControl
     concurrency::ThreadPool& GetNonBlockingSenderThreadPool();
 
     std::shared_ptr<message_passing::ISender> CreateNewSender(const QualityType& asil_level,
-                                                              const pid_t target_node_id);
+                                                              const pid_t target_node_id) noexcept;
     /// \brief does our instance support ASIL-B?
     bool asil_b_capability_;
     /// \brief sender queue size for non blocking sender (just used in case of asil_b_capability_ == true)
