@@ -28,6 +28,7 @@
 #include <score/assert.hpp>
 #include <score/optional.hpp>
 #include <score/string_view.hpp>
+#include <score/utility.hpp>
 
 #include <mutex>
 
@@ -101,7 +102,7 @@ class ProxyEventCommon final
     // coverity[autosar_cpp14_a0_1_3_violation]
     void InjectSlotCollector(SlotCollector&& slot_collector)
     {
-        test_slot_collector_.emplace(std::move(slot_collector));
+        score::cpp::ignore = test_slot_collector_.emplace(std::move(slot_collector));
     };
     score::cpp::optional<SlotCollector> test_slot_collector_;
 

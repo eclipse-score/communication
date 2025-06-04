@@ -21,6 +21,8 @@
 #include "score/result/result.h"
 #include "score/mw/log/logging.h"
 
+#include <score/utility.hpp>
+
 #include <sstream>
 #include <utility>
 
@@ -44,7 +46,7 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
             ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
         return MakeUnexpected(ComErrc::kMaxSubscribersExceeded);
     }
-    state_machine_.transaction_log_registration_guard_.emplace(
+    score::cpp::ignore = state_machine_.transaction_log_registration_guard_.emplace(
         std::move(transaction_log_registration_guard_result).value());
 
     auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
@@ -83,7 +85,7 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
             std::move(state_machine_.event_receiver_handler_.value()));
         state_machine_.event_receiver_handler_.reset();
     }
-    state_machine_.subscription_data_.slot_collector_.emplace(std::move(slot_collector));
+    score::cpp::ignore = state_machine_.subscription_data_.slot_collector_.emplace(std::move(slot_collector));
     state_machine_.subscription_data_.max_sample_count_ = max_sample_count;
 
     if (state_machine_.provider_service_instance_is_available_)

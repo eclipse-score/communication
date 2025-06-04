@@ -32,6 +32,7 @@
 #include <score/assert.hpp>
 #include <score/optional.hpp>
 #include <score/string_view.hpp>
+#include <score/utility.hpp>
 
 #include <mutex>
 #include <tuple>
@@ -264,7 +265,7 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
         skeleton_event_tracing_data_.enable_send || skeleton_event_tracing_data_.enable_send_with_allocate;
     if (tracing_globally_enabled && tracing_for_skeleton_event_enabled)
     {
-        transaction_log_registration_guard_.emplace(
+        score::cpp::ignore = transaction_log_registration_guard_.emplace(
             TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
     }
 
