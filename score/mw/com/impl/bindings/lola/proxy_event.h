@@ -189,7 +189,7 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
 
     for (auto slot_indicator_it = slot_indicators.begin; slot_indicator_it != slot_indicators.end; ++slot_indicator_it)
     {
-        const SampleType& sample_data{samples_.at(slot_indicator_it->GetIndex())};
+        const SampleType& sample_data{samples_.at(static_cast<std::size_t>(slot_indicator_it->GetIndex()))};
         const EventSlotStatus event_slot_status{slot_indicator_it->GetSlot().load()};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
