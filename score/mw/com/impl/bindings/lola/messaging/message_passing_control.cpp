@@ -116,6 +116,8 @@ std::shared_ptr<message_passing::ISender> MessagePassingControl::CreateNewSender
         (asil_level == QualityType::kASIL_QM))
     {
         // LCOV_EXCL_BR_STOP
+        // make_unique may fail only if the system is out of memory
+        // coverity[autosar_cpp14_a15_4_2_violation]
         new_sender_unique_p =
             score::cpp::pmr::make_unique<message_passing::NonBlockingSender>(score::cpp::pmr::get_default_resource(),
                                                                       std::move(new_sender_unique_p),
