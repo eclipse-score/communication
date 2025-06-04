@@ -31,6 +31,11 @@ SlotDecrementer::~SlotDecrementer() noexcept
 
 SlotDecrementer::SlotDecrementer(SlotDecrementer&& other) noexcept
     : event_data_control_{other.event_data_control_},
+      // Suppress "AUTOSAR C++14 A12-8-4" rule finding. This rule states: "Move constructor shall not initialize its
+      // class members and base classes using copy semantics."
+      // Rationale: False positive - std::move is used which will result in the move constructor of
+      // control_slot_indicator_ being called.
+      // coverity[autosar_cpp14_a12_8_4_violation : FALSE]
       control_slot_indicator_{std::move(other.control_slot_indicator_)},
       transaction_log_idx_{other.transaction_log_idx_}
 {
