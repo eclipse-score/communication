@@ -14,6 +14,7 @@
 
 #include "score/result/result.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 
