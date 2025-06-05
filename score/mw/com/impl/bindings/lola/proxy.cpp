@@ -230,10 +230,6 @@ class FindServiceGuard final
         {
             score::mw::log::LogFatal("lola")
                 << "StartFindService failed with error" << find_service_handle_result.error() << ". Terminating.";
-
-            // To avoid the previous message not being logged due to the terminate, we sleep for 2 seconds.  This is a
-            // temporary workaround due to a logging bug and will be removed in Ticket-184950
-            std::this_thread::sleep_for(std::chrono::seconds{2U});
             std::terminate();
         }
         service_availability_change_handle_ = std::make_unique<FindServiceHandle>(find_service_handle_result.value());
