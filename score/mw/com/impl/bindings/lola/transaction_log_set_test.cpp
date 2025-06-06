@@ -513,11 +513,10 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveSkeletonTran
     EXPECT_FALSE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
 
-/// TransactionLogNode::Reset() currently debug_asserts (SCORE_LANGUAGE_FUTURECPP_ASSERT_LEVEL_DEBUG), when called while containing
-/// transactions. So in this test we will hit a SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE, which has no effect with our standard
-/// compile settings. Might change in the future (then this test might transition to a DEATH_TEST)
+/// TransactionLogNode::Reset() currently asserts (SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE), when called while containing
+/// transactions. So in this is a DEATH_TEST ensuring that the assert is hit and program terminates.
 /// Currently test is needed for full code coverage.
-TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWhileTransactionLogContainsTransactionsWorks)
+TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWhileTransactionLogContainsTransactionsAsserts)
 {
     WithATransactionLogSet(kNumberOfLogs);
 
@@ -528,10 +527,7 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWhileTransactionLogCon
     auto& transaction_log = unit_->GetTransactionLog(transaction_log_index);
     transaction_log.ReferenceTransactionBegin(2U);
 
-    // then Unregister works (does not terminate - see test comment)
-    unit_->Unregister(transaction_log_index);
-    // and no transaction log exists afterwards.
-    EXPECT_FALSE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
+    EXPECT_DEATH({ unit_->Unregister(transaction_log_index); }, "");
 }
 
 TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLogsConcurrently)
