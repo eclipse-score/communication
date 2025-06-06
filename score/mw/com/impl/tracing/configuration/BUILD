@@ -237,7 +237,7 @@ cc_library(
     deps = [
         ":service_element_type",
         ":tracing_filter_config",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:trace_error",
         "@score-baselibs//score/language/futurecpp",

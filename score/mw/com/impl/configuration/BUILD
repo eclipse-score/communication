@@ -59,7 +59,7 @@ cc_library(
     ],
     deps = [
         ":configuration_local",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -145,7 +145,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -159,7 +159,7 @@ cc_library(
     visibility = [
         # "@ddad//score/mw/com/impl/configuration:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/json:json_parser"],
+    deps = ["@score-baselibs//score/json"],
 )
 
 cc_library(
@@ -217,7 +217,7 @@ cc_library(
     visibility = [
         # "@ddad//score/mw/com/impl/configuration:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/json:json_parser"],
+    deps = ["@score-baselibs//score/json"],
 )
 
 cc_library(
@@ -235,7 +235,7 @@ cc_library(
         ":lola_field_instance_deployment",
         ":lola_service_instance_id",
         ":quality_type",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "//score/mw/com/impl:error",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -266,7 +266,7 @@ cc_library(
     implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    deps = ["@score-baselibs//score/json:json_parser"],
+    deps = ["@score-baselibs//score/json"],
 )
 
 cc_library(
@@ -279,7 +279,7 @@ cc_library(
     visibility = [
         # "@ddad//score/mw/com/impl/configuration:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/json:json_parser"],
+    deps = ["@score-baselibs//score/json"],
 )
 
 cc_library(
@@ -294,7 +294,7 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":service_version_type",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -333,7 +333,7 @@ cc_library(
         ":configuration_common_resources",
         ":lola_service_instance_id",
         ":someip_service_instance_id",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -350,7 +350,7 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -366,7 +366,7 @@ cc_library(
     ],
     deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -385,7 +385,7 @@ cc_library(
         ":someip_event_instance_deployment",
         ":someip_field_instance_deployment",
         ":someip_service_instance_id",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/result",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -402,7 +402,7 @@ cc_library(
     ],
     deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
     ],
 )
 
@@ -427,7 +427,7 @@ cc_library(
         # "@ddad//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -491,7 +491,7 @@ cc_test(
     deps = [
         ":configuration_common_resources",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/json:json_parser",
+        "@score-baselibs//score/json",
         "@googletest//:gtest_main",
         "@score-baselibs//score/language/futurecpp",
     ],
