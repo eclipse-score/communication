@@ -1,0 +1,24 @@
+package score
+
+enum ASIL
+{
+  QM
+  B
+}
+
+abstract type Requirement
+{
+  description   String
+  note          optional String
+  asil          optional ASIL
+}
+
+type AssumedFeatureRequirement extends Requirement
+{
+
+}
+
+type AssumedTechnicalSafetyRequirement extends Requirement
+{
+  freeze asil = ASIL.B
+}
