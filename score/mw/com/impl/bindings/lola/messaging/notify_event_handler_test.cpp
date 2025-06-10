@@ -638,12 +638,14 @@ TEST_F(NotifyEventHandlerFixture, UnregisterNotification_RemoteEvent_SendError)
         QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, registration_number, REMOTE_NODE_ID);
 }
 
-TEST_F(NotifyEventHandlerFixture, CallingUnreregisterEventNotificationWillNotSendUnregisterIfRegistrationsStillExist)
+TEST_F(NotifyEventHandlerFixture, CallingUnregisterEventNotificationWillNotSendUnregisterIfRegistrationsStillExist)
 {
     // given a NotifyEventHandler without ASIL support
     WithANotifyEventHandler(false).WithMessagePassingSenders({REMOTE_NODE_ID});
 
-    // and that a message is sent for the first call to RegisterEventNotifier
+    // Expecting that a message is sent for the first call to RegisterEventNotifier (Note. this is not an expectation
+    // that is being tested in this test, but gmock requires that we add expectations for ALL calls to an API if we have
+    // a single EXPECT_CALL on that API)
     EXPECT_CALL(*sender_mock_map_[REMOTE_NODE_ID],
                 Send(Matcher<const message_passing::ShortMessage&>(IsRegisterMessage())));
 
@@ -659,6 +661,49 @@ TEST_F(NotifyEventHandlerFixture, CallingUnreregisterEventNotificationWillNotSen
         QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, notify_event_callback_counter_store_remote_.handler, REMOTE_NODE_ID);
 
     // when unregistering the receive-handler for the first registration only
+    unit_.value().UnregisterEventNotification(
+        QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, registration_number, REMOTE_NODE_ID);
+}
+
+TEST_F(NotifyEventHandlerFixture, CallingUnregisterEventNotificationWithoutRegistrationWillNotSendUnregister)
+{
+    // given a NotifyEventHandler without ASIL support
+    WithANotifyEventHandler(false).WithMessagePassingSenders({REMOTE_NODE_ID});
+
+    // Expecting that an UnregisterEventNotifier message is never sent
+    EXPECT_CALL(*sender_mock_map_[REMOTE_NODE_ID],
+                Send(Matcher<const message_passing::ShortMessage&>(IsUnregisterMessage())))
+        .Times(0);
+
+    // When unregistering the receive-handler having never registered one
+    IMessagePassingService::HandlerRegistrationNoType invalid_registration_no{100U};
+    unit_.value().UnregisterEventNotification(
+        QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, invalid_registration_no, REMOTE_NODE_ID);
+}
+
+TEST_F(NotifyEventHandlerFixture, CallingUnregisterEventNotificationTwiceWillSendUnregisterOnlyOnce)
+{
+    // Given a NotifyEventHandler without ASIL support
+    WithANotifyEventHandler(false).WithMessagePassingSenders({REMOTE_NODE_ID});
+
+    // Expecting that a message is sent for the call to RegisterEventNotifier (Note. this is not an expectation
+    // that is being tested in this test, but gmock requires that we add expectations for ALL calls to an API if we have
+    // a single EXPECT_CALL on that API)
+    EXPECT_CALL(*sender_mock_map_[REMOTE_NODE_ID],
+                Send(Matcher<const message_passing::ShortMessage&>(IsRegisterMessage())));
+
+    // and that an UnregisterEventNotifier message is sent only once
+    EXPECT_CALL(*sender_mock_map_[REMOTE_NODE_ID],
+                Send(Matcher<const message_passing::ShortMessage&>(IsUnregisterMessage())))
+        .Times(1);
+
+    // given that an event notification is registered for a remote event
+    auto registration_number = unit_.value().RegisterEventNotification(
+        QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, notify_event_callback_counter_store_remote_.handler, REMOTE_NODE_ID);
+
+    // when calling UnregisterEventNotification twice with the same registration_number
+    unit_.value().UnregisterEventNotification(
+        QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, registration_number, REMOTE_NODE_ID);
     unit_.value().UnregisterEventNotification(
         QualityType::kASIL_QM, SOME_ELEMENT_FQ_ID, registration_number, REMOTE_NODE_ID);
 }
