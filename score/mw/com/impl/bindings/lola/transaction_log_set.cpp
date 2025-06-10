@@ -43,12 +43,6 @@ void TransactionLogSet::TransactionLogNode::Reset() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!transaction_log_.ContainsTransactions(),
                            "Cannot Reset TransactionLog as it still contains some old transactions.");
-    if (transaction_log_.ContainsTransactions())
-    {
-        score::mw::log::LogWarn("lola")
-            << "TransactionLog still contains some old transactions. This is likely because the "
-               "GenericTraceAPI is still tracing some data and has not yet called the trace done callback.";
-    }
     needs_rollback_ = false;
     Release();
 }
