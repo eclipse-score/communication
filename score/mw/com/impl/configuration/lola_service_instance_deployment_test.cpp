@@ -16,6 +16,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <string>
 
 namespace score::mw::com::impl
 {
@@ -24,6 +25,12 @@ namespace
 
 using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
+
+LolaServiceInstanceId kDummyInstanceId{10U};
+const std::string kDummyEventName{"my_dummy_event"};
+const std::string kDummyFieldName{"my_dummy_field"};
+const auto kDummyLolaEventInstanceDeployment{MakeLolaEventInstanceDeployment()};
+const auto kDummyLolaFieldInstanceDeployment{MakeLolaFieldInstanceDeployment()};
 
 TEST(LolaServiceInstanceDeployment, construction)
 {
@@ -128,6 +135,60 @@ TEST_F(LolaServiceInstanceDeploymentFixture, CanCreateFromSerializedObjectWithou
     LolaServiceInstanceDeployment reconstructed_unit{serialized_unit};
 
     ExpectLolaServiceInstanceDeploymentObjectsEqual(reconstructed_unit, unit);
+}
+
+using LolaServiceInstanceDeploymentGetServiceElementFixture = ConfigurationStructsFixture;
+TEST_F(LolaServiceInstanceDeploymentGetServiceElementFixture, ReturnsEventThatExistsInDeployment)
+{
+    // Given a LolaServiceInstanceDeployment containing an event and field
+    const LolaServiceInstanceDeployment unit{kDummyInstanceId,
+                                             {{kDummyEventName, kDummyLolaEventInstanceDeployment}},
+                                             {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}}};
+
+    // When getting an LolaEventInstanceDeployment using the correct event name
+    const auto& event_instance_deployment = GetEventInstanceDeployment(unit, kDummyEventName);
+
+    // Then the returned object is the same as the one in the configuration
+    EXPECT_EQ(event_instance_deployment, kDummyLolaEventInstanceDeployment);
+}
+
+TEST_F(LolaServiceInstanceDeploymentGetServiceElementFixture, ReturnsFieldThatExistsInDeployment)
+{
+    // Given a LolaServiceInstanceDeployment containing an event and field
+    const LolaServiceInstanceDeployment unit{kDummyInstanceId,
+                                             {{kDummyEventName, kDummyLolaEventInstanceDeployment}},
+                                             {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}}};
+
+    // When getting an LolaFieldInstanceDeployment using the correct field name
+    const auto& field_instance_deployment = GetFieldInstanceDeployment(unit, kDummyFieldName);
+
+    // Then the returned object is the same as the one in the configuration
+    EXPECT_EQ(field_instance_deployment, kDummyLolaFieldInstanceDeployment);
+}
+
+using LolaServiceInstanceDeploymentGetServiceElementDeathTest = LolaServiceInstanceDeploymentGetServiceElementFixture;
+TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingEventThatDoesNotExistInDeploymentTerminates)
+{
+    // Given a LolaServiceInstanceDeployment containing an event and field
+    const LolaServiceInstanceDeployment unit{kDummyInstanceId,
+                                             {{kDummyEventName, kDummyLolaEventInstanceDeployment}},
+                                             {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}}};
+
+    // When getting a LolaEventInstanceDeployment using an incorrect event name
+    // Then the program termintaes
+    EXPECT_DEATH(score::cpp::ignore = GetEventInstanceDeployment(unit, kDummyFieldName), ".*");
+}
+
+TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingFieldThatDoesNotExistInDeploymentTerminates)
+{
+    // Given a LolaServiceInstanceDeployment containing an event and field
+    const LolaServiceInstanceDeployment unit{kDummyInstanceId,
+                                             {{kDummyEventName, kDummyLolaEventInstanceDeployment}},
+                                             {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}}};
+
+    // When getting a LolaFieldInstanceDeployment using an incorrect field name
+    // Then the program termintaes
+    EXPECT_DEATH(score::cpp::ignore = GetFieldInstanceDeployment(unit, kDummyEventName), ".*");
 }
 
 TEST(LolaServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
