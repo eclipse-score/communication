@@ -1,0 +1,58 @@
+package score_communication
+
+import score
+
+section "Communication"
+{
+
+score.AssumedTechnicalSafetyRequirement SafeCommunication
+{
+  description =
+  """
+  The communication framework shall avoid or control communication faults (see IS26262:2018 Part 6, Annex D) for any defined [[CommunicationMechansims]] .
+  """
+}
+
+score.AssumedTechnicalSafetyRequirement MixedCriticality
+{
+  description =
+  """
+  The communication framework shall support [[SafeCommunication]] involving communication partners on the same or multiple criticality levels.
+  """
+  note = """Thus, the communication frameworks supports mixed criticality systems."""
+}
+
+score.AssumedTechnicalSafetyRequirement DataCorruption
+{
+  description =
+  """
+  Consumers with lower criticality shall not be able to corrupt data consumed by partners with higher criticality.
+  """
+}
+
+score.AssumedTechnicalSafetyRequirement DataReordering
+{
+  description =
+  """
+  Consumers with lower criticality shall not be able to modify the order of data consumed by partners with higher criticality.
+  """
+}
+
+
+score.AssumedTechnicalSafetyRequirement DataRepetition
+{
+  description =
+  """
+  Consumers with lower criticality shall not be able to duplicate data consumed by other communication partners with higher criticality.
+  """
+}
+
+score.AssumedTechnicalSafetyRequirement DataLoss
+{
+  description =
+  """
+  Consumers with lower criticality shall not be able to cause data loss for other consumers with higher criticality.
+  """
+}
+
+}
