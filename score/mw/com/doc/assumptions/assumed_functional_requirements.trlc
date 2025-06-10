@@ -1,0 +1,168 @@
+package score_communication
+
+import score
+
+section "Communication Framework" {
+
+    score.AssumedFeatureRequirement AllowUserToDefineData
+    {
+        description =
+        """The communication framework shall allow the user to configure which data shall be exchanged in which communication mechanism."""
+    }
+
+    score.AssumedFeatureRequirement GroupCommunicationMechanisms
+    {
+        description = """The communication framework shall allow the user to group different communication mechansims into a service interface."""
+    }
+
+    section "Communication Mechansims" {
+
+        score.AssumedFeatureRequirement CommunicationMechansims
+        {
+            description =
+            """
+            The communication framework shall support the following communication mechansims
+            * [[TransferOfEvents]]
+            """
+        }
+
+        score.AssumedFeatureRequirement TransferOfEvents
+        {
+            description = """It shall be possible to send data one-way."""
+            note = """This communciation mechanism is refered to as `event`."""
+        }
+
+
+        score.AssumedFeatureRequirement AssociateEventWithIdentifier
+        {
+            description = """When a event [[TransferOfEvents]] is grouped within an service interface, a identifier shall be associated."""
+        }
+
+        score.AssumedFeatureRequirement PollingMode
+        {
+            description = """It shall be possible to receive [[TransferOfEvents]] only upon user request."""
+        }
+
+        score.AssumedFeatureRequirement NotificationMode
+        {
+            description = """It shall be possible that the user is notified, if new [[TransferOfEvents]] have been received."""
+        }
+
+        section "Data Types" {
+
+        score.AssumedFeatureRequirement AllowPrimitiveData
+        {
+            description = """It shall be possible to transfer primitive data types."""
+            note =
+            """primitive data types are booleans, signed and un-signed integeres in all available sizes, floating point numbers in all available sizes."""
+        }
+
+        score.AssumedFeatureRequirement AllowCompositeDataTypes
+        {
+            description = """It shall be possible to transfer composite data types."""
+            note = """In C++ a composite data type is a `struct`."""
+        }
+
+        score.AssumedFeatureRequirement AllowLists
+        {
+            description = "It shall be possible to transfer fixed size list data types."
+        }
+
+        }
+
+    }
+
+    section "Service Discovery" {
+
+        score.AssumedFeatureRequirement InterfaceInstance
+        {
+            description = """It shall be possible to make an service interface available in different instances at the same point in time."""
+            note = """A process that makes an service interface instance available is called producer."""
+        }
+
+        score.AssumedFeatureRequirement InterfaceInstanceIdentifier
+        {
+            description = """A service interface instance shall be uniquely identifiable."""
+        }
+
+        score.AssumedFeatureRequirement InterfaceInstanceIdentifier
+        {
+            description = """The communication framework shall provide a service discovery to find available service instances during runtime."""
+            note = """A process that searches for available service interfaces is called consumer."""
+        }
+
+    }
+
+    section "Testability" {
+
+    score.AssumedFeatureRequirement Testability
+    {
+        description = """The user shall be able to test all code paths that are triggered by the communication framework."""
+    }
+
+    }
+
+    section "Access Control Lists" {
+        score.AssumedFeatureRequirement ACL
+        {
+            description = "The communication framework shall support Access Control Lists for all communication relations."
+        }
+
+        score.AssumedFeatureRequirement OnlySpecifiedCommunicationPartners
+        {
+            description = "Only specifically authorized processes shall be able to access transfered data."
+        }
+    }
+
+    section "Multi Binding Support" {
+
+    score.AssumedFeatureRequirement MultiBinding
+    {
+        description = """The communication framework shall support multiple bindings."""
+        note =
+        "A binding performs the conversion of user communication to the respective communication protocol. It does this either directly or via a gateway approach."
+    }
+
+    score.AssumedFeatureRequirement BindingAgnosticAPI
+    {
+        description = """The public API of the communication framework shall be binding-agnostic."""
+        note =
+        """Binding-agnostic in this context means, that the public API is independent of the binding underneath.
+        E.g., if the binding is exchanged, the public API remains syntactically and semantically unchanged.
+        """
+    }
+
+    score.AssumedFeatureRequirement MultiBindingDeployment
+    {
+        description = """The association of a service instance and the appropriate binding shall be specified in the deployment configuration."""
+    }
+
+    score.AssumedFeatureRequirement DeploymentConfiguration
+    {
+        description = """Deployment configuration shall be read from an configuration file at runtime."""
+    }
+
+    }
+
+    section "Bindings"
+    {
+        section "IPC Binding"
+        {
+
+            score.AssumedFeatureRequirement ZeroCopy
+            {
+                description = """
+                Inter Process Communication shall be possible without copying to-be-transfered data.
+                """
+            }
+
+            score.AssumedFeatureRequirement SupportTracing
+            {
+                description = """
+                The communication framework shall provide infrastructure to enable binding-agnostic, zero-copy, read-only tracing of communication.
+                """
+            }
+
+        }
+    }
+}
