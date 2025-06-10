@@ -376,7 +376,7 @@ auto TracingRuntime::GetTraceContextIdRangeForServiceElement(
         "TraceContextId, then we could get an overflow.");
     // LCOV_EXCL_STOP
 
-    return {range_start, static_cast<TraceContextId>(range_start + range_size)};
+    return {range_start, static_cast<TraceContextId>(range_start) + static_cast<TraceContextId>(range_size)};
 }
 
 auto TracingRuntime::GetTraceContextId(
