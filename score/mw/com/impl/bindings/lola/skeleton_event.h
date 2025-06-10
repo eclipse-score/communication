@@ -270,11 +270,16 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
     const bool tracing_for_skeleton_event_enabled =
         skeleton_event_tracing_data_.enable_send || skeleton_event_tracing_data_.enable_send_with_allocate;
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
+    // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
+    // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in
+    // Ticket-188259).
     if (tracing_globally_enabled && tracing_for_skeleton_event_enabled)
     {
+        // LCOV_EXCL_BR_STOP
         score::cpp::ignore = transaction_log_registration_guard_.emplace(
             TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
-        type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
+        score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
     }
     return {};
 }
