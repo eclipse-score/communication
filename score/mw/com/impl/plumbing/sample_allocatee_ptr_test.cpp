@@ -17,6 +17,7 @@
 
 #include <score/assert.hpp>
 
+#include <score/blank.hpp>
 #include <gtest/gtest.h>
 #include <limits>
 #include <memory>
@@ -353,6 +354,31 @@ TEST_F(SampleAllocateePtrFixture, CanGetUnderlyingBlankPointer)
 
     // Then it is a nullptr
     EXPECT_EQ(value, nullptr);
+}
+
+TEST_F(SampleAllocateePtrFixture, CanResetUnderlyingPointerUsingUniquePtr)
+{
+    // Given a SampleAllocateePtr with an underlying unique_ptr
+    bool is_destructed{false};
+    SampleAllocateePtr<ObjectDestructionNotifier> unit_with_unique_ptr{
+        MakeSampleAllocateePtr(std::make_unique<ObjectDestructionNotifier>(is_destructed))};
+
+    // When calling Reset
+    unit_with_unique_ptr.reset();
+
+    // Then the underlying unique_ptr will be destroyed
+    EXPECT_TRUE(is_destructed);
+}
+
+TEST_F(SampleAllocateePtrFixture, ResettingWithUnderlyingBlankPointerDoesNotCrash)
+{
+    // Given an invalid (empty) unit
+    auto unit = SampleAllocateePtr<std::uint8_t>{};
+
+    // When calling reset
+    unit.reset();
+
+    // Then the process will not crash
 }
 
 TEST_F(SampleAllocateePtrFixture, CanDereferenceToUnderlyingValueUsingUniquePtr)

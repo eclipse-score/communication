@@ -84,11 +84,22 @@ class SampleAllocateePtr
     /// \brief Replaces the managed object.
     void reset(const pointer ptr = pointer()) noexcept
     {
-        auto internal_ptr = std::get_if<lola::SampleAllocateePtr<SampleType>>(&internal_);
-        if (internal_ptr != nullptr)
-        {
-            internal_ptr->reset(ptr);
-        }
+        auto visitor = score::cpp::overload(
+            // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
+            // expression statement and identifier declaration shall be placed on a
+            // separate line.". Following line statement is fine, this happens due to
+            // clang formatting.
+            // coverity[autosar_cpp14_a7_1_7_violation]
+            [ptr](lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
+                internal_ptr.reset(ptr);
+            },
+            // coverity[autosar_cpp14_a7_1_7_violation]
+            [ptr](std::unique_ptr<SampleType>& internal_ptr) noexcept -> void {
+                internal_ptr.reset(ptr);
+            },
+            // coverity[autosar_cpp14_a7_1_7_violation]
+            [](const score::cpp::blank&) noexcept -> void {});
+        std::visit(visitor, internal_);
     }
 
     /// \brief Swaps the managed objects of *this and another SampleAllocateePtr object other.
