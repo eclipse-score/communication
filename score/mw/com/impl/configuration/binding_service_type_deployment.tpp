@@ -17,6 +17,7 @@
 
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 
+#include <exception>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -144,6 +145,36 @@ bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, Ser
                 const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& rhs) noexcept
 {
     return ((lhs.service_id_ == rhs.service_id_) && (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_));
+}
+
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const EventIdType& GetEventId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
+    const std::string& event_name)
+{
+    const auto event_id_it = binding_service_type_deployment.events_.find(event_name);
+    if (event_id_it == binding_service_type_deployment.events_.cend())
+    {
+        score::mw::log::LogFatal() << "Event name \"" << event_name
+                                 << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
+        std::terminate();
+    }
+    return event_id_it->second;
+}
+
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const FieldIdType& GetFieldId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
+    const std::string& field_name)
+{
+    const auto field_id_it = binding_service_type_deployment.fields_.find(field_name);
+    if (field_id_it == binding_service_type_deployment.fields_.cend())
+    {
+        score::mw::log::LogFatal() << "Field name \"" << field_name
+                                 << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
+        std::terminate();
+    }
+    return field_id_it->second;
 }
 
 }  // namespace score::mw::com::impl

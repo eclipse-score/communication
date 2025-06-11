@@ -13,6 +13,8 @@
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 
 #include "lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_event_id.h"
+#include "score/mw/com/impl/configuration/lola_field_id.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
 #include <gmock/gmock.h>
@@ -27,6 +29,10 @@ using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
 
 const LolaServiceId kLolaServiceId{123U};
+const std::string kDummyEventName{"my_dummy_event"};
+const std::string kDummyFieldName{"my_dummy_field"};
+const LolaEventId kDummyLolaEventId{456U};
+const LolaFieldId kDummyLolaFieldId{678U};
 
 using LolaServiceTypeDeploymentFixture = ConfigurationStructsFixture;
 TEST_F(LolaServiceTypeDeploymentFixture, CanCreateFromSerializedObject)
@@ -60,6 +66,56 @@ TEST_F(LolaServiceTypeDeploymentFixture, ComparingDifferentDeploymentsReturnsFal
 
     // Then the result is false
     EXPECT_FALSE(are_equal);
+}
+
+using LolaServiceTypeDeploymentGetServiceElementFixture = ConfigurationStructsFixture;
+TEST_F(LolaServiceTypeDeploymentGetServiceElementFixture, ReturnsEventIdThatExistsInDeployment)
+{
+    // Given a LolaServiceTypeDeployment containing an event and field
+    const LolaServiceTypeDeployment unit{
+        kLolaServiceId, {{kDummyEventName, kDummyLolaEventId}}, {{kDummyFieldName, kDummyLolaFieldId}}};
+
+    // When getting a LolaEventId using the correct event name
+    const auto& event_id = GetEventId(unit, kDummyEventName);
+
+    // Then the returned object is the same as the one in the configuration
+    EXPECT_EQ(event_id, kDummyLolaEventId);
+}
+
+TEST_F(LolaServiceTypeDeploymentGetServiceElementFixture, ReturnsFieldIdThatExistsInDeployment)
+{
+    // Given a LolaServiceTypeDeployment containing an event and field
+    const LolaServiceTypeDeployment unit{
+        kLolaServiceId, {{kDummyEventName, kDummyLolaEventId}}, {{kDummyFieldName, kDummyLolaFieldId}}};
+
+    // When getting a LolaFieldId using the correct field name
+    const auto& field_id = GetFieldId(unit, kDummyFieldName);
+
+    // Then the returned object is the same as the one in the configuration
+    EXPECT_EQ(field_id, kDummyLolaFieldId);
+}
+
+using LolaServiceTypeDeploymentGetServiceElementDeathTest = LolaServiceTypeDeploymentGetServiceElementFixture;
+TEST_F(LolaServiceTypeDeploymentGetServiceElementDeathTest, GettingEventIdThatDoesNotExistInDeploymentTerminates)
+{
+    // Given a LolaServiceTypeDeployment containing an event and field
+    const LolaServiceTypeDeployment unit{
+        kLolaServiceId, {{kDummyEventName, kDummyLolaEventId}}, {{kDummyFieldName, kDummyLolaFieldId}}};
+
+    // When getting a LolaEventId using an incorrect event name
+    // Then the program termintaes
+    EXPECT_DEATH(score::cpp::ignore = GetEventId(unit, kDummyFieldName), ".*");
+}
+
+TEST_F(LolaServiceTypeDeploymentGetServiceElementDeathTest, GettingFieldIdThatDoesNotExistInDeploymentTerminates)
+{
+    // Given a LolaServiceTypeDeployment containing an event and field
+    const LolaServiceTypeDeployment unit{
+        kLolaServiceId, {{kDummyEventName, kDummyLolaEventId}}, {{kDummyFieldName, kDummyLolaFieldId}}};
+
+    // When getting a LolaFieldId using an incorrect field name
+    // Then the program termintaes
+    EXPECT_DEATH(score::cpp::ignore = GetFieldId(unit, kDummyEventName), ".*");
 }
 
 TEST(LolaServiceTypeDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)

@@ -68,6 +68,16 @@ class BindingServiceTypeDeployment
 };
 
 template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const EventIdType& GetEventId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
+    const std::string& event_name);
+
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const FieldIdType& GetFieldId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
+    const std::string& field_name);
+
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
 bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& lhs,
                 const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& rhs) noexcept;
 
