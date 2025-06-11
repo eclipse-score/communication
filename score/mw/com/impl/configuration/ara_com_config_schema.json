@@ -191,7 +191,7 @@
                                         "QM",
                                         "B"
                                     ],
-                                    "description": "ASIL level: On provider side B means, service instance provides ASIL-B quality and can therefore serve QM and ASIL-B consumers. B on consumer side means: Needs ASIL-B qualified provider. If this value is set to B, then a the global asil level needs to be explicitely set to B as well, via the {\"global\": {\"asil-level\": B} key."
+                                    "description": "ASIL level: On provider side B means, service instance provides ASIL-B quality and can therefore serve QM and ASIL-B consumers. B on consumer side means: Needs ASIL-B qualified provider. If this value is set to B, then the global asil level needs to be explicitly set to B as well, via the {\"global\": {\"asil-level\": B} key."
                                 },
                                 "binding": {
                                     "type": "string",
