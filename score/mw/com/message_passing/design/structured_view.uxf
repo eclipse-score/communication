@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<diagram program="umlet" version="13.3">
-  <zoom_level>10</zoom_level>
+<diagram program="umlet" version="15.0.0">
+  <zoom_level>9</zoom_level>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1870</x>
-      <y>2050</y>
-      <w>410</w>
-      <h>100</h>
+      <x>1683</x>
+      <y>1845</y>
+      <w>369</w>
+      <h>90</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::ShortMessage
 --
@@ -20,10 +20,10 @@
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2240</x>
-      <y>1450</y>
-      <w>950</w>
-      <h>290</h>
+      <x>2016</x>
+      <y>1305</y>
+      <w>855</w>
+      <h>261</h>
     </coordinates>
     <panel_attributes>template=ChannelTraits
 mw::com::message_passing::Receiver
@@ -50,10 +50,10 @@ If a handler has been registered for a specific message, it is invoked.
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1640</x>
-      <y>1450</y>
-      <w>570</w>
-      <h>270</h>
+      <x>1476</x>
+      <y>1305</y>
+      <w>513</w>
+      <h>243</h>
     </coordinates>
     <panel_attributes>template=ChannelTraits
 mw::com::message_passing::Sender
@@ -74,13 +74,13 @@ channel and transmits the specified message.
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>720</x>
-      <y>1150</y>
-      <w>320</w>
-      <h>90</h>
+      <x>648</x>
+      <y>1035</y>
+      <w>423</w>
+      <h>81</h>
     </coordinates>
     <panel_attributes>Notes:
-SenderFactoryImpl creates 
+SenderFactoryImpl creates
 Sender  Object with ResmgrSenderTraits/MqueueSenderTraits
 as ChannelTraits</panel_attributes>
     <additional_attributes/>
@@ -88,10 +88,10 @@ as ChannelTraits</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1910</x>
-      <y>1710</y>
-      <w>70</w>
-      <h>360</h>
+      <x>1719</x>
+      <y>1539</y>
+      <w>63</w>
+      <h>324</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 sends</panel_attributes>
@@ -100,10 +100,10 @@ sends</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2250</x>
-      <y>1730</y>
-      <w>90</w>
-      <h>340</h>
+      <x>2025</x>
+      <y>1557</y>
+      <w>81</w>
+      <h>306</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 receives</panel_attributes>
@@ -112,10 +112,10 @@ receives</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2370</x>
-      <y>1790</y>
-      <w>410</w>
-      <h>130</h>
+      <x>2133</x>
+      <y>1611</y>
+      <w>423</w>
+      <h>117</h>
     </coordinates>
     <panel_attributes>/mw::com::message_passing::BaseMessage/
 --
@@ -131,21 +131,21 @@ using MessageId std::uint8_t
   <element>
     <type>com.baselet.element.old.element.Relation</type>
     <coordinates>
-      <x>2240</x>
-      <y>1890</y>
-      <w>220</w>
-      <h>180</h>
+      <x>2016</x>
+      <y>1701</y>
+      <w>189</w>
+      <h>153</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>200;30;30;160</additional_attributes>
+    <additional_attributes>180;27;27;144</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2760</x>
-      <y>2060</y>
-      <w>410</w>
-      <h>100</h>
+      <x>2484</x>
+      <y>1854</y>
+      <w>369</w>
+      <h>90</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::MediumMessage
 --
@@ -158,21 +158,21 @@ using MessageId std::uint8_t
   <element>
     <type>com.baselet.element.old.element.Relation</type>
     <coordinates>
-      <x>2640</x>
-      <y>1890</y>
-      <w>310</w>
-      <h>190</h>
+      <x>2376</x>
+      <y>1701</y>
+      <w>270</w>
+      <h>162</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>30;30;290;170</additional_attributes>
+    <additional_attributes>27;27;261;153</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2400</x>
-      <y>1200</y>
-      <w>780</w>
-      <h>140</h>
+      <x>2160</x>
+      <y>1080</y>
+      <w>702</w>
+      <h>126</h>
     </coordinates>
     <panel_attributes>/mw::com::message_passing::IReceiver/
 --
@@ -187,21 +187,21 @@ using MediumMessageReceivedCallback = score::cpp::callback&lt;void(MediumMessage
   <element>
     <type>com.baselet.element.old.element.Relation</type>
     <coordinates>
-      <x>2750</x>
-      <y>1310</y>
-      <w>50</w>
-      <h>160</h>
+      <x>2475</x>
+      <y>1179</y>
+      <w>36</w>
+      <h>135</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>30;30;30;140</additional_attributes>
+    <additional_attributes>27;27;27;126</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1240</x>
-      <y>1200</y>
-      <w>960</w>
-      <h>110</h>
+      <x>1116</x>
+      <y>1080</y>
+      <w>864</w>
+      <h>99</h>
     </coordinates>
     <panel_attributes>/mw::com::message_passing::ISender/
 --
@@ -215,21 +215,21 @@ using MediumMessageReceivedCallback = score::cpp::callback&lt;void(MediumMessage
   <element>
     <type>com.baselet.element.old.element.Relation</type>
     <coordinates>
-      <x>1790</x>
-      <y>1280</y>
-      <w>50</w>
-      <h>200</h>
+      <x>1611</x>
+      <y>1152</y>
+      <w>44</w>
+      <h>179</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>30;30;30;180</additional_attributes>
+    <additional_attributes>27;27;27;162</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2940</x>
-      <y>1730</y>
-      <w>90</w>
-      <h>350</h>
+      <x>2646</x>
+      <y>1557</y>
+      <w>81</w>
+      <h>315</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 receives</panel_attributes>
@@ -238,10 +238,10 @@ receives</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1690</x>
-      <y>1710</y>
-      <w>1120</w>
-      <h>530</h>
+      <x>1521</x>
+      <y>1539</y>
+      <w>1008</w>
+      <h>477</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 sends</panel_attributes>
@@ -250,17 +250,17 @@ sends</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2600</x>
-      <y>860</y>
-      <w>680</w>
-      <h>180</h>
+      <x>2340</x>
+      <y>774</y>
+      <w>612</w>
+      <h>162</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::ReceiverFactory
 --
 
 _+Create(identifier : std::string_view , executor : concurrency::Executor&amp;,_
 _    allowed_uids : const score::cpp::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
-_    score::cpp::pmr::memory_resource* memory_resource) :  std::unique_ptr&lt;IReceiver&gt;_
+_    score::cpp::pmr::memory_resource* memory_resource) :  score::cpp::pmr::unique_ptr&lt;IReceiver&gt;_
 _+InjectReceiverMock(IReceiver* mock) : void_
 </panel_attributes>
     <additional_attributes/>
@@ -268,10 +268,10 @@ _+InjectReceiverMock(IReceiver* mock) : void_
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2750</x>
-      <y>1030</y>
-      <w>80</w>
-      <h>190</h>
+      <x>2475</x>
+      <y>927</y>
+      <w>72</w>
+      <h>171</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 creates</panel_attributes>
@@ -280,26 +280,26 @@ creates</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>1720</x>
-      <y>960</y>
-      <w>760</w>
-      <h>130</h>
+      <x>1548</x>
+      <y>864</y>
+      <w>684</w>
+      <h>117</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::SenderFactory
 --
 --
 _+Create(identifier :std::string_view, token : const score::cpp::stop_token&amp;,_
 _             const SenderConfig&amp;, logging_callback : LoggingCallback,_
-_             memory_resource : score::cpp::pmr::memory_resource*) :  std::unique_ptr&lt;ISender&gt;_</panel_attributes>
+_             memory_resource : score::cpp::pmr::memory_resource*) :  score::cpp::pmr::unique_ptr&lt;ISender&gt;_</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2100</x>
-      <y>1080</y>
-      <w>80</w>
-      <h>140</h>
+      <x>1890</x>
+      <y>972</y>
+      <w>72</w>
+      <h>126</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 creates</panel_attributes>
@@ -308,26 +308,26 @@ creates</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>920</x>
-      <y>960</y>
-      <w>760</w>
-      <h>130</h>
+      <x>828</x>
+      <y>864</y>
+      <w>684</w>
+      <h>117</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::SenderFactoryImpl
 --
 --
 _+Create(identifier :std::string_view, token : const score::cpp::stop_token&amp;,_
 _             const SenderConfig&amp;, logging_callback : LoggingCallback,_
-_             memory_resource : score::cpp::pmr::memory_resource*) :  std::unique_ptr&lt;ISender&gt;_</panel_attributes>
+_             memory_resource : score::cpp::pmr::memory_resource*) :  score::cpp::pmr::unique_ptr&lt;ISender&gt;_</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1320</x>
-      <y>1080</y>
-      <w>80</w>
-      <h>140</h>
+      <x>1188</x>
+      <y>972</y>
+      <w>72</w>
+      <h>126</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 creates</panel_attributes>
@@ -336,27 +336,27 @@ creates</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>3470</x>
-      <y>860</y>
-      <w>690</w>
-      <h>180</h>
+      <x>3123</x>
+      <y>774</y>
+      <w>621</w>
+      <h>162</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::ReceiverFactoryImpl
 --
 
 _+Create(identifier : std::string_view , executor : concurrency::Executor&amp;,_
 _    allowed_uids : const score::cpp::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
-_    score::cpp::pmr::memory_resource* memory_resource) :  std::unique_ptr&lt;IReceiver&gt;_
+_    score::cpp::pmr::memory_resource* memory_resource) :  score::cpp::pmr::unique_ptr&lt;IReceiver&gt;_
 --</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>3170</x>
-      <y>1030</y>
-      <w>590</w>
-      <h>250</h>
+      <x>2853</x>
+      <y>927</y>
+      <w>531</w>
+      <h>225</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 creates</panel_attributes>
@@ -365,10 +365,10 @@ creates</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>880</x>
-      <y>1460</y>
-      <w>740</w>
-      <h>150</h>
+      <x>792</x>
+      <y>1314</y>
+      <w>666</w>
+      <h>135</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::NonBlockingSender
 --
@@ -386,21 +386,21 @@ creates</panel_attributes>
   <element>
     <type>com.baselet.element.old.element.Relation</type>
     <coordinates>
-      <x>1310</x>
-      <y>1280</y>
-      <w>50</w>
-      <h>200</h>
+      <x>1179</x>
+      <y>1152</y>
+      <w>44</w>
+      <h>179</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>30;30;30;180</additional_attributes>
+    <additional_attributes>27;27;27;162</additional_attributes>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2120</x>
+      <x>1908</x>
       <y>0</y>
-      <w>770</w>
-      <h>110</h>
+      <w>693</w>
+      <h>99</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::QnxResourcePath
 --
@@ -415,10 +415,10 @@ _+kMaxIdentifierLen : std::size_t_
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2630</x>
-      <y>490</y>
-      <w>940</w>
-      <h>260</h>
+      <x>2367</x>
+      <y>441</y>
+      <w>846</w>
+      <h>234</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::ResmgrReceiverTraits
 --
@@ -443,10 +443,10 @@ _    MediumMessageProcessor fMedium) : score::cpp::expected&lt;bool, score::os::
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>910</x>
-      <y>580</y>
-      <w>770</w>
-      <h>170</h>
+      <x>819</x>
+      <y>522</y>
+      <w>693</w>
+      <h>153</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::ResmgrSenderTraits
 --
@@ -466,10 +466,10 @@ _+has_non_blocking_guarantee() : bool_
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>1400</x>
-      <y>790</y>
-      <w>630</w>
-      <h>160</h>
+      <x>1260</x>
+      <y>711</y>
+      <w>567</w>
+      <h>144</h>
     </coordinates>
     <panel_attributes>Notes:
 MessagePassing is a unidirectional 1:N communication mechanism.
@@ -485,10 +485,10 @@ via Pulses.</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1010</x>
-      <y>740</y>
-      <w>60</w>
-      <h>240</h>
+      <x>909</x>
+      <y>666</y>
+      <w>54</w>
+      <h>216</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 uses</panel_attributes>
@@ -497,25 +497,25 @@ uses</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>2140</x>
-      <y>830</y>
-      <w>320</w>
-      <h>110</h>
+      <x>1926</x>
+      <y>747</y>
+      <w>360</w>
+      <h>99</h>
     </coordinates>
     <panel_attributes>Notes:
-Sender factory allows creations of both mocks 
-and production version of ISender objects 
-(uses SenderFactoryImpl internally to 
+Sender factory allows creations of both mocks
+and production version of ISender objects
+(uses SenderFactoryImpl internally to
 create ISender Objects)</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1620</x>
-      <y>100</y>
-      <w>910</w>
-      <h>500</h>
+      <x>1458</x>
+      <y>90</y>
+      <w>819</w>
+      <h>450</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;-
 </panel_attributes>
@@ -524,20 +524,20 @@ create ISender Objects)</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>2970</x>
-      <y>240</y>
-      <w>420</w>
-      <h>200</h>
+      <x>2673</x>
+      <y>216</y>
+      <w>378</w>
+      <h>180</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::ResmgrReceiverState
 --
 +[kConcurrency] : dispatch_context_t*
 +side_channel_coid_ : const std::int32_t
 
-+message_queue_mutex_ : std::mutex 
-+message_queue_ : score::memory::PmrRingBuffer&lt;MessageData&gt; 
-+message_queue_owned_ : bool 
-+allowed_uids_ : const score::cpp::pmr::vector&lt;uid_t&gt;&amp; 
++message_queue_mutex_ : std::mutex
++message_queue_ : score::memory::PmrRingBuffer&lt;MessageData&gt;
++message_queue_owned_ : bool
++allowed_uids_ : const score::cpp::pmr::vector&lt;uid_t&gt;&amp;
 --
 +ResmgrReceiverState(max_message_queue_size : std::size_t,
     side_channel_coid : std::int32_t,
@@ -549,10 +549,10 @@ create ISender Objects)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>3020</x>
-      <y>430</y>
-      <w>30</w>
-      <h>80</h>
+      <x>2718</x>
+      <y>387</y>
+      <w>27</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;-
 </panel_attributes>
@@ -561,25 +561,25 @@ create ISender Objects)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>3560</x>
-      <y>620</y>
-      <w>190</w>
-      <h>260</h>
+      <x>3204</x>
+      <y>567</y>
+      <w>198</w>
+      <h>225</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 uses</panel_attributes>
-    <additional_attributes>10.0;20.0;170.0;20.0;170.0;240.0</additional_attributes>
+    <additional_attributes>10.0;10.0;170.0;10.0;170.0;230.0</additional_attributes>
   </element>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>3960</x>
-      <y>1060</y>
-      <w>320</w>
-      <h>90</h>
+      <x>3564</x>
+      <y>999</y>
+      <w>468</w>
+      <h>81</h>
     </coordinates>
     <panel_attributes>Notes:
-ReceiverFactoryImpl creates 
+ReceiverFactoryImpl creates
 Receiver Object with ResmgrReceiverTraits/MqueueReceiverTraits
 as ChannelTraits</panel_attributes>
     <additional_attributes/>
@@ -587,10 +587,10 @@ as ChannelTraits</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>2500</x>
-      <y>100</y>
-      <w>1410</w>
-      <h>780</h>
+      <x>2250</x>
+      <y>90</y>
+      <w>1269</w>
+      <h>702</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;-
 </panel_attributes>
@@ -600,9 +600,9 @@ as ChannelTraits</panel_attributes>
     <id>UMLClass</id>
     <coordinates>
       <x>0</x>
-      <y>960</y>
-      <w>770</w>
-      <h>180</h>
+      <y>864</y>
+      <w>756</w>
+      <h>162</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::MqueueSenderTraits
 --
@@ -622,22 +622,22 @@ _+has_non_blocking_guarantee() : bool_
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>760</x>
-      <y>1020</y>
-      <w>180</w>
-      <h>40</h>
+      <x>747</x>
+      <y>918</y>
+      <w>99</w>
+      <h>36</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 uses</panel_attributes>
-    <additional_attributes>10.0;20.0;160.0;20.0</additional_attributes>
+    <additional_attributes>10.0;20.0;90.0;20.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>4150</x>
-      <y>930</y>
-      <w>210</w>
-      <h>40</h>
+      <x>3735</x>
+      <y>837</y>
+      <w>189</w>
+      <h>36</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 uses</panel_attributes>
@@ -646,10 +646,10 @@ uses</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>4340</x>
-      <y>870</y>
-      <w>770</w>
-      <h>180</h>
+      <x>3906</x>
+      <y>783</y>
+      <w>720</w>
+      <h>207</h>
     </coordinates>
     <panel_attributes>mw::com::message_passing::MqueueReceiverTraits
 --
@@ -659,7 +659,7 @@ _+open_receiver(identifier : const std::string_view ,_
 _    allowed_uids : const score::cpp::pmr::vector&lt;uid_t&gt;&amp;,_
 _   max_number_message_in_queue : const std::int32_t) : score::cpp::expected&lt;file_descriptor_type, score::os::Error&gt;_
 _+close_receiver(const file_descriptor_type file_descriptor,_
-_    const std::string_view /*identifier*/) : void_
+_    const std::string_view identifier) : void_
 _+ stop_receive(const file_descriptor_type file_descriptor) : void_
 _+receive_next(const file_descriptor_type file_descriptor,_
 _    const std::size_t thread,_
@@ -672,10 +672,10 @@ _    MediumMessageProcessor fMedium) : score::cpp::expected&lt;bool, score::os::
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1600</x>
-      <y>1080</y>
-      <w>150</w>
-      <h>80</h>
+      <x>1440</x>
+      <y>972</y>
+      <w>135</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 uses</panel_attributes>
@@ -684,28 +684,28 @@ uses</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>3310</x>
-      <y>1460</y>
-      <w>490</w>
-      <h>80</h>
+      <x>2979</x>
+      <y>1314</y>
+      <w>441</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>ReceiverConfig
 --
-+max_number_message_in_queue : std::int32_t    
++max_number_message_in_queue : std::int32_t
 +message_loop_delay : std::optional&lt;std::chrono::milliseconds&gt;</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>880</x>
-      <y>1640</y>
-      <w>590</w>
-      <h>80</h>
+      <x>792</x>
+      <y>1476</y>
+      <w>531</w>
+      <h>72</h>
     </coordinates>
     <panel_attributes>SenderConfig
 --
-+max_numbers_of_retry : std::int32_t    
++max_numbers_of_retry : std::int32_t
 +send_retry_delay : std::chrono::milliseconds
 +connect_retry_delay : std::chrono::milliseconds</panel_attributes>
     <additional_attributes/>

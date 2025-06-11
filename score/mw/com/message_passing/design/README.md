@@ -70,6 +70,7 @@ to send data at any point in time. The `Receiver` will have some OS specific que
 this queue is configured big enough for respective use-cases, thus that no messages will get lost.
 
 You can find the respective sequence diagram here:
+(Note that functions WaitWithTimeoutForChannel(), RegisterCallbackinMap() , CheckIfCallbackRegistered() and receive_and_process_next() are self calling mechanisms but not functions defined in the code.)
 
 ![Sequence View](broken_link_k/swh/ddad_score/mw/com/message_passing/design/sequence_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
 
