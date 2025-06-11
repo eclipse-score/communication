@@ -394,7 +394,10 @@ cc_library(
 cc_library(
     name = "binding_service_type_deployment",
     srcs = ["binding_service_type_deployment.cpp"],
-    hdrs = ["binding_service_type_deployment.h"],
+    hdrs = [
+        "binding_service_type_deployment.h",
+        "binding_service_type_deployment.tpp",
+    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
