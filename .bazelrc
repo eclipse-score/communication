@@ -12,7 +12,8 @@
 # *******************************************************************************
 
 # use mw/log stub implementation by default
-common --@score-baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=True
+common --@score-baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=False
+common --@score-baselibs//score/mw/log/flags:KRemote_Logging=False
 common --@score-baselibs//score/json:base_library=nlohmann
 common --//score/mw/com/flags:tracing_library=stub
 common --extra_toolchains=@gcc_toolchain//:host_gcc_12
