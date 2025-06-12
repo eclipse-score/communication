@@ -516,7 +516,8 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveSkeletonTran
 /// TransactionLogNode::Reset() currently asserts (SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE), when called while containing
 /// transactions. So in this is a DEATH_TEST ensuring that the assert is hit and program terminates.
 /// Currently test is needed for full code coverage.
-TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWhileTransactionLogContainsTransactionsAsserts)
+using TransactionLogSetRegisterFixtureDeathTest = TransactionLogSetRegisterFixture;
+TEST_F(TransactionLogSetRegisterFixtureDeathTest, CallingUnRegisterWhileTransactionLogContainsTransactionsAsserts)
 {
     WithATransactionLogSet(kNumberOfLogs);
 
