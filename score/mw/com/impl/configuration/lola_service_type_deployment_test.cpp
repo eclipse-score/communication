@@ -46,28 +46,6 @@ TEST_F(LolaServiceTypeDeploymentFixture, CanCreateFromSerializedObject)
     ExpectLolaServiceTypeDeploymentObjectsEqual(reconstructed_unit, unit);
 }
 
-TEST_F(LolaServiceTypeDeploymentFixture, ComparingSameDeploymentsReturnsTrue)
-{
-    // When comparing two LolaServiceTypeDeployments containing the same data
-    const LolaServiceTypeDeployment unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const LolaServiceTypeDeployment unit2{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const auto are_equal = unit == unit2;
-
-    // Then the result is true
-    EXPECT_TRUE(are_equal);
-}
-
-TEST_F(LolaServiceTypeDeploymentFixture, ComparingDifferentDeploymentsReturnsFalse)
-{
-    // When comparing two LolaServiceTypeDeployments containing different data
-    const LolaServiceTypeDeployment unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const LolaServiceTypeDeployment unit2{MakeLolaServiceTypeDeployment(kLolaServiceId + 1U)};
-    const auto are_equal = unit == unit2;
-
-    // Then the result is false
-    EXPECT_FALSE(are_equal);
-}
-
 using LolaServiceTypeDeploymentGetServiceElementFixture = ConfigurationStructsFixture;
 TEST_F(LolaServiceTypeDeploymentGetServiceElementFixture, ReturnsEventIdThatExistsInDeployment)
 {
@@ -160,6 +138,61 @@ const std::vector<std::tuple<LolaServiceTypeDeployment, std::string_view>> insta
 INSTANTIATE_TEST_SUITE_P(LolaServiceTypeDeploymentHashFixture,
                          LolaServiceTypeDeploymentHashFixture,
                          ::testing::ValuesIn(instance_id_to_hash_string_variations));
+
+using LolaServiceTypeDeploymentEqualityFixture = ConfigurationStructsFixture;
+TEST_F(LolaServiceTypeDeploymentEqualityFixture, ComparingSameDeploymentsReturnsTrue)
+{
+    // When comparing two LolaServiceTypeDeployments containing the same data
+    const LolaServiceTypeDeployment unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
+    const LolaServiceTypeDeployment unit2{MakeLolaServiceTypeDeployment(kLolaServiceId)};
+    const auto are_equal = unit == unit2;
+
+    // Then the result is true
+    EXPECT_TRUE(are_equal);
+}
+
+class LolaServiceTypeDeploymentEqualityParamaterisedFixture
+    : public ::testing::TestWithParam<std::pair<LolaServiceTypeDeployment, LolaServiceTypeDeployment>>
+{
+};
+
+TEST_P(LolaServiceTypeDeploymentEqualityParamaterisedFixture, DifferentDeploymentsAreNotEqual)
+{
+    // Given 2 TransactionLogIds containing different values
+    const auto [lola_service_type_deployment_1, lola_service_type_deployment_2] = GetParam();
+
+    // When comparing the two
+    const auto comparison_result = lola_service_type_deployment_1 == lola_service_type_deployment_2;
+
+    // Then the equality operator should return false
+    EXPECT_FALSE(comparison_result);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    LolaServiceTypeDeploymentEqualityParamaterisedFixture,
+    LolaServiceTypeDeploymentEqualityParamaterisedFixture,
+    ::testing::Values(std::make_pair(LolaServiceTypeDeployment{1U}, LolaServiceTypeDeployment{2U}),
+
+                      std::make_pair(LolaServiceTypeDeployment{1U,
+                                                               {{"first_event_name", LolaEventId{1U}}},
+                                                               {{"same_field_name", LolaFieldId{2U}}}},
+                                     LolaServiceTypeDeployment{1U,
+                                                               {{"second_event_name", LolaEventId{1U}}},
+                                                               {{"same_field_name", LolaFieldId{2U}}}}),
+
+                      std::make_pair(LolaServiceTypeDeployment{1U,
+                                                               {{"same_event_name", LolaEventId{100U}}},
+                                                               {{"same_field_name", LolaFieldId{2U}}}},
+                                     LolaServiceTypeDeployment{1U,
+                                                               {{"same_event_name", LolaEventId{1U}}},
+                                                               {{"same_field_name", LolaFieldId{2U}}}}),
+
+                      std::make_pair(LolaServiceTypeDeployment{1U,
+                                                               {{"same_event_name", LolaEventId{1U}}},
+                                                               {{"same_field_name", LolaFieldId{200U}}}},
+                                     LolaServiceTypeDeployment{1U,
+                                                               {{"same_event_name", LolaEventId{1U}}},
+                                                               {{"same_field_name", LolaFieldId{2U}}}})));
 
 }  // namespace
 }  // namespace score::mw::com::impl
