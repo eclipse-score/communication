@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_ELEMENT_FQ_ID_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_ELEMENT_FQ_ID_H
 
+#include "score/mw/com/impl/service_element_type.h"
+
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -31,14 +33,6 @@ class LogStream;
 
 namespace com::impl::lola
 {
-
-/// \brief enum used to differentiate between difference service element types
-enum class ServiceElementType : std::uint8_t
-{
-    INVALID = 0,
-    EVENT,
-    FIELD
-};
 
 /// \brief unique identification of a service element (event, field, method) instance within one score::mw runtime/process
 ///

@@ -37,7 +37,7 @@
 namespace score::mw::com::impl
 {
 
-template <typename ProxyServiceElementBinding, typename ProxyServiceElement, lola::ServiceElementType element_type>
+template <typename ProxyServiceElementBinding, typename ProxyServiceElement, ServiceElementType element_type>
 // "AUTOSAR C++14 A15-5-3" triggered by std::bad_variant_access.
 // Additionally the variant might be valueless_by_exception, which would also cause a std::bad_variant_access, this
 // can only happen if any of the variants throw exception during construction. Since we do not throw exceptions,

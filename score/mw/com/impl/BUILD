@@ -458,6 +458,18 @@ cc_library(
 )
 
 cc_library(
+    name = "service_element_type",
+    srcs = ["service_element_type.cpp"],
+    hdrs = ["service_element_type.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+        # "@ddad//score/mw/com:__subpackages__",
+    ],
+)
+
+cc_library(
     name = "service_discovery_client_mock",
     testonly = True,
     srcs = ["service_discovery_client_mock.cpp"],

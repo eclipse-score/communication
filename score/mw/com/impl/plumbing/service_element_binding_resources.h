@@ -29,20 +29,20 @@
 namespace score::mw::com::impl
 {
 
-template <lola::ServiceElementType element_type>
+template <ServiceElementType element_type>
 const auto& GetServiceElementId(const LolaServiceTypeDeployment& lola_service_type_deployment,
                                 const std::string_view service_element_name)
 {
     const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
     // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
-    if constexpr (element_type == lola::ServiceElementType::EVENT)
+    if constexpr (element_type == ServiceElementType::EVENT)
     {
         return GetEventId(lola_service_type_deployment, service_element_name_string);
     }
     // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
-    if constexpr (element_type == lola::ServiceElementType::FIELD)
+    if constexpr (element_type == ServiceElementType::FIELD)
     {
         return GetFieldId(lola_service_type_deployment, service_element_name_string);
     }

@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+
 #include "score/mw/log/logging.h"
 
 #include <cstdint>
