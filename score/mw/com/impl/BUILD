@@ -462,6 +462,9 @@ cc_library(
     srcs = ["service_element_type.cpp"],
     hdrs = ["service_element_type.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score-baselibs//score/mw/log",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -769,6 +772,15 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "service_element_type_test",
+    srcs = ["service_element_type_test.cpp"],
+    deps = [
+        ":service_element_type",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -835,6 +847,7 @@ cc_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
+        ":service_element_type_test",
         ":flag_owner_test",
         ":generic_proxy_test",
         ":sample_reference_tracker_test",
