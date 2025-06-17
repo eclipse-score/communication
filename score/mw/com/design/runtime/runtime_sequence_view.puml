@@ -1,0 +1,45 @@
+@startuml
+participant "<u>static:impl::Runtime</u>" as staticRuntime
+participant "<u>:impl::lola::<some class></u>" as lolaClass
+participant "singleton_instance:impl::Runtime" as runtimeInstance
+participant "<u>:impl::RuntimeBindingFactory</u>\n<<plumbing>>" as bindingFactory
+participant "<u>static:impl::lola::Runtime</u>" as staticLolaRuntime
+participant "<u>:impl::lola::Runtime</u>" as lolaRuntime
+
+activate staticRuntime
+staticRuntime -> runtimeInstance : create(Configuration&)
+activate runtimeInstance
+
+runtimeInstance -> bindingFactory : CreateBindingRuntimes(Configuration&)
+activate bindingFactory
+
+bindingFactory -> bindingFactory : check via config, which binding runtimes to create
+
+bindingFactory -> staticLolaRuntime : InitializeStaticDependencies()
+activate staticLolaRuntime
+staticLolaRuntime --> bindingFactory : return : void
+deactivate staticLolaRuntime
+
+bindingFactory -> lolaRuntime : create(Configuration&)
+bindingFactory --> runtimeInstance : return : std::pair<>("loLa", std::unique_ptr<lola::Runtime>)
+deactivate bindingFactory
+
+runtimeInstance --> staticRuntime : return : impl::Runtime instance
+deactivate runtimeInstance
+deactivate staticRuntime
+
+activate lolaClass
+lolaClass -> staticRuntime : GetBindingRuntime(BindingType::LoLa)
+activate staticRuntime
+staticRuntime --> lolaClass : return : impl::IRuntimeBinding*
+deactivate staticRuntime
+
+lolaClass -> lolaClass : dynamic_cast<impl::lola::Runtime*>(impl::IRuntimeBinding*)
+
+lolaClass -> lolaRuntime : GetLoLaMessaging()
+activate lolaRuntime
+lolaRuntime --> lolaClass : return : impl::lola:IMessagePassingService&
+deactivate lolaRuntime
+deactivate lolaClass
+
+@enduml
