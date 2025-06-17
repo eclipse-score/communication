@@ -1,0 +1,57 @@
+@startuml
+'!include ../puml-theme-score.puml
+
+participant ":OS" as OS
+participant ":Process\nara::com User" as Process
+participant "impl::Runtime:static:" as Runtime
+participant "impl::Runtime:SingletonInstance" as RuntimeInstance
+participant ":Configuration" as Configuration
+participant ":ConfigParser" as ConfigParser
+
+activate OS
+OS -> Process : create
+deactivate OS
+
+activate Process
+activate Runtime
+activate ConfigParser
+
+opt user wants to specify non-default manifest path
+    Process -> Runtime : Initialize(int argc, char** argv)
+    
+    group config creation
+        note over Runtime, ConfigParser: sequence see below
+    end group
+    
+    Runtime --> Process : return: void
+end opt
+
+Process -> Runtime : getInstance()
+
+opt config creation if singleton instance not yet created
+    Runtime -> Runtime : Initialize() //with default manifest path
+    Runtime -> ConfigParser : parse(path, const serviceTypeRegistry*)
+    ConfigParser -> Configuration : create()
+
+    
+    ConfigParser --> Runtime : return: Configuration
+    deactivate ConfigParser
+    
+    Runtime -> RuntimeInstance : create(configuration)
+end opt
+
+Runtime --> Process : return: singleton instance
+deactivate Runtime
+
+Process -> RuntimeInstance : resolve(InstanceSpecifier)
+activate RuntimeInstance
+RuntimeInstance -> Configuration : serviceInstances_.find(InstanceSpecifier)
+activate Configuration
+Configuration --> RuntimeInstance : return: Iter
+deactivate Configuration
+
+RuntimeInstance --> Process : return: InstanceIdentifierContainer
+deactivate RuntimeInstance
+deactivate Process
+
+@enduml
