@@ -1,0 +1,49 @@
+@startuml
+'!include ../puml-theme-score.puml
+
+participant ":OS" as OS
+participant ":Process\nara::com user" as Process
+participant "score::mw::com::impl::Runtime" as Runtime
+participant ":ConfigReader" as ConfigReader
+participant ":Configuration" as Configuration
+participant "singletonInstance:score::mw::com::impl::Runtime" as SingletonRuntime
+
+OS -> Process : create
+OS -> Process : main(argc, argc)
+activate Process
+
+Process -> Runtime : Initialize(argc, argv)
+activate Runtime
+
+Runtime -> ConfigReader : create
+Runtime -> ConfigReader : read(argv[i])
+activate ConfigReader
+
+ConfigReader -> Configuration: create
+ConfigReader --> Runtime : return: configuration
+destroy ConfigReader
+
+Runtime -> SingletonRuntime : new Runtime(configuration)
+
+Runtime --> Process : :return
+deactivate Runtime
+
+Process -> Runtime : getInstance()
+activate Runtime
+
+Runtime --> Process : return: singletonInstance
+deactivate Runtime
+
+Process -> SingletonRuntime : resolve(InstanceSpecifier)
+activate SingletonRuntime
+
+SingletonRuntime -> Configuration : serviceInstances.find(InstanceSpecifier)
+activate Configuration
+
+Configuration --> SingletonRuntime : return: Iter
+deactivate Configuration
+
+SingletonRuntime --> Process : return: InstanceIdentifierContainer
+deactivate SingletonRuntime
+
+@enduml
