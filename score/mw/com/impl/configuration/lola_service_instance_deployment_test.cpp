@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
 #include "score/mw/com/impl/service_element_type.h"
@@ -30,8 +31,15 @@ using ::testing::UnorderedElementsAre;
 LolaServiceInstanceId kDummyInstanceId{10U};
 const std::string kDummyEventName{"my_dummy_event"};
 const std::string kDummyFieldName{"my_dummy_field"};
-const auto kDummyLolaEventInstanceDeployment{MakeLolaEventInstanceDeployment()};
-const auto kDummyLolaFieldInstanceDeployment{MakeLolaFieldInstanceDeployment()};
+const auto kDummyLolaEventInstanceDeployment{MakeLolaEventInstanceDeployment(12U, 13U)};
+const auto kDummyLolaFieldInstanceDeployment{MakeLolaFieldInstanceDeployment(14U, 15U)};
+const auto kDummyLolaEventInstanceDeployment2{MakeLolaEventInstanceDeployment(22U, 23U)};
+const auto kDummyLolaFieldInstanceDeployment2{MakeLolaFieldInstanceDeployment(24U, 25U)};
+
+const std::unordered_map<QualityType, std::vector<uid_t>> kAllowedConsumers{{QualityType::kASIL_QM, {1, 2}}};
+const std::unordered_map<QualityType, std::vector<uid_t>> kAllowedConsumers2{{QualityType::kASIL_QM, {11, 12}}};
+const std::unordered_map<QualityType, std::vector<uid_t>> kAllowedProviders{{QualityType::kASIL_B, {3, 4}}};
+const std::unordered_map<QualityType, std::vector<uid_t>> kAllowedProviders2{{QualityType::kASIL_B, {13, 14}}};
 
 TEST(LolaServiceInstanceDeployment, construction)
 {
@@ -210,6 +218,83 @@ TEST(LolaServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMis
 
     EXPECT_DEATH(LolaServiceInstanceDeployment reconstructed_unit{serialized_unit}, ".*");
 }
+
+using LolaServiceInstanceDeploymentEqualityFixture = ConfigurationStructsFixture;
+TEST_F(LolaServiceInstanceDeploymentEqualityFixture, ComparingSameDeploymentsReturnsTrue)
+{
+    // Given two LolaServiceInstanceDeployments containing the same data
+    const LolaServiceInstanceDeployment unit{1U,
+                                             {{"same_event_name", kDummyLolaEventInstanceDeployment}},
+                                             {{"same_field_name", kDummyLolaFieldInstanceDeployment}},
+                                             true,
+                                             kAllowedConsumers,
+                                             kAllowedProviders};
+    const LolaServiceInstanceDeployment unit2{1U,
+                                              {{"same_event_name", kDummyLolaEventInstanceDeployment}},
+                                              {{"same_field_name", kDummyLolaFieldInstanceDeployment}},
+                                              true,
+                                              kAllowedConsumers,
+                                              kAllowedProviders};
+
+    // When comparing the two
+    const auto are_equal = unit == unit2;
+
+    // Then the result is true
+    EXPECT_TRUE(are_equal);
+}
+
+class LolaServiceInstanceDeploymentEqualityParamaterisedFixture
+    : public ::testing::TestWithParam<std::pair<LolaServiceInstanceDeployment, LolaServiceInstanceDeployment>>
+{
+};
+
+TEST_P(LolaServiceInstanceDeploymentEqualityParamaterisedFixture, DifferentDeploymentsAreNotEqual)
+{
+    // Given 2 TransactionLogIds containing different values
+    const auto [lola_service_type_deployment_1, lola_service_type_deployment_2] = GetParam();
+
+    // When comparing the two
+    const auto comparison_result = lola_service_type_deployment_1 == lola_service_type_deployment_2;
+
+    // Then the result is false
+    EXPECT_FALSE(comparison_result);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    LolaServiceInstanceDeploymentEqualityParamaterisedFixture,
+    LolaServiceInstanceDeploymentEqualityParamaterisedFixture,
+    ::testing::Values(
+        std::make_pair(LolaServiceInstanceDeployment{1U}, LolaServiceInstanceDeployment{2U}),
+
+        std::make_pair(LolaServiceInstanceDeployment{1U,
+                                                     {{"first_event_name", kDummyLolaEventInstanceDeployment}},
+                                                     {{"same_field_name", kDummyLolaFieldInstanceDeployment}}},
+                       LolaServiceInstanceDeployment{1U,
+                                                     {{"second_event_name", kDummyLolaEventInstanceDeployment}},
+                                                     {{"same_field_name", kDummyLolaFieldInstanceDeployment}}}),
+
+        std::make_pair(LolaServiceInstanceDeployment{1U,
+                                                     {{"same_event_name", kDummyLolaEventInstanceDeployment}},
+                                                     {{"same_field_name", kDummyLolaFieldInstanceDeployment}}},
+                       LolaServiceInstanceDeployment{1U,
+                                                     {{"same_event_name", kDummyLolaEventInstanceDeployment2}},
+                                                     {{"same_field_name", kDummyLolaFieldInstanceDeployment}}}),
+
+        std::make_pair(LolaServiceInstanceDeployment{1U,
+                                                     {{"same_event_name", kDummyLolaEventInstanceDeployment}},
+                                                     {{"same_field_name", kDummyLolaFieldInstanceDeployment}}},
+                       LolaServiceInstanceDeployment{1U,
+                                                     {{"same_event_name", kDummyLolaEventInstanceDeployment}},
+                                                     {{"same_field_name", kDummyLolaFieldInstanceDeployment2}}}),
+
+        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, true},
+                       LolaServiceInstanceDeployment{1U, {}, {}, false}),
+
+        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers2, kAllowedProviders},
+                       LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers, kAllowedProviders}),
+
+        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers, kAllowedProviders2},
+                       LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers, kAllowedProviders})));
 
 }  // namespace
 }  // namespace score::mw::com::impl

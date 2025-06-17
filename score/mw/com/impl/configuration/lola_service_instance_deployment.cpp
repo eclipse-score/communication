@@ -96,7 +96,10 @@ auto areCompatible(const LolaServiceInstanceDeployment& lhs, const LolaServiceIn
 
 bool operator==(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept
 {
-    return lhs.instance_id_ == rhs.instance_id_;
+    return ((lhs.instance_id_ == rhs.instance_id_) && (lhs.shared_memory_size_ == rhs.shared_memory_size_) &&
+            (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_) &&
+            (lhs.strict_permissions_ == rhs.strict_permissions_) && (lhs.allowed_consumer_ == rhs.allowed_consumer_) &&
+            (lhs.allowed_provider_ == rhs.allowed_provider_));
 }
 
 // In this case the constructor delegation does not provide additional code structuring because of the score::cpp::optional
@@ -133,17 +136,20 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
     }
 }
 
-LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::cpp::optional<LolaServiceInstanceId> instance_id,
-                                                             EventInstanceMapping events,
-                                                             FieldInstanceMapping fields,
-                                                             const bool strict_permission) noexcept
+LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
+    const score::cpp::optional<LolaServiceInstanceId> instance_id,
+    EventInstanceMapping events,
+    FieldInstanceMapping fields,
+    const bool strict_permission,
+    std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer,
+    std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider) noexcept
     : instance_id_{instance_id},
       shared_memory_size_{},
       events_{std::move(events)},
       fields_{std::move(fields)},
       strict_permissions_{strict_permission},
-      allowed_consumer_{},
-      allowed_provider_{}
+      allowed_consumer_{std::move(allowed_consumer)},
+      allowed_provider_{std::move(allowed_provider)}
 {
 }
 

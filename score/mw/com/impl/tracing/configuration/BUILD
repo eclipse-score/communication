@@ -69,8 +69,8 @@ cc_library(
         ":hash_helper_utility",
         ":i_tracing_filter_config",
         ":service_element_identifier_view",
-        "//score/mw/com/impl:service_element_type",
         ":trace_point_key",
+        "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
     ],
 )
@@ -225,9 +225,9 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        "//score/mw/com/impl:service_element_type",
         ":tracing_filter_config",
         "@score-baselibs//score/json",
+        "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:trace_error",
         "@score-baselibs//score/language/futurecpp",
@@ -281,8 +281,8 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":service_element_identifier",
-        "//score/mw/com/impl:service_element_type",
         ":trace_point_key",
+        "//score/mw/com/impl:service_element_type",
     ],
 )
 
