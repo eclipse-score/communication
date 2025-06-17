@@ -1,0 +1,102 @@
+@startuml lola_msg_pass_event_notify
+
+hide footbox
+
+participant "mw::com::impl::ProxyEvent" as ProxyEvent
+participant "lola::ProxyEvent" as LolaProxyEvent
+participant "<u>singleton_Proc1:lola::MessagePassing</u>" as MessagePassingProc1
+participant "<u><ASILType>:messagepassing::Receiver</u>" as ReceiverProc1
+participant "<u>:RegisterEventNotifierMsg</u>" as RegisterEventNotifierMsg
+participant "<u>:messagepassing::Sender</u>" as SenderProc1
+participant "<u><ASILType>:messagepassing::Sender</u>" as SenderProc2
+participant "<u><ASILType>:messagepassing::Receiver</u>" as ReceiverProc2
+participant "<u>:NotifyEventMsg</u>" as NotifyEventMsg
+participant "<u>singleton_Proc2:lola::MessagePassing</u>" as MessagePassingProc2
+participant "<u>:lola::SkeletonEvent</u>" as SkeletonEvent
+
+group Initialization: lola_msg_pass_initialize
+    |||
+    create ReceiverProc1
+    MessagePassingProc1 -[#white]> ReceiverProc1
+end
+
+activate MessagePassingProc2
+group Initialization: lola_msg_pass_initialize
+    |||
+    create ReceiverProc2
+    MessagePassingProc2 -[#white]> ReceiverProc2
+end
+deactivate MessagePassingProc2
+
+activate ProxyEvent
+ProxyEvent -> LolaProxyEvent : SetReceiveHandler(callback)
+activate LolaProxyEvent
+LolaProxyEvent -> MessagePassingProc1 : RegisterEventNotification(\nASILType, ElementFqId, callback, PID_Proc2)
+activate MessagePassingProc1
+opt if eventNotificationHandlers[ElementFqId].empty()\nwe only send a RegisterEventNotifierMsg to the other side, if this is the 1st registration for this ElementFqId
+    opt if not yet Sender to PID_Proc2 for ASILType exists
+        create SenderProc1
+        MessagePassingProc1 -> SenderProc1 : create("LoLa_<PID_Proc2>_<ASILType>")
+    end
+    create RegisterEventNotifierMsg
+    MessagePassingProc1 -> RegisterEventNotifierMsg : Create(ElementFqId)
+    MessagePassingProc1 -> SenderProc1 : Send(lola::RegisterEventNotifierMsg)
+    activate SenderProc1
+    SenderProc1 -> ReceiverProc2 : OS specific IPC (QNX pulse, Posix MQ)
+    activate ReceiverProc2
+    SenderProc1 --> MessagePassingProc1 : return
+    deactivate SenderProc1
+    ReceiverProc2 -> ReceiverProc2 : find registered handler
+    ReceiverProc2 -> MessagePassingProc2 : HandleRegisterEventNotifMsgQM<ASILType>(msg_payload)
+    activate MessagePassingProc2
+    deactivate ReceiverProc2
+    MessagePassingProc2 -> MessagePassingProc2 : eventNotifications[msg_payload.ElementFqId].\npush_back(PID_Proc1)
+    MessagePassingProc2 -[#white]> MessagePassingProc2
+    |||
+    deactivate MessagePassingProc2
+end
+
+MessagePassingProc1 -> MessagePassingProc1 : eventNotificationHandlers[ElementFqId].push_back(callback)
+
+MessagePassingProc1 --> LolaProxyEvent : return
+deactivate MessagePassingProc1
+LolaProxyEvent --> ProxyEvent : return
+deactivate LolaProxyEvent
+'TODO extend life line of ProxyEvent
+deactivate ProxyEvent
+
+activate SkeletonEvent
+SkeletonEvent -> MessagePassingProc2 : NotifyEvent(<ASILType>, ElementFqId)
+activate MessagePassingProc2
+MessagePassingProc2 -> MessagePassingProc2 : PID_Proc1 =\neventNotifications[ElementFqId].front
+opt if Sender for PID_Proc1 for ASILType not yet exists
+    MessagePassingProc2 -> SenderProc2 : Create
+end
+create NotifyEventMsg
+MessagePassingProc2 -> NotifyEventMsg : Create(ElementFqId)
+MessagePassingProc2 -> SenderProc2 : Send(lola::NotifyEventMsg)
+activate SenderProc2
+
+SenderProc2 -> ReceiverProc1 : OS specific IPC (QNX pulse, Posix MQ)
+activate ReceiverProc1
+SenderProc2 --> MessagePassingProc2 : return
+deactivate SenderProc2
+MessagePassingProc2 --> SkeletonEvent : return
+deactivate MessagePassingProc2
+
+ReceiverProc1 -> MessagePassingProc1 : HandleEventNotification<ASILType>(NotifyEventMsg)
+deactivate SkeletonEvent
+activate MessagePassingProc1
+MessagePassingProc1 -> MessagePassingProc1 : callback = eventNotificationHandlers[ElementFqId].front()
+deactivate ReceiverProc1
+
+MessagePassingProc1 -> LolaProxyEvent : callback()
+activate LolaProxyEvent
+deactivate MessagePassingProc1
+
+LolaProxyEvent -> ProxyEvent : callback()
+activate ProxyEvent
+ProxyEvent --> LolaProxyEvent : return
+deactivate ProxyEvent
+
+@enduml
