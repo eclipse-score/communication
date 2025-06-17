@@ -14,6 +14,7 @@
 
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
+#include "score/mw/com/impl/service_element_type.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <string>
@@ -146,7 +147,8 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementFixture, ReturnsEventThatEx
                                              {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}}};
 
     // When getting an LolaEventInstanceDeployment using the correct event name
-    const auto& event_instance_deployment = GetEventInstanceDeployment(unit, kDummyEventName);
+    const auto& event_instance_deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(unit, kDummyEventName);
 
     // Then the returned object is the same as the one in the configuration
     EXPECT_EQ(event_instance_deployment, kDummyLolaEventInstanceDeployment);
@@ -160,7 +162,8 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementFixture, ReturnsFieldThatEx
                                              {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}}};
 
     // When getting an LolaFieldInstanceDeployment using the correct field name
-    const auto& field_instance_deployment = GetFieldInstanceDeployment(unit, kDummyFieldName);
+    const auto& field_instance_deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(unit, kDummyFieldName);
 
     // Then the returned object is the same as the one in the configuration
     EXPECT_EQ(field_instance_deployment, kDummyLolaFieldInstanceDeployment);
@@ -176,7 +179,8 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingEventThat
 
     // When getting a LolaEventInstanceDeployment using an incorrect event name
     // Then the program termintaes
-    EXPECT_DEATH(score::cpp::ignore = GetEventInstanceDeployment(unit, kDummyFieldName), ".*");
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(unit, kDummyFieldName),
+                 ".*");
 }
 
 TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingFieldThatDoesNotExistInDeploymentTerminates)
@@ -188,7 +192,8 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingFieldThat
 
     // When getting a LolaFieldInstanceDeployment using an incorrect field name
     // Then the program termintaes
-    EXPECT_DEATH(score::cpp::ignore = GetFieldInstanceDeployment(unit, kDummyEventName), ".*");
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(unit, kDummyEventName),
+                 ".*");
 }
 
 TEST(LolaServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
