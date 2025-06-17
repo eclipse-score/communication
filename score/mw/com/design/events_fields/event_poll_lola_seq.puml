@@ -1,0 +1,105 @@
+@startuml event_poll_lola_seq
+
+hide footbox
+
+participant "<u>:Process</u>\nara::com application (server)" as Process1
+participant "<u>:lola::skeleton</u>" as skeleton
+participant "<u>:lola::SkeletonEvent</u>" as SkeletonEvent
+participant "<shared memory>\n<u>:lola::EventDataControl</u>" as EventDataControl
+participant "<shared memory>\n<u>:lola::EventDataStorage</u>" as EventDataStorage
+participant "<u>:lola::ProxyEvent</u>" as ProxyEvent
+participant "<u>:lola::proxy</u>" as proxy
+participant "<u>:lola::SampleDeleter</u>" as SampleDeleter
+participant "<u>:lola::SamplePtr</u>" as SamplePtr
+participant "<u>:Process</u>\nara::com application (client)" as Process2
+
+activate Process1
+|||
+group LoLa skeleton CREATE in skeleton_create_offer_seq
+    Process1 -[#white]> skeleton
+    activate skeleton
+    |||
+end
+
+group LoLa skeleton EVENT CREATE in skeleton_create_offer_seq
+    |||
+    create SkeletonEvent
+    skeleton -[#white]> SkeletonEvent
+    |||
+end
+
+group LoLa skeleton OFFER in skeleton_create_offer_seq
+    |||
+    create EventDataControl
+    Process1 -[#white]> EventDataControl
+    activate SkeletonEvent
+    create EventDataStorage
+    Process1 -[#white]> EventDataStorage
+end
+|||
+deactivate SkeletonEvent
+|||
+deactivate skeleton
+|||
+deactivate Process1
+
+group Proxy CREATE
+    |||
+    create proxy
+    Process2 -[#white]> proxy
+    activate Process2
+    create ProxyEvent
+    Process2 -[#white]> ProxyEvent
+end
+
+Process2 -> ProxyEvent: Subscribe(maxSamples)
+deactivate Process2
+activate ProxyEvent
+ref over SkeletonEvent, ProxyEvent: Message passing SubscribeEvent in\nlola_msg_pass_subscribe_seq
+ProxyEvent --> Process2: Subscribe Result (fulfill Future)
+activate Process2
+deactivate ProxyEvent
+deactivate Process2
+
+Process1 -[#white]> Process1
+activate Process1
+Process1 -> SkeletonEvent: Update(sample)
+activate SkeletonEvent
+SkeletonEvent -> SkeletonEvent: AllocateSlot()
+SkeletonEvent -> EventDataControl: std::atomic::compare_exchange\nalgo on state_slots
+activate EventDataControl
+deactivate EventDataControl
+SkeletonEvent -> SkeletonEvent: return: SlotIndex
+SkeletonEvent -> EventDataStorage: Update event_slots[SlotIndex]
+activate EventDataStorage
+deactivate EventDataStorage
+SkeletonEvent -> EventDataControl: Update timestamp state_slots[SlotIndex]
+activate EventDataControl
+deactivate EventDataControl
+ref over SkeletonEvent, ProxyEvent: Message passing NotifyEvent in\nlola_msg_pass_notify_seq
+Process1 <-- SkeletonEvent: return
+deactivate SkeletonEvent
+Process1 -[#white]> Process1
+deactivate Process1
+
+activate Process2
+Process2 -> ProxyEvent: GetNewSamples(maxSamples)
+activate ProxyEvent
+loop until maxSamples reached or no new samples available
+  ProxyEvent -> EventDataControl: referenceNextEvent(last_samples_check_timestamp)
+  activate EventDataControl
+  ProxyEvent <-- EventDataControl: return score::cpp::optional<EventSlotIndexType>
+  deactivate EventDataControl
+  create SampleDeleter
+  ProxyEvent -> SampleDeleter: Create(slot_index, EventDataControl&)
+  create SamplePtr
+  ProxyEvent -> SamplePtr: Create(SampleDeleter)
+  Process2 <- ProxyEvent: Callable F(std::move(SamplePtr))
+  Process2 --> ProxyEvent: return
+end
+Process2 <-- ProxyEvent: return sampleCount
+deactivate ProxyEvent
+Process2 -[#white]> Process2
+deactivate Process2
+
+@enduml
