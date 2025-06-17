@@ -1,6 +1,8 @@
 @startuml
 '!include ../puml-theme-score.puml
 
+hide footbox
+
 participant ":OS" as OS
 participant ":Process\nara::com user" as Process
 participant "score::mw::com::impl::Runtime" as Runtime
