@@ -25,7 +25,7 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-const ElementFqId kSomeElementFqId{1, 1, 1, ElementType::EVENT};
+const ElementFqId kSomeElementFqId{1, 1, 1, ServiceElementType::EVENT};
 constexpr pid_t PID = 777;
 constexpr MessageType test_message_id{MessageType::kNotifyEvent};
 

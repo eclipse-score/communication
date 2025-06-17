@@ -105,7 +105,7 @@ TEST_F(LolaGenericProxyEventFixture, SampleConstness)
 using LolaGenericProxyEventDeathFixture = LolaGenericProxyEventFixture;
 TEST_F(LolaGenericProxyEventDeathFixture, FailOnEventNotFound)
 {
-    const ElementFqId bad_element_fq_id{0xcdef, 0x6, 0x10, ElementType::EVENT};
+    const ElementFqId bad_element_fq_id{0xcdef, 0x6, 0x10, ServiceElementType::EVENT};
     const std::string_view bad_event_name{"BadEventName"};
 
     // When constructing a GenericProxyEvent from an unknown event

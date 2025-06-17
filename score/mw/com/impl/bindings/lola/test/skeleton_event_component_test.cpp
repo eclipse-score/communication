@@ -197,7 +197,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
 
     const std::uint8_t max_subscribers_{3U};
     const bool enforce_max_samples_{true};
-    const ElementFqId fake_element_fq_id_{1, 1, 1, ElementType::EVENT};
+    const ElementFqId fake_element_fq_id_{1, 1, 1, ServiceElementType::EVENT};
     const std::string fake_event_name_{"dummy"};
     const InstanceSpecifier instance_specifier_{InstanceSpecifier::Create("/my_dummy_instance_specifier").value()};
 
