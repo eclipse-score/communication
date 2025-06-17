@@ -14,8 +14,8 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRACING_TRACING_RUNTIME_H
 
 #include "score/mw/com/impl/configuration/configuration.h"
+#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
-#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime_binding.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
 
@@ -47,8 +47,7 @@ class TracingRuntime : public impl::tracing::ITracingRuntimeBinding
     // variables being given values that are not subsequently used"
     // Variable is used in the implementation(.cpp) file.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
-    constexpr static impl::tracing::ServiceElementType kDummyElementTypeForShmRegisterCallback{
-        impl::tracing::ServiceElementType::EVENT};
+    constexpr static impl::ServiceElementType kDummyElementTypeForShmRegisterCallback{impl::ServiceElementType::EVENT};
 
     /// \brief Constructor
     /// \param number_of_needed_tracing_slots The maximum number of tracing slots that will be required.

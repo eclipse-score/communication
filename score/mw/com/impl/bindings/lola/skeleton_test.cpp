@@ -96,7 +96,7 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, GetBindingType)
 
 TEST_F(SkeletonTestMockedSharedMemoryFixture, StopOfferCallsUnregisterShmObjectTraceCallback)
 {
-    MockFunction<void(score::cpp::string_view, impl::tracing::ServiceElementType)> unregister_shm_object_trace_callback{};
+    MockFunction<void(score::cpp::string_view, impl::ServiceElementType)> unregister_shm_object_trace_callback{};
 
     // Given a deployment based on an default LolaServiceInstanceDeployment which has QM and ASIL B support
     // ... and a skeleton constructed from it
@@ -212,8 +212,7 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
 
     using namespace memory::shared;
 
-    MockFunction<void(
-        score::cpp::string_view, impl::tracing::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
+    MockFunction<void(score::cpp::string_view, impl::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
@@ -258,8 +257,7 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
 
     using namespace memory::shared;
 
-    MockFunction<void(
-        score::cpp::string_view, impl::tracing::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
+    MockFunction<void(score::cpp::string_view, impl::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
@@ -500,10 +498,8 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCa
     auto memory_resource_mock = std::static_pointer_cast<memory::shared::SharedMemoryResourceHeapAllocatorMock>(
         data_shared_memory_resource_mock_);
 
-    MockFunction<void(score::cpp::string_view,
-                      impl::tracing::ServiceElementType,
-                      memory::shared::ISharedMemoryResource::FileDescriptor,
-                      void*)>
+    MockFunction<void(
+        score::cpp::string_view, impl::ServiceElementType, memory::shared::ISharedMemoryResource::FileDescriptor, void*)>
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment

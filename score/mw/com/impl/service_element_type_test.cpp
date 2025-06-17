@@ -88,4 +88,4 @@ TEST(ServiceElementTypeTest, OperatorStreamOutputsUnknownWhenTypeIsUnrecognized)
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl::tracing
+}  // namespace score::mw::com::impl

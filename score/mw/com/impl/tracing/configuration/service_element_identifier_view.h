@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_TRACING_CONFIGURATION_SERVICE_ELEMENT_IDENTIFIER_VIEW_H
 #define SCORE_MW_COM_IMPL_TRACING_CONFIGURATION_SERVICE_ELEMENT_IDENTIFIER_VIEW_H
 
+#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/tracing/configuration/hash_helper_for_service_element_and_se_view.h"
-#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 
 #include "score/mw/log/logging.h"
 

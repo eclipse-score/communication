@@ -115,7 +115,7 @@ TEST_P(SkeletonEventTracingParamaterisedFixture, TracePointsAreCorrectlySet)
     SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
 
     const tracing::ServiceElementIdentifierView service_element_identifier_view{
-        service_type, kEventName, tracing::ServiceElementType::EVENT};
+        service_type, kEventName, ServiceElementType::EVENT};
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
         service_element_identifier_view, score::cpp::string_view{kInstanceSpecifier.ToString()}};
 
@@ -208,7 +208,7 @@ class SkeletonEventTracingFixture : public ::testing::Test
     tracing::ServiceElementInstanceIdentifierView CreateServiceElementInstanceIdentifierView() const noexcept
     {
         const tracing::ServiceElementIdentifierView service_element_identifier_view{
-            kServiceTypeName, kEventName, tracing::ServiceElementType::EVENT};
+            kServiceTypeName, kEventName, ServiceElementType::EVENT};
         const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
             service_element_identifier_view, score::cpp::string_view{kInstanceSpecifier.ToString()}};
         return expected_service_element_instance_identifier_view;
