@@ -150,7 +150,7 @@ design
 are adjusted if source code is changed in the future.
 
 This comes with the drawback that we shall try to not place binary blobs into the repository.
-Thus, we decided to use [UMLet](https://www.umlet.com) for drawing any UML-related diagrams (it can be used on any OS).
+Thus, we decided to use [PlantUML](https://www.plantuml.com) for drawing any UML-related diagrams (it can be used on any OS).
 
 For graphics, we decided to only use SVGs.
 
