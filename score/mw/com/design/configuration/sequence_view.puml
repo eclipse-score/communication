@@ -3,28 +3,33 @@
 
 hide footbox
 
-participant ":OS" as OS
-participant ":Process\nara::com user" as Process
-participant "score::mw::com::impl::Runtime" as Runtime
-participant ":ConfigReader" as ConfigReader
-participant ":Configuration" as Configuration
-participant "singletonInstance:score::mw::com::impl::Runtime" as SingletonRuntime
+participant "<u>:OS</u>" as OS
+participant "<u>:Process</u>\nara::com user" as Process
+participant "<u>score::mw::com::impl::Runtime</u>" as Runtime
+participant "<u>:ConfigReader</u>" as ConfigReader
+participant "<u>:Configuration</u>" as Configuration
+participant "<u>singletonInstance:score::mw::com::impl::Runtime</u>" as SingletonRuntime
 
+create Process
 OS -> Process : create
 OS -> Process : main(argc, argc)
 activate Process
 
+create Runtime
 Process -> Runtime : Initialize(argc, argv)
 activate Runtime
 
+create ConfigReader
 Runtime -> ConfigReader : create
 Runtime -> ConfigReader : read(argv[i])
 activate ConfigReader
 
+create Configuration
 ConfigReader -> Configuration: create
 ConfigReader --> Runtime : return: configuration
 destroy ConfigReader
 
+create SingletonRuntime
 Runtime -> SingletonRuntime : new Runtime(configuration)
 
 Runtime --> Process : :return
