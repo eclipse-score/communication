@@ -16,9 +16,6 @@
 #include "score/json/json_parser.h"
 
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
-#include "score/mw/com/impl/service_element_type.h"
-
-#include "score/mw/log/logging.h"
 
 #include <exception>
 #include <iomanip>
@@ -150,32 +147,34 @@ bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, Ser
     return ((lhs.service_id_ == rhs.service_id_) && (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_));
 }
 
-template <ServiceElementType service_element_type, typename EventIdType, typename FieldIdType, typename ServiceIdType>
-auto GetServiceElementId(
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const EventIdType& GetEventId(
     const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
-    const std::string& service_element_name)
+    const std::string& event_name)
 {
-    const auto& service_element_type_deployments = [&binding_service_type_deployment]() -> const auto& {
-        if constexpr (service_element_type == ServiceElementType::EVENT)
-        {
-            return binding_service_type_deployment.events_;
-        }
-        if constexpr (service_element_type == ServiceElementType::FIELD)
-        {
-            return binding_service_type_deployment.fields_;
-        }
-        score::mw::log::LogFatal() << "Invalid service element type. Could not get service element ID. Terminating";
-        std::terminate();
-    }();
-
-    const auto service_element_id_it = service_element_type_deployments.find(service_element_name);
-    if (service_element_id_it == service_element_type_deployments.cend())
+    const auto event_id_it = binding_service_type_deployment.events_.find(event_name);
+    if (event_id_it == binding_service_type_deployment.events_.cend())
     {
-        score::mw::log::LogFatal() << service_element_type << "name \"" << service_element_name
+        score::mw::log::LogFatal() << "Event name \"" << event_name
                                  << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
         std::terminate();
     }
-    return service_element_id_it->second;
+    return event_id_it->second;
+}
+
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const FieldIdType& GetFieldId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
+    const std::string& field_name)
+{
+    const auto field_id_it = binding_service_type_deployment.fields_.find(field_name);
+    if (field_id_it == binding_service_type_deployment.fields_.cend())
+    {
+        score::mw::log::LogFatal() << "Field name \"" << field_name
+                                 << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
+        std::terminate();
+    }
+    return field_id_it->second;
 }
 
 }  // namespace score::mw::com::impl

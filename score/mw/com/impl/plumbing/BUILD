@@ -173,6 +173,7 @@ cc_library(
         # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":service_element_binding_resources",
         "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl:proxy_base",
         "//score/mw/com/impl/bindings/lola",
@@ -246,6 +247,7 @@ cc_library(
         # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
+        ":service_element_binding_resources",
         "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/bindings/lola",
@@ -525,6 +527,7 @@ cc_library(
     deps = [
         ":proxy_event_binding_factory",
         ":sample_allocatee_ptr",
+        ":service_element_binding_resources",
         ":skeleton_event_binding_factory",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:proxy_base",
@@ -548,6 +551,7 @@ cc_library(
     deps = [
         ":proxy_field_binding_factory",
         ":sample_allocatee_ptr",
+        ":service_element_binding_resources",
         ":skeleton_field_binding_factory",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:proxy_base",
@@ -586,6 +590,36 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/mock_binding:sample_ptr",
         "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "service_element_binding_resources",
+    srcs = ["service_element_binding_resources.cpp"],
+    hdrs = ["service_element_binding_resources.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/plumbing:__subpackages__"],
+    deps = [
+        "//score/mw/com/impl:proxy_event_binding",
+        "//score/mw/com/impl/bindings/lola:element_fq_id",
+        "//score/mw/com/impl/configuration",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "service_element_binding_resources_test",
+    srcs = [
+        "service_element_binding_resources_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        ":service_element_binding_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
     ],
 )
 
@@ -741,6 +775,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":proxy_field_binding_factory_test",
         ":proxy_service_element_binding_factory_test",
         ":runtime_binding_factory_test",
+        ":service_element_binding_resources_test",
         ":skeleton_event_binding_factory_test",
         ":skeleton_field_binding_factory_test",
         ":skeleton_service_element_binding_factory_test",

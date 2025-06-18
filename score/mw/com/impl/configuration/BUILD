@@ -406,7 +406,6 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         "@score-baselibs//score/json",
-        "//score/mw/com/impl:service_element_type",
     ],
 )
 

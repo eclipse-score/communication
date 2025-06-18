@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/plumbing/service_element_binding_resources.h"
 #include "score/mw/com/impl/skeleton_base.h"
 
 #include "score/memory/any_string_view.h"
@@ -106,9 +107,8 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                 lola_service_element_instance_deployment.max_subscribers_.value(),
                 lola_service_element_instance_deployment.enforce_max_samples_.value()};
 
-            const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
-            const auto lola_service_element_id =
-                GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_string);
+            const auto lola_service_element_id = GetServiceElementId<element_type>(
+                lola_service_type_deployment, memory::AnyStringView{service_element_name});
             const lola::ElementFqId element_fq_id{lola_service_type_deployment.service_id_,
                                                   lola_service_element_id,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),

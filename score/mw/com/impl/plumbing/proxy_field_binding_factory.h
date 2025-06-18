@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory_impl.h"
+#include "score/mw/com/impl/plumbing/service_element_binding_resources.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 

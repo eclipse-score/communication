@@ -13,8 +13,6 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H
 
-#include "score/mw/com/impl/service_element_type.h"
-
 #include "score/json/json_parser.h"
 
 #include <cstdint>
@@ -69,10 +67,15 @@ class BindingServiceTypeDeployment
     std::string hash_string_;
 };
 
-template <ServiceElementType service_element_type, typename EventIdType, typename FieldIdType, typename ServiceIdType>
-auto GetServiceElementId(
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const EventIdType& GetEventId(
     const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
-    const std::string& service_element_name);
+    const std::string& event_name);
+
+template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+const FieldIdType& GetFieldId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
+    const std::string& field_name);
 
 template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
 bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& lhs,
