@@ -15,15 +15,7 @@
 
 #include <cstdint>
 
-namespace score::mw
-{
-
-namespace log
-{
-class LogStream;
-}
-
-namespace com::impl
+namespace score::mw::com::impl
 {
 
 /// \brief enum used to differentiate between difference service element types
@@ -34,10 +26,6 @@ enum class ServiceElementType : std::uint8_t
     FIELD
 };
 
-::score::mw::log::LogStream& operator<<(::score::mw::log::LogStream& log_stream,
-                                      const ServiceElementType& service_element_type);
-
-}  // namespace com::impl
-}  // namespace score::mw
+}  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_SERVICE_ELEMENT_TYPE_H
