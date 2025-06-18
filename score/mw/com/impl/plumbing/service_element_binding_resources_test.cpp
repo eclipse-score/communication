@@ -59,6 +59,60 @@ ConfigurationStore kConfigurationStoreLolaBinding{kInstanceSpecifier,
 
 }  // namespace
 
+TEST(ServiceElementBindingResourcesGetLolaServiceTypeDeploymentTest,
+     CanGetLolaConfigFromServiceTypeDeploymentContainingLolaConfig)
+{
+    // When getting the LolaServiceTypeDeployment from a ServiceTypeDeployment containing a lola binding
+    const auto returned_lola_service_type_deployment =
+        GetLolaServiceTypeDeploymentFromServiceTypeDeployment(*kConfigurationStoreLolaBinding.service_type_deployment_);
+
+    // Then the lola binding of the ServiceTypeDeploment is returned
+    EXPECT_EQ(kConfigurationStoreLolaBinding.lola_service_type_deployment_.service_id_,
+              returned_lola_service_type_deployment.service_id_);
+    EXPECT_EQ(kConfigurationStoreLolaBinding.lola_service_type_deployment_.events_,
+              returned_lola_service_type_deployment.events_);
+    EXPECT_EQ(kConfigurationStoreLolaBinding.lola_service_type_deployment_.fields_,
+              returned_lola_service_type_deployment.fields_);
+}
+
+TEST(ServiceElementBindingResourcesGetLolaServiceTypeDeploymentDeathTest,
+     GettingLolaConfigFromServiceTypeDeploymentNotContainingLolaConfigTerminates)
+{
+    // Given a ServiceTypeDeployment which contains a blank binding
+    const ServiceTypeDeployment service_type_deployment_containing_blank{score::cpp::blank{}};
+
+    // When getting the LolaServiceTypeDeployment from the ServiceTypeDeployment
+    // Then the program terminates
+    ASSERT_DEATH(GetLolaServiceTypeDeploymentFromServiceTypeDeployment(service_type_deployment_containing_blank), ".*");
+}
+
+TEST(ServiceElementBindingResourcesGetLolaServiceInstanceDeploymentTest,
+     CanGetLolaConfigFromServiceInstanceDeploymentContainingLolaConfig)
+{
+    // When getting the LolaServiceInstanceDeployment from a ServiceInstanceDeployment containing a lola binding
+    const auto returned_lola_service_instance_deployment =
+        GetLolaServiceInstanceDeploymentFromServiceInstanceDeployment(
+            *kConfigurationStoreLolaBinding.service_instance_deployment_);
+
+    // Then the lola binding of the ServiceInstanceDeployment is returned
+    EXPECT_EQ(kConfigurationStoreLolaBinding.lola_service_instance_deployment_,
+              returned_lola_service_instance_deployment);
+}
+
+TEST(ServiceElementBindingResourcesGetLolaServiceInstanceDeploymentDeathTest,
+     GettingLolaConfigFromServiceInstanceDeploymentNotContainingLolaConfigTerminates)
+{
+    // Given a ServiceInstanceDeployment which contains a blank binding
+    const ServiceInstanceDeployment service_instance_deployment_containing_blank{
+        kServiceIdentifier, score::cpp::blank{}, kDummyQualityType, kInstanceSpecifier};
+
+    // When getting the LolaServiceInstanceDeployment from the ServiceInstanceDeployment
+    // Then the program terminates
+    ASSERT_DEATH(
+        GetLolaServiceInstanceDeploymentFromServiceInstanceDeployment(service_instance_deployment_containing_blank),
+        ".*");
+}
+
 TEST(ServiceElementBindingResourcesGetElementFqIdFromConfigTest,
      ConvertingEventLolaConfigToElementFqIdReturnsValidElementFqId)
 {

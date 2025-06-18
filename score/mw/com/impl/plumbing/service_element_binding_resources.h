@@ -27,6 +27,12 @@
 namespace score::mw::com::impl
 {
 
+const LolaServiceInstanceDeployment& GetLolaServiceInstanceDeploymentFromServiceInstanceDeployment(
+    const ServiceInstanceDeployment& instance_deployment);
+
+const LolaServiceTypeDeployment& GetLolaServiceTypeDeploymentFromServiceTypeDeployment(
+    const ServiceTypeDeployment& type_deployment);
+
 template <lola::ElementType element_type>
 lola::ElementFqId GetElementFqIdFromLolaConfig(const LolaServiceTypeDeployment& lola_service_type_deployment,
                                                const LolaServiceInstanceId lola_service_instance_id,

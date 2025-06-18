@@ -22,13 +22,11 @@
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include "score/json/json_parser.h"
-#include "score/mw/log/logging.h"
 
 #include <score/blank.hpp>
 #include <score/string_view.hpp>
 
 #include <cstdint>
-#include <exception>
 #include <string>
 #include <utility>
 #include <variant>
@@ -81,21 +79,6 @@ class ServiceInstanceDeployment
 bool operator==(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) noexcept;
 bool operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) noexcept;
 bool areCompatible(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs);
-
-template <typename ServiceInstanceDeploymentBinding>
-const ServiceInstanceDeploymentBinding& GetServiceInstanceDeploymentBinding(
-    const ServiceInstanceDeployment& service_instance_deployment)
-{
-    const auto* service_instance_deployment_binding =
-        std::get_if<ServiceInstanceDeploymentBinding>(&service_instance_deployment.bindingInfo_);
-    if (service_instance_deployment_binding == nullptr)
-    {
-        ::score::mw::log::LogFatal("lola")
-            << "Trying to get binding from ServiceInstanceDeployment which contains a different binding. Terminating.";
-        std::terminate();
-    }
-    return *service_instance_deployment_binding;
-}
 
 }  // namespace score::mw::com::impl
 

@@ -16,12 +16,10 @@
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 
 #include "score/json/json_parser.h"
-#include "score/mw/log/logging.h"
 
 #include <score/string_view.hpp>
 
 #include <cstdint>
-#include <exception>
 #include <string>
 #include <variant>
 
@@ -67,21 +65,6 @@ class ServiceTypeDeployment
 };
 
 bool operator==(const ServiceTypeDeployment& lhs, const ServiceTypeDeployment& rhs) noexcept;
-
-template <typename ServiceTypeDeploymentBinding>
-const ServiceTypeDeploymentBinding& GetServiceTypeDeploymentBinding(
-    const ServiceTypeDeployment& service_type_deployment)
-{
-    const auto* service_type_deployment_binding =
-        std::get_if<ServiceTypeDeploymentBinding>(&service_type_deployment.binding_info_);
-    if (service_type_deployment_binding == nullptr)
-    {
-        ::score::mw::log::LogFatal("lola")
-            << "Trying to get binding from ServiceTypeDeployment which contains a different binding. Terminating.";
-        std::terminate();
-    }
-    return *service_type_deployment_binding;
-}
 
 }  // namespace score::mw::com::impl
 
