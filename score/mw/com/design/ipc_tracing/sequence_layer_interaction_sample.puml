@@ -1,0 +1,49 @@
+@startuml sequence_layer_interaction_sample
+
+hide footbox
+
+participant "<u>impl::SkeletonEvent:Instance</u>" as SkeletonEvent
+participant "<u>impl::tracing::skeleton_event_tracing_helpers</u>" as TraceHelpers
+participant "<u>TraceCall_Lambda:Instance</u>" as TraceLambda
+participant "<u>impl::lola::SkeletonEvent:Instance</u>" as LolaSkeletonEvent
+participant "<u>impl::tracing::TracingRuntime:Instance</u>" as TracingRuntime
+
+-> SkeletonEvent: Send(sample_value)
+activate SkeletonEvent
+
+SkeletonEvent -> TraceHelpers : CreateTracingSendCallback(skeleton_event_tracing_data,\nskeleton_event_binding_base)
+activate TraceHelpers
+
+alt is trace point enabled == false
+  TraceHelpers --> SkeletonEvent : return empty optional<TraceCallback>
+else true
+    create TraceLambda
+    TraceHelpers -> TraceLambda : create
+    TraceHelpers --> SkeletonEvent : return optional<TraceCallback> with value
+    deactivate TraceHelpers
+end
+
+SkeletonEvent -> LolaSkeletonEvent : Send(sample_value, optional<TraceCallback>)
+activate LolaSkeletonEvent
+
+opt optional<TraceCallback>.has_value()
+    LolaSkeletonEvent -> TraceLambda : TraceCallback(SampleAllocateePtr)
+    activate TraceLambda
+
+    TraceLambda -> TracingRuntime : Trace()
+    activate TracingRuntime
+
+    TracingRuntime --> TraceLambda : return
+    deactivate TracingRuntime
+
+    TraceLambda --> LolaSkeletonEvent : return
+    deactivate TraceLambda
+end
+
+LolaSkeletonEvent --> SkeletonEvent : return
+deactivate LolaSkeletonEvent
+
+<-- SkeletonEvent : return
+deactivate SkeletonEvent
+
+@enduml
