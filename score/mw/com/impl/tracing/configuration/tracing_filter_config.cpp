@@ -12,9 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config.h"
 
-#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/tracing/configuration/hash_helper_utility.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_identifier_view.h"
+#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 
 #include "score/mw/log/logging.h"
 
@@ -394,14 +394,22 @@ std::uint16_t TracingFilterConfig::GetNumberOfTracingSlots(score::mw::com::impl:
 {
     std::unordered_set<ServiceElementIdentifierView> service_element_identifier_view_set{};
     const std::array<std::size_t, 4U> number_trace_points_list{
-        {FindNumberOfTracingSlots<SkeletonEventTracePointType>(
-             skeleton_event_trace_points_, service_element_identifier_view_set, config, ServiceElementType::EVENT),
-         FindNumberOfTracingSlots<SkeletonFieldTracePointType>(
-             skeleton_field_trace_points_, service_element_identifier_view_set, config, ServiceElementType::FIELD),
-         FindNumberOfTracingSlots<ProxyEventTracePointType>(
-             proxy_event_trace_points_, service_element_identifier_view_set, config, ServiceElementType::EVENT),
-         FindNumberOfTracingSlots<ProxyFieldTracePointType>(
-             proxy_field_trace_points_, service_element_identifier_view_set, config, ServiceElementType::FIELD)}};
+        {FindNumberOfTracingSlots<SkeletonEventTracePointType>(skeleton_event_trace_points_,
+                                                               service_element_identifier_view_set,
+                                                               config,
+                                                               tracing::ServiceElementType::EVENT),
+         FindNumberOfTracingSlots<SkeletonFieldTracePointType>(skeleton_field_trace_points_,
+                                                               service_element_identifier_view_set,
+                                                               config,
+                                                               tracing::ServiceElementType::FIELD),
+         FindNumberOfTracingSlots<ProxyEventTracePointType>(proxy_event_trace_points_,
+                                                            service_element_identifier_view_set,
+                                                            config,
+                                                            tracing::ServiceElementType::EVENT),
+         FindNumberOfTracingSlots<ProxyFieldTracePointType>(proxy_field_trace_points_,
+                                                            service_element_identifier_view_set,
+                                                            config,
+                                                            tracing::ServiceElementType::FIELD)}};
 
     const auto [number_trace_points, data_overflow_error] = score::mw::com::impl::tracing::configuration::Accumulate(
         number_trace_points_list.begin(),

@@ -126,7 +126,7 @@ class SkeletonBaseTracingFixture : public ::testing::Test
     tracing::ServiceElementInstanceIdentifierView CreateServiceElementInstanceIdentifierView() const noexcept
     {
         const tracing::ServiceElementIdentifierView service_element_identifier_view{
-            kServiceTypeName, kDummyEventName, ServiceElementType::EVENT};
+            kServiceTypeName, kDummyEventName, tracing::ServiceElementType::EVENT};
         const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
             service_element_identifier_view, score::cpp::string_view{kInstanceSpecifier.ToString()}};
         return expected_service_element_instance_identifier_view;
@@ -228,7 +228,7 @@ TEST_F(SkeletonBaseRegisterShmTracingFixture, RegisterShmObjectIsTracedIfTracing
     // and the register shm object tracing callback is called
     ASSERT_TRUE(register_shm_object_trace_callback_result.has_value());
     (*register_shm_object_trace_callback_result)(
-        kDummyEventName, ServiceElementType::EVENT, shm_object_fd, shm_memory_start_address);
+        kDummyEventName, tracing::ServiceElementType::EVENT, shm_object_fd, shm_memory_start_address);
 }
 
 TEST_F(SkeletonBaseRegisterShmTracingFixture, RegisterShmObjectIsNotTracedIfTracingForSkeletonIsDisabled)
@@ -356,7 +356,7 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsTracedIfTra
 
     // and the unregister shm object tracing callback is called
     ASSERT_TRUE(unregister_shm_object_trace_callback_result.has_value());
-    (*unregister_shm_object_trace_callback_result)(kDummyEventName, ServiceElementType::EVENT);
+    (*unregister_shm_object_trace_callback_result)(kDummyEventName, tracing::ServiceElementType::EVENT);
 }
 
 TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsNotTracedIfTracingForSkeletonIsDisabled)
@@ -461,7 +461,8 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsTracedOnDes
             EXPECT_TRUE(provided_unregister_shm_object_trace_callback_result.has_value());
 
             // And we call it after PrepareStopOffer
-            provided_unregister_shm_object_trace_callback_result.value()(kDummyEventName, ServiceElementType::EVENT);
+            provided_unregister_shm_object_trace_callback_result.value()(kDummyEventName,
+                                                                         tracing::ServiceElementType::EVENT);
             return {};
         }));
 

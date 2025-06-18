@@ -21,7 +21,7 @@ namespace
 
 const tracing::ServiceElementIdentifier kDummyServiceElementIdentifier{"my_service_type",
                                                                        "my_service_element",
-                                                                       ServiceElementType::EVENT};
+                                                                       tracing::ServiceElementType::EVENT};
 const tracing::ServiceElementIdentifierView kDummyServiceElementIdentifierView{
     kDummyServiceElementIdentifier.service_type_name.data(),
     kDummyServiceElementIdentifier.service_element_name.data(),

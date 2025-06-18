@@ -102,7 +102,7 @@ std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShm
     {
         tracing_handler = [&instance_id, &skeleton_binding, tracing_runtime](
                               score::cpp::string_view element_name,
-                              ServiceElementType element_type,
+                              tracing::ServiceElementType element_type,
                               memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
                               void* shm_memory_start_address) -> void {
             const auto instance_identifier_view = InstanceIdentifierView(instance_id);
@@ -137,8 +137,8 @@ std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> CreateUnregiste
     auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();
     if (IsTracingEnabledForInstance(tracing_runtime, events, fields))
     {
-        tracing_handler = [&instance_id, &skeleton_binding, tracing_runtime](score::cpp::string_view element_name,
-                                                                             ServiceElementType element_type) -> void {
+        tracing_handler = [&instance_id, &skeleton_binding, tracing_runtime](
+                              score::cpp::string_view element_name, tracing::ServiceElementType element_type) -> void {
             const auto instance_identifier_view = InstanceIdentifierView(instance_id);
             const auto service_std_string_view =
                 instance_identifier_view.GetServiceInstanceDeployment().service_.ToString();

@@ -2891,14 +2891,15 @@ TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTra
     EXPECT_TRUE(tracing_config.IsTracingEnabled());
 
     tracing::ServiceElementIdentifierView service_1_event{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
+        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", tracing::ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_1_field{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
+        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", tracing::ServiceElementType::FIELD};
 
     tracing::ServiceElementIdentifierView service_2_event{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
-    tracing::ServiceElementIdentifierView service_2_field{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
+        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", tracing::ServiceElementType::EVENT};
+    tracing::ServiceElementIdentifierView service_2_field{"/bmw/ncar/services/TireTemperatureService",
+                                                          "CurrentTemperatureFrontRight",
+                                                          tracing::ServiceElementType::FIELD};
 
     const auto service_1_instance_specifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();
     const auto service_2_instance_specifier = InstanceSpecifier::Create("abc/abc/TireTemperaturePort").value();
@@ -3053,14 +3054,15 @@ TEST(ConfigParserTracing, DisablingGlobalTracingReturnsFalseForAllCallsToIsServi
     EXPECT_FALSE(tracing_config.IsTracingEnabled());
 
     tracing::ServiceElementIdentifierView service_1_event{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
+        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", tracing::ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_1_field{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
+        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", tracing::ServiceElementType::FIELD};
 
     tracing::ServiceElementIdentifierView service_2_event{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
-    tracing::ServiceElementIdentifierView service_2_field{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
+        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", tracing::ServiceElementType::EVENT};
+    tracing::ServiceElementIdentifierView service_2_field{"/bmw/ncar/services/TireTemperatureService",
+                                                          "CurrentTemperatureFrontRight",
+                                                          tracing::ServiceElementType::FIELD};
 
     const auto service_1_instance_specifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();
     const auto service_2_instance_specifier = InstanceSpecifier::Create("abc/abc/TireTemperaturePort").value();
@@ -3213,14 +3215,15 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
     EXPECT_TRUE(tracing_config.IsTracingEnabled());
 
     tracing::ServiceElementIdentifierView service_1_event{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
+        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", tracing::ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_1_field{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
+        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", tracing::ServiceElementType::FIELD};
 
     tracing::ServiceElementIdentifierView service_2_event{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
-    tracing::ServiceElementIdentifierView service_2_field{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
+        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", tracing::ServiceElementType::EVENT};
+    tracing::ServiceElementIdentifierView service_2_field{"/bmw/ncar/services/TireTemperatureService",
+                                                          "CurrentTemperatureFrontRight",
+                                                          tracing::ServiceElementType::FIELD};
 
     const auto service_1_instance_specifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();
     const auto service_2_instance_specifier = InstanceSpecifier::Create("abc/abc/TireTemperaturePort").value();

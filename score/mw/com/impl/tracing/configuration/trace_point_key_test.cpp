@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/configuration/trace_point_key.h"
 
-#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_identifier_view.h"
+#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 
 #include <gtest/gtest.h>
 

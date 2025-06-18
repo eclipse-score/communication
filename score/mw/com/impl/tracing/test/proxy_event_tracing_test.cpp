@@ -133,7 +133,7 @@ class ProxyEventTracingFixture : public ::testing::Test
         tracing::ProxyEventTracePointType) const noexcept
     {
         const tracing::ServiceElementIdentifierView service_element_identifier_view{
-            kServiceTypeName, kServiceElementName, ServiceElementType::EVENT};
+            kServiceTypeName, kServiceElementName, tracing::ServiceElementType::EVENT};
         const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
             service_element_identifier_view, kInstanceSpecifierStringView};
         return expected_service_element_instance_identifier_view;
@@ -143,7 +143,7 @@ class ProxyEventTracingFixture : public ::testing::Test
         tracing::ProxyFieldTracePointType) const noexcept
     {
         const tracing::ServiceElementIdentifierView service_element_identifier_view{
-            kServiceTypeName, kServiceElementName, ServiceElementType::FIELD};
+            kServiceTypeName, kServiceElementName, tracing::ServiceElementType::FIELD};
         const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
             service_element_identifier_view, kInstanceSpecifierStringView};
         return expected_service_element_instance_identifier_view;
@@ -293,7 +293,7 @@ TEST_P(ProxyEventTracingEnabledTracePointsParamaterizedFixture, TracePointsAreCo
     const ProxyEventTracingData expected_enabled_trace_points = GetParam();
 
     const tracing::ServiceElementIdentifierView service_element_identifier_view{
-        kServiceTypeName, kServiceElementName, ServiceElementType::EVENT};
+        kServiceTypeName, kServiceElementName, tracing::ServiceElementType::EVENT};
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
         service_element_identifier_view, kInstanceSpecifierStringView};
 
@@ -341,7 +341,7 @@ TEST_P(ProxyFieldTracingEnabledTracePointsParamaterizedFixture, TracePointsAreCo
     const ProxyEventTracingData expected_enabled_trace_points = GetParam();
 
     const tracing::ServiceElementIdentifierView service_element_identifier_view{
-        kServiceTypeName, kServiceElementName, ServiceElementType::FIELD};
+        kServiceTypeName, kServiceElementName, tracing::ServiceElementType::FIELD};
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
         service_element_identifier_view, kInstanceSpecifierStringView};
 

@@ -10,18 +10,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/service_element_type.h"
-
+#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 #include "score/mw/log/logging.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace score::mw::com::impl
+namespace score::mw::com::impl::tracing
 {
 namespace
 {
-
 TEST(ServiceElementTypeTest, DefaultConstructedEnumValueIsInvalid)
 {
     // Given a default constructed ServiceElementType
@@ -71,6 +68,20 @@ TEST(ServiceElementTypeTest, OperatorStreamOutputsFieldWhenTypeIsField)
 
     // Then the output should contain the formatted ServiceElementType
     EXPECT_THAT(output, ::testing::HasSubstr("FIELD"));
+}
+
+TEST(ServiceElementTypeTest, OperatorStreamOutputsMethodWhenTypeIsMethod)
+{
+    // Given a ServiceElementType set to METHOD
+    ServiceElementType service_element_type = ServiceElementType::METHOD;
+    testing::internal::CaptureStdout();
+
+    // When streaming the ServiceElementType to a log
+    score::mw::log::LogFatal("test") << service_element_type;
+    std::string output = testing::internal::GetCapturedStdout();
+
+    // Then the output should contain the formatted ServiceElementType
+    EXPECT_THAT(output, ::testing::HasSubstr("METHOD"));
 }
 
 TEST(ServiceElementTypeTest, OperatorStreamOutputsUnknownWhenTypeIsUnrecognized)

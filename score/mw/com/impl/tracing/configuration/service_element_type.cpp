@@ -10,32 +10,32 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/service_element_type.h"
+#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 
 #include "score/mw/log/logging.h"
-
-namespace score::mw::com::impl
-{
 
 // Suppress "AUTOSAR C++14 A13-2-2" rule finding: "A binary arithmetic operator and a bitwise operator shall return
 // a “prvalue”."
 // The code here is present in single line to avoid '<<' is not a left shift operator but an overload for logging the
 // respective types. code analysis tools tend to assume otherwise hence a false positive.
 // coverity[autosar_cpp14_a13_2_2_violation]
-::score::mw::log::LogStream& operator<<(
+::score::mw::log::LogStream& score::mw::com::impl::tracing::operator<<(
     ::score::mw::log::LogStream& log_stream,
-    const ServiceElementType& service_element_type)
+    const score::mw::com::impl::tracing::ServiceElementType& service_element_type)
 {
     switch (service_element_type)
     {
-        case ServiceElementType::INVALID:
+        case score::mw::com::impl::tracing::ServiceElementType::INVALID:
             log_stream << "INVALID";
             break;
-        case ServiceElementType::EVENT:
+        case score::mw::com::impl::tracing::ServiceElementType::EVENT:
             log_stream << "EVENT";
             break;
-        case ServiceElementType::FIELD:
+        case score::mw::com::impl::tracing::ServiceElementType::FIELD:
             log_stream << "FIELD";
+            break;
+        case score::mw::com::impl::tracing::ServiceElementType::METHOD:
+            log_stream << "METHOD";
             break;
         default:
             log_stream << "UNKNOWN";
@@ -43,5 +43,3 @@ namespace score::mw::com::impl
     }
     return log_stream;
 }
-
-}  // namespace score::mw::com::impl

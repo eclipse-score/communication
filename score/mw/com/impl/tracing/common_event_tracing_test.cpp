@@ -15,7 +15,7 @@
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
-#include "score/mw/com/impl/service_element_type.h"
+#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 #include "score/mw/com/impl/tracing/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
 #include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"

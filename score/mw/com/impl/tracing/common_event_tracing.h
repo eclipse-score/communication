@@ -14,8 +14,8 @@
 #define SCORE_MW_COM_IMPL_TRACING_COMMON_EVENT_TRACING_H
 
 #include "score/mw/com/impl/instance_identifier.h"
-#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
+#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 
 #include <score/optional.hpp>
