@@ -41,13 +41,10 @@ class LolaServiceInstanceDeployment
 
     LolaServiceInstanceDeployment() = default;
     explicit LolaServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
-    explicit LolaServiceInstanceDeployment(
-        const score::cpp::optional<LolaServiceInstanceId> instance_id,
-        EventInstanceMapping events = {},
-        FieldInstanceMapping fields = {},
-        const bool strict_permission = false,
-        std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer = {},
-        std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider = {}) noexcept;
+    explicit LolaServiceInstanceDeployment(const score::cpp::optional<LolaServiceInstanceId> instance_id,
+                                           EventInstanceMapping events = {},
+                                           FieldInstanceMapping fields = {},
+                                           const bool strict_permission = false) noexcept;
 
     constexpr static std::uint32_t serializationVersion{1U};
     // Note the struct is not compliant to POD type containing non-POD member.
