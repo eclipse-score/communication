@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 
-#include "lola_service_id.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
 #include <gmock/gmock.h>
@@ -29,7 +28,6 @@ using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
 
 ServiceIdentifierType dummy_service = make_ServiceIdentifierType("foo", 1U, 0U);
-const LolaServiceId kLolaServiceId{123U};
 
 TEST(ServiceTypeDeploymentTest, CanConstructFromLolaServiceTypeDeployment)
 {
@@ -57,28 +55,6 @@ TEST_F(ServiceTypeDeploymentFixture, CanCreateFromSerializedLolaObject)
     ServiceTypeDeployment reconstructed_unit{serialized_unit};
 
     ExpectServiceTypeDeploymentObjectsEqual(reconstructed_unit, unit);
-}
-
-TEST_F(ServiceTypeDeploymentFixture, ComparingSameDeploymentsReturnsTrue)
-{
-    // When comparing two ServiceTypeDeployments containing the same data
-    const ServiceTypeDeployment unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const ServiceTypeDeployment unit2{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const auto are_equal = unit == unit2;
-
-    // Then the result is true
-    EXPECT_TRUE(are_equal);
-}
-
-TEST_F(ServiceTypeDeploymentFixture, ComparingDifferentDeploymentsReturnsFalse)
-{
-    // When comparing two ServiceTypeDeployments containing different data
-    const ServiceTypeDeployment unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const ServiceTypeDeployment unit2{MakeLolaServiceTypeDeployment(kLolaServiceId + 1U)};
-    const auto are_equal = unit == unit2;
-
-    // Then the result is false
-    EXPECT_FALSE(are_equal);
 }
 
 TEST(ServiceTypeDeploymentTest, CanCreateFromSerializedBlankObject)

@@ -64,8 +64,6 @@ class ServiceTypeDeployment
     std::string hash_string_;
 };
 
-bool operator==(const ServiceTypeDeployment& lhs, const ServiceTypeDeployment& rhs) noexcept;
-
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_CONFIGURATION_SERVICE_TYPE_DEPLOYMENT_H

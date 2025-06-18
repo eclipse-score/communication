@@ -192,13 +192,6 @@ std::string_view BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceI
     return hash_string_;
 }
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
-bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& lhs,
-                const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& rhs) noexcept
-{
-    return ((lhs.service_id_ == rhs.service_id_) && (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_));
-}
-
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H

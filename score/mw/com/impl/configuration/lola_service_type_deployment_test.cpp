@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 
-#include "lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
 #include <gmock/gmock.h>
@@ -26,8 +25,6 @@ namespace
 using ::testing::Pair;
 using ::testing::UnorderedElementsAre;
 
-const LolaServiceId kLolaServiceId{123U};
-
 using LolaServiceTypeDeploymentFixture = ConfigurationStructsFixture;
 TEST_F(LolaServiceTypeDeploymentFixture, CanCreateFromSerializedObject)
 {
@@ -38,28 +35,6 @@ TEST_F(LolaServiceTypeDeploymentFixture, CanCreateFromSerializedObject)
     LolaServiceTypeDeployment reconstructed_unit{serialized_unit};
 
     ExpectLolaServiceTypeDeploymentObjectsEqual(reconstructed_unit, unit);
-}
-
-TEST_F(LolaServiceTypeDeploymentFixture, ComparingSameDeploymentsReturnsTrue)
-{
-    // When comparing two LolaServiceTypeDeployments containing the same data
-    const LolaServiceTypeDeployment unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const LolaServiceTypeDeployment unit2{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const auto are_equal = unit == unit2;
-
-    // Then the result is true
-    EXPECT_TRUE(are_equal);
-}
-
-TEST_F(LolaServiceTypeDeploymentFixture, ComparingDifferentDeploymentsReturnsFalse)
-{
-    // When comparing two LolaServiceTypeDeployments containing different data
-    const LolaServiceTypeDeployment unit{MakeLolaServiceTypeDeployment(kLolaServiceId)};
-    const LolaServiceTypeDeployment unit2{MakeLolaServiceTypeDeployment(kLolaServiceId + 1U)};
-    const auto are_equal = unit == unit2;
-
-    // Then the result is false
-    EXPECT_FALSE(are_equal);
 }
 
 TEST(LolaServiceTypeDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
