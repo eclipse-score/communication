@@ -118,7 +118,7 @@ inline S* CreateSkeletonWrapper(const ::score::mw::com::InstanceSpecifier& insta
     }                                                                                                            \
                                                                                                                  \
     ::score::mw::com::impl::SkeletonEvent<event_type>* mw_com_gen_SkeletonWrapperClass_##uid##_##event_name##_get( \
-    uid##MwComSkeletonType* skeleton) noexcept                                                                   \
+        uid##MwComSkeletonType* skeleton) noexcept                                                               \
     {                                                                                                            \
         return &skeleton->event_name;                                                                            \
     }
