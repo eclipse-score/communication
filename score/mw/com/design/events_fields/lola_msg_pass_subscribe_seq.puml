@@ -1,0 +1,100 @@
+@startuml lola_msg_pass_subscribe_seq
+
+hide footbox
+
+participant "lola::ProxyEvent" as ProxyEvent
+participant "<u>singleton_Proc1:lola::MessagePassing</u>" as MessagePassing1
+participant "<u><ASILType>:messagepassing::Receiver</u>" as Receiver1
+participant "<u>:messagepassing::Sender</u>" as Sender1
+participant "<u>:SubscribeEventMsg</u>" as SubscribeEventMsg
+participant "<u><ASILType>:messagepassing::Receiver</u>" as Receiver2
+participant "<u>:messagepassing::Sender</u>" as Sender2
+participant "<u>:SubscribeEventResultMsg</u>" as SubscribeEventResultMsg
+participant "<u>singleton_Proc2:lola::MessagePassing</u>" as MessagePassing2
+participant "<u>:lola::SkeletonEvent</u>" as SkeletonEvent
+
+group Initialization: lola_msg_pass_initialize
+    |||
+    create Receiver1
+    MessagePassing1 -[#white]> Receiver1
+end
+
+group Initialization: lola_msg_pass_initialize
+    |||
+    create Receiver2
+    MessagePassing2 -[#white]> Receiver2
+end
+
+activate MessagePassing2
+SkeletonEvent -[#white]> SkeletonEvent
+activate SkeletonEvent
+SkeletonEvent -> MessagePassing2 : AddSubscriptionEventHandler(ASILType,\nElementFqId, this->Subscribe)
+MessagePassing2 --> SkeletonEvent : return
+deactivate MessagePassing2
+SkeletonEvent -[#white]> SkeletonEvent
+deactivate SkeletonEvent
+
+activate ProxyEvent
+ProxyEvent -> MessagePassing1 : SubscribeEvent(ASILType, ElementFqId,\nmaxSamples, PID_Proc2, callback)
+activate MessagePassing1
+
+opt if not yet Sender to PID_Proc2 for ASILType exists
+    create Sender1
+    MessagePassing1 -> Sender1 : create("LoLa_<PID_Proc2>_<ASILType>")
+end
+
+create SubscribeEventMsg
+MessagePassing1 -> SubscribeEventMsg : Create(ElementFqId, maxSamples, curCallSeqCounter++)
+
+MessagePassing1 -> MessagePassing1 : subscribeEventResultCallbacks[call_seq_no] = callback
+MessagePassing1 -> Sender1 : Send(lola::SubscribeEventMsg)
+activate Sender1
+Sender1 -> Receiver2 : OS specific IPC (QNX pulse, Posix MQ)
+activate Receiver2
+Sender1 --> MessagePassing1 : return
+deactivate Sender1
+MessagePassing1 --> ProxyEvent : return
+deactivate MessagePassing1
+deactivate ProxyEvent
+
+Receiver2 -> Receiver2 : find registered handler
+Receiver2 -> MessagePassing2 : HandleSubscribeEventMsg<ASILType>(msg_payload)
+activate MessagePassing2
+deactivate Receiver2
+
+MessagePassing2 -> MessagePassing2 : get handler:\nsubscribeHandlers[\nmsg_payload.ElementFqId]
+SkeletonEvent -[#white]> SkeletonEvent
+activate SkeletonEvent
+MessagePassing2 -> SkeletonEvent : Subscribe(ASILType, maxSamples)
+SkeletonEvent --> MessagePassing2 : return: bool
+deactivate SkeletonEvent
+
+opt if Sender for PID_Proc1 for ASILType not yet exists
+    |||
+    create Sender2
+    MessagePassing2 -> Sender2 : Create("LoLa_PID_Proc1_<ASILType>")
+end
+
+create SubscribeEventResultMsg
+MessagePassing2 -> SubscribeEventResultMsg : Create
+
+Sender2 -[#white]> Sender2
+activate Sender2
+MessagePassing2 -> Sender2 : Send(SubscribeEventResultMsg)
+Sender2 -> Receiver1 : OS specific IPC (QNX pulse, Posix MQ)
+activate Receiver1
+Sender2 --> MessagePassing2 : return
+deactivate Sender2
+deactivate MessagePassing2
+
+Receiver1 -> MessagePassing1 : HandleSubscribeEventResultMsg<ASILType>(\nSubscribeEventResultMsg)
+activate MessagePassing1
+MessagePassing1 -> MessagePassing1 : callback = subscribeEventResultCallbacks[call_seq_no]
+deactivate Receiver1
+MessagePassing1 -> ProxyEvent : callback()
+deactivate MessagePassing1
+activate ProxyEvent
+ProxyEvent -[#white]> SkeletoProxyEventn
+deactivate ProxyEvent
+
+@enduml
