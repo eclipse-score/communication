@@ -67,7 +67,7 @@ using ::testing::Matcher;
 using ::testing::Return;
 using ::testing::ReturnRef;
 
-const ElementFqId SOME_ELEMENT_FQ_ID{1, 1, 1, ServiceElementType::EVENT};
+const ElementFqId SOME_ELEMENT_FQ_ID{1, 1, 1, ElementType::EVENT};
 constexpr pid_t LOCAL_NODE_ID = 4444;
 constexpr pid_t REMOTE_NODE_ID = 763;
 constexpr pid_t NEW_REMOTE_NODE_ID = 764;

@@ -75,7 +75,7 @@ TEST(ElementFqId, ConstructingEventEnumConstructor)
     const std::uint16_t element_id{11U};
     const std::uint16_t instance_id{12U};
 
-    ElementFqId fqid(service_id, element_id, instance_id, ServiceElementType::EVENT);
+    ElementFqId fqid(service_id, element_id, instance_id, ElementType::EVENT);
 
     EXPECT_EQ(fqid.service_id_, service_id);
     EXPECT_EQ(fqid.element_id_, element_id);
@@ -89,7 +89,7 @@ TEST(ElementFqId, ConstructingFieldEnumConstructor)
     const std::uint16_t element_id{11U};
     const std::uint16_t instance_id{12U};
 
-    ElementFqId fqid(service_id, element_id, instance_id, ServiceElementType::FIELD);
+    ElementFqId fqid(service_id, element_id, instance_id, ElementType::FIELD);
 
     EXPECT_EQ(fqid.service_id_, service_id);
     EXPECT_EQ(fqid.element_id_, element_id);
@@ -157,8 +157,8 @@ TEST(ElementFqId, HashDeterministic)
 TEST(ElementFqId, HashDoesNotUseElementType)
 {
     // Given 2 ElementFqIds which have the same service, element and instance ID but different element type
-    ElementFqId fqid_1{1266, 13, 1, ServiceElementType::EVENT};
-    ElementFqId fqid_2{1266, 13, 1, ServiceElementType::FIELD};
+    ElementFqId fqid_1{1266, 13, 1, ElementType::EVENT};
+    ElementFqId fqid_2{1266, 13, 1, ElementType::FIELD};
 
     // when hashing the ElementFqIds
     std::hash<ElementFqId> hash;
@@ -205,7 +205,7 @@ TEST(ElementFqId, HashAcceptableCollisions)
 TEST(ElementFqId, ToStringEvent)
 {
     // Given an ElementFqId
-    ElementFqId fqid{1266, 13, 1, ServiceElementType::EVENT};
+    ElementFqId fqid{1266, 13, 1, ElementType::EVENT};
 
     // when calling ToString()
     const auto str = fqid.ToString();
@@ -218,7 +218,7 @@ TEST(ElementFqId, ToStringEvent)
 TEST(ElementFqId, ToStringField)
 {
     // Given an ElementFqId
-    ElementFqId fqid{1266, 13, 1, ServiceElementType::FIELD};
+    ElementFqId fqid{1266, 13, 1, ElementType::FIELD};
 
     // when calling ToString()
     const auto str = fqid.ToString();
@@ -274,8 +274,8 @@ TEST(ElementFqId, Equality_False3)
 
 TEST(ElementFqId, Equality_DoesNotUseElementType)
 {
-    ElementFqId lhs{1, 1, 1, ServiceElementType::EVENT};
-    ElementFqId rhs{1, 1, 1, ServiceElementType::FIELD};
+    ElementFqId lhs{1, 1, 1, ElementType::EVENT};
+    ElementFqId rhs{1, 1, 1, ElementType::FIELD};
 
     EXPECT_TRUE(lhs == rhs);
 }
@@ -300,18 +300,18 @@ TEST(ElementFqId, InsertionOperator_DoesNotCrash)
 
 TEST(ElementFqId, IsElementEventReturnsTrueOnlyForEventType)
 {
-    EXPECT_TRUE(IsElementEvent(ElementFqId{1, 1, 1, ServiceElementType::EVENT}));
-    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, ServiceElementType::FIELD}));
-    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, ServiceElementType::INVALID}));
-    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, static_cast<ServiceElementType>(100U)}));
+    EXPECT_TRUE(IsElementEvent(ElementFqId{1, 1, 1, ElementType::EVENT}));
+    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, ElementType::FIELD}));
+    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, ElementType::INVALID}));
+    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, static_cast<ElementType>(100U)}));
 }
 
 TEST(ElementFqId, IsElementFieldReturnsTrueOnlyForFieldType)
 {
-    EXPECT_TRUE(IsElementField(ElementFqId{1, 1, 1, ServiceElementType::FIELD}));
-    EXPECT_FALSE(IsElementField(ElementFqId{1, 1, 1, ServiceElementType::EVENT}));
-    EXPECT_FALSE(IsElementField(ElementFqId{1, 1, 1, ServiceElementType::INVALID}));
-    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, static_cast<ServiceElementType>(100U)}));
+    EXPECT_TRUE(IsElementField(ElementFqId{1, 1, 1, ElementType::FIELD}));
+    EXPECT_FALSE(IsElementField(ElementFqId{1, 1, 1, ElementType::EVENT}));
+    EXPECT_FALSE(IsElementField(ElementFqId{1, 1, 1, ElementType::INVALID}));
+    EXPECT_FALSE(IsElementEvent(ElementFqId{1, 1, 1, static_cast<ElementType>(100U)}));
 }
 
 }  // namespace

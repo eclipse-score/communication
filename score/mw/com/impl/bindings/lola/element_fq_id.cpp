@@ -25,7 +25,7 @@ ElementFqId::ElementFqId() noexcept
     : ElementFqId{std::numeric_limits<std::uint16_t>::max(),
                   std::numeric_limits<std::uint16_t>::max(),
                   std::numeric_limits<std::uint16_t>::max(),
-                  ServiceElementType::INVALID}
+                  ElementType::INVALID}
 {
 }
 
@@ -35,14 +35,13 @@ ElementFqId::ElementFqId(const std::uint16_t service_id,
                          const std::uint8_t element_type) noexcept
     // Suppress "AUTOSAR C++14 A7-2-1" rule: "An expression with enum underlying type shall only have values
     // corresponding to the enumerators of the enumeration.".
-    // The enumeration cast "element_type" to "ServiceElementType" is checked below for compliance with the enumeration
-    // range coverity[autosar_cpp14_a7_2_1_violation]
-    : ElementFqId(service_id, element_id, instance_id, static_cast<ServiceElementType>(element_type))
+    // The enumeration cast "element_type" to "ElementType" is checked below for compliance with the enumeration range
+    // coverity[autosar_cpp14_a7_2_1_violation]
+    : ElementFqId(service_id, element_id, instance_id, static_cast<ElementType>(element_type))
 {
-    if (element_type > static_cast<std::uint8_t>(ServiceElementType::FIELD))
+    if (element_type > static_cast<std::uint8_t>(ElementType::FIELD))
     {
-        score::mw::log::LogFatal("lola") << "ElementFqId::ElementFqId failed: Invalid ServiceElementType:"
-                                       << element_type;
+        score::mw::log::LogFatal("lola") << "ElementFqId::ElementFqId failed: Invalid ElementType:" << element_type;
         std::terminate();
     }
 }
@@ -50,7 +49,7 @@ ElementFqId::ElementFqId(const std::uint16_t service_id,
 ElementFqId::ElementFqId(const std::uint16_t service_id,
                          const std::uint16_t element_id,
                          const std::uint16_t instance_id,
-                         const ServiceElementType element_type) noexcept
+                         const ElementType element_type) noexcept
     : service_id_{service_id}, element_id_{element_id}, instance_id_{instance_id}, element_type_{element_type}
 {
 }
@@ -67,12 +66,12 @@ std::string ElementFqId::ToString() const noexcept
 
 bool IsElementEvent(const ElementFqId& element_fq_id) noexcept
 {
-    return element_fq_id.element_type_ == ServiceElementType::EVENT;
+    return element_fq_id.element_type_ == ElementType::EVENT;
 }
 
 bool IsElementField(const ElementFqId& element_fq_id) noexcept
 {
-    return element_fq_id.element_type_ == ServiceElementType::FIELD;
+    return element_fq_id.element_type_ == ElementType::FIELD;
 }
 
 bool operator==(const ElementFqId& lhs, const ElementFqId& rhs) noexcept

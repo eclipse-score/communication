@@ -686,7 +686,7 @@ TYPED_TEST(LolaProxyEventFixture,
 
 TYPED_TEST(LolaProxyEventDeathFixture, FailOnEventNotFound)
 {
-    const ElementFqId bad_element_fq_id{0xcdef, 0x6, 0x10, ServiceElementType::EVENT};
+    const ElementFqId bad_element_fq_id{0xcdef, 0x6, 0x10, ElementType::EVENT};
     const std::string bad_event_name{"BadEventName"};
 
     EXPECT_DEATH(score::cpp::ignore = this->GivenAProxyEvent(bad_element_fq_id, bad_event_name), ".*");

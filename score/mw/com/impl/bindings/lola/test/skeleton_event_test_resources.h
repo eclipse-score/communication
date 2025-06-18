@@ -45,7 +45,7 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
     std::uint8_t max_subscribers_{3U};
 
     const std::string service_type_name_{"foo"};
-    const ElementFqId fake_element_fq_id_{1, 1, 1, ServiceElementType::EVENT};
+    const ElementFqId fake_element_fq_id_{1, 1, 1, ElementType::EVENT};
     const std::string fake_event_name_{"dummy"};
     const InstanceSpecifier instance_specifier_{InstanceSpecifier::Create("abc/abc/TirePressurePort").value()};
 

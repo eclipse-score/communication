@@ -62,7 +62,7 @@ ConfigurationStore kConfigurationStoreLolaBinding{kInstanceSpecifier,
 TEST(ServiceElementBindingResourcesGetServiceElementIdTest, GettingEventIdWithValidEventNameReturnsValidEventId)
 {
     // When getting the EventId from a LolaServiceTypeDeployment containing that event
-    const auto actual_event_id = GetServiceElementId<lola::ServiceElementType::EVENT>(
+    const auto actual_event_id = GetServiceElementId<lola::ElementType::EVENT>(
         kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyEventName);
 
     // Then we get a valid EventId from the configuration
@@ -72,7 +72,7 @@ TEST(ServiceElementBindingResourcesGetServiceElementIdTest, GettingEventIdWithVa
 TEST(ServiceElementBindingResourcesGetServiceElementIdTest, GettingFieldIdWithValidFieldNameReturnsValidFieldId)
 {
     // When getting the FieldId from a LolaServiceTypeDeployment containing that field
-    const auto actual_field_id = GetServiceElementId<lola::ServiceElementType::FIELD>(
+    const auto actual_field_id = GetServiceElementId<lola::ElementType::FIELD>(
         kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyFieldName);
 
     // Then we get a valid FieldId from the configuration
@@ -83,7 +83,7 @@ TEST(ServiceElementBindingResourcesGetElementFqIdFromConfigDeathTest, Converting
 {
     // When getting the EventId from a LolaServiceTypeDeployment which doesn't contain that event
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<lola::ServiceElementType::EVENT>(
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<lola::ElementType::EVENT>(
                      kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyFieldName),
                  ".*");
 }
@@ -92,7 +92,7 @@ TEST(ServiceElementBindingResourcesGetElementFqIdFromConfigDeathTest, Converting
 {
     // When getting the FieldId from a LolaServiceTypeDeployment which doesn't contain that field
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<lola::ServiceElementType::FIELD>(
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<lola::ElementType::FIELD>(
                      kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyEventName),
                  ".*");
 }

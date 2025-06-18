@@ -71,8 +71,8 @@ constexpr auto kServiceInstanceUsageMarkerFile = "/tmp/mw_com_lola/partial_resta
 
 const std::string kEventName{"DummyEvent1"};
 const std::string kNonProvidedEventName{"DummyEvent2"};
-const ElementFqId kElementFqId{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
-const ElementFqId kNonProvidedElementFqId{0xcdef, 0x6, 0x10, ServiceElementType::EVENT};
+const ElementFqId kElementFqId{0xcdef, 0x5, 0x10, ElementType::EVENT};
+const ElementFqId kNonProvidedElementFqId{0xcdef, 0x6, 0x10, ElementType::EVENT};
 
 class ProxyWithRealMemFixture : public ::testing::Test
 {

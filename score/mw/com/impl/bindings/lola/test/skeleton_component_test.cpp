@@ -397,7 +397,7 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_QM)
             ElementFqId event_fqn{lola_service_type_deployment->service_id_,
                                   test::kFooEventId,
                                   test::kDefaultLolaInstanceId,
-                                  ServiceElementType::EVENT};
+                                  ElementType::EVENT};
             unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
             return {};
         }));
@@ -406,7 +406,7 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_QM)
             ElementFqId event_fqn{lola_service_type_deployment->service_id_,
                                   test::kFooFieldId,
                                   test::kDefaultLolaInstanceId,
-                                  ServiceElementType::FIELD};
+                                  ElementType::FIELD};
             unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
             return {};
         }));
@@ -457,7 +457,7 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
             ElementFqId event_fqn{lola_service_type_deployment->service_id_,
                                   test::kFooEventId,
                                   test::kDefaultLolaInstanceId,
-                                  ServiceElementType::EVENT};
+                                  ElementType::EVENT};
             unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
             return {};
         }));
@@ -466,7 +466,7 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
             ElementFqId event_fqn{lola_service_type_deployment->service_id_,
                                   test::kFooFieldId,
                                   test::kDefaultLolaInstanceId,
-                                  ServiceElementType::FIELD};
+                                  ElementType::FIELD};
             unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
             return {};
         }));

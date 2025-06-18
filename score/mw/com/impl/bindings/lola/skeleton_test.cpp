@@ -48,7 +48,7 @@ const os::Fcntl::Operation kUnlockOperation = os::Fcntl::Operation::kUnLock;
 
 std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> kEmptyRegisterShmObjectTraceCallback{};
 
-const ElementFqId kDummyElementFqId{1U, 2U, 3U, ServiceElementType::EVENT};
+const ElementFqId kDummyElementFqId{1U, 2U, 3U, ElementType::EVENT};
 void* const kDummyShmObjectBaseAddress = reinterpret_cast<void*>(static_cast<uintptr_t>(1000));
 const memory::shared::ISharedMemoryResource::FileDescriptor kDummyShmObjectFileDescriptor{55};
 
@@ -838,7 +838,7 @@ TEST_F(SkeletonGetInstanceQualityTypeFixture, CallingGetInstanceQualityTypeWithA
 }
 
 class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemoryFixture,
-                                             public WithParamInterface<ServiceElementType>
+                                             public WithParamInterface<ElementType>
 {
 };
 
@@ -864,10 +864,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmReg
 
     // when the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                          test::kFooEventId,
-                          test::kDefaultLolaInstanceId,
-                          ServiceElementType::EVENT};
+    ElementFqId event_fqn{
+        lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, ElementType::EVENT};
     auto [typed_event_data_storage_ptr, event_data_control_composite] =
         skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
 
@@ -881,9 +879,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmReg
 
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegionWasOpened)
 {
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -891,7 +889,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidASILInstanceIdentifierWithEvent()
                                                      : GetValidASILInstanceIdentifierWithField()};
 
@@ -938,9 +936,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
     InsertSkeletonTransactionLogWithValidTransactions(event_data_control_qm);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
 
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -948,7 +946,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidInstanceIdentifierWithEvent()
                                                      : GetValidInstanceIdentifierWithField()};
 
@@ -987,9 +985,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
     InsertSkeletonTransactionLogWithValidTransactions(event_data_control_asil_b);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b));
 
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -997,7 +995,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidASILInstanceIdentifierWithEvent()
                                                      : GetValidASILInstanceIdentifierWithField()};
 
@@ -1037,9 +1035,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
     InsertSkeletonTransactionLogWithInvalidTransactions(event_data_control_qm);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
 
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -1047,7 +1045,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidInstanceIdentifierWithEvent()
                                                      : GetValidInstanceIdentifierWithField()};
 
@@ -1085,9 +1083,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventDataSlotsExistAfterEventI
 {
     using namespace memory::shared;
 
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -1095,7 +1093,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventDataSlotsExistAfterEventI
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidInstanceIdentifierWithEvent()
                                                      : GetValidInstanceIdentifierWithField()};
 
@@ -1134,9 +1132,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CanAllocateSlotAfterEventIsRegister
 {
     using namespace memory::shared;
 
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -1144,7 +1142,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CanAllocateSlotAfterEventIsRegister
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidInstanceIdentifierWithEvent()
                                                      : GetValidInstanceIdentifierWithField()};
 
@@ -1181,9 +1179,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
 {
     using namespace memory::shared;
 
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -1191,7 +1189,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidInstanceIdentifierWithEvent()
                                                      : GetValidInstanceIdentifierWithField()};
 
@@ -1242,7 +1240,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
 
     constexpr std::size_t number_of_slots = 3U;
 
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
     // Given a skeleton with two events FOO_EVENT_NAME, "dumbEvent" registered
     // Note: We are using only maxSamples = 3 for these events as we base this test on a configured shm-size
@@ -1254,7 +1252,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
 
     std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_inst_depls;
     std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_inst_depls;
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, foo_event);
         events_.emplace(test::kDumbEventName, dumb_event);
@@ -1352,9 +1350,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
 
 TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId)
 {
-    const ServiceElementType element_type = GetParam();
+    const ElementType element_type = GetParam();
 
-    if (element_type == ServiceElementType::EVENT)
+    if (element_type == ElementType::EVENT)
     {
         events_.emplace(test::kFooEventName, mock_event_binding_);
     }
@@ -1362,7 +1360,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId
     {
         fields_.emplace(test::kFooEventName, mock_event_binding_);
     }
-    const InstanceIdentifier instance_identifier{element_type == ServiceElementType::EVENT
+    const InstanceIdentifier instance_identifier{element_type == ElementType::EVENT
                                                      ? GetValidInstanceIdentifierWithEvent()
                                                      : GetValidInstanceIdentifierWithField()};
 
@@ -1432,7 +1430,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
         ElementFqId event_fqn{lola_service_type_deployment->service_id_,
                               test::kFooEventId,
                               test::kDefaultLolaInstanceId,
-                              ServiceElementType::EVENT};
+                              ElementType::EVENT};
 
         // When calling register twice with the same ElementFqId
         score::cpp::ignore = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
@@ -1444,7 +1442,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
 
 INSTANTIATE_TEST_SUITE_P(SkeletonRegisterParamaterisedFixture,
                          SkeletonRegisterParamaterisedFixture,
-                         Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
+                         Values(ElementType::EVENT, ElementType::FIELD));
 
 class SkeletonCreateFixture : public Test
 {

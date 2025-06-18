@@ -56,7 +56,7 @@ auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const Insta
 {
     return CreateSkeletonServiceElement<SkeletonEventBinding<SampleType>,
                                         lola::SkeletonEvent<SampleType>,
-                                        lola::ServiceElementType::FIELD>(identifier, parent, field_name);
+                                        lola::ElementType::FIELD>(identifier, parent, field_name);
 }
 
 }  // namespace score::mw::com::impl

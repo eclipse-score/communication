@@ -263,7 +263,7 @@ ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const score::cpp::st
     std::stringstream sstream{};
     sstream << "Event name " << event_name.data() << " does not exists in event map.";
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != events.end(), sstream.str().c_str());
-    return {service_id_, event_it->second, instance_id_, ServiceElementType::EVENT};
+    return {service_id_, event_it->second, instance_id_, ElementType::EVENT};
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
