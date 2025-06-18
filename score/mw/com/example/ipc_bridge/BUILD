@@ -80,6 +80,7 @@ rust_binary(
     srcs = ["ipc_bridge.rs"],
     data = ["etc/mw_com_config.json"],
     features = ["link_std_cpp_lib"],
+    rustc_flags = ["-Clink-arg=-lstdc++"],
     deps = [
         ":lib_gen_rs",
         "//score/mw/com/impl/rust:proxy_bridge_rs",
