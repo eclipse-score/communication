@@ -49,11 +49,19 @@ crate.spec(package = "libc", version = "0.2.155")
 crate.from_specs(name = "crate_index")
 use_repo(crate, "crate_index")
 
+bazel_dep(name = "rules_boost", repo_name = "com_github_nelhage_rules_boost")
 archive_override(
     module_name = "rules_boost",
     urls = "https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz",
     strip_prefix = "rules_boost-master",
 )
+
+non_module_boost_repositories = use_extension("@com_github_nelhage_rules_boost//:boost/repositories.bzl", "non_module_dependencies")
+use_repo(
+    non_module_boost_repositories,
+    "boost",
+)
+
 
 bazel_dep(name = "download_utils", version = "1.0.1")
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
