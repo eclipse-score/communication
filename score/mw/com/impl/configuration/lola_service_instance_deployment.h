@@ -68,13 +68,6 @@ class LolaServiceInstanceDeployment
 bool areCompatible(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
 bool operator==(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
 
-const LolaEventInstanceDeployment& GetEventInstanceDeployment(
-    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
-    const std::string& event_name);
-const LolaFieldInstanceDeployment& GetFieldInstanceDeployment(
-    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
-    const std::string& field_name);
-
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_SERVICE_INSTANCE_DEPLOYMENT_H
