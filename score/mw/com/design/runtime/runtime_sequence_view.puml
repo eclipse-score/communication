@@ -1,6 +1,9 @@
 @startuml
-participant "<u>static:impl::Runtime</u>" as staticRuntime
+
+hide footbox
+
 participant "<u>:impl::lola::<some class></u>" as lolaClass
+participant "<u>static:impl::Runtime</u>" as staticRuntime
 participant "singleton_instance:impl::Runtime" as runtimeInstance
 participant "<u>:impl::RuntimeBindingFactory</u>\n<<plumbing>>" as bindingFactory
 participant "<u>static:impl::lola::Runtime</u>" as staticLolaRuntime
