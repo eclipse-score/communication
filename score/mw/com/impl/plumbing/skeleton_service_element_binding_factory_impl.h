@@ -39,6 +39,33 @@
 namespace score::mw::com::impl
 {
 
+namespace detail
+{
+
+template <ServiceElementType element_type>
+const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+                                                const std::string_view service_element_name)
+{
+    const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
+    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
+    // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
+    if constexpr (element_type == ServiceElementType::EVENT)
+    {
+        return GetEventInstanceDeployment(lola_service_instance_deployment, service_element_name_string);
+    }
+    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
+    // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
+    if constexpr (element_type == ServiceElementType::FIELD)
+    {
+        return GetFieldInstanceDeployment(lola_service_instance_deployment, service_element_name_string);
+    }
+    score::mw::log::LogFatal()
+        << "Invalid service element type. Could not get service element instance deployment. Terminating";
+    std::terminate();
+}
+
+}  // namespace detail
+
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
@@ -71,14 +98,15 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
             const auto& lola_service_instance_deployment =
                 GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
 
-            const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
-            const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
-                lola_service_instance_deployment, service_element_name_string);
+            const auto& lola_service_element_instance_deployment =
+                detail::GetServiceElementInstanceDeployment<element_type>(lola_service_instance_deployment,
+                                                                          memory::AnyStringView{service_element_name});
             const lola::SkeletonEventProperties skeleton_event_properties{
                 lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
                 lola_service_element_instance_deployment.max_subscribers_.value(),
                 lola_service_element_instance_deployment.enforce_max_samples_.value()};
 
+            const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_string);
             const lola::ElementFqId element_fq_id{lola_service_type_deployment.service_id_,

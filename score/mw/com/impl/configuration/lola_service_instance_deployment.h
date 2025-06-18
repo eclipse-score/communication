@@ -18,14 +18,9 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
-#include "score/mw/com/impl/service_element_type.h"
-
-#include "score/mw/log/logging.h"
-
 #include <score/optional.hpp>
 
 #include <cstdint>
-#include <exception>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -73,33 +68,12 @@ class LolaServiceInstanceDeployment
 bool areCompatible(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
 bool operator==(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
 
-template <ServiceElementType service_element_type>
-const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
-                                                const std::string& event_name)
-{
-    const auto& service_element_instance_deployments = [&lola_service_instance_deployment]() -> const auto& {
-        if constexpr (service_element_type == ServiceElementType::EVENT)
-        {
-            return lola_service_instance_deployment.events_;
-        }
-        if constexpr (service_element_type == ServiceElementType::FIELD)
-        {
-            return lola_service_instance_deployment.fields_;
-        }
-        score::mw::log::LogFatal()
-            << "Invalid service element type. Could not get service element instance deployment. Terminating";
-        std::terminate();
-    }();
-
-    const auto service_element_instance_deployment_it = service_element_instance_deployments.find(event_name);
-    if (service_element_instance_deployment_it == service_element_instance_deployments.cend())
-    {
-        score::mw::log::LogFatal() << service_element_type << "name \"" << event_name
-                                 << "\"does not exist in LolaServiceInstanceDeployment. Terminating.";
-        std::terminate();
-    }
-    return service_element_instance_deployment_it->second;
-}
+const LolaEventInstanceDeployment& GetEventInstanceDeployment(
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+    const std::string& event_name);
+const LolaFieldInstanceDeployment& GetFieldInstanceDeployment(
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+    const std::string& field_name);
 
 }  // namespace score::mw::com::impl
 

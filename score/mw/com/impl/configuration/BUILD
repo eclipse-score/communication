@@ -237,7 +237,6 @@ cc_library(
         ":quality_type",
         "@score-baselibs//score/json",
         "//score/mw/com/impl:error",
-        "//score/mw/com/impl:service_element_type",
         "@score-baselibs//score/language/futurecpp",
     ],
 )

@@ -183,4 +183,32 @@ bool LolaServiceInstanceDeployment::ContainsField(const std::string& field_name)
     return (fields_.find(field_name) != fields_.end());
 }
 
+const LolaEventInstanceDeployment& GetEventInstanceDeployment(
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+    const std::string& event_name)
+{
+    const auto event_instance_deployment_it = lola_service_instance_deployment.events_.find(event_name);
+    if (event_instance_deployment_it == lola_service_instance_deployment.events_.cend())
+    {
+        score::mw::log::LogFatal() << "Event name \"" << event_name
+                                 << "\"does not exist in LolaServiceInstanceDeployment. Terminating.";
+        std::terminate();
+    }
+    return event_instance_deployment_it->second;
+}
+
+const LolaFieldInstanceDeployment& GetFieldInstanceDeployment(
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+    const std::string& field_name)
+{
+    const auto field_instance_deployment_it = lola_service_instance_deployment.fields_.find(field_name);
+    if (field_instance_deployment_it == lola_service_instance_deployment.fields_.cend())
+    {
+        score::mw::log::LogFatal() << "Field name \"" << field_name
+                                 << "\" does not exist in LolaServiceInstanceDeployment. Terminating.";
+        std::terminate();
+    }
+    return field_instance_deployment_it->second;
+}
+
 }  // namespace score::mw::com::impl
