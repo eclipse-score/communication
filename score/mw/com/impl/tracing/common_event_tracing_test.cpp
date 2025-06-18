@@ -63,7 +63,7 @@ class CommonEventTracingFixture : public ::testing::Test
     ServiceElementInstanceIdentifierView service_element_instance_identifier_view_{
         GetServiceElementInstanceIdentifierView(
             kConfigStore.GetInstanceIdentifier(),
-            static_cast<score::cpp::string_view>(memory::AnyStringView{kServiceElementName}),
+            score::cpp::string_view{kServiceElementName.data(), kServiceElementName.size()},
             kServiceElementType)};
     TracingRuntime::TracePointType trace_point_{ProxyEventTracePointType::SET_RECEIVE_HANDLER};
     BindingType binding_type_{BindingType::kLoLa};

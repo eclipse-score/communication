@@ -101,11 +101,9 @@ void ErrorIfFound(const score::json::Object::const_iterator& iterator_to_element
 
     if (iterator_to_element != json_obj.end())
     {
-        mw::log::LogFatal() << static_cast<std::string_view>("Parsing an element ")
-                            << (iterator_to_element->first.GetAsStringView())
-                            << static_cast<std::string_view>(" which is not currently supported.")
-                            << static_cast<std::string_view>(
-                                   " Remove this element from the configuration. Aborting!\n");
+        mw::log::LogFatal() << "Parsing an element " << (iterator_to_element->first.GetAsStringView())
+                            << " which is not currently supported."
+                            << " Remove this element from the configuration. Aborting!\n";
 
         // Abortion call tolerated. See Assumptions of Use in mw/com/design/README.md
         std::terminate();

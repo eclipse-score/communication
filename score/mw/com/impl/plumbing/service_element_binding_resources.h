@@ -38,7 +38,7 @@ lola::ElementFqId GetElementFqIdFromLolaConfig(const LolaServiceTypeDeployment& 
                                                const LolaServiceInstanceId lola_service_instance_id,
                                                const std::string_view service_element_name)
 {
-    const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
+    const std::string service_element_name_string{service_element_name};
 
     // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.

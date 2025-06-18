@@ -31,16 +31,17 @@ namespace score::mw::com::impl::tracing
 {
 namespace
 {
+using std::string_view_literals::operator""sv;
 
-constexpr auto kServicesKey = static_cast<std::string_view>("services");
-constexpr auto kShortnamePathKey = static_cast<std::string_view>("shortname_path");
-constexpr auto kEventsKey = static_cast<std::string_view>("events");
-constexpr auto kFieldsKey = static_cast<std::string_view>("fields");
-constexpr auto kMethodsKey = static_cast<std::string_view>("methods");
-constexpr auto kShortnameKey = static_cast<std::string_view>("shortname");
-constexpr auto kNotifierKey = static_cast<std::string_view>("notifier");
-constexpr auto kGetterKey = static_cast<std::string_view>("getter");
-constexpr auto kSetterKey = static_cast<std::string_view>("setter");
+constexpr auto kServicesKey = "services"sv;
+constexpr auto kShortnamePathKey = "shortname_path"sv;
+constexpr auto kEventsKey = "events"sv;
+constexpr auto kFieldsKey = "fields"sv;
+constexpr auto kMethodsKey = "methods"sv;
+constexpr auto kShortnameKey = "shortname"sv;
+constexpr auto kNotifierKey = "notifier"sv;
+constexpr auto kGetterKey = "getter"sv;
+constexpr auto kSetterKey = "setter"sv;
 
 /// \brief List of json property names from the tracing filter config json file which are not currently implemented.
 constexpr std::array<const std::string_view, 2U> service_element_notifier_filter_properties_not_implemented_array{
