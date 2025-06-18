@@ -280,7 +280,7 @@ uses</panel_attributes>
 +Runtime(config : const Configuration&amp;)
 +GetBindingType() : BindingType
 +GetLolaMessaging() : lola::IMessagePassingService&amp;
-+HasAsilBSupport() : bool 
++HasAsilBSupport() : bool
 +GetMessagePassingCfg(asil_level : const QualityType) : MessagePassingFacade::AsilSpecificCfg</panel_attributes>
     <additional_attributes/>
   </element>
@@ -310,7 +310,7 @@ m2=1</panel_attributes>
 
 +RegisterMessageReceivedCallbacks(QualityType, message_passing::IReceiver&amp;) : void
 +NotifyEvent(QualityType, ElementFqId) : void
-+RegisterEventNotification(QualityType, ElementFqId, IMessagePassingService::EventUpdateNotificationHandler, pid_t) 
++RegisterEventNotification(QualityType, ElementFqId, IMessagePassingService::EventUpdateNotificationHandler, pid_t)
         : IMessagePassingService::HandlerRegistrationNoType
 +RegisterEventNotification(ASILType, ElementFqId, std::weak_ptr&lt;ScopedEventReceiveHandler&gt;, pid_t): RegistrationHandle
 +UnregisterEventNotification(QualityType, ElementFqId, IMessagePassingService::HandlerRegistrationNoType, pid_t) : void
@@ -774,7 +774,7 @@ uses</panel_attributes>
     <panel_attributes>mw::com::impl::lola::IRuntime
 --
 +GetLolaMessaging() : lola::IMessagePassingService&amp;
-+HasAsilBSupport() : bool 
++HasAsilBSupport() : bool
 </panel_attributes>
     <additional_attributes/>
   </element>
