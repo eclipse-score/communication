@@ -76,7 +76,7 @@ inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyEventBindingFactoryIm
 {
     return CreateProxyServiceElement<ProxyEventBinding<SampleType>,
                                      lola::ProxyEvent<SampleType>,
-                                     ServiceElementType::EVENT>(parent, event_name);
+                                     lola::ServiceElementType::EVENT>(parent, event_name);
 }
 
 }  // namespace score::mw::com::impl

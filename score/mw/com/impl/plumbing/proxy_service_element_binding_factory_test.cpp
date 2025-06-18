@@ -104,11 +104,12 @@ class ProxyServiceElementBindingFactoryParamaterisedFixture : public lola::Proxy
         switch (service_element_type_)
         {
             case ServiceElementTypes::PROXY_EVENT:
-                return lola::ElementFqId{kServiceId, kDummyEventId, kInstanceId, ServiceElementType::EVENT};
+                return lola::ElementFqId{kServiceId, kDummyEventId, kInstanceId, lola::ServiceElementType::EVENT};
             case ServiceElementTypes::PROXY_FIELD:
-                return lola::ElementFqId{kServiceId, kDummyFieldId, kInstanceId, ServiceElementType::FIELD};
+                return lola::ElementFqId{kServiceId, kDummyFieldId, kInstanceId, lola::ServiceElementType::FIELD};
             case ServiceElementTypes::GENERIC_PROXY_EVENT:
-                return lola::ElementFqId{kServiceId, kDummyGenericProxyId, kInstanceId, ServiceElementType::EVENT};
+                return lola::ElementFqId{
+                    kServiceId, kDummyGenericProxyId, kInstanceId, lola::ServiceElementType::EVENT};
             default:
                 // This should never be reached since we assert the value of element_type_ in service_element_type_()
                 std::terminate();

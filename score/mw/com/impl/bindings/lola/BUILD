@@ -362,7 +362,6 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl:service_element_type",
         "@score-baselibs//score/mw/log",
     ],
 )
