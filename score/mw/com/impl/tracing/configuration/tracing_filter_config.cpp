@@ -25,33 +25,15 @@
 namespace score::mw::com::impl::tracing
 {
 
-namespace detail_tracing_filter_config
-{
-
-bool CompareStringWithStringView::operator()(const score::cpp::string_view lhs_view,
-                                             const std::string& rhs_string) const noexcept
-{
-    return lhs_view < score::cpp::string_view{rhs_string.data(), rhs_string.size()};
-}
-
-bool CompareStringWithStringView::operator()(const std::string& lhs_string,
-                                             const score::cpp::string_view rhs_view) const noexcept
-{
-    return score::cpp::string_view{lhs_string.data(), lhs_string.size()} < rhs_view;
-}
-
-}  // namespace detail_tracing_filter_config
-
 namespace
 {
 
-using CompareStringWithStringView = detail_tracing_filter_config::CompareStringWithStringView;
 using InstanceSpecifierView = ITracingFilterConfig::InstanceSpecifierView;
 
 const score::cpp::string_view GetOrInsertStringInSet(const score::cpp::string_view key,
-                                              std::set<std::string, CompareStringWithStringView>& search_set) noexcept
+                                              std::set<std::string, std::less<>>& search_set) noexcept
 {
-    const auto find_result = search_set.find(key);
+    const auto find_result = search_set.find(std::string_view{key.data(), key.size()});
     const bool does_string_already_exist{find_result != search_set.end()};
     if (does_string_already_exist)
     {
@@ -94,7 +76,7 @@ void AddTracePointToMap(score::cpp::string_view service_type,
                         InstanceSpecifierView instance_specifier,
                         TracePointType trace_point_type,
                         std::unordered_map<TracePointKey, std::set<InstanceSpecifierView>>& trace_point_map,
-                        std::set<std::string, CompareStringWithStringView>& config_names) noexcept
+                        std::set<std::string, std::less<>>& config_names) noexcept
 {
     if (trace_point_type == TracePointType::INVALID)
     {

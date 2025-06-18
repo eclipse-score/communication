@@ -26,23 +26,6 @@
 namespace score::mw::com::impl::tracing
 {
 
-namespace detail_tracing_filter_config
-{
-
-class CompareStringWithStringView
-{
-  public:
-    using is_transparent = void;
-    bool operator()(const std::string& lhs, const std::string& rhs) const noexcept
-    {
-        return lhs < rhs;
-    }
-    bool operator()(const score::cpp::string_view lhs_view, const std::string& rhs_string) const noexcept;
-    bool operator()(const std::string& lhs_string, const score::cpp::string_view rhs_view) const noexcept;
-};
-
-}  // namespace detail_tracing_filter_config
-
 class TracingFilterConfig : public ITracingFilterConfig
 {
   public:
@@ -83,7 +66,7 @@ class TracingFilterConfig : public ITracingFilterConfig
     std::uint16_t GetNumberOfTracingSlots(score::mw::com::impl::Configuration& config) const noexcept override;
 
   private:
-    std::set<std::string, detail_tracing_filter_config::CompareStringWithStringView> config_names_;
+    std::set<std::string, std::less<>> config_names_;
 
     using TracePointMapType = std::unordered_map<TracePointKey, std::set<InstanceSpecifierView>>;
     TracePointMapType skeleton_event_trace_points_;
