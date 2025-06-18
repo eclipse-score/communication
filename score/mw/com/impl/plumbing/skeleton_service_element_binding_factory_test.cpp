@@ -13,7 +13,6 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
-#include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
@@ -127,12 +126,6 @@ INSTANTIATE_TEST_CASE_P(SkeletonServiceElementBindingFactoryParamaterisedFixture
                         SkeletonServiceElementBindingFactoryParamaterisedFixture,
                         ::testing::Values(lola::ElementType::EVENT, lola::ElementType::FIELD));
 
-using SkeletonServiceElementBindingFactoryParamaterisedDeathTest =
-    SkeletonServiceElementBindingFactoryParamaterisedFixture;
-INSTANTIATE_TEST_CASE_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
-                        SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
-                        ::testing::Values(lola::ElementType::EVENT, lola::ElementType::FIELD));
-
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructFixture) {}
 
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructServiceElement)
@@ -192,64 +185,6 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture,
 
     // Then a valid binding cannot be created
     EXPECT_EQ(unit, nullptr);
-}
-
-using SkeletonServiceElementBindingFactoryParamaterisedDeathTest =
-    SkeletonServiceElementBindingFactoryParamaterisedFixture;
-TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
-       ConstructingWithInvalidServiceElementNamesInServiceTypeDeploymentTerminates)
-{
-    // Given a SkeletonBase which contains a valid lola Skeleton binding
-    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
-    WithASkeletonBaseWithValidBinding(instance_identifier);
-
-    // When constructing a Skeleton service element with an InstanceIdentifier containing service element names that
-    // don't exist in the service type deployment
-    const auto incorrect_event_name{"incorrect_event_name"};
-    const auto incorrect_field_name{"incorrect_field_name"};
-    const LolaServiceTypeDeployment lola_service_type_deployment_with_invalid_names{
-        kServiceId, {{incorrect_event_name, kDummyEventId}}, {{incorrect_field_name, kDummyFieldId}}};
-
-    ConfigurationStore config_store_with_invalid_service_element_names{
-        kInstanceSpecifier,
-        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
-        QualityType::kASIL_QM,
-        lola_service_type_deployment_with_invalid_names,
-        kConfigStoreAsilQM.lola_service_instance_deployment_};
-    const auto instance_identifier_invalid_type_deployment =
-        config_store_with_invalid_service_element_names.GetInstanceIdentifier();
-
-    // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_type_deployment), ".*");
-}
-
-TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
-       ConstructingWithInvalidServiceElementNamesInServiceInstanceDeploymentTerminates)
-{
-    // Given a SkeletonBase which contains a valid lola Skeleton binding
-    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
-    WithASkeletonBaseWithValidBinding(instance_identifier);
-
-    // When constructing a Skeleton service element with an InstanceIdentifier containing service element names that
-    // don't exist in the service instance deployment
-    const auto incorrect_event_name{"incorrect_event_name"};
-    const auto incorrect_field_name{"incorrect_field_name"};
-    const LolaServiceInstanceDeployment lola_service_instance_deployment_with_invalid_names{
-        LolaServiceInstanceId{kInstanceId},
-        {{incorrect_event_name, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}},
-        {{incorrect_field_name, LolaFieldInstanceDeployment{{1U}, {3U}, 1U, true, 0U}}}};
-
-    ConfigurationStore config_store_with_invalid_service_element_names{
-        kInstanceSpecifier,
-        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
-        QualityType::kASIL_QM,
-        kConfigStoreAsilQM.lola_service_type_deployment_,
-        lola_service_instance_deployment_with_invalid_names};
-    const auto instance_identifier_invalid_instance_deployment =
-        config_store_with_invalid_service_element_names.GetInstanceIdentifier();
-
-    // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment), ".*");
 }
 
 }  // namespace

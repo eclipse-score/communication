@@ -14,9 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_SERVICE_ELEMENT_BINDING_RESOURCES_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
-#include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
@@ -30,23 +28,29 @@ namespace score::mw::com::impl
 {
 
 template <lola::ElementType element_type>
-const auto& GetServiceElementId(const LolaServiceTypeDeployment& lola_service_type_deployment,
-                                const std::string_view service_element_name)
+lola::ElementFqId GetElementFqIdFromLolaConfig(const LolaServiceTypeDeployment& lola_service_type_deployment,
+                                               const LolaServiceInstanceId lola_service_instance_id,
+                                               const std::string_view service_element_name)
 {
     const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
+
     // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
     if constexpr (element_type == lola::ElementType::EVENT)
     {
-        return GetEventId(lola_service_type_deployment, service_element_name_string);
+        const auto event_id = lola_service_type_deployment.events_.at(service_element_name_string);
+        return lola::ElementFqId{
+            lola_service_type_deployment.service_id_, event_id, lola_service_instance_id.GetId(), element_type};
     }
     // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
     if constexpr (element_type == lola::ElementType::FIELD)
     {
-        return GetFieldId(lola_service_type_deployment, service_element_name_string);
+        const auto field_id = lola_service_type_deployment.fields_.at(service_element_name_string);
+        return lola::ElementFqId{
+            lola_service_type_deployment.service_id_, field_id, lola_service_instance_id.GetId(), element_type};
     }
-    score::mw::log::LogFatal() << "Invalid service element type. Could not get service element ID. Terminating";
+    score::mw::log::LogFatal() << "Invalid service element type. Could not get ElementFqId from config. Terminating";
     std::terminate();
 }
 
