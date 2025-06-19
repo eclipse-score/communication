@@ -347,7 +347,6 @@ cc_gtest_unit_test(
     deps = [
         ":common_event_tracing",
         ":tracing_runtime_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/tracing/test:runtime_mock_guard",
     ],
@@ -360,7 +359,6 @@ cc_gtest_unit_test(
     deps = [
         ":skeleton_event_tracing",
         ":tracing_runtime_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_mock",

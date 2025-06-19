@@ -16,10 +16,10 @@
 #include "score/json/json_parser.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl

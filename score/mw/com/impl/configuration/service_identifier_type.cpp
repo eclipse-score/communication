@@ -14,9 +14,8 @@
 
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 
-#include <score/string_view.hpp>
-
 #include <exception>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -47,7 +46,7 @@ ServiceIdentifierType::ServiceIdentifierType(std::string serviceTypeName,
 
 ServiceIdentifierType::ServiceIdentifierType(const score::json::Object& json_object) noexcept
     : ServiceIdentifierType(
-          GetValueFromJson<score::cpp::string_view>(json_object, kServiceTypeKeyServIdentType).data(),
+          GetValueFromJson<std::string_view>(json_object, kServiceTypeKeyServIdentType).data(),
           static_cast<ServiceVersionType>(GetValueFromJson<json::Object>(json_object, kVersionKeyServIdentType)))
 {
     const auto serialization_version =
@@ -74,17 +73,16 @@ auto ServiceIdentifierType::Serialize() const noexcept -> score::json::Object
 
 auto operator==(const ServiceIdentifierType& lhs, const ServiceIdentifierType& rhs) noexcept -> bool
 {
-    return (((score::cpp::string_view{lhs.serviceTypeName_} == score::cpp::string_view{rhs.serviceTypeName_}) &&
-             (lhs.version_ == rhs.version_)));
+    return (((lhs.serviceTypeName_ == rhs.serviceTypeName_) && (lhs.version_ == rhs.version_)));
 }
 
 auto operator<(const ServiceIdentifierType& lhs, const ServiceIdentifierType& rhs) noexcept -> bool
 {
-    if (score::cpp::string_view{lhs.serviceTypeName_} == score::cpp::string_view{rhs.serviceTypeName_})
+    if (lhs.serviceTypeName_ == rhs.serviceTypeName_)
     {
         return lhs.version_ < rhs.version_;
     }
-    return score::cpp::string_view{lhs.serviceTypeName_} < score::cpp::string_view{rhs.serviceTypeName_};
+    return lhs.serviceTypeName_ < rhs.serviceTypeName_;
 }
 
 }  // namespace score::mw::com::impl

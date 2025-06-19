@@ -22,9 +22,9 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include <score/assert.hpp>
-#include <score/string_view.hpp>
 
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -37,7 +37,7 @@ class SkeletonEventBindingFactoryImpl : public ISkeletonEventBindingFactory<Samp
   public:
     std::unique_ptr<SkeletonEventBinding<SampleType>> Create(const InstanceIdentifier& identifier,
                                                              SkeletonBase& parent,
-                                                             const score::cpp::string_view event_name) noexcept override;
+                                                             const std::string_view event_name) noexcept override;
 };
 
 template <typename SampleType>
@@ -51,7 +51,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonEventBindingFactoryImpl<SampleType>::Create(const InstanceIdentifier& identifier,
                                                          SkeletonBase& parent,
-                                                         const score::cpp::string_view event_name) noexcept
+                                                         const std::string_view event_name) noexcept
     -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
     return CreateSkeletonServiceElement<SkeletonEventBinding<SampleType>,

@@ -18,10 +18,9 @@
 #include "score/json/json_parser.h"
 #include "score/memory/string_literal.h"
 
-#include <score/string_view.hpp>
-
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -158,7 +157,7 @@ class ServiceIdentifierTypeView
 {
   public:
     constexpr explicit ServiceIdentifierTypeView(const ServiceIdentifierType& type) : srvIdentifierType_(type) {};
-    inline score::cpp::string_view getInternalTypeName() const
+    inline std::string_view getInternalTypeName() const
     {
         return srvIdentifierType_.serviceTypeName_;
     };

@@ -22,9 +22,9 @@
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
-#include <score/string_view.hpp>
 
 #include <memory>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -36,7 +36,7 @@ class SkeletonField : public SkeletonFieldBase
   public:
     using FieldType = SampleDataType;
 
-    SkeletonField(SkeletonBase& parent, const score::cpp::string_view field_name);
+    SkeletonField(SkeletonBase& parent, const std::string_view field_name);
 
     ~SkeletonField() override = default;
 
@@ -83,7 +83,7 @@ class SkeletonField : public SkeletonFieldBase
 };
 
 template <typename SampleDataType>
-SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& parent, const score::cpp::string_view field_name)
+SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& parent, const std::string_view field_name)
     : SkeletonFieldBase{parent,
                         field_name,
                         std::make_unique<SkeletonEvent<FieldType>>(

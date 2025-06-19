@@ -144,7 +144,7 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOff
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -205,7 +205,7 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBindi
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -264,7 +264,7 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBind
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -323,7 +323,7 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServicePropagatesBindin
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -374,7 +374,7 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateBeforePrepareOfferDoesNotReturnVa
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -416,7 +416,7 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBind
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -474,7 +474,7 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBinding
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -534,7 +534,7 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDisp
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -612,7 +612,7 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceProp
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -688,7 +688,7 @@ TEST(SkeletonFieldInitialValueFixture, LatestFieldValueWillBeSetOnPrepareOffer)
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -739,7 +739,7 @@ TEST(SkeletonFieldInitialValueFixture, OfferingFieldBeforeUpdatingValueReturnsEr
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will not be called on the event binding
@@ -774,7 +774,7 @@ TEST(SkeletonFieldInitialValueFixture, MoveConstructingFieldBeforePrepareOfferWi
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
@@ -819,7 +819,7 @@ TEST(SkeletonFieldInitialValueFixture, MoveAssigningFieldBeforePrepareOfferWillK
     auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     EXPECT_CALL(skeleton_field_binding_mock, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -853,8 +853,7 @@ TEST(SkeletonFieldInitialValueFixture, MoveAssigningFieldBeforePrepareOfferWillK
     // and Expecting that a second SkeletonField binding is created
     auto skeleton_field_binding_mock_ptr_2 = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_field_binding_mock_2 = *skeleton_field_binding_mock_ptr_2;
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier2, _, score::cpp::string_view{kFieldName}))
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(identifier2, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr_2))));
 
     EXPECT_CALL(skeleton_field_binding_mock_2, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -884,7 +883,7 @@ TEST(SkeletonFieldTest, SkeletonFieldsRegisterThemselvesWithSkeleton)
     // Expecting that the SkeletonFieldBindingFactory returns a valid binding
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
 
     // Given a skeleton created based on a Lola binding
@@ -914,7 +913,7 @@ TEST(SkeletonFieldTest, MovingConstructingSkeletonUpdatesFieldMapReference)
     // Expecting that the SkeletonFieldBindingFactory returns a valid binding
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
 
     // Given a skeleton created based on a Lola binding
@@ -954,10 +953,9 @@ TEST(SkeletonFieldTest, MovingAssigningSkeletonUpdatesFieldMapReference)
     // Expecting that the SkeletonFieldBindingFactory returns a valid binding  for both Skeletons
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier2, _, score::cpp::string_view{kFieldName}))
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(identifier2, _, kFieldName))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
 
     // Given a skeleton created based on a Lola binding
@@ -991,7 +989,7 @@ TEST(SkeletonFieldTest, UpdateWithInvalidFieldNameTriggersTermination)
     // Expecting that the SkeletonFieldBindingFactory returns a valid binding
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(kInstanceIdWithLolaBinding, _, score::cpp::string_view{kFieldName}))
+                CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
 
     // Given a skeleton created based on a Lola binding

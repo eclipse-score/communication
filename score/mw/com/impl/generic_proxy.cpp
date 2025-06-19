@@ -41,9 +41,9 @@ namespace
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-std::vector<score::cpp::string_view> GetEventNameList(const InstanceIdentifier& identifier) noexcept
+std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identifier) noexcept
 {
-    using ReturnType = std::vector<score::cpp::string_view>;
+    using ReturnType = std::vector<std::string_view>;
 
     const auto& service_type_deployment = InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
     auto visitor = score::cpp::overload(
@@ -51,8 +51,7 @@ std::vector<score::cpp::string_view> GetEventNameList(const InstanceIdentifier& 
             ReturnType event_names;
             for (const auto& event : deployment.events_)
             {
-                const auto event_name = score::cpp::string_view{event.first.data(), event.first.size()};
-                event_names.push_back(event_name);
+                event_names.push_back(std::string_view{event.first});
             }
             return event_names;
         },
@@ -91,16 +90,14 @@ GenericProxy::GenericProxy(std::unique_ptr<ProxyBinding> proxy_binding, HandleTy
 {
 }
 
-void GenericProxy::FillEventMap(const std::vector<score::cpp::string_view>& event_names) noexcept
+void GenericProxy::FillEventMap(const std::vector<std::string_view>& event_names) noexcept
 {
     for (const auto event_name : event_names)
     {
         if (proxy_binding_->IsEventProvided(event_name))
         {
-            const auto emplace_result =
-                events_.emplace(std::piecewise_construct,
-                                std::forward_as_tuple(std::string_view{event_name.data(), event_name.size()}),
-                                std::forward_as_tuple(*this, event_name));
+            const auto emplace_result = events_.emplace(
+                std::piecewise_construct, std::forward_as_tuple(event_name), std::forward_as_tuple(*this, event_name));
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second, "Could not emplace GenericProxyEvent in map.");
         }
         else

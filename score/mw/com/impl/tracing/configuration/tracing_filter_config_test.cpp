@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config.h"
-#include "score/memory/any_string_view.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
 
 #include "score/mw/com/impl/tracing/configuration/proxy_event_trace_point_type.h"
@@ -32,7 +31,7 @@ using std::string_view_literals::operator""sv;
 const std::string kServiceType{"my_service_type"};
 const std::string kEventName{"my_event_name"};
 const std::string kFieldName{"my_field_name"};
-const memory::AnyStringView kInstanceSpecifiersv = "abc/abc/TirePressurePort";
+const auto kInstanceSpecifiersv = "abc/abc/TirePressurePort"sv;
 const ITracingFilterConfig::InstanceSpecifierView kInstanceSpecifierView{"my_instance_specifier"};
 const score::cpp::optional<ITracingFilterConfig::InstanceSpecifierView> kEnableAllInstanceSpecifiers{};
 constexpr auto kDummyTracePointType = SkeletonEventTracePointType::SEND;
@@ -325,9 +324,9 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, minimalTest)
     // Given an empty ipc tracing filter config
     TracingFilterConfig tracing_filter_config{};
 
-    const score::cpp::string_view service_type = "/bmw/ncar/services/TirePressureService";
-    const score::cpp::string_view event_name = "CurrentPressureFrontLeft";
-    const score::cpp::string_view instance_specifier = "abc/abc/TirePressurePort";
+    const std::string_view service_type = "/bmw/ncar/services/TirePressureService";
+    const std::string_view event_name = "CurrentPressureFrontLeft";
+    const std::string_view instance_specifier = "abc/abc/TirePressurePort";
 
     // When adding a trace point for this TracePointType and the same service element, which has been configured with
     // the need for 27 sample slots for tracing
@@ -420,9 +419,9 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAlloneIsPresentAndWantsT
     // Given an empty ipc tracing filter config
     TracingFilterConfig tracing_filter_config{};
 
-    constexpr score::cpp::string_view service_type = "/bmw/ncar/services/TirePressureService";
-    constexpr score::cpp::string_view field_name = "CurrentTemperatureFrontLeft";
-    constexpr score::cpp::string_view instance_specifier = "abc/abc/TirePressurePort";
+    constexpr std::string_view service_type = "/bmw/ncar/services/TirePressureService";
+    constexpr std::string_view field_name = "CurrentTemperatureFrontLeft";
+    constexpr std::string_view instance_specifier = "abc/abc/TirePressurePort";
     // When adding the trace points
     tracing_filter_config.AddTracePoint(service_type, field_name, instance_specifier, trace_point_type_0);
 
@@ -527,10 +526,10 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAndAnEventArePresentAndW
     // Given an empty ipc tracing filter config
     TracingFilterConfig tracing_filter_config{};
 
-    constexpr score::cpp::string_view service_type = "/bmw/ncar/services/TirePressureService";
-    constexpr score::cpp::string_view instance_specifier = "abc/abc/TirePressurePort";
-    constexpr score::cpp::string_view field_name = "CurrentTemperatureFrontLeft";
-    constexpr score::cpp::string_view event_name = "CurrentPressureFrontLeft";
+    constexpr std::string_view service_type = "/bmw/ncar/services/TirePressureService";
+    constexpr std::string_view instance_specifier = "abc/abc/TirePressurePort";
+    constexpr std::string_view field_name = "CurrentTemperatureFrontLeft";
+    constexpr std::string_view event_name = "CurrentPressureFrontLeft";
     // When adding both trace points
     tracing_filter_config.AddTracePoint(service_type, field_name, instance_specifier, trace_point_type_0);
     tracing_filter_config.AddTracePoint(service_type, event_name, instance_specifier, trace_point_type_1);
@@ -562,7 +561,7 @@ class ConfigurationFixture : public ::testing::Test
         return Instance(number_of_sample_slots, 1U, 1U, false, number_of_tracing_slots);
     }
 
-    InstanceSpecifier MakeInstanceSpecifier(memory::AnyStringView instance_specifier_sv)
+    InstanceSpecifier MakeInstanceSpecifier(std::string_view instance_specifier_sv)
     {
         auto instance_specifier_result = InstanceSpecifier::Create(instance_specifier_sv);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(instance_specifier_result.has_value());
@@ -656,7 +655,7 @@ class ConfigurationFixture : public ::testing::Test
     }
     score::cpp::optional<Configuration> configuration_{};
     TracingFilterConfig tracing_filter_config_{};
-    const memory::AnyStringView service_type_ = "/bmw/ncar/services/TirePressureService";
+    const std::string_view service_type_ = "/bmw/ncar/services/TirePressureService";
     const std::string event_name_ = "CurrentPressureFrontLeft";
 };
 
@@ -668,7 +667,7 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsDeathTest, InstanceSpecifierCan
     // same service element, which contains an instance specifier whith illegal charachters.
     PrepareValidConfigurationWithTracingRequiredEvent();
 
-    const memory::AnyStringView instance_specifier_sv = "specifier_with_bad_charachters%-&";
+    const std::string_view instance_specifier_sv = "specifier_with_bad_charachters%-&";
     tracing_filter_config_.AddTracePoint(service_type_, event_name_, instance_specifier_sv, kDummyTracePointType);
 
     // When calling GetNumberOfTracingSlots
@@ -682,7 +681,7 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsDeathTest, InstanceSpecifierCan
     // service element, Which contains a legal but wrong instance specifier.
     PrepareValidConfigurationWithTracingRequiredEvent();
 
-    const score::cpp::string_view instance_specifier = "legal_but_wrong_instance_specifier";
+    const std::string_view instance_specifier = "legal_but_wrong_instance_specifier";
     tracing_filter_config_.AddTracePoint(service_type_, event_name_, instance_specifier, kDummyTracePointType);
 
     // When calling GetNumberOfTracingSlots
@@ -697,7 +696,7 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsDeathTest,
     // And a trace point for this TracePointType and the same service element, which does not exist in the config.
     PrepareValidConfigurationWithTracingRequiredEvent();
 
-    const score::cpp::string_view wrong_event_name = "ThisServiceElementDoesNotExist";
+    const std::string_view wrong_event_name = "ThisServiceElementDoesNotExist";
     tracing_filter_config_.AddTracePoint(service_type_, wrong_event_name, kInstanceSpecifiersv, kDummyTracePointType);
 
     // When calling GetNumberOfTracingSlots

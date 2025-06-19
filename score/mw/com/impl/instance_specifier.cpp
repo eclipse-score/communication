@@ -26,7 +26,7 @@ namespace
 // function shall not be called implicitly". std::regex_search() will not throw exception
 // as characters passed are pre checked for invalid data.
 // coverity[autosar_cpp14_a15_5_3_violation]
-bool IsShortNameValid(const score::cpp::string_view shortname) noexcept
+bool IsShortNameValid(const std::string_view shortname) noexcept
 {
     // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
     // constant-initialized". std::regex does not have a constexpr constructor and hence cannot be constexpr.
@@ -47,7 +47,7 @@ bool IsShortNameValid(const score::cpp::string_view shortname) noexcept
 
 }  // namespace
 
-score::Result<InstanceSpecifier> InstanceSpecifier::Create(const score::cpp::string_view shortname_path) noexcept
+score::Result<InstanceSpecifier> InstanceSpecifier::Create(const std::string_view shortname_path) noexcept
 {
     if (!IsShortNameValid(shortname_path))
     {
@@ -65,8 +65,8 @@ std::string_view InstanceSpecifier::ToString() const noexcept
     return instance_specifier_string_;
 }
 
-InstanceSpecifier::InstanceSpecifier(const score::cpp::string_view shortname_path) noexcept
-    : instance_specifier_string_{shortname_path.data(), shortname_path.size()}
+InstanceSpecifier::InstanceSpecifier(const std::string_view shortname_path) noexcept
+    : instance_specifier_string_{shortname_path}
 {
 }
 
@@ -77,17 +77,17 @@ auto operator==(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noex
 
 // Suppress "AUTOSAR C++14 A13-5-5", The rule states: "Comparison operators shall be non-member functions with
 // identical parameter types and noexcept.". There is no functional reason behind, we require comparing
-// `InstanceSpecifier&` and `score::cpp::string_view&`.
+// `InstanceSpecifier&` and `std::string_view&`.
 // coverity[autosar_cpp14_a13_5_5_violation]
-bool operator==(const InstanceSpecifier& lhs, const score::cpp::string_view& rhs) noexcept
+bool operator==(const InstanceSpecifier& lhs, const std::string_view& rhs) noexcept
 {
-    return lhs.ToString() == std::string_view{rhs.data(), rhs.size()};
+    return lhs.ToString() == rhs;
 }
 
 // coverity[autosar_cpp14_a13_5_5_violation]
-bool operator==(const score::cpp::string_view& lhs, const InstanceSpecifier& rhs) noexcept
+bool operator==(const std::string_view& lhs, const InstanceSpecifier& rhs) noexcept
 {
-    return std::string_view{lhs.data(), lhs.size()} == rhs.ToString();
+    return lhs == rhs.ToString();
 }
 
 auto operator!=(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept -> bool
@@ -96,13 +96,13 @@ auto operator!=(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noex
 }
 
 // coverity[autosar_cpp14_a13_5_5_violation]
-bool operator!=(const InstanceSpecifier& lhs, const score::cpp::string_view& rhs) noexcept
+bool operator!=(const InstanceSpecifier& lhs, const std::string_view& rhs) noexcept
 {
     return !(lhs == rhs);
 }
 
 // coverity[autosar_cpp14_a13_5_5_violation]
-bool operator!=(const score::cpp::string_view& lhs, const InstanceSpecifier& rhs) noexcept
+bool operator!=(const std::string_view& lhs, const InstanceSpecifier& rhs) noexcept
 {
     return !(lhs == rhs);
 }

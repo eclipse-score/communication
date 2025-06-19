@@ -16,8 +16,6 @@
 #include "score/result/result.h"
 #include "score/mw/log/logging.h"
 
-#include <score/string_view.hpp>
-
 #include <string>
 #include <string_view>
 
@@ -35,23 +33,23 @@ class InstanceSpecifier
     friend std::hash<InstanceSpecifier>;
 
   public:
-    static score::Result<InstanceSpecifier> Create(const score::cpp::string_view shortname_path) noexcept;
+    static score::Result<InstanceSpecifier> Create(const std::string_view shortname_path) noexcept;
 
     std::string_view ToString() const noexcept;
 
   private:
-    explicit InstanceSpecifier(const score::cpp::string_view shortname_path) noexcept;
+    explicit InstanceSpecifier(const std::string_view shortname_path) noexcept;
 
     std::string instance_specifier_string_;
 };
 
 bool operator==(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept;
-bool operator==(const InstanceSpecifier& lhs, const score::cpp::string_view& rhs) noexcept;
-bool operator==(const score::cpp::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
+bool operator==(const InstanceSpecifier& lhs, const std::string_view& rhs) noexcept;
+bool operator==(const std::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
 
 bool operator!=(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept;
-bool operator!=(const InstanceSpecifier& lhs, const score::cpp::string_view& rhs) noexcept;
-bool operator!=(const score::cpp::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
+bool operator!=(const InstanceSpecifier& lhs, const std::string_view& rhs) noexcept;
+bool operator!=(const std::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
 
 bool operator<(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept;
 
