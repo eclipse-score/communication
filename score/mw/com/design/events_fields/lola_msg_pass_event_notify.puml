@@ -1,5 +1,5 @@
 @startuml lola_msg_pass_event_notify
-
+title "Sequence Message Passing Event Notify"
 hide footbox
 
 participant "mw::com::impl::ProxyEvent" as ProxyEvent

@@ -1,5 +1,5 @@
 @startuml lola_msg_pass_initialize_seq
-
+title "Sequence Message Passing Init"
 hide footbox
 
 participant "<u>:score::com::impl::Runtime</u>" as Runtime

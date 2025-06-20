@@ -1,5 +1,5 @@
 @startuml event_poll_lola_seq
-
+title "Sequence Update Event and Access via Polling"
 hide footbox
 
 participant "<u>:Process</u>\nara::com application (server)" as Process1
