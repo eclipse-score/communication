@@ -27,17 +27,6 @@ cc_library(
 )
 
 cc_library(
-    name = "any_string_view",
-    srcs = ["any_string_view.cpp"],
-    hdrs = ["any_string_view.h"],
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public", # platform_only
-    ],
-    deps = ["@score-baselibs//score/language/futurecpp"],
-)
-
-cc_library(
     name = "endianness",
     srcs = ["endianness.cpp"],
     hdrs = ["endianness.h"],
@@ -138,24 +127,6 @@ cc_test(
 )
 
 cc_test(
-    name = "any_string_view_test",
-    srcs = [
-        "any_string_view_test.cpp",
-    ],
-    features = [
-        "aborts_upon_exception",
-        "treat_warnings_as_errors",
-        "strict_warnings",
-        "additional_warnings",
-    ],
-    tags = ["unit"],
-    deps = [
-        ":any_string_view",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "endianness_unit_test",
     srcs = [
         "endianness_test.cpp",
@@ -194,7 +165,6 @@ cc_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
-        ":any_string_view_test",
         ":endianness_unit_test",
         ":pmr_ring_buffer_unit_test",
         ":split_string_view_unit_test",
