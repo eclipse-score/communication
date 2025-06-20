@@ -316,7 +316,11 @@ The `score::mw::com::message_passing::Receiver`s used by `lola::MessagePassingFa
 initialization of our `mw::com` runtime. Depending on the `ara::com`/`mw::com` deployment info for the
 executable/process, it can be decided, whether only QM (ASIL-QM) or QM and ASIL (ASIL-B) Receivers are needed.
 
-![Sequence Message Passing Init](broken_link_k/swh/ddad_score/mw/com/design/events_fields/lola_msg_pass_initialize_seq.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include lola_msg_pass_initialize_seq.puml
+```
+
 
 ### Event subscription
 
@@ -354,7 +358,10 @@ The structural model of the state machine design is as follows:
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see
 example above). Here event notification registrations are aggregated and related messages are only sent once:
 
-![Sequence Message Passing Event Notify](broken_link_k/swh/ddad_score/mw/com/design/events_fields/lola_msg_pass_event_notify.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include lola_msg_pass_event_notify.puml
+```
 
 #### Managing user provided EventReceiveHandlers
 
@@ -441,7 +448,10 @@ looks like! This sequence builds on message passing concepts/sequences already d
 [Notifications between skeleton and proxy](#notifications-between-skeleton-and-proxy) and the design of data-structures
 placed in shared memory discussed [here](#event-related-datastructures-in-lola-binding)
 
-![Sequence Update Event and Access via Polling](broken_link_k/swh/ddad_score/mw/com/design/events_fields/event_poll_lola_seq.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include event_poll_lola_seq.puml
+```
 
 # General implementation details of score::mw::com
 
