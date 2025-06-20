@@ -740,7 +740,6 @@ cc_library(
         ":runtime_interfaces",
         ":service_discovery",
         "@score-baselibs//score/concurrency:long_running_threads_container",
-        "@score-baselibs//score/memory:any_string_view",
         "@score-baselibs//score/memory/shared:types",
         "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",

@@ -18,7 +18,6 @@
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config_parser.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime_binding.h"
 
-#include "score/memory/any_string_view.h"
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
