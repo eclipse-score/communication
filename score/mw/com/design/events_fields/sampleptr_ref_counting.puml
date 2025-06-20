@@ -1,5 +1,6 @@
 @startuml sampleptr_ref_counting
 
+title "Sequence during sample reception on proxy side"
 hide footbox
 
 participant "<u>App</u>" as App

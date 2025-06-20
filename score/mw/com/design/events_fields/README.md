@@ -55,9 +55,12 @@ field-collection!
 ## Event related datastructures in LoLa binding
 
 Here we provide insight, how event communication is realized within our `LoLa` (shared memory based) binding. The
-following class diagram shows LooLa specific binding implementation and its relationship with binding independent parts:
+following class diagram shows LoLa specific binding implementation and its relationship with binding independent parts:
 
-![Structural View](broken_link_k/swh/ddad_score/mw/com/design/events_fields/event_lola_model.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include event_lola_model.puml
+```
 
 The referenced class `SubscriptionStateMachine` within this model is further detailed (including its dependent entities)
 further [below](#event-subscription).
@@ -471,4 +474,7 @@ central counter buried inside `SampleReferenceTracker` is atomic.
 
 This sequence diagram depicts the mechanics behind the reference counting on proxy side:
 
-![Sequence during sample reception on proxy side](broken_link_k/swh/ddad_score/mw/com/design/events_fields/sampleptr_ref_counting.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include sampleptr_ref_counting.puml
+```
