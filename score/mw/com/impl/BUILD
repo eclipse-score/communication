@@ -14,7 +14,7 @@ load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_tes
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
-    # "@ddad//score/mw/com/impl:__subpackages__",
+    "//score/mw/com/impl:__subpackages__",
 ])
 
 cc_library(
@@ -45,7 +45,6 @@ cc_library(
         "//score/mw/com/impl/test:__pkg__",
         "//score/mw/com/impl/test/uat:__pkg__",
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":error",
@@ -79,7 +78,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":flag_owner",
@@ -99,7 +97,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":error",
@@ -118,7 +115,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/plumbing:__pkg__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":flag_owner",
@@ -142,7 +138,6 @@ cc_library(
     visibility = [
         "//score/mw/com:__pkg__",
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -155,7 +150,6 @@ cc_library(
     visibility = [
         "//score/mw/com:__pkg__",
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":find_service_handle",
@@ -171,7 +165,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":find_service_handle",
@@ -195,7 +188,6 @@ cc_library(
     visibility = [
         "//score/mw/com/impl:__pkg__",
         "//score/mw/com/impl/rust:__pkg__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":error",
@@ -216,7 +208,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -235,7 +226,6 @@ cc_library(
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":binding_type",
@@ -261,7 +251,6 @@ cc_library(
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":binding_type",
@@ -287,7 +276,6 @@ cc_library(
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "proxy_event_binding",
@@ -312,7 +300,6 @@ cc_library(
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":binding_type",
@@ -342,7 +329,6 @@ cc_library(
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
         "//score/mw/com/impl/plumbing:__subpackages__",
         "//score/mw/com/impl/tracing:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":binding_type",
@@ -363,7 +349,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":instance_identifier",
@@ -380,7 +365,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":error",
@@ -396,7 +380,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":handle_type",
@@ -414,7 +397,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = ["@score-baselibs//score/result"],
 )
@@ -427,7 +409,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":error",
@@ -445,7 +426,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":enriched_instance_identifier",
@@ -465,7 +445,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_service_discovery_client",
@@ -481,7 +460,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -499,7 +477,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":binding_type",
@@ -520,7 +497,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":runtime_interfaces",
@@ -536,7 +512,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -549,7 +524,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":enriched_instance_identifier",
@@ -570,7 +544,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":enriched_instance_identifier",
@@ -593,7 +566,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/safecpp/scoped_function:move_only_scoped_function"],
 )
@@ -606,7 +578,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":find_service_handle",
@@ -628,7 +599,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":instance_identifier",
@@ -660,7 +630,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -672,7 +641,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -684,7 +652,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
 )
 

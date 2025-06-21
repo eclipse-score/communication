@@ -27,7 +27,6 @@ filegroup(
     visibility = [
         "//score/mw/com:__subpackages__",
         "//score/mw/com/impl/configuration/test:__subpackages__",
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
     ],
 )
 
@@ -55,7 +54,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
         ":configuration_local",
@@ -71,7 +70,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
         ":global_configuration",
@@ -94,7 +93,7 @@ cc_library(
     implementation_deps = ["@score-baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
         ":quality_type",
@@ -110,7 +109,7 @@ cc_library(
     implementation_deps = ["@score-baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:instance_specifier",
@@ -128,7 +127,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = ["@score-baselibs//score/result"],
 )
@@ -157,7 +156,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = ["@score-baselibs//score/json"],
 )
@@ -168,9 +167,6 @@ cc_library(
     hdrs = ["lola_event_id.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
 )
 
 cc_library(
@@ -179,9 +175,6 @@ cc_library(
     hdrs = ["lola_field_id.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [":lola_event_id"],
 )
 
@@ -191,9 +184,6 @@ cc_library(
     hdrs = ["lola_service_id.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
 )
 
 cc_library(
@@ -202,9 +192,6 @@ cc_library(
     hdrs = ["lola_field_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [":lola_event_instance_deployment"],
 )
 
@@ -214,9 +201,6 @@ cc_library(
     hdrs = ["someip_field_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = ["@score-baselibs//score/json"],
 )
 
@@ -226,9 +210,6 @@ cc_library(
     hdrs = ["lola_service_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         ":lola_event_instance_deployment",
@@ -247,9 +228,6 @@ cc_library(
     hdrs = ["lola_service_type_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":binding_service_type_deployment",
         ":lola_event_id",
@@ -276,9 +254,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = ["@score-baselibs//score/json"],
 )
 
@@ -288,9 +263,6 @@ cc_library(
     hdrs = ["service_identifier_type.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         ":service_version_type",
@@ -306,9 +278,6 @@ cc_library(
     hdrs = ["service_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         ":lola_service_instance_deployment",
@@ -344,9 +313,6 @@ cc_library(
     hdrs = ["service_type_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
@@ -361,9 +327,6 @@ cc_library(
     hdrs = ["service_version_type.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         "@score-baselibs//score/json",
@@ -377,9 +340,6 @@ cc_library(
     hdrs = ["someip_service_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         ":someip_event_instance_deployment",
@@ -397,9 +357,6 @@ cc_library(
     hdrs = ["binding_service_type_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         "@score-baselibs//score/json",
@@ -412,9 +369,6 @@ cc_library(
     hdrs = ["shm_size_calc_mode.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
 )
 
 cc_library(
@@ -423,9 +377,6 @@ cc_library(
     hdrs = ["configuration_common_resources.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         "@score-baselibs//score/json",
         "@score-baselibs//score/mw/log",
@@ -466,9 +417,6 @@ cc_test(
         "aborts_upon_exception",
     ],
     tags = ["unit"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":config_parser",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
@@ -485,9 +433,6 @@ cc_test(
         "aborts_upon_exception",
     ],
     tags = ["unit"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":configuration_common_resources",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
@@ -501,9 +446,6 @@ cc_gtest_unit_test(
     name = "configuration_error_test",
     srcs = ["configuration_error_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [":configuration_error"],
 )
 
@@ -512,9 +454,6 @@ cc_gtest_unit_test(
     srcs = ["configuration_test.cpp"],
     data = ["example/ara_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":config_parser",
         ":configuration_local",
@@ -527,9 +466,6 @@ cc_gtest_unit_test(
     name = "lola_service_instance_deployment_test",
     srcs = ["lola_service_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":lola_service_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -541,9 +477,6 @@ cc_gtest_unit_test(
     name = "lola_event_instance_deployment_test",
     srcs = ["lola_event_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":lola_event_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -554,9 +487,6 @@ cc_gtest_unit_test(
     name = "lola_field_instance_deployment_test",
     srcs = ["lola_field_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":lola_field_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -567,9 +497,6 @@ cc_gtest_unit_test(
     name = "quality_type_test",
     srcs = ["quality_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [":quality_type"],
 )
 
@@ -577,9 +504,6 @@ cc_gtest_unit_test(
     name = "service_identifier_type_test",
     srcs = ["service_identifier_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":service_identifier_type",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -590,9 +514,6 @@ cc_gtest_unit_test(
     name = "service_instance_deployment_test",
     srcs = ["service_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":service_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -603,9 +524,6 @@ cc_gtest_unit_test(
     name = "service_version_type_test",
     srcs = ["service_version_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":service_version_type",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -616,9 +534,6 @@ cc_gtest_unit_test(
     name = "service_type_deployment_test",
     srcs = ["service_type_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":service_type_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -629,9 +544,6 @@ cc_gtest_unit_test(
     name = "someip_service_instance_deployment_test",
     srcs = ["someip_service_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":someip_service_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -642,9 +554,6 @@ cc_gtest_unit_test(
     name = "lola_service_type_deployment_test",
     srcs = ["lola_service_type_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":lola_service_type_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -655,9 +564,6 @@ cc_gtest_unit_test(
     name = "service_instance_id_test",
     srcs = ["service_instance_id_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":service_instance_id",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -668,9 +574,6 @@ cc_gtest_unit_test(
     name = "lola_service_instance_id_test",
     srcs = ["lola_service_instance_id_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":lola_service_instance_id",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -681,9 +584,6 @@ cc_gtest_unit_test(
     name = "someip_service_instance_id_test",
     srcs = ["someip_service_instance_id_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":someip_service_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
@@ -694,9 +594,6 @@ cc_gtest_unit_test(
     name = "global_configuration_test",
     srcs = ["global_configuration_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":global_configuration",
     ],
@@ -706,9 +603,6 @@ cc_gtest_unit_test(
     name = "tracing_configuration_test",
     srcs = ["tracing_configuration_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [
         ":tracing_configuration",
     ],
@@ -718,9 +612,6 @@ cc_gtest_unit_test(
     name = "someip_field_instance_deployment_test",
     srcs = ["someip_field_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [":someip_field_instance_deployment"],
 )
 
@@ -728,9 +619,6 @@ cc_gtest_unit_test(
     name = "someip_event_instance_deployment_test",
     srcs = ["someip_event_instance_deployment_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [":someip_event_instance_deployment"],
 )
 
@@ -738,9 +626,6 @@ cc_gtest_unit_test(
     name = "shm_size_calc_mode_test",
     srcs = ["shm_size_calc_mode_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/configuration:__subpackages__",
-    ],
     deps = [":shm_size_calc_mode"],
 )
 

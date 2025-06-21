@@ -45,7 +45,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/bindings/lola/messaging/messages:__pkg__",
+        "//score/mw/com/impl/bindings/lola/messaging/messages:__pkg__",
     ],
     deps = [
         ":messages",

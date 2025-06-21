@@ -25,7 +25,7 @@ alias(
         "//score/mw/com/message_passing/test:__pkg__",
         "@score-baselibs//score/mw/log:__subpackages__",
         "@score-baselibs//score/mw/log/detail/data_router:__pkg__",
-        # "@ddad//score/mw/com/message_passing:__pkg__",
+        "//platform/aas/pas/logging:__subpackages__",
     ],
 )
 
@@ -104,8 +104,8 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/message_passing:__pkg__",
         "//score/mw/com/message_passing/test:__pkg__",
-        # "@ddad//score/mw/com/message_passing:__pkg__",
     ],
     deps = [
         ":interface",
@@ -141,8 +141,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        "//score/mw/com/message_passing/test:__pkg__",
-        # "@ddad//score/mw/com/message_passing:__subpackages__",
+        "//score/mw/com/message_passing:__subpackages__",
     ],
     deps = [
         ":interface",
@@ -191,7 +190,6 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
         "@score-baselibs//score/mw/log:__subpackages__",
         "//platform/aas/pas/logging:__subpackages__",
-        # "@ddad//score/mw/com/message_passing:__subpackages__",
     ],
     deps = [
         ":interface",
@@ -221,7 +219,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com:__pkg__",
-        # "@ddad//score/mw/com/message_passing:__pkg__",
     ],
     deps = [
         ":message_passing",
@@ -268,9 +265,6 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     target_compatible_with = ["@platforms//os:qnx"],
-    visibility = [
-        # "@ddad//score/mw/com/message_passing:__pkg__",
-    ],
     deps = [
         ":resmgr_traits_for_testing",
         "@score-baselibs//score/os/mocklib:fcntl_mock",
@@ -292,9 +286,6 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     target_compatible_with = ["@platforms//os:qnx"],
-    visibility = [
-        # "@ddad//score/mw/com/message_passing:__pkg__",
-    ],
     deps = [
         ":interface",
         ":message",

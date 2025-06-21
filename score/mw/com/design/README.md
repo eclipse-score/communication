@@ -115,24 +115,24 @@ during the whole design process.
 
 Our implementation of `mw::com` depends on the following components/libraries:
 
-* `@ddad//score/analysis/tracing/library/generic_trace_api`
-* `@safe_posix_platform//score/language/safecpp/safe_math`
-* `@safe_posix_platform//score/language/safecpp/scoped_function`
-* `@safe_posix_platform//platform/aas/lib/bitmanipulation:bitmask_operators`
-* `@safe_posix_platform//platform/aas/lib/concurrency`
-* `@safe_posix_platform//platform/aas/lib/containers:dynamic_array`
-* `@safe_posix_platform//platform/aas/lib/filesystem`
-* `@safe_posix_platform//platform/aas/lib/json:json_parser`
-* `@safe_posix_platform//score/memory/shared`: Our whole shared-memory handling is implemented in this lib.
-* `@safe_posix_platform//score/mw/com/message_passing`: This message passing infrastructure is currently located
+* `//score/analysis/tracing/library/generic_trace_api`
+* `//score/language/safecpp/safe_math`
+* `//score/language/safecpp/scoped_function`
+* `//platform/aas/lib/bitmanipulation:bitmask_operators`
+* `//platform/aas/lib/concurrency`
+* `//platform/aas/lib/containers:dynamic_array`
+* `//platform/aas/lib/filesystem`
+* `//platform/aas/lib/json:json_parser`
+* `//score/memory/shared`: Our whole shared-memory handling is implemented in this lib.
+* `//score/mw/com/message_passing`: This message passing infrastructure is currently located
   in the same top
   folder as our `mw::com` implementation, although it is a complete independent/standalone layer (location/structure
   will be refactored in the future). Details of its usage can be found
   [here](events_fields/README.md#notifications-between-skeleton-and-proxy). It also enlists the dependencies it has and
   which therefore become transient dependencies for our `mw::com` implementation.
-* `@safe_posix_platform//platform/aas/lib/memory:any_string_view`
-* `@safe_posix_platform//score/os/utils/acl:acl`
-* `@safe_posix_platform//score/os/utils/inotify`
+* `//platform/aas/lib/memory:any_string_view`
+* `//score/os/utils/acl:acl`
+* `//score/os/utils/inotify`
 * `/platform/aas/mw/log`
 * `//platform/aas/lib/concurrency`
 * `//platform/aas/lib/os:errno_logging`

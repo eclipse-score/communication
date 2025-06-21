@@ -8,7 +8,7 @@
 This `IPC Tracing` allows `LoLa` to trace the majority of calls a user of `mw::com`/`LoLa` does to the public API of `mw::com`.
 The exact supported list of API calls is described [here](../../../analysis/tracing/library/design#c-api-interface).
 The tracing is controlled by a
-[JSON based configuration](../../../analysis/tracing/config/schema/comtrace_config_schema.json), 
+[JSON based configuration](../../../analysis/tracing/config/schema/comtrace_config_schema.json),
 which describes, which API entry point shall be traced.
 Additionally, the underlying element (event/field) the API call relates to, has to also be [enabled for tracing](#service-element-specific-properties).
 
@@ -64,7 +64,7 @@ following extension:
 "numberOfIpcTracingSlots": {
    "type": "integer",
    "description": "std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands that this field or event to be traced, a WARN message will be logged. A value greater than zero for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the sceleton side will set the number of tracing slots.",
-   "default": 0 
+   "default": 0
 }
 ```
 
@@ -112,7 +112,7 @@ I.e. `tracing::TracingFilterConfig::AddTracePoint` gets only called, if
 #### Avoid registration of non-existing trace points
 
 The `trace filter config` could contain trace point definitions, which relate to service types, which aren't used within
-the `mw::com`/`LoLa` application. I.e. the `trace filter config` contains a trace point for a service with a specific 
+the `mw::com`/`LoLa` application. I.e. the `trace filter config` contains a trace point for a service with a specific
 `shortname_path`, but the `mw_com_config.json` configuration of the application doesn't contain an element in array
 `serviceTypes`, whose property `serviceTypeName` matches the `shortname_path`! In this case the trace point definition
 will not be added to the `TracingFilterConfig` via call to `AddTracePoint`.
@@ -149,7 +149,7 @@ Therefore, existing binding independent classes for events/fields at proxy and s
 
 <img src="broken_link_k/swh/ddad_score/mw/com/design/ipc_tracing/structural_event_field_extensions.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
 
-Due to our current architecture, we can not hand those `<Skeleton|Proxy>EventTracingData` instances over in the 
+Due to our current architecture, we can not hand those `<Skeleton|Proxy>EventTracingData` instances over in the
 constructor calls of the binding independent classes for events/fields at proxy and skeleton side, since at least on the
 skeleton side binding specific information is required for setting `SkeletonEventTracingData::trace_context_id`.
 So instead these classes create those `tracing_data_` members within their constructor in the following way:
@@ -164,7 +164,7 @@ calls referring to data located in shared memory. How this member gets set and i
 _Note_: The reason, why the creation of the proxy/skeleton event/field related `tracing_data`_ members aren't set up in
 the non-templated base-classes `impl::ProxyEventBase` resp. `impl::SkeletonEventBase`, but in the subclass
 `impl::ProxyEvent`/`impl::SkeletonEvent` class template `ctors` is the following:
-The `impl::ProxyEvent`/`impl::SkeletonEvent` constructor will be also called by the `impl::ProxyField` or 
+The `impl::ProxyEvent`/`impl::SkeletonEvent` constructor will be also called by the `impl::ProxyField` or
 `impl::SkeletonField`, because our fields are a composition, which dispatches event-functionality to its corresponding
 event (`impl::ProxyEvent` or `impl:SkeletonEvent`). Therefore, the `impl::ProxyField`/`impl::SkeletonField` class calls
 a **specific** constructor of `impl::ProxyEvent`/`impl::SkeletonEvent`, in which we have the context knowledge, to set
@@ -315,32 +315,32 @@ no "synchronized management"/locking needed during runtime.
 
 The `SamplePtr` array is realized in `lola::tracing::TracingRuntime::type_erased_sample_ptrs_`. Its size gets decided
 after the entire tracing related configurations have been evaluated, and it is exactly known (see [here](#parsing)), for
-which service elements tracing is enabled at all, and how much tracing slots per element are required. When the 
-`lola::tracing::TracingRuntime` gets constructed, it gets the information in the constructor call via 
+which service elements tracing is enabled at all, and how much tracing slots per element are required. When the
+`lola::tracing::TracingRuntime` gets constructed, it gets the information in the constructor call via
 `number_of_needed_tracing_slots`, how many instances of service elements are tracing enabled, and how many tracing slots
-per service element were requested. This gets determined by the call to 
+per service element were requested. This gets determined by the call to
 `TracingFilterConfig::GetNumberOfTracingSlots()`.
 
 Later (after `lola::tracing::TracingRuntime` construction) during initialization, where the service element specific
 trace switches are [set up](#enriching-mwcom-classes-with-trace-switches) also a specific "registration" of service
 elements with tracing enabled and potential `TraceDoneCallback` need to take place: They register themselves at the
-`impl::tracing::TracingRuntime` via call to`RegisterServiceElement(TracingSlotSizeType number_of_ipc_tracing_slots)`, 
+`impl::tracing::TracingRuntime` via call to`RegisterServiceElement(TracingSlotSizeType number_of_ipc_tracing_slots)`,
 which returns their specific `ServiceElementTracingData`. This struct contains sufficient information for a service
 element, to obtain a slot for the `SamplePtr`, if one is free. This can be done through a call to
-`EmplaceTypeErasedSamplePtr(TypeErasedSamplePtr, ServiceElementTracingData)`, which will look for an empty slot for a 
-sample pointer in it's allowed range of slots and return an `optional<TraceContextId>` which contains a value if a 
-slot could be found and is empty if it could not be. If the returned optional is empty, we will set a data loss flag. 
+`EmplaceTypeErasedSamplePtr(TypeErasedSamplePtr, ServiceElementTracingData)`, which will look for an empty slot for a
+sample pointer in it's allowed range of slots and return an `optional<TraceContextId>` which contains a value if a
+slot could be found and is empty if it could not be. If the returned optional is empty, we will set a data loss flag.
 Otherwise, the `TraceContextId` can be used for calls to the asynchronous `Trace()` overload.
 The returned `TraceContextId` is simply the index of the first available slot in a slot-range within
 `lola::tracing::TracingRuntime::type_erased_sample_ptrs_`, which has been reserved via `RegisterServiceElement`
-call. 
+call.
 
 In case the pre-calculated number of needed `TraceContextId`s (i.e. the array size of
 `lola::tracing::TracingRuntime::type_erased_sample_ptrs_`) returned by
 `TracingFilterConfig::GetNumberOfTracingSlots()` was wrong/too small, it will be detected in the
 course of the `RegisterServiceElement(TracingSlotSizeType)` calls.
 
-#### Finding free tracing slots 
+#### Finding free tracing slots
 
 Each Service element has it's associated `numberOfIpcTracingSlots`, specified in the configuration JSON. This in turn
 associates a range of slots in the `lola::tracing::TracingRuntime::type_erased_sample_ptrs_` to the service element
@@ -348,4 +348,3 @@ during the `RegisterServiceElement(TracingSlotSizeType)` call. A subsequent call
 iterates through stored `trace_context_id`'s in a loop (ring-buffer) semantics and always use the first free slot that
 does not already contain a `trace_context_id`. If no such slot is left then the data loss flag is set and no data is
 traced until a slot frees up again.
-

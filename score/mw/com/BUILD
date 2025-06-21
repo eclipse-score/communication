@@ -22,7 +22,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = ["//score/mw/com/impl:error"],
 )
@@ -35,7 +34,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl",
@@ -52,7 +50,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":types",
@@ -90,7 +87,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com:__pkg__",
+        "//score/mw/com:__pkg__",
     ],
     deps = [
         ":runtime",
@@ -108,10 +105,10 @@ cc_unit_test_suites_for_host_and_qnx(
     test_suites_from_sub_packages = [
         "//score/mw/com/impl:unit_test_suite",
         "//score/mw/com/message_passing:unit_test_suite",
+        # "//score/mw/com/test/api:unit_test_suite", Remove until API tests are open sourced Ticket-196988
     ],
     visibility = [
         "//platform/aas/mw:__pkg__",
-        # "@ddad//score/mw/com:__pkg__",
     ],
 )
 

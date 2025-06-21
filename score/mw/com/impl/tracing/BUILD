@@ -15,7 +15,7 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
     default_visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
 )
 
@@ -46,7 +46,7 @@ cc_library(
         "@score-baselibs//score/language/futurecpp",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
-            # "@ddad@score-baselibs//score/analysis/tracing/library/generic_trace_api",
+            "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
         "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
     }),
@@ -202,7 +202,7 @@ cc_library(
         "@score-baselibs//score/language/futurecpp",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
-            # "@ddad@score-baselibs//score/analysis/tracing/library/generic_trace_api",
+            "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
         "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
     }),
@@ -231,7 +231,7 @@ cc_library(
         "@score-baselibs//score/memory/shared:pointer_arithmetic_util",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
-            # "@ddad@score-baselibs//score/analysis/tracing/library/generic_trace_api",
+            "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
         "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
     }),
@@ -264,7 +264,7 @@ cc_gtest_unit_test(
     srcs = ["trace_error_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":trace_error",
@@ -279,7 +279,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":tracing_runtime",

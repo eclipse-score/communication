@@ -178,16 +178,16 @@ bg=black</panel_attributes>
 - service_instances : const std::unordered_map&lt;InstanceSpecifier, ServiceInstanceDeployment&gt;
 - global_configuration_ : GlobalConfiguration
 - tracing_configuration_ : TracingConfiguration
-    
+
 --
 + Configuration(ServiceTypeDeployments service_types,
                   ServiceInstanceDeployments service_instances,
                   GlobalConfiguration global_configuration,
                   TracingConfiguration tracing_configuration)
-+AddServiceTypeDeployment(ServiceIdentifierType, ServiceTypeDeployment) noexcept : ServiceTypeDeployment* 
-+AddServiceInstanceDeployments(InstanceSpecifier, ServiceInstanceDeployment) noexcept : ServiceInstanceDeployment* 
++AddServiceTypeDeployment(ServiceIdentifierType, ServiceTypeDeployment) noexcept : ServiceTypeDeployment*
++AddServiceInstanceDeployments(InstanceSpecifier, ServiceInstanceDeployment) noexcept : ServiceInstanceDeployment*
 
-+GetServiceTypes() const noexcept : const ServiceTypeDeployments&amp; 
++GetServiceTypes() const noexcept : const ServiceTypeDeployments&amp;
 +GetServiceInstances() const noexcept : const ServiceInstanceDeployments&amp;
 +GetGlobalConfiguration() const noexcept : const GlobalConfiguration&amp;
 +GetTracingConfiguration() const noexcept : const TracingConfiguration&amp;</panel_attributes>
@@ -467,7 +467,7 @@ bg=black
 --
 + id: std::uint8 const
 --
-+ LolaElementTypeDeployment(id : std::uint8 const) 
++ LolaElementTypeDeployment(id : std::uint8 const)
 </panel_attributes>
     <additional_attributes/>
   </element>
@@ -647,7 +647,7 @@ m2=0..1</panel_attributes>
     </coordinates>
     <panel_attributes>score::mw::com::impl::TracingConfiguration
 --
-+ SetTracingEnabled(bool tracing_enabled) noexcept : void 
++ SetTracingEnabled(bool tracing_enabled) noexcept : void
 + SetApplicationInstanceID(std::string tracing_application_instance_id) noexcept : void
 + SetTracingTraceFilterConfigPath(std::string trace_filter_config_path) noexcept : void
 + IsTracingEnabled() const noexcept : bool
@@ -723,14 +723,14 @@ _constexpr DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE{20} : std::int32_t_
 +SetReceiverMessageQueueSize(QualityType, std::int32_t) noexcept : void
 +SetSenderMessageQueueSize(std::int32_t queue_size) noexcept : void
 +SetShmSizeCalcMode(const ShmSizeCalculationMode) noexcept : void
-+GetReceiverMessageQueueSize(const QualityType) const noexcept : std::int32_t 
++GetReceiverMessageQueueSize(const QualityType) const noexcept : std::int32_t
 +GetSenderMessageQueueSize() const noexcept : std::int32_t
 +GetProcessAsilLevel() const : QualityType
 +GetShmSizeCalcMode() const noexcept : ShmSizeCalculationMode
 --
--process_asil_level_ : QualityType 
+-process_asil_level_ : QualityType
 -message_rx_queue_size_qm : std::int32_t
--message_rx_queue_size_b : std::int32_t 
+-message_rx_queue_size_b : std::int32_t
 -message_tx_queue_size_b : std::int32_t
 -shm_size_calc_mode_ : ShmSizeCalculationMode</panel_attributes>
     <additional_attributes/>
