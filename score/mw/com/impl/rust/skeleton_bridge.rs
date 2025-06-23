@@ -72,10 +72,7 @@ impl<T: SkeletonOps, L> SkeletonEvent<T, UnOffered, L> {
 }
 
 impl<T: SkeletonOps, L> SkeletonEvent<T, Offered, L> {
-    pub fn send(
-        &self,
-        stamped_data: T,
-    ) -> common::Result<()> {
+    pub fn send(&self, stamped_data: T) -> common::Result<()> {
         stamped_data.send(self.event)
     }
 

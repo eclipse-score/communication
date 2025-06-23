@@ -10,6 +10,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+use std::ffi::CString;
+use std::fmt::{self, Debug, Formatter};
+use std::marker::PhantomData;
+use std::mem::{drop, ManuallyDrop};
 ///! This module provides boilerplate for a generated bridge between the Rust and C++ code for the
 ///! proxy side of a service.
 ///!
@@ -20,16 +24,11 @@
 ///! `ProxyOps` for the user-defined type. The implementation typically will call the respective
 ///! generated FFI functions to operate on the typed objects like the event itself or the sample
 ///! pointer. See the documentation of the respective traits for more details.
-
-use std::ops::{Index, Deref};
-use std::marker::PhantomData;
-use std::ffi::CString;
-use std::mem::{ManuallyDrop, drop};
-use std::sync::Arc;
+use std::ops::{Deref, Index};
 use std::path::Path;
-use std::task::{Context, Poll};
 use std::pin::Pin;
-use std::fmt::{self, Debug, Formatter};
+use std::sync::Arc;
+use std::task::{Context, Poll};
 
 use futures::prelude::*;
 use futures::task::AtomicWaker;
@@ -97,9 +96,7 @@ mod ffi {
             // SAFETY: Since we're transmuting into a pointer and using that pointer is unsafe
             // anyway, the `transmute` is not unsafe since it's a pure relabelling that, by itself,
             // does not introduce undefined behavior.
-            unsafe {
-                transmute(self)
-            }
+            unsafe { transmute(self) }
         }
     }
 
@@ -108,26 +105,46 @@ mod ffi {
             // SAFETY: Since we're transmuting into a pair of pointers and using those pointers is
             // anyway an unsafe operation, the `transmute` is not unsafe since it's a pure
             // relabelling that does not introduce undefined behavior.
-            unsafe {
-                transmute(ptr)
-            }
+            unsafe { transmute(ptr) }
         }
     }
 
-    extern {
-        pub(super) fn mw_com_impl_instance_specifier_create(value: *const u8, len: u32) -> *mut NativeInstanceSpecifier;
-        pub(super) fn mw_com_impl_instance_specifier_clone(instance_specifier: *const NativeInstanceSpecifier) -> *mut NativeInstanceSpecifier;
-        pub(super) fn mw_com_impl_instance_specifier_delete(instance_specifier: *mut NativeInstanceSpecifier);
-        pub(super) fn mw_com_impl_find_service(instance_specifier: *mut NativeInstanceSpecifier) -> *mut NativeHandleContainer;
+    extern "C" {
+        pub(super) fn mw_com_impl_instance_specifier_create(
+            value: *const u8,
+            len: u32,
+        ) -> *mut NativeInstanceSpecifier;
+        pub(super) fn mw_com_impl_instance_specifier_clone(
+            instance_specifier: *const NativeInstanceSpecifier,
+        ) -> *mut NativeInstanceSpecifier;
+        pub(super) fn mw_com_impl_instance_specifier_delete(
+            instance_specifier: *mut NativeInstanceSpecifier,
+        );
+        pub(super) fn mw_com_impl_find_service(
+            instance_specifier: *mut NativeInstanceSpecifier,
+        ) -> *mut NativeHandleContainer;
         pub(super) fn mw_com_impl_handle_container_delete(container: *mut NativeHandleContainer);
-        pub(super) fn mw_com_impl_handle_container_get_size(container: *const NativeHandleContainer) -> u32;
-        pub(super) fn mw_com_impl_handle_container_get_handle_at(container: *const NativeHandleContainer, pos: u32) -> *const HandleType;
+        pub(super) fn mw_com_impl_handle_container_get_size(
+            container: *const NativeHandleContainer,
+        ) -> u32;
+        pub(super) fn mw_com_impl_handle_container_get_handle_at(
+            container: *const NativeHandleContainer,
+            pos: u32,
+        ) -> *const HandleType;
         pub(super) fn mw_com_impl_initialize(options: *const *const i8, len: u32);
         pub(super) fn mw_com_impl_sample_ptr_get_size() -> u32;
-        pub(super) fn mw_com_impl_proxy_event_subscribe(proxy_event: *mut ProxyEventBase, max_num_events: u32) -> bool;
+        pub(super) fn mw_com_impl_proxy_event_subscribe(
+            proxy_event: *mut ProxyEventBase,
+            max_num_events: u32,
+        ) -> bool;
         pub(super) fn mw_com_impl_proxy_event_unsubscribe(proxy_event: *mut ProxyEventBase);
-        pub(super) fn mw_com_impl_proxy_event_set_receive_handler(proxy_event: *mut ProxyEventBase, boxed_handler: *const FatPtr);
-        pub(super) fn mw_com_impl_proxy_event_unset_receive_handler(proxy_event: *mut ProxyEventBase);
+        pub(super) fn mw_com_impl_proxy_event_set_receive_handler(
+            proxy_event: *mut ProxyEventBase,
+            boxed_handler: *const FatPtr,
+        );
+        pub(super) fn mw_com_impl_proxy_event_unset_receive_handler(
+            proxy_event: *mut ProxyEventBase,
+        );
     }
 }
 
@@ -140,7 +157,7 @@ mod ffi {
 /// will be an FnMut dynamic fat pointer. If this isn't true (or if the pointer is invalid), this
 /// will invoke undefined behavior.
 #[no_mangle]
-unsafe extern fn mw_com_impl_call_dyn_fnmut(ptr: *mut ffi::FatPtr) {
+unsafe extern "C" fn mw_com_impl_call_dyn_fnmut(ptr: *mut ffi::FatPtr) {
     let dyn_fnmut: *mut (dyn FnMut() + Send + 'static) = (*ptr).into();
     (*dyn_fnmut)();
 }
@@ -153,7 +170,7 @@ unsafe extern fn mw_com_impl_call_dyn_fnmut(ptr: *mut ffi::FatPtr) {
 /// will be an FnMut dynamic fat pointer. If this isn't true (or if the pointer is invalid), this
 /// will invoke undefined behavior.
 #[no_mangle]
-unsafe extern fn mw_com_impl_delete_boxed_fnmut(ptr: *mut ffi::FatPtr) {
+unsafe extern "C" fn mw_com_impl_delete_boxed_fnmut(ptr: *mut ffi::FatPtr) {
     let dyn_fnmut = (*ptr).into();
     drop(Box::from_raw(dyn_fnmut));
 }
@@ -163,8 +180,8 @@ unsafe extern fn mw_com_impl_delete_boxed_fnmut(ptr: *mut ffi::FatPtr) {
 pub use ffi::NativeInstanceSpecifier;
 
 pub use ffi::HandleType;
-pub use ffi::ProxyWrapperClass;
 pub use ffi::ProxyEvent as NativeProxyEvent;
+pub use ffi::ProxyWrapperClass;
 
 /// This trait is used to create and delete proxies.
 ///
@@ -202,7 +219,10 @@ impl<T: ProxyOps> ProxyWrapperGuard<T> {
     pub fn new(handle: &HandleType) -> Result<Self, ()> {
         let proxy = <T as ProxyOps>::create(handle);
         if !proxy.is_null() {
-            Ok(Self { proxy, _type: std::marker::PhantomData })
+            Ok(Self {
+                proxy,
+                _type: std::marker::PhantomData,
+            })
         } else {
             Err(())
         }
@@ -280,17 +300,22 @@ pub trait EventOps: Sized {
     ///
     /// This method is only safe to be called when the given pointer is pointing to a valid event of
     /// the type `Self`.
-    unsafe fn get_new_sample(proxy_event: *mut NativeProxyEvent<Self>) -> Option<sample_ptr_rs::SamplePtr<Self>>;
+    unsafe fn get_new_sample(
+        proxy_event: *mut NativeProxyEvent<Self>,
+    ) -> Option<sample_ptr_rs::SamplePtr<Self>>;
 }
 
 /// # Safety
 ///
 /// This function must be called with a pointer to a valid event of the type `T`. The event behind
 /// the pointer must not have been deleted already.
-unsafe fn native_get_new_sample<'a, T: EventOps>(native: *mut ffi::ProxyEvent<T>) -> Option<crate::SamplePtr<'a, T>> {
+unsafe fn native_get_new_sample<'a, T: EventOps>(
+    native: *mut ffi::ProxyEvent<T>,
+) -> Option<crate::SamplePtr<'a, T>> {
     let sample_ptr = <T as EventOps>::get_new_sample(native);
-    sample_ptr.map(|sample_ptr| {
-        crate::SamplePtr { sample_ptr: ManuallyDrop::new(sample_ptr), _event: PhantomData }
+    sample_ptr.map(|sample_ptr| crate::SamplePtr {
+        sample_ptr: ManuallyDrop::new(sample_ptr),
+        _event: PhantomData,
     })
 }
 
@@ -369,7 +394,10 @@ impl<T: EventOps, P> ProxyEvent<T, P> {
     /// # Errors
     ///
     /// If the subscription fails on C++ side, this error is propagated to the caller.
-    pub fn subscribe(self, max_num_events: u32) -> Result<SubscribedProxyEvent<T, P>, (&'static str, Self)> {
+    pub fn subscribe(
+        self,
+        max_num_events: u32,
+    ) -> Result<SubscribedProxyEvent<T, P>, (&'static str, Self)> {
         // SAFETY: Since the pointer is unmodified from what we get from C++ and the FFI function
         // calls Subscribe on the event, there is no undefined behavior expected.
         unsafe {
@@ -426,9 +454,7 @@ impl<T: EventOps, P: Clone> SubscribedProxyEvent<T, P> {
         // SAFETY: This call is safe since the pointer is unmodified from what we get from C++.
         // Since this is the same pointer that we received during initialization (which is, by its
         // signature) of the same type, we're allowed to use it here safely.
-        unsafe {
-            native_get_new_sample(self.native)
-        }
+        unsafe { native_get_new_sample(self.native) }
     }
 
     /// Set a callable that is called whenever there is new data incoming.
@@ -457,7 +483,9 @@ impl<T: EventOps, P: Clone> SubscribedProxyEvent<T, P> {
         // SAFETY: This call is safe since the pointer is unmodified from what we get from C++.
         // Since this is the same pointer that we received during initialization (which is, by its
         // signature) of the same type, we're allowed to use it here safely.
-        unsafe { native_unset_receive_handler(self.native); }
+        unsafe {
+            native_unset_receive_handler(self.native);
+        }
     }
 
     pub fn as_stream(&mut self) -> Result<ProxyEventStream<T, P>, &'static str> {
@@ -468,7 +496,9 @@ impl<T: EventOps, P: Clone> SubscribedProxyEvent<T, P> {
         // SAFETY: This call is safe since the pointer is unmodified from what we get from C++.
         // Since this is the same pointer that we received during initialization (which is, by its
         // signature) of the same type, we're allowed to use it here safely.
-        unsafe { native_set_receive_handler(self.native, waker_callback); }
+        unsafe {
+            native_set_receive_handler(self.native, waker_callback);
+        }
 
         Ok(ProxyEventStream {
             event: self,
@@ -481,9 +511,7 @@ impl<T, P> Drop for SubscribedProxyEvent<T, P> {
     fn drop(&mut self) {
         // SAFETY: Since the pointer is unmodified from what we get from C++ and the FFI function
         // calls Unsubscribe on the event, there is no undefined behavior.
-        unsafe {
-            ffi::mw_com_impl_proxy_event_unsubscribe(&mut (*self.native).base)
-        }
+        unsafe { ffi::mw_com_impl_proxy_event_unsubscribe(&mut (*self.native).base) }
     }
 }
 
@@ -504,9 +532,7 @@ impl<'a, T: EventOps, P> Stream for ProxyEventStream<'a, T, P> {
         let sample_ptr = unsafe { native_get_new_sample(self.event.native) };
         match sample_ptr {
             Some(sample_ptr) => Poll::Ready(Some(sample_ptr)),
-            None => {
-                Poll::Pending
-            }
+            None => Poll::Pending,
         }
     }
 }
@@ -546,9 +572,7 @@ impl TryFrom<&'_ str> for InstanceSpecifier {
         if inner.is_null() {
             Err(())
         } else {
-            Ok(Self {
-                inner
-            })
+            Ok(Self { inner })
         }
     }
 }
@@ -557,12 +581,8 @@ impl Clone for InstanceSpecifier {
     fn clone(&self) -> Self {
         // SAFETY: Since we only pass the pointer received by the create FFI function, the call is
         // safe.
-        let inner = unsafe {
-            ffi::mw_com_impl_instance_specifier_clone(self.inner)
-        };
-        Self {
-            inner
-        }
+        let inner = unsafe { ffi::mw_com_impl_instance_specifier_clone(self.inner) };
+        Self { inner }
     }
 }
 
@@ -594,9 +614,7 @@ impl HandleContainer {
     pub fn len(&self) -> usize {
         // SAFETY: Since we only pass the pointer received by the create FFI function, the call is
         // safe.
-        unsafe {
-            ffi::mw_com_impl_handle_container_get_size(self.inner) as usize
-        }
+        unsafe { ffi::mw_com_impl_handle_container_get_size(self.inner) as usize }
     }
 
     /// Returns the first handle in the container, or 'None' if the container is empty.
@@ -621,7 +639,8 @@ impl Index<usize> for HandleContainer {
         // as the container is still alive. Since the lifetime of the result is bound to the
         // lifetime of the borrow to self, this is guaranteed.
         unsafe {
-            let native_handle = ffi::mw_com_impl_handle_container_get_handle_at(self.inner, index as u32);
+            let native_handle =
+                ffi::mw_com_impl_handle_container_get_handle_at(self.inner, index as u32);
             native_handle.as_ref().expect("nullptr received as handle")
         }
     }
@@ -644,12 +663,10 @@ impl Drop for HandleContainer {
 pub fn find_service(instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()> {
     // SAFETY: Since we only pass the pointer received by the create FFI function, the call is
     // safe.
-    let native_hande_container = unsafe {
-        ffi::mw_com_impl_find_service(instance_specifier.inner)
-    };
+    let native_hande_container = unsafe { ffi::mw_com_impl_find_service(instance_specifier.inner) };
     if !native_hande_container.is_null() {
         Ok(HandleContainer {
-            inner: native_hande_container
+            inner: native_hande_container,
         })
     } else {
         Err(())
@@ -704,9 +721,7 @@ where
 fn get_sample_ptr_size() -> usize {
     // SAFETY: The function jut calls sizeof on a type and is therefore constexpr. No undefined
     // behavior exists.
-    unsafe {
-        ffi::mw_com_impl_sample_ptr_get_size() as usize
-    }
+    unsafe { ffi::mw_com_impl_sample_ptr_get_size() as usize }
 }
 
 /// Initialize the mw::com subsystem.
@@ -714,7 +729,10 @@ fn get_sample_ptr_size() -> usize {
 /// This call is optional. However, it will allow for modifying the configuration file location,
 /// plus it will do sanity checks, e.g. if the size of the sample pointer is correct.
 pub fn initialize(manifest_location: Option<&Path>) {
-    assert_eq!(get_sample_ptr_size(), std::mem::size_of::<sample_ptr_rs::SamplePtr<u32>>());
+    assert_eq!(
+        get_sample_ptr_size(),
+        std::mem::size_of::<sample_ptr_rs::SamplePtr<u32>>()
+    );
 
     let mut options = vec![CString::new(b"executable").unwrap()];
     if let Some(manifest_location) = manifest_location {

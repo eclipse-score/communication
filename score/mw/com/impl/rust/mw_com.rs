@@ -11,12 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 pub use macros::*;
-pub use proxy_bridge_rs::{initialize,  InstanceSpecifier}; // TODO: Move to common
+pub use proxy_bridge_rs::{initialize, InstanceSpecifier}; // TODO: Move to common
 pub mod proxy {
     pub use proxy_bridge_rs::{find_service, SamplePtr};
 }
 pub mod skeleton {
-    pub use skeleton_bridge_rs::{Offered, UnOffered, OfferState, SkeletonOps, SkeletonEvent};
+    pub use skeleton_bridge_rs::{OfferState, Offered, SkeletonEvent, SkeletonOps, UnOffered};
 }
 pub mod ffi {
     pub use proxy_bridge_rs::NativeInstanceSpecifier;

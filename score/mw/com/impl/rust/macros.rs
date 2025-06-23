@@ -51,7 +51,10 @@ macro_rules! import_type {
                 #[link_name=concat!("mw_com_gen_", stringify!($uid), "_get_size")]
                 pub safe fn get_size() -> u32;
                 #[link_name=concat!("mw_com_gen_SkeletonEvent_", stringify!($uid), "_send")]
-                pub unsafe fn send(skeleton_event: *mut $crate::skeleton_bridge::NativeSkeletonEvent<$ctype>, sample: *const $ctype) -> bool;
+                pub unsafe fn send(
+                    skeleton_event: *mut $crate::skeleton_bridge::NativeSkeletonEvent<$ctype>,
+                    sample: *const $ctype,
+                ) -> bool;
             }
         }
 
@@ -87,11 +90,12 @@ macro_rules! import_type {
         }
 
         impl $crate::skeleton_bridge::SkeletonOps for $ctype {
-            fn send(&self, event: *mut $crate::skeleton_bridge::NativeSkeletonEvent<Self>) -> $crate::common_types::Result<()> {
+            fn send(
+                &self,
+                event: *mut $crate::skeleton_bridge::NativeSkeletonEvent<Self>,
+            ) -> $crate::common_types::Result<()> {
                 // SAFETY: calling FFI functionalities
-                if unsafe {
-                    $uid::send(event, self as *const _)
-                } {
+                if unsafe { $uid::send(event, self as *const _) } {
                     Ok(())
                 } else {
                     Err(())
