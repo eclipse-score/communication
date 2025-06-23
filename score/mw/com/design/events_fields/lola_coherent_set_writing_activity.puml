@@ -1,0 +1,33 @@
+@startuml CoherentSetToWriting
+title "Coherent Status Update\nslot_index: integer"
+
+start
+
+:Atomic Load Status of slot\nslot_index of ASIL_B segment\ninto status_current_B and check\nits refcount;
+note left: slot_index
+
+if (refcount equals 0?) then (yes)
+  :Atomic Load Status of slot\nslot_index of ASIL_QM segment\ninto status_current_QM and check\nits refcount;
+  if (refcount equals 0?) then (yes)
+    :Atomic CompareExchange the\nvalue of slot[slot_index] of\nASIL_B segment with\nstatus_current_B and exchange\nit to status "IN_WRITING".;    
+    if (compare exchange success?) then (yes)
+      :Atomic CompareExchange the\nvalue of slot[slot_index] of\nASIL_QM segment with\nstatus_current_QM and exchange\nit to status "IN_WRITING".; 
+      if (compare exchange success?) then (yes)
+      else (no)
+        :Reset value of slot[slot_index]\nin ASIL_B segment to\nstatus_current_B via\natomic store.;
+      endif
+    else (no)
+    endif
+  else (no)
+  endif
+else (no)
+  
+endif
+
+:Update Write\nStatus OUT-Param\nsuccess/failure;
+note left: write_status
+
+stop
+note left: Coherent Set to WRITING done
+
+@enduml

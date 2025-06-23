@@ -208,7 +208,10 @@ follows:
 During this activity a more complex sub-activity is executed/referenced, to achieve a coherent change of slot states in
 both control structures (containing a rollback mechanism). This activity is modeled separately here:
 
-![Coherent Status Update](broken_link_k/swh/ddad_score/mw/com/design/events_fields/lola_coherent_set_writing_activity.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include lola_coherent_set_writing_activity.puml
+```
 
 ### Proxy side Activities for Event Access
 
