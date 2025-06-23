@@ -1,0 +1,45 @@
+@startuml "Proxy Event Subscription State Machine"
+title "Proxy Event Subscription State Machine"
+
+state "NOT_SUBSCRIBED" as not_subscribed {
+  onentry: ClearSubscriptionData()
+  onentry: EventReceiveHandlerManager::Unregister()
+}
+
+state "SUBSCRIPTION_PENDING" as subscription_pending
+
+state "SUBSCRIBED" as subscribed
+
+note "Global data\n--\nSubscriptionData\n+ Clear()\n- optional<uint8_t> max_sample_count: stores the sample_count from Subscribe()\n- optional<SlotCollector>: slot_collector\n\nEventReceiveHandlerManager: Manages \nregistering / unregistering / reregistering Event Receive Handlers.\n\n--\nGlobal Functions\n--  \nClearSubscriptionData():\n- Sets all values in SubscriptionData to initial state." as global_data
+
+not_subscribed -[#red]-> not_subscribed : UnsubscribeEvent()
+
+not_subscribed -[#green]-> not_subscribed : ReOfferEvent()/provider_service_instance_is_available_=true
+
+not_subscribed -[#orange]-> not_subscribed : StopOfferEvent()/\nprovider_service_instance_is_available_=false
+
+not_subscribed -[#blue]-> subscription_pending : SubscribeEvent(max_samples)/TransactionLog::RegisterProxyElement,max_sample_count=max_samples\n[provider_service_instance_is_available_==false] EventReceiveHandlerManager::Register()
+
+not_subscribed -[#blue]-> subscribed : SubscribeEvent(max_samples)/MaxSamples=max_samples\n[provider_service_instance_is_available_==true]
+
+subscription_pending -[#blue]-> subscription_pending : SubscribeEvent(max_samples)/PrintError()[NextMaxSamples != max_samples]
+
+subscription_pending -[#blue]-> subscription_pending : SubscribeEvent(max_samples)/[NextMaxSamples == max_samples]
+
+subscribed -[#blue]-> subscribed : SubscribeEvent(max_samples)/\n[GetMaxSamples() == max_samples]
+
+subscribed -[#blue]-> subscribed : SubscribeEvent(max_samples)/PrintError()\n[GetMaxSamples() != max_samples]
+
+subscription_pending -[#red]-> not_subscribed : UnsubscribeEvent()
+
+subscribed -[#red]-> not_subscribed : UnsubscribeEvent()
+
+subscription_pending -[#green]-> subscribed : ReOfferEvent()/provider_service_instance_is_available_=true, \nEventReceiveHandlerManager::Reregister()
+
+subscribed -[#green]-> subscribed : ReOfferEvent()/PrintWarning(),provider_service_instance_is_available_=true
+
+subscribed -[#orange]-> subscription_pending : StopOfferEvent()/\nprovider_service_instance_is_available_=false
+
+subscription_pending -[#orange]-> subscription_pending : StopOfferEvent()/\nprovider_service_instance_is_available_=false/Terminate()
+
+@enduml

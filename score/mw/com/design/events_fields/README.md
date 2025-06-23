@@ -364,11 +364,17 @@ instance has been described [here](../skeleton_proxy/README.md#proxy-auto-reconn
 
 The structure and transitions of the state machine are shown in:
 
-![Proxy Event Subscription State Machine](broken_link_k/swh/ddad_score/mw/com/design/events_fields/proxy_event_state_machine.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include proxy_event_state_machine.puml
+```
 
 The structural model of the state machine design is as follows:
 
-![Structural View Proxy Event Subscription State Machine](broken_link_k/swh/ddad_score/mw/com/design/events_fields/proxy_event_state_machine_model.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include proxy_event_state_machine_model.puml
+```
 
 ### Event Update Notification
 
