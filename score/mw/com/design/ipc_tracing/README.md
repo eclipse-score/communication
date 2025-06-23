@@ -147,14 +147,14 @@ not.
 Therefore, existing binding independent classes for events/fields at proxy and skeleton side get extended with
 `tracing_data_` members, which contain simple enable/disable flags per API:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/ipc_tracing/structural_event_field_extensions.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/structural_event_field_extensions.puml" />
 
 Due to our current architecture, we can not hand those `<Skeleton|Proxy>EventTracingData` instances over in the
 constructor calls of the binding independent classes for events/fields at proxy and skeleton side, since at least on the
 skeleton side binding specific information is required for setting `SkeletonEventTracingData::trace_context_id`.
 So instead these classes create those `tracing_data_` members within their constructor in the following way:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/ipc_tracing/sequence_API_trace_setup.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/sequence_API_trace_setup.puml" />
 
 As mentioned above the `SkeletonEventTracingData` has (opposed to `ProxyEventTracingData`) an additional member
 `trace_context_id`, which has to be set up, because only the skeleton side tracing deals with the asynchronous trace
@@ -233,7 +233,7 @@ with the binding specific information/arguments.
 
 The following sequence shows as an example the call to `SkeletonEvent<SampleDataType>::Send`
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/ipc_tracing/sequence_layer_interaction_sample.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/sequence_layer_interaction_sample.puml" />
 
 Like explained above &ndash; the `LoLa` binding specific `lola::SkeletonEvent` doesn't know anything, which is really
 tracing specific! It gets handed over an optional "tracing callback", which has been prepared by the binding independent
