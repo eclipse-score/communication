@@ -1,0 +1,48 @@
+@startuml
+title "Activity Allocate Mixed Criticality"
+
+(*) --> if "" as RetryCheck then
+  -down->[max Retries reached] (*)
+else
+  -down->[max Retries not reached] "Set\ncurrent_slot_index = 0\noldest_timestamp = MAX\nfound_slot_index = INVALID;" as Activity_1
+endif
+
+Activity_1 -down-> "Check, whether slot in ASIL-B segment && in ASIL-QM segment at current_slot_index are: EMPTY" as Activity_2
+
+Activity_2 -down-> if "" as EmptyCheck then
+  -left->[empty] "Set state of slot with current_slot_index in ASIL-B segment && ASIL-QM segment to 'IN WRITING';\nstop" as Activity_3
+  -down-> [Event Allocation finished](*)
+else
+  -down->[no empty slot] "Check, whether slot in ASIL-B segment && in ASIL-QM segment at current_slot_index are valid (contain data) and reference count == 0;" as Activity_4
+endif
+
+Activity_4 -down-> if "" as ValidCheck then
+  -down->[valid && refcount == 0] "Check whether timestamp of slot in ASIL-B segment < oldest_timestamp;" as Activity_5
+else
+  -right->[not valid || refcount != 0] "Increment current_slot_index;" as Activity_6
+endif
+
+Activity_6 -up-> if "" as IncrementCheck then
+  -up->[current_slot_index <= max_slot_index] Activity_2
+else
+  -down->[current_slot_index > max_slot_index] if "" as FoundCheck then
+    -down->[found_slot_index IS VALID] "CoherentSetToWriting;\nif change successful then stop" as Activity_7
+  else
+    -right->[found_slot_index IS INVALID] "Increment retries" as Activity_8
+    -up-> RetryCheck
+  endif
+endif
+
+Activity_5 -down-> if "" as TimestampCheck then
+  -down->[slot timestamp < oldest_timestamp] "Set oldest_timestamp = timestamp of slot in ASIL-B segment at current_slot_index\nfound_slot_index = current_slot_index;" as Activity_7
+  -up-> Activity_6
+else
+  -right->[slot timestamp >= oldest_timestamp] Activity_6
+endif
+
+Activity_7 -down-> if "" as ChangeCheck then
+  -right->[change successful] (*)
+else
+  -up->[change failed] Activity_8
+
+@enduml

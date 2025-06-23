@@ -200,7 +200,10 @@ In case of a mixed criticality setup with an ASIL-B provider/skeleton and both -
 discrete control structures are needed to separate ASIL-B/QM, the activities to be taken by the ASIL-B skeleton are as
 follows:
 
-![Activity Allocate Mixed Criticality](broken_link_k/swh/ddad_score/mw/com/design/events_fields/lola_event_allocate_mixed_critical_activity.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include lola_event_allocate_mixed_critical_activity.puml
+```
 
 During this activity a more complex sub-activity is executed/referenced, to achieve a coherent change of slot states in
 both control structures (containing a rollback mechanism). This activity is modeled separately here:
