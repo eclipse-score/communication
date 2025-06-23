@@ -65,10 +65,10 @@ cc_library(
 )
 
 rust_library(
-    name = "lib_gen_rs",
-    srcs = ["lib_gen.rs"],
+    name = "ipc_bridge_gen_rs",
+    srcs = ["ipc_bridge_gen.rs"],
     deps = [
-        ":lib_gen_cpp",
+        ":ipc_bridge_gen_cpp",
         "//score/mw/com/impl/rust:mw_com",
         "@crate_index//:libc",
     ],
@@ -79,9 +79,8 @@ rust_binary(
     srcs = ["ipc_bridge.rs"],
     data = ["etc/mw_com_config.json"],
     features = ["link_std_cpp_lib"],
-    rustc_flags = ["-Clink-arg=-lstdc++"],
     deps = [
-        ":lib_gen_rs",
+        ":ipc_bridge_gen_rs",
         "//score/mw/com/impl/rust:mw_com",
         "@crate_index//:clap",
         "@crate_index//:futures",
@@ -89,8 +88,8 @@ rust_binary(
 )
 
 cc_library(
-    name = "lib_gen_cpp",
-    srcs = ["lib_gen.cpp"],
+    name = "ipc_bridge_gen_cpp",
+    srcs = ["ipc_bridge_gen.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":datatype",

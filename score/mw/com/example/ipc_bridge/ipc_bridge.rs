@@ -50,7 +50,7 @@ const DATA_RECEPTION_COUNT: usize = 100;
 /// sample that is received.
 async fn get_samples<
     'a,
-    S: Stream<Item = mw_com::proxy::SamplePtr<'a, lib_gen_rs::MapApiLanesStamped>> + 'a,
+    S: Stream<Item = mw_com::proxy::SamplePtr<'a, ipc_bridge_gen_rs::MapApiLanesStamped>> + 'a,
 >(
     map_api_lanes_stamped: S,
     count: usize,
@@ -81,9 +81,9 @@ fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
         }
     };
 
-    let lib_gen_rs::IpcBridge::Proxy {
+    let ipc_bridge_gen_rs::IpcBridge::Proxy {
         map_api_lanes_stamped_,
-    } = lib_gen_rs::IpcBridge::Proxy::new(&handles[0]).expect("Failed to create the proxy");
+    } = ipc_bridge_gen_rs::IpcBridge::Proxy::new(&handles[0]).expect("Failed to create the proxy");
     let mut subscribed_map_api_lanes_stamped = map_api_lanes_stamped_
         .subscribe(1)
         .expect("Failed to subscribe");
@@ -98,13 +98,14 @@ fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
 }
 
 fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier) {
-    let skeleton = lib_gen_rs::IpcBridge::Skeleton::new(&instance_specifier)
+    let skeleton = ipc_bridge_gen_rs::IpcBridge::Skeleton::new(&instance_specifier)
         .expect("BigDataSkeleton creation failed");
 
     let skeleton = skeleton.offer_service().expect("Failed offering from rust");
     let mut x: u32 = 1;
     while x < 10 {
-        let mut sample: lib_gen_rs::MapApiLanesStamped = lib_gen_rs::MapApiLanesStamped::default();
+        let mut sample: ipc_bridge_gen_rs::MapApiLanesStamped =
+            ipc_bridge_gen_rs::MapApiLanesStamped::default();
         sample.x = x;
         skeleton
             .events
@@ -124,7 +125,8 @@ fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier) {
     let skeleton = skeleton.offer_service().expect("Reoffering failed");
     x = 0;
     while x < 10 {
-        let mut sample: lib_gen_rs::MapApiLanesStamped = lib_gen_rs::MapApiLanesStamped::default();
+        let mut sample: ipc_bridge_gen_rs::MapApiLanesStamped =
+            ipc_bridge_gen_rs::MapApiLanesStamped::default();
         sample.x = x;
         skeleton
             .events
@@ -142,11 +144,11 @@ fn main() {
     let args = Arguments::parse();
     println!(
         "[Rust] Size of MapApiLanesStamped: {}",
-        std::mem::size_of::<lib_gen_rs::MapApiLanesStamped>()
+        std::mem::size_of::<ipc_bridge_gen_rs::MapApiLanesStamped>()
     );
     println!(
         "[Rust] Size of MapApiLanesStamped::lane_boundaries: {}",
-        std::mem::size_of_val(&lib_gen_rs::MapApiLanesStamped::default().lane_boundaries)
+        std::mem::size_of_val(&ipc_bridge_gen_rs::MapApiLanesStamped::default().lane_boundaries)
     );
     mw_com::initialize(Some(&args.service_instance_manifest));
 
