@@ -191,7 +191,10 @@ The API entry point to events on the server/skeleton side is
 In any case a memory-allocation (rather a free event slot search) needs to be done. The general activity to be done in
 this case is pictured in the following activity diagram:
 
-![Activity Allocate Sample Slot](broken_link_k/swh/ddad_score/mw/com/design/events_fields/lola_event_allocate_activity.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include lola_event_allocate_activity.puml
+```
 
 In case of a mixed criticality setup with an ASIL-B provider/skeleton and both - ASIL-B and ASIL-QM consumers, where
 discrete control structures are needed to separate ASIL-B/QM, the activities to be taken by the ASIL-B skeleton are as
@@ -320,7 +323,6 @@ executable/process, it can be decided, whether only QM (ASIL-QM) or QM and ASIL 
 @startuml
 !include lola_msg_pass_initialize_seq.puml
 ```
-
 
 ### Event subscription
 

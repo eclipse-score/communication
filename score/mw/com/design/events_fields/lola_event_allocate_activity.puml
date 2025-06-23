@@ -1,0 +1,29 @@
+@startuml "EventAllocate"
+
+title EventAllocate
+
+(*) --> if "" as RetryCheck then
+  -down->[max Retries reached] (*)
+else
+  -down->[max Retries not reached] "Find Empty slot\n(slot not yet containing\nvalid event data)" as Activity_1
+endif
+
+Activity_1 --> if "" as EmptyCheck then
+  -right->[empty slot found] "Try change state of found\nslot to 'IN WRITING'"
+else
+  -down->[no empty slot] "Find unused slot with valid\nevent data with oldest timestamp"
+endif
+
+"Find unused slot with valid\nevent data with oldest timestamp" --> if "" as UnusedCheck then
+  -down->[found unused slot] "Try change state of found\nslot to 'IN WRITING'"
+else
+  -left->[no slot found] RetryCheck
+endif
+
+"Try change state of found\nslot to 'IN WRITING'" --> if "" as ChangeCheck then
+  -right->[change successful] (*)
+else
+  -up->[change failed] RetryCheck
+endif
+
+@enduml
