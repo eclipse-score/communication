@@ -1,0 +1,23 @@
+@startuml GetNewSamples
+title GetNewSamples (for specific event instance)\nmaxSampleCount: integer
+
+start
+
+:Determine point in time\nof last call to\nGetNewSamples;
+
+:Adapt maxSampleCount:\nmin(maxSampleCount, freeSamples);
+
+repeat
+  #Yellow:Activity\nReferenceNextEvent;
+
+  if (reference success?) then (no)
+    break
+  else (yes)
+    :Update UpperLimit with\ntimestamp of referenced\nevent.;
+    :Callback User\nwith SamplePtr;
+  endif
+repeat while (maxSampleCount not reached?) is (yes)
+
+stop
+
+@enduml

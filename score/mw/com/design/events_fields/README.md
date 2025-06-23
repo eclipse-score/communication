@@ -218,11 +218,17 @@ both control structures (containing a rollback mechanism). This activity is mode
 The central API entry point at proxy/consumer side to access event samples (after a successful subscription) is the
 `GetNewSamples()` method of an event instance. The activities taken by the proxy side implementation are as follows:
 
-![Activity GetNewSamples](broken_link_k/swh/ddad_score/mw/com/design/events_fields/get_new_samples_activity.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include get_new_samples_activity.puml
+```
 
 The activity shown above thereby relies on activity `ReferenceNextEvent`, which is shown here:
 
-![Activity GetNewSamples](broken_link_k/swh/ddad_score/mw/com/design/events_fields/lola_reference_next_event_activity.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include lola_reference_next_event_activity.puml
+```
 
 The main proxy algorithm above the shared memory data structures is broken into three entities:
 `score::mw::com::impl::lola::ProxyEvent`, `score::mw::com::impl::lola::ProxyEventCommon` and `score::mw::com::impl::lola::SlotCollector`. 
