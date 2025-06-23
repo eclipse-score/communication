@@ -100,7 +100,7 @@ Only if this is the case the `trace filter config` in the path given by
 `tracing::TracingFilterConfig`, which inherits from `tracing::ITracingFilterConfig` to support testing/mocking and has
 the following structure:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/ipc_tracing/structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/structural_view.puml" />
 
 For each activated/enabled trace point in the `trace filter config` a corresponding
 `tracing::TracingFilterConfig::AddTracePoint` is called, but **only** if for the enclosing service element (field/event)
