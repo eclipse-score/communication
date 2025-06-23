@@ -57,10 +57,7 @@ field-collection!
 Here we provide insight, how event communication is realized within our `LoLa` (shared memory based) binding. The
 following class diagram shows LoLa specific binding implementation and its relationship with binding independent parts:
 
-```plantuml
-@startuml
-!include event_lola_model.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/event_lola_model.puml">
 
 The referenced class `SubscriptionStateMachine` within this model is further detailed (including its dependent entities)
 further [below](#event-subscription).
@@ -191,44 +188,29 @@ The API entry point to events on the server/skeleton side is
 In any case a memory-allocation (rather a free event slot search) needs to be done. The general activity to be done in
 this case is pictured in the following activity diagram:
 
-```plantuml
-@startuml
-!include lola_event_allocate_activity.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_event_allocate_activity.puml">
 
 In case of a mixed criticality setup with an ASIL-B provider/skeleton and both - ASIL-B and ASIL-QM consumers, where
 discrete control structures are needed to separate ASIL-B/QM, the activities to be taken by the ASIL-B skeleton are as
 follows:
 
-```plantuml
-@startuml
-!include lola_event_allocate_mixed_critical_activity.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_event_allocate_mixed_critical_activity.puml">
 
 During this activity a more complex sub-activity is executed/referenced, to achieve a coherent change of slot states in
 both control structures (containing a rollback mechanism). This activity is modeled separately here:
 
-```plantuml
-@startuml
-!include lola_coherent_set_writing_activity.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_coherent_set_writing_activity.puml">
 
 ### Proxy side Activities for Event Access
 
 The central API entry point at proxy/consumer side to access event samples (after a successful subscription) is the
 `GetNewSamples()` method of an event instance. The activities taken by the proxy side implementation are as follows:
 
-```plantuml
-@startuml
-!include get_new_samples_activity.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/get_new_samples_activity.puml">
 
 The activity shown above thereby relies on activity `ReferenceNextEvent`, which is shown here:
 
-```plantuml
-@startuml
-!include lola_reference_next_event_activity.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_reference_next_event_activity.puml">
 
 The main proxy algorithm above the shared memory data structures is broken into three entities:
 `score::mw::com::impl::lola::ProxyEvent`, `score::mw::com::impl::lola::ProxyEventCommon` and `score::mw::com::impl::lola::SlotCollector`. 
@@ -298,10 +280,7 @@ once we resort back to sideband channel communication for `Subscribe` and `Unsub
 We encapsulate the low-level mechanisms provided by `score::mw::com::message_passing` via
 class `lola::MessagePassingFacade`, which is shown in the following class model:
 
-```plantuml
-@startuml
-!include lola_message_passing_model.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_message_passing_model.puml">
 
 ### `lola::MessagePassingFacade` is a Smart Proxy
 
@@ -334,10 +313,7 @@ The `score::mw::com::message_passing::Receiver`s used by `lola::MessagePassingFa
 initialization of our `mw::com` runtime. Depending on the `ara::com`/`mw::com` deployment info for the
 executable/process, it can be decided, whether only QM (ASIL-QM) or QM and ASIL (ASIL-B) Receivers are needed.
 
-```plantuml
-@startuml
-!include lola_msg_pass_initialize_seq.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_msg_pass_initialize_seq.puml">
 
 ### Event subscription
 
@@ -364,27 +340,18 @@ instance has been described [here](../skeleton_proxy/README.md#proxy-auto-reconn
 
 The structure and transitions of the state machine are shown in:
 
-```plantuml
-@startuml
-!include proxy_event_state_machine.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_msg_pass_proxy_event_state_machineinitialize_seq.puml">
 
 The structural model of the state machine design is as follows:
 
-```plantuml
-@startuml
-!include proxy_event_state_machine_model.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/proxy_event_state_machine_model.puml">
 
 ### Event Update Notification
 
 Event Notification is a good showcase for the "smart" behavior of `lola::MessagePassingFacade` as already mentioned (see
 example above). Here event notification registrations are aggregated and related messages are only sent once:
 
-```plantuml
-@startuml
-!include lola_msg_pass_event_notify.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/lola_msg_pass_event_notify.puml">
 
 #### Managing user provided EventReceiveHandlers
 
@@ -471,10 +438,7 @@ looks like! This sequence builds on message passing concepts/sequences already d
 [Notifications between skeleton and proxy](#notifications-between-skeleton-and-proxy) and the design of data-structures
 placed in shared memory discussed [here](#event-related-datastructures-in-lola-binding)
 
-```plantuml
-@startuml
-!include event_poll_lola_seq.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/event_poll_lola_seq.puml">
 
 # General implementation details of score::mw::com
 
@@ -507,7 +471,4 @@ central counter buried inside `SampleReferenceTracker` is atomic.
 
 This sequence diagram depicts the mechanics behind the reference counting on proxy side:
 
-```plantuml
-@startuml
-!include sampleptr_ref_counting.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/sampleptr_ref_counting.puml">

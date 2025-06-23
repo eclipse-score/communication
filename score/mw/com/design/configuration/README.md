@@ -173,10 +173,7 @@ initialization from a default manifest or configuration path, an explicit user p
 a directly handed over JSON.
 The sequence during startup would look like this:
 
-```plantuml
-@startuml
-!include sequence_startup_view.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/configuration/sequence_startup_view.puml">
 
 During this call a singleton instance of `score::mw::com::impl::Runtime` gets created, which gets the parsed/validated
 configuration in the form of `score::mw::com::detail::Configuration`.
@@ -187,7 +184,4 @@ configuration in the form of `score::mw::com::detail::Configuration`.
 
 Details can be seen in the following class diagram:
 
-```plantuml
-@startuml
-!include structural_view.puml
-```
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/configuration/structural_view.puml">
