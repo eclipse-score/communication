@@ -298,7 +298,10 @@ once we resort back to sideband channel communication for `Subscribe` and `Unsub
 We encapsulate the low-level mechanisms provided by `score::mw::com::message_passing` via
 class `lola::MessagePassingFacade`, which is shown in the following class model:
 
-![Structural View_MessagePassing](broken_link_k/swh/ddad_score/mw/com/design/events_fields/lola_message_passing_model.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+```plantuml
+@startuml
+!include lola_message_passing_model.puml
+```
 
 ### `lola::MessagePassingFacade` is a Smart Proxy
 
