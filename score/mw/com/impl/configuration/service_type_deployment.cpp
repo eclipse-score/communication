@@ -128,4 +128,9 @@ std::string_view ServiceTypeDeployment::ToHashString() const noexcept
     return hash_string_;
 }
 
+bool operator==(const ServiceTypeDeployment& lhs, const ServiceTypeDeployment& rhs) noexcept
+{
+    return lhs.binding_info_ == rhs.binding_info_;
+}
+
 }  // namespace score::mw::com::impl
