@@ -117,7 +117,7 @@ As shown in [Sequential View](./sequence_view.uxf?ref=18c835c8d7b01056dd48f257c1
 `ServiceDiscovery` which directly dispatches the requests - based on the `InstanceIdentifier` - to either one or both
 bindings.
 
-![Sequence View](broken_link_k/swh/ddad_score/mw/com/design/service_discovery/sequence_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/service_discovery/sequence_view.puml" />
 
 In the special case of starting an asynchronous search for service instances (aka `StartFindService()`) a unique handle
 (`FindServiceHandle`) needs to be returned, to enable the user to later stop this search. This identifier needs to be
