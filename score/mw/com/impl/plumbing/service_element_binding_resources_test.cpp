@@ -59,55 +59,41 @@ ConfigurationStore kConfigurationStoreLolaBinding{kInstanceSpecifier,
 
 }  // namespace
 
-TEST(ServiceElementBindingResourcesGetElementFqIdFromConfigTest,
-     ConvertingEventLolaConfigToElementFqIdReturnsValidElementFqId)
+TEST(ServiceElementBindingResourcesGetServiceElementIdTest, GettingEventIdWithValidEventNameReturnsValidEventId)
 {
-    // When converting Event config containing a lola binding to an ElementFqId
-    const auto actual_element_fq_id = GetElementFqIdFromLolaConfig<lola::ElementType::EVENT>(
-        kConfigurationStoreLolaBinding.lola_service_type_deployment_,
-        *kConfigurationStoreLolaBinding.lola_instance_id_,
-        kDummyEventName);
+    // When getting the EventId from a LolaServiceTypeDeployment containing that event
+    const auto actual_event_id = GetServiceElementId<lola::ElementType::EVENT>(
+        kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyEventName);
 
-    // Then we get a valid ElementFqId containing data from the configuration
-    const lola::ElementFqId expected_element_fq_id{
-        kServiceId, kDummyEventId, kLolaServiceInstanceId.GetId(), lola::ElementType::EVENT};
-    EXPECT_EQ(expected_element_fq_id, actual_element_fq_id);
+    // Then we get a valid EventId from the configuration
+    EXPECT_EQ(actual_event_id, kDummyEventId);
 }
 
-TEST(ServiceElementBindingResourcesGetElementFqIdFromConfigTest,
-     ConvertingFieldLolaConfigToElementFqIdReturnsValidElementFqId)
+TEST(ServiceElementBindingResourcesGetServiceElementIdTest, GettingFieldIdWithValidFieldNameReturnsValidFieldId)
 {
-    // When converting Field config containing a lola binding to an ElementFqId
-    const auto actual_element_fq_id = GetElementFqIdFromLolaConfig<lola::ElementType::FIELD>(
-        kConfigurationStoreLolaBinding.lola_service_type_deployment_,
-        *kConfigurationStoreLolaBinding.lola_instance_id_,
-        kDummyFieldName);
+    // When getting the FieldId from a LolaServiceTypeDeployment containing that field
+    const auto actual_field_id = GetServiceElementId<lola::ElementType::FIELD>(
+        kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyFieldName);
 
-    // Then we get a valid ElementFqId containing data from the configuration
-    const lola::ElementFqId expected_element_fq_id{
-        kServiceId, kDummyFieldId, kLolaServiceInstanceId.GetId(), lola::ElementType::FIELD};
-    EXPECT_EQ(expected_element_fq_id, actual_element_fq_id);
+    // Then we get a valid FieldId from the configuration
+    EXPECT_EQ(actual_field_id, kDummyFieldId);
 }
 
 TEST(ServiceElementBindingResourcesGetElementFqIdFromConfigDeathTest, ConvertingConfigWithInvalidElementTypeTerminates)
 {
-    // When converting Event config containing a lola binding to an ElementFqId using GetElementFqIdFromLolaConfig typed
-    // with an invalid ElementType Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetElementFqIdFromLolaConfig<lola::ElementType::INVALID>(
-                     kConfigurationStoreLolaBinding.lola_service_type_deployment_,
-                     *kConfigurationStoreLolaBinding.lola_instance_id_,
-                     kDummyEventName),
+    // When getting the EventId from a LolaServiceTypeDeployment which doesn't contain that event
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<lola::ElementType::EVENT>(
+                     kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyFieldName),
                  ".*");
 }
 
 TEST(ServiceElementBindingResourcesGetElementFqIdFromConfigDeathTest, ConvertingConfigWithUnknownElementTypeTerminates)
 {
-    // When converting Event config containing a lola binding to an ElementFqId using GetElementFqIdFromLolaConfig typed
-    // with an unknown ElementType Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetElementFqIdFromLolaConfig<static_cast<lola::ElementType>(100U)>(
-                     kConfigurationStoreLolaBinding.lola_service_type_deployment_,
-                     *kConfigurationStoreLolaBinding.lola_instance_id_,
-                     kDummyEventName),
+    // When getting the FieldId from a LolaServiceTypeDeployment which doesn't contain that field
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<lola::ElementType::FIELD>(
+                     kConfigurationStoreLolaBinding.lola_service_type_deployment_, kDummyEventName),
                  ".*");
 }
 
