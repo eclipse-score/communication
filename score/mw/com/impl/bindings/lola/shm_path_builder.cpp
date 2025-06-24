@@ -79,6 +79,12 @@ void EmitControlFileName(std::ostream& out,
             // default case and break are necessary to have well-formed switch.
             // coverity[autosar_cpp14_m0_1_1_violation : FALSE]
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid quality type");
+
+            // Rationale: This code is actually unreachable due to the assert above which will always be triggered if
+            // hit. However, rule M6-4-5 says that "An unconditional throw or break statement shall terminate every
+            // nonempty switch-clause.". So to avoid triggering that warning, we suppress this warning about unreachable
+            // code rather than removing the break statement.
+            // coverity[autosar_cpp14_m0_1_1_violation]
             break;
         }
     }
