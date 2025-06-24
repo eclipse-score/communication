@@ -52,10 +52,9 @@ will be represented by a flag file, and the path towards these files represent a
 
 ## Implementation
 
-The following section gives a written explanation for the structural view that is illustrated in
-[Structural View](structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+The following section gives a written explanation for the structural view that is illustrated in the following diagram.
 
-![Structural View](broken_link_k/swh/ddad_score/mw/com/design/service_discovery/structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/service_discovery/structural_view.puml" />
 
 All possible user interactions with service discovery related functionalities are service specific. Since an API user
 should not bother about implementation specific representations of services (e.g. the service identifier),

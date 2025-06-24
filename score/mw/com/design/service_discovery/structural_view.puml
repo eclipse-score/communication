@@ -1,0 +1,101 @@
+@startuml "StructuralView"
+title "Service Discovery Structural View"
+
+interface "mw::com::impl::IRuntime" as IRuntime {
+  - service_discovery_: score::cpp::optional<ServiceDiscovery>
+  --
+  + {abstract} resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>
+  + {abstract} GetServiceDiscovery(): ServiceDiscovery&
+  + {abstract} GetBindingRuntime(BindingType binding): IRuntimeBinding*
+}
+
+class "mw::com::impl::ServiceDiscovery" as ServiceDiscovery {
+  - runtime_: IRuntime&
+  - next_free_id: std::size_t
+  - user_callbacks_: std::unordered_map<FindServiceHandle, FindServiceHandler>
+  - handle_to_instance_: std::multimap<FindServiceHandle, InstanceIdentifier>
+  --
+  + ServiceDiscovery(IRuntime&)
+  + StartFindService(FindServiceHandler handler, InstanceSpecifier specifier): FindServiceHandle
+  + StartFindService(FindServiceHandler handler, InstanceIdentifier identifier): FindServiceHandle
+  + StartFindService(FindServiceHandler, EnrichedInstanceIdentifier): FindServiceHandle
+  + StopFindService(FindServiceHandle)
+  + GetInstanceIdentifierFor(FindServiceHandle): std::vector<InstanceIdentifier>
+  - GetNextHandle(): FindServiceHandle
+  FoundCallback = score::cpp::callback<void(FindServiceHandle)>
+}
+
+class "lola::ServiceDiscoveryClient" as ServiceDiscoveryClient {
+  - io_notify_: os::IONotify
+  - search_requests: std::multimap<watch_fd, std::pair<FindServiceHandle, FoundCallback> >
+  --
+  + ServiceDiscoveryClient(concurrency::Executor&)
+  - InstanceIdentiferToPath(): filesystem::Path
+}
+
+interface "mw::com::impl::IRuntimeBinding" as IRuntimeBinding {
+  service_discovery_client_: binding::ServiceDiscoveryClient
+  --
+  + {abstract} GetServiceDiscoveryClient(): IServiceDiscoveryClient&
+}
+
+interface "score::mw::com::impl::ProxyBase" as ProxyBase {
+  + StartFindService(FindServiceHandler handler, InstanceSpecifier specifier): FindServiceHandle
+  + StartFindService(FindServiceHandler handler, InstanceIdentifier identifier): FindServiceHandle
+  + StopFindService(FindServiceHandle)
+}
+
+interface "IServiceDiscoveryClient" as IServiceDiscoveryClient {
+  + {abstract} StartFindService(FoundCallback, FindServiceHandle, InstanceIdentifier)
+  + {abstract} StopFindService(FindServiceHandle)
+}
+
+class "DummyProxy" as DummyProxy {
+}
+
+interface "score::mw::com::impl::IServiceDiscovery" as IServiceDiscovery {
+  + StartFindService(FindServiceHandler, const InstanceSpecifier): FindServiceHandle
+  + StartFindService(FindServiceHandler, InstanceIdentifier): FindServiceHandle>
+  + StartFindService(FindServiceHandler, EnrichedInstanceIdentifier): FindServiceHandle
+  + StopFindService(const FindServiceHandle): ResultBlank
+}
+
+class "os::IONotify" as IONotify {
+  + AddWatch(filesystem::Path): watch_fd
+  + RemoveWatch(watch_fd): void
+  + WaitForEvent(): watch_fd
+}
+
+IRuntime --> ServiceDiscovery : "create"
+ProxyBase --> IRuntime : "uses: GetServiceDiscovery()"
+IServiceDiscoveryClient <|.. ServiceDiscoveryClient
+IRuntimeBinding --> ServiceDiscoveryClient : "create"
+ServiceDiscovery --> IServiceDiscoveryClient
+IRuntime <-- ServiceDiscovery : "uses:\nGetBindingRuntime(BindingType) /\nresolve(InstanceSpecifier)"
+IRuntimeBinding <-- ServiceDiscovery : "uses:\nGetServiceDiscoveryClient()"
+ServiceDiscoveryClient *-- IONotify
+ProxyBase <|.. DummyProxy
+IServiceDiscovery <|.. ServiceDiscovery
+
+note as N1
+Thread:
+- Wait for inotify event
+- Wake up
+- In data Structure watch_fd
+- Get watch_fd callbacks and handles from multimap
+
+- iterate:
+
+FoundCallback:
+Capture reference to ServiceDiscovery
+Argument: FindServiceHandle
+
+Find user_callback with FindServiceHandle
+Find respective InstanceIdentifier
+
+Create HandleType
+
+Execute captured FindServiceHandler (user_callback)
+end note
+
+@enduml
