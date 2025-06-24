@@ -69,7 +69,7 @@ cc_library(
         ":hash_helper_utility",
         ":i_tracing_filter_config",
         ":service_element_identifier_view",
-        ":service_element_type",
+        "//score/mw/com/impl:service_element_type",
         ":trace_point_key",
         "//score/mw/com/impl/configuration",
     ],
@@ -102,16 +102,6 @@ cc_library(
 )
 
 cc_library(
-    name = "service_element_type",
-    srcs = ["service_element_type.cpp"],
-    hdrs = ["service_element_type.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = ["@score-baselibs//score/mw/log"],
-)
-
-cc_library(
     name = "hash_helper_for_service_element_and_se_view",
     srcs = ["hash_helper_for_service_element_and_se_view.cpp"],
     hdrs = ["hash_helper_for_service_element_and_se_view.h"],
@@ -134,7 +124,7 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":hash_helper_for_service_element_and_se_view",
-        ":service_element_type",
+        "//score/mw/com/impl:service_element_type",
         "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -149,7 +139,7 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":hash_helper_for_service_element_and_se_view",
-        ":service_element_type",
+        "//score/mw/com/impl:service_element_type",
         "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
     ],
@@ -235,24 +225,12 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":service_element_type",
+        "//score/mw/com/impl:service_element_type",
         ":tracing_filter_config",
         "@score-baselibs//score/json",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:trace_error",
         "@score-baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_gtest_unit_test(
-    name = "service_element_type_test",
-    srcs = ["service_element_type_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/mw/com/impl/tracing:__subpackages__",
-    ],
-    deps = [
-        ":service_element_type",
     ],
 )
 
@@ -265,7 +243,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":service_element_identifier",
-        ":service_element_type",
+        "//score/mw/com/impl:service_element_type",
     ],
 )
 
@@ -278,7 +256,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":service_element_identifier_view",
-        ":service_element_type",
+        "//score/mw/com/impl:service_element_type",
     ],
 )
 
@@ -303,7 +281,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":service_element_identifier",
-        ":service_element_type",
+        "//score/mw/com/impl:service_element_type",
         ":trace_point_key",
     ],
 )
@@ -406,7 +384,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":service_element_identifier_test",
         ":service_element_identifier_view_test",
         ":service_element_instance_identifier_view_test",
-        ":service_element_type_test",
         ":skeleton_event_trace_point_type_test",
         ":skeleton_field_trace_point_type_test",
         ":trace_point_key_test",

@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/configuration/service_element_identifier.h"
 
-#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
+#include "score/mw/com/impl/service_element_type.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

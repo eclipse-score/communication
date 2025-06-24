@@ -16,7 +16,7 @@
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
-#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
+#include "score/mw/com/impl/service_element_type.h"
 
 #include <score/callback.hpp>
 #include <score/optional.hpp>
@@ -44,7 +44,7 @@ class SkeletonBinding
     ///          data-exchange mechanism.
     using RegisterShmObjectTraceCallback =
         score::cpp::callback<void(score::cpp::string_view element_name,
-                           tracing::ServiceElementType element_type,
+                           ServiceElementType element_type,
                            memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
                            void* shm_memory_start_address),
                       64U>;
@@ -53,7 +53,7 @@ class SkeletonBinding
     /// \details Needs only get used/called by bindings, which use shared-memory as their underlying communication/
     ///          data-exchange mechanism.
     using UnregisterShmObjectTraceCallback =
-        score::cpp::callback<void(score::cpp::string_view element_name, tracing::ServiceElementType element_type), 64U>;
+        score::cpp::callback<void(score::cpp::string_view element_name, ServiceElementType element_type), 64U>;
 
     // For the moment, SkeletonFields use only SkeletonEventBindings. However, in the future when Get / Set are
     // supported in fields, then SkeletonFieldBindings will be a map in which the values are:
