@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_type.h"
+#include "score/mw/com/impl/configuration/configuration_common_resources.h"
 
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
