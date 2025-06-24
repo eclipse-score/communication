@@ -54,7 +54,7 @@ If a handler has been registered for a specific message, it is invoked.
 +serviceId_ : uint16_t
 +instanceId_ : uint16_t
 +elementId_ : uint16_t
-+element_type_ : ElementType
++element_type_ : ServiceElementType
 --
 +ElementFqId(service_id : const std::uint16_t,event_id : const std::uint8_t,instance_id : const std::uint16_t)
 +ToString() : std::string

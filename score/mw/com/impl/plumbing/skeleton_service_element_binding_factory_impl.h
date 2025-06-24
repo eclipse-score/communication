@@ -43,20 +43,20 @@ namespace score::mw::com::impl
 namespace detail
 {
 
-template <lola::ElementType element_type>
+template <lola::ServiceElementType element_type>
 const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
                                                 const std::string_view service_element_name)
 {
     const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
     // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
-    if constexpr (element_type == lola::ElementType::EVENT)
+    if constexpr (element_type == lola::ServiceElementType::EVENT)
     {
         return GetEventInstanceDeployment(lola_service_instance_deployment, service_element_name_string);
     }
     // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
     // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
-    if constexpr (element_type == lola::ElementType::FIELD)
+    if constexpr (element_type == lola::ServiceElementType::FIELD)
     {
         return GetFieldInstanceDeployment(lola_service_instance_deployment, service_element_name_string);
     }
@@ -67,7 +67,9 @@ const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeploym
 
 }  // namespace detail
 
-template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, lola::ElementType element_type>
+template <typename SkeletonServiceElementBinding,
+          typename SkeletonServiceElement,
+          lola::ServiceElementType element_type>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
 // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
