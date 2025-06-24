@@ -1,0 +1,172 @@
+@startuml
+
+
+class "lola::Skeleton" {
+  -CreateSharedMemoryForData(LolaServiceInstanceDeployment&, LolaServiceTypeDeployment&) : bool
+  -CreateSharedMemoryForControl(LolaServiceInstanceDeployment&, LolaServiceTypeDeployment&, QualityType) : bool
+  -storage_ : ServiceDataStorage*
+  -control_qm_ : ServiceDataControl*
+  -control_asil_b_ : ServiceDataControl*
+  -storage_resource_ : std::shared_ptr<score::memory::shared::ManagedMemoryResource>
+  -control_qm_resource_ : std::shared_ptr<score::memory::shared::ManagedMemoryResource>
+  -control_asil_resource_ : std::shared_ptr<score::memory::shared::ManagedMemoryResource>
+}
+
+class "lola::ServiceDataStorage" <<Shared Memory>> {
+  +events_ : score::memory::shared::Map<ElementFqId, score::memory::shared::OffsetPtr<void>>
+  +events_metainfo_ : score::memory::shared::Map<ElementFqId, EventMetaInfo>
+  +skeleton_pid_ : pid_t
+}
+
+class "lola::EventMetaInfo" <<Shared Memory>> {
+  +data_type_info : DataTypeMetaInfo
+  +event_slots_raw_array : memory::shared::OffsetPtr<void>
+}
+
+class "lola::DataTypeMetaInfo" <<Shared Memory>> {
+  +size_of_ : std::size_
+  +align_of_ : std::uint8_t
+}
+
+class "lola::EventDataStorage<SampleType>" <<Shared Memory>> <<typedef>> {
+  using score::containers::DynamicArray<SampleType,\nstd::scoped_allocator_adaptor<\n    memory::shared::PolymorphicOffsetPtrAllocator<SampleType>\n>>
+}
+
+class "lola::ServiceDataControl" <<Shared Memory>> {
+  +event_controls_ : score::memory::shared::Map<ElementFqId, EventControl>
+  +uid_pid_mapping_ : UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>
+}
+
+class "lola::EventDataControl" <<Shared Memory>> <<typedef>> {
+}
+
+class "lola::detail_event_data_control::EventDataControlImpl<>" <<Shared Memory>> {
+  -state_slots_: std::vector<std::atomic<EventSlotStatus::value_type>,\n                memory::shared::PolymorphicOffsetPtrAllocator<std::atomic<EventSlotStatus::value_type>>>
+  -transaction_log_set_ : TransactionLogSet
+}
+
+class "memory::shared::SharedMemoryResource" {
+  -controlBlock : ControlBlock*
+}
+
+class "ControlBlock" {
+  +alreadyAllocatedBytes : std::size_t
+  -start : OffsetPtr<void>
+}
+
+class "lola::Proxy" {
+  +GetEventDataControl(const ElementFqId element_fq_id) const : EventDataControl*
+  +GetRawDataStorage(ElementFqId) const : const void*
+  +GetEventMetaInfo(ElementFqId) const : const EventMetaInfo&
+  -control_ : std::shared_ptr<memory::shared::ManagedMemoryResource>
+  -data_ : std::shared_ptr<memory::shared::ManagedMemoryResource>
+  -quality_type_: QualityType
+}
+
+class "lola::ProxyEventCommon" {
+  -slot_collector_ : SlotCollector
+}
+
+class "lola::ProxyEvent" {
+}
+
+class "lola::SlotCollector" {
+  -event_data_control_ : EventDataControl*
+}
+
+class "lola::EventControl" <<Shared Memory>> {
+  +data_control : EventDataControl
+  +subscription_control : EventSubscriptionControl
+}
+
+class "lola::EventSubscriptionControl" <<Shared Memory>> <<typedef>> {
+}
+
+class "lola::detail_event_subscription_control::EventSubscriptionControlImpl<>" <<Shared Memory>> {
+  -current_subscription_state_ : std::atomic_uint32_t
+  -max_subscribable_slots_ : const SlotNumberType
+  -max_subscribers_ : const SubscriberCountType
+  -enforce_max_samples_ : const bool
+}
+
+class "lola::UidPidMapping" <<Shared Memory>> {
+  +RegisterPid(const uid_t uid, const pid_t pid) : score::cpp::optional<pid_t>
+  -mapping_entries_ : score::containers::DynamicArray<UidPidMappingEntry, mapping_entry_alloc>
+}
+
+class "lola::UidPidMappingEntry" <<Shared Memory>> {
+  +key_uid_status_ : std::atomic<key_type>
+  +pid_ : pid_t
+}
+
+class "lola::TransactionLogSet" <<Shared Memory>> {
+  -proxy_transaction_logs_ : std::vector<TransactionLogNode,\n                                     memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>
+  -skeleton_tracing_transaction_log_ : TransactionLogNode
+  ..TransactionLogNode..
+  -is_active_ : bool
+  -needs_rollback : bool
+  -transaction_log_ : lola::TransactionLog
+  -transaction_log_id_: TransactionLogId
+}
+
+class "lola::TransactionLog" <<Shared Memory>> {
+  -reference_count_slots_ : std::vector<TransactionLogSlot,\n     memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>
+  -subscribe_transactions_ : TransactionLogSlot
+  -subscription_max_sample_count_ : score::cpp::optional<MaxSampleCountType>
+}
+
+class "lola::TransactionLogSlot" <<Shared Memory>> {
+  +SetTransactionBegin(bool) : void
+  +SetTransactionEnd(bool) : void
+  +GetTransactionBegin() : bool const
+  +GetTransactionEnd() : bool const
+  -transaction_begin_ : std::uint8_t : 1
+  -transaction_end_ : std::uint8_t : 2
+}
+
+
+lola::Skeleton "1" *-- "1" lola::ServiceDataStorage : storage_
+lola::Skeleton ..> lola::ServiceDataStorage : creates in CreateSharedMemoryForData()
+
+lola::Skeleton "1" *-- "1..2" lola::ServiceDataControl : control_<qm|asil_b>
+lola::Skeleton ..> lola::ServiceDataControl : creates in CreateSharedMemoryForControl()
+
+lola::Skeleton "1" *-- "2..3" memory::shared::SharedMemoryResource
+memory::shared::SharedMemoryResource *-- ControlBlock
+
+lola::Proxy "1" *-- "2" memory::shared::SharedMemoryResource
+lola::SlotCollector *-- "1" lola::EventDataControl : event_data_control
+
+lola::Proxy *-- "1..n" lola::ProxyEvent
+lola::ProxyEvent *-- "1" lola::ProxyEventCommon
+lola::ProxyEventCommon *-- "1" lola::SlotCollector
+lola::ProxyEvent ..> "lola::EventDataStorage<SampleType>" : Uses in GetNewSamples()
+
+
+
+
+
+lola::ServiceDataStorage *-- "1..n" "lola::EventDataStorage<SampleType>"
+lola::ServiceDataStorage *-- "1..n" lola::EventMetaInfo
+lola::EventMetaInfo *-- lola::DataTypeMetaInfo
+
+lola::ServiceDataControl *-- "1..n" lola::EventControl
+lola::ServiceDataControl *-- lola::UidPidMapping
+
+lola::EventControl *-- lola::EventDataControl
+lola::EventControl *-- lola::EventSubscriptionControl
+
+lola::UidPidMapping *-- "0..n" lola::UidPidMappingEntry
+
+lola::EventDataControl .> lola::detail_event_data_control::EventDataControlImpl : type
+lola::EventSubscriptionControl .> lola::detail_event_subscription_control::EventSubscriptionControlImpl : type
+
+
+
+
+
+
+lola::detail_event_data_control::EventDataControlImpl *-- lola::TransactionLogSet
+lola::TransactionLogSet *-- lola::TransactionLog
+lola::TransactionLog *-- "1..n" lola::TransactionLogSlot
+@enduml
