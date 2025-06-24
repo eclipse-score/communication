@@ -105,6 +105,55 @@ TEST(ServiceTypeDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedS
     EXPECT_DEATH(ServiceTypeDeployment reconstructed_unit{serialized_unit}, ".*");
 }
 
+TEST_F(ServiceTypeDeploymentFixture, CanGetLolaBindingFromServiceTypeDeploymentContainingLolaBinding)
+{
+    // Given a ServiceTypeDeployment containing a Lola binding
+    const auto& lola_service_type_deployment = MakeLolaServiceTypeDeployment();
+    ServiceTypeDeployment service_type_deployment{lola_service_type_deployment};
+
+    // When getting the LolaServiceTypeDeployment
+    const auto& returned_service_type_deployment_binding =
+        GetServiceTypeDeploymentBinding<LolaServiceTypeDeployment>(service_type_deployment);
+
+    // Then the lola binding of the ServiceTypeDeployment is returned
+    EXPECT_EQ(lola_service_type_deployment, returned_service_type_deployment_binding);
+}
+
+TEST_F(ServiceTypeDeploymentFixture, CanGetBlankBindingFromServiceTypeDeploymentContainingBlankBinding)
+{
+    // Given a ServiceTypeDeployment containing a blank binding
+    ServiceTypeDeployment service_type_deployment{score::cpp::blank{}};
+
+    // When getting the blank service type binding
+    const auto returned_service_type_deployment_binding =
+        GetServiceTypeDeploymentBinding<score::cpp::blank>(service_type_deployment);
+
+    // Then a blank binding is returned
+    EXPECT_EQ(score::cpp::blank{}, returned_service_type_deployment_binding);
+}
+
+TEST_F(ServiceTypeDeploymentFixture, GettingLolaBindingFromServiceTypeDeploymentNotContainingLolaBindingTerminates)
+{
+    // Given a ServiceTypeDeployment containing a blank binding
+    ServiceTypeDeployment service_type_deployment{score::cpp::blank{}};
+
+    // When getting the LolaServiceTypeDeployment
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = GetServiceTypeDeploymentBinding<LolaServiceTypeDeployment>(service_type_deployment),
+                 ".*");
+}
+
+TEST_F(ServiceTypeDeploymentFixture, GettingBlankBindingFromServiceTypeDeploymentNotContainingBlankBindingTerminates)
+{
+    // Given a ServiceTypeDeployment containing a Lola binding
+    const auto& lola_service_type_deployment = MakeLolaServiceTypeDeployment();
+    ServiceTypeDeployment service_type_deployment{lola_service_type_deployment};
+
+    // When getting a blank binding
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = GetServiceTypeDeploymentBinding<score::cpp::blank>(service_type_deployment), ".*");
+}
+
 class ServiceTypeDeploymentHashFixture
     : public ::testing::TestWithParam<std::tuple<ServiceTypeDeployment, std::string_view>>
 {
@@ -123,7 +172,7 @@ TEST_P(ServiceTypeDeploymentHashFixture, ToHashString)
     EXPECT_EQ(actual_hash_string.size(), ServiceTypeDeployment::hashStringSize);
 }
 
-const std::vector<std::tuple<ServiceTypeDeployment, std::string_view>> instance_id_to_hash_string_variations{
+const std::vector<std::tuple<ServiceTypeDeployment, std::string_view>> type_id_to_hash_string_variations{
     {ServiceTypeDeployment{LolaServiceTypeDeployment{0U}}, "00000"},
     {ServiceTypeDeployment{LolaServiceTypeDeployment{1U}}, "00001"},
     {ServiceTypeDeployment{LolaServiceTypeDeployment{10U}}, "0000a"},
@@ -131,7 +180,7 @@ const std::vector<std::tuple<ServiceTypeDeployment, std::string_view>> instance_
     {ServiceTypeDeployment{LolaServiceTypeDeployment{std::numeric_limits<LolaServiceId>::max()}}, "0ffff"}};
 INSTANTIATE_TEST_SUITE_P(ServiceTypeDeploymentHashFixture,
                          ServiceTypeDeploymentHashFixture,
-                         ::testing::ValuesIn(instance_id_to_hash_string_variations));
+                         ::testing::ValuesIn(type_id_to_hash_string_variations));
 
 }  // namespace
 }  // namespace score::mw::com::impl

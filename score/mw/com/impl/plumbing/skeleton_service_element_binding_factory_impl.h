@@ -104,7 +104,7 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
 
             const auto& service_instance_deployment = identifier_view.GetServiceInstanceDeployment();
             const auto& lola_service_instance_deployment =
-                GetLolaServiceInstanceDeploymentFromServiceInstanceDeployment(service_instance_deployment);
+                GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
             const auto element_fq_id =
                 GetElementFqIdFromLolaConfig<element_type>(lola_service_type_deployment,
                                                            lola_service_instance_deployment.instance_id_.value(),

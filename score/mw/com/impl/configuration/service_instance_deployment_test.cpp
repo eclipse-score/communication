@@ -153,6 +153,93 @@ TEST_F(ServiceInstanceDeploymentFixture, CanCreateFromSerializedBlankObject)
     ServiceInstanceDeployment reconstructed_unit{serialized_unit};
 }
 
+TEST_F(ServiceInstanceDeploymentFixture, CanGetLolaBindingFromServiceInstanceDeploymentContainingLolaBinding)
+{
+    // Given a ServiceInstanceDeployment containing a Lola binding
+    const auto& lola_service_instance_deployment = MakeLolaServiceInstanceDeployment();
+    ServiceInstanceDeployment service_instance_deployment{
+        kDummyService, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    // When getting the LolaServiceInstanceDeployment
+    const auto& returned_service_instance_deployment_binding =
+        GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
+
+    // Then the lola binding of the ServiceInstanceDeployment is returned
+    EXPECT_EQ(lola_service_instance_deployment, returned_service_instance_deployment_binding);
+}
+
+TEST_F(ServiceInstanceDeploymentFixture, CanGetSomeIpBindingFromServiceInstanceDeploymentContainingSomeIpBinding)
+{
+    // Given a ServiceInstanceDeployment containing a SomeIp binding
+    const auto& someip_service_instance_deployment = MakeSomeIpServiceInstanceDeployment();
+    ServiceInstanceDeployment service_instance_deployment{
+        kDummyService, someip_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    // When getting the SomeIpServiceInstanceDeployment
+    const auto returned_service_instance_deployment_binding =
+        GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment);
+
+    // Then the SomeIp binding of the ServiceInstanceDeployment is returned
+    EXPECT_EQ(someip_service_instance_deployment, returned_service_instance_deployment_binding);
+}
+
+TEST_F(ServiceInstanceDeploymentFixture, CanGetBlankBindingFromServiceInstanceDeploymentContainingBlankBinding)
+{
+    // Given a ServiceInstanceDeployment containing a blank binding
+    ServiceInstanceDeployment service_instance_deployment{
+        kDummyService, score::cpp::blank{}, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    // When getting the blank binding instance deployment
+    const auto returned_service_instance_deployment_binding =
+        GetServiceInstanceDeploymentBinding<score::cpp::blank>(service_instance_deployment);
+
+    // Then a blank binding is returned
+    EXPECT_EQ(score::cpp::blank{}, returned_service_instance_deployment_binding);
+}
+
+TEST_F(ServiceInstanceDeploymentFixture,
+       GettingLolaBindingFromServiceInstanceDeploymentNotContainingLolaBindingTerminates)
+{
+    // Given a ServiceInstanceDeployment containing a SomeIp binding
+    const auto& someip_service_instance_deployment = MakeSomeIpServiceInstanceDeployment();
+    ServiceInstanceDeployment service_instance_deployment{
+        kDummyService, someip_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    // When getting the LolaServiceInstanceDeployment
+    // Then the program terminates
+    EXPECT_DEATH(
+        score::cpp::ignore = GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment),
+        ".*");
+}
+
+TEST_F(ServiceInstanceDeploymentFixture,
+       GettingSomeIpBindingFromServiceInstanceDeploymentNotContainingSomeIpBindingTerminates)
+{
+    // Given a ServiceInstanceDeployment containing a Lola binding
+    const auto& lola_service_instance_deployment = MakeLolaServiceInstanceDeployment();
+    ServiceInstanceDeployment service_instance_deployment{
+        kDummyService, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    // When getting the SomeIpServiceInstanceDeployment
+    // Then the program terminates
+    EXPECT_DEATH(
+        score::cpp::ignore = GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment),
+        ".*");
+}
+
+TEST_F(ServiceInstanceDeploymentFixture,
+       GettingBlankBindingFromServiceInstanceDeploymentNotContainingBlankBindingTerminates)
+{
+    // Given a ServiceInstanceDeployment containing a SomeIp binding
+    const auto& someip_service_instance_deployment = MakeSomeIpServiceInstanceDeployment();
+    ServiceInstanceDeployment service_instance_deployment{
+        kDummyService, someip_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    // When getting a blank binding
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = GetServiceInstanceDeploymentBinding<score::cpp::blank>(service_instance_deployment), ".*");
+}
+
 TEST(ServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
 {
     const ServiceInstanceDeployment unit{kDummyService,
