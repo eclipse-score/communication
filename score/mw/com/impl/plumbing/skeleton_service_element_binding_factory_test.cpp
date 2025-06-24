@@ -55,14 +55,13 @@ ConfigurationStore kConfigStoreAsilQM{kInstanceSpecifier,
                                       kLolaServiceTypeDeployment,
                                       kLolaServiceInstanceDeployment};
 
-class SkeletonServiceElementBindingFactoryParamaterisedFixture
-    : public ::testing::TestWithParam<lola::ServiceElementType>
+class SkeletonServiceElementBindingFactoryParamaterisedFixture : public ::testing::TestWithParam<ServiceElementType>
 {
   protected:
     void SetUp() override
     {
-        ASSERT_TRUE((service_element_type_ == lola::ServiceElementType::EVENT) ||
-                    (service_element_type_ == lola::ServiceElementType::FIELD));
+        ASSERT_TRUE((service_element_type_ == ServiceElementType::EVENT) ||
+                    (service_element_type_ == ServiceElementType::FIELD));
     }
 
     SkeletonServiceElementBindingFactoryParamaterisedFixture& WithASkeletonBaseWithValidBinding(
@@ -84,11 +83,11 @@ class SkeletonServiceElementBindingFactoryParamaterisedFixture
     {
         switch (service_element_type_)
         {
-            case lola::ServiceElementType::EVENT:
+            case ServiceElementType::EVENT:
                 return lola::ElementFqId{kServiceId, kDummyEventId, kInstanceId, service_element_type_};
-            case lola::ServiceElementType::FIELD:
+            case ServiceElementType::FIELD:
                 return lola::ElementFqId{kServiceId, kDummyFieldId, kInstanceId, service_element_type_};
-            case lola::ServiceElementType::INVALID:
+            case ServiceElementType::INVALID:
             default:
                 // This should never be reached since we assert the value of service_element_type_ in SetUp()
                 std::terminate();
@@ -106,33 +105,33 @@ class SkeletonServiceElementBindingFactoryParamaterisedFixture
 
         switch (service_element_type_)
         {
-            case lola::ServiceElementType::EVENT:
+            case ServiceElementType::EVENT:
                 return SkeletonEventBindingFactory<TestSampleType>::Create(
                     instance_identifier, *skeleton_base_, kDummyEventName);
-            case lola::ServiceElementType::FIELD:
+            case ServiceElementType::FIELD:
                 return SkeletonFieldBindingFactory<TestSampleType>::CreateEventBinding(
                     instance_identifier, *skeleton_base_, kDummyFieldName);
-            case lola::ServiceElementType::INVALID:
+            case ServiceElementType::INVALID:
             default:
                 // This should never be reached since we assert the value of service_element_type_ in SetUp()
                 std::terminate();
         }
     }
 
-    lola::ServiceElementType service_element_type_{GetParam()};
+    ServiceElementType service_element_type_{GetParam()};
     std::unique_ptr<SkeletonBase> skeleton_base_{nullptr};
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder{};
 };
 
 INSTANTIATE_TEST_CASE_P(SkeletonServiceElementBindingFactoryParamaterisedFixture,
                         SkeletonServiceElementBindingFactoryParamaterisedFixture,
-                        ::testing::Values(lola::ServiceElementType::EVENT, lola::ServiceElementType::FIELD));
+                        ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
 
 using SkeletonServiceElementBindingFactoryParamaterisedDeathTest =
     SkeletonServiceElementBindingFactoryParamaterisedFixture;
 INSTANTIATE_TEST_CASE_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
                         SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
-                        ::testing::Values(lola::ServiceElementType::EVENT, lola::ServiceElementType::FIELD));
+                        ::testing::Values(ServiceElementType::EVENT, ServiceElementType::FIELD));
 
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructFixture) {}
 
