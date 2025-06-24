@@ -76,7 +76,7 @@ TEST_F(LolaServiceTypeDeploymentGetServiceElementFixture, ReturnsEventIdThatExis
         kLolaServiceId, {{kDummyEventName, kDummyLolaEventId}}, {{kDummyFieldName, kDummyLolaFieldId}}};
 
     // When getting a LolaEventId using the correct event name
-    const auto& event_id = GetEventId(unit, kDummyEventName);
+    const auto& event_id = GetServiceElementId<ServiceElementType::EVENT>(unit, kDummyEventName);
 
     // Then the returned object is the same as the one in the configuration
     EXPECT_EQ(event_id, kDummyLolaEventId);
@@ -89,7 +89,7 @@ TEST_F(LolaServiceTypeDeploymentGetServiceElementFixture, ReturnsFieldIdThatExis
         kLolaServiceId, {{kDummyEventName, kDummyLolaEventId}}, {{kDummyFieldName, kDummyLolaFieldId}}};
 
     // When getting a LolaFieldId using the correct field name
-    const auto& field_id = GetFieldId(unit, kDummyFieldName);
+    const auto& field_id = GetServiceElementId<ServiceElementType::FIELD>(unit, kDummyFieldName);
 
     // Then the returned object is the same as the one in the configuration
     EXPECT_EQ(field_id, kDummyLolaFieldId);
@@ -104,7 +104,7 @@ TEST_F(LolaServiceTypeDeploymentGetServiceElementDeathTest, GettingEventIdThatDo
 
     // When getting a LolaEventId using an incorrect event name
     // Then the program termintaes
-    EXPECT_DEATH(score::cpp::ignore = GetEventId(unit, kDummyFieldName), ".*");
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<ServiceElementType::EVENT>(unit, kDummyFieldName), ".*");
 }
 
 TEST_F(LolaServiceTypeDeploymentGetServiceElementDeathTest, GettingFieldIdThatDoesNotExistInDeploymentTerminates)
@@ -115,7 +115,7 @@ TEST_F(LolaServiceTypeDeploymentGetServiceElementDeathTest, GettingFieldIdThatDo
 
     // When getting a LolaFieldId using an incorrect field name
     // Then the program termintaes
-    EXPECT_DEATH(score::cpp::ignore = GetFieldId(unit, kDummyEventName), ".*");
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementId<ServiceElementType::FIELD>(unit, kDummyEventName), ".*");
 }
 
 TEST(LolaServiceTypeDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)

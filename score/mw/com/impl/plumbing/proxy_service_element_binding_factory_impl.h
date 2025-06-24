@@ -17,7 +17,6 @@
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
-#include "score/mw/com/impl/plumbing/service_element_binding_resources.h"
 #include "score/mw/com/impl/proxy_base.h"
 
 #include "score/memory/any_string_view.h"
@@ -76,8 +75,9 @@ std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
                                    "ServiceInstanceId does not contain lola binding.");
 
+            const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
             const auto lola_service_element_id =
-                GetServiceElementId<element_type>(lola_type_deployment, memory::AnyStringView{service_element_name});
+                GetServiceElementId<element_type>(lola_type_deployment, service_element_name_string);
             const lola::ElementFqId element_fq_id{lola_type_deployment.service_id_,
                                                   lola_service_element_id,
                                                   lola_service_instance_id->GetId(),
