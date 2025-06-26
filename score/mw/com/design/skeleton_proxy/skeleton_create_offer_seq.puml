@@ -112,14 +112,7 @@ deactivate SkeletonEvent
 
 end loop
 
-
-
-
-
-
 deactivate LolaSkeletonEvent
-
-
 deactivate SkeletonEvent
 
 SkeletonBase -> ServiceDiscovery: OfferService(InstanceIdentifier)
@@ -134,6 +127,5 @@ GenSkeleton --> Process
 deactivate GenSkeleton
 
 deactivate Process
-
 
 @enduml
