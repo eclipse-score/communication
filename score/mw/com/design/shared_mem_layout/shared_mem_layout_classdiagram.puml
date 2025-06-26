@@ -1,5 +1,5 @@
-@startuml
-
+@startuml "Shared Memory Layout Class Diagram"
+title "Shared Memory Layout Class Diagram"
 
 class "lola::Skeleton" {
   -CreateSharedMemoryForData(LolaServiceInstanceDeployment&, LolaServiceTypeDeployment&) : bool
@@ -29,7 +29,7 @@ class "lola::DataTypeMetaInfo" <<Shared Memory>> {
 }
 
 class "lola::EventDataStorage<SampleType>" <<Shared Memory>> <<typedef>> {
-  using score::containers::DynamicArray<SampleType,\nstd::scoped_allocator_adaptor<\n    memory::shared::PolymorphicOffsetPtrAllocator<SampleType>\n>>
+  using score::containers::DynamicArray<SampleType,std::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<SampleType>>>
 }
 
 class "lola::ServiceDataControl" <<Shared Memory>> {
@@ -40,8 +40,8 @@ class "lola::ServiceDataControl" <<Shared Memory>> {
 class "lola::EventDataControl" <<Shared Memory>> <<typedef>> {
 }
 
-class "lola::detail_event_data_control::EventDataControlImpl<>" <<Shared Memory>> {
-  -state_slots_: std::vector<std::atomic<EventSlotStatus::value_type>,\n                memory::shared::PolymorphicOffsetPtrAllocator<std::atomic<EventSlotStatus::value_type>>>
+class "lola::detail_event_data_control::EventDataControlImpl<>" as EventDataControlImpl <<Shared Memory>> {
+  -state_slots_: std::vector<std::atomic<EventSlotStatus::value_type>, memory::shared::PolymorphicOffsetPtrAllocator<std::atomic<EventSlotStatus::value_type>>>
   -transaction_log_set_ : TransactionLogSet
 }
 
@@ -82,7 +82,7 @@ class "lola::EventControl" <<Shared Memory>> {
 class "lola::EventSubscriptionControl" <<Shared Memory>> <<typedef>> {
 }
 
-class "lola::detail_event_subscription_control::EventSubscriptionControlImpl<>" <<Shared Memory>> {
+class "lola::detail_event_subscription_control::EventSubscriptionControlImpl<>" as EventSubscriptionControlImpl <<Shared Memory>> {
   -current_subscription_state_ : std::atomic_uint32_t
   -max_subscribable_slots_ : const SlotNumberType
   -max_subscribers_ : const SubscriberCountType
@@ -100,9 +100,11 @@ class "lola::UidPidMappingEntry" <<Shared Memory>> {
 }
 
 class "lola::TransactionLogSet" <<Shared Memory>> {
-  -proxy_transaction_logs_ : std::vector<TransactionLogNode,\n                                     memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>
+  -proxy_transaction_logs_ : std::vector<TransactionLogNode, memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>
   -skeleton_tracing_transaction_log_ : TransactionLogNode
-  ..TransactionLogNode..
+}
+
+class TransactionLog {
   -is_active_ : bool
   -needs_rollback : bool
   -transaction_log_ : lola::TransactionLog
@@ -110,7 +112,7 @@ class "lola::TransactionLogSet" <<Shared Memory>> {
 }
 
 class "lola::TransactionLog" <<Shared Memory>> {
-  -reference_count_slots_ : std::vector<TransactionLogSlot,\n     memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>
+  -reference_count_slots_ : std::vector<TransactionLogSlot, memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>
   -subscribe_transactions_ : TransactionLogSlot
   -subscription_max_sample_count_ : score::cpp::optional<MaxSampleCountType>
 }
@@ -131,20 +133,16 @@ lola::Skeleton ..> lola::ServiceDataStorage : creates in CreateSharedMemoryForDa
 lola::Skeleton "1" *-- "1..2" lola::ServiceDataControl : control_<qm|asil_b>
 lola::Skeleton ..> lola::ServiceDataControl : creates in CreateSharedMemoryForControl()
 
-lola::Skeleton "1" *-- "2..3" memory::shared::SharedMemoryResource
+lola::Skeleton "1" o-up- "2..3" memory::shared::SharedMemoryResource
 memory::shared::SharedMemoryResource *-- ControlBlock
 
-lola::Proxy "1" *-- "2" memory::shared::SharedMemoryResource
-lola::SlotCollector *-- "1" lola::EventDataControl : event_data_control
+lola::Proxy "1" o-up- "2" memory::shared::SharedMemoryResource
+lola::SlotCollector "n" *-- "1" lola::EventDataControl : event_data_control
 
 lola::Proxy *-- "1..n" lola::ProxyEvent
 lola::ProxyEvent *-- "1" lola::ProxyEventCommon
 lola::ProxyEventCommon *-- "1" lola::SlotCollector
 lola::ProxyEvent ..> "lola::EventDataStorage<SampleType>" : Uses in GetNewSamples()
-
-
-
-
 
 lola::ServiceDataStorage *-- "1..n" "lola::EventDataStorage<SampleType>"
 lola::ServiceDataStorage *-- "1..n" lola::EventMetaInfo
@@ -158,15 +156,12 @@ lola::EventControl *-- lola::EventSubscriptionControl
 
 lola::UidPidMapping *-- "0..n" lola::UidPidMappingEntry
 
-lola::EventDataControl .> lola::detail_event_data_control::EventDataControlImpl : type
-lola::EventSubscriptionControl .> lola::detail_event_subscription_control::EventSubscriptionControlImpl : type
+lola::EventDataControl .> EventDataControlImpl : type
+lola::EventSubscriptionControl .> EventSubscriptionControlImpl : type
 
-
-
-
-
-
-lola::detail_event_data_control::EventDataControlImpl *-- lola::TransactionLogSet
+EventDataControlImpl *-- lola::TransactionLogSet
 lola::TransactionLogSet *-- lola::TransactionLog
 lola::TransactionLog *-- "1..n" lola::TransactionLogSlot
+
+TransactionLog -left-+ lola::TransactionLogSet
 @enduml

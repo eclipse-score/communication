@@ -36,7 +36,7 @@ The following class diagram provides an overview of the classes, whose instances
 also a rough indication how the provider side (in the form of `LoLa` skeleton) and the consumer side (in the form of
 `LoLa` proxy/proxy-event) interact with them.
 
-![Class View](broken_link_k/swh/ddad_score/mw/com/design/shared_mem_layout/artifacts/shared_mem_layout_classdiagram.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/shared_mem_layout/shared_mem_layout_classdiagram.puml" />
 
 This object diagram below (showing a concrete instantiation of the class diagram above for some example service instance)
 depicts more clearly the relation between the `SharedMemoryResource` instances representing a shared-memory object and the
