@@ -21,9 +21,7 @@ cc_binary(
         "main.cpp",
     ],
     data = ["etc/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
-    ],
+    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":sample_sender_receiver",
         "//score/mw/com",

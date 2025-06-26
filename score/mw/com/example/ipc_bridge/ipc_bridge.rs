@@ -102,7 +102,7 @@ fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier) {
         .expect("BigDataSkeleton creation failed");
 
     let skeleton = skeleton.offer_service().expect("Failed offering from rust");
-    let mut x: u32 = 1;
+    let mut x: u32 = 0;
     while x < 10 {
         let mut sample: ipc_bridge_gen_rs::MapApiLanesStamped =
             ipc_bridge_gen_rs::MapApiLanesStamped::default();

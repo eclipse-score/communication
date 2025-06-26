@@ -79,8 +79,11 @@ void HashArray(const std::array<LaneIdType, 16U>& array, std::size_t& seed)
 class SampleReceiver
 {
   public:
-    SampleReceiver(const score::mw::com::InstanceSpecifier& instance_specifier)
-        : instance_specifier_{instance_specifier}, last_received_{}, received_{0U}
+    explicit SampleReceiver(const InstanceSpecifier& instance_specifier, bool check_sample_hash = true)
+        : instance_specifier_{instance_specifier},
+          last_received_{},
+          received_{0U},
+          check_sample_hash_{check_sample_hash}
     {
     }
 
@@ -103,6 +106,10 @@ class SampleReceiver
   private:
     bool CheckReceivedSample(const MapApiLanesStamped& map) const noexcept
     {
+        if (!check_sample_hash_)
+        {
+            return true;
+        }
         if (last_received_.has_value())
         {
             if (map.x <= last_received_.value())
@@ -140,6 +147,7 @@ class SampleReceiver
     const score::mw::com::InstanceSpecifier& instance_specifier_;
     score::cpp::optional<std::uint32_t> last_received_;
     std::size_t received_;
+    bool check_sample_hash_;
 };
 
 score::cpp::optional<std::reference_wrapper<impl::ProxyEvent<MapApiLanesStamped>>> GetMapApiLanesStampedProxyEvent(
@@ -267,7 +275,8 @@ template <typename ProxyType, typename ProxyEventType>
 int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
                                     const score::cpp::optional<std::chrono::milliseconds> cycle_time,
                                     const std::size_t num_cycles,
-                                    bool try_writing_to_data_segment)
+                                    bool try_writing_to_data_segment,
+                                    bool check_sample_hash)
 {
     // For a GenericProxy, the SampleType will be void. For a regular proxy, it will by MapApiLanesStamped.
     using SampleType =
@@ -312,7 +321,7 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     map_api_lanes_stamped_event.Subscribe(SAMPLES_PER_CYCLE);
 
     score::cpp::optional<char> last_received{};
-    SampleReceiver receiver{instance_specifier};
+    SampleReceiver receiver{instance_specifier, check_sample_hash};
     for (std::size_t cycle = 0U; cycle < num_cycles;)
     {
         const auto cycle_start_time = std::chrono::steady_clock::now();
@@ -443,11 +452,13 @@ template int EventSenderReceiver::RunAsProxy<IpcBridgeProxy, impl::ProxyEvent<Ma
     const score::mw::com::InstanceSpecifier&,
     const score::cpp::optional<std::chrono::milliseconds>,
     const std::size_t,
-    bool try_writing_to_data_segment);
+    bool,
+    bool);
 template int EventSenderReceiver::RunAsProxy<impl::GenericProxy, impl::GenericProxyEvent>(
     const score::mw::com::InstanceSpecifier&,
     const score::cpp::optional<std::chrono::milliseconds>,
     const std::size_t,
-    bool try_writing_to_data_segment);
+    bool,
+    bool);
 
 }  // namespace score::mw::com
