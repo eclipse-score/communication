@@ -1,0 +1,134 @@
+@startuml "Proxy Event Subscription State Machine"
+title "Structural View Proxy Event Subscription State Machine"
+
+class "lola::SubscriptionStateMachine" {
+  +{static} <u>Create(Ts&&... params) : std::shared_ptr<SubscriptionStateMachine></u>
+  +GetSharedPtr() : std::shared_ptr<SubscriptionStateMachine>
+  +GetCurrentState() : SubscriptionStateMachineState
+  +SubscribeEvent(max_sample_count : std::size_t) : void
+  +UnsubscribeEvent() : void
+  +SubscriptionStateChangeEvent(state_change_result : IMessagePassingService::SubscriptionStateChange ) : void
+  +SetReceiveHandler(handler : EventReceiveHandler) : void
+  +UnsetReceiveHandler() : void
+  +MarkProxyForDestruction() : void
+  -SubscriptionStateMachine(Proxy&, ElementFqId, pid_t, std::function<void(SlotCollector&&)> set_slot_collector, std::function<void()> remove_slot_collector)
+  -states_ : std::array<std::unique_ptr<SubscriptionStateBase>, SubscriptionStateMachineState::STATE_COUNT)>
+}
+
+class "lola::SubscriptionStateBase" {
+  +SubscriptionStateBase(V : SubscriptionStateMachine&) noexcept
+  +{abstract} SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
+  +{abstract} UnsubscribeEvent() : TriggerResult
+  +{abstract} SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+  +{abstract} SetReceiveHandler(handler : EventReceiveHandler) : void
+  +{abstract} UnsetReceiveHandler() : void
+  +OnEntry() : void
+  +OnExit(): void
+  -state_machine_ : SubscriptionStateMachine&
+}
+
+abstract class "lola::NotSubscribedState" {
+  +NotSubscribedState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +UnsubscribeEvent() : TriggerResult
+  +SetReceiveHandler(handler : EventReceiveHandler) : void
+  +UnsetReceiveHandler() : void
+}
+
+class "lola::NotSubscribedAwaitNoneState" {
+  +NotSubscribedAwaitNoneState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
+  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+  +OnEntry() : void
+}
+
+class "lola::NotSubscribedAwaitSubscribeResultState" {
+  +NotSubscribedAwaitSubscribeResultState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
+  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+}
+
+class "lola::NotSubscribedAwaitUnsubscribeAckState" {
+  +NotSubscribedAwaitUnsubscribeAckState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
+  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+  +OnEntry() : void
+}
+
+class "lola::SubscribedState" {
+  +SubscribedState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
+  +UnsubscribeEvent() : TriggerResult
+  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+  +SetReceiveHandler(handler : EventReceiveHandler) : void
+  +UnsetReceiveHandler() : void
+}
+
+abstract class "lola::SubscriptionPendingState" {
+  +SubscriptionPendingState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
+  +SetReceiveHandler(handler : EventReceiveHandler) : void
+  +UnsetReceiveHandler() : void
+}
+
+class "lola::SubscriptionPendingAwaitSubscribeResultState" {
+  +SubscriptionPendingAwaitSubscribeResultState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +SubscribeEvent(const std::size_t max_sample_count) : TriggerResult
+  +UnsubscribeEvent() : TriggerResult
+  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+}
+
+class "lola::SubscriptionPendingAwaitUnsubscribeAckState" {
+  +SubscriptionPendingAwaitUnsubscribeAckState(subscription_event_state_machine : SubscriptionStateMachine&)
+  +UnsubscribeEvent() : TriggerResult
+  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+  +OnExit(): void
+}
+
+class "lola::SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples" {
+  +SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples(subscription_event_state_machine : SubscriptionStateMachine&)
+  +UnsubscribeEvent() : TriggerResult
+  +SubscriptionStateChangeEvent(state_change_result: IMessagePassingService::SubscriptionStateChange) : TriggerResult
+}
+
+abstract class "lola::BaseMessagePassingManager" {
+  +BaseMessagePassingManager(QualityType, ElementFqId, pid_t)
+}
+
+class "lola::SubscriptionDispatchManager" {
+  +SubscriptionDispatchManager(QualityType, ElementFqId, pid_t)
+  +Subscribe(max_samples: std::uint8_t, IMessagePassingService::SubscriptionStateCallback) : void
+  +Unsubscribe() : void
+  +GetMaxSamples() : score::cpp::optional<std::uint8_t>
+}
+
+class "lola::EventReceiveHandlerManager" {
+  +EventReceiveHandlerManager(QualityType, ElementFqId, pid_t)
+  +Register(EventReceiveHandler handler) : void
+  +Unregister() : void
+}
+
+class "SubscriptionData" {
+  +next_max_sample_count_ : score::cpp::optional<std::uint8_t>
+}
+
+"lola::SubscriptionStateMachine" o-- "lola::SubscriptionStateBase" : "1..n"
+"lola::SubscriptionStateMachine" o-- "SubscriptionData" : "1"
+"lola::SubscriptionStateMachine" o-- "lola::EventReceiveHandlerManager" : "1"
+"lola::SubscriptionStateMachine" *-- "lola::SubscriptionDispatchManager" : "1"
+"lola::SubscriptionStateBase" --> "lola::SubscriptionStateMachine"
+"lola::BaseMessagePassingManager" <|-- "lola::EventReceiveHandlerManager"
+"lola::BaseMessagePassingManager" <|-- "lola::SubscriptionDispatchManager"
+"lola::SubscriptionStateBase" <|-- "lola::SubscribedState"
+
+
+"lola::SubscriptionStateBase" <|-- "lola::NotSubscribedState"
+"lola::NotSubscribedState" <|-- "lola::NotSubscribedAwaitNoneState"
+"lola::NotSubscribedState" <|-- "lola::NotSubscribedAwaitSubscribeResultState"
+"lola::NotSubscribedState" <|-- "lola::NotSubscribedAwaitUnsubscribeAckState"
+
+"lola::SubscriptionStateBase" <|-- "lola::SubscriptionPendingState"
+"lola::SubscriptionPendingState" <|-- "lola::SubscriptionPendingAwaitSubscribeResultState"
+"lola::SubscriptionPendingState" <|-- "lola::SubscriptionPendingAwaitUnsubscribeAckState"
+"lola::SubscriptionPendingState" <|-- "lola::SubscriptionPendingAwaitSubscribeResultUpdatedMaxSamples"
+
+@enduml

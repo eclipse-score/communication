@@ -1,0 +1,94 @@
+@startuml "TransactionLogSet"
+
+title "TransactionLogSet"
+
+class "lola::TransactionLog" {
+  +SubscribeTransactionBegin(std::size_t subscription_max_sample_count) : void
+  +SubscribeTransactionCommit() : void
+  +SubscribeTransactionAbort() : void
+  +UnsubscribeTransactionBegin() : void
+  +UnsubscribeTransactionCommit() : void
+  +ReferenceTransactionBegin(SlotIndexType slot_index) : void
+  +ReferenceTransactionCommit(SlotIndexType slot_index) : void
+  +ReferenceTransactionAbort(SlotIndexType slot_index) : void
+  +DereferenceTransactionBegin(SlotIndexType slot_index) : void
+  +DereferenceTransactionCommit(SlotIndexType slot_index) : void
+  +RollbackProxyElementLog(const DereferenceSlotCallback&, const UnsubscribeCallback&) : ResultBlank
+  +RollbackSkeletonTracingElementLog(const DereferenceSlotCallback&) : ResultBlank
+  +ContainsTransactions() const : bool
+  -reference_count_slots_ : TransactionLogSlots
+  -subscribe_transactions_ : TransactionLogSlot
+  -subscription_max_sample_count_ : score::cpp::optional<MaxSampleCountType>
+}
+
+class "lola::TransactionLogSet" {
+  +RollbackProxyTransactions(const TransactionLogId&, TransactionLog::DereferenceSlotCallback,TransactionLog::UnsubscribeCallback) : ResultBlank 
+  +RollbackSkeletonTracingTransactions(TransactionLog::DereferenceSlotCallback) : ResultBlank
+  +RegisterProxyElement(const TransactionLogId&) : score::Result<TransactionLogIndex>
+  +RegisterSkeletonTracingElement() : TransactionLogIndex
+  +Unregister(TransactionLogIndex) : void
+  +GetTransactionLog(TransactionLogIndex) : TransactionLog& 
+  +MarkTransactionLogsNeedRollback(const TransactionLogId& ) : void
+  -proxy_transaction_logs_ : TransactionLogCollection
+  -skeleton_tracing_transaction_log_ : TransactionLogNode
+}
+
+class "lola::TransactionLogSet::TransactionLogNode" {
+  -needs_rollback : bool
+  -transaction_log_ : lola::TransactionLog
+  -transaction_log_id_: std::atomic<TransactionLogId>
+}
+
+class "lola::EventDataControlImpl" <<SharedMemory>> {
+  -SlotIndexType uint16_t
+  -state_slots: std::vector<std::atomic<EventSlotStatusType::value_type>, PolymorphicOffsetAllocator<std::atomic<EventSlotStatusType::value_type> > >
+  -<b>transaction_log_set_ : TransactionLogSet</b>
+  +EventDataControlImpl(MemoryResourceProxy*, SlotIndexType maxSlots)
+  +AllocateNextSlot(): std::optional<SlotIndexType>
+  +EventReady(SlotIndexType, EventTimestamp): void
+  +Discard(SlotIndexType): void
+  +ReferenceNextEvent(lastSearchTime : EventTimestampType, upper_limit : const EventSlotStatus::EventTimeStamp = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX): std::optional<SlotIndexType>
+  +DereferenceEvent(SlotIndexType eventSlotIndex): void
+  +GetNumNewEvents(reference_time : const EventSlotStatus::EventTimeStamp) const : std::size_t
+  +<b>GetTransactionLogSet() : TransactionLogSet&</b>
+  ..
+  <u>Notes:</u>
+  Exists at least once per provided Event.
+  For an ASIL-B provider/skeleton, which has ASIL-B AND ASIL-QM consumer/subscriber,
+  it exists twice: One Control section per ASIL-level in seperated shm-objects.
+  Readable/Writable by Skeleton and Proxies
+}
+
+class "lola::TransactionLogID" {
+  + uid_ : uid_t
+}
+
+class "lola::TransactionLogSlot" {
+  +SetTransactionBegin(bool new_value) : void
+  +SetTransactionEnd(bool new_value) : void
+  +GetTransactionBegin() const : bool
+  +GetTransactionEnd() const : bool
+  -transaction_begin_ : std::uint8_t : 1
+  -transaction_end_ :  std::uint8_t  : 2
+}
+
+note right of "lola::TransactionLog"
+  For each potential subscriber of the Event a
+  TransactionLog is pre-allocated (i.e. the
+  number correlates with max_subscribers
+  from configuration)
+
+  A transaction log for the skeleton/provider side
+  gets allocated for IPC Tracing, which technically
+  acts like a provider/skeleton side proxy.
+end note
+
+
+
+"lola::EventDataControlImpl" *-- "lola::TransactionLogSet"
+"lola::TransactionLogSet" *-- "lola::TransactionLog" : proxy_transaction_logs_\n0..n
+"lola::TransactionLogSet" *-- "lola::TransactionLog" : skeleton_tracing_transaction_log_\n0..1
+"lola::TransactionLog" *-- "lola::TransactionLogSlot" : 1..n
+
+"lola::TransactionLogSet" +-- "lola::TransactionLogSet::TransactionLogNode"
+@enduml
