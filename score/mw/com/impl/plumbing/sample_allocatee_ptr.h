@@ -89,37 +89,19 @@ class SampleAllocateePtr
 
     /// \brief Checks whether *this owns an object, i.e. whether Get() != nullptr
     /// \return true if *this owns an object, false otherwise.
-    // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
-    // not be called implicitly.". std::visit Throws std::bad_variant_access if
-    // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
-    // valueless if an exception is thrown during different stages. Since we don't throw exceptions, it's not possible
-    // that the variant can return true from valueless_by_exception and therefore not possible that std::visit throws
-    // an exception.
-    // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
+    // Suppress "AUTOSAR C++14 A15-5-3" rule finding: See rationale above (fix in Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     explicit operator bool() const noexcept;
 
     /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
     /// terminate.
-    // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
-    // not be called implicitly.". std::visit Throws std::bad_variant_access if
-    // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
-    // valueless if an exception is thrown during different stages. Since we don't throw exceptions, it's not possible
-    // that the variant can return true from valueless_by_exception and therefore not possible that std::visit throws
-    // an exception.
-    // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
+    // Suppress "AUTOSAR C++14 A15-5-3" rule finding: See rationale above (fix in Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     typename std::add_lvalue_reference<SampleType>::type operator*() const noexcept(noexcept(*std::declval<pointer>()));
 
     /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
     /// terminate.
-    // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
-    // not be called implicitly.". std::visit Throws std::bad_variant_access if
-    // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
-    // valueless if an exception is thrown during different stages. Since we don't throw exceptions, it's not possible
-    // that the variant can return true from valueless_by_exception and therefore not possible that std::visit throws
-    // an exception.
-    // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
+    // Suppress "AUTOSAR C++14 A15-5-3" rule finding: See rationale above (fix in Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     pointer operator->() const noexcept;
 
