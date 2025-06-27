@@ -61,54 +61,20 @@ class SampleAllocateePtr
     SampleAllocateePtr& operator=(const SampleAllocateePtr<SampleType>&) & = delete;
 
     /// \brief Constructs a SampleAllocateePtr by transferring ownership from other to *this.
-    SampleAllocateePtr(SampleAllocateePtr<SampleType>&& other) noexcept : SampleAllocateePtr()
-    {
-        this->Swap(other);
-    }
+    SampleAllocateePtr(SampleAllocateePtr<SampleType>&& other) noexcept;
 
     /// \brief Move assignment operator. Transfers ownership from other to *this
-    SampleAllocateePtr& operator=(SampleAllocateePtr<SampleType>&& other) & noexcept
-    {
-        this->Swap(other);
-        return *this;
-    }
+    SampleAllocateePtr& operator=(SampleAllocateePtr<SampleType>&& other) & noexcept;
 
-    SampleAllocateePtr& operator=(std::nullptr_t) noexcept
-    {
-        reset();
-        return *this;
-    }
+    SampleAllocateePtr& operator=(std::nullptr_t) noexcept;
 
     ~SampleAllocateePtr() noexcept = default;
 
     /// \brief Replaces the managed object.
-    void reset() noexcept
-    {
-        auto visitor = score::cpp::overload(
-            // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-            // expression statement and identifier declaration shall be placed on a
-            // separate line.". Following line statement is fine, this happens due to
-            // clang formatting.
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
-                internal_ptr.reset();
-            },
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](std::unique_ptr<SampleType>& internal_ptr) noexcept -> void {
-                internal_ptr.reset(nullptr);
-            },
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const score::cpp::blank&) noexcept -> void {});
-        std::visit(visitor, internal_);
-    }
+    void reset() noexcept;
 
     /// \brief Swaps the managed objects of *this and another SampleAllocateePtr object other.
-    void Swap(SampleAllocateePtr<SampleType>& other) noexcept
-    {
-        // Search for custom swap functions via ADL, and use std::swap if none are found.
-        using std::swap;
-        swap(internal_, other.internal_);
-    }
+    void Swap(SampleAllocateePtr<SampleType>& other) noexcept;
 
     /// \brief Returns a pointer to the managed object or nullptr if no object is owned.
     // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
@@ -119,35 +85,7 @@ class SampleAllocateePtr
     // an exception.
     // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    pointer Get() const noexcept
-    {
-        using ReturnType = pointer;
-
-        auto visitor = score::cpp::overload(
-            // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-            // expression statement and identifier declaration shall be placed on a
-            // separate line.". Following line statement is fine, this happens due to
-            // clang formatting.
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-                return internal_ptr.get();
-            },
-            // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
-            // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
-            // the function replaces the managed object"
-            // This is a false positive, we here using lvalue reference.
-            // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
-                return internal_ptr.get();
-            },
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const score::cpp::blank&) noexcept -> ReturnType {
-                return nullptr;
-            });
-
-        return std::visit(visitor, internal_);
-    }
+    pointer Get() const noexcept;
 
     /// \brief Checks whether *this owns an object, i.e. whether Get() != nullptr
     /// \return true if *this owns an object, false otherwise.
@@ -159,32 +97,7 @@ class SampleAllocateePtr
     // an exception.
     // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    explicit operator bool() const noexcept
-    {
-        auto visitor = score::cpp::overload(
-            [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> bool {
-                return static_cast<bool>(internal_ptr);
-            },
-            // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-            // expression statement and identifier declaration shall be placed on a
-            // separate line.". Following line statement is fine, this happens due to
-            // clang formatting.
-            // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
-            // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
-            // the function replaces the managed object"
-            // This is a false positive, we here using lvalue reference.
-            // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> bool {
-                return static_cast<bool>(internal_ptr);
-            },
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const score::cpp::blank&) noexcept -> bool {
-                return false;
-            });
-
-        return std::visit(visitor, internal_);
-    }
+    explicit operator bool() const noexcept;
 
     /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
     /// terminate.
@@ -196,35 +109,7 @@ class SampleAllocateePtr
     // an exception.
     // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    typename std::add_lvalue_reference<SampleType>::type operator*() const noexcept(noexcept(*std::declval<pointer>()))
-    {
-        using ReturnType = typename std::add_lvalue_reference<SampleType>::type;
-
-        auto visitor = score::cpp::overload(
-            // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-            // expression statement and identifier declaration shall be placed on a
-            // separate line.". Following line statement is fine, this happens due to
-            // clang formatting.
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-                return *internal_ptr;
-            },
-            // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
-            // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
-            // the function replaces the managed object"
-            // This is a false positive, we here using lvalue reference.
-            // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
-                return *internal_ptr;
-            },
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const score::cpp::blank&) noexcept -> ReturnType {
-                std::terminate();
-            });
-
-        return std::visit(visitor, internal_);
-    }
+    typename std::add_lvalue_reference<SampleType>::type operator*() const noexcept(noexcept(*std::declval<pointer>()));
 
     /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
     /// terminate.
@@ -236,35 +121,7 @@ class SampleAllocateePtr
     // an exception.
     // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    pointer operator->() const noexcept
-    {
-        using ReturnType = pointer;
-
-        auto visitor = score::cpp::overload(
-            // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
-            // expression statement and identifier declaration shall be placed on a
-            // separate line.". Following line statement is fine, this happens due to
-            // clang formatting.
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
-                return internal_ptr.get();
-            },
-            // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
-            // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
-            // the function replaces the managed object"
-            // This is a false positive, we here using lvalue reference.
-            // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
-                return internal_ptr.get();
-            },
-            // coverity[autosar_cpp14_a7_1_7_violation]
-            [](const score::cpp::blank&) noexcept -> ReturnType {
-                std::terminate();
-            });
-
-        return std::visit(visitor, internal_);
-    }
+    pointer operator->() const noexcept;
 
   private:
     template <typename T>
@@ -296,6 +153,179 @@ class SampleAllocateePtr
     // We don't use the pimpl idiom because it would require dynamic memory allocation (that we want to avoid)
     std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, std::unique_ptr<SampleType>> internal_;
 };
+
+template <typename SampleType>
+SampleAllocateePtr<SampleType>::SampleAllocateePtr(SampleAllocateePtr<SampleType>&& other) noexcept
+    : SampleAllocateePtr()
+{
+    this->Swap(other);
+}
+
+template <typename SampleType>
+auto SampleAllocateePtr<SampleType>::operator=(SampleAllocateePtr<SampleType>&& other) & noexcept
+    -> SampleAllocateePtr<SampleType>&
+{
+    this->Swap(other);
+    return *this;
+}
+
+template <typename SampleType>
+auto SampleAllocateePtr<SampleType>::operator=(std::nullptr_t) noexcept -> SampleAllocateePtr<SampleType>&
+{
+    reset();
+    return *this;
+}
+
+template <typename SampleType>
+void SampleAllocateePtr<SampleType>::reset() noexcept
+{
+    auto visitor = score::cpp::overload(
+        // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
+        // expression statement and identifier declaration shall be placed on a
+        // separate line.". Following line statement is fine, this happens due to
+        // clang formatting.
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
+            internal_ptr.reset();
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](std::unique_ptr<SampleType>& internal_ptr) noexcept -> void {
+            internal_ptr.reset(nullptr);
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const score::cpp::blank&) noexcept -> void {});
+    std::visit(visitor, internal_);
+}
+
+template <typename SampleType>
+void SampleAllocateePtr<SampleType>::Swap(SampleAllocateePtr<SampleType>& other) noexcept
+{
+    // Search for custom swap functions via ADL, and use std::swap if none are found.
+    using std::swap;
+    swap(internal_, other.internal_);
+}
+
+template <typename SampleType>
+auto SampleAllocateePtr<SampleType>::Get() const noexcept -> pointer
+{
+    using ReturnType = pointer;
+
+    auto visitor = score::cpp::overload(
+        // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
+        // expression statement and identifier declaration shall be placed on a
+        // separate line.". Following line statement is fine, this happens due to
+        // clang formatting.
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
+            return internal_ptr.get();
+        },
+        // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
+        // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
+        // the function replaces the managed object"
+        // This is a false positive, we here using lvalue reference.
+        // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
+            return internal_ptr.get();
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const score::cpp::blank&) noexcept -> ReturnType {
+            return nullptr;
+        });
+
+    return std::visit(visitor, internal_);
+}
+
+template <typename SampleType>
+SampleAllocateePtr<SampleType>::operator bool() const noexcept
+{
+    auto visitor = score::cpp::overload(
+        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> bool {
+            return static_cast<bool>(internal_ptr);
+        },
+        // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
+        // expression statement and identifier declaration shall be placed on a
+        // separate line.". Following line statement is fine, this happens due to
+        // clang formatting.
+        // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
+        // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
+        // the function replaces the managed object"
+        // This is a false positive, we here using lvalue reference.
+        // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> bool {
+            return static_cast<bool>(internal_ptr);
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const score::cpp::blank&) noexcept -> bool {
+            return false;
+        });
+
+    return std::visit(visitor, internal_);
+}
+
+template <typename SampleType>
+typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleType>::operator*() const
+    noexcept(noexcept(*std::declval<pointer>()))
+{
+    using ReturnType = typename std::add_lvalue_reference<SampleType>::type;
+
+    auto visitor = score::cpp::overload(
+        // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
+        // expression statement and identifier declaration shall be placed on a
+        // separate line.". Following line statement is fine, this happens due to
+        // clang formatting.
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
+            return *internal_ptr;
+        },
+        // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
+        // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
+        // the function replaces the managed object"
+        // This is a false positive, we here using lvalue reference.
+        // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
+            return *internal_ptr;
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const score::cpp::blank&) noexcept -> ReturnType {
+            std::terminate();
+        });
+
+    return std::visit(visitor, internal_);
+}
+
+template <typename SampleType>
+auto SampleAllocateePtr<SampleType>::operator->() const noexcept -> pointer
+{
+    using ReturnType = pointer;
+
+    auto visitor = score::cpp::overload(
+        // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
+        // expression statement and identifier declaration shall be placed on a
+        // separate line.". Following line statement is fine, this happens due to
+        // clang formatting.
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
+            return internal_ptr.get();
+        },
+        // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
+        // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
+        // the function replaces the managed object"
+        // This is a false positive, we here using lvalue reference.
+        // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
+            return internal_ptr.get();
+        },
+        // coverity[autosar_cpp14_a7_1_7_violation]
+        [](const score::cpp::blank&) noexcept -> ReturnType {
+            std::terminate();
+        });
+
+    return std::visit(visitor, internal_);
+}
 
 /// \brief Compares the pointer values of two SampleAllocateePtr, or a SampleAllocateePtr and nullptr
 template <class T1, class T2>
