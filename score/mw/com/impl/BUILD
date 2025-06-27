@@ -252,6 +252,7 @@ cc_library(
     srcs = ["find_service_handle.cpp"],
     hdrs = ["find_service_handle.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["@score-baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
@@ -887,6 +888,16 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "find_service_handle_test",
+    srcs = ["find_service_handle_test.cpp"],
+    deps = [
+        ":find_service_handle",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:recorder_mock",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -894,7 +905,6 @@ cc_test(
     srcs = [
         "com_error_test.cpp",
         "enriched_instance_identifier_test.cpp",
-        "find_service_handle_test.cpp",
         "generic_proxy_event_test.cpp",
         "handle_type_test.cpp",
         "instance_identifier_test.cpp",
@@ -956,6 +966,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":flag_owner_test",
         ":generic_proxy_test",
         ":sample_reference_tracker_test",
+        ":find_service_handle_test",
         ":service_discovery_test",
         ":unit_test",
         ":runtime_test",

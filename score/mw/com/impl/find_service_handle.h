@@ -14,9 +14,17 @@
 #define SCORE_MW_COM_IMPL_FINDSERVICEHANDLE_H
 
 #include <cstddef>
-#include <optional>
+#include <ostream>
 
-namespace score::mw::com::impl
+namespace score::mw
+{
+
+namespace log
+{
+class LogStream;
+}
+
+namespace com::impl
 {
 
 class FindServiceHandle;
@@ -64,6 +72,10 @@ class FindServiceHandle final
      * \return true if lhs is less then rhs, false otherwise
      */
     friend bool operator<(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noexcept;
+
+    friend mw::log::LogStream& operator<<(mw::log::LogStream& log_stream, const FindServiceHandle& find_service_handle);
+
+    friend std::ostream& operator<<(std::ostream& ostream_out, const FindServiceHandle& find_service_handle);
 
   private:
     std::size_t uid_;
@@ -118,7 +130,8 @@ class FindServiceHandleView
     const FindServiceHandle& handle_;
 };
 
-}  // namespace score::mw::com::impl
+}  // namespace com::impl
+}  // namespace score::mw
 
 namespace std
 {
