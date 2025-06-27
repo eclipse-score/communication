@@ -119,8 +119,8 @@ fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier) {
     }
 
     println!("stopping offering and sleeping for 5sec");
-    sleep(Duration::from_secs(5));
     let skeleton = skeleton.stop_offer_service();
+    sleep(Duration::from_secs(5));
 
     let skeleton = skeleton.offer_service().expect("Reoffering failed");
     x = 0;

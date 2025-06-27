@@ -89,8 +89,8 @@ cc_library(
     name = "ipc_bridge_gen_cpp",
     srcs = ["ipc_bridge_gen.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    deps = [
+    implementation_deps = [
         ":datatype",
-        "//score/mw/com/impl/rust:proxy_bridge_macros",
+        "//score/mw/com/impl/rust:bridge_macros",
     ],
 )

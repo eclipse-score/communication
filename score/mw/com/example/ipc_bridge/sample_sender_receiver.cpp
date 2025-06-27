@@ -106,10 +106,6 @@ class SampleReceiver
   private:
     bool CheckReceivedSample(const MapApiLanesStamped& map) const noexcept
     {
-        if (!check_sample_hash_)
-        {
-            return true;
-        }
         if (last_received_.has_value())
         {
             if (map.x <= last_received_.value())
@@ -124,21 +120,24 @@ class SampleReceiver
             }
         }
 
-        std::size_t hash_value = START_HASH;
-        for (const MapApiLaneData& lane : map.lanes)
+        if (check_sample_hash_)
         {
-            HashArray(lane.successor_lanes, hash_value);
-        }
+            std::size_t hash_value = START_HASH;
+            for (const MapApiLaneData& lane : map.lanes)
+            {
+                HashArray(lane.successor_lanes, hash_value);
+            }
 
-        if (hash_value != map.hash_value)
-        {
-            std::cerr << ToString(instance_specifier_,
-                                  ": Unexpected data received, hash comparison failed: ",
-                                  hash_value,
-                                  ", expected ",
-                                  map.hash_value,
-                                  "\n");
-            return false;
+            if (hash_value != map.hash_value)
+            {
+                std::cerr << ToString(instance_specifier_,
+                                      ": Unexpected data received, hash comparison failed: ",
+                                      hash_value,
+                                      ", expected ",
+                                      map.hash_value,
+                                      "\n");
+                return false;
+            }
         }
 
         return true;
