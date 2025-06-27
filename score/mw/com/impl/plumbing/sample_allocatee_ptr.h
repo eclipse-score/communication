@@ -82,7 +82,7 @@ class SampleAllocateePtr
     ~SampleAllocateePtr() noexcept = default;
 
     /// \brief Replaces the managed object.
-    void reset(const pointer ptr = pointer()) noexcept
+    void reset() noexcept
     {
         auto visitor = score::cpp::overload(
             // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
@@ -90,12 +90,12 @@ class SampleAllocateePtr
             // separate line.". Following line statement is fine, this happens due to
             // clang formatting.
             // coverity[autosar_cpp14_a7_1_7_violation]
-            [ptr](lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
-                internal_ptr.reset(ptr);
+            [](lola::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
+                internal_ptr.reset();
             },
             // coverity[autosar_cpp14_a7_1_7_violation]
-            [ptr](std::unique_ptr<SampleType>& internal_ptr) noexcept -> void {
-                internal_ptr.reset(ptr);
+            [](std::unique_ptr<SampleType>& internal_ptr) noexcept -> void {
+                internal_ptr.reset(nullptr);
             },
             // coverity[autosar_cpp14_a7_1_7_violation]
             [](const score::cpp::blank&) noexcept -> void {});

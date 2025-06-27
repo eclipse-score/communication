@@ -106,14 +106,9 @@ class SampleAllocateePtr
     };
 
     /// \brief reset managed object and eventually discard underlying event slot.
-    void reset(std::nullptr_t /* ptr */ = nullptr) noexcept
+    void reset() noexcept
     {
         internal_delete();
-    }
-    [[deprecated("SCORE_DEPRECATION: reset shall not be used (will be also removed from user facing interface).")]] void
-    reset(const_pointer p)
-    {
-        managed_object_ = p;
     }
 
     /// \brief swap content with _other_
