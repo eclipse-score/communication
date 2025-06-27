@@ -1,0 +1,5 @@
+{
+	"name": "eclipse-score_devkit",
+	"image": "ghcr.io/elektrobit/eclipse-score_devkit:latest",
+	"initializeCommand": "mkdir -p ~/.cache/bazel"
+}
