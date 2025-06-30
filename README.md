@@ -18,3 +18,7 @@ To create a `compile_commands.json` file, run the following commands:
 communication (main) $ bazel build ...
 communication (main) $ bazel-compile-commands ...
 ```
+
+### Visual Studio Code
+
+After both commands were run successfully, press in Visual Studio Code `ctrl + shift p` and select `clangd: Restart language server`.
