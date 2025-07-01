@@ -12,12 +12,14 @@
  ********************************************************************************/
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/memory/shared/memory_resource_registry.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/plumbing/runtime_binding_factory.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config_parser.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime_binding.h"
+
+#include "score/memory/any_string_view.h"
+#include "score/memory/shared/memory_resource_registry.h"
 #include "score/mw/log/logging.h"
 #include "score/mw/log/runtime.h"
 
@@ -26,6 +28,7 @@
 
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace
@@ -105,6 +108,24 @@ score::cpp::optional<TracingFilterConfig> ParseTraceConfig(const Configuration& 
 }
 
 }  // namespace
+
+void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configuration)
+{
+    std::lock_guard<std::mutex> lock{mutex_};
+    if (runtime_initialization_locked_)
+    {
+        error_double_init();
+        return;
+    }
+
+    if (initialization_config_.has_value())
+    {
+        warn_double_init();
+    }
+
+    auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+    StoreConfiguration(std::move(config));
+}
 
 void Runtime::Initialize() noexcept
 {

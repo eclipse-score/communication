@@ -20,9 +20,7 @@
 #ifndef SCORE_MW_COM_RUNTIME_H
 #define SCORE_MW_COM_RUNTIME_H
 
-#include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/types.h"
 
 #include "score/memory/string_literal.h"
@@ -52,6 +50,13 @@ score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(co
 ///            effect after an internal runtime singleton has been already created/is in use!
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
 void InitializeRuntime(const std::int32_t argc, score::StringLiteral argv[]);
+
+/// \brief Initializes mw::com subsystem with the given configuration.
+/// \detail This call is optional for a mw::com user. Only if the mw::com configuration (json) is not located in the
+///         default manifest path, this function shall be called when the caller already has the configuration path.
+/// \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
+///            effect after an internal runtime singleton has been already created/is in use!
+void InitializeRuntime(const RuntimeConfiguration& runtime_configuration);
 
 }  // namespace score::mw::com::runtime
 

@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/service_discovery.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config.h"
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
+#include "score/mw/com/runtime_configuration.h"
 
 #include <score/optional.hpp>
 #include <score/span.hpp>
@@ -63,6 +64,13 @@ namespace score::mw::com::impl
 class Runtime final : public IRuntime
 {
   public:
+    /// \brief static initializer for the runtime. Must be called once per process, which intends to use ara::com
+    ///        functionality.
+    /// \attention Multiple calls to one of the Initialize() overloads shall be avoided. They may have no effect after
+    ///            once our Runtime singleton has been created via getInstance()/getInstanceInternal()
+    /// \param runtime_configuration object containing configuration needed to initialize the Runtime
+    static void Initialize(const runtime::RuntimeConfiguration& runtime_configuration);
+
     /// \brief Initialize runtime with default values (i.e. config is searched at default path)
     /// \attention Multiple calls to one of the Initialize() overloads shall be avoided. They may have no effect after
     ///            once our Runtime singleton has been created via getInstance()/getInstanceInternal()

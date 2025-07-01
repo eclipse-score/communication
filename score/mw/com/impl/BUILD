@@ -739,7 +739,9 @@ cc_library(
         ":runtime_interfaces",
         ":service_discovery",
         "@score-baselibs//score/concurrency:long_running_threads_container",
+        "@score-baselibs//score/memory:any_string_view",
         "@score-baselibs//score/memory/shared:types",
+        "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/plumbing:runtime",
@@ -806,6 +808,7 @@ cc_test(
     tags = ["unit"],
     deps = [
         ":impl",
+        ":runtime",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@score-baselibs//score/mw/log",
         "@googletest//:gtest_main",
@@ -866,6 +869,24 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "runtime_test",
+    srcs = ["runtime_test.cpp"],
+    deps = [
+        ":runtime",
+        ":runtime_mock",
+        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
+        "//score/mw/com/impl/bindings/lola:runtime_mock",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/tracing:tracing_runtime",
+        "//score/mw/com/impl/tracing:tracing_test_resources",
+        "//score/mw/com/impl/tracing/configuration:proxy_event_trace_point_type",
+        "//score/mw/com/impl/tracing/configuration:skeleton_event_trace_point_type",
+        "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -884,7 +905,6 @@ cc_test(
         "proxy_event_binding_base_test.cpp",
         "proxy_event_test.cpp",
         "proxy_field_test.cpp",
-        "runtime_test.cpp",
         "service_element_map_test.cpp",
         "skeleton_base_test.cpp",
         "skeleton_binding_test.cpp",
@@ -938,6 +958,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":sample_reference_tracker_test",
         ":service_discovery_test",
         ":unit_test",
+        ":runtime_test",
         ":unit_test_runtime_single_exec",
     ],
     test_suites_from_sub_packages = [

@@ -52,6 +52,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":runtime_configuration",
         ":types",
         "//score/mw/com/impl:runtime",
     ],
@@ -80,6 +81,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        "@score-baselibs//score/filesystem",
         "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
