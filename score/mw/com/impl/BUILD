@@ -19,53 +19,171 @@ package(default_visibility = [
 
 cc_library(
     name = "impl",
-    srcs = [
-        "generic_proxy.cpp",
-        "generic_proxy_event.cpp",
-        "proxy_event.cpp",
-        "proxy_field.cpp",
-        "skeleton_event.cpp",
-        "skeleton_field.cpp",
-        "traits.cpp",
-    ],
-    hdrs = [
-        "generic_proxy.h",
-        "generic_proxy_event.h",
-        "proxy_event.h",
-        "proxy_field.h",
-        "skeleton_event.h",
-        "skeleton_field.h",
-        "traits.h",
-    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//score/mw/com:__pkg__",
-        "//score/mw/com/impl/rust:__pkg__",
-        "//score/mw/com/impl/test:__pkg__",
-        "//score/mw/com/impl/test/uat:__pkg__",
-        "//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":generic_proxy",
+        ":generic_proxy_event",
+        ":proxy_event",
+        ":proxy_field",
+        ":skeleton_event",
+        ":skeleton_field",
+        ":traits",
+    ],
+)
+
+cc_library(
+    name = "generic_proxy",
+    srcs = ["generic_proxy.cpp"],
+    hdrs = ["generic_proxy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
         ":error",
+        "//score/mw/com/impl/plumbing",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":generic_proxy_event",
+        ":handle_type",
+        ":proxy_base",
+        ":proxy_binding",
+        ":service_element_map",
+        "@score-baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "generic_proxy_event",
+    srcs = ["generic_proxy_event.cpp"],
+    hdrs = ["generic_proxy_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "//score/mw/com/impl/plumbing:event",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
         ":generic_proxy_event_binding",
+        ":proxy_base",
+        ":proxy_event_base",
+        "//score/mw/com/impl/tracing:proxy_event_tracing",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
+    name = "proxy_event",
+    srcs = ["proxy_event.cpp"],
+    hdrs = ["proxy_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":generic_proxy_event",
         ":instance_identifier",
         ":proxy_base",
         ":proxy_event_base",
         ":proxy_event_binding",
         ":runtime",
-        ":service_element_map",
+        "@score-baselibs//score/result",
+        "//score/mw/com/impl/plumbing:event",
+        "//score/mw/com/impl/tracing:proxy_event_tracing",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_event",
+    srcs = ["skeleton_event.cpp"],
+    hdrs = ["skeleton_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":instance_identifier",
+        ":runtime",
         ":skeleton_base",
-        ":skeleton_binding",
         ":skeleton_event_base",
         ":skeleton_event_binding",
-        ":skeleton_field_base",
-        "//score/mw/com/impl/configuration",
+        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing:event",
-        "//score/mw/com/impl/plumbing:field",
-        "//score/mw/com/impl/tracing:proxy_event_tracing",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_field",
+    srcs = ["skeleton_field.cpp"],
+    hdrs = ["skeleton_field.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":skeleton_event",
+        ":skeleton_field_base",
+        "@score-baselibs//score/result",
+        "//score/mw/com/impl/plumbing:field",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "traits",
+    srcs = ["traits.cpp"],
+    hdrs = ["traits.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":proxy_base",
+        ":proxy_event",
+        ":proxy_field",
+        ":skeleton_base",
+        ":skeleton_event",
+        ":skeleton_field",
+        "//score/mw/com/impl/plumbing:event",
+    ],
+)
+
+cc_library(
+    name = "proxy_field",
+    srcs = ["proxy_field.cpp"],
+    hdrs = ["proxy_field.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":proxy_event",
+        ":proxy_event_binding",
+        "@score-baselibs//score/result",
+        "//score/mw/com/impl/plumbing:field",
         "@score-baselibs//score/language/futurecpp",
     ],
 )

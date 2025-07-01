@@ -805,11 +805,10 @@ cc_unit_test(
 )
 
 cc_test(
-    name = "event_data_control_unit_tests",
+    name = "event_data_control_unit_test",
     size = "small",
     timeout = "long",
     srcs = [
-        "event_data_control_composite_test.cpp",
         "event_data_control_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES + [
@@ -826,6 +825,22 @@ cc_test(
         "//score/mw/com/impl/bindings/lola:event_data_control_composite",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "event_data_control_composite_unit_test",
+    srcs = ["event_data_control_composite_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "@score-baselibs//score/containers:dynamic_array",
+        "@score-baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score-baselibs//score/memory/shared:new_delete_delegate_resource",
+        "//score/mw/com/impl:instance_specifier",
+        "//score/mw/com/impl/bindings/lola:event_data_control",
+        "//score/mw/com/impl/bindings/lola:event_data_control_composite",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -933,6 +948,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -944,6 +960,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_data_storage",
+        "@score-baselibs//score/containers:dynamic_array",
         "@score-baselibs//score/mw/log",
     ],
 )
@@ -1175,7 +1192,8 @@ cc_unit_test_suites_for_host_and_qnx(
         ":transaction_log_slot_test",
         ":transaction_log_test",
         ":dynamic_array_bounds_checking_test",
-        ":event_data_control_unit_tests",
+        ":event_data_control_unit_test",
+        ":event_data_control_composite_unit_test",
         ":generic_proxy_event_test",
         ":partial_restart_path_builder_test",
         ":proxy_event_test",
