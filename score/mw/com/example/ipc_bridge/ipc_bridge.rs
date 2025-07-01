@@ -38,7 +38,7 @@ struct Arguments {
     #[arg(
         short,
         long,
-        default_value = "./platform/aas/mw/com/example/ipc_bridge/etc/mw_com_config.json"
+        default_value = "./score/mw/com/example/ipc_bridge/etc/mw_com_config.json"
     )]
     service_instance_manifest: PathBuf,
 }

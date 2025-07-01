@@ -37,7 +37,7 @@ mod ffi {
     use std::marker::PhantomData;
     use std::mem::transmute;
 
-    /// This type represents bmw::mw::com::InstanceSpecifier as an opaque struct.
+    /// This type represents score::mw::com::InstanceSpecifier as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
     pub struct NativeInstanceSpecifier {
@@ -45,14 +45,14 @@ mod ffi {
     }
 
     /// This type represents a
-    /// ::bmw::mw::com::ServiceHandleContainer<::bmw::mw::com::impl::HandleType> as an opaque
+    /// ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType> as an opaque
     /// struct. Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
     pub(super) struct NativeHandleContainer {
         _dummy: [u8; 0],
     }
 
-    /// This type represents bmw::mw::com::impl::ProxyWrapperClass as an opaque struct for any
+    /// This type represents score::mw::com::impl::ProxyWrapperClass as an opaque struct for any
     /// template argument, as the type isn't relevant when dealing with it as an opaque type.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
@@ -60,14 +60,14 @@ mod ffi {
         _dummy: [u8; 0],
     }
 
-    /// This type represents bmw::mw::com::impl::ProxyEventBase as an opaque struct.
+    /// This type represents score::mw::com::impl::ProxyEventBase as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
     pub struct ProxyEventBase {
         _dummy: [u8; 0],
     }
 
-    /// This type represents bmw::mw::com::impl::ProxyEvent as an opaque struct.
+    /// This type represents score::mw::com::impl::ProxyEvent as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
     pub struct ProxyEvent<T> {
@@ -75,7 +75,7 @@ mod ffi {
         _data: PhantomData<T>,
     }
 
-    /// This type represents bmw::mw::com::impl::HandleType as an opaque struct.
+    /// This type represents score::mw::com::impl::HandleType as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
     pub struct HandleType {
