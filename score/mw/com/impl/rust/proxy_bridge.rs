@@ -131,7 +131,7 @@ mod ffi {
             container: *const NativeHandleContainer,
             pos: u32,
         ) -> *const HandleType;
-        pub(super) fn mw_com_impl_initialize(options: *const *const i8, len: u32);
+        pub(super) fn mw_com_impl_initialize(options: *mut *const i8, len: i32);
         pub(super) fn mw_com_impl_sample_ptr_get_size() -> u32;
         pub(super) fn mw_com_impl_proxy_event_subscribe(
             proxy_event: *mut ProxyEventBase,
@@ -740,8 +740,9 @@ pub fn initialize(manifest_location: Option<&Path>) {
         options.push(CString::new(manifest_location.to_string_lossy().as_ref()).unwrap());
     }
 
-    let options_ptr = options.iter().map(|s| s.as_ptr()).collect::<Vec<_>>();
+    let mut options_ptr = options.iter().map(|s| s.as_ptr()).collect::<Vec<_>>();
     unsafe {
-        ffi::mw_com_impl_initialize(options_ptr.as_ptr(), options_ptr.len() as u32);
+        let num_args = options_ptr.len() as i32;
+        ffi::mw_com_impl_initialize(options_ptr.as_mut_ptr(), num_args);
     }
 }

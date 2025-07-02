@@ -13,9 +13,11 @@
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 
 #include <score/assert.hpp>
+#include <cstdint>
 
 struct FatPtr
 {
@@ -139,9 +141,9 @@ const ::score::mw::com::impl::HandleType* mw_com_impl_handle_container_get_handl
     return &container->at(pos);
 }
 
-void mw_com_impl_initialize(const char* const argc[], std::uint32_t argv)
+void mw_com_impl_initialize(const char* argv[], std::int32_t argc)
 {
-    ::score::mw::com::impl::Runtime::Initialize({argc, argv});
+    ::score::mw::com::runtime::InitializeRuntime(argc, argv);
 }
 
 std::uint32_t mw_com_impl_sample_ptr_get_size() noexcept
