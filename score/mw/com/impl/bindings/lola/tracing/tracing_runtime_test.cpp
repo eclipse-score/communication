@@ -16,7 +16,7 @@
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 
-#include "score/analysis/tracing/common/types.h"
+#include "score/analysis/tracing/common/interface_types/types.h"
 #include "score/analysis/tracing/library/generic_trace_api/mocks/trace_library_mock.h"
 
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"

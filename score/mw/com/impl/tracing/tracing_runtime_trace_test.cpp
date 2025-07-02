@@ -15,7 +15,7 @@
 #include "score/mw/com/impl/tracing/configuration/skeleton_field_trace_point_type.h"
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 
-#include "score/analysis/tracing/library/generic_trace_api/trace_point_type.h"
+#include "score/analysis/tracing/library/interface/trace_point_type.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/tracing/configuration/skeleton_event_trace_point_type.h"

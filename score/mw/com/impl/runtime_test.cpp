@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/analysis/tracing/common/types.h"
+#include "score/analysis/tracing/common/interface_types/types.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/configuration/configuration.h"
