@@ -27,7 +27,7 @@ filegroup(
     srcs = ["comtrace_config_schema.json"],
     visibility = [
         "//score/mw/com:__pkg__",
-        # "@ddad//score/mw/com/impl/tracing/configuration:__pkg__",
+        "//score/mw/com/impl/tracing/configuration:__pkg__",
     ],
 )
 
@@ -179,7 +179,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":hash_helper_utility",
@@ -249,7 +249,7 @@ cc_gtest_unit_test(
     srcs = ["service_element_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":service_element_type",
@@ -261,7 +261,7 @@ cc_gtest_unit_test(
     srcs = ["service_element_identifier_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":service_element_identifier",
@@ -274,7 +274,7 @@ cc_gtest_unit_test(
     srcs = ["service_element_identifier_view_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":service_element_identifier_view",
@@ -287,7 +287,7 @@ cc_gtest_unit_test(
     srcs = ["service_element_instance_identifier_view_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":service_element_instance_identifier_view",
@@ -299,7 +299,7 @@ cc_gtest_unit_test(
     srcs = ["trace_point_key_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":service_element_identifier",
@@ -313,7 +313,7 @@ cc_gtest_unit_test(
     srcs = ["tracing_filter_config_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":tracing_filter_config",
@@ -327,7 +327,7 @@ cc_gtest_unit_test(
     srcs = ["skeleton_event_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":skeleton_event_trace_point_type",
@@ -339,7 +339,7 @@ cc_gtest_unit_test(
     srcs = ["skeleton_field_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":skeleton_field_trace_point_type",
@@ -351,7 +351,7 @@ cc_gtest_unit_test(
     srcs = ["proxy_event_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":proxy_event_trace_point_type",
@@ -363,7 +363,7 @@ cc_gtest_unit_test(
     srcs = ["proxy_field_trace_point_type_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":proxy_field_trace_point_type",
@@ -376,7 +376,7 @@ cc_gtest_unit_test(
     data = ["example/comtrace_filter_config_small.json"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":tracing_filter_config_mock",
@@ -390,7 +390,7 @@ cc_gtest_unit_test(
     srcs = ["hash_helper_utility_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com/impl/tracing:__subpackages__",
     ],
     deps = [
         ":hash_helper_utility",

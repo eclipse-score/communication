@@ -239,7 +239,7 @@ cc_test(
     ],
     tags = ["unit"],
     visibility = [
-        # "@ddad//score/mw/com/impl/bindings/lola/messaging:__pkg__",
+        "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
     deps = [
         ":messaging",
@@ -268,7 +268,7 @@ cc_test(
     tags = ["unit"],
     visibility = [
         # "//score/mw/com/impl/bindings/lola:__pkg__",
-        # "@ddad//score/mw/com/impl/bindings/lola/messaging:__pkg__",
+        "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
     deps = [
         ":mock",
@@ -286,7 +286,7 @@ cc_gtest_unit_test(
     srcs = ["node_identifier_copier_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [":node_identifier_copier"],
 )

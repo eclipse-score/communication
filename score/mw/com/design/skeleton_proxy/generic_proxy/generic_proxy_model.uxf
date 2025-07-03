@@ -153,7 +153,7 @@ _        QualityType quality_type,_
 _        ServiceElementMap&lt;GenericProxyEvent&gt;&amp;) : Result&lt;Proxy&gt;_
 +Proxy(Proxy&amp;&amp;)
 +GetServiceHandles(instance_identifier : InstanceIdentifier) : score::Result&lt;std::vector&lt;HandleType&gt;&gt;
-+GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl* 
++GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl*
 +GetRawDataStorage(element_fq_id : const ElementFqId) : void*
 +GetEventMetaInfo(element_fq_id : const ElementFqId) :  const EventMetaInfo&amp;
 +GetQualityType() : QualityType
@@ -316,7 +316,7 @@ proxy_event_state_machine.uxf.</panel_attributes>
 --
 -SlotCollector(EventDataControl&amp;, const std::size_t max_slots)
 +GetNumNewSamplesAvailable(): size_t
-+GetNewSamplesSlotIndices(size_t max_count): 
++GetNewSamplesSlotIndices(size_t max_count):
  pair&lt;SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator&gt;
 --
 Notes:
@@ -651,15 +651,15 @@ bg=yellow
 +GetSubscriptionState() : SubscriptionState
 +SetReceiveHandler(EventReceiveHandler handler) : void
 +UnsetReceiveHandler(EventReceiveHandler handler) : void
-+GetEventSourcePid() : pid_t 
++GetEventSourcePid() : pid_t
 +GetElementFQId() : ElementFqId
 +GetNumNewSamplesAvailable(): Result&lt;std::size_t&gt;
-+GetNewSamplesSlotIndices(size_t max_count): 
++GetNewSamplesSlotIndices(size_t max_count):
  pair&lt;SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator&gt;
 --
 Notes:
 lola::ProxyEventCommon is not moveable or copyable.
-SlotCollector is instantiated by the SubscriptionStateMachine when it enters the 
+SlotCollector is instantiated by the SubscriptionStateMachine when it enters the
 Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
 </panel_attributes>
     <additional_attributes/>
@@ -756,8 +756,8 @@ using mapped_type = GenericProxyEvent
 using value_type = 	std::pair&lt;const key_type, mapped_type&gt;
 using const_iterator = LegacyBidirectionalIterator to const value_type
 
-+cbegin() : const_iterator 
-+cend() : const_iterator 
++cbegin() : const_iterator
++cend() : const_iterator
 +find() : const_iterator
 +size() : std::size_t
 +empty() : bool</panel_attributes>

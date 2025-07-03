@@ -198,7 +198,7 @@ _+getInstance() : Runtime&amp;_
 +resolve(const InstanceSpecifier&amp;) : std::vector&lt;InstanceIdentifier&gt;
 +GetTracingFilterConfig() : const ITracingFilterConfig*
 +getBindingRuntime(BindingType binding) : IRuntimeBinding*
--- 
+--
 Notes:
 Runtime is not copyable.</panel_attributes>
     <additional_attributes/>

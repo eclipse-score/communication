@@ -20,7 +20,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":proxy_binding_factory",
@@ -39,7 +38,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/concurrency:executor",
@@ -57,7 +56,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:handle_type",
@@ -74,7 +73,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:instance_identifier",
@@ -90,7 +89,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:instance_identifier",
@@ -106,7 +105,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:instance_identifier",
@@ -122,7 +121,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:instance_identifier",
@@ -138,7 +137,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:instance_identifier",
@@ -155,7 +154,7 @@ cc_library(
     implementation_deps = ["//score/mw/com/impl/bindings/lola"],
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         ":i_proxy_binding_factory",
@@ -170,7 +169,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         ":service_element_binding_resources",
@@ -190,7 +189,7 @@ cc_library(
     implementation_deps = ["//score/mw/com/impl/bindings/lola"],
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
+        "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
         ":i_proxy_event_binding_factory",
@@ -206,9 +205,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["//score/mw/com/impl/bindings/lola"],
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":i_proxy_field_binding_factory",
         ":proxy_service_element_binding_factory_impl",
@@ -228,9 +224,6 @@ cc_library(
         "@score-baselibs//score/mw/log",
     ],
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":i_skeleton_binding_factory",
         "@score-baselibs//score/language/futurecpp",
@@ -243,9 +236,6 @@ cc_library(
     hdrs = ["skeleton_service_element_binding_factory_impl.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":service_element_binding_resources",
         "@score-baselibs//score/memory:any_string_view",
@@ -263,9 +253,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["//score/mw/com/impl/bindings/lola"],
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":i_skeleton_event_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
@@ -280,9 +267,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["//score/mw/com/impl/bindings/lola"],
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":i_skeleton_field_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
@@ -299,9 +283,6 @@ cc_library(
         "proxy_binding_factory_impl",
     ],
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":i_proxy_binding_factory",
         "@score-baselibs//score/language/futurecpp",
@@ -314,9 +295,6 @@ cc_library(
     hdrs = ["proxy_event_binding_factory.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         "proxy_event_binding_factory_impl",
         ":i_proxy_event_binding_factory",
@@ -330,9 +308,6 @@ cc_library(
     hdrs = ["proxy_field_binding_factory.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         "proxy_field_binding_factory_impl",
         ":i_proxy_field_binding_factory",
@@ -349,9 +324,6 @@ cc_library(
         "skeleton_binding_factory_impl",
     ],
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":i_skeleton_binding_factory",
         "@score-baselibs//score/language/futurecpp",
@@ -364,9 +336,6 @@ cc_library(
     hdrs = ["skeleton_event_binding_factory.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         "skeleton_event_binding_factory_impl",
         ":i_skeleton_event_binding_factory",
@@ -380,9 +349,6 @@ cc_library(
     hdrs = ["skeleton_field_binding_factory.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         "skeleton_field_binding_factory_impl",
         ":i_skeleton_field_binding_factory",
@@ -398,7 +364,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_proxy_binding_factory",
@@ -414,7 +379,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_proxy_event_binding_factory",
@@ -430,7 +394,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_proxy_field_binding_factory",
@@ -446,7 +409,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_skeleton_binding_factory",
@@ -462,7 +424,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_skeleton_event_binding_factory",
@@ -478,7 +439,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":i_skeleton_field_binding_factory",
@@ -501,7 +461,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:runtime_interfaces",
@@ -522,7 +481,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":proxy_event_binding_factory",
@@ -546,7 +504,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":proxy_field_binding_factory",
@@ -614,9 +571,6 @@ cc_gtest_unit_test(
         "service_element_binding_resources_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":service_element_binding_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
@@ -629,9 +583,6 @@ cc_gtest_unit_test(
         "proxy_service_element_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":proxy_event_binding_factory",
         ":proxy_field_binding_factory",
@@ -647,9 +598,6 @@ cc_gtest_unit_test(
         "proxy_event_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":proxy_event_binding_factory",
     ],
@@ -661,9 +609,6 @@ cc_gtest_unit_test(
         "proxy_field_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":proxy_field_binding_factory",
     ],
@@ -675,9 +620,6 @@ cc_gtest_unit_test(
         "skeleton_service_element_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":skeleton_event_binding_factory",
         ":skeleton_field_binding_factory",
@@ -692,9 +634,6 @@ cc_gtest_unit_test(
         "skeleton_event_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":skeleton_event_binding_factory",
     ],
@@ -706,9 +645,6 @@ cc_gtest_unit_test(
         "skeleton_field_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":skeleton_field_binding_factory",
     ],
@@ -720,9 +656,6 @@ cc_gtest_unit_test(
         "runtime_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl/plumbing:__subpackages__",
-    ],
     deps = [
         ":runtime_binding_factory",
         "//score/mw/com/impl/bindings/lola/messaging:mock",
@@ -747,7 +680,6 @@ cc_test(
     tags = ["unit"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":event",
@@ -783,7 +715,6 @@ cc_unit_test_suites_for_host_and_qnx(
     ],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
-        # "@ddad//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -792,7 +723,6 @@ rust_library(
     srcs = ["sample_ptr.rs"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = ["@crate_index//:libc"],
 )

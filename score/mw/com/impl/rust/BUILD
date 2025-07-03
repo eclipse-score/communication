@@ -32,7 +32,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//platform/aas:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl",
@@ -46,7 +45,6 @@ rust_library(
     srcs = ["proxy_bridge.rs"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":proxy_bridge_cpp",
@@ -69,7 +67,6 @@ rust_library(
     srcs = ["mw_com.rs"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//platform/aas:__subpackages__",
     ],
     deps = [
         ":macros",

@@ -14,7 +14,7 @@ load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_tes
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
-    # "@ddad//score/mw/com/impl/bindings/lola/service_discovery:__subpackages__",
+    "//score/mw/com/impl/bindings/lola/service_discovery:__subpackages__",
 ])
 
 cc_library(

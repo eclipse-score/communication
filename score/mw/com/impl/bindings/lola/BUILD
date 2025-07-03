@@ -41,7 +41,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = ["//score/mw/com/impl/configuration:lola_service_instance_id"],
 )
@@ -93,7 +93,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl/configuration",
@@ -108,7 +108,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl/configuration",
@@ -193,7 +193,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":data_type_meta_info",
@@ -208,7 +208,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -373,7 +373,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":event_data_control",
@@ -388,7 +388,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":event_data_control",
@@ -485,7 +485,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":event_slot_status",
@@ -530,7 +530,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -541,7 +541,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":control_slot_types",
@@ -558,7 +558,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/containers:dynamic_array",
@@ -573,7 +573,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":control_slot_types",
@@ -731,7 +731,7 @@ cc_gtest_unit_test(
     srcs = ["partial_restart_path_builder_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [":partial_restart_path_builder"],
 )
@@ -740,9 +740,6 @@ cc_gtest_unit_test(
     name = "shm_path_builder_test",
     srcs = ["shm_path_builder_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [":shm_path_builder"],
 )
 
@@ -750,9 +747,6 @@ cc_gtest_unit_test(
     name = "uid_pid_mapping_test",
     srcs = ["uid_pid_mapping_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":uid_pid_mapping",
         "@score-baselibs//score/memory/shared:atomic_indirector",
@@ -764,9 +758,6 @@ cc_gtest_unit_test(
     name = "generic_proxy_event_test",
     srcs = ["generic_proxy_event_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":proxy",
         "@score-baselibs//score/memory:any_string_view",
@@ -778,9 +769,6 @@ cc_gtest_unit_test(
     name = "type_erased_sample_ptrs_guard_test",
     srcs = ["type_erased_sample_ptrs_guard_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":type_erased_sample_ptrs_guard",
         "//score/mw/com/impl:runtime",
@@ -802,7 +790,6 @@ cc_unit_test(
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        # "@ddad//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
@@ -828,9 +815,6 @@ cc_test(
         "aborts_upon_exception",
     ],
     tags = ["unit"],
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@score-baselibs//score/containers:dynamic_array",
@@ -853,9 +837,6 @@ cc_test(
         "aborts_upon_exception",
     ],
     tags = ["unit"],
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":skeleton",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
@@ -871,9 +852,6 @@ cc_gtest_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":proxy",
         ":shm_path_builder_mock",
@@ -890,9 +868,6 @@ cc_gtest_unit_test(
     name = "proxy_event_test",
     srcs = ["proxy_event_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":proxy",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
@@ -903,9 +878,6 @@ cc_gtest_unit_test(
     name = "slot_decrementer_test",
     srcs = ["slot_decrementer_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":event_data_control",
         ":slot_decrementer",
@@ -917,9 +889,6 @@ cc_gtest_unit_test(
     name = "transaction_log_rollback_executor_test",
     srcs = ["transaction_log_rollback_executor_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":rollback_synchronization",
         ":runtime_mock",
@@ -964,9 +933,6 @@ cc_test(
         "aborts_upon_exception",
     ],
     tags = ["unit"],
-    visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
-    ],
     deps = [
         ":event_data_control_test_resources",
         ":lola",
@@ -1043,6 +1009,5 @@ cc_unit_test_suites_for_host_and_qnx(
     ],
     visibility = [
         "//score/mw/com/impl:__pkg__",
-        # "@ddad//score/mw/com/impl:__pkg__",
     ],
 )

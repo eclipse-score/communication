@@ -44,7 +44,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        # "@ddad//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/filesystem:mock",
@@ -74,7 +73,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        # "@ddad//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":skeleton_test_resources",
@@ -112,7 +110,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        # "@ddad//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":proxy_event_test_resources",
@@ -135,7 +132,6 @@ cc_test(
     tags = ["unit"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        # "@ddad//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":skeleton_test_resources",
@@ -159,7 +155,6 @@ cc_test(
     tags = ["unit"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        # "@ddad//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":skeleton_test_resources",
@@ -183,7 +178,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        # "@ddad//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":proxy_event_test_resources",

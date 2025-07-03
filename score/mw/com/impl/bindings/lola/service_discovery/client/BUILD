@@ -48,7 +48,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl/bindings/lola/service_discovery/client:__pkg__",
+        "//score/mw/com/impl/bindings/lola/service_discovery/client:__pkg__",
     ],
     deps = [
         "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",

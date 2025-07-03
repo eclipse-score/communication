@@ -53,7 +53,7 @@ DummyField : fields::DummyField // using fields::DummyField = SkeletonField&lt;S
     <panel_attributes>template=SampleType
 lola::SkeletonEvent
 --
-+SkeletonEvent(SkeletonBase&amp; parent, ElementFqId, score::cpp::string_view event_name, 
++SkeletonEvent(SkeletonBase&amp; parent, ElementFqId, score::cpp::string_view event_name,
                 size_t max_number_slots, bool enforce_max_samples = true)
 +Send(SampleType const&amp;): void
 +Send(SampleAllocateePtr&lt;SampleType&gt;): void
@@ -144,7 +144,7 @@ Skeleton(InstanceIdentifier, SkeletonEvents&amp;
 +PrepareStopOffer(): void
 
  template &lt;typename SampleType&gt;
-+Register(ElementFqId, size_t num_slots): std::pair&lt;EventDataStorage&lt;SampleType&gt;*, 
++Register(ElementFqId, size_t num_slots): std::pair&lt;EventDataStorage&lt;SampleType&gt;*,
                                                                                 EventDataControlComposite&gt;
 </panel_attributes>
     <additional_attributes/>
@@ -384,7 +384,7 @@ lola::ProxyEvent
 -common_dispatch_ : lola::ProxyEventCommon
 --
 Notes:
-Dispatches all calls to functions in ProxyEventBindingBase interface to 
+Dispatches all calls to functions in ProxyEventBindingBase interface to
 ProxyEventCommon</panel_attributes>
     <additional_attributes/>
   </element>
@@ -500,7 +500,7 @@ _        const LolaServiceTypeDeployment&amp; service_deployment,_
 _        QualityType quality_type) : Result&lt;Proxy&gt;_
 +Proxy(Proxy&amp;&amp;)
 +GetServiceHandles(instance_identifier : InstanceIdentifier) : score::Result&lt;std::vector&lt;HandleType&gt;&gt;
-+GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl* 
++GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl*
 +GetRawDataStorage(element_fq_id : const ElementFqId) : void*
 +GetQualityType() : QualityType
 +GetSourcePid() : pid_t</panel_attributes>
@@ -725,7 +725,7 @@ bg=black</panel_attributes>
 -tracker_: SampleReferenceTracker*
 --
 Notes:
-SampleReferenceGuard is 
+SampleReferenceGuard is
 not movable or copyable.</panel_attributes>
     <additional_attributes/>
   </element>
@@ -921,7 +921,7 @@ proxy_event_state_machine.uxf.</panel_attributes>
 --
 -ProxyEventClient(EventDataControl&amp;, const std::size_t max_slots)
 +GetNumNewSamplesAvailable(): size_t
-+GetNewSamplesSlotIndices(size_t max_count): 
++GetNewSamplesSlotIndices(size_t max_count):
  pair&lt;SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator&gt;</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1021,7 +1021,7 @@ operator-&gt;() : pointer
     <panel_attributes>score::result::ErrorDomain
 --
 --
-+MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : score::cpp::string_view 
++MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : score::cpp::string_view
 --</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1036,7 +1036,7 @@ operator-&gt;() : pointer
     <panel_attributes>ComErrorDomain
 --
 --
-+MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : score::cpp::string_view  
++MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : score::cpp::string_view
 --</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1114,16 +1114,16 @@ uses</panel_attributes>
 +GetSubscriptionState() : SubscriptionState
 +SetReceiveHandler(EventReceiveHandler handler) : void
 +UnsetReceiveHandler(EventReceiveHandler handler) : void
-+GetEventSourcePid() : pid_t 
++GetEventSourcePid() : pid_t
 +GetElementFQId() : ElementFqId
 +GetNumNewSamplesAvailable(): Result&lt;std::size_t&gt;
-+GetNewSamplesSlotIndices(size_t max_count): 
++GetNewSamplesSlotIndices(size_t max_count):
  pair&lt;SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator&gt;
 --
 Notes:
-SlotCollector is instantiated by the SubscriptionStateMachine when it enters the 
+SlotCollector is instantiated by the SubscriptionStateMachine when it enters the
 Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
-All subscription operations are implemented in the separate class 
+All subscription operations are implemented in the separate class
 SubscriptionStateMachine and the associated states. </panel_attributes>
     <additional_attributes/>
   </element>
@@ -1193,7 +1193,7 @@ mw::com::impl::ProxyServiceMethod
       <h>120</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
-r1=service_method_dispatch_ 
+r1=service_method_dispatch_
 m2=0..2
 </panel_attributes>
     <additional_attributes>10.0;100.0;10.0;10.0</additional_attributes>
@@ -1273,10 +1273,10 @@ m2=1</panel_attributes>
 score::mw::com::impl::SkeletonField
 --
 +SkeletonField(SkeletonBase&amp; parent, std::string field_name)
-+Update(const SampleType&amp; data): ResultBlank 
++Update(const SampleType&amp; data): ResultBlank
 +Update(SampleAllocateePtr&lt;SampleType&gt;): ResultBlank
 +Allocate(): SampleAllocateePtr&lt;SampleType&gt;
-+RegisterGetHandler(std::function&lt;Future&lt;SampleType&gt;()&gt; getHandler): Result&lt;void&gt; 
++RegisterGetHandler(std::function&lt;Future&lt;SampleType&gt;()&gt; getHandler): Result&lt;void&gt;
 +RegisterSetHandler(std::function&lt;Future&lt;SampleType&gt;(const SampleType&amp; data)&gt; setHandler):Result&lt;void&gt;
 --
 -IsInitialValueSaved(): bool
@@ -1284,7 +1284,7 @@ score::mw::com::impl::SkeletonField
 -skeleton_service_method_dispatch_get_: SkeletonServiceMethod&lt;Future&lt;SampleType&gt;, void&gt;
 -skeleton_service_method_dispatch_set_: SkeletonServiceMethod &lt;void, SampleType&gt;
 --
-SkeletonField will dispatch update call to impl::skeletonEvent via skeleton_event_dispatch_. On moving, the 
+SkeletonField will dispatch update call to impl::skeletonEvent via skeleton_event_dispatch_. On moving, the
 SkeletonField should call UpdateField on its parent skeleton so that the parent stores its new address.
 </panel_attributes>
     <additional_attributes/>
@@ -1452,12 +1452,12 @@ m1=slot_collector_</panel_attributes>
 --
 Notes:
 SkeletonEventBase is moveable but not copyable.
-In production, the constructor receives a SkeletonEventBinding&lt;SampleType&gt; 
-from impl::SkeletonEvent which is assigned to the base class pointer, binding_. 
-This allows SkeletonEventBase to access the type independent methods of 
-SkeletonEventBindingBase. Derived classes i.e. impl::SkeletonEvent should 
-downcast binding_ to a SkeletonEventBinding&lt;SampleType&gt; in order to use type 
-dependent methods. On moving, the SkeletonEvent should call UpdateEvent on its 
+In production, the constructor receives a SkeletonEventBinding&lt;SampleType&gt;
+from impl::SkeletonEvent which is assigned to the base class pointer, binding_.
+This allows SkeletonEventBase to access the type independent methods of
+SkeletonEventBindingBase. Derived classes i.e. impl::SkeletonEvent should
+downcast binding_ to a SkeletonEventBinding&lt;SampleType&gt; in order to use type
+dependent methods. On moving, the SkeletonEvent should call UpdateEvent on its
 parent skeleton so that the parent stores its new address.</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1519,10 +1519,10 @@ knows</panel_attributes>
 /-DoDeferredUpdate(): ResultBlank = 0/
 -is_initial_value_set_: bool
 --
-In production, the constructor receives a SkeletonEvent&lt;SampleType&gt; from 
-impl::SkeletonField which is assigned to the base class pointer, skeleton_event_dispatch_. 
-This allows BaseSkeletonField to access the type independent methods of SkeletonEventBase. 
-Derived classes i.e. impl::SkeletonField should downcast skeleton_event_dispatch_ to a 
+In production, the constructor receives a SkeletonEvent&lt;SampleType&gt; from
+impl::SkeletonField which is assigned to the base class pointer, skeleton_event_dispatch_.
+This allows BaseSkeletonField to access the type independent methods of SkeletonEventBase.
+Derived classes i.e. impl::SkeletonField should downcast skeleton_event_dispatch_ to a
 SkeletonEvent&lt;SampleType&gt; in order to use type dependent methods.</panel_attributes>
     <additional_attributes/>
   </element>

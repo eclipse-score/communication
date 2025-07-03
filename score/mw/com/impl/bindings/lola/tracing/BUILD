@@ -43,7 +43,7 @@ cc_gtest_unit_test(
     srcs = ["tracing_runtime_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        # "@ddad//score/mw/com/impl:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":tracing_runtime",
