@@ -7,18 +7,11 @@ Repository for the communication module LoLa
 communication (main) $ bazel build ...
 ```
 
-## IDE support (compile_commands.json)
+## IDE support
 
-[bazel-compile-commands](https://github.com/kiron1/bazel-compile-commands) creates a `compile_commands.json` file which can then be used by IDEs / clangd for code completion and navigation.
-The container image has this tool preinstalled.
+Enabling IDE support is the same on [all S-CORE devcontainers](https://github.com/eclipse-score/devcontainer/blob/main/README.md#usage).
 
-To create a `compile_commands.json` file, run the following commands:
+After you have build the code, create databases via Visual Studio Code Tasks:
 
-```shell
-communication (main) $ bazel build ...
-communication (main) $ bazel-compile-commands ...
-```
-
-### Visual Studio Code
-
-After both commands were run successfully, press in Visual Studio Code `ctrl + shift p` and select `clangd: Restart language server`.
+- C++: `Ctrl + p` -> `Tasks: Run Task` -> `Update compile_commands.json`
+- Rust: `Ctrl + p` -> `Tasks: Run Task` -> `Generate rust-project.json`
