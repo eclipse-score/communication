@@ -29,7 +29,7 @@ body:
   attributes:
     label: Supporting Information
     description: |
-      During which operational state did the issue occurr
+      During which operational state did the issue occur
       Observations / Screenshots / Traces
   validations:
     required: false
@@ -68,17 +68,3 @@ body:
     options:
       - label: Safety Related
       - label: Security Related
-- type: markdown
-  attributes:
-    value: "## <ins>Bug analysis</ins>"
-- type: textarea
-  attributes:
-    label: Problem Analysis Results
-  validations:
-    required: false
-- type: textarea
-  attributes:
-    label: Problem Solution
-    description: Measures to solve the problem
-  validations:
-    required: false

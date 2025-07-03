@@ -19,7 +19,10 @@ body:
 - type: textarea
   attributes:
     label: What
-    description: Goal of the Improvement / Task
+    description: |
+      - Goal of the Improvement / Task
+      - If Req/Architecture is affected, the template of
+      [Change Management](https://eclipse-score.github.io/process_description/main/process_areas/change_management/guidance/change_management_impact_analysis_template.html) needs to be used
   validations:
     required: true
 - type: textarea
@@ -41,6 +44,9 @@ body:
     label: Category
     options:
       - label: Affects Detailed Design
-      - label: Security related
-      - label: Safety related
-
+- type: checkboxes
+  attributes:
+    label: Requirements / Architecture
+    options:
+      - label: Requirements / Architecture are not affected by this change?
+        required: true
