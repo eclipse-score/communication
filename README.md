@@ -13,5 +13,5 @@ Enabling IDE support is the same on [all S-CORE devcontainers](https://github.co
 
 After you have build the code, create databases via Visual Studio Code Tasks:
 
-- C++: `Ctrl + p` -> `Tasks: Run Task` -> `Update compile_commands.json`
-- Rust: `Ctrl + p` -> `Tasks: Run Task` -> `Generate rust-project.json`
+- C++: `Ctrl + Shift + p` -> `Tasks: Run Task` -> `Update compile_commands.json`
+- Rust: `Ctrl + Shift + p` -> `Tasks: Run Task` -> `Generate rust-project.json`
