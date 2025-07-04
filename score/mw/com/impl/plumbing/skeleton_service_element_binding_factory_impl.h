@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/skeleton_base.h"
 
@@ -38,6 +39,35 @@
 
 namespace score::mw::com::impl
 {
+
+namespace detail
+{
+
+template <typename LolaServiceElementInstanceDeployment>
+lola::SkeletonEventProperties GetSkeletonEventProperties(
+    const LolaServiceElementInstanceDeployment& lola_service_element_instance_deployment)
+{
+    if (!lola_service_element_instance_deployment.GetNumberOfSampleSlots().has_value())
+    {
+        score::mw::log::LogFatal("lola")
+            << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Number of sample slots "
+               "was not specified in the configuration. Terminating.";
+        std::terminate();
+    }
+
+    if (!lola_service_element_instance_deployment.max_subscribers_.has_value())
+    {
+        score::mw::log::LogFatal("lola")
+            << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Max subscribers was "
+               "not specified in the configuration. Terminating.";
+        std::terminate();
+    }
+    return lola::SkeletonEventProperties{lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
+                                         lola_service_element_instance_deployment.max_subscribers_.value(),
+                                         lola_service_element_instance_deployment.enforce_max_samples_};
+}
+
+}  // namespace detail
 
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
@@ -74,10 +104,8 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
             const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_string);
-            const lola::SkeletonEventProperties skeleton_event_properties{
-                lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
-                lola_service_element_instance_deployment.max_subscribers_.value(),
-                lola_service_element_instance_deployment.enforce_max_samples_.value()};
+            const auto skeleton_event_properties =
+                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_string);

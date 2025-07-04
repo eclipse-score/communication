@@ -105,13 +105,13 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").GetNumberOfTracingSlots(), 0);
     EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").GetNumberOfSampleSlots().value(), 50);
     EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").max_subscribers_.value(), 5);
-    EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").enforce_max_samples_.value(), true);
+    EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").enforce_max_samples_, true);
     EXPECT_EQ(secondDeploymentInfo.events_.at("CurrentPressureFrontLeft").max_concurrent_allocations_.value(), 1);
 
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").GetNumberOfTracingSlots(), 7);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").GetNumberOfSampleSlots().value(), 60 + 7);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").max_subscribers_.value(), 6);
-    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").enforce_max_samples_.value(), true);
+    EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").enforce_max_samples_, true);
     EXPECT_EQ(secondDeploymentInfo.fields_.at("CurrentTemperatureFrontLeft").max_concurrent_allocations_.value(), 1);
 
     const auto service_deployment = config.GetServiceTypes().at(deployments.service_);
@@ -2021,7 +2021,7 @@ TEST(ConfigParser, LolaEventOptionalEnforceMaxSamples)
         config.GetServiceInstances().at(InstanceSpecifier::Create("abc/abc/TirePressurePort").value());
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
-    EXPECT_EQ(deploymentInfo.events_.at("CurrentPressureFrontLeft").enforce_max_samples_.value(), false);
+    EXPECT_EQ(deploymentInfo.events_.at("CurrentPressureFrontLeft").enforce_max_samples_, false);
 }
 
 TEST(ConfigParser, LolaFieldOptionalEnforceMaxSamples)
@@ -2084,7 +2084,7 @@ TEST(ConfigParser, LolaFieldOptionalEnforceMaxSamples)
         config.GetServiceInstances().at(InstanceSpecifier::Create("abc/abc/TirePressurePort").value());
 
     const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
-    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").enforce_max_samples_.value(), false);
+    EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").enforce_max_samples_, false);
 }
 
 TEST(ConfigParser, EmptyServiceTypes)
