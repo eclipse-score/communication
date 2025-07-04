@@ -1,0 +1,126 @@
+@startuml "Sequence View"
+title "Sequence View"
+
+hide footbox
+
+participant "<u>:User</u>" as User
+participant "<u>DummyProxy</u>" as DummyProxy
+participant "<u>:mw::com::impl::Runtime</u>" as Runtime
+participant "<u>:ServiceDiscovery</u>" as ServiceDiscovery
+participant "<u>:lola::IRuntime</u>" as LolaRuntime
+participant "<u>:lola::ServiceDiscoveryClient</u>" as ServiceDiscoveryClient
+participant "<u>:os::IONotify</u>" as IONotify
+participant "<u>:concurrency::Executor</u>" as Executor
+participant "<u>:SDTask</u>" as SDTask
+participant "<u>:FoundCallback</u>" as FoundCallback
+
+User -> DummyProxy: StartFindService(\nFindHandler, InstanceSpecifier)
+activate DummyProxy
+
+DummyProxy -> Runtime: getInstance()
+activate Runtime
+Runtime --> DummyProxy
+deactivate Runtime
+
+DummyProxy -> Runtime: GetServiceDiscovery()
+activate Runtime
+Runtime --> DummyProxy
+deactivate Runtime
+
+DummyProxy -> ServiceDiscovery: ...
+activate ServiceDiscovery
+
+ServiceDiscovery -> Runtime: resolve(InstanceSpecifier):
+activate Runtime
+Runtime --> ServiceDiscovery: std::vector<InstanceIdentifier>
+deactivate Runtime
+
+ServiceDiscovery -> ServiceDiscovery: GetNextHandle():\nFindServiceHandle
+
+ServiceDiscovery -> ServiceDiscovery: Store FindHandler\nin map
+
+ServiceDiscovery -> ServiceDiscovery: Store InstanceIdentifier\nin multi-map
+
+loop for each InstanceIdentifier
+    ServiceDiscovery -> Runtime: getBindingRuntime(\nInstanceIdentifier.instance_deployment_.bindingInfo_):
+    activate Runtime
+    Runtime --> ServiceDiscovery: lola::IRuntime*
+    deactivate Runtime
+    
+    ServiceDiscovery -> LolaRuntime: GetServiceDiscoveryClient()
+    activate LolaRuntime
+    LolaRuntime --> ServiceDiscovery: IServiceDiscoveryClient&
+    deactivate LolaRuntime
+    
+    ServiceDiscovery -> ServiceDiscoveryClient: StartFindService(FoundCallback, FindServiceHandle, InstanceIdentifier)
+    activate ServiceDiscoveryClient
+    
+    ServiceDiscoveryClient -> ServiceDiscoveryClient: InstanceIdentiferToPath()
+    
+    ServiceDiscoveryClient -> IONotify: AddWatch(filesystem::Path)
+    activate IONotify
+    IONotify --> ServiceDiscoveryClient: watch_fd
+    deactivate IONotify
+    
+    ServiceDiscoveryClient -> ServiceDiscoveryClient: Store FoundCallback and Handle\nin multi-map with watch_fd
+    
+    ServiceDiscoveryClient --> ServiceDiscovery
+    deactivate ServiceDiscoveryClient
+end
+
+ServiceDiscovery --> DummyProxy
+deactivate ServiceDiscovery
+
+DummyProxy --> User
+deactivate DummyProxy
+
+
+
+activate ServiceDiscoveryClient
+ServiceDiscoveryClient -> Executor: Submit(SDTask):
+activate Executor
+Executor -> SDTask: creates
+Executor --> ServiceDiscoveryClient
+deactivate Executor
+deactivate ServiceDiscoveryClient
+
+activate SDTask
+loop while no stop
+    SDTask -> IONotify: WaitForEvent()
+    note left of IONotify: Note:\nThis wait is blocking for\nan OS Event
+    activate IONotify
+    IONotify --> SDTask: watch_fd
+    deactivate IONotify
+    
+    SDTask -> SDTask: Find watch_fd in\nsearch_requests
+    
+    loop for each entry
+        SDTask -> FoundCallback: invoke(FindServiceHandle)
+        
+        activate FoundCallback
+        FoundCallback -> ServiceDiscovery: GetInstanceIdentifierForFindHandle(FindServiceHandle)
+        activate ServiceDiscovery
+        ServiceDiscovery --> FoundCallback: std::vector<InstanceIdentifier>
+        deactivate ServiceDiscovery
+        
+        
+        
+        loop for each InstanceIdentifier
+            FoundCallback -> FoundCallback: Create\nHandleType
+        end
+        
+        FoundCallback -> ServiceDiscovery: ExecuteUserCallback(std::vector<HandleType>, FindServiceHandle)
+        activate ServiceDiscovery
+        
+        ServiceDiscovery -> ServiceDiscovery: Find Callback\nin map
+        
+        ServiceDiscovery -> ServiceDiscovery: Execute Callback\nfrom User
+        
+        ServiceDiscovery --> FoundCallback: std::vector<InstanceIdentifier>
+        deactivate ServiceDiscovery
+        deactivate FoundCallback
+    end
+end
+deactivate SDTask
+
+@enduml

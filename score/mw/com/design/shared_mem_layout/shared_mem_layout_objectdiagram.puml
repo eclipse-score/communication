@@ -1,0 +1,58 @@
+@startuml "Object View"
+title "Shared Memory Layout Object Diagram"
+
+object "skeleton_SI_1 : lola::Skeleton" as skeleton {
+  -CreateSharedMemoryForData(LolaServiceInstanceDeployment&, LolaServiceTypeDeployment&) : bool
+  -CreateSharedMemoryForControl(LolaServiceInstanceDeployment&, LolaServiceTypeDeployment&, QualityType) : bool
+  -storage_ : ServiceDataStorage*
+  -control_qm : ServiceDataControl*
+  -control_asil_b : ServiceDataControl*
+  -storage_resource : std::shared_ptr<score::memory::shared::ManagedMemoryResource> 
+  -control_qm_resource : std::shared_ptr<score::memory::shared::ManagedMemoryResource> 
+  -control_asil_resource : std::shared_ptr<score::memory::shared::ManagedMemoryResource> 
+}
+
+object "shmResource_storage_SI_1 : SharedMemoryResource" as storage_resource {
+  +alreadyAllocatedBytes : std::size_t
+  -start : OffsetPtr<void>
+}
+
+object "shmResource_control_qm_SI_1 : SharedMemoryResource" as control_qm_resource {
+  +alreadyAllocatedBytes : std::size_t
+  -start : OffsetPtr<void>
+}
+
+object "shmResource_control_asil_SI_1 : SharedMemoryResource" as control_asil_resource {
+  +alreadyAllocatedBytes : std::size_t
+  -start : OffsetPtr<void>
+}
+
+object "<< Shared Memory >>\nserviceDataStorage_SI_1 : lola::ServiceDataStorage" as storage {
+  +events_ : score::memory::shared::Map<ElementFqId, score::memory::shared::OffsetPtr<void>>
+  +events_metainfo_ : score::memory::shared::Map<ElementFqId, EventMetaInfo>
+}
+
+object "<< Shared Memory >>\nserviceDataControl_qm_SI_1 : lola::ServiceDataControl" as control_qm {
+  +event_data_control_ : score::memory::shared::Map<ElementFqId, EventDataControl>
+  +skeleton_pid_ : pid_t
+}
+
+object "<< Shared Memory >>\nserviceDataControl_asil_SI_1 : lola::ServiceDataControl" as control_asil {
+  +event_data_control_ : score::memory::shared::Map<ElementFqId, EventDataControl>
+  +skeleton_pid_ : pid_t
+}
+
+skeleton o-- storage_resource : storage_resource
+skeleton o-- control_qm_resource : control_qm_resource
+skeleton o-- control_asil_resource : control_asil_resource
+
+skeleton o-- storage : storage
+skeleton o-- control_qm : control_qm
+skeleton o-- control_asil : control_asil_b
+
+control_qm_resource -right-> control_qm : start
+control_asil_resource -right-> control_asil : start
+storage_resource -right-> storage : start
+
+control_qm_resource -[hidden]-> control_asil_resource
+control_asil_resource -[hidden]-> storage_resource
