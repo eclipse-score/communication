@@ -1,3 +1,5 @@
 bazel-*
 MODULE.bazel.lock
 user.bazelrc
+.cache/*
+compile_commands.json
