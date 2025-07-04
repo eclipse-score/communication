@@ -35,6 +35,7 @@
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/memory/shared/lock_file.h"
+#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 #include <score/assert.hpp>
 #include <score/optional.hpp>
@@ -346,7 +347,8 @@ auto Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_f
     -> std::pair<EventDataStorage<SampleType>*, EventDataControlComposite>
 {
     auto* typed_event_data_storage_ptr = storage_resource_->construct<EventDataStorage<SampleType>>(
-        element_properties.number_of_slots, storage_resource_->getMemoryResourceProxy());
+        element_properties.number_of_slots,
+        memory::shared::PolymorphicOffsetPtrAllocator<SampleType>(storage_resource_->getMemoryResourceProxy()));
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
                                                          std::forward_as_tuple(element_fq_id),
