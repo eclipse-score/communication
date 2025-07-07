@@ -10,26 +10,27 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/filesystem/factory/filesystem_factory.h"
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/memory/string_literal.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/runtime_configuration.h"
+
+#include "score/filesystem/factory/filesystem_factory.h"
 
 #include <score/blank.hpp>
 #include <score/overload.hpp>
 #include <score/span.hpp>
 #include <score/string_view.hpp>
 
+#include <score/utility.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <cstdlib>
 #include <fstream>
 #include <functional>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <variant>
@@ -38,8 +39,6 @@ namespace score::mw::com::impl
 {
 namespace
 {
-
-constexpr auto kDummyApplicationName = "dummyname";
 
 // This fixture forces every test to run within its own process.
 // This is required to support resets of a Meyer-Singleton.
@@ -110,43 +109,6 @@ class SingleTestPerProcessFixture : public ::testing::Test
     }
 };
 
-class CallArgs
-{
-  public:
-    explicit CallArgs(std::string source_path)
-        : source_path_{std::move(source_path)},
-          call_args_{kDummyApplicationName, "-service_instance_manifest", source_path_.c_str()},
-          contains_path_{true}
-    {
-    }
-
-    explicit CallArgs() : source_path_{}, call_args_{kDummyApplicationName}, contains_path_{false} {}
-
-    score::cpp::span<const score::StringLiteral> Get() const
-    {
-        if (contains_path_)
-        {
-            return call_args_;
-        }
-        return score::cpp::span<const score::StringLiteral>{&call_args_[0], 1U};
-    }
-
-  private:
-    std::string source_path_;
-    score::StringLiteral call_args_[3];
-    bool contains_path_;
-};
-
-CallArgs WithCallArgsContainingConfigPath(std::string source_path)
-{
-    return CallArgs(std::move(source_path));
-}
-
-CallArgs WithCallArgsNotContainingConfigPath()
-{
-    return CallArgs();
-}
-
 std::vector<score::cpp::string_view> GetEventNameListFromHandle(const HandleType& handle_type) noexcept
 {
     using ReturnType = std::vector<score::cpp::string_view>;
@@ -179,17 +141,9 @@ void WithConfigAtDefaultPath(const std::string& source_path)
     ASSERT_TRUE(filesystem.CopyFile(filesystem::Path{source_path}, target).has_value());
 }
 
-std::string WithConfigInBuffer(const std::string& source_path)
-{
-    std::ifstream configuration{source_path};
-    std::string configuration_buffer{std::istreambuf_iterator<char>{configuration}, std::istreambuf_iterator<char>{}};
+using RuntimeInitializationTest = SingleTestPerProcessFixture;
 
-    return configuration_buffer;
-}
-
-using RuntimeCallArgsInitializationTest = SingleTestPerProcessFixture;
-
-TEST_F(RuntimeCallArgsInitializationTest, InitializationLoadsCorrectConfiguration)
+TEST_F(RuntimeInitializationTest, InitializationLoadsCorrectConfiguration)
 {
     RecordProperty("Verifies", "SCR-6221480, SCR-21781439");
     RecordProperty("Description", "InstanceSpecifier resolution can not retrieve wrong InstanceIdentifier.");
@@ -198,11 +152,11 @@ TEST_F(RuntimeCallArgsInitializationTest, InitializationLoadsCorrectConfiguratio
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     TestInSeparateProcess([this]() {
-        // Given a configuration with the tire_pressure_port_ provided by path as call arguments
-        const auto test_args = WithCallArgsContainingConfigPath(config_with_tire_pressure_port_);
+        // Given a RuntimeConfiguration
+        const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
 
         // When initializing the runtime with the call args
-        Runtime::Initialize(test_args.Get());
+        Runtime::Initialize(runtime_configuration);
 
         // Then we can resolve this instance identifier
         auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
@@ -210,35 +164,18 @@ TEST_F(RuntimeCallArgsInitializationTest, InitializationLoadsCorrectConfiguratio
     });
 }
 
-TEST_F(RuntimeCallArgsInitializationTest, InitializationLoadsDefaultConfigurationIfNoneProvided)
+TEST_F(RuntimeInitializationTest, SecondInitializationUpdatesRuntimeIfRuntimeHasNotYetBeenUsed)
 {
     TestInSeparateProcess([this]() {
-        // Given a configuration at the default location with the tire_pressure_port_ and call args which don't specify
-        // the configuration path
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
-        const auto test_args = WithCallArgsNotContainingConfigPath();
-
-        // When initializing the runtime with the call args
-        Runtime::Initialize(test_args.Get());
-
-        // Then we can resolve this instance identifier
-        auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
-        EXPECT_EQ(identifiers.size(), 1);
-    });
-}
-
-TEST_F(RuntimeCallArgsInitializationTest, SecondInitializationUpdatesRuntimeIfRuntimeHasNotYetBeenUsed)
-{
-    TestInSeparateProcess([this]() {
-        // Given two configurations with one instance specifier each
-        const auto test_args_1 = WithCallArgsContainingConfigPath(config_with_tire_pressure_port_);
-        const auto test_args_2 = WithCallArgsContainingConfigPath(config_with_tire_pressure_port_other_);
+        // Given two RuntimeConfigurations containing different configuration file paths
+        const auto runtime_configuration_1 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+        const auto runtime_configuration_2 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
 
         // and that the runtime has been initialised with the first configuration
-        Runtime::Initialize(test_args_1.Get());
+        Runtime::Initialize(runtime_configuration_1);
 
         // When initializing the runtime with the second configuration before the runtime is used
-        Runtime::Initialize(test_args_2.Get());
+        Runtime::Initialize(runtime_configuration_2);
 
         // Then we can only resolve the second instance specifier
         auto identifiers_1 = Runtime::getInstance().resolve(tire_pressure_port_);
@@ -248,21 +185,21 @@ TEST_F(RuntimeCallArgsInitializationTest, SecondInitializationUpdatesRuntimeIfRu
     });
 }
 
-TEST_F(RuntimeCallArgsInitializationTest, SecondInitializationDoesNotUpdateRuntimeIfRuntimeHasAlreadyBeenUsed)
+TEST_F(RuntimeInitializationTest, SecondInitializationDoesNotUpdateRuntimeIfRuntimeHasAlreadyBeenUsed)
 {
     TestInSeparateProcess([this]() {
-        // Given two configurations with one instance specifier each
-        const auto test_args_1 = WithCallArgsContainingConfigPath(config_with_tire_pressure_port_);
-        const auto test_args_2 = WithCallArgsContainingConfigPath(config_with_tire_pressure_port_other_);
+        // Given two RuntimeConfigurations containing different configuration file paths
+        const auto runtime_configuration_1 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+        const auto runtime_configuration_2 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
 
         // and that the runtime has been initialised with the first configuration
-        Runtime::Initialize(test_args_1.Get());
+        Runtime::Initialize(runtime_configuration_1);
 
         // and that the runtime has been used
         score::cpp::ignore = Runtime::getInstance().resolve(tire_pressure_port_);
 
         // When initializing the runtime with the second configuration
-        Runtime::Initialize(test_args_2.Get());
+        Runtime::Initialize(runtime_configuration_2);
 
         // Then we can only resolve the first instance specifier
         auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_other_);
@@ -272,9 +209,7 @@ TEST_F(RuntimeCallArgsInitializationTest, SecondInitializationDoesNotUpdateRunti
     });
 }
 
-using RuntimeDefaultInitializationTest = SingleTestPerProcessFixture;
-
-TEST_F(RuntimeDefaultInitializationTest, ImplicitInitializationLoadsCorrectConfiguration)
+TEST_F(RuntimeInitializationTest, ImplicitInitializationLoadsCorrectConfiguration)
 {
     TestInSeparateProcess([this]() {
         // Given a configuration with one instance specifier provided at default location
@@ -285,123 +220,6 @@ TEST_F(RuntimeDefaultInitializationTest, ImplicitInitializationLoadsCorrectConfi
 
         // Then we can resolve this instance identifier
         auto identifiers = runtime.resolve(tire_pressure_port_);
-        EXPECT_EQ(identifiers.size(), 1);
-    });
-}
-
-TEST_F(RuntimeDefaultInitializationTest, ExplicitInitializationLoadsCorrectConfiguration)
-{
-    TestInSeparateProcess([this]() {
-        // Given a configuration with one instance specifier provided at default location
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
-
-        // When explicitly default-initializing the runtime
-        Runtime::Initialize();
-
-        // Then we can resolve this instance identifier
-        auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
-        EXPECT_EQ(identifiers.size(), 1);
-    });
-}
-
-TEST_F(RuntimeDefaultInitializationTest, SecondInitializationUpdatesRuntimeIfNotYetLocked)
-{
-    TestInSeparateProcess([this]() {
-        // Given a configuration with one instance specifier
-
-        // When initializing the runtime with the first configuration and then the second configuration
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
-        Runtime::Initialize();
-
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_other_);
-        Runtime::Initialize();
-
-        // Then we can only resolve the second instance specifier
-        auto identifiers_1 = Runtime::getInstance().resolve(tire_pressure_port_);
-        EXPECT_EQ(identifiers_1.size(), 0);
-        auto identifiers_2 = Runtime::getInstance().resolve(tire_pressure_port_other_);
-        EXPECT_EQ(identifiers_2.size(), 1);
-    });
-}
-
-TEST_F(RuntimeDefaultInitializationTest, SecondInitializationDoesNotUpdatesRuntimeIfLocked)
-{
-    TestInSeparateProcess([this]() {
-        // Given two configurations with one instance specifier each
-
-        // When initializing the runtime with the first configuration and then the second configuration with a usage of
-        // the runtime in between
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
-        Runtime::Initialize();
-
-        score::cpp::ignore = Runtime::getInstance().resolve(tire_pressure_port_);
-
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_other_);
-        Runtime::Initialize();
-
-        // Then we can only resolve the first instance specifier
-        auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_other_);
-        EXPECT_EQ(identifiers.size(), 0);
-        identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
-        EXPECT_EQ(identifiers.size(), 1);
-    });
-}
-
-using RuntimeInitializationFromBufferTest = SingleTestPerProcessFixture;
-
-TEST_F(RuntimeInitializationFromBufferTest, InitializationLoadsCorrectConfiguration)
-{
-    TestInSeparateProcess([this]() {
-        // Given a configuration with one instance specifier provided in a buffer
-        const auto configuration_buffer = WithConfigInBuffer(config_with_tire_pressure_port_);
-
-        // When initializing the runtime
-        Runtime::Initialize(configuration_buffer);
-
-        // Then we can resolve this instance identifier
-        auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
-        EXPECT_EQ(identifiers.size(), 1);
-    });
-}
-
-TEST_F(RuntimeInitializationFromBufferTest, SecondInitializationUpdatesRuntimeIfNotYetLocked)
-{
-    TestInSeparateProcess([this]() {
-        // Given two configurations with one instance specifier and provided in a buffer each
-        const auto configuration_buffer_1 = WithConfigInBuffer(config_with_tire_pressure_port_);
-
-        const auto configuration_buffer_2 = WithConfigInBuffer(config_with_tire_pressure_port_other_);
-
-        // When initializing the runtime with the first configuration and then the second configuration
-        Runtime::Initialize(configuration_buffer_1);
-        Runtime::Initialize(configuration_buffer_2);
-
-        // Then we can only resolve the second instance specifier
-        auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
-        EXPECT_EQ(identifiers.size(), 0);
-        identifiers = Runtime::getInstance().resolve(tire_pressure_port_other_);
-        EXPECT_EQ(identifiers.size(), 1);
-    });
-}
-
-TEST_F(RuntimeInitializationFromBufferTest, SecondInitializationDoesNotUpdatesRuntimeIfLocked)
-{
-    TestInSeparateProcess([this]() {
-        // Given two configurations with one instance specifier and provided in a buffer each
-        const auto configuration_buffer_1 = WithConfigInBuffer(config_with_tire_pressure_port_);
-
-        const auto configuration_buffer_2 = WithConfigInBuffer(config_with_tire_pressure_port_other_);
-
-        // When initializing the runtime with the first configuration and then the second configuration with a usage of
-        // the runtime in between
-        Runtime::Initialize(configuration_buffer_1);
-        score::cpp::ignore = Runtime::getInstance().resolve(tire_pressure_port_);
-        Runtime::Initialize(configuration_buffer_2);
-
-        // Then we can only resolve the first instance specifier
-        auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_other_);
-        EXPECT_EQ(identifiers.size(), 0);
-        identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
         EXPECT_EQ(identifiers.size(), 1);
     });
 }
@@ -497,8 +315,8 @@ TEST_F(RuntimeTest, TracingIsDisabledWhenTraceFilterConfigPathIsInvalid)
         // configuration
         WithConfigAtDefaultPath(get_path("ara_com_config_invalid_trace_config_path.json"));
 
-        // When initializing the runtime
-        Runtime::Initialize();
+        // When implicitly default-initializing the runtime
+        score::cpp::ignore = Runtime::getInstance();
 
         // Then tracing will be disabled
         EXPECT_EQ(Runtime::getInstance().GetTracingRuntime(), nullptr);
@@ -511,8 +329,8 @@ TEST_F(RuntimeTest, TracingRuntimeIsDisabledWhenTracingDisabledInConfig)
         // Given a configuration with valid and disabled tracing configuration
         WithConfigAtDefaultPath(get_path("ara_com_config_disabled_trace_config.json"));
 
-        // When initializing the runtime
-        Runtime::Initialize();
+        // When implicitly default-initializing the runtime
+        score::cpp::ignore = Runtime::getInstance();
 
         // Then tracing will be disabled
         EXPECT_EQ(Runtime::getInstance().GetTracingRuntime(), nullptr);
@@ -529,8 +347,8 @@ TEST_F(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
                              : default_path;
         WithConfigAtDefaultPath(json_path);
 
-        // When initializing the runtime
-        Runtime::Initialize();
+        // When implicitly default-initializing the runtime
+        score::cpp::ignore = Runtime::getInstance();
 
         // Then tracing runtime will exist
         EXPECT_NE(Runtime::getInstance().GetTracingRuntime(), nullptr);

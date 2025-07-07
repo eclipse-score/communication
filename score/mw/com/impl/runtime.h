@@ -71,23 +71,6 @@ class Runtime final : public IRuntime
     /// \param runtime_configuration object containing configuration needed to initialize the Runtime
     static void Initialize(const runtime::RuntimeConfiguration& runtime_configuration);
 
-    /// \brief Initialize runtime with default values (i.e. config is searched at default path)
-    /// \attention Multiple calls to one of the Initialize() overloads shall be avoided. They may have no effect after
-    ///            once our Runtime singleton has been created via getInstance()/getInstanceInternal()
-    static void Initialize() noexcept;
-
-    /// \brief static initializer for the runtime. Must be called once per process, which intends to use ara::com
-    ///        functionality.
-    /// \attention Multiple calls to one of the Initialize() overloads shall be avoided. They may have no effect after
-    ///            once our Runtime singleton has been created via getInstance()/getInstanceInternal()
-    /// \param args passed through command line args
-    static void Initialize(const score::cpp::span<const score::StringLiteral> arguments);
-
-    /// \brief Enable injection of config-json via a buffer for easy unit-testing
-    /// \attention Multiple calls to one of the Initialize() overloads shall be avoided. They may have no effect after
-    ///            once our Runtime singleton has been created via getInstance()/getInstanceInternal()
-    static void Initialize(const std::string&);
-
     /// \brief get singleton.
     /// \details Might return either reference to a real Runtime instance or to a mock.
     /// \return singleton ref.
@@ -99,7 +82,7 @@ class Runtime final : public IRuntime
     static void InjectMock(IRuntime* const mock) noexcept;
 
     /// \brief ctor for singleton instance. Should only be used internally.
-    /// \details we make this ctor public (although it somehow brakes the singleton pattern) since this
+    /// \details we make this ctor public (although it somehow breaks the singleton pattern) since this
     ///          impl::Runtime isn't user facing and just internally used. Having a public ctor eases life
     ///          in so many places!
     /// \param config configuration, which was build up during Runtime::Initialize().
