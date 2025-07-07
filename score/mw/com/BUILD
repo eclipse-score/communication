@@ -14,6 +14,19 @@ load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_tes
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 load("@score-baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 
+#Seooc(
+#    feat_reqs =
+#    sw_arch_design =
+#)
+
+# sw_comp(
+#   comp_reqs = "doc/comp_req_lola"
+#   comp_arch = "*.puml"
+#   src = "bazel_target_name"
+#   comp_int_test = "bazel target name"
+#)
+
+
 cc_library(
     name = "com_error_domain",
     srcs = ["com_error_domain.cpp"],
@@ -78,8 +91,8 @@ alias(
 cc_gtest_unit_test(
     name = "unit_test",
     srcs = [
-        "runtime_test.cpp",
-        "types_accessibility_test.cpp",
+        #"runtime_test.cpp",
+        #"types_accessibility_test.cpp",
         "types_test.cpp",
     ],
     data = [

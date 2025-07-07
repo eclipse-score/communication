@@ -1,0 +1,4 @@
+# This is only used as input to create the resolved requirements.txt
+# If you change here something, update the resolved requirements.txt with:
+# bazel run //:requirements.update
+pandas<0.25.0

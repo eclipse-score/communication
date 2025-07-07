@@ -29,10 +29,13 @@
 #include <vector>
 
 /**
- * \brief The Types header file includes the data type definitions which are specific for the
+ * \brief The Types header file includes the data type definitions which are
+ specific for the
  * ara::com API.
  *
  * \requirement SWS_CM_01018, SWS_CM_01013
+ // trace: score_communication.SafeCommunication
+ // trace: Lola.proxy_exec_less_creation
  */
 namespace score::mw::com
 {
@@ -58,6 +61,7 @@ using InstanceSpecifier = ::score::mw::com::impl::InstanceSpecifier;
  * a return value of the ResolveInstanceIDs method.
  *
  * \requirement SWS_CM_00319
+ // trace: score_communication.abc
  */
 using InstanceIdentifierContainer = std::vector<InstanceIdentifier>;
 

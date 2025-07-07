@@ -12,6 +12,17 @@
 # *******************************************************************************
 module(name = "communication")
 
+bazel_dep(
+    name = "rules_python",
+    version = "1.5.1",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+
+python.defaults(python_version = "3.12")
+python.toolchain(python_version = "3.12")
+
+
 bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency=True)
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
@@ -80,4 +91,37 @@ git_override(
     module_name = "score-baselibs",
     remote = "git@github.com:eclipse-score/baselibs.git",
     commit = "d837b9452a717e93522dc1f8bc858f72ab67c314",
+)
+
+bazel_dep(
+    name = "trlc",
+    version = "0.0.0",
+)
+
+git_override(
+    commit = "7133093d0ebfa511bbb25d0798c952de7c0bb1a4",
+    module_name = "trlc",
+    remote = "https://github.com/castler/trlc.git",
+)
+
+bazel_dep(
+    name = "lobster",
+    version = "0.0.0",
+)
+
+git_override(
+    commit = "ff577d6abf2e68691c8a26b162f7de0f9c10fa7d",
+    module_name = "lobster",
+    remote = "https://github.com/castler/lobster.git",
+)
+
+bazel_dep (
+    name = "score_platform",
+    version = "0.0.0",
+)
+
+git_override(
+    commit = "bd45040110e3cf85b93b3181abf295ca3ed4947a",
+    module_name = "score_platform",
+    remote = "git@github.com:eclipse-score/score.git",
 )

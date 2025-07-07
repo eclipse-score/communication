@@ -11,27 +11,18 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
- package score
+package LolaArch
 
-enum ASIL
-{
-  QM
-  B
-}
+import ScoreType
+import ScoreReq
+import ScoreArch
 
-abstract type Requirement
-{
-  description   String
-  note          optional String
-  asil          optional ASIL
-}
+import Communication
 
-type AssumedFeatureRequirement extends Requirement
-{
-
-}
-
-type AssumedTechnicalSafetyRequirement extends Requirement
-{
-  freeze asil = ASIL.B
+ScoreArch.SwUnit configuration {
+        title = "Lola Configuration"
+        status = ScoreType.Status.valid
+        security = ScoreType.Sec.yes
+        safety = ScoreType.Asil.B
+        satisfies = [ Communication.time_based_arch@2 ]
 }
