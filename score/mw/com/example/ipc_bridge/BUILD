@@ -26,8 +26,8 @@ cc_binary(
         ":sample_sender_receiver",
         "//score/mw/com",
         "@score-baselibs//score/mw/log",
-        "//third_party/boost:program_options",
         "@score-baselibs//score/language/futurecpp",
+        "@boost_program_options",
     ],
 )
 
