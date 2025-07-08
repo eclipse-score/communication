@@ -25,6 +25,18 @@ body:
     description: Short Description of the Bug
   validations:
     required: true
+- type: dropdown
+  attributes:
+    label: Error Occurrence  Rate
+    options:
+      - Single Event
+      - Sporadic
+      - Highly Intermittent
+      - Reproducible
+- type: textarea
+  attributes:
+    label: How to reproduce
+    description: How to reproduce?
 - type: textarea
   attributes:
     label: Supporting Information
