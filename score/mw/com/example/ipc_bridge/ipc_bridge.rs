@@ -40,7 +40,7 @@ fn run<F: std::future::Future<Output=()> + Send>(future: F) {
 fn main() {
     println!("[Rust] Size of MapApiLanesStamped: {}", std::mem::size_of::<lib_gen_rs::MapApiLanesStamped>());
     println!("[Rust] Size of MapApiLanesStamped::lane_boundaries: {}", std::mem::size_of_val(&lib_gen_rs::MapApiLanesStamped::default().lane_boundaries));
-    proxy_bridge_rs::initialize(Some(Path::new("./platform/aas/mw/com/example/ipc_bridge/etc/mw_com_config.json")));
+    proxy_bridge_rs::initialize(Some(Path::new("./score/mw/com/example/ipc_bridge/etc/mw_com_config.json")));
 
     let instance_specifier = proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
         .expect("Instance specifier creation failed");
