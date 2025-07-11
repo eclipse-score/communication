@@ -22,7 +22,9 @@ on:
     types: [checks_requested]
 jobs:
     build_and_test_gcc_host_gcc12:
-      runs-on: ghcr.io/eclipse-score/devcontainer:latest
+      runs-on: ubuntu-latest
+      container:
+        image: ghcr.io/eclipse-score/devcontainer:latest
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
