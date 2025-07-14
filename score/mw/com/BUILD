@@ -134,7 +134,7 @@ cc_unit_test_suites_for_host_and_qnx(
     test_suites_from_sub_packages = [
         "//score/mw/com/impl:unit_test_suite",
         "//score/mw/com/message_passing:unit_test_suite",
-        "//score/mw/com/test/api:unit_test_suite",
+        # "//score/mw/com/test/api:unit_test_suite", Remove until API tests are open sourced Ticket-196988
     ],
     visibility = [
         "//platform/aas/mw:__pkg__",
