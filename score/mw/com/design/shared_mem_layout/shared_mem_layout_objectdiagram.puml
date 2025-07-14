@@ -1,4 +1,4 @@
-@startuml "Object View"
+@startuml shared_mem_layout_objectdiagram
 title "Shared Memory Layout Object Diagram"
 
 object "skeleton_SI_1 : lola::Skeleton" as skeleton {
@@ -56,3 +56,5 @@ storage_resource -right-> storage : start
 
 control_qm_resource -[hidden]-> control_asil_resource
 control_asil_resource -[hidden]-> storage_resource
+
+@enduml

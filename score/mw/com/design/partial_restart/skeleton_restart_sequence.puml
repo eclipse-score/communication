@@ -1,4 +1,4 @@
-@startuml "Skeleton Restart Sequence"
+@startuml skeleton_restart_sequence
 title "Skeleton Restart Sequence"
 hide footbox
 
@@ -88,4 +88,5 @@ end
 
 SkeletonInstance --> Caller: return expected
 deactivate SkeletonInstance
+
 @enduml

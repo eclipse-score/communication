@@ -1,4 +1,4 @@
-@startuml "Shared Memory Layout Class Diagram"
+@startuml shared_mem_layout_classdiagram
 title "Shared Memory Layout Class Diagram"
 
 class "lola::Skeleton" {
@@ -164,4 +164,5 @@ lola::TransactionLogSet *-- lola::TransactionLog
 lola::TransactionLog *-- "1..n" lola::TransactionLogSlot
 
 TransactionLog -left-+ lola::TransactionLogSet
+
 @enduml

@@ -1,4 +1,5 @@
 @startuml event_lola_model
+title "Event Lola Model"
 
 ' Abstract classes and interfaces
 abstract SkeletonEventBindingBase {
@@ -79,6 +80,7 @@ class lola::ProxyEventCommon {
   -parent_: lola::Proxy&
   -subscription_event_state_machine_: std::shared_ptr<SubscriptionStateMachine>
   -slot_collector_: score::cpp::optional<SlotCollector>
+  __
   +ProxyEventCommon(lola::Proxy& parent, ElementFqId)
   +Subscribe(size_t max_sample_count): void
   +Unsubscribe(): void
@@ -168,7 +170,7 @@ class lola::SamplePtr<SampleType> {
 
 ' Shared memory classes
 class "<<SharedMemory>>\n<<typedef>>\nEventDataStorage<SampleType>" as EventDataStorage {
-  std::vector<SampleType,\nstd::scoped_allocator_adaptor<PolymorphicOffsetAllocator<SampleType>>
+  DynamicArray<SampleType,\nstd::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<SampleType>>>
   ..
   <u>Notes:</u>
   Exists once per Event\nOnly writable by Skeleton,\nreadable by all subscribed Proxies independent of ASIL level.
@@ -178,7 +180,7 @@ class "<<SharedMemory>>\n<<typedef>>\nSkeletonDataStorage<SampleType>" as Skelet
   std::map<ElementFqId, offset_ptr<void>>
   ..
   <u>Notes:</u>
-  The offset_ptr<void> SkeletonDataStorage stored as the value in the map is an offset_ptr<EventDataStorage> which has its type erased.\nThe type is identified later when samples are retrieved, see GetNewSamples for an explanation."
+  The offset_ptr<void> SkeletonDataStorage stored as the value in the map is an offset_ptr<EventDataStorage> which has its type erased.\nThe type is identified later when samples are retrieved, see GetNewSamples for an explanation.
 }
 
 class "<<SharedMemory>>\nlola::SkeletonDataControl" {
@@ -232,17 +234,14 @@ enum SubscriptionState {
   SUBSCRIPTION_PENDING
 }
 
-' Inheritance relationships
 SkeletonEventBindingBase <|-- SkeletonEventBinding
 SkeletonEventBinding <|-- lola::SkeletonEvent
 ProxyEventBindingBase <|-- ProxyEventBinding
 ProxyEventBinding <|-- lola::ProxyEvent
-
-' Composition and association relationships
 lola::Skeleton *-- SkeletonDataStorage : "1..1"
 lola::Skeleton *-- "<<SharedMemory>>\nlola::SkeletonDataControl" : "1..2"
 "<<SharedMemory>>\nlola::SkeletonDataControl" *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "0..n"
-lola::SkeletonEvent *-- "EventDataStorage"
+lola::SkeletonEvent o-- "EventDataStorage"
 lola::SkeletonEvent *-- EventDataControlCompositeImpl
 "<<SharedMemory>>\nlola::EventDataControlImpl" ..> "<<SharedMemory>>\nlola::EventSlotStatus"
 SampleAllocateePtr o-- lola::SampleAllocateePtr
@@ -250,21 +249,19 @@ SamplePtr o-- lola::SamplePtr
 lola::ProxyEvent *-- lola::ProxyEventCommon
 lola::ProxyEventCommon *-- lola::SubscriptionStateMachine
 lola::ProxyEventCommon --* lola::SlotCollector
-lola::ProxyEvent *-- lola::SubscriptionStateMachine
 ProxyEventBindingBase o-- SubscriptionState
 lola::SampleAllocateePtr *-- EventDataControlCompositeImpl
-EventDataControlCompositeImpl *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
-
-' Additional relationships from the original diagram
+EventDataControlCompositeImpl o-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
 lola::Skeleton ..> lola::ShmPathBuilder : uses
+lola::Skeleton ..> EventDataControlCompositeImpl
 lola::SubscriptionStateMachine ..> lola::SlotCollector : <<creates>>
 SkeletonEventBinding ..> SampleAllocateePtr
 lola::ProxyEvent ..> lola::SamplePtr
-
-' From the original relationships identified by <id>Relation</id>
 SkeletonDataStorage *-- "EventDataStorage" : "0..n"
-lola::SlotCollector *-- "<<SharedMemory>>\nlola::EventDataControlImpl"
+lola::SlotCollector o-- "<<SharedMemory>>\nlola::EventDataControlImpl"
+ProxyEventBinding ..> SamplePtr
 lola::SkeletonEvent ..> lola::SampleAllocateePtr
 lola::SamplePtr ..> "<<SharedMemory>>\nlola::EventDataControlImpl"
 lola::SampleAllocateePtr ..> "<<SharedMemory>>\nlola::EventDataControlImpl"
+
 @enduml

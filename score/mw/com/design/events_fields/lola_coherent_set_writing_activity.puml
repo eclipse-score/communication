@@ -1,4 +1,4 @@
-@startuml CoherentSetToWriting
+@startuml lola_coherent_set_writing_activity
 title "Coherent Status Update\nslot_index: integer"
 
 start

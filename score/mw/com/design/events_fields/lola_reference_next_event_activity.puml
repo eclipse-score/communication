@@ -1,4 +1,4 @@
-@startuml "ReferenceNextEventActivity"
+@startuml lola_reference_next_event_activity
 title ReferenceNextEvent\nLastReferenceTime: timestamp\nUpperLimit: timestamp
 
 start

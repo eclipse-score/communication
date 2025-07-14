@@ -1,5 +1,5 @@
 @startuml sequence_API_trace_setup
-
+title "Sequence API Trace Setup"
 hide footbox
 
 participant "<u>impl::ProxyEvent:Instance</u>" as ProxyEvent

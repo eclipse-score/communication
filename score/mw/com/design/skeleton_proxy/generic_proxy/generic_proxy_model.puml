@@ -1,4 +1,4 @@
-@startuml "Generic Proxy Extension"
+@startuml generic_proxy_model
 title "Generic Proxy Extension"
 
 class "score::mw::com::impl::HandleType" {

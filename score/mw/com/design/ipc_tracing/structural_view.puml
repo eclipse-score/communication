@@ -1,4 +1,6 @@
-@startuml
+@startuml structural_view_ipc_tracing
+title "Structural View IPC Tracing"
+
 enum SkeletonEventTracePointType {
   INVALID = 0U
   SEND
@@ -113,4 +115,5 @@ class "mw::com::impl::Runtime" {
 ITracingFilterConfig <|-- TracingFilterConfig
 "mw::com::impl::IRuntime" <|-- "mw::com::impl::Runtime"
 "mw::com::impl::Runtime" ..> TracingFilterConfig : Creates in Initialize()
+
 @enduml

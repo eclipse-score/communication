@@ -1,5 +1,4 @@
-@startuml "TransactionLogSet"
-
+@startuml transaction_log_model
 title "TransactionLogSet"
 
 class "lola::TransactionLog" {
@@ -83,12 +82,10 @@ note right of "lola::TransactionLog"
   acts like a provider/skeleton side proxy.
 end note
 
-
-
 "lola::EventDataControlImpl" *-- "lola::TransactionLogSet"
 "lola::TransactionLogSet" *-- "lola::TransactionLog" : proxy_transaction_logs_\n0..n
 "lola::TransactionLogSet" *-- "lola::TransactionLog" : skeleton_tracing_transaction_log_\n0..1
 "lola::TransactionLog" *-- "lola::TransactionLogSlot" : 1..n
-
 "lola::TransactionLogSet" +-- "lola::TransactionLogSet::TransactionLogNode"
+
 @enduml

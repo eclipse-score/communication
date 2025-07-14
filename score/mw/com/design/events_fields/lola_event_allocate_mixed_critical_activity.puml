@@ -1,4 +1,4 @@
-@startuml
+@startuml lola_event_allocate_mixed_critical_activity
 title "Activity Allocate Mixed Criticality"
 
 (*) --> if "" as RetryCheck then

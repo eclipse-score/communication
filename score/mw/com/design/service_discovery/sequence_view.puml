@@ -1,6 +1,5 @@
-@startuml "Sequence View"
-title "Sequence View"
-
+@startuml sequence_view_service_discovery
+title "Sequence View Service Discovery"
 hide footbox
 
 participant "<u>:User</u>" as User

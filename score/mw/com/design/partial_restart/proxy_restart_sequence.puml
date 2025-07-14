@@ -1,5 +1,5 @@
 @startuml proxy_restart_sequence
-
+title "Proxy Restart Sequence"
 hide footbox
 
 participant "<u>lola::Proxy:class</u>" as Proxy

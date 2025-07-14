@@ -1,6 +1,5 @@
-@startuml "EventAllocate"
-
-title EventAllocate
+@startuml lola_event_allocate_activity
+title "EventAllocate"
 
 (*) --> if "" as RetryCheck then
   -down->[max Retries reached] (*)

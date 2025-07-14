@@ -1,4 +1,6 @@
-@startuml
+@startuml structural_event_field_extensions
+title "Structural Event Field Extensions"
+
 class "score::mw::com::impl::tracing::SkeletonEventTracingData" {
   +service_element_instance_identifier_view{} : ServiceElementInstanceIdentifierView
   +trace_context_id : ITracingRuntimeBinding::TraceContextId

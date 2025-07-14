@@ -1,5 +1,5 @@
-@startuml
-title "Structural View"
+@startuml structural_view_configuration
+title "Structural View Configuration"
 
 package "configuration" {
 

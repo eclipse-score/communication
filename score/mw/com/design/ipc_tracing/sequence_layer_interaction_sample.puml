@@ -1,5 +1,5 @@
 @startuml sequence_layer_interaction_sample
-
+title "Sequence Layer Interaction Sample"
 hide footbox
 
 participant "<u>impl::SkeletonEvent:Instance</u>" as SkeletonEvent

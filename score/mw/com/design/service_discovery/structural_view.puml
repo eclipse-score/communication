@@ -1,5 +1,5 @@
-@startuml "StructuralView"
-title "Service Discovery Structural View"
+@startuml structural_view_service_discovery
+title "Structural View Service Discovery"
 
 interface "mw::com::impl::IRuntime" as IRuntime {
   - service_discovery_: score::cpp::optional<ServiceDiscovery>

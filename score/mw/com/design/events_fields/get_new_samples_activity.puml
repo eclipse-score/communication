@@ -1,5 +1,5 @@
-@startuml GetNewSamples
-title GetNewSamples (for specific event instance)\nmaxSampleCount: integer
+@startuml get_new_samples_activity
+title "GetNewSamples (for specific event instance)\nmaxSampleCount: integer"
 
 start
 

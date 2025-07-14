@@ -1,4 +1,4 @@
-@startuml
+@startuml sequence_startup_view
 title "Sequence Startup View"
 hide footbox
 

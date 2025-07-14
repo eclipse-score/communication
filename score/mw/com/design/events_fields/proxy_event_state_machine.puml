@@ -1,4 +1,4 @@
-@startuml "Proxy Event Subscription State Machine"
+@startuml proxy_event_state_machine
 title "Proxy Event Subscription State Machine"
 
 state "NOT_SUBSCRIBED" as not_subscribed {

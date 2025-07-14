@@ -1,4 +1,4 @@
-@startuml "SkeletonCreateOfferSequence"
+@startuml skeleton_create_offer_seq
 title "Skeleton Creation and Offer Sequence"
 hide footbox
 

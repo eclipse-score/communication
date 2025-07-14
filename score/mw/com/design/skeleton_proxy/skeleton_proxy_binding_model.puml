@@ -1,4 +1,4 @@
-@startuml "SkeletonProxyBindingModel"
+@startuml skeleton_proxy_binding_model
 title "Skeleton Proxy Binding Model"
 
 ' Error domain classes

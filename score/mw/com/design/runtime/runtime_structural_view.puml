@@ -1,4 +1,5 @@
-@startuml
+@startuml runtime_structural_view
+title "Structural View Runtime"
 
 interface "mw::com::impl::IRuntime" as IRuntime {
     +{abstract} resolve(const InstanceSpecifier&) : std::vector<InstanceIdentifier>

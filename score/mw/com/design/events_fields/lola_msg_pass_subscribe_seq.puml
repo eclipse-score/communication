@@ -1,5 +1,5 @@
 @startuml lola_msg_pass_subscribe_seq
-
+title "Sequence Message Passing Subscribe"
 hide footbox
 
 participant "lola::ProxyEvent" as ProxyEvent
