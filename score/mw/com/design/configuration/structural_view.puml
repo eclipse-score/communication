@@ -1,5 +1,5 @@
 @startuml
-' Class diagram for structural view
+title "Structural View"
 
 package "configuration" {
 
@@ -80,10 +80,11 @@ package "configuration" {
   }
 
   class "score::mw::com::impl::LolaServiceTypeDeployment" {
-    LolaServiceTypeDeployment(service_id : std::uint16_t, events : EventIdMapping)
     + serviceId: std::uint16
     + events: std::unordered_map<std::string, LolaElementTypeDeployment>
     + fields: std::unordered_map<std::string, LolaElementTypeDeployment>
+    __
+    LolaServiceTypeDeployment(service_id : std::uint16_t, events : EventIdMapping)
     ..
     <u>Notes:</u>
     This class has no invariants.
@@ -95,6 +96,7 @@ package "configuration" {
   }
 
   class "score::mw::com::impl::ServiceTypeDeployment" {
+    __
     + ServiceTypeDeployment(lola_deployment : const LolaServiceTypeDeployment)
     ..
     <u>Notes:</u>
@@ -182,6 +184,7 @@ class "nlhomann::json" {
 
 class "score::mw::com::impl::Runtime" {
   - configuration : Configuration const&
+  __
   - Runtime(std::pair<Configuration&&, score::cpp::optional<tracing::TracingFilterConfig>&&> configs)
   {static} + Initialize() : void
   {static} + Initialize(const score::cpp::span<const score::StringLiteral> arguments) : void
@@ -204,21 +207,21 @@ class "score::mw::com::impl::Runtime" {
 "score::mw::com::impl::ServiceInstanceDeployment" *-- "score::mw::com::ServiceIdentifierType"
 "score::mw::com::impl::ServiceInstanceDeployment" *-- "score::mw::com::impl::LolaServiceInstanceDeployment"
 "score::mw::com::impl::ServiceInstanceDeployment" *-- "score::mw::com::impl::SomeIpServiceInstanceDeployment"
-"score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaEventInstanceDeployment"
-"score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaFieldInstanceDeployment"
+"score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaEventInstanceDeployment" : 0..1
+"score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaFieldInstanceDeployment" : 0..1
 "score::mw::com::impl::Configuration" *-- "score::mw::com::ServiceIdentifierType"
 "score::mw::com::impl::Configuration" *-- "score::mw::com::impl::ServiceInstanceDeployment"
 "score::mw::com::impl::Configuration" *-- "GlobalConfiguration"
 "score::mw::com::impl::Configuration" *-- "score::mw::com::impl::TracingConfiguration"
-"score::mw::com::impl::LolaServiceTypeDeployment" *-- "score::mw::com::impl::LolaElementTypeDeployment"
+"score::mw::com::impl::Configuration" *-- "score::mw::com::impl::ServiceTypeDeployment"
+"score::mw::com::impl::LolaServiceTypeDeployment" *-- "score::mw::com::impl::LolaElementTypeDeployment" : 1..n
 "score::mw::com::impl::TracingConfiguration" *-- "tracing::TracingConfig"
 "score::mw::com::impl::Runtime" *-- "score::mw::com::impl::Configuration"
-"score::mw::com::InstanceIdentifier" *-- "score::mw::com::impl::ServiceInstanceDeployment"
-"score::mw::com::InstanceIdentifier" *-- "score::mw::com::ServiceIdentifierType"
-"score::mw::com::InstanceIdentifier" *-- "score::mw::com::impl::ServiceTypeDeployment"
+"score::mw::com::InstanceIdentifier" o-- "score::mw::com::impl::ServiceInstanceDeployment"
+"score::mw::com::InstanceIdentifier" o-- "score::mw::com::impl::ServiceTypeDeployment"
 "<Generated ara::com ServiceClass>" *-- "score::mw::com::ServiceIdentifierType"
 "score::mw::com::impl::ServiceTypeDeployment" *-- "score::mw::com::impl::LolaServiceTypeDeployment"
-"<Proxy>::HandleType" <|-- "score::mw::com::impl::HandleType"
+"<Proxy>::HandleType" --> "score::mw::com::impl::HandleType": is realized by
 "Global Functions" --> "score::mw::com::impl::Configuration" : creates
 "Global Functions" --> "nlhomann::json" : uses
 "score::mw::com::impl::Runtime" --> "Global Functions" : uses in\nInitialize

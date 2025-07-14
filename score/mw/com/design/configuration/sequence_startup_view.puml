@@ -1,6 +1,5 @@
 @startuml
-'!include ../puml-theme-score.puml
-
+title "Sequence Startup View"
 hide footbox
 
 participant "<u>:OS" as OS
