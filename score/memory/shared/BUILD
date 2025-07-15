@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -400,8 +400,8 @@ cc_library(
         ":polymorphic_offset_ptr_allocator",
     ] + select({
         "@platforms//os:linux": [
-            "@boost.container",
-            "@boost.interprocess",
+            "//third_party/boost:container",
+            "//third_party/boost:interprocess",
         ],
         "@platforms//os:qnx": [],
     }),
