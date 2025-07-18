@@ -23,11 +23,11 @@ on:
 jobs:
     build_and_test_gcc_host_gcc12:
       runs-on: ubuntu-latest
+      container:
+        image: ghcr.io/eclipse-score/devcontainer:latest
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
-        - name: Setup Bazel
-          uses: bazel-contrib/setup-bazel@0.9.1
         - name: Bazel build communication targets
           run: |
             bazel build //...
