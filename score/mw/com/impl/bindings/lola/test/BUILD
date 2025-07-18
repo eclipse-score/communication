@@ -10,7 +10,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -172,16 +171,19 @@ cc_test(
     ],
 )
 
-cc_gtest_unit_test(
+cc_test(
     name = "proxy_component_test",
+    size = "small",
+    timeout = "moderate",
     srcs = ["proxy_component_test.cpp"],
-    features = COMPILER_WARNING_FEATURES,
+    features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":proxy_event_test_resources",
         ":service_discovery_test_resources",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@score-baselibs//score/filesystem",
         "//score/mw/com/impl:proxy_base",
         "//score/mw/com/impl/bindings/lola:proxy",
@@ -189,5 +191,6 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola/service_discovery/client:service_discovery_client",
         "//score/mw/com/impl/bindings/lola/test_doubles",
         "//score/mw/com/impl/configuration/test:configuration_store",
+        "@googletest//:gtest_main",
     ],
 )
