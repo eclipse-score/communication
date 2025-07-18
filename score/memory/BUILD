@@ -14,7 +14,7 @@ load("@score-baselibs//bazel:unit_tests.bzl", "cc_unit_test_suites_for_host_and_
 load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
-    # "@ddad@score-baselibs//score/memory:__subpackages__",
+    "@score-baselibs//score/memory:__subpackages__",
 ])
 
 cc_library(
@@ -23,7 +23,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//platform/aas:__subpackages__",
     ],
 )
 
@@ -34,7 +33,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -48,7 +46,6 @@ cc_library(
     visibility = [
         "//platform/aas/lib/serialization:__subpackages__",
         "//platform/aas/pas/sysmon/library:__subpackages__",
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -103,7 +100,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "@score-baselibs//score/mw/log:__subpackages__",
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -117,7 +113,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/language/futurecpp",
@@ -212,7 +207,7 @@ cc_unit_test_suites_for_host_and_qnx(
         "@score-baselibs//score/memory/shared:offset_ptr_test",
         "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test",
         "@score-baselibs//score/memory/shared:memory_region_bounds_test",
-        # "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typed_memory_test" # TODO: This test depends on @ddad
+        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typed_memory_test",
     ],
     visibility = [
         "//visibility:public",

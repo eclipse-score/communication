@@ -67,7 +67,6 @@ cc_gtest_unit_test(
     ],
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":sealedshm",

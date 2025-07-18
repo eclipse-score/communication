@@ -20,7 +20,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "@score-baselibs//score/memory/shared:__pkg__",
-        # "@ddad@score-baselibs//score/memory/shared:__pkg__",
     ],
     deps = [],
 )
@@ -33,7 +32,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad//platform/aas:__subpackages__",
     ],
     deps = [":atomic_interface"],
 )
@@ -59,7 +57,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/mw/log:frontend",
@@ -74,7 +71,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":types",
@@ -92,7 +88,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":i_shared_memory_resource",
@@ -110,7 +105,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":i_shared_memory_resource",
@@ -167,7 +161,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":i_shared_memory_factory",
@@ -242,7 +235,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/language/futurecpp",
@@ -257,7 +249,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = ["@score-baselibs//score/language/futurecpp"],
 )
@@ -273,7 +264,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":atomic_indirector",
@@ -306,7 +296,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":managed_memory_resource",
@@ -332,7 +321,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
 )
 
@@ -348,7 +336,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":memory_region_bounds",
@@ -376,7 +363,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":memory_region_map",
@@ -393,7 +379,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":memory_resource_proxy",
@@ -410,7 +395,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":polymorphic_offset_ptr_allocator",
@@ -431,7 +415,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":polymorphic_offset_ptr_allocator",
@@ -446,7 +429,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":polymorphic_offset_ptr_allocator",
@@ -603,7 +585,6 @@ cc_unit_test(
     ],
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":pointer_arithmetic_util",
@@ -623,7 +604,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":shared_memory_factory",
@@ -640,7 +620,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":memory_region_bounds",
@@ -660,7 +639,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":offset_ptr",
@@ -682,7 +660,6 @@ cc_unit_test(
     ],
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":bounds_check_memory_pool",
@@ -726,7 +703,6 @@ cc_test(
     tags = ["unit"],
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":atomic_indirector_mock_binding",

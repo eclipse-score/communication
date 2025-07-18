@@ -39,7 +39,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":flock_mutex",
@@ -58,7 +57,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         ":flock_mutex",
@@ -74,7 +72,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//visibility:public", # platform_only
-        # "@ddad@score-baselibs//score/memory:__subpackages__",
     ],
     deps = [
         "@score-baselibs//score/memory/shared:lock_file",
@@ -89,7 +86,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
-        # "@ddad@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":exclusive_flock_mutex",
