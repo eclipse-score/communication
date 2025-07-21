@@ -25,19 +25,23 @@ namespace
 
 TEST(Types, ServiceHandleContainer)
 {
-    RecordProperty("Verifies", "SCR-21792716");
-    RecordProperty(
-        "Description",
-        "Checks that ServiceHandleContainer exists and satisfies the sequence container requirements. It verifies "
-        "that the ServiceHandleContainer is a std vector which is guaranteed by the C++ standard to "
-        "satisfy the sequence container requirements (https://en.cppreference.com/w/cpp/container/vector).");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
+  RecordProperty("lobster-tracing", "Lola.proxy_exec_less_creation");
+  RecordProperty("Verifies", "SCR-21792716");
+  RecordProperty("Description",
+                 "Checks that ServiceHandleContainer exists and satisfies the "
+                 "sequence container requirements. It verifies "
+                 "that the ServiceHandleContainer is a std vector which is "
+                 "guaranteed by the C++ standard to "
+                 "satisfy the sequence container requirements "
+                 "(https://en.cppreference.com/w/cpp/container/vector).");
+  RecordProperty("TestType", "Requirements-based test");
+  RecordProperty("Priority", "1");
+  RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    using TestType = std::uint32_t;
-    static_assert(std::is_same<score::mw::com::ServiceHandleContainer<TestType>, std::vector<TestType>>::value,
-                  "ServiceHandleContainer is not a std vector");
+  using TestType = std::uint32_t;
+  static_assert(std::is_same<score::mw::com::ServiceHandleContainer<TestType>,
+                             std::vector<TestType>>::value,
+                "ServiceHandleContainer is not a std vector");
 }
 
 TEST(Types, FindServiceHandle)

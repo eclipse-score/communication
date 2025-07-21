@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+common --experimental_enable_bzlmod
 
 # use mw/log stub implementation by default
 common --@score-baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=False

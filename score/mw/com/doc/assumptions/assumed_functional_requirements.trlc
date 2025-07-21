@@ -85,7 +85,7 @@ section "Communication Framework" {
             description = """A service interface instance shall be uniquely identifiable."""
         }
 
-        score.AssumedFeatureRequirement InterfaceInstanceIdentifier
+        score.AssumedFeatureRequirement FindAllServices
         {
             description = """The communication framework shall provide a service discovery to find available service instances during runtime."""
             note = """A process that searches for available service interfaces is called consumer."""
