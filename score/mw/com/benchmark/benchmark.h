@@ -18,7 +18,12 @@
 namespace score::mw::com
 {
 
-const std::size_t kSampleSize = 8192;
+constexpr std::size_t kSampleSize = 8192;
+constexpr std::uint32_t kIterations = 10000000 / 100;
+constexpr std::size_t kSubscribersA = 2;
+constexpr std::size_t kSubscribersB = 2;
+constexpr std::size_t kSubscribersTotal = kSubscribersA + kSubscribersB;
+constexpr std::size_t kThreadsMultiTotal = kSubscribersTotal + (kSubscribersA != 0 ? 1 : 0) + (kSubscribersB != 0 ? 1 : 0);
 
 struct DummyBenchmarkData
 {

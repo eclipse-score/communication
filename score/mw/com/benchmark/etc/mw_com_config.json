@@ -22,7 +22,7 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "benchmark/A2B",
+      "instanceSpecifier": "benchmark/SkeletonA",
       "serviceTypeName": "/lola/benchmark",
       "version": {
         "major": 1,
@@ -31,18 +31,8 @@
       "instances": [
         {
           "instanceId": 1,
-          "allowedConsumer": {
-            "QM": [
-              4002,
-              0
-            ]
-          },
-          "allowedProvider": {
-            "QM": [
-              4001,
-              0
-            ]
-          },
+          "allowedConsumer": {},
+          "allowedProvider": {},
           "asil-level": "QM",
           "binding": "SHM",
           "events": [
@@ -51,12 +41,13 @@
               "numberOfSampleSlots": 1,
               "maxSubscribers": 1
             }
-          ]
+          ],
+          "permission-checks": "file-permissions-on-empty"
         }
       ]
     },
     {
-      "instanceSpecifier": "benchmark/B2A",
+      "instanceSpecifier": "benchmark/SkeletonB",
       "serviceTypeName": "/lola/benchmark",
       "version": {
         "major": 1,
@@ -65,18 +56,8 @@
       "instances": [
         {
           "instanceId": 2,
-          "allowedConsumer": {
-            "QM": [
-              4002,
-              0
-            ]
-          },
-          "allowedProvider": {
-            "QM": [
-              4001,
-              0
-            ]
-          },
+          "allowedConsumer": {},
+          "allowedProvider": {},
           "asil-level": "QM",
           "binding": "SHM",
           "events": [
@@ -85,7 +66,58 @@
               "numberOfSampleSlots": 1,
               "maxSubscribers": 1
             }
-          ]
+          ],
+          "permission-checks": "file-permissions-on-empty"
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "benchmark/SkeletonMultiA",
+      "serviceTypeName": "/lola/benchmark",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 3,
+          "allowedConsumer": {},
+          "allowedProvider": {},
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "dummy_data_arrived",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ],
+          "permission-checks": "file-permissions-on-empty"
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "benchmark/SkeletonMultiB",
+      "serviceTypeName": "/lola/benchmark",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4,
+          "allowedConsumer": {},
+          "allowedProvider": {},
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "dummy_data_arrived",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ],
+          "permission-checks": "file-permissions-on-empty"
         }
       ]
     }
