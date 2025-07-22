@@ -21,16 +21,16 @@ on:
   merge_group:
     types: [checks_requested]
 jobs:
-    build_and_test_gcc_host_gcc12:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4.2.2
-        - name: Setup Bazel
-          uses: bazel-contrib/setup-bazel@0.9.1
-        - name: Bazel build communication targets
-          run: |
-            bazel build //...
-        - name: Bazel test communication targets
-          run: |
-            bazel test //... --build_tests_only
+  build_and_test_gcc_host_gcc12:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.9.1
+      - name: Bazel build communication targets
+        run: |
+          bazel build //...
+      - name: Bazel test communication targets
+        run: |
+          bazel test //... --build_tests_only

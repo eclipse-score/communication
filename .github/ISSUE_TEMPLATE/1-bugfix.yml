@@ -16,67 +16,67 @@ description: Issue to track a bug
 title: "Bug: Your bugfix title"
 labels: ["codeowner_review"]
 body:
-- type: markdown
-  attributes:
-    value: "## <ins>Bug Ticket creation</ins>"
-- type: textarea
-  attributes:
-    label: Description
-    description: Short Description of the Bug
-  validations:
-    required: true
-- type: dropdown
-  attributes:
-    label: Error Occurrence  Rate
-    options:
-      - Single Event
-      - Sporadic
-      - Highly Intermittent
-      - Reproducible
-- type: textarea
-  attributes:
-    label: How to reproduce
-    description: How to reproduce?
-- type: textarea
-  attributes:
-    label: Supporting Information
-    description: |
-      During which operational state did the issue occur
-      Observations / Screenshots / Traces
-  validations:
-    required: false
-- type: dropdown
-  attributes:
-    label: Classification
-    options:
-      - minor
-      - major
-      - critical
-      - blocker
-    default: 0
-  validations:
-    required: true
-- type: dropdown
-  attributes:
-    label: Affected Version
-    options:
-      - 0.5
-      - 1.0
-    default: 0
-  validations:
-    required: true
-- type: dropdown
-  attributes:
-    label: Expected Closure Version
-    options:
-      - 0.5
-      - 1.0
-    default: 0
-  validations:
-    required: false
-- type: checkboxes
-  attributes:
-    label: Category
-    options:
-      - label: Safety Related
-      - label: Security Related
+  - type: markdown
+    attributes:
+      value: "## <ins>Bug Ticket creation</ins>"
+  - type: textarea
+    attributes:
+      label: Description
+      description: Short Description of the Bug
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Error Occurrence  Rate
+      options:
+        - Single Event
+        - Sporadic
+        - Highly Intermittent
+        - Reproducible
+  - type: textarea
+    attributes:
+      label: How to reproduce
+      description: How to reproduce?
+  - type: textarea
+    attributes:
+      label: Supporting Information
+      description: |
+        During which operational state did the issue occur
+        Observations / Screenshots / Traces
+    validations:
+      required: false
+  - type: dropdown
+    attributes:
+      label: Classification
+      options:
+        - minor
+        - major
+        - critical
+        - blocker
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Affected Version
+      options:
+        - 0.5
+        - 1.0
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Expected Closure Version
+      options:
+        - 0.5
+        - 1.0
+      default: 0
+    validations:
+      required: false
+  - type: checkboxes
+    attributes:
+      label: Category
+      options:
+        - label: Safety Related
+        - label: Security Related

@@ -40,10 +40,10 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":fake_memory_resource",
-        "@score-baselibs//score/memory/shared",
-        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola:shared_data_structures",
         "//score/mw/com/impl/bindings/lola:skeleton",
+        "@score-baselibs//score/memory/shared",
+        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )

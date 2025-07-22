@@ -29,10 +29,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
     deps = [
-        "@score-baselibs//score/os:unistd",
         "//score/mw/com/impl/bindings/lola:element_fq_id",
         "//score/mw/com/message_passing",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/os:unistd",
     ],
 )
 

@@ -41,9 +41,9 @@ cc_library(
     deps = [
         ":service_element_tracing_data",
         ":type_erased_sample_ptr",
-        "@score-baselibs//score/memory/shared",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory/shared",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
@@ -165,8 +165,8 @@ cc_library(
         "//score/mw/com/impl:proxy_event_binding",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -192,7 +192,6 @@ cc_library(
         ":i_tracing_runtime_binding",
         ":service_element_tracing_data",
         ":type_erased_sample_ptr",
-        "@score-baselibs//score/memory/shared:i_shared_memory_resource",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl/tracing/configuration:proxy_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:proxy_field_trace_point_type",
@@ -200,6 +199,7 @@ cc_library(
         "//score/mw/com/impl/tracing/configuration:skeleton_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:skeleton_field_trace_point_type",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory/shared:i_shared_memory_resource",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
@@ -284,8 +284,8 @@ cc_gtest_unit_test(
     deps = [
         ":tracing_runtime",
         ":tracing_test_resources",
-        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
         "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
+        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
     ],
 )
 
@@ -347,9 +347,9 @@ cc_gtest_unit_test(
     deps = [
         ":common_event_tracing",
         ":tracing_runtime_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/tracing/test:runtime_mock_guard",
+        "@score-baselibs//score/memory:any_string_view",
     ],
 )
 
@@ -360,11 +360,11 @@ cc_gtest_unit_test(
     deps = [
         ":skeleton_event_tracing",
         ":tracing_runtime_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_mock",
         "//score/mw/com/impl/tracing/test:runtime_mock_guard",
+        "@score-baselibs//score/memory:any_string_view",
     ],
 )
 

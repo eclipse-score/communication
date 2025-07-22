@@ -1,3 +1,5 @@
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+
 # *******************************************************************************
 # Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
@@ -11,7 +13,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
@@ -216,9 +217,9 @@ cc_library(
         ":lola_field_instance_deployment",
         ":lola_service_instance_id",
         ":quality_type",
-        "@score-baselibs//score/json",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:service_element_type",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -268,8 +269,8 @@ cc_library(
         ":configuration_common_resources",
         ":service_version_type",
         "@score-baselibs//score/json",
-        "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory:string_literal",
     ],
 )
 
@@ -347,8 +348,8 @@ cc_library(
         ":someip_field_instance_deployment",
         ":someip_service_instance_id",
         "@score-baselibs//score/json",
-        "@score-baselibs//score/result",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/result",
     ],
 )
 
@@ -363,8 +364,8 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/json",
         "//score/mw/com/impl:service_element_type",
+        "@score-baselibs//score/json",
     ],
 )
 
@@ -384,8 +385,8 @@ cc_library(
     tags = ["FFI"],
     deps = [
         "@score-baselibs//score/json",
-        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -424,8 +425,8 @@ cc_test(
     tags = ["unit"],
     deps = [
         ":config_parser",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
     ],
 )
 
@@ -440,10 +441,10 @@ cc_test(
     tags = ["unit"],
     deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/json",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
     ],
 )
 
