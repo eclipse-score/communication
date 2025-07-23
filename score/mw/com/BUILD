@@ -11,8 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
-load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 load("@score-baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
+load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "com_error_domain",
@@ -82,9 +82,9 @@ cc_library(
     ],
     deps = [
         "@score-baselibs//score/filesystem",
+        "@score-baselibs//score/language/futurecpp",
         "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 

@@ -20,11 +20,11 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        "@score-baselibs//score/filesystem",
         "//score/mw/com/impl:find_service_handle",
         "//score/mw/com/impl:find_service_handler",
         "//score/mw/com/impl:handle_type",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/filesystem",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -39,6 +39,10 @@ cc_library(
     deps = [
         ":file_system_guard",
         ":service_discovery_client_test_resources",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:i_service_discovery",
+        "//score/mw/com/impl/bindings/lola/service_discovery/client:service_discovery_client",
+        "@googletest//:gtest_main",
         "@score-baselibs//score/concurrency:executor_mock",
         "@score-baselibs//score/concurrency:long_running_threads_container",
         "@score-baselibs//score/filesystem",
@@ -46,10 +50,6 @@ cc_library(
         "@score-baselibs//score/os/utils/inotify:inotify_instance_facade",
         "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",
         "@score-baselibs//score/os/utils/inotify:inotify_watch_descriptor",
-        "//score/mw/com/impl:handle_type",
-        "//score/mw/com/impl:i_service_discovery",
-        "//score/mw/com/impl/bindings/lola/service_discovery/client:service_discovery_client",
-        "@googletest//:gtest_main",
     ],
 )
 
