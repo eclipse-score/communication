@@ -88,3 +88,4 @@ git_override(
     commit = "9ac6b9d003f2fa049b9a153edf687f67a51671b8",
 )
 
+bazel_dep(name = "aspect_bazel_lib", version = "2.20.0")
