@@ -27,19 +27,21 @@
 namespace score::containers::test
 {
 
-template <typename ElementType, typename Allocator>
+template <typename ServiceElementType, typename Allocator>
 class DynamicArrayTestAttorney
 {
   public:
-    DynamicArrayTestAttorney(DynamicArray<ElementType, Allocator>& dynamic_array) : dynamic_array_{dynamic_array} {}
+    DynamicArrayTestAttorney(DynamicArray<ServiceElementType, Allocator>& dynamic_array) : dynamic_array_{dynamic_array}
+    {
+    }
 
     void SetPointerToUnderlyingArray(void* const new_array_address)
     {
-        dynamic_array_.dynamic_array_ = static_cast<ElementType*>(new_array_address);
+        dynamic_array_.dynamic_array_ = static_cast<ServiceElementType*>(new_array_address);
     }
 
   private:
-    DynamicArray<ElementType, Allocator>& dynamic_array_;
+    DynamicArray<ServiceElementType, Allocator>& dynamic_array_;
 };
 
 }  // namespace score::containers::test

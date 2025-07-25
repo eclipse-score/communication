@@ -1,3 +1,8 @@
 bazel-*
 MODULE.bazel.lock
 user.bazelrc
+
+# Compilation databases for code completion in IDEs
+.cache/*
+compile_commands.json
+rust-project.json

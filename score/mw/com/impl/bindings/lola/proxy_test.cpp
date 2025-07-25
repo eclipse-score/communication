@@ -58,7 +58,7 @@ const auto kServiceInstanceDeployment =
                               QualityType::kASIL_QM,
                               kInstanceSpecifier};
 
-const ElementFqId kDummyElementFqId{0xcdef, 0x5, 0x10, ElementType::EVENT};
+const ElementFqId kDummyElementFqId{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
 const std::size_t kMaxNumSlots{5U};
 const std::uint8_t kMaxSubscribers{10U};
 
@@ -268,7 +268,7 @@ TEST_F(ProxyCreationDeathFixture, GettingEventDataControlWithoutInitialisedEvent
 
     // Then trying to get the event data control for an event that was not registered in the ServiceDataStorage
     // Will terminate
-    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ElementType::EVENT};
+    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
     EXPECT_DEATH(proxy_->GetEventControl(uninitialised_element_fq_id), ".*");
 }
 
@@ -282,7 +282,7 @@ TEST_F(ProxyCreationDeathFixture, GettingRawDataStorageWithoutInitialisedEventDa
 
     // Then trying to get the event data storage for an event that was not registered in the ServiceDataStorage
     // Will terminate
-    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ElementType::EVENT};
+    const ElementFqId uninitialised_element_fq_id{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
     EXPECT_DEATH(proxy_->GetEventDataStorage<SampleType>(uninitialised_element_fq_id), ".*");
 }
 

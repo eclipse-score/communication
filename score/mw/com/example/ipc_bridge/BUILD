@@ -21,9 +21,7 @@ cc_binary(
         "main.cpp",
     ],
     data = ["etc/mw_com_config.json"],
-    features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
-    ],
+    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":sample_sender_receiver",
         "//score/mw/com",
@@ -65,12 +63,11 @@ cc_library(
 )
 
 rust_library(
-    name = "lib_gen_rs",
-    srcs = ["lib_gen.rs"],
+    name = "ipc_bridge_gen_rs",
+    srcs = ["ipc_bridge_gen.rs"],
     deps = [
-        ":lib_gen_cpp",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
-        "//score/mw/com/impl/rust:proxy_bridge_rs",
+        ":ipc_bridge_gen_cpp",
+        "//score/mw/com/impl/rust:mw_com",
         "@crate_index//:libc",
     ],
 )
@@ -82,17 +79,19 @@ rust_binary(
     features = ["link_std_cpp_lib"],
     rustc_flags = ["-Clink-arg=-lstdc++"],
     deps = [
-        ":lib_gen_rs",
-        "//score/mw/com/impl/rust:proxy_bridge_rs",
+        ":ipc_bridge_gen_rs",
+        "//score/mw/com/impl/rust:mw_com",
+        "@crate_index//:clap",
         "@crate_index//:futures",
     ],
 )
 
 cc_library(
-    name = "lib_gen_cpp",
-    srcs = ["lib_gen.cpp"],
+    name = "ipc_bridge_gen_cpp",
+    srcs = ["ipc_bridge_gen.cpp"],
     features = COMPILER_WARNING_FEATURES,
-    deps = [
+    implementation_deps = [
         ":datatype",
+        "//score/mw/com/impl/rust:bridge_macros",
     ],
 )

@@ -46,7 +46,7 @@ const pid_t kDummyProviderPid{33U};
 const pid_t kDummyOldConsumerPid{17U};
 const pid_t kDummyCurrentConsumerPid{155U};
 const QualityType kDummyQualityType{QualityType::kASIL_QM};
-const ElementFqId kDummyElementFqId{1U, 2U, 3U, ElementType::EVENT};
+const ElementFqId kDummyElementFqId{1U, 2U, 3U, ServiceElementType::EVENT};
 
 constexpr std::size_t kNumberOfSlots{20U};
 constexpr std::size_t kMaxSubscribers{20U};

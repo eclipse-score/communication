@@ -18,9 +18,14 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
+#include "score/mw/com/impl/service_element_type.h"
+
+#include "score/mw/log/logging.h"
+
 #include <score/optional.hpp>
 
 #include <cstdint>
+#include <exception>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -36,10 +41,13 @@ class LolaServiceInstanceDeployment
 
     LolaServiceInstanceDeployment() = default;
     explicit LolaServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
-    explicit LolaServiceInstanceDeployment(const score::cpp::optional<LolaServiceInstanceId> instance_id,
-                                           EventInstanceMapping events = {},
-                                           FieldInstanceMapping fields = {},
-                                           const bool strict_permission = false) noexcept;
+    explicit LolaServiceInstanceDeployment(
+        const score::cpp::optional<LolaServiceInstanceId> instance_id,
+        EventInstanceMapping events = {},
+        FieldInstanceMapping fields = {},
+        const bool strict_permission = false,
+        std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer = {},
+        std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider = {}) noexcept;
 
     constexpr static std::uint32_t serializationVersion{1U};
     // Note the struct is not compliant to POD type containing non-POD member.
@@ -67,6 +75,34 @@ class LolaServiceInstanceDeployment
 
 bool areCompatible(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
 bool operator==(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
+
+template <ServiceElementType service_element_type>
+const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+                                                const std::string& event_name)
+{
+    const auto& service_element_instance_deployments = [&lola_service_instance_deployment]() -> const auto& {
+        if constexpr (service_element_type == ServiceElementType::EVENT)
+        {
+            return lola_service_instance_deployment.events_;
+        }
+        if constexpr (service_element_type == ServiceElementType::FIELD)
+        {
+            return lola_service_instance_deployment.fields_;
+        }
+        score::mw::log::LogFatal()
+            << "Invalid service element type. Could not get service element instance deployment. Terminating";
+        std::terminate();
+    }();
+
+    const auto service_element_instance_deployment_it = service_element_instance_deployments.find(event_name);
+    if (service_element_instance_deployment_it == service_element_instance_deployments.cend())
+    {
+        score::mw::log::LogFatal() << service_element_type << "name \"" << event_name
+                                 << "\"does not exist in LolaServiceInstanceDeployment. Terminating.";
+        std::terminate();
+    }
+    return service_element_instance_deployment_it->second;
+}
 
 }  // namespace score::mw::com::impl
 

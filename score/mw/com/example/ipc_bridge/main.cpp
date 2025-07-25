@@ -29,6 +29,7 @@ struct Params
     score::cpp::optional<std::string> instance_manifest;
     score::cpp::optional<std::chrono::milliseconds> cycle_time;
     score::cpp::optional<unsigned long> cycle_num;
+    bool check_sample_hash;
 };
 
 template <typename ParsedType, typename SavedType = ParsedType>
@@ -55,6 +56,10 @@ Params ParseCommandLineArguments(const int argc, const char** argv)
     options.add_options()("cycle-time,t", po::value<std::size_t>(), "Cycle time in milliseconds for sending/polling");
     options.add_options()(
         "service_instance_manifest,s", po::value<std::string>(), "Path to the com configuration file");
+    options.add_options()(
+        "disable-hash-check,d",
+        po::bool_switch(),
+        "Do not check the sample hash value in the receiver. If true, the sample hash is not checked.");
 
     po::variables_map args;
     const auto parsed_args =
@@ -73,7 +78,8 @@ Params ParseCommandLineArguments(const int argc, const char** argv)
     return {GetValueIfProvided<std::string>(args, "mode"),
             GetValueIfProvided<std::string>(args, "service_instance_manifest"),
             GetValueIfProvided<std::size_t, std::chrono::milliseconds>(args, "cycle-time"),
-            GetValueIfProvided<std::size_t>(args, "num-cycles")};
+            GetValueIfProvided<std::size_t>(args, "num-cycles"),
+            args.count("disable-hash-check") == 0U};
 }
 
 int main(const int argc, const char** argv)
@@ -97,6 +103,7 @@ int main(const int argc, const char** argv)
     const auto mode = params.mode.value();
     const auto cycles = params.cycle_num.value();
     const auto cycle_time = params.cycle_time.value();
+    const auto check_sample_hash = params.check_sample_hash;
 
     score::mw::com::EventSenderReceiver event_sender_receiver{};
 
@@ -114,7 +121,7 @@ int main(const int argc, const char** argv)
     }
     else if (mode == "recv" || mode == "proxy")
     {
-        return event_sender_receiver.RunAsProxy(instance_specifier, cycle_time, cycles);
+        return event_sender_receiver.RunAsProxy(instance_specifier, cycle_time, cycles, false, check_sample_hash);
     }
     else
     {

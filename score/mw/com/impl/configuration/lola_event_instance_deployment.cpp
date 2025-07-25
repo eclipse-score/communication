@@ -25,13 +25,11 @@ namespace score::mw::com::impl
 namespace
 {
 
-using std::string_view_literals::operator""sv;
-
-constexpr auto kNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
-constexpr auto kSubscribersKey = "maxSubscribers"sv;
-constexpr auto kMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
-constexpr auto kEnforceMaxSamplesKey = "enforceMaxSamples"sv;
-constexpr auto kNumberOfIpcTracingSlotsKey = "numberOfIpcTracingSlots"sv;
+constexpr auto kNumberOfSampleSlotsKey = "numberOfSampleSlots";
+constexpr auto kSubscribersKey = "maxSubscribers";
+constexpr auto kMaxConcurrentAllocationsKey = "maxConcurrentAllocations";
+constexpr auto kEnforceMaxSamplesKey = "enforceMaxSamples";
+constexpr auto kNumberOfIpcTracingSlotsKey = "numberOfIpcTracingSlots";
 constexpr LolaEventInstanceDeployment::TracingSlotSizeType kNumberOfIpcTracingSlotsDefault{0U};
 
 }  // namespace
@@ -39,7 +37,7 @@ constexpr LolaEventInstanceDeployment::TracingSlotSizeType kNumberOfIpcTracingSl
 LolaEventInstanceDeployment::LolaEventInstanceDeployment(std::optional<SampleSlotCountType> number_of_sample_slots,
                                                          std::optional<SubscriberCountType> max_subscribers,
                                                          std::optional<std::uint8_t> max_concurrent_allocations,
-                                                         const std::optional<bool> enforce_max_samples,
+                                                         const bool enforce_max_samples,
                                                          const TracingSlotSizeType number_of_tracing_slots) noexcept
     : max_subscribers_{max_subscribers},
       max_concurrent_allocations_{max_concurrent_allocations},
@@ -68,7 +66,7 @@ LolaEventInstanceDeployment LolaEventInstanceDeployment::CreateFromJson(const sc
     const auto max_subscribers = GetOptionalValueFromJson<SubscriberCountType>(json_object, kSubscribersKey);
     const auto max_concurrent_allocations =
         GetOptionalValueFromJson<std::uint8_t>(json_object, kMaxConcurrentAllocationsKey);
-    const auto enforce_max_samples = GetOptionalValueFromJson<bool>(json_object, kEnforceMaxSamplesKey);
+    const auto enforce_max_samples = GetValueFromJson<bool>(json_object, kEnforceMaxSamplesKey);
     const auto number_of_tracing_slots_opt =
         GetOptionalValueFromJson<TracingSlotSizeType>(json_object, kNumberOfIpcTracingSlotsKey);
 
@@ -103,9 +101,9 @@ score::json::Object LolaEventInstanceDeployment::Serialize() const noexcept
         json_object[kMaxConcurrentAllocationsKey] = score::json::Any{max_concurrent_allocations_.value()};
     }
 
-    if (enforce_max_samples_.has_value())
+    if (enforce_max_samples_)
     {
-        json_object[kEnforceMaxSamplesKey] = score::json::Any{enforce_max_samples_.value()};
+        json_object[kEnforceMaxSamplesKey] = score::json::Any{enforce_max_samples_};
     }
 
     // We always turn of ipc tracing. I.e., serialize  kNumberOfIpcTracingSlotsKey as false

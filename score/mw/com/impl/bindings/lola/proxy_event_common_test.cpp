@@ -48,7 +48,7 @@ std::shared_ptr<ScopedEventReceiveHandler> FromMockFunction(safecpp::Scope<>& ev
 }
 
 const std::string kEventName{"dummy_event"};
-const ElementFqId kElementFqId{0xcdef, 0x5, 0x10, ElementType::EVENT};
+const ElementFqId kElementFqId{0xcdef, 0x5, 0x10, ServiceElementType::EVENT};
 const InstanceSpecifier kInstanceSpecifier{InstanceSpecifier::Create("/my_dummy_instance_specifier").value()};
 const std::size_t kMaxNumSlots{5U};
 const std::uint8_t kMaxSubscribers{10U};

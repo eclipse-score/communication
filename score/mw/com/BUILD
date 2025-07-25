@@ -52,6 +52,7 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":runtime_configuration",
         ":types",
         "//score/mw/com/impl:runtime",
     ],
@@ -65,7 +66,25 @@ cc_library(
     deps = [
         ":com_error_domain",
         ":runtime",
+        ":runtime_configuration",
         ":types",
+    ],
+)
+
+cc_library(
+    name = "runtime_configuration",
+    srcs = ["runtime_configuration.cpp"],
+    hdrs = ["runtime_configuration.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        "@score-baselibs//score/filesystem",
+        "@score-baselibs//score/memory:string_literal",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -97,10 +116,20 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "runtime_configuration_test",
+    srcs = ["runtime_configuration_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "runtime_configuration",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
         ":unit_test",
+        ":runtime_configuration_test",
     ],
     test_suites_from_sub_packages = [
         "//score/mw/com/impl:unit_test_suite",

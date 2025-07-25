@@ -245,7 +245,7 @@ class LolaProxyEventResources : public ProxyMockedMemoryFixture
     const ElementFqId element_fq_id_{lola_service_id_,
                                      lola_element_id_,
                                      lola_service_instance_id_.GetId(),
-                                     ElementType::EVENT};
+                                     ServiceElementType::EVENT};
 
     IMessagePassingService::HandlerRegistrationNoType current_subscription_no_ = 37U;
 };

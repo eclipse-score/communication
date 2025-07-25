@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_ELEMENT_FQ_ID_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_ELEMENT_FQ_ID_H
 
+#include "score/mw/com/impl/service_element_type.h"
+
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -31,14 +33,6 @@ class LogStream;
 
 namespace com::impl::lola
 {
-
-/// \brief enum used to differentiate between difference service element types
-enum class ElementType : std::uint8_t
-{
-    INVALID = 0,
-    EVENT,
-    FIELD
-};
 
 /// \brief unique identification of a service element (event, field, method) instance within one score::mw runtime/process
 ///
@@ -60,7 +54,7 @@ class ElementFqId
     ElementFqId(const std::uint16_t service_id,
                 const std::uint16_t element_id,
                 const std::uint16_t instance_id,
-                const ElementType element_type) noexcept;
+                const ServiceElementType element_type) noexcept;
 
     std::string ToString() const noexcept;
 
@@ -74,7 +68,7 @@ class ElementFqId
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::uint16_t instance_id_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    ElementType element_type_;
+    ServiceElementType element_type_;
 };
 // guarantee memcpy usage
 static_assert(std::is_trivially_copyable<ElementFqId>::value,
@@ -83,8 +77,8 @@ static_assert(std::is_trivially_copyable<ElementFqId>::value,
 bool IsElementEvent(const ElementFqId& element_fq_id) noexcept;
 bool IsElementField(const ElementFqId& element_fq_id) noexcept;
 
-// Note. Equality / comparison operators do not use ElementType since the other 3 elements already uniquely identify a
-// service element.
+// Note. Equality / comparison operators do not use ServiceElementType since the other 3 elements already uniquely
+// identify a service element.
 
 bool operator==(const ElementFqId& lhs, const ElementFqId& rhs) noexcept;
 
@@ -101,8 +95,8 @@ namespace std
 {
 /// \brief ElementFqId is used as a key for maps, so we need a hash func for it.
 ///
-/// The ElementType enum is not used in the hash function since the other 3 elements already uniquely identify a service
-/// element.
+/// The ServiceElementType enum is not used in the hash function since the other 3 elements already uniquely identify a
+/// service element.
 template <>
 // NOLINTBEGIN(score-struct-usage-compliance):struct type for consistency with STL
 // Suppress "AUTOSAR C++14 A11-0-2" rule finding.

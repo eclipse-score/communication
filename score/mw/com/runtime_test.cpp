@@ -21,6 +21,7 @@
 #include <score/jthread.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <thread>
 
 #include <fstream>
@@ -162,8 +163,8 @@ TEST_F(RuntimeTestExternalJsonFixture, ResolveInstanceIdsIsThreadSafe)
     // Given a runtime initialised with the path to a configuration file
     auto json_path = get_path("ara_com_config.json");
     score::StringLiteral test_args[] = {"dummyname", "-service_instance_manifest", json_path.c_str()};
-    const score::cpp::span<const score::StringLiteral> test_args_span{test_args};
-    impl::Runtime::Initialize(test_args_span);
+    const std::int32_t num_test_args{3};
+    InitializeRuntime(num_test_args, test_args);
 
     // and an instance identifier and InstanceSpecifier derived from the configuration
     const auto instance_specifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();

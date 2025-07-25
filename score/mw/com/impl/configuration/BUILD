@@ -218,6 +218,7 @@ cc_library(
         ":quality_type",
         "@score-baselibs//score/json",
         "//score/mw/com/impl:error",
+        "//score/mw/com/impl:service_element_type",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -354,12 +355,16 @@ cc_library(
 cc_library(
     name = "binding_service_type_deployment",
     srcs = ["binding_service_type_deployment.cpp"],
-    hdrs = ["binding_service_type_deployment.h"],
+    hdrs = [
+        "binding_service_type_deployment.h",
+        "binding_service_type_deployment.tpp",
+    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
         "@score-baselibs//score/json",
+        "//score/mw/com/impl:service_element_type",
     ],
 )
 

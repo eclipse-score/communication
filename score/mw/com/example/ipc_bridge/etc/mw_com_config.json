@@ -52,7 +52,7 @@
           "events": [
             {
               "eventName": "map_api_lanes_stamped",
-              "maxSamples": 10,
+              "numberOfSampleSlots": 10,
               "maxSubscribers": 3
             }
           ]

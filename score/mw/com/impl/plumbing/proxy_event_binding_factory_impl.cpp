@@ -32,7 +32,7 @@ std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::C
     ProxyBase& parent,
     const score::cpp::string_view event_name) noexcept
 {
-    return CreateProxyServiceElement<GenericProxyEventBinding, lola::GenericProxyEvent, lola::ElementType::EVENT>(
+    return CreateProxyServiceElement<GenericProxyEventBinding, lola::GenericProxyEvent, ServiceElementType::EVENT>(
         parent, event_name);
 }
 

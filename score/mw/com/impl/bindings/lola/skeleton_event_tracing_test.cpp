@@ -83,7 +83,7 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
     impl::tracing::ServiceElementInstanceIdentifierView CreateServiceElementInstanceIdentifierView() const noexcept
     {
         const impl::tracing::ServiceElementIdentifierView service_element_identifier_view{
-            service_type_name_, fake_event_name_, impl::tracing::ServiceElementType::EVENT};
+            service_type_name_, fake_event_name_, impl::ServiceElementType::EVENT};
         const impl::tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
             service_element_identifier_view,
             score::cpp::string_view{instance_specifier_.ToString().data(), instance_specifier_.ToString().size()}};

@@ -16,9 +16,10 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
-#include "score/mw/com/impl/plumbing/service_element_binding_resources.h"
 #include "score/mw/com/impl/skeleton_base.h"
 
 #include "score/memory/any_string_view.h"
@@ -42,39 +43,33 @@ namespace score::mw::com::impl
 namespace detail
 {
 
-template <lola::ElementType element_type>
-// The return type of the template function does not depend on the type of parameters.
-// coverity[autosar_cpp14_a8_2_1_violation: FALSE]
-lola::SkeletonEventProperties GetSkeletonEventPropertiesFromConfig(
-    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
-    const std::string_view service_element_name)
+template <typename LolaServiceElementInstanceDeployment>
+lola::SkeletonEventProperties GetSkeletonEventProperties(
+    const LolaServiceElementInstanceDeployment& lola_service_element_instance_deployment)
 {
-    const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
-    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
-    // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
-    if constexpr (element_type == lola::ElementType::EVENT)
+    if (!lola_service_element_instance_deployment.GetNumberOfSampleSlots().has_value())
     {
-        return lola::SkeletonEventProperties{
-            lola_service_instance_deployment.events_.at(service_element_name_string).GetNumberOfSampleSlots().value(),
-            lola_service_instance_deployment.events_.at(service_element_name_string).max_subscribers_.value(),
-            lola_service_instance_deployment.events_.at(service_element_name_string).enforce_max_samples_.value()};
+        score::mw::log::LogFatal("lola")
+            << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Number of sample slots "
+               "was not specified in the configuration. Terminating.";
+        std::terminate();
     }
-    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]: this is a cpp-14 warning. if constexpr is cpp-17 syntax.
-    // coverity[autosar_cpp14_m6_4_1_violation: FALSE]: "if constexpr" is a valid statement since C++17.
-    if constexpr (element_type == lola::ElementType::FIELD)
+
+    if (!lola_service_element_instance_deployment.max_subscribers_.has_value())
     {
-        return lola::SkeletonEventProperties{
-            lola_service_instance_deployment.fields_.at(service_element_name_string).GetNumberOfSampleSlots().value(),
-            lola_service_instance_deployment.fields_.at(service_element_name_string).max_subscribers_.value(),
-            lola_service_instance_deployment.fields_.at(service_element_name_string).enforce_max_samples_.value()};
+        score::mw::log::LogFatal("lola")
+            << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Max subscribers was "
+               "not specified in the configuration. Terminating.";
+        std::terminate();
     }
-    score::mw::log::LogFatal() << "Invalid service element type. Could not create SkeletonEventProperties. Terminating";
-    std::terminate();
+    return lola::SkeletonEventProperties{lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
+                                         lola_service_element_instance_deployment.max_subscribers_.value(),
+                                         lola_service_element_instance_deployment.enforce_max_samples_};
 }
 
 }  // namespace detail
 
-template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, lola::ElementType element_type>
+template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
 // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
@@ -104,13 +99,21 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
 
             const auto& service_instance_deployment = identifier_view.GetServiceInstanceDeployment();
             const auto& lola_service_instance_deployment =
-                GetLolaServiceInstanceDeploymentFromServiceInstanceDeployment(service_instance_deployment);
-            const auto element_fq_id =
-                GetElementFqIdFromLolaConfig<element_type>(lola_service_type_deployment,
-                                                           lola_service_instance_deployment.instance_id_.value(),
-                                                           memory::AnyStringView{service_element_name});
-            const auto skeleton_event_properties = detail::GetSkeletonEventPropertiesFromConfig<element_type>(
-                lola_service_instance_deployment, memory::AnyStringView{service_element_name});
+                GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment);
+
+            const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
+            const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
+                lola_service_instance_deployment, service_element_name_string);
+            const auto skeleton_event_properties =
+                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
+
+            const auto lola_service_element_id =
+                GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_string);
+            const lola::ElementFqId element_fq_id{lola_service_type_deployment.service_id_,
+                                                  lola_service_element_id,
+                                                  lola_service_instance_deployment.instance_id_.value().GetId(),
+                                                  element_type};
+
             return std::make_unique<SkeletonServiceElement>(
                 *lola_parent, element_fq_id, service_element_name, skeleton_event_properties);
         },

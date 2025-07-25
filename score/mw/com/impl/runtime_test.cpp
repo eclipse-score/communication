@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/analysis/tracing/common/types.h"
+#include "score/analysis/tracing/common/interface_types/types.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/configuration/configuration.h"
@@ -43,37 +43,6 @@ namespace
 
 using testing::_;
 using testing::Return;
-
-/**
- * @brief TC verifies, that Runtime::Initialize() fails with abort, when NO "-service_instance_manifest" option is
- * given.
- */
-TEST(RuntimeDeathTest, initNoManifestOption)
-{
-    score::StringLiteral test_args[] = {"dummyname", "arg1", "arg2", "arg3"};
-    const score::cpp::span<const score::StringLiteral> test_args_span{test_args};
-
-    // Initialize without mandatory option "-service_instance_manifest"
-    EXPECT_DEATH(Runtime::Initialize(test_args_span), ".*");
-}
-
-/**
- * @brief TC verifies, that Runtime::Initialize() fails with abort, when "-service_instance_manifest" option is
- * given, but no additional path parameter.
- */
-TEST(RuntimeDeathTest, initMissingManifestPath)
-{
-    score::StringLiteral test_args[] = {"dummyname", "-service_instance_manifest"};
-    const score::cpp::span<const score::StringLiteral> test_args_span{test_args};
-
-    // Initialize without arg/path-value for mandatory option "-service_instance_manifest"
-    EXPECT_DEATH(Runtime::Initialize(test_args_span), ".*");
-}
-
-TEST(RuntimeDeathTest, InvalidJSONTerminates)
-{
-    EXPECT_DEATH(Runtime::Initialize(std::string{"{"}), ".*");
-}
 
 TEST(RuntimeTest, CanRetrieveServiceDiscovery)
 {

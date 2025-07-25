@@ -48,7 +48,7 @@ cc_library(
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
     }),
 )
 
@@ -102,8 +102,8 @@ cc_library(
         ":tracing_runtime",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:runtime",
+        "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "//score/mw/com/impl/tracing/configuration:service_element_type",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -204,7 +204,7 @@ cc_library(
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
     }),
 )
 
@@ -233,7 +233,7 @@ cc_library(
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
     }),
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],

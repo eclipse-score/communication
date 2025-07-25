@@ -12,12 +12,13 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/config_parser.h"
 
+#include "score/mw/com/impl/configuration/configuration_common_resources.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
-#include "score/mw/com/impl/tracing/configuration/service_element_type.h"
+#include "score/mw/com/impl/service_element_type.h"
 
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
@@ -469,15 +470,15 @@ auto ParseServiceElementTracingEnabled(const score::json::Any& json,
                                        TracingConfiguration& tracing_configuration,
                                        const score::cpp::string_view service_type_name_view,
                                        const InstanceSpecifier& instance_specifier,
-                                       const tracing::ServiceElementType service_element_type) noexcept
+                                       const ServiceElementType service_element_type) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((service_element_type == tracing::ServiceElementType::EVENT) ||
-                               (service_element_type == tracing::ServiceElementType::FIELD),
-                           "Only FIELD or EVENT are allowed as ServiceElementTypes.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        (service_element_type == ServiceElementType::EVENT) || (service_element_type == ServiceElementType::FIELD),
+        "Only FIELD or EVENT are allowed as ServiceElementTypes.");
 
     const auto& [ElementKey, ElementNameKey] =
-        (service_element_type == tracing::ServiceElementType::EVENT ? std::make_pair(kEventsKey, kEventNameKey)
-                                                                    : std::make_pair(kFieldsKey, kFieldNameKey));
+        (service_element_type == ServiceElementType::EVENT ? std::make_pair(kEventsKey, kEventNameKey)
+                                                           : std::make_pair(kFieldsKey, kFieldNameKey));
 
     const auto& service_elements = json.As<score::json::Object>().value().get().find(ElementKey);
     if (service_elements == json.As<score::json::Object>().value().get().cend())
@@ -609,8 +610,8 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
 
             if (tracing_configuration.IsTracingEnabled())
             {
-                constexpr auto EVENT = tracing::ServiceElementType::EVENT;
-                constexpr auto FIELD = tracing::ServiceElementType::FIELD;
+                constexpr auto EVENT = ServiceElementType::EVENT;
+                constexpr auto FIELD = ServiceElementType::FIELD;
                 const auto service_name_std_view = service.ToString();
                 const auto service_name = score::cpp::string_view{service_name_std_view.data(), service_name_std_view.size()};
                 ParseServiceElementTracingEnabled(

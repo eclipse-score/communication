@@ -16,7 +16,7 @@
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
 
-#include "score/analysis/tracing/library/generic_trace_api/generic_trace_api.h"
+#include "score/analysis/tracing/library/interface/generic_trace_api.h"
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"
 

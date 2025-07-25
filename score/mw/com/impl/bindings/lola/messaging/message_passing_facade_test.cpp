@@ -57,7 +57,7 @@ using ::testing::Return;
 
 constexpr pid_t OUR_PID = 4444;
 constexpr std::int32_t ARBITRARY_POSIX_ERROR{10};
-const ElementFqId SOME_ELEMENT_FQ_ID{1, 1, 1, ElementType::EVENT};
+const ElementFqId SOME_ELEMENT_FQ_ID{1, 1, 1, ServiceElementType::EVENT};
 
 class ThreadHWConcurrencyMock : public ThreadHWConcurrencyIfc
 {

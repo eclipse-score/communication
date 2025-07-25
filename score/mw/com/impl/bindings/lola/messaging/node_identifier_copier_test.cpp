@@ -29,8 +29,8 @@
 namespace score::mw::com::impl::lola::test
 {
 
-const ElementFqId kDummyElementFqId{2U, 3U, 4U, ElementType::EVENT};
-const ElementFqId kElementFqIdNotInMap{222U, 333U, 444U, ElementType::EVENT};
+const ElementFqId kDummyElementFqId{2U, 3U, 4U, ServiceElementType::EVENT};
+const ElementFqId kElementFqIdNotInMap{222U, 333U, 444U, ServiceElementType::EVENT};
 const pid_t kPidNotInMap{10000U};
 constexpr auto kMaxBufferSize = std::tuple_size<NodeIdTmpBufferType>::value;
 

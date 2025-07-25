@@ -15,8 +15,8 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
-#include "score/mw/com/impl/plumbing/service_element_binding_resources.h"
 #include "score/mw/com/impl/proxy_base.h"
 
 #include "score/memory/any_string_view.h"
@@ -36,7 +36,7 @@
 namespace score::mw::com::impl
 {
 
-template <typename ProxyServiceElementBinding, typename ProxyServiceElement, lola::ElementType element_type>
+template <typename ProxyServiceElementBinding, typename ProxyServiceElement, ServiceElementType element_type>
 // "AUTOSAR C++14 A15-5-3" triggered by std::bad_variant_access.
 // Additionally the variant might be valueless_by_exception, which would also cause a std::bad_variant_access, this
 // can only happen if any of the variants throw exception during construction. Since we do not throw exceptions,
@@ -75,8 +75,13 @@ std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
                                    "ServiceInstanceId does not contain lola binding.");
 
-            const auto element_fq_id = GetElementFqIdFromLolaConfig<element_type>(
-                lola_type_deployment, *lola_service_instance_id, memory::AnyStringView{service_element_name});
+            const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
+            const auto lola_service_element_id =
+                GetServiceElementId<element_type>(lola_type_deployment, service_element_name_string);
+            const lola::ElementFqId element_fq_id{lola_type_deployment.service_id_,
+                                                  lola_service_element_id,
+                                                  lola_service_instance_id->GetId(),
+                                                  element_type};
             return std::make_unique<ProxyServiceElement>(*lola_parent, element_fq_id, service_element_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {

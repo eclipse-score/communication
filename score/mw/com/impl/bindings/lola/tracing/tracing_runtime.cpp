@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
-#include "score/analysis/tracing/common/types.h"
+#include "score/analysis/tracing/common/interface_types/types.h"
 #include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
@@ -287,13 +287,13 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
         service_element_instance_identifier_view.service_element_identifier_view.service_element_type;
     const auto service_element_name =
         service_element_instance_identifier_view.service_element_identifier_view.service_element_name;
-    if (service_element_type == impl::tracing::ServiceElementType::EVENT)
+    if (service_element_type == impl::ServiceElementType::EVENT)
     {
         const auto lola_event_id = lola_service_type_deployment->events_.at(
             std::string{service_element_name.data(), service_element_name.size()});
         output_service_instance_element.element_id_ = static_cast<ServiceInstanceElement::EventIdType>(lola_event_id);
     }
-    else if (service_element_type == impl::tracing::ServiceElementType::FIELD)
+    else if (service_element_type == impl::ServiceElementType::FIELD)
     {
         const auto lola_field_id = lola_service_type_deployment->fields_.at(
             std::string{service_element_name.data(), service_element_name.size()});

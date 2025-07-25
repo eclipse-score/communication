@@ -34,7 +34,7 @@ class LolaEventInstanceDeployment
     explicit LolaEventInstanceDeployment(std::optional<SampleSlotCountType> number_of_sample_slots,
                                          std::optional<SubscriberCountType> max_subscribers,
                                          std::optional<std::uint8_t> max_concurrent_allocations,
-                                         const std::optional<bool> enforce_max_samples,
+                                         const bool enforce_max_samples,
                                          const TracingSlotSizeType number_of_tracing_slots) noexcept;
 
     explicit LolaEventInstanceDeployment(const score::json::Object& json_object) noexcept;
@@ -60,7 +60,7 @@ class LolaEventInstanceDeployment
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::optional<std::uint8_t> max_concurrent_allocations_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    std::optional<bool> enforce_max_samples_;
+    bool enforce_max_samples_;
 
     // False positive, variable is used outside of the file.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]

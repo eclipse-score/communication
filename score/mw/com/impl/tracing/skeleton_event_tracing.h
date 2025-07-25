@@ -168,11 +168,11 @@ void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,
         const auto service_element_type =
             service_element_instance_identifier.service_element_identifier_view.service_element_type;
         tracing::TracingRuntime::TracePointType trace_point{};
-        if (service_element_type == tracing::ServiceElementType::EVENT)
+        if (service_element_type == ServiceElementType::EVENT)
         {
             trace_point = tracing::SkeletonEventTracePointType::SEND;
         }
-        else if (service_element_type == tracing::ServiceElementType::FIELD)
+        else if (service_element_type == ServiceElementType::FIELD)
         {
             trace_point = tracing::SkeletonFieldTracePointType::UPDATE;
         }
@@ -213,11 +213,11 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
         const auto service_element_type =
             service_element_instance_identifier.service_element_identifier_view.service_element_type;
         tracing::TracingRuntime::TracePointType trace_point{};
-        if (service_element_type == tracing::ServiceElementType::EVENT)
+        if (service_element_type == ServiceElementType::EVENT)
         {
             trace_point = tracing::SkeletonEventTracePointType::SEND_WITH_ALLOCATE;
         }
-        else if (service_element_type == tracing::ServiceElementType::FIELD)
+        else if (service_element_type == ServiceElementType::FIELD)
         {
             trace_point = tracing::SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE;
         }
