@@ -5159,7 +5159,7 @@
     "@@score_toolchains_gcc~//extentions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "7/5nFnmj/vqfPZdYlLeF8rOtM3ybSarGTSYlTFd6p34=",
-        "usagesDigest": "b9EycWtrAHsacHbQMc99NLAFhrMXiKZlc5rA6V5BXRA=",
+        "usagesDigest": "XtzjGoD5IITOSD1K87tMUGVcL4ykQf7HVYRA49RUj7k=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -5169,7 +5169,7 @@
             "ruleClassName": "http_archive",
             "attributes": {
               "urls": [
-                "http://localhost:8000/fastdev-sdk-ubuntu-ebcl-deb-qemuarm64.tar.xz"
+                "https://linux.elektrobit.com/tmp/score/fastdev-sdk-ubuntu-ebcl-deb-qemu-arm64.tar.xz"
               ],
               "build_file": "@@score_toolchains_gcc~//toolchain/third_party:gcc.BUILD",
               "sha256": "cf8d277a2b95bbdad3e177c488fa77d01723510690a911218ef33747574d78fe",

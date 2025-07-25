@@ -21,7 +21,7 @@ git_override(
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
 gcc.toolchain(
-    url = "https://linux.elektrobit.com/tmp/score/fastdev-sdk-ubuntu-ebcl-deb-qemuarm64.tar.xz",
+    url = "https://linux.elektrobit.com/tmp/score/fastdev-sdk-ubuntu-ebcl-deb-qemu-arm64.tar.xz",
     sha256 = "cf8d277a2b95bbdad3e177c488fa77d01723510690a911218ef33747574d78fe",
     strip_prefix = "fastdev-sdk-ubuntu-ebcl-deb-qemuarm64",
 )
