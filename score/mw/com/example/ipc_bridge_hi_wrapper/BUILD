@@ -26,9 +26,12 @@ genrule(
 
 genrule(
     name = "hi_main",
-    srcs = [":ipc_bridge_hi_wrapper"],
+    srcs = [
+        ":ipc_bridge_hi_wrapper",
+        ":ipc_bridge_cpp_sil"
+        ],
     outs = ["hi_main"],
-    cmd = "cp $(SRCS) $@ && \
+    cmd = "cp $(location :ipc_bridge_hi_wrapper) $@ && \
      chmod ugo+w $@ && \
      $(execpath @gcc_toolchain_gcc//:elf-enabler) $@ && \
      chmod ugo-w $@",
