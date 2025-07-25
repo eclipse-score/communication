@@ -29,7 +29,9 @@ cc_binary(
         "//third_party/boost:program_options",
         "@score-baselibs//score/language/futurecpp",
     ],
-    visibility = ["//score/mw/com/example/ipc_bridge_hi_wrapper:__pkg__"],
+    visibility = [
+        "//visibility:public", # platform_only
+    ],
 )
 
 cc_library(
