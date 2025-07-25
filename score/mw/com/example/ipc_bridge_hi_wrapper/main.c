@@ -12,8 +12,21 @@
  ********************************************************************************/
 
 #include <stdio.h>
+#include <unistd.h>
 
 int main() {
-    printf("Hello, World!\n");
+    printf("Starting ipc_bridge_cpp_sil with the following arguments:\n");
+    printf("-n 10 -m recv -t 2 -s /etc/mw_com_config.json\n");
+
+    char *args[] = {"-n", "10", "-m", "recv", "-t", "2", "-s", "/etc/mw_com_config.json", NULL};
+    execve("/usr/bin/ipc_bridge_cpp_sil", args, NULL);
+
+    // If execve fails, print an error and sleep forever
+    perror("execve failed");
+    while (1) {
+        printf("execve failed, sleeping...\n");
+        sleep(10);
+    }
     return 0;
 }
+
