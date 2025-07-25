@@ -14,15 +14,15 @@ module(name = "communication")
 
 bazel_dep(name = "score_toolchains_gcc", version = "0.5", dev_dependency=True)
 git_override(
-    module_name = "score_toolchains_gcc",
-    remote = "git@github.com:Elektrobit/eclipse-score_toolchains_gcc.git",
-    commit = "4be9eef58a14116fcf94eccb27717b143aa65d4c",
+   module_name = "score_toolchains_gcc",
+   remote = "git@github.com:Elektrobit/eclipse-score_toolchains_gcc.git",
+   commit = "fb009e490b9b8f28805d587f50d0bf6d885f3414",
 )
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
 gcc.toolchain(
     url = "https://linux.elektrobit.com/tmp/score/fastdev-sdk-ubuntu-ebcl-deb-qemuarm64.tar.xz",
-    sha256 = "7aeab39080bffcc2c5ce4869acaa9c3192c0c1d845afa51d5556748f8d328ab8",
+    sha256 = "cf8d277a2b95bbdad3e177c488fa77d01723510690a911218ef33747574d78fe",
     strip_prefix = "fastdev-sdk-ubuntu-ebcl-deb-qemuarm64",
 )
 
