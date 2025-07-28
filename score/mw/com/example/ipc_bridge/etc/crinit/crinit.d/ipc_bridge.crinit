@@ -1,0 +1,8 @@
+NAME = ipc-bridge
+
+COMMAND = /usr/bin/ipc_bridge_cpp -n 0 -m send -t 2 -s /etc/mw_com_config.json
+
+DEPENDS = @provided:tmpdir
+
+RESPAWN = YES
+RESPAWN_RETRIES = 3
