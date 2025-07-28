@@ -73,9 +73,9 @@ genrule(
         "mw_com_config.json"
     ],
     cmd = " \
-        sshpass -p linux scp -P 2222 $(location :ipc_bridge_cpp_sil) root@localhost:/usr/bin &&\
-        sshpass -p linux scp -P 2222 $(location :hi_app) root@localhost:/usr/bin &&\
-        sshpass -p linux scp -P 2222 $(location mw_com_config.json) root@localhost:/etc/ &&\
+        sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location :ipc_bridge_cpp_sil) root@localhost:/usr/bin &&\
+        sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location :hi_app) root@localhost:/usr/bin &&\
+        sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location mw_com_config.json) root@localhost:/etc/ &&\
         echo 'Done' > $@\
     ",
     outs = ["upload.log"],

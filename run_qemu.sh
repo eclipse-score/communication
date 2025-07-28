@@ -2,6 +2,10 @@
 
 set -xu
 
+if [ -z "$1" ]; then
+    echo "Usage: $0 <basefolder>"
+    exit 1
+fi
 BASEFOLDER=$1
 IMAGE="${BASEFOLDER}/fastdev-ubuntu-ebcl-deb-qemuarm64.wic"
 KERNEL="${BASEFOLDER}/fastdev-ubuntu-ebcl-deb-qemuarm64-vmlinux"
