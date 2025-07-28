@@ -12,7 +12,6 @@
 # *******************************************************************************
 load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
-
 genrule(
     name = "ipc_bridge_cpp_sil",
     srcs = ["//score/mw/com/example/ipc_bridge:ipc_bridge_cpp"],
@@ -47,4 +46,21 @@ cc_binary(
     deps = [
         "//score/mw/com/example/ipc_bridge:ipc_bridge_cpp",
     ],
+)
+
+genrule(
+    name = "fetch-fastdev-archive",
+    srcs = [],
+    outs = ["fastdev-archive.tgz"],
+    cmd = "wget -O $@ https://linux.elektrobit.com/tmp/score/fastdev-ubuntu-ebcl-deb-qemu-arm64.tgz"
+)
+
+genrule(
+    name = "fastdev-image",
+    srcs = [":fetch-fastdev-archive"],
+    outs = [
+        "deb-qemuarm64/fastdev-ubuntu-ebcl-deb-qemuarm64.wic",
+        "deb-qemuarm64/fastdev-ubuntu-ebcl-deb-qemuarm64-vmlinux"
+    ],
+    cmd = "tar xzf $(location :fetch-fastdev-archive) -C $(RULEDIR)",
 )
