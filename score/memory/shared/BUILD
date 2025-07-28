@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -672,52 +672,314 @@ cc_unit_test(
     ],
 )
 
-cc_test(
-    name = "unit_test",
-    srcs = [
-        "atomic_indirector_test.cpp",
-        "lock_file_test.cpp",
-        "managed_memory_resource_test.cpp",
-        "map_test.cpp",
-        "memory_region_map_test.cpp",
-        "memory_resource_proxy_test.cpp",
-        "memory_resource_registry_test.cpp",
-        "new_delete_delegate_resource_test.cpp",
-        "polymorphic_offset_ptr_allocator_test.cpp",
-        "shared_memory_error_test.cpp",
-        "shared_memory_resource_allocate_test.cpp",
-        "shared_memory_resource_create_anonymous_test.cpp",
-        "shared_memory_resource_create_or_open_test.cpp",
-        "shared_memory_resource_create_test.cpp",
-        "shared_memory_resource_misc_test.cpp",
-        "shared_memory_resource_open_test.cpp",
-        "vector_test.cpp",
-    ] + select({
-        "@platforms//os:linux": ["string_test.cpp"],
-        "@platforms//os:qnx": [],
-    }),
-    features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
-    ],
-    flaky = True,  # TODO: Remove flakiness (Ticket-157184)
-    tags = ["unit"],
+cc_gtest_unit_test(
+    name = "atomic_indirector_test",
+    srcs = ["atomic_indirector_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":atomic_indirector_mock_binding",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "lock_file_test",
+    srcs = [
+        "lock_file_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":shared_memory_test_resources",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "managed_memory_resource_test",
+    srcs = ["managed_memory_resource_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
         ":fake_memory_resources",
-        ":lock_file",
-        ":new_delete_delegate_resource",
-        ":offset_ptr_test_resources",
-        ":pointer_arithmetic_util",
+        ":shared_memory_test_resources",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "map_test",
+    srcs = [
+        "map_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":shared",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "memory_region_map_test",
+    srcs = [
+        "memory_region_map_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":atomic_indirector_mock_binding",
         ":shared",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "memory_resource_proxy_test",
+    srcs = [
+        "memory_resource_proxy_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":shared",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "memory_resource_registry_test",
+    srcs = [
+        "memory_resource_registry_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":shared",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "new_delete_delegate_resource_test",
+    srcs = [
+        "new_delete_delegate_resource_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":new_delete_delegate_resource",
+        ":shared_memory_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "polymorphic_offset_ptr_allocator_test",
+    srcs = [
+        "polymorphic_offset_ptr_allocator_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":polymorphic_offset_ptr_allocator",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "shared_memory_error_test",
+    srcs = [
+        "shared_memory_error_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":shared_memory_error",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "shared_memory_resource_allocate_test",
+    srcs = [
+        "shared_memory_resource_allocate_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":shared_memory_test_resources",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "shared_memory_resource_create_anonymous_test",
+    srcs = [
+        "shared_memory_resource_create_anonymous_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":shared",
+        ":shared_memory_test_resources",
         "@score-baselibs//score/os/utils/acl:mock",
         "@score-baselibs//score/mw/log",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "shared_memory_resource_create_or_open_test",
+    srcs = [
+        "shared_memory_resource_create_or_open_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":shared_memory_test_resources",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "shared_memory_resource_create_test",
+    srcs = [
+        "shared_memory_resource_create_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":pointer_arithmetic_util",
+        ":shared_memory_resource",
+        ":shared_memory_test_resources",
+        "@score-baselibs//score/os/utils/acl:mock",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "shared_memory_resource_misc_test",
+    srcs = [
+        "shared_memory_resource_misc_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":pointer_arithmetic_util",
+        ":shared_memory_test_resources",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "shared_memory_resource_open_test",
+    srcs = [
+        "shared_memory_resource_open_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":shared_memory_test_resources",
+        "@score-baselibs//score/os/utils/acl:mock",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "vector_test",
+    srcs = [
+        "vector_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":vector",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "string_test",
+    srcs = [
+        "string_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":fake_memory_resources",
+        ":vector",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_unit_test_suites_for_host_and_qnx(
+    name = "unit_test_suite",
+    cc_unit_tests = [
+        ":shared_memory_factory_test",
+        ":memory_region_bounds_test",
+        ":offset_ptr_test",
+        ":atomic_indirector_test",
+        ":lock_file_test",
+        ":managed_memory_resource_test",
+        ":map_test",
+        ":memory_region_map_test",
+        ":memory_resource_proxy_test",
+        ":memory_resource_registry_test",
+        ":new_delete_delegate_resource_test",
+        ":polymorphic_offset_ptr_allocator_test",
+        ":shared_memory_error_test",
+        ":shared_memory_resource_allocate_test",
+        ":shared_memory_resource_create_anonymous_test",
+        ":shared_memory_resource_create_or_open_test",
+        ":shared_memory_resource_create_test",
+        ":shared_memory_resource_misc_test",
+        ":shared_memory_resource_open_test",
+        ":vector_test",
+        ":string_test",
     ],
 )

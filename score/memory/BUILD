@@ -200,7 +200,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":split_string_view_unit_test",
         ":string_comparison_adaptor_unit_test",
         "@score-baselibs//score/memory/shared/flock:unit_test",
-        "@score-baselibs//score/memory/shared:unit_test",
         "@score-baselibs//score/memory/shared:shared_memory_factory_test",
         "@score-baselibs//score/memory/shared:pointer_arithmetic_util_precondition_violation_test",
         "@score-baselibs//score/memory/shared:offset_ptr_precondition_violation_test",
