@@ -41,7 +41,7 @@ genrule(
 cc_binary(
     name = "ipc_bridge_hi_wrapper",
     srcs = [
-        "main.c",
+        "main.cc",
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
