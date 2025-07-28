@@ -113,6 +113,19 @@ score::cpp::expected<int, score::os::Error> TypedMemoryImpl::AllocateAndOpenAnon
 #endif
 }
 
+score::cpp::expected_blank<score::os::Error> TypedMemoryImpl::Unlink(const std::string shm_name) const noexcept
+{
+// coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
+#if defined(__QNX__) && defined(USE_TYPEDSHMD)
+    return typed_shm_client_->Unlink(shm_name);
+// coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
+#else
+    static_cast<void>(shm_name);
+    return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOSYS));
+// coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
+#endif
+}
+
 }  // namespace internal
 
 std::shared_ptr<score::memory::shared::TypedMemory> score::memory::shared::TypedMemory::Default() noexcept
