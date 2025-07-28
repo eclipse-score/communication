@@ -22,7 +22,7 @@ int main() {
         "/usr/bin/ipc_bridge_cpp_sil",
         "-n", "10",
         "-m", "recv",
-        "-t", "2",
+        "-t", "200",
         "-s", "/etc/mw_com_config.json",
         nullptr
     };

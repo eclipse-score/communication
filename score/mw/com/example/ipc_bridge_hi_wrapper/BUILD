@@ -69,14 +69,48 @@ genrule(
     name = "upload",
     srcs = [
         ":ipc_bridge_cpp_sil",
+        "//score/mw/com/example/ipc_bridge:ipc_bridge_cpp",
         ":hi_app",
-        "mw_com_config.json"
+        ":fastdev-image",
+        "mw_com_config.json",
+        "run_qemu.sh"
     ],
     cmd = " \
+        mkdir -p $(RULEDIR)/deb-qemuarm64-modified &&\
+        cp $(RULEDIR)/deb-qemuarm64/* $(RULEDIR)/deb-qemuarm64-modified/ &&\
+        $(location run_qemu.sh) $(RULEDIR)/deb-qemuarm64-modified -pidfile $(RULEDIR)/qemu.pid > $(RULEDIR)/qemu_upload.log &\
+        sleep 10 ; \
         sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location :ipc_bridge_cpp_sil) root@localhost:/usr/bin &&\
+        sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location //score/mw/com/example/ipc_bridge:ipc_bridge_cpp) root@localhost:/usr/bin &&\
         sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location :hi_app) root@localhost:/usr/bin &&\
         sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location mw_com_config.json) root@localhost:/etc/ &&\
-        echo 'Done' > $@\
+        sshpass -p linux ssh -o StrictHostKeyChecking=no -p 2222 root@localhost sync &&\
+        sshpass -p linux ssh -o StrictHostKeyChecking=no -p 2222 root@localhost crinit-ctl poweroff || true \
+        sleep 5  \
     ",
-    outs = ["upload.log"],
+    outs = [
+        "qemu_upload.log",
+        "deb-qemuarm64-modified/fastdev-ubuntu-ebcl-deb-qemuarm64.wic",
+        "deb-qemuarm64-modified/fastdev-ubuntu-ebcl-deb-qemuarm64-vmlinux"
+    ],
+)
+
+genrule(
+    name = "run_example",
+    srcs = [
+        "deb-qemuarm64-modified/fastdev-ubuntu-ebcl-deb-qemuarm64.wic",
+        "deb-qemuarm64-modified/fastdev-ubuntu-ebcl-deb-qemuarm64-vmlinux",
+        "run_qemu.sh"
+    ],
+    cmd = " \
+        $(location run_qemu.sh) $(RULEDIR)/deb-qemuarm64-modified -pidfile $(RULEDIR)/qemu.pid > $(RULEDIR)/qemu_run.log &\
+        sleep 10 ; \
+        sshpass -p linux ssh -o StrictHostKeyChecking=no -p 2222 root@localhost ipc_bridge_cpp -n 10 -m send -t 200 -s /etc/mw_com_config.json > $(RULEDIR)/ssh_run.log && \
+        sshpass -p linux ssh -o StrictHostKeyChecking=no -p 2222 root@localhost crinit-ctl poweroff || true \
+        sleep 5 \
+    ",
+    outs = [
+        "qemu_run.log",
+        "ssh_run.log",
+    ],
 )

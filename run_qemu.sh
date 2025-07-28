@@ -30,4 +30,4 @@ chmod +w ${IMAGE}
 
 exec qemu-system-aarch64 -m "${MEM}" -machine "${MACHINE}" -cpu "${CPU}" \
     -smp "${SMP}" -kernel "${KERNEL}" "${KERNEL_ARGS[@]}" ${DISK_ARGS} \
-    ${NETWORK_ARGS} -nographic
+    ${NETWORK_ARGS} -nographic ${@:2}
