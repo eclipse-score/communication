@@ -16,7 +16,7 @@
 #include <unistd.h>
 
 int main() {
-    std::cout << "Starting ipc_bridge_cpp_sil:" << std::endl;
+    std::cout << "HI_App: Starting ipc_bridge_cpp_sil" << std::endl;
 
     char * const c_args[] = {
         "/usr/bin/ipc_bridge_cpp_sil",
