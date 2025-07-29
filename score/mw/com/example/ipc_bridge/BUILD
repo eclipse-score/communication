@@ -95,3 +95,13 @@ cc_library(
         "//score/mw/com/impl/rust:bridge_macros",
     ],
 )
+
+# Rust code dumps core when run in parallel with unit tests
+sh_test(
+    name = "integration_test_ipc_bridge",
+    srcs = ["test_ipc_bridge.sh"],
+    data = [
+        ":ipc_bridge_cpp",
+        ":ipc_bridge_rs",
+    ],
+)
