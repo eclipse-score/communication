@@ -1,8 +1,7 @@
 #!/bin/bash
 set -eux
 
-CPP_EXAMPLE_CMD="./bazel-bin/score/mw/com/example/ipc_bridge/ipc_bridge_cpp -n 20 -t 1000 -s score/mw/com/example/ipc_bridge/etc/mw_com_config.json"
-
+CPP_EXAMPLE_CMD="./bazel-bin/score/mw/com/example/ipc_bridge/ipc_bridge_cpp -s score/mw/com/example/ipc_bridge/etc/mw_com_config.json -n 20 -t 1000"
 RUST_EXAMPLE_CMD="./bazel-bin/score/mw/com/example/ipc_bridge/ipc_bridge_rs -s score/mw/com/example/ipc_bridge/etc/mw_com_config.json"
 
 function build_examples() {
@@ -38,7 +37,7 @@ function run_receiver_sender() {
     wait $receiver_pid
     receiver_return_code=$?
     set -e
-    [[ $RECEIVER_RETURN_CODE == $receiver_return_code ]]
+    [[ "$RECEIVER_RETURN_CODE" == "$receiver_return_code" ]]
 }
 
 build_examples
