@@ -680,6 +680,7 @@ cc_gtest_unit_test(
         "@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
+        ":atomic_indirector",
         ":atomic_indirector_mock_binding",
     ],
 )
@@ -694,6 +695,7 @@ cc_gtest_unit_test(
         "@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
+        ":lock_file",
         ":shared_memory_test_resources",
         "@score-baselibs//score/mw/log",
     ],
@@ -708,6 +710,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":fake_memory_resources",
+        ":managed_memory_resource",
         ":shared_memory_test_resources",
         "@score-baselibs//score/mw/log",
     ],
@@ -724,7 +727,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":fake_memory_resources",
-        ":shared",
+        ":map",
         "@score-baselibs//score/mw/log",
     ],
 )
@@ -740,7 +743,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":atomic_indirector_mock_binding",
-        ":shared",
+        ":memory_region_map",
         ":shared_memory_test_resources",
         "@score-baselibs//score/mw/log",
     ],
@@ -757,7 +760,8 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":fake_memory_resources",
-        ":shared",
+        ":memory_resource_proxy",
+        #":shared",
         "@score-baselibs//score/mw/log",
     ],
 )
@@ -772,7 +776,7 @@ cc_gtest_unit_test(
         "@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":shared",
+        ":memory_resource_registry",
         "@score-baselibs//score/mw/log",
     ],
 )
@@ -833,6 +837,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":fake_memory_resources",
+        ":pointer_arithmetic_util",
         ":shared_memory_test_resources",
         "@score-baselibs//score/mw/log",
     ],
@@ -848,8 +853,8 @@ cc_gtest_unit_test(
         "@score-baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":shared",
         ":shared_memory_test_resources",
+        "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
         "@score-baselibs//score/os/utils/acl:mock",
         "@score-baselibs//score/mw/log",
     ],
@@ -952,7 +957,6 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":fake_memory_resources",
-        ":vector",
         "@score-baselibs//score/mw/log",
     ],
 )
@@ -960,26 +964,33 @@ cc_gtest_unit_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
-        ":shared_memory_factory_test",
-        ":memory_region_bounds_test",
-        ":offset_ptr_test",
         ":atomic_indirector_test",
         ":lock_file_test",
         ":managed_memory_resource_test",
         ":map_test",
+        ":memory_region_bounds_test",
         ":memory_region_map_test",
         ":memory_resource_proxy_test",
         ":memory_resource_registry_test",
         ":new_delete_delegate_resource_test",
+        ":offset_ptr_precondition_violation_test",
+        ":offset_ptr_test",
         ":polymorphic_offset_ptr_allocator_test",
+        ":pointer_arithmetic_util_precondition_violation_test",
         ":shared_memory_error_test",
+        ":shared_memory_factory_test",
         ":shared_memory_resource_allocate_test",
         ":shared_memory_resource_create_anonymous_test",
         ":shared_memory_resource_create_or_open_test",
         ":shared_memory_resource_create_test",
         ":shared_memory_resource_misc_test",
         ":shared_memory_resource_open_test",
-        ":vector_test",
         ":string_test",
+        ":vector_test",
+    ],
+    test_suites_from_sub_packages = [
+        "@score-baselibs//score/memory/shared/flock:unit_test_suite",
+        "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test_suite",
+        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:unit_test_suite",
     ],
 )

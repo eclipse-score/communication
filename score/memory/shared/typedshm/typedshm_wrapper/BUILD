@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@score-baselibs//bazel:unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
 load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 selects.config_setting_group(
@@ -77,5 +78,12 @@ cc_test(
         "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@score-baselibs//score/os/mocklib/qnx:mman_mock",
         "@googletest//:gtest_main",
+    ],
+)
+
+cc_unit_test_suites_for_host_and_qnx(
+    name = "unit_test_suite",
+    cc_unit_tests = [
+        ":typed_memory_test",
     ],
 )

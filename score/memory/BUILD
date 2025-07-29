@@ -199,14 +199,9 @@ cc_unit_test_suites_for_host_and_qnx(
         ":pmr_ring_buffer_unit_test",
         ":split_string_view_unit_test",
         ":string_comparison_adaptor_unit_test",
-        "@score-baselibs//score/memory/shared/flock:unit_test",
-        "@score-baselibs//score/memory/shared:shared_memory_factory_test",
-        "@score-baselibs//score/memory/shared:pointer_arithmetic_util_precondition_violation_test",
-        "@score-baselibs//score/memory/shared:offset_ptr_precondition_violation_test",
-        "@score-baselibs//score/memory/shared:offset_ptr_test",
-        "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test",
-        "@score-baselibs//score/memory/shared:memory_region_bounds_test",
-        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typed_memory_test",
+    ],
+    test_suites_from_sub_packages = [
+        "@score-baselibs//score/memory/shared:unit_test_suite",
     ],
     visibility = [
         "//visibility:public",
