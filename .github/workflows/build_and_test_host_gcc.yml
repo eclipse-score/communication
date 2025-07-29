@@ -34,3 +34,7 @@ jobs:
         - name: Bazel test communication targets
           run: |
             bazel test //... --build_tests_only
+        - name: Run examples
+          run: |
+            score/mw/com/example/ipc_bridge/test_ipc_bridge.sh
+
