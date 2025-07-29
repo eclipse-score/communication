@@ -18,7 +18,7 @@
 score::cpp::pmr::unique_ptr<score::mw::com::message_passing::IReceiver>
 score::mw::com::message_passing::ReceiverFactoryImpl::Create(const std::string_view identifier,
                                                            concurrency::Executor& executor,
-                                                           const score::cpp::span<const uid_t> allowed_uids,
+                                                           const score::cpp::v1::span<const uid_t> allowed_uids,
                                                            const ReceiverConfig& receiver_config,
                                                            score::cpp::pmr::memory_resource* const memory_resource)
 {
