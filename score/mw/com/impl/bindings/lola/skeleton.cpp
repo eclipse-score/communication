@@ -76,19 +76,6 @@ const LolaServiceInstanceDeployment& GetLolaServiceInstanceDeployment(const Inst
     return *lola_service_instance_deployment_ptr;
 }
 
-template <typename ServiceElementMap>
-LolaEventInstanceDeployment::SampleSlotCountType ExtractNumberOfSampleSlotsFromInstanceDeployment(
-    const ServiceElementMap& service_element_map,
-    std::string event_name)
-{
-    const auto search = service_element_map.find(event_name);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != service_element_map.cend(), "Deployment doesn't contain event with given name!");
-    const auto number_of_sample_slots_result = search->second.GetNumberOfSampleSlots();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_sample_slots_result.has_value(),
-                           "Deployment does not contain number of sample slots");
-    return number_of_sample_slots_result.value();
-}
-
 ServiceDataControl* GetServiceDataControlSkeletonSide(const memory::shared::ManagedMemoryResource& control) noexcept
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
