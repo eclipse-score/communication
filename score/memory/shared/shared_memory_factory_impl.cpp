@@ -35,7 +35,7 @@ std::unique_ptr<score::os::IAccessControlList> CreateAccessControlList(
     return std::make_unique<score::os::AccessControlList>(file_descriptor);
 }
 
-bool checkUidMatch(const uid_t providerUid, const score::cpp::span<const uid_t> allowedProviders) noexcept
+bool checkUidMatch(const uid_t providerUid, const score::cpp::v1::span<const uid_t> allowedProviders) noexcept
 {
     if (providerUid == score::os::Unistd::instance().getuid())
     {
@@ -91,7 +91,7 @@ auto GetResourceIfAlreadyOpened(
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SharedMemoryFactoryImpl::Open(const std::string& path,
                                    const bool is_read_write,
-                                   const std::optional<score::cpp::span<const uid_t>>& allowedProviders) noexcept
+                                   const std::optional<score::cpp::v1::span<const uid_t>>& allowedProviders) noexcept
     -> std::shared_ptr<ISharedMemoryResource>
 {
     std::lock_guard<std::mutex> lock{mutex_};

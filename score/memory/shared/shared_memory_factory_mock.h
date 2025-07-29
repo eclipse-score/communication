@@ -29,7 +29,7 @@ class SharedMemoryFactoryMock : public ISharedMemoryFactory
   public:
     MOCK_METHOD(std::shared_ptr<ISharedMemoryResource>,
                 Open,
-                (const std::string&, const bool, const std::optional<score::cpp::span<const uid_t>>&),
+                (const std::string&, const bool, const std::optional<score::cpp::v1::span<const uid_t>>&),
                 (noexcept, override));
 
     MOCK_METHOD(std::shared_ptr<ISharedMemoryResource>,
