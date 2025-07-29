@@ -1,0 +1,25 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+        {
+            "label": "Run fastdev image",
+            "type": "shell",
+            "command": "${workspaceFolder}/run_qemu.sh bazel-bin/score/mw/com/example/ipc_bridge_hi_wrapper/deb-qemuarm64-modified/",
+            "problemMatcher": []
+        },
+        {
+            "label": "Upload application binaries to fastedev image",
+            "type": "shell",
+            "command": "cd ${workspaceFolder} && bazel build --config=aarch64 --spawn_strategy=local //score/mw/com/example/ipc_bridge_hi_wrapper:upload",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run example application in fastedev image",
+            "type": "shell",
+            "command": "cd ${workspaceFolder} && bazel build --config=aarch64 --spawn_strategy=local //score/mw/com/example/ipc_bridge_hi_wrapper:run_example && code ./bazel-bin/score/mw/com/example/ipc_bridge_hi_wrapper/qemu_run.log && code ./bazel-bin/score/mw/com/example/ipc_bridge_hi_wrapper/ssh_run.log",
+            "problemMatcher": []
+        }
+    ]
+}
