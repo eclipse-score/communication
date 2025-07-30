@@ -86,4 +86,7 @@ cc_unit_test_suites_for_host_and_qnx(
     cc_unit_tests = [
         ":typed_memory_test",
     ],
+    visibility = [
+        "@score-baselibs//score/memory/shared:__pkg__",
+    ],
 )

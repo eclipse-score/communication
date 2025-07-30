@@ -546,34 +546,6 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "offset_ptr_test_resources",
-    testonly = True,
-    srcs = ["test_offset_ptr/offset_ptr_test_resources.cpp"],
-    hdrs = ["test_offset_ptr/offset_ptr_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["@score-baselibs//score/memory/shared:__pkg__"],
-    deps = [
-        "@score-baselibs//score/memory/shared",
-        "@score-baselibs//score/memory/shared:fake_memory_resources",
-        "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
-    name = "bounds_check_memory_pool",
-    testonly = True,
-    srcs = ["test_offset_ptr/bounds_check_memory_pool.cpp"],
-    hdrs = ["test_offset_ptr/bounds_check_memory_pool.h"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":offset_ptr_test_resources",
-        ":shared",
-        "@score-baselibs//score/language/futurecpp",
-    ],
-)
-
 cc_unit_test(
     name = "pointer_arithmetic_util_precondition_violation_test",
     srcs = [
@@ -623,52 +595,6 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":memory_region_bounds",
-    ],
-)
-
-cc_gtest_unit_test(
-    name = "offset_ptr_test",
-    srcs = [
-        "test_offset_ptr/assignment_test.cpp",
-        "test_offset_ptr/bool_ops_test.cpp",
-        "test_offset_ptr/compare_test.cpp",
-        "test_offset_ptr/construction_test.cpp",
-        "test_offset_ptr/index_dereference_test.cpp",
-        "test_offset_ptr/misc_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "@score-baselibs//score/memory:__pkg__",
-    ],
-    deps = [
-        ":offset_ptr",
-        ":offset_ptr_test_resources",
-        "@score-baselibs//score/mw/log",
-    ],
-)
-
-cc_unit_test(
-    name = "offset_ptr_precondition_violation_test",
-    srcs = [
-        "test_offset_ptr/arithmetic_test.cpp",
-        "test_offset_ptr/bounds_check_test.cpp",
-        "test_offset_ptr/copying_offset_ptr_bounds_check_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES + [
-        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
-        "-aborts_upon_exception",
-    ],
-    visibility = [
-        "@score-baselibs//score/memory:__pkg__",
-    ],
-    deps = [
-        ":bounds_check_memory_pool",
-        ":offset_ptr",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/mw/log",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
@@ -761,7 +687,6 @@ cc_gtest_unit_test(
     deps = [
         ":fake_memory_resources",
         ":memory_resource_proxy",
-        #":shared",
         "@score-baselibs//score/mw/log",
     ],
 )
@@ -957,6 +882,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":fake_memory_resources",
+        ":string",
         "@score-baselibs//score/mw/log",
     ],
 )
@@ -973,8 +899,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":memory_resource_proxy_test",
         ":memory_resource_registry_test",
         ":new_delete_delegate_resource_test",
-        ":offset_ptr_precondition_violation_test",
-        ":offset_ptr_test",
         ":polymorphic_offset_ptr_allocator_test",
         ":pointer_arithmetic_util_precondition_violation_test",
         ":shared_memory_error_test",
@@ -992,5 +916,9 @@ cc_unit_test_suites_for_host_and_qnx(
         "@score-baselibs//score/memory/shared/flock:unit_test_suite",
         "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:unit_test_suite",
         "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:unit_test_suite",
+        "@score-baselibs//score/memory/shared/test_offset_ptr:unit_test_suite",
+    ],
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
     ],
 )
