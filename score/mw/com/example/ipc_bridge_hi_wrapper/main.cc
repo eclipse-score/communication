@@ -10,15 +10,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include <cstring>
 #include <iostream>
-#include <vector>
-#include <string>
 #include <unistd.h>
 
 int main() {
     std::cout << "HI_App: Starting ipc_bridge_cpp_sil" << std::endl;
 
-    char * const c_args[] = {
+    const char *c_args[] = {
         "/usr/bin/ipc_bridge_cpp_sil",
         "-n", "10",
         "-m", "recv",
@@ -27,12 +26,12 @@ int main() {
         nullptr
     };
 
-    execve("/usr/bin/ipc_bridge_cpp_sil", c_args, nullptr);
+    execve("/usr/bin/ipc_bridge_cpp_sil", const_cast<char* const*>(c_args), nullptr);
 
-    perror("execve failed");
+    std::cerr << "execve failed, sleeping... Reason: " << strerror(errno)
+              << std::endl;
     while (true) {
-        std::cerr << "execve failed, sleeping..." << std::endl;
-        sleep(10);
+      sleep(10);
     }
     return 0;
 }
