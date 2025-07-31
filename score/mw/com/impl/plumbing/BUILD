@@ -41,10 +41,10 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/concurrency:executor",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
+        "@score-baselibs//score/concurrency:executor",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -172,11 +172,11 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl:proxy_base",
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory:any_string_view",
     ],
 )
 
@@ -236,11 +236,11 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory:any_string_view",
     ],
 )
 
@@ -361,7 +361,7 @@ cc_library(
     hdrs = ["proxy_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":i_proxy_binding_factory",
@@ -376,7 +376,7 @@ cc_library(
     hdrs = ["proxy_event_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":i_proxy_event_binding_factory",
@@ -391,7 +391,7 @@ cc_library(
     hdrs = ["proxy_field_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":i_proxy_field_binding_factory",
@@ -406,7 +406,7 @@ cc_library(
     hdrs = ["skeleton_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":i_skeleton_binding_factory",
@@ -421,7 +421,7 @@ cc_library(
     hdrs = ["skeleton_event_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":i_skeleton_event_binding_factory",
@@ -436,7 +436,7 @@ cc_library(
     hdrs = ["skeleton_field_binding_factory_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":i_skeleton_field_binding_factory",
@@ -654,8 +654,6 @@ cc_test(
         ":event",
         ":plumbing",
         ":proxy_binding_factory_mock",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola/messaging:mock",
@@ -664,8 +662,10 @@ cc_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
         "//score/mw/com/message_passing:mock",
-        "@score-baselibs//score/mw/log",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/os/mocklib:fcntl_mock",
     ],
 )
 
