@@ -54,9 +54,9 @@ class ReceiverFixture : public ::testing::Test
         receiver_config.message_loop_delay = std::chrono::milliseconds{1};
 
         ForwardingReceiverChannelTraits::impl_ = &mock_;
-        unit_ = ReceiverFactoryMock::Create(SOME_PATH, thread_pool_, score::cpp::v1::span<const uid_t>{}, receiver_config);
+        unit_ = ReceiverFactoryMock::Create(SOME_PATH, thread_pool_, score::cpp::span<const uid_t>{}, receiver_config);
         unit_without_delay_ = ReceiverFactoryMock::Create(
-            SOME_PATH, thread_pool_, score::cpp::v1::span<const uid_t>{}, receiver_config_without_delay);
+            SOME_PATH, thread_pool_, score::cpp::span<const uid_t>{}, receiver_config_without_delay);
     }
 
     void TearDown() override
@@ -131,7 +131,7 @@ TEST_F(ReceiverFixture, CanNotOpenUnderlyingChannel)
 TEST_F(ReceiverFixture, DestructReceiverWhileListeningWillStop)
 {
     // Given a valid path and constructed unit
-    auto unit = ReceiverFactoryMock::Create(SOME_PATH, thread_pool_, score::cpp::v1::span<const uid_t>{}, ReceiverConfig{});
+    auto unit = ReceiverFactoryMock::Create(SOME_PATH, thread_pool_, score::cpp::span<const uid_t>{}, ReceiverConfig{});
 
     // Expect that "open_receiver" gets called on the channel traits and "close_receiver" as well
     EXPECT_CALL(mock_, open_receiver(_, _, _, _)).WillOnce(Return(VALID_FILE_DESCRIPTOR));

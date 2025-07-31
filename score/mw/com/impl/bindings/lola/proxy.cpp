@@ -127,11 +127,11 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
                  const LolaServiceTypeDeployment& lola_service_deployment,
                  const LolaServiceInstanceId& lola_service_instance_id) noexcept
 {
-    std::optional<score::cpp::v1::span<const uid_t>> providers{std::nullopt};
+    std::optional<score::cpp::span<const uid_t>> providers{std::nullopt};
     const auto found = instance_deployment.allowed_provider_.find(quality_type);
     if (found != instance_deployment.allowed_provider_.end())
     {
-        providers = std::make_optional(score::cpp::v1::span<const uid_t>{found->second});
+        providers = std::make_optional(score::cpp::span<const uid_t>{found->second});
     }
 
     ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_};

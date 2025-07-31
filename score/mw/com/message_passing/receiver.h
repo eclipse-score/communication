@@ -84,7 +84,7 @@ class Receiver final : public IReceiver
     /// \param allocator allocator bound to memory resource for allocating the memory required by the Receiver object
     explicit Receiver(const std::string_view identifier,
                       concurrency::Executor& executor,
-                      const score::cpp::v1::span<const uid_t> allowed_uids,
+                      const score::cpp::span<const uid_t> allowed_uids,
                       const ReceiverConfig& receiver_config,
                       const allocator_type& allocator) noexcept;
 
@@ -126,7 +126,7 @@ class Receiver final : public IReceiver
 template <typename ChannelTraits>
 Receiver<ChannelTraits>::Receiver(const std::string_view identifier,
                                   concurrency::Executor& executor,
-                                  const score::cpp::v1::span<const uid_t> allowed_uids,
+                                  const score::cpp::span<const uid_t> allowed_uids,
                                   const ReceiverConfig& receiver_config,
                                   const allocator_type& allocator) noexcept
     : IReceiver{},

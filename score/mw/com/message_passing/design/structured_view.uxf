@@ -28,7 +28,7 @@
     <panel_attributes>template=ChannelTraits
 mw::com::message_passing::Receiver
 --
-+Receiver(identifier : std::string_view, executor : concurrency::Executor&amp;, allowed_uids : const score::cpp::v1::span&lt;const uid_t&gt;,
++Receiver(identifier : std::string_view, executor : concurrency::Executor&amp;, allowed_uids : const score::cpp::span&lt;const uid_t&gt;,
                       receiver_config : const ReceiverConfig&amp;, allocator : const allocator_type&amp;)
 +Register(MessageId id, ShortMessageReceivedCallback callback) : void
 +Register(MessageId id, MediumMessageReceivedCallback callback) : void
@@ -259,7 +259,7 @@ sends</panel_attributes>
 --
 
 _+Create(identifier : std::string_view , executor : concurrency::Executor&amp;,_
-_    allowed_uids : const score::cpp::v1::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
+_    allowed_uids : const score::cpp::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
 _    score::cpp::pmr::memory_resource* memory_resource) :  score::cpp::pmr::unique_ptr&lt;IReceiver&gt;_
 _+InjectReceiverMock(IReceiver* mock) : void_
 </panel_attributes>
@@ -345,7 +345,7 @@ creates</panel_attributes>
 --
 
 _+Create(identifier : std::string_view , executor : concurrency::Executor&amp;,_
-_    allowed_uids : const score::cpp::v1::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
+_    allowed_uids : const score::cpp::span&lt;const uid_t&gt;, receiver_config : const ReceiverConfig&amp;_
 _    score::cpp::pmr::memory_resource* memory_resource) :  score::cpp::pmr::unique_ptr&lt;IReceiver&gt;_
 --</panel_attributes>
     <additional_attributes/>

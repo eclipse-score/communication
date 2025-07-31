@@ -33,7 +33,7 @@ class ReceiverFactoryImpl final
   public:
     static score::cpp::pmr::unique_ptr<IReceiver> Create(const std::string_view identifier,
                                                   concurrency::Executor& executor,
-                                                  const score::cpp::v1::span<const uid_t> allowed_uids,
+                                                  const score::cpp::span<const uid_t> allowed_uids,
                                                   const ReceiverConfig& receiver_config,
                                                   score::cpp::pmr::memory_resource* const memory_resource);
 };

@@ -46,7 +46,7 @@ RuntimeConfiguration::RuntimeConfiguration(filesystem::Path configuration_path)
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
 RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, score::StringLiteral argv[]) : configuration_path_{}
 {
-    const score::cpp::v1::span<const score::StringLiteral> command_line_arguments(argv, argc);
+    const score::cpp::span<const score::StringLiteral> command_line_arguments(argv, argc);
     auto configuration_path = ParseConfigurationPath(command_line_arguments);
     configuration_path_ =
         configuration_path.has_value() ? std::move(configuration_path).value() : kDefaultConfigurationPath;
@@ -58,7 +58,7 @@ const filesystem::Path& RuntimeConfiguration::GetConfigurationPath() const
 }
 
 std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
-    const score::cpp::v1::span<const score::StringLiteral> command_line_args)
+    const score::cpp::span<const score::StringLiteral> command_line_args)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(command_line_args.size() >= 0);
     const auto num_args = static_cast<std::uint32_t>(command_line_args.size());

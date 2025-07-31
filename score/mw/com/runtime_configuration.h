@@ -43,7 +43,7 @@ class RuntimeConfiguration
 
   private:
     static std::optional<filesystem::Path> ParseConfigurationPath(
-        const score::cpp::v1::span<const score::StringLiteral> command_line_args);
+        const score::cpp::span<const score::StringLiteral> command_line_args);
 
     filesystem::Path configuration_path_;
 };
