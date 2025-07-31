@@ -70,7 +70,7 @@ class SharedMemoryFactory
     static std::shared_ptr<ISharedMemoryResource> Open(
         const std::string& path,
         const bool is_read_write,
-        const std::optional<score::cpp::v1::span<const uid_t>>& allowedProviders = std::nullopt) noexcept;
+        const std::optional<score::cpp::span<const uid_t>>& allowedProviders = std::nullopt) noexcept;
 
     /// \brief Obtain a memory resource for a newly created memory region.
     /// \param path name of the memory region to create: a string consisting of an initial

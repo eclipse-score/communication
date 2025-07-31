@@ -33,7 +33,7 @@ class SharedMemoryFactoryImpl final : public ISharedMemoryFactory
     std::shared_ptr<ISharedMemoryResource> Open(
         const std::string& path,
         const bool is_read_write,
-        const std::optional<score::cpp::v1::span<const uid_t>>& allowedProviders) noexcept override;
+        const std::optional<score::cpp::span<const uid_t>>& allowedProviders) noexcept override;
 
     std::shared_ptr<ISharedMemoryResource> Create(std::string path,
                                                   InitializeCallback cb,

@@ -56,7 +56,7 @@ class ISharedMemoryResource : public ManagedMemoryResource
         // coverity[autosar_cpp14_m11_0_1_violation]
         const UserPermissions& permissions_;
         // coverity[autosar_cpp14_m11_0_1_violation]
-        const std::optional<score::cpp::v1::span<const uid_t>> allowedProviders_;
+        const std::optional<score::cpp::span<const uid_t>> allowedProviders_;
     };
 
     ISharedMemoryResource() noexcept = default;

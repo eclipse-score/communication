@@ -28,8 +28,7 @@ ISharedMemoryFactory* SharedMemoryFactory::mock_{nullptr};
 auto score::memory::shared::SharedMemoryFactory::Open(
     const std::string& path,
     const bool is_read_write,
-    const std::optional<score::cpp::v1::span<const uid_t>>& allowedProviders) noexcept
-    -> std::shared_ptr<ISharedMemoryResource>
+    const std::optional<score::cpp::span<const uid_t>>& allowedProviders) noexcept -> std::shared_ptr<ISharedMemoryResource>
 {
     return instance().Open(path, is_read_write, allowedProviders);
 }

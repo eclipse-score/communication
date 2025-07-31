@@ -35,7 +35,7 @@ class ISharedMemoryFactory
 
     virtual std::shared_ptr<ISharedMemoryResource> Open(const std::string&,
                                                         const bool,
-                                                        const std::optional<score::cpp::v1::span<const uid_t>>&) noexcept = 0;
+                                                        const std::optional<score::cpp::span<const uid_t>>&) noexcept = 0;
 
     virtual std::shared_ptr<ISharedMemoryResource> Create(std::string,
                                                           InitializeCallback,
