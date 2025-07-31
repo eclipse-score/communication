@@ -100,6 +100,7 @@ struct ShmObjectStatInfo
     // coverity[autosar_cpp14_a9_6_1_violation]
     uid_t owner_uid;
     std::size_t size;
+    bool is_shm_in_typed_memory;
 };
 
 // Helper class which allows SharedMemoryResource::Create() to call protected SharedMemoryResource constructors.
@@ -196,32 +197,34 @@ score::os::IAccessControlList::UserIdentifier GetCreatorUidFromAcl(
     return users_with_exec_permission.front();
 }
 
-ShmObjectStatInfo GetOwnerUidAndSizeOf(const ISharedMemoryResource::FileDescriptor fd,
+ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescriptor fd,
                                        const ISharedMemoryResource::AccessControlListFactory& acl_factory,
                                        bool is_named_shm)
 {
     score::os::StatBuffer stat_buffer{};
+
     const auto result = score::os::Stat::instance().fstat(fd, stat_buffer);
     if (!result.has_value())
     {
         score::mw::log::LogFatal("shm") << "Getting owner_uid and size of shm-object file failed: " << result.error();
         std::terminate();
     }
-
     const auto owner_uid = stat_buffer.st_uid;
+    bool is_shm_in_typed_memory = false;
     if (is_named_shm && (kTypedmemdUid == owner_uid))
     {
+        is_shm_in_typed_memory = true;
         score::mw::log::LogInfo("shm") << "Named-shm is in TypedMemory. Finding creator-uid from from eACL entries.";
         stat_buffer.st_uid = GetCreatorUidFromAcl(fd, acl_factory);
     }
-
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"
     // Rationale: There is no variable defined in the following line.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(stat_buffer.st_size >= 0, "Size of shm-object file is negative.");
     return {safe_math::Cast<uid_t>(stat_buffer.st_uid).value(),
-            safe_math::Cast<std::size_t>(stat_buffer.st_size).value()};
+            safe_math::Cast<std::size_t>(stat_buffer.st_size).value(),
+            is_shm_in_typed_memory};
 }
 
 void* CalculateUsableStartAddress(void* const base_address, const std::size_t management_space) noexcept
@@ -492,7 +495,7 @@ score::cpp::expected_blank<Error> SharedMemoryResource::CreateImpl(const std::si
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(file_descriptor_ >= 0, "No valid file descriptor");
 
-    const auto stat_values = GetOwnerUidAndSizeOf(file_descriptor_, acl_factory_, (path != nullptr));
+    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, acl_factory_, (path != nullptr));
     file_owner_uid_ = stat_values.owner_uid;
 
     if (!is_shm_in_typed_memory_)
@@ -585,7 +588,8 @@ auto SharedMemoryResource::waitForOtherProcessAndOpen() noexcept -> score::cpp::
         return score::cpp::make_unexpected(result.error());
     }
     file_descriptor_ = result.value();
-    const auto stat_values = GetOwnerUidAndSizeOf(file_descriptor_, acl_factory_, is_named_shm);
+    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, acl_factory_, is_named_shm);
+    is_shm_in_typed_memory_ = stat_values.is_shm_in_typed_memory;
     file_owner_uid_ = stat_values.owner_uid;
     virtual_address_space_to_reserve_ = stat_values.size;
     this->loadInternalsFromSharedMemory();

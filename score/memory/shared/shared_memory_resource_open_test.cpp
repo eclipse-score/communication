@@ -315,6 +315,85 @@ TEST_F(SharedMemoryResourceOpenTest, OpenTypedSharedMemorySuccessWhenOnlyOneUser
     ASSERT_TRUE(resource_result.has_value());
 }
 
+TEST_F(SharedMemoryResourceOpenTest,
+       IsShmInTypedMemoryReturnsTrueWhenOpenTypedSharedMemorySuccessWhenOnlyOneUserHasExecutePermission)
+{
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    constexpr bool is_read_write = false;
+    constexpr bool is_death_test = false;
+    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
+    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
+    std::vector<score::os::IAccessControlList::UserIdentifier> users_with_exec_permission = {2025U};
+
+    // Given that the lock file does not exist
+    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
+                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
+
+    // and that we can open the shared memory region
+    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
+
+    // Expecting that fstat returns the typedmem UID indicating that the shared memory region is in typed memory.
+    expectFstatReturns(
+        file_descriptor, is_death_test, static_cast<uid_t>(TestValues::typedmemd_uid), static_cast<std::int64_t>(1));
+
+    // and that the execute permission is set for only one user in the eACL
+    EXPECT_CALL(*acl_control_list_mock, FindUserIdsWithPermission(score::os::Acl::Permission::kExecute))
+        .WillOnce(Return(users_with_exec_permission));
+
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    EXPECT_CALL(*unistd_mock_, close(_)).Times(1);
+
+    // and given the shared memory region is opened
+    const auto resource_result =
+        SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list);
+
+    // When checking if the shared memory region is in typed memory
+    const auto is_in_typed_memory = resource_result.value()->IsShmInTypedMemory();
+
+    // Then the result is true
+    EXPECT_TRUE(is_in_typed_memory);
+}
+
+TEST_F(SharedMemoryResourceOpenTest,
+       IsShmInTypedMemoryReturnsFalseWhenOpenTypedSharedMemoryFailWhenOnlyOneUserHasExecutePermission)
+{
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    constexpr bool is_read_write = false;
+    constexpr bool is_death_test = false;
+    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
+    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
+    std::vector<score::os::IAccessControlList::UserIdentifier> users_with_exec_permission = {2025U};
+
+    // Given that the lock file does not exist
+    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
+                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
+
+    // and that we can open the shared memory region
+    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
+
+    constexpr auto kInvalidtypedmemUid = 0xffU;
+    // Expecting that fstat returns a UID which is different to the typedmem UID indicating that the shared memory
+    // region is not in typed memory.
+    expectFstatReturns(
+        file_descriptor, is_death_test, static_cast<uid_t>(kInvalidtypedmemUid), static_cast<std::int64_t>(0));
+
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    EXPECT_CALL(*unistd_mock_, close(_)).Times(1);
+
+    // and given the shared memory region is opened
+    const auto resource_result =
+        SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list);
+    // When checking if the shared memory region is in typed memory
+    const auto is_in_typed_memory = resource_result.value()->IsShmInTypedMemory();
+
+    // Then the result is false
+    EXPECT_FALSE(is_in_typed_memory);
+}
+
 TEST_F(SharedMemoryResourceOpenTest, DifferentInstancesAreNotEqual)
 {
     InSequence sequence{};

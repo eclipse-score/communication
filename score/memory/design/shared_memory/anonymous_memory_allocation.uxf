@@ -194,7 +194,7 @@ shm_open(SHM_ANON, O_RDWR | O_CREAT | O_ANON, mode)</panel_attributes>
       <h>25</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;-
-GetOwnerUidAndSizeOf(file_descriptor)</panel_attributes>
+GetShmObjectStatInfo(file_descriptor)</panel_attributes>
     <additional_attributes>10.0;30.0;60.0;30.0;60.0;10.0;10.0;10.0</additional_attributes>
   </element>
   <element>
