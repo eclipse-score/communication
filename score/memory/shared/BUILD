@@ -702,6 +702,8 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":memory_resource_registry",
+        ":pointer_arithmetic_util",
+        ":shared_memory_error",
         "@score-baselibs//score/mw/log",
     ],
 )
