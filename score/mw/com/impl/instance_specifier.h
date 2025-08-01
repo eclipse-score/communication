@@ -16,6 +16,8 @@
 #include "score/result/result.h"
 #include "score/mw/log/logging.h"
 
+#include <score/string_view.hpp>
+
 #include <string>
 #include <string_view>
 
@@ -34,6 +36,18 @@ class InstanceSpecifier
 
   public:
     static score::Result<InstanceSpecifier> Create(const std::string_view shortname_path) noexcept;
+
+    [[deprecated("SPP_DEPRECATION: Use overload with std::string_view instead")]] static score::Result<InstanceSpecifier>
+    Create(const score::cpp::string_view shortname_path) noexcept;
+
+    // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
+    // it will be removed once the overload with score::cpp::string_view is removed
+    template <typename StringViewConveritbleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
+    static score::Result<InstanceSpecifier> Create(const StringViewConveritbleType shortname_path) noexcept
+    {
+        return InstanceSpecifier::Create(std::string_view{shortname_path});
+    }
 
     std::string_view ToString() const noexcept;
 

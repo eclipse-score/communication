@@ -25,6 +25,7 @@
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
+#include <score/string_view.hpp>
 
 #include <cstddef>
 #include <memory>
@@ -94,6 +95,22 @@ class ProxyEvent final : public ProxyEventBase
     /// \param event_name Event name of the event, taken from the AUTOSAR model
     /// \todo Remove unneeded parameter once we get these information from the configuration
     ProxyEvent(ProxyBase& base, const std::string_view event_name);
+
+    [[deprecated("SPP_DEPRECATION: Use overload with std::string_view instead")]] ProxyEvent(
+        ProxyBase& base,
+        const score::cpp::string_view event_name)
+        : ProxyEvent{base, std::string_view{event_name.data(), event_name.size()}}
+    {
+    }
+
+    // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
+    // it will be removed once the overload with score::cpp::string_view is removed
+    template <typename StringViewConveritbleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
+    ProxyEvent(ProxyBase& base, const StringViewConveritbleType event_name)
+        : ProxyEvent{base, std::string_view{event_name}}
+    {
+    }
 
     /// \brief Receive pending data from the event.
     ///
