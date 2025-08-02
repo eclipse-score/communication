@@ -2,7 +2,8 @@
 
 [![Eclipse Score](https://img.shields.io/badge/Eclipse-Score-orange.svg)](https://eclipse-score.github.io/score/main/modules/communication/index.html)
 
-A high-performance, safety-critical communication middleware implementation based on the Adaptive AUTOSAR Communication Management specification. This module provides zero-copy, shared-memory based inter-process communication (IPC) for intra-ECU communication and for inter-ECU communication using Some/IP(future implementation) in automotive and embedded systems.
+- A high-performance, safety-critical communication middleware implementation based on the Adaptive AUTOSAR Communication Management specification. 
+- This module provides zero-copy, shared-memory based inter-process communication (IPC) in embedded systems.
 
 ## Overview
 
@@ -10,80 +11,38 @@ The Communication Module (also known as **LoLa** - Low Latency) is an open-sourc
 
 - **High-Performance Intra-ECU IPC**: Zero-copy shared-memory communication for minimal latency within ECUs
 - **AUTOSAR Compliance**: Partial implementation of Adaptive AUTOSAR Communication Management (ara::com)
+- **Event-Driven Architecture**: Publisher/subscriber pattern with skeleton/proxy framework
+- **Service Discovery**: Flag file-based service registration and lookup mechanism
 - **Safety-Critical**: Designed for automotive safety standards (ASIL-B qualified)
-- **Multi-Platform**: Supports Linux and QNX operating systems  
-- **Multi-Binding Architecture**: Currently implements LoLa (intra-ECU) with architectural preparation for SOME/IP (inter-ECU)
+- **Multi-Threading Support**: Thread-safe operations with atomic data structures
+- **Memory Management**: Custom allocators optimized for shared memory usage
+- **Tracing Infrastructure**: Zero-copy, binding-agnostic communication tracing support
+- **Multi-Platform**: Supports Linux and QNX operating systems
 
 ## Architecture
 
 The module consists of two main components:
 
 ### 1. LoLa/mw::com (High-Level Middleware)
-- **Service Discovery**: Automatic service registration and discovery
-- **Event/Field Communication**: Publish-subscribe messaging patterns  
-- **Method Invocation**: Remote procedure call (RPC) support
-- **Quality of Service**: ASIL-B and QM (Quality Management) support
-- **Zero-Copy**: Shared-memory based data exchange
+- **Service Discovery**: Automatic service registration and discovery [`score/mw/com/impl/find_service_handler.h`](score/mw/com/impl/find_service_handler.h)
+- **Event/Field Communication**: Publish-subscribe messaging patterns [`score/mw/com/impl/generic_proxy_event.h`](score/mw/com/impl/generic_proxy_event.h)
+- **Method Invocation**: Remote procedure call (RPC) support [`score/mw/com/impl/generic_proxy.h`](score/mw/com/impl/generic_proxy.h)
+- **Quality of Service**: ASIL-B and QM (Quality Management) support [`score/mw/com/types.h`](score/mw/com/types.h)
+- **Zero-Copy**: Shared-memory based data exchange [`score/mw/com/message_passing/`](score/mw/com/message_passing/)
 
 ### 2. Message Passing (Low-Level Foundation)
-- **Asynchronous Communication**: Non-blocking message exchange
-- **Multi-Channel**: Multiple senders to single receiver communication (unidirectional n-to-1)
-- **OS Abstraction**: POSIX and QNX-specific implementations
-- **Message Types**: Support for short messages (~8 bytes payload) and medium messages (~16 bytes payload)
+- **Asynchronous Communication**: Non-blocking message exchange [`score/mw/com/message_passing/design/`](score/mw/com/message_passing/design/)
+- **Multi-Channel**: Multiple senders to single receiver communication (unidirectional n-to-1) [`score/mw/com/message_passing/`](score/mw/com/message_passing/)
+- **OS Abstraction**: POSIX and QNX-specific implementations [`score/mw/com/message_passing/mqueue/`](score/mw/com/message_passing/mqueue/) | [`score/mw/com/message_passing/qnx/`](score/mw/com/message_passing/qnx/)
+- **Message Types**: Support for short messages (~8 bytes payload) and medium messages (~16 bytes payload) [`score/mw/com/message_passing/design/`](score/mw/com/message_passing/design/)
 
 ## System Flow Diagram
 
 ### Intra-ECU communication
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          Application Layer                              │
-├─────────────────────────────┬───────────────────────────────────────────┤
-│        Publisher App        │            Subscriber App                 │
-│                             │                                           │
-│  ┌─────────────────────┐    │    ┌─────────────────────┐                │
-│  │   Data Producer     │    │    │   Data Consumer     │                │
-│  │  (e.g., Sensor)     │    │    │ (e.g., Dashboard)   │                │
-│  └─────────┬───────────┘    │    └─────────┬───────────┘                │
-└───────────┼────────────────────────────────┼────────────────────────────┘
-            │                                │                             
-            │ 1. OfferService()              │ 2. FindService()           
-            ▼                                ▼                             
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         LoLa Middleware                                 │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                  Service Discovery                              │    │
-│  │  • Register services    • Find available services               │    │
-│  │  • Manage connections   • Handle service lifecycle              │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                    │                                    │
-│                              3. Service Match                           │
-│                                    ▼                                    │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                    Event System                                 │    │
-│  │  ┌─────────────┐           ┌─────────────┐                      │    │
-│  │  │  Publisher  │ 4. Send() │ Subscriber  │ 5. Receive()         │    │
-│  │  │   Skeleton  │◄─────────►│   Proxy     │                      │    │
-│  │  └─────────────┘           └─────────────┘                      │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                    │                                    │
-│                            6. Zero-Copy Transfer                        │
-│                                    ▼                                    │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                  Shared Memory Manager                          │    │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │    │
-│  │  │   Memory    │  │   Memory    │  │   Memory    │              │    │
-│  │  │   Pool 1    │  │   Pool 2    │  │   Pool N    │              │    │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘              │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │                                     
-                            7. Direct Memory Access                       
-                                    ▼                                     
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Operating System                                 │
-│                      (Linux / QNX Neutrino)                             |
-└─────────────────────────────────────────────────────────────────────────┘
 
+![LoLa Flow Diagram](score/mw/com/doc/assumptions/lola_flowdiagram.drawio.svg)
+
+```
 Flow Steps:
 1. Publisher registers service with unique identifier
 2. Subscriber searches for services by identifier  
@@ -93,7 +52,7 @@ Flow Steps:
 6. Data transferred via direct shared memory access
 7. OS provides underlying memory management and synchronization
 ```
-> **Note**: Inter-ECU communication via SOME/IP is under architectural planning. The block diagram will be updated post-implementation.TODO
+> **Note**: Inter-ECU communication via [SOME/IP](https://github.com/eclipse-score/score/issues/914) is under architectural planning. The block diagram will be updated post-implementation.
 
 ## Communication Patterns
 
@@ -112,24 +71,6 @@ Camera App ──► [Video Frame] ──┬──► Display App
                                └──► AI Processing App
 ```
 
-## Features
-
-### **Intra-ECU Communication (LoLa - Fully Implemented)**
-
-- **Zero-Copy Shared Memory**: Ultra-low latency communication within ECUs using shared memory
-- **AUTOSAR ara::com API**: Partial implementation of Adaptive AUTOSAR Communication Management
-- **Event-Driven Architecture**: Publisher/subscriber pattern with skeleton/proxy framework
-- **Service Discovery**: Flag file-based service registration and lookup mechanism
-- **Safety-Critical Design**: ASIL-B qualified implementation with deterministic behavior
-- **Multi-Threading Support**: Thread-safe operations with atomic data structures
-- **Memory Management**: Custom allocators optimized for shared memory usage
-- **Tracing Infrastructure**: Zero-copy, binding-agnostic communication tracing support
-
-### **Inter-ECU Communication (SOME/IP - Architectural Preparation)**
-
-> **Note**: Inter-ECU communication via SOME/IP is under architectural preparation phase. The features will be updated after implementation.TODO
-
-
 ## Getting Started
 
 ### Prerequisites
@@ -137,6 +78,15 @@ Camera App ──► [Video Frame] ──┬──► Display App
 - **Build System**: Bazel 6.0+
 - **Operating System**: Linux (Ubuntu 24.04+) or QNX
 - **Dependencies**: GoogleTest, Google Benchmark
+
+### DevContainer Setup(Recommended)
+
+> [!NOTE]
+> This repository offers a [DevContainer](https://containers.dev/).
+> For setting this up and enabling code completion read [eclipse-score/devcontainer/README.md#inside-the-container](https://github.com/eclipse-score/devcontainer/blob/main/README.md#inside-the-container).
+
+> [!NOTE]
+> If you are using Docker on Windows **without `WSL2`** in between, you have to select the alternative container `eclipse-s-core-docker-on-windows`.
 
 ### Building the Project
 
@@ -178,30 +128,6 @@ communication/
 └── BUILD                          # Root build file
 ```
 
-
-## Testing
-
-The project includes comprehensive testing:
-
-```bash
-# Run all tests
-bazel test //...
-
-# Run specific test suites
-bazel test //score/mw/com/impl:all
-bazel test //score/mw/com/message_passing:all
-
-# Run with coverage
-bazel coverage //...
-```
-
-Test categories:
-- **Unit Tests**: Component-level testing
-- **Integration Tests**: Cross-component interaction
-- **Performance Tests**: Latency and throughput benchmarks
-- **Safety Tests**: ASIL-B compliance verification
-
-
 ## Documentation
 
 ### For Users
@@ -217,47 +143,15 @@ Test categories:
 
 ## Contributing
 
-We welcome contributions to the Communication Module! Please read our contribution guidelines:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Follow** coding standards (C++17, Google style guide)
-4. **Add** tests for new functionality
-5. **Ensure** all tests pass (`bazel test //...`)
-6. **Commit** changes (`git commit -m 'Add amazing feature'`)
-7. **Push** to branch (`git push origin feature/amazing-feature`)
-8. **Open** a Pull Request
-
-### Development Setup
-```bash
-# Setup development environment
-bazel build //...
-bazel test //...
-
-# Format code
-clang-format -i $(find . -name "*.cpp" -o -name "*.h")
-
-# Lint code
-bazel build //... --config=clang-tidy
-```
-
-## Project Information
-
-- **Project Home**: [Eclipse Score](https://projects.eclipse.org/projects/automotive.score)
-- **Maintainer**: Eclipse Foundation
-- **Category**: Automotive Software
-- **Language**: C++17
-- **Build System**: Bazel
-- **Platforms**: Linux, QNX
+We welcome contributions! See our [Contributing Guide](CONTRIBUTION.md) for details.
 
 ## Support
 
 ### Community
-- **Issues**: Report bugs and request features via GitHub Issues
-- **Discussions**: Join community discussions on the Eclipse forums
-- **Documentation**: Comprehensive docs in the `design/` and `doc/` directories
+- **Issues**: Report bugs and request features via [GitHub Issues](https://github.com/eclipse-score/communication/issues)
+- **Discussions**: Join community [discussions](https://github.com/eclipse-score/communication/discussions) on the Eclipse forums
+- **Documentation**: Comprehensive docs in the [`design/`](score/mw/com/design/) and [`doc/`](score/mw/com/doc/) directories
 
 ---
 
 **Note**: This is an open-source project under the Eclipse Foundation. It implements automotive-grade communication middleware suitable for safety-critical applications.
-
