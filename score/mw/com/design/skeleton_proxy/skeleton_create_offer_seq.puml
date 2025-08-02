@@ -1,0 +1,131 @@
+@startuml skeleton_create_offer_seq
+title "Skeleton Creation and Offer Sequence"
+hide footbox
+
+participant "<u>:Process</u>\nara::com application" as Process
+participant "<u>:<generated>Skeleton</u>" as GenSkeleton
+participant "impl::SkeletonBase:instance" as SkeletonBase
+participant "<u>SkeletonBindingFactory:class</u>" as SkeletonBindingFactory
+participant "lola::Skeleton::instance" as LolaSkeleton
+participant "impl::SkeletonEvent:skeleton_event_member" as SkeletonEvent
+participant "<u>SkeletonEventBindingFactory:class</u>" as SkeletonEventBindingFactory
+participant "lola::SkeletonEvent::instance" as LolaSkeletonEvent
+participant "<<shared memory>>\nlola::ServiceDataControl:lola::instance" as ServiceDataControl
+participant "<<shared memory>>\nlola::ServiceDataStorage:instance" as ServiceDataStorage
+participant "<<shared memory>>\nlola::EventDataStorage:instance" as EventDataStorage
+participant "<<shared memory>>\nlola::EventDataControl:instance" as EventDataControl
+participant "<u>:ServiceDiscovery</u>\naccessible via Runtime singleton" as ServiceDiscovery
+
+activate Process
+
+Process -> GenSkeleton: create(InstanceIdentifier)
+activate GenSkeleton
+
+GenSkeleton -> SkeletonBase: create(InstanceIdentifier)
+activate SkeletonBase
+
+SkeletonBase -> SkeletonBindingFactory: <u>Create(InstanceIdentifier)</u>
+activate SkeletonBindingFactory
+
+SkeletonBindingFactory -> LolaSkeleton: create()
+SkeletonBindingFactory <-- LolaSkeleton
+SkeletonBindingFactory --> SkeletonBase: return: lola::Skeleton
+deactivate SkeletonBindingFactory
+
+SkeletonBase -> SkeletonBase: set lola::skeleton as pImpl
+
+SkeletonBase --> GenSkeleton
+deactivate SkeletonBase
+
+GenSkeleton -> SkeletonEvent: create(SkeletonBase& parent, StringView event_name)
+activate SkeletonEvent
+
+SkeletonEvent -> SkeletonEventBindingFactory: <u>create(InstanceIdentifier, ElementId, parent)</u>
+activate SkeletonEventBindingFactory
+
+SkeletonEventBindingFactory -> LolaSkeletonEvent: create()
+SkeletonEventBindingFactory --> SkeletonEvent: return: lola::SkeletonEvent
+
+SkeletonEvent -> SkeletonEvent: set lola::SkeletonEvent as pImpl
+
+SkeletonEvent -> SkeletonBase: RegisterEvent(event_name, *this)
+activate SkeletonBase
+SkeletonBase --> SkeletonEvent: return
+deactivate SkeletonBase
+
+SkeletonEvent --> GenSkeleton: return: SkeletonEvent
+deactivate SkeletonEvent
+
+GenSkeleton --> Process
+deactivate GenSkeleton
+
+Process -> GenSkeleton: OfferService
+activate GenSkeleton
+
+GenSkeleton -> SkeletonBase: OfferService
+activate SkeletonBase
+
+SkeletonBase -> LolaSkeleton: PrepareOfferService
+activate LolaSkeleton
+
+LolaSkeleton -> ServiceDataControl: create_in_shared_mem()
+ServiceDataControl --> LolaSkeleton
+
+LolaSkeleton -> ServiceDataStorage: create_in_shared_mem()
+ServiceDataStorage --> LolaSkeleton
+
+LolaSkeleton --> SkeletonBase
+deactivate LolaSkeleton
+
+loop for all events
+
+SkeletonBase -> SkeletonEvent: PrepareOffer()
+activate SkeletonEvent
+
+SkeletonEvent -> LolaSkeletonEvent: PrepareOffer()
+activate LolaSkeletonEvent
+
+LolaSkeleton <- LolaSkeletonEvent: Register(ElementFqId, SkeletonEventProperties, optional<impl::tracing::SkeletonEventTracingData>)
+
+activate LolaSkeleton
+
+LolaSkeleton -> EventDataStorage: create()
+EventDataStorage --> LolaSkeleton: return eventDataStorageInstance
+
+LolaSkeleton -> ServiceDataStorage: eventDataStorageMap[ElementId] = eventDataStorageInstance
+LolaSkeleton <-- ServiceDataStorage:
+
+LolaSkeleton -> EventDataControl: create()
+EventDataControl --> LolaSkeleton: return eventControlInstance
+
+LolaSkeleton -> ServiceDataControl: eventControlMap[ElementId] = eventControlInstance
+LolaSkeleton <-- ServiceDataControl
+
+LolaSkeleton --> LolaSkeletonEvent: return EventDataStorage, EventDataControl
+deactivate LolaSkeleton
+
+LolaSkeletonEvent --> SkeletonEvent: return ResultBlank
+deactivate LolaSkeletonEvent
+
+SkeletonEvent --> SkeletonBase: return ResultBlank
+deactivate SkeletonEvent
+
+end loop
+
+deactivate LolaSkeletonEvent
+deactivate SkeletonEvent
+
+SkeletonBase -> ServiceDiscovery: OfferService(InstanceIdentifier)
+activate ServiceDiscovery
+ServiceDiscovery --> SkeletonBase: return ResultBlank
+deactivate ServiceDiscovery
+
+SkeletonBase --> GenSkeleton
+deactivate SkeletonBase
+
+GenSkeleton --> Process
+deactivate GenSkeleton
+
+deactivate Process
+
+@enduml
