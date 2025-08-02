@@ -1,0 +1,90 @@
+@startuml proxy_restart_sequence
+title "Proxy Restart Sequence"
+hide footbox
+
+participant "<u>lola::Proxy:class</u>" as Proxy
+participant "<u>lola::Proxy:Instance</u>" as ProxyInstance
+participant "LockFile:class_" as LockFile
+participant "LockFile:service_instance_usage_marker" as Marker
+participant "FlockMutexAndLock<SharedFlockMutex>:Instance" as FlockMutex
+participant "lola::TransactionLogRollbackExecutor" as RollbackExecutor
+participant "<<shared memory>>\n<u>vUidPidMapping:ServiceDataControl.uid_pid_mapping</u>" as UidPidMapping
+participant "<u>MessagePassingFacade:Instance</u>" as MessageFacade
+participant "<<shared memory>>\nEventControl:ServiceDataControl.event_controls" as EventControl
+participant "<<shared memory>>\nTransactionLogSet:instance" as TransactionLogSet
+
+[-> Proxy: Create()
+activate Proxy
+
+Proxy -> LockFile: Open(service_instance_usage_marker_file_path)
+activate LockFile
+
+opt open failed
+    [<-- Proxy: return nullptr
+end opt
+
+create Marker
+LockFile -> Marker: Create()
+Proxy <-- LockFile: return service_instance_usage_marker
+deactivate LockFile
+
+create FlockMutex
+Proxy -> FlockMutex: Create(service_instance_usage_marker)
+Proxy -> FlockMutex: TryLock()
+activate FlockMutex
+
+opt flock shared failed
+    Proxy <-- FlockMutex: false
+    [<-- Proxy: return nullptr
+end opt
+
+Proxy <-- FlockMutex: true
+deactivate FlockMutex
+
+Proxy -> Proxy: Open Shm for CTRL && DATA
+
+group Restart Detection && Recovery
+    create RollbackExecutor
+    Proxy -> RollbackExecutor: Create
+    Proxy -> RollbackExecutor: RollbackTransactionLogs()
+    activate RollbackExecutor
+
+    loop over event_controls
+        EventControl -[#white]> EventControl
+        activate EventControl
+        RollbackExecutor -> EventControl: GetTransactionLogSet()
+        RollbackExecutor <-- EventControl: return TransactionLogSet
+        deactivate EventControl
+
+        TransactionLogSet -[#white]> TransactionLogSet
+        activate TransactionLogSet
+        RollbackExecutor -> TransactionLogSet: RollbackProxyTransactions()
+        RollbackExecutor <-- TransactionLogSet: return ResultBlank
+        deactivate TransactionLogSet
+
+        opt if transaction log rollback failed
+            Proxy <-- RollbackExecutor: return error
+            [<-- Proxy: return nullptr
+        end opt
+        deactivate RollbackExecutor
+    end
+
+    Proxy -> UidPidMapping: RegisterPid(uid, current pid)
+    activate UidPidMapping
+    Proxy <-- UidPidMapping: return optional<previous pid>
+    deactivate UidPidMapping
+
+    opt if previous pid exists
+        Proxy -> MessageFacade: NotifyOutdatedNodeId(QualityType, previous pid, target_node_id)
+        activate MessageFacade
+        Proxy <-- MessageFacade: return
+        deactivate MessageFacade
+    end opt
+end
+
+create ProxyInstance
+Proxy -> ProxyInstance: CreateInstance()
+[<-- Proxy: return instance
+deactivate Proxy
+
+@enduml
