@@ -1,0 +1,55 @@
+@startuml sequence_view
+title "Sequence View"
+hide footbox
+
+participant "<u>:OS</u>" as OS
+participant "<u>:Process</u>\nara::com user" as Process
+participant "<u>score::mw::com::impl::Runtime</u>" as Runtime
+participant "<u>:ConfigReader</u>" as ConfigReader
+participant "<u>:Configuration</u>" as Configuration
+participant "<u>singletonInstance:score::mw::com::impl::Runtime</u>" as SingletonRuntime
+
+create Process
+OS -> Process : create
+OS -> Process : main(argc, argc)
+activate Process
+
+create Runtime
+Process -> Runtime : Initialize(argc, argv)
+activate Runtime
+
+create ConfigReader
+Runtime -> ConfigReader : create
+Runtime -> ConfigReader : read(argv[i])
+activate ConfigReader
+
+create Configuration
+ConfigReader -> Configuration: create
+ConfigReader --> Runtime : return: configuration
+destroy ConfigReader
+
+create SingletonRuntime
+Runtime -> SingletonRuntime : new Runtime(configuration)
+
+Runtime --> Process : :return
+deactivate Runtime
+
+Process -> Runtime : getInstance()
+activate Runtime
+
+Runtime --> Process : return: singletonInstance
+deactivate Runtime
+
+Process -> SingletonRuntime : resolve(InstanceSpecifier)
+activate SingletonRuntime
+
+SingletonRuntime -> Configuration : serviceInstances.find(InstanceSpecifier)
+activate Configuration
+
+Configuration --> SingletonRuntime : return: Iter
+deactivate Configuration
+
+SingletonRuntime --> Process : return: InstanceIdentifierContainer
+deactivate SingletonRuntime
+
+@enduml
