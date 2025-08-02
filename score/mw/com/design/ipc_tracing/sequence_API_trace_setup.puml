@@ -1,0 +1,43 @@
+@startuml sequence_API_trace_setup
+title "Sequence API Trace Setup"
+hide footbox
+
+participant "<u>impl::ProxyEvent:Instance</u>" as ProxyEvent
+participant "<u>:tracing::GenerateProxyTracingStructFromEventConfig</u>" as Generator
+participant "<u>ITracingFilterConfig:Instance</u>" as FilterConfig
+participant "<u>impl::Runtime:Singleton</u>" as Runtime
+
+activate ProxyEvent
+activate Generator
+[-> ProxyEvent: ctor(ProxyBase& base, event_name)
+ProxyEvent -> Generator: GenerateProxyTracingStructFromEventConfig
+
+Generator -> Runtime: GetTracingFilterConfig()
+activate Runtime
+Runtime --> Generator: return const ITracingFilterConfig*
+deactivate Runtime
+
+Generator -> Generator: create ProxyEventTracingData instance
+
+alt returned ITraceFilterConfig* != nullptr
+    Generator -> Generator: instance_specifier = GetInstanceSpecifier(proxy_base)
+    Generator -> Generator: service_type = GetServiceType(proxy_base)
+    activate FilterConfig
+    Generator -> FilterConfig: IsTracePointEnabled(service_type, event_name, instance_specifier, PROXY_EVENT_SUB)
+    FilterConfig --> Generator: return true | false
+    Generator -> FilterConfig: IsTracePointEnabled(service_type, event_name, instance_specifier, PROXY_EVENT_UNSUB)
+    FilterConfig --> Generator: return true | false
+    Generator -> FilterConfig: IsTracePointEnabled(service_type, event_name, instance_specifier, PROXY_EVENT_SUBSTATE_CHANGE)
+    FilterConfig --> Generator: return true | false
+    Generator -> FilterConfig: IsTracePointEnabled(service_type, event_name, instance_specifier, PROXY_EVENT_SET_RECHDL)
+    FilterConfig --> Generator: return true | false
+    deactivate FilterConfig
+    Generator -> Generator: set members of ProxyEventTracing instance\nfrom returned flags
+end
+
+Generator --> ProxyEvent: return ProxyEventTracingData instance
+deactivate Generator
+ProxyEvent -[#white]> ProxyEvent
+deactivate ProxyEvent
+
+@enduml
