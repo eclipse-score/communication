@@ -7,7 +7,7 @@ within shared-memory by `Lola`. Other parts of the design documentation e.g.
 [event and field description part](../events_fields/README.md#introduction) already describe/hint in their class
 diagrams via the stereotype `<<SharedMemory>>` in the following form:
 
-![Stereotype](artifacts/stereotype.svg)
+![Stereotype](stereotype.svg)
 
 whether some classes (instances of it) are partially placed within shared-memory. We use the same stereotype here, but
 give a complete overview.
@@ -36,13 +36,13 @@ The following class diagram provides an overview of the classes, whose instances
 also a rough indication how the provider side (in the form of `LoLa` skeleton) and the consumer side (in the form of
 `LoLa` proxy/proxy-event) interact with them.
 
-![Class View](broken_link_k/swh/ddad_score/mw/com/design/shared_mem_layout/artifacts/shared_mem_layout_classdiagram.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/shared_mem_layout/shared_mem_layout_classdiagram.puml" />
 
 This object diagram below (showing a concrete instantiation of the class diagram above for some example service instance)
 depicts more clearly the relation between the `SharedMemoryResource` instances representing a shared-memory object and the
 anchor/root elements placed within shared-memory:
 
-![Object View](broken_link_k/swh/ddad_score/mw/com/design/shared_mem_layout/artifacts/shared_mem_layout_objectdiagram.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/shared_mem_layout/shared_mem_layout_objectdiagram.puml" />
 
 So - the first object/element created within the shared-memory object for **Data** (represented by `SharedMemoryResource`
 instance `shmResource_storage_SI_1`) is the instance `serviceDataStorage_SI_1` of class `ServiceDataStorage` and
