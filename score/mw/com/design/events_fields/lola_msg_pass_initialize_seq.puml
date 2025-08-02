@@ -1,0 +1,50 @@
+@startuml lola_msg_pass_initialize_seq
+title "Sequence Message Passing Init"
+hide footbox
+
+participant "<u>:score::com::impl::Runtime</u>" as Runtime
+participant "<u>singleInstancePerProc:lola::MessagePassing</u>" as MessagePassing
+participant "<u>QM:messagepassing::Receiver</u>" as QMReceiver
+participant "<u>ASIL:messagepassing::Receiver</u>" as ASILReceiver
+
+activate Runtime
+Runtime -> Runtime: check Configuration, whether\nASIL_B service deployment exists
+Runtime -> MessagePassing: Initialize(ASIL_B_deployment)
+activate MessagePassing
+Runtime -[#white]> Runtime
+deactivate Runtime
+
+create QMReceiver
+MessagePassing -> QMReceiver: Create("LoLa_<PID>_QM")
+activate QMReceiver
+
+MessagePassing -> QMReceiver: Register(SUBSCRIBE_EVENT,\nthis->HandleSubscribeEventMsgQM)
+QMReceiver --> MessagePassing: return
+
+MessagePassing -> QMReceiver: Register(SUBSCRIBE_EVENT_RESULT,\nthis->HandleSubscribeEventResultMsgQM)
+QMReceiver --> MessagePassing: return
+
+MessagePassing -> QMReceiver: Register(UNSUBSCRIBE_EVENT,\nthis->HandleUnsubscribeEventMsgQM)
+QMReceiver --> MessagePassing: return
+
+MessagePassing -> QMReceiver: Register(REGISTER_EVENT_NOTIFIER,\nthis->HandleRegisterEventNotifMsgQM)
+QMReceiver --> MessagePassing: return
+
+MessagePassing -> QMReceiver: Register(UNEGISTER_EVENT_NOTIFIER,\nthis->HandleUnregisterEventNotifMsgQM)
+QMReceiver --> MessagePassing: return
+
+MessagePassing -> QMReceiver: Register(NOTIFY_EVENT,\nthis->HandleEventNotificationQM)
+QMReceiver --> MessagePassing: return
+deactivate QMReceiver
+
+opt if (ASIL_B_deployment)
+    create ASILReceiver
+    MessagePassing -> ASILReceiver: Create("LoLa_<PID>_ASIL")
+
+    group repeat
+        note over MessagePassing, ASILReceiver: Registration of Msg-Handlers this time for ASIL handlers
+    end
+    deactivate MessagePassing
+end
+
+@enduml
