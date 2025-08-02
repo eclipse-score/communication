@@ -1,0 +1,267 @@
+@startuml event_lola_model
+title "Event Lola Model"
+
+' Abstract classes and interfaces
+abstract SkeletonEventBindingBase {
+  {abstract} +PrepareOffer(): void
+  {abstract} +PrepareStopOffer(): void
+  {abstract} +GetMaxSize(): size_t
+}
+
+abstract class SkeletonEventBinding<SampleType> {
+  {abstract} +Send(SampleType const&): void
+  {abstract} +Send(SampleAllocateePtr<SampleType>): void
+  {abstract} +Allocate(): SampleAllocateePtr<SampleType>
+  +GetMaxSize(): size_t
+}
+
+abstract class ProxyEventBindingBase {
+  {abstract} +Subscribe(size_t maxSampleCount): void
+  {abstract} +Unsubscribe(): void
+  {abstract} +GetSubscriptionState(): SubscriptionState
+  {abstract} +SetReceiveHandler(EventReceiveHandler): void
+  {abstract} +UnsetReceiveHandler(): void
+  {abstract} +GetNumNewSamplesAvailable(): Result<size_t>
+}
+
+abstract class ProxyEventBinding<SampleType> {
+  {abstract} +GetNewSamples(score::cpp::callback<void(SamplePtr<SampleType>)>&&, TrackerGuardFactory): Result<size_t>
+  {static} # MakeSamplePtr(BindingSamplePtr&&, SampleReferenceGuard): SamplePtr<SampleType>
+}
+
+abstract class SkeletonBinding {
+  -events_: SkeletonEvents&
+  +SkeletonBinding(SkeletonEvents&): void
+  {abstract} +PrepareStopOffer(): void
+  {abstract} +PrepareOffer(): Result<void>
+}
+
+' Concrete classes
+class lola::SkeletonEvent<SampleType> {
+  -event_data_storage: EventDataStorage<SampleType>*
+  -event_data_control: score::cpp::optional<EventDataControlComposite>
+  +SkeletonEvent(parent: Skeleton&, event_fqn: const ElementFqId, max_number_of_slots: const std::size_t, enforce_max_samples: const bool)
+  +Send(SampleType const&): void
+  +Send(SampleAllocateePtr<SampleType>): void
+  +Allocate(): SampleAllocateePtr<SampleType>
+  +PrepareOffer(): void
+  +PrepareStopOffer(): void
+}
+
+class lola::ProxyEvent<SampleType> {
+  -parent: Proxy&
+  -subscription_state_machine: std::shared_ptr<SubscriptionStateMachine>
+  +ProxyEvent(ProxyBase& parent, ElementFqId)
+  +Subscribe(size_t maxSampleCount): void
+  +GetSubscriptionState(): SubscriptionState
+  +Unsubscribe(): void
+  +SetReceiveHandler(score::cpp::callback<void(void)>): void
+  +UnsetReceiveHandler(): void
+  +GetNewSamples(score::cpp::callback<void(SamplePtr<SampleType>)>&&, TrackerGuardFactory): Result<size_t>
+  +GetNumNewSamplesAvailable(): Result<size_t>
+  ..
+  <u>Notes:</u>
+  Dispatches all calls to functions in ProxyEventBindingBase interface to\nProxyEventCommon.
+}
+
+class lola::Skeleton {
+  -data: SkeletonDataStorage*
+  -control_qm_: SkeletonDataControl*
+  -control_asil_b_: SkeletonDataControl*
+  +Skeleton(const InstanceIdentifier&, SkeletonEvents&)
+  +PrepareOffer(): ResultBlank
+  +PrepareStopOffer(): ResultBlank
+  +Register(ElementFqId, size_t numberOfSlots): std::pair<EventDataStorage*, EventDataControlComposite>
+  +GetInstanceQualityType() const: QualityType
+}
+
+class lola::ProxyEventCommon {
+  -element_fq_id_: ElementFqId
+  -parent_: lola::Proxy&
+  -subscription_event_state_machine_: std::shared_ptr<SubscriptionStateMachine>
+  -slot_collector_: score::cpp::optional<SlotCollector>
+  __
+  +ProxyEventCommon(lola::Proxy& parent, ElementFqId)
+  +Subscribe(size_t max_sample_count): void
+  +Unsubscribe(): void
+  +GetSubscriptionState(): SubscriptionState
+  +SetReceiveHandler(EventReceiveHandler handler): void
+  +UnsetReceiveHandler(EventReceiveHandler handler): void
+  +GetEventSourcePid(): pid_t
+  +GetElementFQId(): ElementFqId
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+  ..
+  <u>Notes:</u>
+  lola::ProxyEventCommon is not moveable or copyable.
+  SlotCollector is instantiated by the SubscriptionStateMachine when it enters the 
+  Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
+  All subscription operations are implemented in the separate class 
+  SubscriptionStateMachine and the associated states. 
+}
+
+class lola::SubscriptionStateMachine {
+  ..
+  <u>Notes:</u>
+  State machine that manages subscriptions to a ProxyEvent.\nDetails about the state machine can be found in\nproxy_event_state_machine.puml and proxy_event_state_machine_model.puml
+}
+
+class lola::SlotCollector {
+  -event_data_control_: EventDataControl&
+  +SlotCollector(EventDataControl&, const std::size_t max_slots)
+  +GetNumNewSamplesAvailable(): size_t
+  +GetNewSamplesSlotIndices(size_t max_count): pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+  ..
+  <u>Notes:</u>
+  SlotCollector is not copyable.
+}
+
+class lola::ShmPathBuilder {
+  +ShmPathBuilder(instance_deployment: const LolaServiceInstanceDeployment&, type_deploymenttype_deployment: const LolaServiceTypeDeployment&)
+  +GetControlChannelFileName(channel_type: const QualityType): score::cpp::optional<std::string>
+  +GetDataChannelFileName(): score::cpp::optional<std::string>
+  +GetControlChannelPath(channel_type: const QualityType): score::cpp::optional<std::string>
+  +GetDataChannelPath(): score::cpp::optional<std::string>
+  +GetDataChannelShmName(): score::cpp::optional<std::string>
+  +GetControlChannelShmName(const QualityType channel_type): score::cpp::optional<std::string>
+}
+
+' Template classes and typedefs
+class SampleAllocateePtr<SampleType> {
+  -internal: std::variant<score::cpp::blank, lola::SampleAllocateePtr, std::unique_ptr<SampleType>>
+  ..
+  <u>Notes:</u>
+  Variant is used to enable future version were multiple backends are supported
+  
+}
+
+class lola::SampleAllocateePtr<SampleType> {
+  -managed_object_: SampleType*
+  -event_data_control_: EventDataControlComposite
+  +SampleAllocateePtr()
+  +SampleAllocateePtr(std::nullptr_t)
+  +SampleAllocateePtr(ptr: pointer, const EventDataControlComposite&, const EventDataControl::SlotIndexType)
+  +GetReferencedSlot() const: EventDataControl::SlotIndexType
+  +get() const: SampleType*
+  +reset(std::nullptr_t): void
+  +swap(other: SampleAllocateePtr&): void
+}
+
+class SamplePtr<SampleType> {
+  #internal: std::variant<lola::SamplePtr>
+  +SampleAllocateePtr(std::nullptr_t)
+  +reset(const pointer ptr = SampleType*): void
+  +swap(other: SampleAllocateePtr<SampleType>&): void
+  +get(): SampleType*
+  ..
+  <u>Notes:</u>
+  Variant is used to enable future\nversion were multiple backends are supported
+}
+
+class lola::SamplePtr<SampleType> {
+  -managed_object_: SampleType*
+  -event_data_control_: EventDataControl*
+  +SamplePtr()
+  +SamplePtr(std::nullptr_t)
+  +SamplePtr(pointer ptr, const EventDataControlComposite&, const EventDataControl::SlotIndexType)
+  +get() const: pointer
+  +swap(): void
+}
+
+' Shared memory classes
+class "<<SharedMemory>>\n<<typedef>>\nEventDataStorage<SampleType>" as EventDataStorage {
+  DynamicArray<SampleType,\nstd::scoped_allocator_adaptor<memory::shared::PolymorphicOffsetPtrAllocator<SampleType>>>
+  ..
+  <u>Notes:</u>
+  Exists once per Event\nOnly writable by Skeleton,\nreadable by all subscribed Proxies independent of ASIL level.
+}
+
+class "<<SharedMemory>>\n<<typedef>>\nSkeletonDataStorage<SampleType>" as SkeletonDataStorage {
+  std::map<ElementFqId, offset_ptr<void>>
+  ..
+  <u>Notes:</u>
+  The offset_ptr<void> SkeletonDataStorage stored as the value in the map is an offset_ptr<EventDataStorage> which has its type erased.\nThe type is identified later when samples are retrieved, see GetNewSamples for an explanation.
+}
+
+class "<<SharedMemory>>\nlola::SkeletonDataControl" {
+  +event_data_control_: std::map<ElementFqId, EventDataControl>
+  +skeleton_pid_: pid_t
+  +SkeletonDataControl(proxy: score::memory::shared::MemoryResourceProxy* const)
+}
+
+class "<<SharedMemory>>\nlola::EventDataControlImpl" {
+  -state_slots: std::vector<std::atomic<EventSlotStatusType::value_type>, PolymorphicOffsetAllocator<std::atomic<EventSlotStatusType::value_type>>>
+  +EventDataControlImpl(MemoryResourceProxy*, SlotIndexType maxSlots)
+  +AllocateNextSlot(): std::optional<SlotIndexType>
+  +EventReady(SlotIndexType, EventTimestamp): void
+  +Discard(SlotIndexType): void
+  +ReferenceNextEvent(lastSearchTime: EventTimestampType, upper_limit: const EventSlotStatus::EventTimeStamp): std::optional<SlotIndexType>
+  +DereferenceEvent(SlotIndexType eventSlotIndex): void
+  +GetNumNewEvents(reference_time: const EventSlotStatus::EventTimeStamp) const: std::size_t
+  ..
+  <u>Notes:</u>
+  Exists at least once per provided Event.\nFor an ASIL-B provider/skeleton, which has ASIL-B AND ASIL-QM consumer/subscriber,\nit exists twice: One Control section per ASIL-level in seperated shm-objects.\nReadable/Writable by Skeleton and Proxies.
+}
+
+class "<<SharedMemory>>\nlola::EventSlotStatus" {
+  +EventSlotStatus(init_val: const value_type)
+  +IsInvalid(): bool
+  +IsInWriting(): bool
+  +MarkInWriting(): void
+  +MarkInvalid(): void
+  +GetReferenceCount(): SubscriberCount
+  +GetTimeStamp(): EventTimeStamp
+  +SetTimeStamp(EventTimeStamp)
+  +SetReferenceCount(SubscriberCount)
+  +IsUsed(): bool
+  +IsTimeStampBetween(EventTimeStamp min, EventTimeStamp max): bool
+}
+
+class EventDataControlCompositeImpl<memory::shared::AtomicIndirectorType> {
+  -asil_qm_control_: EventDataControl*
+  -asil_b_control_: EventDataControl*
+  +EventDataControlCompositeImpl(asil_qm_control: EventDataControl* const)
+  +EventDataControlCompositeImpl(asil_qm_control: EventDataControl* const, asil_b_control: EventDataControl* const)
+  +AllocateNextSlot(): std::optional<EventDataControl::SlotIndexType>
+  +EventReady(EventDataControl::SlotIndexType, EventSlotStatus::EventTimeStamp): void
+  +Discard(EventDataControl::SlotIndexType): void
+  +IsQmControlDisconnected(): bool
+}
+
+enum SubscriptionState {
+  SUBSCRIBED
+  NOT_SUBSCRIBED
+  SUBSCRIPTION_PENDING
+}
+
+SkeletonEventBindingBase <|-- SkeletonEventBinding
+SkeletonEventBinding <|-- lola::SkeletonEvent
+ProxyEventBindingBase <|-- ProxyEventBinding
+ProxyEventBinding <|-- lola::ProxyEvent
+lola::Skeleton *-- SkeletonDataStorage : "1..1"
+lola::Skeleton *-- "<<SharedMemory>>\nlola::SkeletonDataControl" : "1..2"
+"<<SharedMemory>>\nlola::SkeletonDataControl" *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "0..n"
+lola::SkeletonEvent o-- "EventDataStorage"
+lola::SkeletonEvent *-- EventDataControlCompositeImpl
+"<<SharedMemory>>\nlola::EventDataControlImpl" ..> "<<SharedMemory>>\nlola::EventSlotStatus"
+SampleAllocateePtr o-- lola::SampleAllocateePtr
+SamplePtr o-- lola::SamplePtr
+lola::ProxyEvent *-- lola::ProxyEventCommon
+lola::ProxyEventCommon *-- lola::SubscriptionStateMachine
+lola::ProxyEventCommon --* lola::SlotCollector
+ProxyEventBindingBase o-- SubscriptionState
+lola::SampleAllocateePtr *-- EventDataControlCompositeImpl
+EventDataControlCompositeImpl o-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
+lola::Skeleton ..> lola::ShmPathBuilder : uses
+lola::Skeleton ..> EventDataControlCompositeImpl
+lola::SubscriptionStateMachine ..> lola::SlotCollector : <<creates>>
+SkeletonEventBinding ..> SampleAllocateePtr
+lola::ProxyEvent ..> lola::SamplePtr
+SkeletonDataStorage *-- "EventDataStorage" : "0..n"
+lola::SlotCollector o-- "<<SharedMemory>>\nlola::EventDataControlImpl"
+ProxyEventBinding ..> SamplePtr
+lola::SkeletonEvent ..> lola::SampleAllocateePtr
+lola::SamplePtr ..> "<<SharedMemory>>\nlola::EventDataControlImpl"
+lola::SampleAllocateePtr ..> "<<SharedMemory>>\nlola::EventDataControlImpl"
+
+@enduml
