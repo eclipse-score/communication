@@ -149,7 +149,7 @@ design
 are adjusted if source code is changed in the future.
 
 This comes with the drawback that we shall try to not place binary blobs into the repository.
-Thus, we decided to use [UMLet](https://www.umlet.com) for drawing any UML-related diagrams (it can be used on any OS).
+Thus, we decided to use [PlantUML](https://www.plantuml.com) for drawing any UML-related diagrams (it can be used on any OS).
 
 For graphics, we decided to only use SVGs.
 
@@ -187,7 +187,7 @@ Since this use of the `friend` keyword does not break encapsulation but provides
 that we need, we find that in spirit it does not contradict the guideline, and we deem such use as acceptable in
 `com::impl` namespace.
 
-## Assumptions of Use(AoUs)
+## Assumptions of Use (AoUs)
 
 A full list of AoUs can be seen [here](#assumptions-of-use-aous). The following presents only a
 small selection.
