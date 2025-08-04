@@ -21,6 +21,7 @@ namespace score::mw::com::impl
 
 GlobalConfiguration::GlobalConfiguration() noexcept
     : process_asil_level_{QualityType::kASIL_QM},
+      application_id_{},
       message_rx_queue_size_qm{DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE},
       message_rx_queue_size_b{DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE},
       message_tx_queue_size_b{DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE},

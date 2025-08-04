@@ -231,7 +231,7 @@ cc_library(
         ":element_fq_id",
         ":event",
         ":event_meta_info",
-        ":uid_pid_mapping",
+        ":application_id_pid_mapping",
         "@score-baselibs//score/memory/shared",
     ],
 )
@@ -398,16 +398,16 @@ cc_library(
 )
 
 cc_library(
-    name = "uid_pid_mapping",
-    srcs = ["uid_pid_mapping.cpp"],
-    hdrs = ["uid_pid_mapping.h"],
+    name = "application_id_pid_mapping",
+    srcs = ["application_id_pid_mapping.cpp"],
+    hdrs = ["application_id_pid_mapping.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score-baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         ":register_pid_fake",
-        ":uid_pid_mapping_entry",
+        ":application_id_pid_mapping_entry",
         "@score-baselibs//score/containers:dynamic_array",
         "@score-baselibs//score/memory/shared:atomic_indirector",
         "@score-baselibs//score/memory/shared:types",
@@ -415,15 +415,13 @@ cc_library(
 )
 
 cc_library(
-    name = "uid_pid_mapping_entry",
-    srcs = ["uid_pid_mapping_entry.cpp"],
-    hdrs = ["uid_pid_mapping_entry.h"],
+    name = "application_id_pid_mapping_entry",
+    srcs = ["application_id_pid_mapping_entry.cpp"],
+    hdrs = ["application_id_pid_mapping_entry.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = ["@score-baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-    deps = [
-    ],
 )
 
 cc_library(
@@ -434,7 +432,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        ":uid_pid_mapping_entry",
+        ":application_id_pid_mapping_entry",
         "@score-baselibs//score/containers:dynamic_array",
     ],
 )
@@ -745,11 +743,11 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
-    name = "uid_pid_mapping_test",
-    srcs = ["uid_pid_mapping_test.cpp"],
+    name = "application_id_pid_mapping_test",
+    srcs = ["application_id_pid_mapping_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":uid_pid_mapping",
+        ":application_id_pid_mapping",
         "@score-baselibs//score/memory/shared:atomic_indirector",
         "@score-baselibs//score/memory/shared:atomic_indirector_mock_binding",
     ],
@@ -1165,6 +1163,20 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "runtime_application_id_test",
+    srcs = [
+        "runtime_application_id_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":runtime",
+        "@score-baselibs//score/os/mocklib:unistd_mock",
+        "//score/mw/com/impl/configuration:configuration_mock",
+        "//score/mw/com/impl/configuration:global_configuration_mock",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -1175,6 +1187,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":event_slot_status_test",
         ":event_subscription_control_test",
         ":proxy_event_common_test",
+        ":runtime_application_id_test",
         ":runtime_test",
         "sample_allocatee_ptr_test",
         ":sample_ptr_test",
@@ -1201,7 +1214,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":slot_decrementer_test",
         ":transaction_log_rollback_executor_test",
         ":type_erased_sample_ptrs_guard_test",
-        ":uid_pid_mapping_test",
+        ":application_id_pid_mapping_test",
         "//score/mw/com/impl/bindings/lola/test:proxy_component_test",
         "//score/mw/com/impl/bindings/lola/test:skeleton_component_test",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_component_test",

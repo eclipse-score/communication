@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/uid_pid_mapping.h"
+#include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 
 #include "score/mw/log/logging.h"
 
@@ -20,23 +20,23 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-/// \brief Iterates through the given entries and updates the pid for the given uid, if an entry with the given uid
+/// \brief Iterates through the given entries and updates the pid for the given application ID, if an entry with the given ID
 ///        exists and is in the right state.
 /// \param entries_begin start iterator/pointer for the entries
 /// \param entries_end end iterator/pointer for the entries
-/// \param uid uid for which the pid shall be registered/updated
+/// \param application_id application ID for which the pid shall be registered/updated
 /// \param pid new pid
-/// \return if the given uid has been found, either the old/previous pid is returned (in case status was in kUsed) or
-///         the new pid is returned, if status was in kUpdating. If uid wasn't found empty optional gets returned.
-std::optional<pid_t> TryUpdatePidForExistingUid(
+/// \return if the given application ID has been found, either the old/previous pid is returned (in case status was in kUsed) or
+///         the new pid is returned, if status was in kUpdating. If application ID wasn't found empty optional gets returned.
+std::optional<pid_t> TryUpdatePidForExistingId(
     // Suppress "AUTOSAR C++14 A8-4-10" rule. The rule declares "A parameter shall be passed by reference
     // if it can’t be NULL".
     // We need this parameter as an iterator over a container, semantically it should never be a nullptr as
     // the DynamicArray always provides valid iterators from begin() / end().
     // coverity[autosar_cpp14_a8_4_10_violation]
-    score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_begin,
-    score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_end,
-    const uid_t uid,
+    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
+    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
+    const uid_t application_id,
     const pid_t pid)
 {
     // Suppress "AUTOSAR C++14 M5-0-15". This rule states:"indexing shall be the only form of pointer arithmetic.".
@@ -49,23 +49,23 @@ std::optional<pid_t> TryUpdatePidForExistingUid(
         const auto status_uid = it->GetStatusAndUidAtomic();
         const auto entry_status = status_uid.first;
         const auto entry_uid = status_uid.second;
-        if ((entry_status == UidPidMappingEntry::MappingEntryStatus::kUsed) && (entry_uid == uid))
+        if ((entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed) && (entry_uid == application_id))
         {
-            // uid already exists. It is "owned" by us, so we can directly update pid, without atomic state changes ...
+            // application ID already exists. It is "owned" by us, so we can directly update pid, without atomic state changes ...
             pid_t old_pid = it->pid_;
             it->pid_ = pid;
             return old_pid;
         }
-        else if ((entry_status == UidPidMappingEntry::MappingEntryStatus::kUpdating) && (entry_uid == uid))
+        else if ((entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUpdating) && (entry_uid == application_id))
         {
-            // This is a very odd situation! I.e. someone is currently updating the pid for OUR uid!
-            // this could only be possible, when our uid/client app has crashed before, while updating the pid
-            // for our uid.
+            // This is a very odd situation! I.e. someone is currently updating the pid for OUR application ID!
+            // this could only be possible, when our application has crashed before, while updating the pid
+            // for our application ID.
             score::mw::log::LogWarn("lola")
-                << "UidPidMapping: Found mapping entry for own uid in state kUpdating. Maybe we "
+                << "ApplicationIdPidMapping: Found mapping entry for own application ID in state kUpdating. Maybe we "
                    "crashed before!? Now taking over entry and updating with current PID.";
             it->pid_ = pid;
-            it->SetStatusAndUidAtomic(UidPidMappingEntry::MappingEntryStatus::kUsed, uid);
+            it->SetStatusAndUidAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, application_id);
             return pid;
         }
     }
@@ -86,12 +86,12 @@ namespace detail
 template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_m3_2_3_violation]
 // coverity[autosar_cpp14_a8_4_10_violation]
-std::optional<pid_t> RegisterPid(score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_begin,
-                                 score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_end,
-                                 const uid_t uid,
+std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
+                                 score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
+                                 const uid_t application_id,
                                  const pid_t pid)
 {
-    const auto result_pid = TryUpdatePidForExistingUid(entries_begin, entries_end, uid, pid);
+    const auto result_pid = TryUpdatePidForExistingId(entries_begin, entries_end, application_id, pid);
     if (result_pid.has_value())
     {
         return result_pid;
@@ -113,17 +113,17 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<UidPidMappingEn
             const auto entry_status = status_uid.first;
             const auto entry_uid = status_uid.second;
 
-            if (entry_status == UidPidMappingEntry::MappingEntryStatus::kUnused)
+            if (entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUnused)
             {
-                auto current_entry_key = UidPidMappingEntry::CreateKey(entry_status, entry_uid);
+                auto current_entry_key = ApplicationIdPidMappingEntry::CreateKey(entry_status, entry_uid);
                 auto new_entry_key =
-                    UidPidMappingEntry::CreateKey(UidPidMappingEntry::MappingEntryStatus::kUpdating, uid);
+                    ApplicationIdPidMappingEntry::CreateKey(ApplicationIdPidMappingEntry::MappingEntryStatus::kUpdating, application_id);
 
-                if (AtomicIndirectorType<UidPidMappingEntry::key_type>::compare_exchange_weak(
-                        it->key_uid_status_, current_entry_key, new_entry_key, std::memory_order_acq_rel))
+                if (AtomicIndirectorType<ApplicationIdPidMappingEntry::key_type>::compare_exchange_weak(
+                        it->key_application_id_status_, current_entry_key, new_entry_key, std::memory_order_acq_rel))
                 {
                     it->pid_ = pid;
-                    it->SetStatusAndUidAtomic(UidPidMappingEntry::MappingEntryStatus::kUsed, uid);
+                    it->SetStatusAndUidAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, application_id);
                     return pid;
                 }
             }
@@ -135,14 +135,14 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<UidPidMappingEn
 /// Instantiate the method templates once for AtomicIndirectorReal (production use) and AtomicIndirectorMock (testing)
 /// Those are all instantiations we need, so we are able to put the template definitions into the .cpp file.
 template std::optional<pid_t> RegisterPid<memory::shared::AtomicIndirectorMock>(
-    score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_begin,
-    score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_end,
-    const uid_t uid,
+    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
+    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
+    const uid_t application_id,
     const pid_t pid);
 template std::optional<pid_t> RegisterPid<memory::shared::AtomicIndirectorReal>(
-    score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_begin,
-    score::containers::DynamicArray<UidPidMappingEntry>::iterator entries_end,
-    const uid_t uid,
+    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
+    score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
+    const uid_t application_id,
     const pid_t pid);
 
 }  // namespace detail

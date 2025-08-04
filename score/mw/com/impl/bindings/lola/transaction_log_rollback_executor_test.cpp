@@ -19,7 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
-#include "score/mw/com/impl/bindings/lola/uid_pid_mapping.h"
+#include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 
@@ -103,7 +103,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     void AddUidPidMapping(uid_t uid, pid_t pid) noexcept
     {
-        const auto result_pid = service_data_control_->uid_pid_mapping_.RegisterPid(uid, pid);
+        const auto result_pid = service_data_control_->application_id_pid_mapping_.RegisterPid(uid, pid);
         ASSERT_TRUE(result_pid.has_value());
         ASSERT_EQ(result_pid.value(), pid);
     }
@@ -350,7 +350,7 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegiste
     RegisterPidFake register_pid_fake{};
     const std::optional<pid_t> empty_register_pid_result{};
     register_pid_fake.InjectRegisterPidResult(empty_register_pid_result);
-    UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>::InjectRegisterPidFake(
+    ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>::InjectRegisterPidFake(
         register_pid_fake);
 
     // When calling RollbackTransactionLogs

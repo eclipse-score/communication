@@ -101,6 +101,30 @@ cc_library(
 )
 
 cc_library(
+    name = "configuration_mock",
+    testonly = True,
+    hdrs = ["configuration_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":configuration_local",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "global_configuration_mock",
+    testonly = True,
+    hdrs = ["global_configuration_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//score/mw/com/impl:__subpackages__"],
+    deps = [
+        ":global_configuration",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "tracing_configuration",
     srcs = ["tracing_configuration.cpp"],
     hdrs = ["tracing_configuration.h"],

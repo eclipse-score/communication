@@ -21,11 +21,10 @@ namespace score::mw::com::impl::lola
 {
 
 /// \brief A unique identifier for identifying / retrieving a TransactionLog
-///
-/// The TransactionLogId is needed so that a Proxy / Skeleton service element can retrieve its own TransactionLog after
-/// a crash. Note. This identifier is not unique for different instances of the same service WITHIN the same process.
-/// E.g. a SkeletonEvent / ProxyEvent of the same service that are created within the same process will have the same
-/// TransactionLogId. Similarly, 2 instantiations of the same ProxyEvent will share the same TransactionLogId. This is
+/// \details The TransactionLogId is needed so that a Proxy / Skeleton service element can retrieve its own
+/// TransactionLog after a crash. It is either the explicitly configured applicationID or falls back to the process uid.
+/// Note: If multiple Proxy objects to the same service are created within a single process, they will all share this
+/// same identifier. Similarly, 2 instantiations of the same ProxyEvent will share the same TransactionLogId. This is
 /// acceptable since ALL service elements within a process will live / die together. So in the TransactionLogSet
 /// rollback mechanism, we can simply rollback all TransactionLogs corresponding to a given TransactionLogId.
 using TransactionLogId = uid_t;

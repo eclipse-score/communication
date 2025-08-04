@@ -82,6 +82,8 @@ class Runtime final : public IRuntime
 
     pid_t GetPid() const noexcept override;
 
+    uid_t GetApplicationId() const noexcept override;
+
     uid_t GetUid() const noexcept override;
 
   private:
@@ -106,6 +108,9 @@ class Runtime final : public IRuntime
                                       const QualityType asil_level);
     pid_t pid_;
     uid_t uid_;
+    uid_t application_id_;
+
+    uid_t DetermineApplicationIdentifier(const Configuration& config) const noexcept;
 };
 
 }  // namespace score::mw::com::impl::lola
