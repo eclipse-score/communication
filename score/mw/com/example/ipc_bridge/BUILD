@@ -27,7 +27,7 @@ cc_binary(
         "//score/mw/com",
         "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
-        "@boost.program_options",
+        "@boost//:program_options",
     ],
 )
 
