@@ -350,6 +350,10 @@
                     ],
                     "default": "QM"
                 },
+                "applicationID": {
+                    "type": "integer",
+                    "description": "Optional explicit Application-ID to be used for crash-recovery. If not given, the uid of the process will be used."
+                },
                 "queue-size": {
                     "type": "object",
                     "description": "Configures the queue size for incoming message ports. This is important for some queue technologies that have an upper size bound and will drop messages in case the queue overflows so that subscription messages or event updates may get lost. If this happens, this number must be raised for the respective receiving queue. Note, that e.g. on Linux, when increasing the message queue size, it can be necessary to increase a kernel parameter! See: /proc/sys/fs/mqueue/msg_max",
