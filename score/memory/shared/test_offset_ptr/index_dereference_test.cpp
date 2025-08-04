@@ -126,7 +126,7 @@ TYPED_TEST(OffsetPtrIndexDereferenceFixture, HandlesCustomArrayIndex)
 {
     struct A
     {
-        A(int first_, int second_) : first(first_), second(second_){};
+        A(int first_, int second_) : first(first_), second(second_) {};
         int first;
         int second;
     };

@@ -340,7 +340,7 @@ TEST_F(MemoryRegionMapTest, ConcurrentAccess)
     struct RegionWithFlag
     {
         RegionWithFlag(MemoryRegionBounds region, bool insertedFlag) noexcept
-            : region_(region), inserted_(insertedFlag){};
+            : region_(region), inserted_(insertedFlag) {};
 
         RegionWithFlag(RegionWithFlag&& other) noexcept
         {
