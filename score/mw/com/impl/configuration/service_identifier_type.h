@@ -157,7 +157,7 @@ inline ServiceIdentifierType make_ServiceIdentifierType(std::string serviceTypeN
 class ServiceIdentifierTypeView
 {
   public:
-    constexpr explicit ServiceIdentifierTypeView(const ServiceIdentifierType& type) : srvIdentifierType_(type){};
+    constexpr explicit ServiceIdentifierTypeView(const ServiceIdentifierType& type) : srvIdentifierType_(type) {};
     inline score::cpp::string_view getInternalTypeName() const
     {
         return srvIdentifierType_.serviceTypeName_;
