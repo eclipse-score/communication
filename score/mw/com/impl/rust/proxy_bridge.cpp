@@ -85,7 +85,8 @@ extern "C" {
     const char* const instance_specifier,
     const std::uint32_t instance_specifier_length) noexcept
 {
-    if (auto result = ::score::mw::com::InstanceSpecifier::Create({instance_specifier, instance_specifier_length});
+    if (auto result =
+            ::score::mw::com::InstanceSpecifier::Create(std::string_view{instance_specifier, instance_specifier_length});
         result.has_value())
     {
         return new ::score::mw::com::InstanceSpecifier{std::move(result).value()};
