@@ -40,7 +40,7 @@ The module consists of two main components:
 
 ### Intra-ECU communication
 
-![LoLa Flow Diagram](score/mw/com/doc/assumptions/lola_flowdiagram.drawio.svg)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score-communication/score/mw/com/doc/assumptions/lola_flowdiagram.puml">
 
 ```
 Flow Steps:
@@ -81,11 +81,11 @@ Camera App ──► [Video Frame] ──┬──► Display App
 
 ### DevContainer Setup(Recommended)
 
-> [NOTE]
+>**Note**:
 > This repository offers a [DevContainer](https://containers.dev/).
 > For setting this up and enabling code completion read [eclipse-score/devcontainer/README.md#inside-the-container](https://github.com/eclipse-score/devcontainer/blob/main/README.md#inside-the-container).
 
-> [NOTE]
+>**Note**:
 > If you are using Docker on Windows **without `WSL2`** in between, you have to select the alternative container `eclipse-s-core-docker-on-windows`.
 
 ### Building the Project
@@ -109,23 +109,10 @@ bazel build //score/mw/com:all
 
 ```
 communication/
-├── score/mw/com/                    # Main communication middleware
-│   ├── design/                      # Architecture documentation
-│   ├── impl/                        # Implementation details
-│   │   ├── bindings/lola/          # LoLa binding implementation
-│   │   │   ├── service_discovery/  # Service discovery client
-│   │   │   ├── messaging/          # Message passing facade
-│   │   │   └── test/               # Component tests
-│   │   └── configuration/          # Runtime configuration
-│   ├── message_passing/             # Low-level messaging
-│   │   ├── design/                 # Message passing architecture
-│   │   ├── qnx/                    # QNX-specific implementation
-│   │   └── mqueue/                 # POSIX message queue implementation
-│   ├── doc/                        # Requirements and assumptions
-│   └── example/                    # Usage examples
-├── third_party/                    # External dependencies
-├── bazel/                          # Build configuration
-└── BUILD                          # Root build file
+├── score/mw/com/  # Main communication middleware (design,code,tests,examples)
+├── third_party/   # External dependencies
+├── bazel/         # Build configuration
+└── BUILD          # Root build file
 ```
 
 ## Documentation
@@ -143,7 +130,7 @@ communication/
 
 ## Contributing
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTION.md) for details.
+We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## Support
 

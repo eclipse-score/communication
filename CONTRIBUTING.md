@@ -1,6 +1,7 @@
 # Contributing to the Communication Module
 
-Thank you for your interest in contributing to the Communication Module of the Eclipse SCORE project! This guide will walk you through the necessary steps to get started with development, adhere to our standards, and successfully submit your contributions.
+- Thank you for your interest in contributing to the Communication Module of the Eclipse SCORE project! 
+- This guide will walk you through the necessary steps to get started with development, adhere to our standards, and successfully submit your contributions.
 
 ## Eclipse Contributor Agreement (ECA)
 
