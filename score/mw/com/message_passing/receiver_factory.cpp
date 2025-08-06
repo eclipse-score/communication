@@ -62,7 +62,7 @@ IReceiver* ReceiverFactory::receiver_mock_{nullptr};
 
 score::cpp::pmr::unique_ptr<IReceiver> ReceiverFactory::Create(const std::string_view identifier,
                                                         concurrency::Executor& executor,
-                                                        const score::cpp::span<const uid_t> allowed_user_ids,
+                                                        const score::cpp::v1::span<const uid_t> allowed_user_ids,
                                                         const ReceiverConfig& receiver_config,
                                                         score::cpp::pmr::memory_resource* memory_resource)
 {

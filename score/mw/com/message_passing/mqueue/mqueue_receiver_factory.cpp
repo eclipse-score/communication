@@ -23,7 +23,7 @@ score::cpp::pmr::unique_ptr<score::mw::com::message_passing::IReceiver>
 // coverity[autosar_cpp14_m3_2_4_violation]
 score::mw::com::message_passing::ReceiverFactoryImpl::Create(const std::string_view identifier,
                                                            concurrency::Executor& executor,
-                                                           const score::cpp::span<const uid_t> allowed_uids,
+                                                           const score::cpp::v1::span<const uid_t> allowed_uids,
                                                            const ReceiverConfig& receiver_config,
                                                            score::cpp::pmr::memory_resource* const memory_resource)
 {

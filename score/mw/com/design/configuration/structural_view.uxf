@@ -356,7 +356,7 @@ afterwards being able to communicate with the service instance.</panel_attribute
 - Runtime(std::pair&lt;Configuration&amp;&amp;, score::cpp::optional&lt;tracing::TracingFilterConfig&gt;&amp;&amp;&gt; configs);
 
 _+Initialize() : void_
-_+Initialize(const score::cpp::span&lt;const score::StringLiteral&gt; arguments) : void_
+_+Initialize(const score::cpp::v1::span&lt;const score::StringLiteral&gt; arguments) : void_
 _+getInstance() : Runtime&amp;_
 
 + resolve(const InstanceSpecifier&amp;): score::mw::com::InstanceIdentifierContainer
