@@ -21,10 +21,6 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        "@score-baselibs//score/concurrency:executor",
-        "@score-baselibs//score/filesystem",
-        "@score-baselibs//score/os/utils/inotify:inotify_instance",
-        "@score-baselibs//score/os/utils/inotify:inotify_instance_impl",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:i_service_discovery_client",
         "//score/mw/com/impl/bindings/lola/service_discovery:flag_file",
@@ -32,7 +28,11 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/service_discovery:known_instances_container",
         "//score/mw/com/impl/bindings/lola/service_discovery:lola_service_instance_identifier",
         "//score/mw/com/impl/bindings/lola/service_discovery:quality_aware_container",
+        "@score-baselibs//score/concurrency:executor",
+        "@score-baselibs//score/filesystem",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/os/utils/inotify:inotify_instance",
+        "@score-baselibs//score/os/utils/inotify:inotify_instance_impl",
     ],
 )
 
@@ -51,7 +51,6 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola/service_discovery/client:__pkg__",
     ],
     deps = [
-        "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",
         "//score/mw/com/impl:handle_type",
         "//score/mw/com/impl:i_service_discovery",
         "//score/mw/com/impl/bindings/lola/service_discovery/client:service_discovery_client",
@@ -60,6 +59,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_fixtures",
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
+        "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",
     ],
 )
 

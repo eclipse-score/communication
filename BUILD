@@ -10,3 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@score_format_checker//:macros.bzl", "use_format_targets")
+load("@score_starpls_lsp//:starpls.bzl", "setup_starpls")
+
+# Add target for formatting checks
+use_format_targets()
+
+# Add StarPLS server for formatting
+setup_starpls(
+    name = "starpls_server",
+    visibility = ["//visibility:public"],
+)
