@@ -56,7 +56,7 @@ enum class MethodCallProcessingMode : std::uint8_t
 class SkeletonBase
 {
   public:
-    using EventNameList = score::cpp::span<const score::StringLiteral>;
+    using EventNameList = score::cpp::v1::span<const score::StringLiteral>;
     // An std::map/ordered map is NEEDED here as we require deterministic order of elements in the map, when iterating
     // over it repeatedly! A hint, that our shared-memory-size-calculation relies on it!
     using SkeletonEvents = std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>;

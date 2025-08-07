@@ -69,7 +69,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         if (const auto* val = std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_))
         {
             return *val;
-        };
+        }
         mw::log::LogFatal("lola")
             << "While getting number of tracing slots, a bed variant access was made. Provided service instance "
                "deployment, does not hold LolaServiceInstanceDeploymentType. Terminating.";

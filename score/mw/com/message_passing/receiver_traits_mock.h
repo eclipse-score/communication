@@ -168,7 +168,7 @@ class ReceiverFactoryMock final
     static score::cpp::pmr::unique_ptr<IReceiver> Create(
         const std::string_view identifier,
         concurrency::Executor& executor,
-        const score::cpp::span<const uid_t> allowed_user_ids,
+        const score::cpp::v1::span<const uid_t> allowed_user_ids,
         const ReceiverConfig& receiver_config = {},
         score::cpp::pmr::memory_resource* memory_resource = score::cpp::pmr::get_default_resource())
     {
