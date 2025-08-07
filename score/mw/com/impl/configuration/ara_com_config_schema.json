@@ -352,7 +352,9 @@
                 },
                 "applicationID": {
                     "type": "integer",
-                    "description": "Optional explicit Application-ID to be used for crash-recovery. If not given, the uid of the process will be used."
+                    "description": "Optional explicit Application-ID to be used for crash-recovery. If not given, the uid of the process will be used.",
+                    "minimum": 0,
+                    "maximum": 4294967295
                 },
                 "queue-size": {
                     "type": "object",
