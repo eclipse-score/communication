@@ -440,7 +440,7 @@ TEST_F(SampleAllocateePtrFixture, CanCompareTwoUnequalPtrs)
 
 using SampleAllocateePtrFixtureDeathTest = SampleAllocateePtrFixture;
 
-TEST_F(SampleAllocateePtrFixture, CannotDereferenceBlankPointer)
+TEST_F(SampleAllocateePtrFixtureDeathTest, CannotDereferenceBlankPointer)
 {
     // Given an invalid (empty) unit
     const auto unit = SampleAllocateePtr<std::uint8_t>{};

@@ -110,7 +110,7 @@ class SampleAllocateePtr
     {
         internal_delete();
     }
-    [[deprecated("SPP_DEPRECATION: reset shall not be used (will be also removed from user facing interface).")]] void
+    [[deprecated("SCORE_DEPRECATION: reset shall not be used (will be also removed from user facing interface).")]] void
     reset(const_pointer p)
     {
         managed_object_ = p;

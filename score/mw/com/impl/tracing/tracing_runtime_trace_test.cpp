@@ -504,7 +504,14 @@ TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_NoCachedFiled
     EXPECT_EQ(attorney.GetFailureCounter(), 0);
 }
 
-TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_GetShmRegionStartAddressFailedDeathTest)
+using TracingRuntimeTraceShmParamaterisedDeathTest = TracingRuntimeTraceShmParamaterisedFixture;
+INSTANTIATE_TEST_CASE_P(TracingRuntimeTraceShmParamaterisedDeathTest,
+                        TracingRuntimeTraceShmParamaterisedDeathTest,
+                        ::testing::Values(SkeletonEventTracePointType::SEND,
+                                          SkeletonEventTracePointType::SEND_WITH_ALLOCATE,
+                                          SkeletonFieldTracePointType::UPDATE,
+                                          SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE));
+TEST_P(TracingRuntimeTraceShmParamaterisedDeathTest, TraceShmDataNOK_GetShmRegionStartAddressFailedDeathTest)
 {
     // given a UuT which delegates to a mock ITracingRuntimeBinding in case of BindingType::kLoLa
 

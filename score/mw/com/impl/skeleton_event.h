@@ -66,7 +66,7 @@ class SkeletonEvent : public SkeletonEventBase
     /// should register itself with the skeleton on creation.
     SkeletonEvent(SkeletonBase& skeleton_base, const std::string_view event_name);
 
-    [[deprecated("SPP_DEPRECATION: Use overload with std::string_view instead")]] SkeletonEvent(
+    [[deprecated("SCORE_DEPRECATION: Use overload with std::string_view instead")]] SkeletonEvent(
         SkeletonBase& skeleton_base,
         const score::cpp::string_view event_name)
         : SkeletonEvent{skeleton_base, std::string_view{event_name.data(), event_name.size()}}

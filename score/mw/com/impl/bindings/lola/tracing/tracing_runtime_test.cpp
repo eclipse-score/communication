@@ -1061,9 +1061,9 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementFixture,
     EXPECT_EQ(actual_service_instance_element_field, expected_service_instance_element_field);
 }
 
-using TracingRuntimeConvertToTracingServiceInstanceElementDeathFixture =
+using TracingRuntimeConvertToTracingServiceInstanceElementDeathTest =
     TracingRuntimeConvertToTracingServiceInstanceElementFixture;
-TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathFixture,
+TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathTest,
        CallingConvertFunctionOnElementWithoutInstanceIdTerminates)
 {
     const auto service_identifier_type =
@@ -1093,7 +1093,7 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathFixture,
                  ".*");
 }
 
-TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathFixture,
+TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathTest,
        CallingConvertFunctionOnElementWithInvalidElementTypeTerminates)
 {
     const auto service_identifier_type =

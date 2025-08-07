@@ -161,8 +161,8 @@ using LolaProxyEventGetNumNewSamplesAvailableFixture = LolaProxyEventFixture<T>;
 TYPED_TEST_SUITE(LolaProxyEventGetNumNewSamplesAvailableFixture, MyTypes, );
 
 template <typename T>
-using LolaProxyEventDeathFixture = LolaProxyEventFixture<T>;
-TYPED_TEST_SUITE(LolaProxyEventDeathFixture, MyTypes, );
+using LolaProxyEventDeathTest = LolaProxyEventFixture<T>;
+TYPED_TEST_SUITE(LolaProxyEventDeathTest, MyTypes, );
 
 TYPED_TEST(LolaProxyEventGetNewSamplesFixture, CallsReceiverForEachAccessibleSample)
 {
@@ -684,7 +684,7 @@ TYPED_TEST(LolaProxyEventFixture,
     EXPECT_EQ(new_subscription_state, SubscriptionState::kSubscribed);
 }
 
-TYPED_TEST(LolaProxyEventDeathFixture, FailOnEventNotFound)
+TYPED_TEST(LolaProxyEventDeathTest, FailOnEventNotFound)
 {
     const ElementFqId bad_element_fq_id{0xcdef, 0x6, 0x10, ServiceElementType::EVENT};
     const std::string bad_event_name{"BadEventName"};

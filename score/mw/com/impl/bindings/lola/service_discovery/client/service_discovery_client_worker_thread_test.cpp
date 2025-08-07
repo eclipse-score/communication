@@ -147,7 +147,8 @@ TEST_F(ServiceDiscoveryClientWorkerThreadFixture, ClosesInotifyInstanceOnDestruc
     barrier.get_future().wait();
 }
 
-TEST_F(ServiceDiscoveryClientWorkerThreadFixture, BailsOutOnInotifyQueueOverflow)
+using ServiceDiscoveryClientWorkerThreadDeathTest = ServiceDiscoveryClientWorkerThreadFixture;
+TEST_F(ServiceDiscoveryClientWorkerThreadDeathTest, BailsOutOnInotifyQueueOverflow)
 {
     const auto event_vector = CreateEventVectorWithEventMasks({IN_Q_OVERFLOW});
 
@@ -295,7 +296,7 @@ TEST_F(ServiceDiscoveryClientWorkerThreadFixture,
     event_read_with_deletion_event_barrier.get_future().wait();
 }
 
-TEST_F(ServiceDiscoveryClientWorkerThreadFixture, DeletingServiceSearchDirectoryCausesWorkerThreadToTerminate)
+TEST_F(ServiceDiscoveryClientWorkerThreadDeathTest, DeletingServiceSearchDirectoryCausesWorkerThreadToTerminate)
 {
     const int watch_descriptor{10U};
     const auto vector_with_delete_event = CreateEventVectorWithEventMasks({IN_DELETE}, {watch_descriptor});

@@ -197,7 +197,8 @@ TEST_F(ServiceInstanceDeploymentFixture, CanGetBlankBindingFromServiceInstanceDe
     EXPECT_EQ(score::cpp::blank{}, returned_service_instance_deployment_binding);
 }
 
-TEST_F(ServiceInstanceDeploymentFixture,
+using ServiceInstanceDeploymentDeathTest = ServiceInstanceDeploymentFixture;
+TEST_F(ServiceInstanceDeploymentDeathTest,
        GettingLolaBindingFromServiceInstanceDeploymentNotContainingLolaBindingTerminates)
 {
     // Given a ServiceInstanceDeployment containing a SomeIp binding
@@ -212,7 +213,7 @@ TEST_F(ServiceInstanceDeploymentFixture,
         ".*");
 }
 
-TEST_F(ServiceInstanceDeploymentFixture,
+TEST_F(ServiceInstanceDeploymentDeathTest,
        GettingSomeIpBindingFromServiceInstanceDeploymentNotContainingSomeIpBindingTerminates)
 {
     // Given a ServiceInstanceDeployment containing a Lola binding
@@ -227,7 +228,7 @@ TEST_F(ServiceInstanceDeploymentFixture,
         ".*");
 }
 
-TEST_F(ServiceInstanceDeploymentFixture,
+TEST_F(ServiceInstanceDeploymentDeathTest,
        GettingBlankBindingFromServiceInstanceDeploymentNotContainingBlankBindingTerminates)
 {
     // Given a ServiceInstanceDeployment containing a SomeIp binding
@@ -240,7 +241,7 @@ TEST_F(ServiceInstanceDeploymentFixture,
     EXPECT_DEATH(score::cpp::ignore = GetServiceInstanceDeploymentBinding<score::cpp::blank>(service_instance_deployment), ".*");
 }
 
-TEST(ServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
+TEST_F(ServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
 {
     const ServiceInstanceDeployment unit{kDummyService,
                                          LolaServiceInstanceDeployment{MakeLolaServiceInstanceDeployment()},

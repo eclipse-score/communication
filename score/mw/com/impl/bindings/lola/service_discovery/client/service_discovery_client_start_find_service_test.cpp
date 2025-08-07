@@ -113,8 +113,8 @@ TEST_F(ServiceDiscoveryClientStartFindServiceFixture, CallingStartFindServiceFor
     EXPECT_TRUE(start_find_service_result.has_value());
 }
 
-using ServiceDiscoveryClientStartFindServiceDeathFixture = ServiceDiscoveryClientStartFindServiceFixture;
-TEST_F(ServiceDiscoveryClientStartFindServiceDeathFixture, CallingStartFindServiceWithInvalidQualityTypeTerminates)
+using ServiceDiscoveryClientStartFindServiceDeathTest = ServiceDiscoveryClientStartFindServiceFixture;
+TEST_F(ServiceDiscoveryClientStartFindServiceDeathTest, CallingStartFindServiceWithInvalidQualityTypeTerminates)
 {
     const ConfigurationStore config_store_invalid_quality_type{
         kInstanceSpecifierString,
@@ -140,7 +140,7 @@ TEST_F(ServiceDiscoveryClientStartFindServiceDeathFixture, CallingStartFindServi
     EXPECT_DEATH(test_function(), ".*");
 }
 
-TEST_F(ServiceDiscoveryClientStartFindServiceDeathFixture, CallingStartFindServiceWithUnknownQualityTypeTerminates)
+TEST_F(ServiceDiscoveryClientStartFindServiceDeathTest, CallingStartFindServiceWithUnknownQualityTypeTerminates)
 {
     const auto unknown_quality_type = static_cast<QualityType>(100U);
     const ConfigurationStore config_store_unknown_quality_type{

@@ -116,8 +116,8 @@ using ProxyEventBaseUnsubscribeFixture = ProxyEventBaseFixture<T>;
 TYPED_TEST_SUITE(ProxyEventBaseUnsubscribeFixture, MyTypes, );
 
 template <typename T>
-using ProxyEventBaseUnsubscribeDeathFixture = ProxyEventBaseFixture<T>;
-TYPED_TEST_SUITE(ProxyEventBaseUnsubscribeDeathFixture, MyTypes, );
+using ProxyEventBaseUnsubscribeDeathTest = ProxyEventBaseFixture<T>;
+TYPED_TEST_SUITE(ProxyEventBaseUnsubscribeDeathTest, MyTypes, );
 
 template <typename T>
 using ProxyEventBaseSubscribeFixture = ProxyEventBaseFixture<T>;
@@ -311,7 +311,7 @@ TYPED_TEST(ProxyEventBaseUnsubscribeFixture, CallingUnsubscribeWhileNotSubscribe
     this->service_element_->Unsubscribe();
 }
 
-TYPED_TEST(ProxyEventBaseUnsubscribeDeathFixture, CallingUnsubscribeWhileASampleIsStillReferencedTerminates)
+TYPED_TEST(ProxyEventBaseUnsubscribeDeathTest, CallingUnsubscribeWhileASampleIsStillReferencedTerminates)
 {
     const auto CallUnsubscribeWhileSampleIsStillAllocated = [this]() {
         // Given a Service Element, that is connected to a mock binding

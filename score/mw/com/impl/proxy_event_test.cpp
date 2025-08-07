@@ -253,7 +253,10 @@ TYPED_TEST(ProxyEventFixture, SamplePtrLimitsAreEnforced)
     EXPECT_EQ(num_callback_calls, *get_result_2);
 }
 
-TYPED_TEST(ProxyEventFixture, DieOnUnsubscribingWhileHoldingSamplePtrs)
+template <typename T>
+using ProxyEventDeathTest = ProxyEventFixture<T>;
+TYPED_TEST_SUITE(ProxyEventDeathTest, MyTypes, );
+TYPED_TEST(ProxyEventDeathTest, DieOnUnsubscribingWhileHoldingSamplePtrs)
 {
     using Base = ProxyEventFixture<TypeParam>;
 
@@ -476,7 +479,7 @@ TEST(ProxyEventTest, SamplePtrsToSlotDataAreConst)
     EXPECT_EQ(get_result.value(), 1U);
 }
 
-TEST(ProxyEventTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
+TEST(ProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
 {
     using SampleType = std::uint16_t;
     const std::size_t max_num_samples{1};

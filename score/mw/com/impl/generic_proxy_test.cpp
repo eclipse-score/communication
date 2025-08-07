@@ -448,8 +448,8 @@ TEST_F(GenericProxyFixture, GenericProxyWillLogErrorMessageForEventsProvidedInCo
     EXPECT_TRUE(log_output.find(text_snippet, text_location) != log_output.npos);
 }
 
-using GenericProxyDeathFixture = GenericProxyFixture;
-TEST_F(GenericProxyDeathFixture, FillingEventMapWithDuplicateEventNamesWillTerminate)
+using GenericProxyDeathTest = GenericProxyFixture;
+TEST_F(GenericProxyDeathTest, FillingEventMapWithDuplicateEventNamesWillTerminate)
 {
     RecordProperty("Verifies", "SCR-15603826");
     RecordProperty("Description",

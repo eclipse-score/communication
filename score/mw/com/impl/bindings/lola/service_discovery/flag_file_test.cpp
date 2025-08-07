@@ -320,7 +320,8 @@ TEST_F(FlagFileTest, GivenCreateDirectoryFailsRepeatedlyWhenMakeThenReturnsError
     EXPECT_EQ(path.error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(FlagFileTest, GivenFileRemoveFailWhenMakeThenWillDie)
+using FlagFileDeathTest = FlagFileTest;
+TEST_F(FlagFileDeathTest, GivenFileRemoveFailWhenMakeThenWillDie)
 {
     // Given Remove returns error
     ON_CALL(filesystem_factory_fake_.GetStandard(), Remove(_))

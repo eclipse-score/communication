@@ -244,8 +244,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture, FindServiceShouldRet
     EXPECT_EQ(handles_result.error(), expected_error_code);
 }
 
-using ServiceDiscoveryFindServiceInstanceSpecifierDeathFixture = ServiceDiscoveryFindServiceInstanceSpecifierFixture;
-TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathFixture, FindServiceTerminatesIfNoInstancesCanBeResolved)
+using ServiceDiscoveryFindServiceInstanceSpecifierDeathTest = ServiceDiscoveryFindServiceInstanceSpecifierFixture;
+TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTerminatesIfNoInstancesCanBeResolved)
 {
     RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
     RecordProperty("Description", "FindService terminates if InstanceSpecifier cannot be resolved.");
@@ -265,7 +265,7 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathFixture, FindServiceTerm
     EXPECT_DEATH(score::cpp::ignore = unit_->FindService(instance_specifier_), ".*");
 }
 
-TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathFixture, FindServiceTerminatesIfBindingRuntimeIsNull)
+TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTerminatesIfBindingRuntimeIsNull)
 {
     // Given a ServiceDiscoveryClient and a service which contains 1 instance
     WithAServiceContainingOneInstances();

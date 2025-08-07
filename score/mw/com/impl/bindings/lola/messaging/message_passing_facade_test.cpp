@@ -187,7 +187,8 @@ TEST_F(MessagePassingFacadeFixture, CreationQMAndAsil)
     PrepareFacade(true);
 }
 
-TEST_F(MessagePassingFacadeFixture, ListeningFailure)
+using MessagePassingFacadeDeathTest = MessagePassingFacadeFixture;
+TEST_F(MessagePassingFacadeDeathTest, ListeningFailure)
 {
     // we expect a death/termination in case we create a Facade for QM with error/failure on message_queue listening
     // call.

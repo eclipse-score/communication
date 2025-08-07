@@ -981,7 +981,7 @@ TEST(SkeletonFieldTest, MovingAssigningSkeletonUpdatesFieldMapReference)
     EXPECT_EQ(&field, &unit2.my_dummy_field_);
 }
 
-TEST(SkeletonFieldTest, UpdateWithInvalidFieldNameTriggersTermination)
+TEST(SkeletonFieldDeathTest, UpdateWithInvalidFieldNameTriggersTermination)
 {
     RuntimeMockGuard runtime_mock_guard{};
     ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
