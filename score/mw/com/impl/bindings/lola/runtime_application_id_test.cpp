@@ -23,13 +23,24 @@
 using namespace score::mw::com::impl;
 using namespace score::mw::com::impl::lola;
 using ::testing::Return;
+using ::testing::NiceMock;
 using ::testing::ReturnRef;
+using ::testing::_;
 
 class LolaRuntimeApplicationIdTest : public ::testing::Test
 {
   protected:
+    LolaRuntimeApplicationIdTest()
+    {
+        // Set a default action for OS calls that happen during lola::Runtime
+        // construction but are not relevant to the logic being tested here.
+        // This avoids GMock warnings about uninteresting calls.
+        ON_CALL(*unistd_mock_guard_, getpid()).WillByDefault(Return(12345));
+        ON_CALL(*unistd_mock_guard_, readlink(_, _, _)).WillByDefault(Return(-1));
+    }
+
     score::concurrency::ThreadPool executor_{1U};
-    score::os::MockGuard<score::os::UnistdMock> unistd_mock_guard_{};
+    score::os::MockGuard<NiceMock<score::os::UnistdMock>> unistd_mock_guard_{};
 };
 
 TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdUsesConfiguredValueWhenPresent)
@@ -62,4 +73,36 @@ TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdFallsBackToProcessUidWhenNo
 
     // Then the process UID is used as a fallback
     EXPECT_EQ(lola_runtime.GetApplicationId(), process_uid);
+}
+
+TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdHandlesZeroValue)
+{
+    // Given a configuration with an applicationID of 0
+    const uid_t configured_id = 0;
+    GlobalConfiguration global_config;
+    global_config.SetApplicationId(configured_id);
+    Configuration config({}, {}, std::move(global_config), {});
+
+    // When the LoLa Runtime is constructed
+    Runtime lola_runtime(config, executor_, nullptr);
+
+    // Then the applicationID is correctly set to 0
+    EXPECT_EQ(lola_runtime.GetApplicationId(), configured_id);
+}
+
+TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdHandlesMaxValue)
+{
+    // Given a configuration with the maximum uint32_t value.
+    // This also covers the case where a negative value like -1 is
+    // provided in the JSON config, which is cast to UINT32_MAX.
+    const uid_t configured_id = std::numeric_limits<std::uint32_t>::max();
+    GlobalConfiguration global_config;
+    global_config.SetApplicationId(configured_id);
+    Configuration config({}, {}, std::move(global_config), {});
+
+    // When the LoLa Runtime is constructed
+    Runtime lola_runtime(config, executor_, nullptr);
+
+    // Then the applicationID is correctly set to the maximum value
+    EXPECT_EQ(lola_runtime.GetApplicationId(), configured_id);
 }

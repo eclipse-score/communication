@@ -422,6 +422,7 @@ cc_library(
     implementation_deps = ["@score-baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [],
 )
 
 cc_library(
