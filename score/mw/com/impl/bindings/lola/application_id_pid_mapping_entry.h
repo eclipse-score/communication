@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_UID_PID_MAPPING_ENTRY_H
-#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_UID_PID_MAPPING_ENTRY_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_APPLICATION_ID_PID_MAPPING_ENTRY_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_APPLICATION_ID_PID_MAPPING_ENTRY_H
 
 #include <sys/types.h>
 #include <atomic>
@@ -21,7 +21,7 @@
 namespace score::mw::com::impl::lola
 {
 
-class UidPidMappingEntry
+class ApplicationIdPidMappingEntry
 {
   public:
     enum class MappingEntryStatus : std::uint16_t
@@ -42,16 +42,16 @@ class UidPidMappingEntry
     /// \brief Load key atomically and return its parts as a pair.
     /// \return parts, which make up the key
     std::pair<MappingEntryStatus, uid_t> GetStatusAndUidAtomic() noexcept;
-    void SetStatusAndUidAtomic(MappingEntryStatus status, uid_t uid) noexcept;
-    static key_type CreateKey(MappingEntryStatus status, uid_t uid) noexcept;
+    void SetStatusAndUidAtomic(MappingEntryStatus status, uid_t application_id) noexcept;
+    static key_type CreateKey(MappingEntryStatus status, uid_t application_id) noexcept;
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". There are no class invariants to maintain so member variable can be safely accessed directly.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    std::atomic<key_type> key_uid_status_{};
+    std::atomic<key_type> key_application_id_status_{};
     // coverity[autosar_cpp14_m11_0_1_violation]
     pid_t pid_{};
 };
 
 }  // namespace score::mw::com::impl::lola
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_UID_PID_MAPPING_ENTRY_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_APPLICATION_ID_PID_MAPPING_ENTRY_H
