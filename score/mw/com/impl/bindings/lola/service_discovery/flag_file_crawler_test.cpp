@@ -419,8 +419,7 @@ TEST_F(FlagFileCrawlerCrawlAndWatchSpecificInstanceFixture, AddsWatchOnlyForInst
     // Expecting that a watch will NOT be added on the service ID path
     const auto service_search_path = GetServiceIdSearchPath(kConfigStoreQm1).Native();
     EXPECT_CALL(inotify_instance_,
-                AddWatch(score::cpp::string_view{service_search_path},
-                         os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
+                AddWatch(service_search_path, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
         .Times(0);
 
     // and expecting that a watch will be added on the instance ID path
@@ -441,8 +440,7 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, AddsWatchForServiceId)
     // Expecting that a watch will be added on the service ID path
     const auto service_search_path = GetServiceIdSearchPath(kConfigStoreQmAny).Native();
     EXPECT_CALL(inotify_instance_,
-                AddWatch(score::cpp::string_view{service_search_path},
-                         os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete));
+                AddWatch(service_search_path, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete));
 
     // When calling CrawlAndWatch for any instance ID
     score::cpp::ignore = flag_file_crawler_->CrawlAndWatch(kConfigStoreQmAny.GetEnrichedInstanceIdentifier());
@@ -458,14 +456,12 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, AddsWatchForExistingInsta
     // Expecting that a watch will be added on the service ID path
     const auto service_search_path = GetServiceIdSearchPath(kConfigStoreQmAny).Native();
     EXPECT_CALL(inotify_instance_,
-                AddWatch(score::cpp::string_view{service_search_path},
-                         os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
+                AddWatch(service_search_path, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
         .WillOnce(Return(kExpectedDescriptor1));
 
     // and expecting that a watch will be added on the existing instance ID path
     EXPECT_CALL(inotify_instance_,
-                AddWatch(score::cpp::string_view{instance_search_path},
-                         os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
+                AddWatch(instance_search_path, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
         .WillOnce(Return(kExpectedDescriptor1));
 
     score::cpp::ignore = flag_file_crawler_->CrawlAndWatch(kConfigStoreQmAny.GetEnrichedInstanceIdentifier());
@@ -498,8 +494,7 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, ReturnsAddedServiceIdWatc
     // Given that a watch will be added on the service ID path
     const auto service_search_path = GetServiceIdSearchPath(kConfigStoreQmAny).Native();
     ON_CALL(inotify_instance_,
-            AddWatch(score::cpp::string_view{service_search_path},
-                     os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
+            AddWatch(service_search_path, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
         .WillByDefault(Return(kExpectedDescriptor1));
 
     // When calling CrawlAndWatch for any instance ID
@@ -523,15 +518,13 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, ReturnsAddedExistingInsta
     // and that a watch will be added on the service ID path which returns a valid descriptor
     const auto service_search_path = GetServiceIdSearchPath(kConfigStoreQmAny).Native();
     ON_CALL(inotify_instance_,
-            AddWatch(score::cpp::string_view{service_search_path},
-                     os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
+            AddWatch(service_search_path, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
         .WillByDefault(Return(kExpectedDescriptor1));
 
     // and that a watch will be added on the existing instance ID path which returns a different valid descriptor
     const auto instance_search_path = GetInstanceIdSearchPath(kConfigStoreQm1).Native();
     ON_CALL(inotify_instance_,
-            AddWatch(score::cpp::string_view{instance_search_path},
-                     os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
+            AddWatch(instance_search_path, os::Inotify::EventMask::kInCreate | os::Inotify::EventMask::kInDelete))
         .WillByDefault(Return(kExpectedDescriptor2));
 
     // When calling CrawlAndWatch for any instance iD
