@@ -40,7 +40,7 @@ constexpr auto kServiceKey = "service";
 // False positive, we first check if json_result has value before we call value() on it. I.e. no throw through
 // bad_variant_access can occur.
 // coverity[autosar_cpp14_a15_5_3_violation]
-QualityType GetQualityTypeFromJson(const score::json::Object& json_object, score::cpp::string_view key) noexcept
+QualityType GetQualityTypeFromJson(const score::json::Object& json_object, std::string_view key) noexcept
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());

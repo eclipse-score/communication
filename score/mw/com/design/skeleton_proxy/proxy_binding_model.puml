@@ -1,0 +1,311 @@
+@startuml "ProxyBindingModel"
+title "Proxy Binding Model"
+
+' Error domain classes
+abstract class "score::result::ErrorDomain" as ScoreResultErrorDomain {
+  +MessageFor(code : const score::result::ErrorCode&) const = 0 : score::cpp::string_view
+}
+
+class "ComErrorDomain" {
+  +MessageFor(code : const score::result::ErrorCode&) const = 0 : score::cpp::string_view
+}
+
+class "<< Stereotype >>\nglobal function" as GlobalFunction {
+  +MakeError(code : ComErrc, message : score::StringLiteral) : score::result::Error
+}
+
+note top of ScoreResultErrorDomain
+  Association of Error class is deliberately not shown as it is used in multiple classes to handle error cases
+end note
+
+' Proxy classes
+class "score::mw::com::impl::HandleType" as ScoreMwComImplHandleType {
+  -indentifier_: InstanceIdentifier
+  --
+  +operator==(const HandleType& other): bool
+  +operator<(const HandleType& other): bool
+  +GetInstanceId(): InstanceIdentifier&
+  +GetServiceInstanceDeployment(): ServiceInstanceDeployment&
+}
+
+abstract class "score::mw::com::impl::ProxyBase" as ScoreMwComImplProxyBase {
+  -proxy_binding_ : std::unique_ptr<ProxyBinding>
+  -handle_ : HandleType
+  --
+  using HandleType = score::mw::com::impl::HandleType
+
+  +ProxyBase(std::unique_ptr<ProxyBinding>, HandleType);
+  +{static} FindService(InstanceSpecifier): Result<ServiceHandleContainer<HandleType>>
+  +{static} FindService(InstanceIdentifier): Result<ServiceHandleContainer<HandleType>>
+  +{static} StartFindService(FindServiceHandler<HandleType>, InstanceSpecifier): Result<FindServiceHandle>
+  +{static} StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier): Result<FindServiceHandle>
+  +{static} StopFindService(FindServiceHandle): ResultBlank
+
+  +GetHandle() : const HandleType&
+  --
+  Note: ProxyBase is not copyable but moveable
+}
+
+abstract class "ProxyBinding" as ProxyBinding {
+}
+
+class "DummyProxy\n{{generated}}" as DummyProxy {
+  using DummyProxy::HandleType = HandleType
+
+  +DummyProxy(const HandleType &handle)
+
+  +DummyEvent : events::DummyEvent // using events::DummyEvent = ProxyEvent<SampleType>
+  +DummyFields : fields::Dummyfields // using fields::DummyField = ProxyFields<SampleType>
+}
+
+class "ProxyBindingFactory" {
+  +{static} Create(HandleType handle): std::unique_ptr<ProxyBinding>
+  +{static} FindService(InstanceIdentifier) : std::optional<HandleType>
+}
+
+class "lola::Proxy" as LolaProxy {
+  +{static} Create(const LolaServiceInstanceDeployment& shm_binding, const LolaServiceTypeDeployment& service_deployment, QualityType quality_type) : Result<Proxy>
+  +Proxy(Proxy&&)
+  +GetServiceHandles(instance_identifier : InstanceIdentifier) : score::Result<std::vector<HandleType>>
+  +GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl*
+  +GetRawDataStorage(element_fq_id : const ElementFqId) : void*
+  +GetQualityType() : QualityType
+  +GetSourcePid() : pid_t
+}
+
+class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
+  +ProxyEventBase(std::unique_ptr<ProxyEventBindingBase> proxy_event_binding)
+
+  +Subscribe(size_t max_sample_count): ResultBlank
+  +GetSubscriptionState() : SubscriptionState
+  +Unsubscribe(): void
+  +GetFreeSampleCount(): Result<size_t>
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
+  +UnsetReceiveHandler() : ResultBlank
+  +IsBindingValid() : bool
+}
+
+class "score::mw::com::impl::ProxyEvent<SampleType>" as ScoreMwComImplProxyEventTemplate {
+  +ProxyEvent(ProxyBase& base, const score::cpp::string_view event_name)
+
+  template <typename F>
+  +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
+
+  --
+  -GetTypedEventBinding() : ProxyEventBinding<SampleType>*
+}
+
+abstract class "ProxyEventBindingBase" as ProxyEventBindingBase {
+  +{abstract} Subscribe(size_t maxSampleCount) = 0: void
+  +{abstract} GetSubscriptionState() = 0: SubscriptionState
+  +{abstract} Unsubscribe() = 0: void
+  +{abstract} SetReceiveHandler(EventReceiveHandler handler) = 0: void
+  +{abstract} UnsetReceiveHandler() = 0: void
+  +{abstract} GetNumNewSamplesAvailable(): Result<std::size_t>
+}
+
+abstract class "ProxyEventBinding<SampleType>" as ProxyEventBindingTemplate {
+  using Callback = score::cpp::callback<void(SamplePtr<SampleType>) noexcept>
+
+  +{abstract} GetNewSamples(Callback&&, TrackerGuardFactory&) = 0: Result<size_t>
+}
+
+class "lola::ProxyEvent<SampleType>" as LolaProxyEventTemplate {
+  +ProxyEvent(lola::Proxy& parent)
+  +GetNewSamples(Callback&&, TrackerGuardFactory&): Result<size_t>
+  --
+  -common_dispatch_ : lola::ProxyEventCommon
+  --
+  Notes:
+  Dispatches all calls to functions in ProxyEventBindingBase interface to
+  ProxyEventCommon
+}
+
+class "lola::ProxyEventCommon" as LolaProxyEventCommon {
+  -element_fq_id_: ElementFqId
+  -parent_: lola::Proxy&
+  -subscription_event_state_machine_: std::shared_ptr<SubscriptionStateMachine>
+  -slot_collector_: score::cpp::optional<SlotCollector>
+  --
+  +ProxyEventCommon(lola::Proxy& parent, ElementFqId)
+  +Subscribe(size_t max_sample_count): void
+  +Unsubscribe(): void
+  +GetSubscriptionState() : SubscriptionState
+  +SetReceiveHandler(EventReceiveHandler handler) : void
+  +UnsetReceiveHandler(EventReceiveHandler handler) : void
+  +GetEventSourcePid() : pid_t
+  +GetElementFQId() : ElementFqId
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +GetNewSamplesSlotIndices(size_t max_count):
+   pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+  --
+  Notes:
+  SlotCollector is instantiated by the SubscriptionStateMachine when it enters the
+  Subscribed state. It is cleared if it subsequently leaves the Subscribed state.
+  All subscription operations are implemented in the separate class
+  SubscriptionStateMachine and the associated states.
+}
+
+class "lola::SubscriptionStateMachine" as LolaSubscriptionStateMachine {
+  Note.
+  State machine that manages subscriptions to a ProxyEvent.
+  Details about the state machine can be found in
+  proxy_event_state_machine.uxf.
+}
+
+class "mw::com::impl::ProxyField<SampleType>" as MwComImplProxyFieldTemplate {
+  +Subscribe(size_t max_sample_count): ResultBlank
+  +GetSubscriptionState() : SubscriptionState
+  +Unsubscribe(): void
+  +GetFreeSampleCount(): Result<size_t>
+  +GetNumNewSamplesAvailable(): Result<std::size_t>
+  +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
+  +UnsetReceiveHandler() : ResultBlank
+  +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
+  +Get(): Future<SampleType>
+  +Set(const SampleType& value): Future<SampleType>
+  --
+  -event_dispatch_ : impl::ProxyEvent<SampleType>
+  -service_method_dispatch_get_<void , Future<SampleType>>: impl::Method
+  -service_method_dispatch_set_<SampleType, Future<SampleType>>: impl::Method
+}
+
+class "mw::com::impl::ProxyMethod<ServiceCallArgTypes>" as MwComImplProxyMethodTemplate {
+  +Call(ServiceCallArgTypes in, ServiceCallArgTypes out)
+}
+
+abstract class "ProxyMethodBindings<ServiceCallArgTypes>" as ProxyMethodBindingsTemplate {
+  +{abstract} Call(ServiceCallArgTypes in, ServiceCallArgTypes out) = 0
+}
+
+class "lola::ProxyMethod<ServiceCallArgTypes>" as LolaProxyMethodTemplate {
+  +Call(const InArgsT&, OutArgsT&)
+}
+
+class "ProxyEventBindingFactory" {
+  +{static} Create<SampleType>(ProxyBase& parent, score::cpp::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+}
+
+class "ProxyFieldBindingFactory" {
+  +{static} CreateEventBinding<SampleType>(ProxyBase& parent, score::cpp::string_view field_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+}
+
+class "SampleReferenceTracker" {
+  +SampleReferenceTracker()
+  +SampleReferenceTracker(size_t max_num_samples)
+  +GetNumAvailableSamples(): size_t
+  +Allocate(size_t count) : TrackerGuardFactory
+  +Reset(size_t new_max_count) : void
+  +IsUsed() : bool
+}
+
+class "TrackerGuardFactory" {
+  -tracker_: SampleReferenceTracker&
+  --
+  +GetNumAvailableGuards() : std::size_t
+  +TakeGuard() : score::cpp::optional<SampleReferenceGuard>
+  --
+  -TrackerGuardFactory(SampleReferenceTracker&, std::size_t)
+}
+
+class "SampleReferenceGuard" {
+  -tracker_: SampleReferenceTracker*
+  --
+  <u>Notes:</u>
+  SampleReferenceGuard is
+  not movable or copyable.
+}
+
+class "SamplePtr<SampleType>" as SamplePtrTemplate {
+  using pointer = const SampleType*
+  binding_sample_ptr_: std::variant<score::cpp::blank,
+      lola::SamplePtr<SampleType>, mock_binding::SamplePtr<SampleType>>
+  reference_guard_: SampleReferenceGuard
+  --
+  + SamplePtr(binding_sample_ptr : SamplePtrType&&,reference_guard : SampleReferenceGuard)
+  +get() : pointer
+  +Get() : pointer
+  +Swap( other : SamplePtr&) : void
+  +Reset(other :SamplePtr) : void
+  +operator*() : const SampleType&
+  +operator->() : pointer
+}
+
+class "lola::SamplePtr<SampleType>" as LolaSamplePtrTemplate {
+  using pointer = const SampleType*
+  --
+  -managed_object_: pointer
+  -event_slot_index_: EventDataControl::SlotIndexType
+  -event_data_control_: EventDataControl*
+  --
+  get() : pointer
+  operator*() : const SampleType&
+  operator->() : pointer
+}
+
+class "lola::SlotCollector" as LolaSlotCollector {
+  +using SlotIndexVector = std::vector<EventDataControl::SlotIndexType>;
+
+  --
+  -event_data_control_: EventDataControl&
+  --
+  -ProxyEventClient(EventDataControl&, const std::size_t max_slots)
+  +GetNumNewSamplesAvailable(): size_t
+  +GetNewSamplesSlotIndices(size_t max_count):
+   pair<SlotIndexVector::const_reverse_iterator, SlotIndexVector::const_reverse_iterator>
+}
+
+class "ProxyBaseView" {
+  --
+  +ProxyBaseView(proxy_base : ProxyBase&)
+  +GetImpl() : ProxyBinding&
+}
+
+class "score::memory::shared::SharedMemoryFactory()" as shmfactory {
+}
+
+' Relationships
+LolaProxy --> shmfactory #darkorange;text:darkorange : uses for openening shared_mem_objects
+ScoreResultErrorDomain <|-- "ComErrorDomain"
+"ComErrorDomain" <.. GlobalFunction : uses
+
+ScoreMwComImplHandleType <.down. ScoreMwComImplProxyBase #blue;text:blue : uses
+"ProxyBindingFactory" <.up. ScoreMwComImplProxyBase #blue;text:blue : uses
+ScoreMwComImplProxyBase <|-d- DummyProxy
+ScoreMwComImplProxyBase *-right- ProxyBinding
+
+"ProxyBindingFactory" .down.> ProxyBinding #red;text:red : <<creates>>
+ProxyBinding <|-- LolaProxy
+ProxyBaseView .up.> ScoreMwComImplProxyBase #green;text:green : <<friend>>
+DummyProxy *-- ScoreMwComImplProxyEventTemplate : 0..n
+DummyProxy *-- MwComImplProxyFieldTemplate : 0..n
+ScoreMwComImplProxyEventBase <|-- ScoreMwComImplProxyEventTemplate
+ScoreMwComImplProxyEventBase *-- ProxyEventBindingBase
+ScoreMwComImplProxyEventTemplate ..> SamplePtrTemplate #red;text:red : <<creates>>
+ScoreMwComImplProxyEventTemplate ..> "ProxyEventBindingFactory" #blue;text:blue : uses
+ScoreMwComImplProxyEventTemplate *-- SampleReferenceTracker
+ScoreMwComImplProxyEventTemplate --* MwComImplProxyFieldTemplate : event_dispatch_
+LolaProxy --o LolaProxyEventCommon
+ProxyEventBindingBase <|-- ProxyEventBindingTemplate
+"ProxyEventBindingFactory" ..> ProxyEventBindingTemplate #red;text:red : <<creates>>
+"ProxyFieldBindingFactory" ..> ProxyEventBindingTemplate #red;text:red : <<creates>>
+ProxyEventBindingTemplate <|-- LolaProxyEventTemplate
+MwComImplProxyFieldTemplate *-- "0..2" MwComImplProxyMethodTemplate : service_method_dispatch_
+ProxyMethodBindingsTemplate --* "1" MwComImplProxyMethodTemplate
+LolaProxyMethodTemplate --|> ProxyMethodBindingsTemplate
+MwComImplProxyFieldTemplate ..> "ProxyFieldBindingFactory" #blue;text:blue : uses
+LolaProxyEventTemplate ..> "SampleReferenceTracker" #blue;text:blue : uses
+"TrackerGuardFactory" o-- "SampleReferenceTracker"
+"TrackerGuardFactory" <.. "SampleReferenceTracker" #red;text:red : <<creates>>
+"SampleReferenceGuard" o-- "SampleReferenceTracker"
+"TrackerGuardFactory" ..> "SampleReferenceGuard" #red;text:red : <<creates>>
+SamplePtrTemplate *-- "SampleReferenceGuard"
+SamplePtrTemplate --* LolaSamplePtrTemplate
+ProxyBaseView --* ProxyEventBindingFactory
+LolaProxyEventTemplate *-- LolaProxyEventCommon : common_dispatch_
+LolaProxyEventCommon *-- LolaSubscriptionStateMachine
+LolaProxyEventCommon *-- LolaSlotCollector : slot_collector_
+LolaSubscriptionStateMachine ..> LolaSlotCollector #red;text:red : <<creates>>
+
+@enduml

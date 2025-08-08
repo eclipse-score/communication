@@ -21,9 +21,9 @@
 #include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <score/overload.hpp>
-#include <score/string_view.hpp>
 
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -41,7 +41,7 @@ class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory<Samp
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
     std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(
         ProxyBase& parent,
-        const score::cpp::string_view field_name) noexcept override;
+        const std::string_view field_name) noexcept override;
 };
 
 template <typename SampleType>
@@ -55,7 +55,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyFieldBindingFactoryImpl<SampleType>::CreateEventBinding(
     ProxyBase& parent,
-    const score::cpp::string_view field_name) noexcept
+    const std::string_view field_name) noexcept
 {
     return CreateProxyServiceElement<ProxyEventBinding<SampleType>,
                                      lola::ProxyEvent<SampleType>,

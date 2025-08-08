@@ -27,10 +27,10 @@
 
 #include <score/assert.hpp>
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 #include <score/utility.hpp>
 
 #include <mutex>
+#include <string_view>
 
 namespace score::mw::com::impl::lola
 {
@@ -49,7 +49,7 @@ class ProxyEventCommon final
     friend class ProxyEventCommonAttorney;
 
   public:
-    ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_id, const score::cpp::string_view event_name);
+    ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name);
     ~ProxyEventCommon();
 
     ProxyEventCommon(const ProxyEventCommon&) = delete;
@@ -108,7 +108,7 @@ class ProxyEventCommon final
 
     Proxy& parent_;
     ElementFqId event_fq_id_;
-    const score::cpp::string_view event_name_;
+    const std::string_view event_name_;
     TransactionLogId transaction_log_id_;
     EventControl& event_control_;
     SubscriptionStateMachine subscription_event_state_machine_;

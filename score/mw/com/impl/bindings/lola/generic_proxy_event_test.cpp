@@ -17,8 +17,6 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 
-#include "score/memory/any_string_view.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <limits>
@@ -37,8 +35,7 @@ class LolaGenericProxyEventFixture : public LolaProxyEventResources
   public:
     LolaGenericProxyEventFixture& WithAGenericProxyEvent(const ElementFqId element_fq_id, std::string_view event_name)
     {
-        generic_proxy_event_ =
-            std::make_unique<GenericProxyEvent>(*proxy_, element_fq_id, memory::AnyStringView{event_name});
+        generic_proxy_event_ = std::make_unique<GenericProxyEvent>(*proxy_, element_fq_id, event_name);
         return *this;
     }
 

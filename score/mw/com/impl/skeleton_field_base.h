@@ -19,10 +19,9 @@
 #include "score/result/result.h"
 #include "score/mw/log/logging.h"
 
-#include <score/string_view.hpp>
-
 #include <functional>
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -39,7 +38,7 @@ class SkeletonFieldBase
 
   public:
     SkeletonFieldBase(SkeletonBase& skeleton_base,
-                      const score::cpp::string_view field_name,
+                      const std::string_view field_name,
                       std::unique_ptr<SkeletonEventBase> skeleton_event_base)
         : skeleton_event_dispatch_{std::move(skeleton_event_base)},
           was_prepare_offer_called_{false},
@@ -116,7 +115,7 @@ class SkeletonFieldBase
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::reference_wrapper<SkeletonBase> skeleton_base_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::string_view field_name_;
+    std::string_view field_name_;
 
   private:
     /// \brief Returns whether the initial value has been saved by the user to be used by DoDeferredUpdate

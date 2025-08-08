@@ -14,8 +14,6 @@
 
 #include "score/mw/com/impl/bindings/lola/path_builder.h"
 
-#include <score/string_view.hpp>
-
 #include <iomanip>
 #include <sstream>
 #include <string>

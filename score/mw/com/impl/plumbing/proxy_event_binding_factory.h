@@ -20,9 +20,9 @@
 #include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <score/overload.hpp>
-#include <score/string_view.hpp>
 
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -34,7 +34,7 @@ class ProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IProxyEventBindingFactory.
-    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent, score::cpp::string_view event_name)
+    static std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent, std::string_view event_name)
     {
         return instance().Create(parent, event_name);
     }
@@ -57,7 +57,7 @@ class GenericProxyEventBindingFactory final
 {
   public:
     /// \brief See documentation in IGenericProxyEventBindingFactory.
-    static std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent, score::cpp::string_view event_name)
+    static std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent, std::string_view event_name)
     {
         return instance().Create(parent, event_name);
     }

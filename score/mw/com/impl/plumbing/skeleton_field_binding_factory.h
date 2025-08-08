@@ -22,10 +22,9 @@
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
-#include <score/string_view.hpp>
-
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -40,7 +39,7 @@ class SkeletonFieldBindingFactory final
     /// \brief See documentation in ISkeletonFieldBindingFactory.
     static std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(const InstanceIdentifier& identifier,
                                                                                 SkeletonBase& parent,
-                                                                                const score::cpp::string_view field_name)
+                                                                                const std::string_view field_name)
     {
         return instance().CreateEventBinding(identifier, parent, field_name);
     }

@@ -2615,9 +2615,8 @@ TEST(ConfigParserTracing, ProvidingAllTracingConfigElementsDoesNotCrash)
     Configuration config{score::mw::com::impl::configuration::Parse(std::move(j2))};
 
     EXPECT_FALSE(config.GetTracingConfiguration().IsTracingEnabled());
-    EXPECT_EQ(config.GetTracingConfiguration().GetApplicationInstanceID(), score::cpp::string_view{"test_application_id"});
-    EXPECT_EQ(config.GetTracingConfiguration().GetTracingFilterConfigPath(),
-              score::cpp::string_view{"./test_filter_config.json"});
+    EXPECT_EQ(config.GetTracingConfiguration().GetApplicationInstanceID(), "test_application_id");
+    EXPECT_EQ(config.GetTracingConfiguration().GetTracingFilterConfigPath(), "./test_filter_config.json");
 }
 
 TEST(ConfigParserTracing, ProvidingAllRequiredTracingConfigElementsDoesNotCrash)
@@ -2645,7 +2644,7 @@ TEST(ConfigParserTracing, ProvidingAllRequiredTracingConfigElementsDoesNotCrash)
     Configuration config{score::mw::com::impl::configuration::Parse(std::move(j2))};
 
     EXPECT_FALSE(config.GetTracingConfiguration().IsTracingEnabled());
-    EXPECT_EQ(config.GetTracingConfiguration().GetApplicationInstanceID(), score::cpp::string_view{"test_application_id"});
+    EXPECT_EQ(config.GetTracingConfiguration().GetApplicationInstanceID(), "test_application_id");
 }
 
 TEST(ConfigParserTracing, ParsingSucceedsIfApplicationInstanceIdentifierPropertyExistsWhenTracingIsEnabled)
@@ -2753,8 +2752,7 @@ TEST(ConfigParserTracing, ParsingSucceedsIfTraceFilterConfigPathPropertyDoesNotE
     // That the application will not terminate
     const auto config{score::mw::com::impl::configuration::Parse(std::move(j2))};
 
-    EXPECT_EQ(config.GetTracingConfiguration().GetTracingFilterConfigPath(),
-              score::cpp::string_view{"./etc/mw_com_trace_filter.json"});
+    EXPECT_EQ(config.GetTracingConfiguration().GetTracingFilterConfigPath(), "./etc/mw_com_trace_filter.json");
 }
 
 TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTracing)
@@ -2902,12 +2900,8 @@ TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTra
 
     const auto service_1_instance_specifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();
     const auto service_2_instance_specifier = InstanceSpecifier::Create("abc/abc/TireTemperaturePort").value();
-    const auto service_1_instance_specifier_std_string_view = service_1_instance_specifier.ToString();
-    const auto service_2_instance_specifier_std_string_view = service_2_instance_specifier.ToString();
-    const auto service_1_instance_specifier_string_view = score::cpp::string_view{
-        service_1_instance_specifier_std_string_view.data(), service_1_instance_specifier_std_string_view.size()};
-    const auto service_2_instance_specifier_string_view = score::cpp::string_view{
-        service_2_instance_specifier_std_string_view.data(), service_2_instance_specifier_std_string_view.size()};
+    const auto service_1_instance_specifier_string_view = service_1_instance_specifier.ToString();
+    const auto service_2_instance_specifier_string_view = service_2_instance_specifier.ToString();
 
     EXPECT_FALSE(
         tracing_config.IsServiceElementTracingEnabled(service_1_event, service_1_instance_specifier_string_view));
@@ -3064,12 +3058,8 @@ TEST(ConfigParserTracing, DisablingGlobalTracingReturnsFalseForAllCallsToIsServi
 
     const auto service_1_instance_specifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();
     const auto service_2_instance_specifier = InstanceSpecifier::Create("abc/abc/TireTemperaturePort").value();
-    const auto service_1_instance_specifier_std_string_view = service_1_instance_specifier.ToString();
-    const auto service_2_instance_specifier_std_string_view = service_2_instance_specifier.ToString();
-    const auto service_1_instance_specifier_string_view = score::cpp::string_view{
-        service_1_instance_specifier_std_string_view.data(), service_1_instance_specifier_std_string_view.size()};
-    const auto service_2_instance_specifier_string_view = score::cpp::string_view{
-        service_2_instance_specifier_std_string_view.data(), service_2_instance_specifier_std_string_view.size()};
+    const auto service_1_instance_specifier_string_view = service_1_instance_specifier.ToString();
+    const auto service_2_instance_specifier_string_view = service_2_instance_specifier.ToString();
 
     EXPECT_FALSE(
         tracing_config.IsServiceElementTracingEnabled(service_1_event, service_1_instance_specifier_string_view));
@@ -3224,12 +3214,8 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
 
     const auto service_1_instance_specifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();
     const auto service_2_instance_specifier = InstanceSpecifier::Create("abc/abc/TireTemperaturePort").value();
-    const auto service_1_instance_specifier_std_string_view = service_1_instance_specifier.ToString();
-    const auto service_2_instance_specifier_std_string_view = service_2_instance_specifier.ToString();
-    const auto service_1_instance_specifier_string_view = score::cpp::string_view{
-        service_1_instance_specifier_std_string_view.data(), service_1_instance_specifier_std_string_view.size()};
-    const auto service_2_instance_specifier_string_view = score::cpp::string_view{
-        service_2_instance_specifier_std_string_view.data(), service_2_instance_specifier_std_string_view.size()};
+    const auto service_1_instance_specifier_string_view = service_1_instance_specifier.ToString();
+    const auto service_2_instance_specifier_string_view = service_2_instance_specifier.ToString();
 
     EXPECT_FALSE(
         tracing_config.IsServiceElementTracingEnabled(service_1_event, service_1_instance_specifier_string_view));

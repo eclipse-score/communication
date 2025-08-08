@@ -14,10 +14,10 @@
 
 #include "score/mw/com/impl/com_error.h"
 
-#include <score/string_view.hpp>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <string_view>
 #include <type_traits>
 #include <unordered_map>
 
@@ -78,14 +78,14 @@ TEST(InstanceSpecifierComparisonOperatorTest, EqualityOperatorForTwoInstanceSpec
 TEST(InstanceSpecifierComparisonOperatorTest, EqualityOperatorForInstanceSpecifierAndStringView)
 {
     RecordProperty("Verifies", "SCR-18443704");
-    RecordProperty("Description", "Checks equality operator for an InstanceSpecifier and an score::cpp::string_view");
+    RecordProperty("Description", "Checks equality operator for an InstanceSpecifier and an std::string_view");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Given 2 valid instance specifier strings with the same value
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
-    const auto valid_instance_specifier_string_2 = "/good/instance/specifier";
+    // Given 2 valid instance specifier string views with the same value
+    const std::string_view valid_instance_specifier_string = "/good/instance/specifier";
+    const std::string_view valid_instance_specifier_string_2 = "/good/instance/specifier";
 
     // When creating an instance specifier from one string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -93,8 +93,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, EqualityOperatorForInstanceSpecifi
     const InstanceSpecifier instance_specifier = std::move(instance_specifier_result).value();
 
     // Then the instance specifier should be equal to the other string_view, regardless of the order
-    EXPECT_EQ(instance_specifier, score::cpp::string_view{valid_instance_specifier_string_2});
-    EXPECT_EQ(score::cpp::string_view{valid_instance_specifier_string_2}, instance_specifier);
+    EXPECT_EQ(instance_specifier, valid_instance_specifier_string_2);
+    EXPECT_EQ(valid_instance_specifier_string_2, instance_specifier);
 }
 
 TEST(InstanceSpecifierComparisonOperatorTest, InequalityOperatorForTwoInstanceSpecifiers)
@@ -125,14 +125,14 @@ TEST(InstanceSpecifierComparisonOperatorTest, InequalityOperatorForTwoInstanceSp
 TEST(InstanceSpecifierComparisonOperatorTest, InequalityOperatorForInstanceSpecifierAndStringView)
 {
     RecordProperty("Verifies", "SCR-18443704");
-    RecordProperty("Description", "Checks inequality operator for an InstanceSpecifier and an score::cpp::string_view");
+    RecordProperty("Description", "Checks inequality operator for an InstanceSpecifier and an std::string_view");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Given 2 a valid instance specifier strings
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
-    const auto valid_instance_specifier_string_2 = "/good/instance/specifier2";
+    // Given 2 a valid instance specifier string views
+    const std::string_view valid_instance_specifier_string = "/good/instance/specifier";
+    const std::string_view valid_instance_specifier_string_2 = "/good/instance/specifier2";
 
     // When creating an instance specifier from the first string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -140,8 +140,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, InequalityOperatorForInstanceSpeci
     const InstanceSpecifier instance_specifier = std::move(instance_specifier_result).value();
 
     // Then the instance specifier should not be equal to the string_view, regardless of the order
-    EXPECT_NE(instance_specifier, score::cpp::string_view{valid_instance_specifier_string_2});
-    EXPECT_NE(score::cpp::string_view{valid_instance_specifier_string_2}, instance_specifier);
+    EXPECT_NE(instance_specifier, valid_instance_specifier_string_2);
+    EXPECT_NE(valid_instance_specifier_string_2, instance_specifier);
 }
 
 TEST(InstanceSpecifierComparisonOperatorTest, LessThanOperatorForTwoInstanceSpecifiers)
@@ -152,9 +152,9 @@ TEST(InstanceSpecifierComparisonOperatorTest, LessThanOperatorForTwoInstanceSpec
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Given 2 a valid instance specifier strings
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
-    const auto valid_instance_specifier_string_2 = "/good/instance/specifier2";
+    // Given 2 a valid instance specifier string views
+    const std::string_view valid_instance_specifier_string = "/good/instance/specifier";
+    const std::string_view valid_instance_specifier_string_2 = "/good/instance/specifier2";
 
     // When creating an instance specifier from each string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -165,9 +165,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, LessThanOperatorForTwoInstanceSpec
     ASSERT_TRUE(instance_specifier_result_2.has_value());
     const InstanceSpecifier instance_specifier_2 = std::move(instance_specifier_result_2).value();
 
-    // Then the comparison operator should compare the underlying strings
-    const bool string_comparison_result =
-        score::cpp::string_view{valid_instance_specifier_string} < score::cpp::string_view{valid_instance_specifier_string_2};
+    // Then the comparison operator should compare the underlying string views
+    const bool string_comparison_result = valid_instance_specifier_string < valid_instance_specifier_string_2;
     const bool instance_specifier_comparison_result = instance_specifier < instance_specifier_2;
     EXPECT_EQ(string_comparison_result, instance_specifier_comparison_result);
 }
@@ -270,7 +269,7 @@ TEST(InstanceSpecifierToStringTest, ToStringWillReturnTheUnderlyingString)
     EXPECT_EQ(instance_specifier.ToString(), valid_instance_specifier_string);
 }
 
-class InstanceSpecifierCanConstructFromValidStringFixture : public ::testing::TestWithParam<score::cpp::string_view>
+class InstanceSpecifierCanConstructFromValidStringFixture : public ::testing::TestWithParam<std::string_view>
 {
 };
 
@@ -283,7 +282,7 @@ TEST_P(InstanceSpecifierCanConstructFromValidStringFixture, CanConstructFromVali
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a valid instance specifier string
-    const score::cpp::string_view instance_specifier_string = GetParam();
+    const std::string_view instance_specifier_string = GetParam();
 
     const auto instance_specifier_result = InstanceSpecifier::Create(instance_specifier_string);
     ASSERT_TRUE(instance_specifier_result.has_value());
@@ -299,7 +298,7 @@ INSTANTIATE_TEST_SUITE_P(InstanceSpecifierCanConstructFromValidStringTest,
                                            "G",
                                            "Good"));
 
-class InstanceSpecifierCannotConstructFromInvalidStringFixture : public ::testing::TestWithParam<score::cpp::string_view>
+class InstanceSpecifierCannotConstructFromInvalidStringFixture : public ::testing::TestWithParam<std::string_view>
 {
 };
 
@@ -313,7 +312,7 @@ TEST_P(InstanceSpecifierCannotConstructFromInvalidStringFixture, ConstructingFro
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const score::cpp::string_view instance_specifier_string = GetParam();
+    const std::string_view instance_specifier_string = GetParam();
     const auto instance_specifier_result = InstanceSpecifier::Create(instance_specifier_string);
     ASSERT_FALSE(instance_specifier_result.has_value());
     EXPECT_EQ(instance_specifier_result.error(), ComErrc::kInvalidMetaModelShortname);

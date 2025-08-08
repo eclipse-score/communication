@@ -33,9 +33,9 @@ namespace score::mw::com::impl::tracing
 
 namespace
 {
-constexpr score::cpp::string_view kDummyServiceTypeName{"my_service_type"};
-constexpr score::cpp::string_view kDummyElementName{"my_event"};
-constexpr score::cpp::string_view kInstanceSpecifier{"/my_service_type_port"};
+constexpr std::string_view kDummyServiceTypeName{"my_service_type"};
+constexpr std::string_view kDummyElementName{"my_event"};
+constexpr std::string_view kInstanceSpecifier{"/my_service_type_port"};
 
 constexpr std::uint8_t kNumberOfIpcTracingSlots{1U};
 constexpr ServiceElementTracingData kServiceElementTracingData{0U, kNumberOfIpcTracingSlots};

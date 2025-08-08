@@ -464,8 +464,8 @@ auto ServiceDiscoveryClient::HandleDeletionEvents(const std::vector<os::InotifyE
         {
             if (enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value())
             {
-                const auto event_name = std::string_view{event.GetName().data(), event.GetName().size()};
-                OnInstanceFlagFileRemoved(watch_iterator, event_name);
+                const auto event_name = event.GetName();
+                OnInstanceFlagFileRemoved(watch_iterator, std::string_view{event_name.data(), event_name.size()});
                 impacted_searches.insert(search_keys.cbegin(), search_keys.cend());
             }
             else
@@ -494,14 +494,14 @@ auto ServiceDiscoveryClient::HandleCreationEvents(const std::vector<os::InotifyE
         }
 
         const auto& [enriched_instance_identifier, search_keys] = watch_iterator->second;
-        const auto event_name = std::string_view{event.GetName().data(), event.GetName().size()};
+        const auto event_name = event.GetName();
         if (enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value())
         {
-            OnInstanceFlagFileCreated(watch_iterator, event_name);
+            OnInstanceFlagFileCreated(watch_iterator, std::string_view{event_name.data(), event_name.size()});
         }
         else
         {
-            OnInstanceDirectoryCreated(watch_iterator, event_name);
+            OnInstanceDirectoryCreated(watch_iterator, std::string_view{event_name.data(), event_name.size()});
         }
 
         impacted_searches.insert(search_keys.cbegin(), search_keys.cend());

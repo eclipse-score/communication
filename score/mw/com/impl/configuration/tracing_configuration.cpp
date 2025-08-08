@@ -37,7 +37,7 @@ bool CompareServiceElementIdentifierWithView::operator()(const tracing::ServiceE
                                                          const tracing::ServiceElementIdentifier& rhs) const noexcept
 {
     const tracing::ServiceElementIdentifierView rhs_view{
-        score::cpp::string_view{rhs.service_type_name}, score::cpp::string_view{rhs.service_element_name}, rhs.service_element_type};
+        rhs.service_type_name, rhs.service_element_name, rhs.service_element_type};
     return lhs_view < rhs_view;
 }
 
@@ -46,7 +46,7 @@ bool CompareServiceElementIdentifierWithView::operator()(
     const tracing::ServiceElementIdentifierView rhs_view) const noexcept
 {
     const tracing::ServiceElementIdentifierView lhs_view{
-        score::cpp::string_view{lhs.service_type_name}, score::cpp::string_view{lhs.service_element_name}, lhs.service_element_type};
+        lhs.service_type_name, lhs.service_element_name, lhs.service_element_type};
     return lhs_view < rhs_view;
 }
 
@@ -101,7 +101,7 @@ void TracingConfiguration::SetServiceElementTracingEnabled(tracing::ServiceEleme
 // coverity[autosar_cpp14_a15_5_3_violation]
 bool TracingConfiguration::IsServiceElementTracingEnabled(
     tracing::ServiceElementIdentifierView service_element_identifier_view,
-    score::cpp::string_view instance_specifier_view) const noexcept
+    std::string_view instance_specifier_view) const noexcept
 {
     const auto find_result = service_element_tracing_enabled_map_.find(service_element_identifier_view);
     if (find_result == service_element_tracing_enabled_map_.end())

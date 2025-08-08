@@ -53,7 +53,7 @@ DummyField : fields::DummyField // using fields::DummyField = SkeletonField&lt;S
     <panel_attributes>template=SampleType
 lola::SkeletonEvent
 --
-+SkeletonEvent(SkeletonBase&amp; parent, ElementFqId, score::cpp::string_view event_name,
++SkeletonEvent(SkeletonBase&amp; parent, ElementFqId, std::string_view event_name,
                 size_t max_number_slots, bool enforce_max_samples = true)
 +Send(SampleType const&amp;): void
 +Send(SampleAllocateePtr&lt;SampleType&gt;): void
@@ -104,8 +104,8 @@ m2=0..n</panel_attributes>
     </coordinates>
     <panel_attributes>/SkeletonBinding/
 --
-using SkeletonEventBindings = std::unordered_map&lt;score::cpp::string_view, SkeletonEventBindingBase&amp;&gt;
-using SkeletonFieldBindings = std::unordered_map&lt;score::cpp::string_view, std::tuple&lt;SkeletonEventBindingBase&amp;,
+using SkeletonEventBindings = std::unordered_map&lt;std::string_view, SkeletonEventBindingBase&amp;&gt;
+using SkeletonFieldBindings = std::unordered_map&lt;std::string_view, std::tuple&lt;SkeletonEventBindingBase&amp;,
 SkeletonServiceMethodBinding, SkeletonServiceMethodBinding&gt;&gt;
 
 /+PrepareOffer(SkeletonEventBindings&amp;, SkeletonFieldBindings&amp;) = 0: ResultBlank/
@@ -202,7 +202,7 @@ creates</panel_attributes>
 #fields_: SkeletonFields
 #instance_id_: InstanceIdentifier
 --
-using SkeletonEvents = std::unordered_map&lt;score::cpp::string_view, SkeletonEventBase&amp;&gt;
+using SkeletonEvents = std::unordered_map&lt;std::string_view, SkeletonEventBase&amp;&gt;
 +SkeletonBase(std::unique_ptr&lt;SkeletonBinding&gt;, InstanceIdentifier, MethodCallProcessingMode)
 +OfferService(): void
 +StopOfferService(): void
@@ -281,7 +281,7 @@ using DummyProxy::HandleType = HandleType
     <panel_attributes>template=SampleType
 score::mw::com::impl::ProxyEvent
 --
-+ProxyEvent(ProxyBase&amp; base, const score::cpp::string_view event_name)
++ProxyEvent(ProxyBase&amp; base, const std::string_view event_name)
 
 template &lt;typename F&gt;
 +GetNewSamples(F&amp;&amp; receiver, size_t max_num_samples): Result&lt;size_t&gt;
@@ -422,7 +422,7 @@ bg=black</panel_attributes>
     <panel_attributes>ProxyEventBindingFactory
 --
 _ template &lt;typename SampleType&gt;_
-_+Create(ProxyBase&amp; parent, score::cpp::string_view event_name): std::unique_ptr&lt;ProxyEventBinding&lt;SampleType&gt; &gt;_</panel_attributes>
+_+Create(ProxyBase&amp; parent, std::string_view event_name): std::unique_ptr&lt;ProxyEventBinding&lt;SampleType&gt; &gt;_</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
@@ -1021,7 +1021,7 @@ operator-&gt;() : pointer
     <panel_attributes>score::result::ErrorDomain
 --
 --
-+MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : score::cpp::string_view
++MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : std::string_view
 --</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1036,7 +1036,7 @@ operator-&gt;() : pointer
     <panel_attributes>ComErrorDomain
 --
 --
-+MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : score::cpp::string_view
++MessageFor(code : const score::result::ErrorCode&amp;) const = 0 : std::string_view
 --</panel_attributes>
     <additional_attributes/>
   </element>
@@ -1505,14 +1505,14 @@ knows</panel_attributes>
     </coordinates>
     <panel_attributes>score::mw::com::impl::SkeletonFieldBase
 --
-+SkeletonFieldBase(SkeletonBase&amp;, score::cpp::string_view field_name, std::unique_ptr&lt;impl::SkeletonEventBase&gt;)
++SkeletonFieldBase(SkeletonBase&amp;, std::string_view field_name, std::unique_ptr&lt;impl::SkeletonEventBase&gt;)
 +PrepareOffer(): ResultBlank
 +PrepareStopOffer(): void
 +UpdateSkeletonReference(SkeletonBase&amp; base_skeleton): void
 --
 #skeleton_event_dispatch_ : std::unique_ptr&lt;impl::SkeletonEventBase&gt;
 #skeleton_base_ : std::reference_wrapper&lt;SkeletonBase&gt;
-#field_name_ : score::cpp::string_view
+#field_name_ : std::string_view
 #was_prepare_offer_called_ : bool
 --
 /-IsInitialValueSaved(): bool = 0/
@@ -1598,7 +1598,7 @@ creates</panel_attributes>
     <panel_attributes>ProxyFieldBindingFactory
 --
 _ template &lt;typename SampleType&gt;_
-_+CreateEventBinding(ProxyBase&amp; parent, score::cpp::string_view field_name): std::unique_ptr&lt;ProxyEventBinding&lt;SampleType&gt; &gt;_</panel_attributes>
+_+CreateEventBinding(ProxyBase&amp; parent, std::string_view field_name): std::unique_ptr&lt;ProxyEventBinding&lt;SampleType&gt; &gt;_</panel_attributes>
     <additional_attributes/>
   </element>
   <element>

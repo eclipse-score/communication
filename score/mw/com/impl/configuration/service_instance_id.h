@@ -17,9 +17,11 @@
 #include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include "score/json/json_parser.h"
+#include "score/mw/log/logging.h"
 
 #include <score/blank.hpp>
 
+#include <exception>
 #include <string_view>
 #include <variant>
 
@@ -66,6 +68,19 @@ class ServiceInstanceId
 
 bool operator==(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noexcept;
 bool operator<(const ServiceInstanceId& lhs, const ServiceInstanceId& rhs) noexcept;
+
+template <typename ServiceInstanceIdBinding>
+const ServiceInstanceIdBinding& GetServiceInstanceIdBinding(const ServiceInstanceId& service_instance_id)
+{
+    const auto* service_instance_id_binding = std::get_if<ServiceInstanceIdBinding>(&service_instance_id.binding_info_);
+    if (service_instance_id_binding == nullptr)
+    {
+        ::score::mw::log::LogFatal("lola")
+            << "Trying to get binding from ServiceInstanceId which contains a different binding. Terminating.";
+        std::terminate();
+    }
+    return *service_instance_id_binding;
+}
 
 }  // namespace score::mw::com::impl
 

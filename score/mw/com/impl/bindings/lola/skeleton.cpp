@@ -76,19 +76,6 @@ const LolaServiceInstanceDeployment& GetLolaServiceInstanceDeployment(const Inst
     return *lola_service_instance_deployment_ptr;
 }
 
-template <typename ServiceElementMap>
-LolaEventInstanceDeployment::SampleSlotCountType ExtractNumberOfSampleSlotsFromInstanceDeployment(
-    const ServiceElementMap& service_element_map,
-    std::string event_name)
-{
-    const auto search = service_element_map.find(event_name);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != service_element_map.cend(), "Deployment doesn't contain event with given name!");
-    const auto number_of_sample_slots_result = search->second.GetNumberOfSampleSlots();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_sample_slots_result.has_value(),
-                           "Deployment does not contain number of sample slots");
-    return number_of_sample_slots_result.value();
-}
-
 ServiceDataControl* GetServiceDataControlSkeletonSide(const memory::shared::ManagedMemoryResource& control) noexcept
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
@@ -378,7 +365,7 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
         // we can't add noexcept to score::cpp::callback signature.
         // coverity[autosar_cpp14_a15_4_2_violation]
         unregister_shm_object_callback.value()(
-            score::cpp::string_view{tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback},
+            std::string_view{tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback},
             // Suppress "AUTOSAR C++14 A4-5-1" rule findings. This rule states: "Expressions with type enum or enum
             // class shall not be used as operands to built-in and overloaded operators other than the subscript
             // operator [ ], the assignment operator =, the equality operators == and ! =, the unary & operator, and the

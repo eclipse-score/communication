@@ -18,12 +18,11 @@
 
 #include "score/mw/log/logging.h"
 
-#include <score/string_view.hpp>
-
 #include <array>
 #include <cstring>
 #include <exception>
 #include <string>
+#include <string_view>
 
 namespace score::mw::com::impl::tracing
 {
@@ -38,9 +37,9 @@ struct ServiceElementIdentifierView
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". We need these data elements to be organized into a coherent organized data structure.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::string_view service_type_name{};
+    std::string_view service_type_name{};
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::string_view service_element_name{};
+    std::string_view service_element_name{};
     // coverity[autosar_cpp14_m11_0_1_violation]
     ServiceElementType service_element_type{};
 };

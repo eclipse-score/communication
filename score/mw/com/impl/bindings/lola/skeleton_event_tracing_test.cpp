@@ -25,7 +25,6 @@
 #include "score/filesystem/filesystem.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -85,8 +84,7 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
         const impl::tracing::ServiceElementIdentifierView service_element_identifier_view{
             service_type_name_, fake_event_name_, impl::ServiceElementType::EVENT};
         const impl::tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
-            service_element_identifier_view,
-            score::cpp::string_view{instance_specifier_.ToString().data(), instance_specifier_.ToString().size()}};
+            service_element_identifier_view, instance_specifier_.ToString()};
         return expected_service_element_instance_identifier_view;
     }
 

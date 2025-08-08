@@ -19,9 +19,8 @@
 
 #include "score/result/result.h"
 
-#include <score/string_view.hpp>
-
 #include <cstddef>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -58,7 +57,7 @@ class ProxyField final
     /// \param proxy_binding The binding that shall be associated with this proxy.
     ProxyField(ProxyBase& base,
                std::unique_ptr<ProxyEventBinding<FieldType>> proxy_binding,
-               const score::cpp::string_view field_name)
+               const std::string_view field_name)
         : proxy_event_dispatch_{base, std::move(proxy_binding), field_name}
     {
     }
@@ -67,7 +66,7 @@ class ProxyField final
     ///
     /// \param base Proxy that contains this field
     /// \param field_name Field name of the field, taken from the AUTOSAR model
-    ProxyField(ProxyBase& base, const score::cpp::string_view field_name)
+    ProxyField(ProxyBase& base, const std::string_view field_name)
         : proxy_event_dispatch_{base,
                                 ProxyFieldBindingFactory<FieldType>::CreateEventBinding(base, field_name),
                                 field_name,

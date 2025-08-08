@@ -20,11 +20,9 @@
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
 #include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"
 
-#include "score/memory/any_string_view.h"
 #include "score/result/result.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 #include <score/utility.hpp>
 
 #include <gtest/gtest.h>
@@ -61,10 +59,9 @@ class CommonEventTracingFixture : public ::testing::Test
     }
 
     ServiceElementInstanceIdentifierView service_element_instance_identifier_view_{
-        GetServiceElementInstanceIdentifierView(
-            kConfigStore.GetInstanceIdentifier(),
-            score::cpp::string_view{kServiceElementName.data(), kServiceElementName.size()},
-            kServiceElementType)};
+        GetServiceElementInstanceIdentifierView(kConfigStore.GetInstanceIdentifier(),
+                                                kServiceElementName,
+                                                kServiceElementType)};
     TracingRuntime::TracePointType trace_point_{ProxyEventTracePointType::SET_RECEIVE_HANDLER};
     BindingType binding_type_{BindingType::kLoLa};
     const std::pair<const void*, std::size_t> local_data_chunk_{
@@ -86,21 +83,16 @@ TEST(CommonEventTracingTest, CallingGetServiceElementInstanceIdentifierViewWillR
 {
     // When calling GetServiceElementInstanceIdentifierView
     const auto service_element_instance_identifier_view = GetServiceElementInstanceIdentifierView(
-        kConfigStore.GetInstanceIdentifier(),
-        static_cast<score::cpp::string_view>(memory::AnyStringView{kServiceElementName}),
-        kServiceElementType);
+        kConfigStore.GetInstanceIdentifier(), kServiceElementName, kServiceElementType);
 
     // Then the resulting struct should be filled with the data provided to GetServiceElementInstanceIdentifierView
-    EXPECT_EQ(static_cast<std::string_view>(memory::AnyStringView{
-                  service_element_instance_identifier_view.service_element_identifier_view.service_type_name}),
+    EXPECT_EQ(service_element_instance_identifier_view.service_element_identifier_view.service_type_name,
               kConfigStore.service_identifier_.ToString());
     EXPECT_EQ(service_element_instance_identifier_view.service_element_identifier_view.service_element_name,
-              static_cast<score::cpp::string_view>(memory::AnyStringView{kServiceElementName}));
+              kServiceElementName);
     EXPECT_EQ(service_element_instance_identifier_view.service_element_identifier_view.service_element_type,
               kServiceElementType);
-    EXPECT_EQ(static_cast<std::string_view>(
-                  memory::AnyStringView{service_element_instance_identifier_view.instance_specifier}),
-              kInstanceSpecifier.ToString());
+    EXPECT_EQ(service_element_instance_identifier_view.instance_specifier, kInstanceSpecifier.ToString());
 }
 
 using CommonEventTracingLocalTraceDataFixture = CommonEventTracingFixture;

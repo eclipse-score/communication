@@ -61,7 +61,7 @@ void UpdateTracingDataFromTraceResult(ResultBlank trace_result,
 // This is false positive. Function is declared only once.
 // coverity[autosar_cpp14_a3_1_1_violation]
 ProxyEventTracingData GenerateProxyTracingStructFromEventConfig(const InstanceIdentifier& instance_identifier,
-                                                                const score::cpp::string_view event_name) noexcept
+                                                                const std::string_view event_name) noexcept
 {
     const auto* const tracing_config = Runtime::getInstance().GetTracingFilterConfig();
     ProxyEventTracingData proxy_event_tracing_data{};
@@ -115,7 +115,7 @@ ProxyEventTracingData GenerateProxyTracingStructFromEventConfig(const InstanceId
 // This is false positive. Function is declared only once.
 // coverity[autosar_cpp14_a3_1_1_violation]
 ProxyEventTracingData GenerateProxyTracingStructFromFieldConfig(const InstanceIdentifier& instance_identifier,
-                                                                const score::cpp::string_view field_name) noexcept
+                                                                const std::string_view field_name) noexcept
 {
     const auto* const tracing_config = Runtime::getInstance().GetTracingFilterConfig();
     ProxyEventTracingData proxy_event_tracing_data{};

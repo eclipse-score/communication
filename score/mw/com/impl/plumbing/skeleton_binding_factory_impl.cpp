@@ -32,33 +32,6 @@ namespace score::mw::com::impl
 namespace
 {
 
-template <typename LolaInstanceMapping>
-bool IsServiceElementConfigurationValid(const LolaInstanceMapping& mapping, const score::cpp::span<const char* const> names)
-{
-    for (const auto event_name : names)
-    {
-        auto search = mapping.find(event_name);
-        if (search == mapping.end())
-        {
-            return false;
-        }
-
-        if (search->second.max_concurrent_allocations_.has_value() == false)
-        {
-            return false;
-        }
-
-        if ((!search->second.GetNumberOfSampleSlots().has_value()) ||
-            (search->second.GetNumberOfSampleSlots().value() == 0) || (!search->second.max_subscribers_.has_value()) ||
-            (search->second.max_subscribers_.value() == 0U) ||
-            (search->second.max_concurrent_allocations_.value() == 0U))
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 const LolaServiceTypeDeployment& GetLolaServiceTypeDeploymentFromInstanceIdentifier(
     const InstanceIdentifier& identifier) noexcept
 {

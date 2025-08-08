@@ -29,11 +29,11 @@
 
 #include <score/optional.hpp>
 #include <score/span.hpp>
-#include <score/string_view.hpp>
 
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -454,12 +454,12 @@ TEST_F(RuntimeTracingConfigTest, GetTracingFilterConfigWillReturnConfigPassedToC
 
 TEST_F(RuntimeTracingConfigTest, TracingFilterConfigRetrievedFromRuntimeWillHaveSameTracePointedEnabled)
 {
-    const score::cpp::string_view service_type_0{"service_type_0"};
-    const score::cpp::string_view service_type_1{"service_type_1"};
-    const score::cpp::string_view event_name_0{"event_name_0"};
-    const score::cpp::string_view event_name_1{"event_name_1"};
-    const score::cpp::string_view instance_specifier_view_0{"instance_specifier_view_0"};
-    const score::cpp::string_view instance_specifier_view_1{"instance_specifier_view_1"};
+    const std::string_view service_type_0{"service_type_0"};
+    const std::string_view service_type_1{"service_type_1"};
+    const std::string_view event_name_0{"event_name_0"};
+    const std::string_view event_name_1{"event_name_1"};
+    const std::string_view instance_specifier_view_0{"instance_specifier_view_0"};
+    const std::string_view instance_specifier_view_1{"instance_specifier_view_1"};
     const auto trace_point_0 = tracing::SkeletonEventTracePointType::SEND_WITH_ALLOCATE;
     const auto trace_point_1 = tracing::ProxyEventTracePointType::GET_NEW_SAMPLES;
 

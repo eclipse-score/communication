@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/proxy.h"
-#include "score/memory/any_string_view.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
@@ -481,7 +480,7 @@ TEST_F(ProxyEventBindingFixture, RegisteringEventBindingWillCallNotifyServiceIns
     EXPECT_CALL(mock_proxy_event_base_binding, NotifyServiceInstanceChangedAvailability(_, _));
 
     // When calling RegisterEventBinding
-    proxy_->RegisterEventBinding(memory::AnyStringView{kDummyEventName}, mock_proxy_event_base_binding);
+    proxy_->RegisterEventBinding(kDummyEventName, mock_proxy_event_base_binding);
 }
 
 TEST_F(ProxyEventBindingFixture,
@@ -500,7 +499,7 @@ TEST_F(ProxyEventBindingFixture,
     InitialiseProxyWithCreate(identifier_);
 
     // and that two bindings are registered
-    proxy_->RegisterEventBinding(memory::AnyStringView{kDummyEventName}, mock_proxy_event_base_binding);
+    proxy_->RegisterEventBinding(kDummyEventName, mock_proxy_event_base_binding);
     proxy_->RegisterEventBinding("some_other_event", mock_proxy_event_base_binding_2);
 
     // When the find service handler is called
@@ -520,10 +519,10 @@ TEST_F(ProxyEventBindingFixture,
     // Given a constructed Proxy which registered an event binding
     WhichCapturesFindServiceHandler(identifier_);
     InitialiseProxyWithCreate(identifier_);
-    proxy_->RegisterEventBinding(memory::AnyStringView{kDummyEventName}, mock_proxy_event_base_binding);
+    proxy_->RegisterEventBinding(kDummyEventName, mock_proxy_event_base_binding);
 
     // and then unregistered the event binding
-    proxy_->UnregisterEventBinding(memory::AnyStringView{kDummyEventName});
+    proxy_->UnregisterEventBinding(kDummyEventName);
 
     // When the find service handler is called
     const auto find_service_handler = find_service_handler_promise_.get_future().get();
@@ -536,7 +535,7 @@ TEST_F(ProxyEventBindingFixture, UnregisteringEventBindingBeforeRegisteringWillN
     InitialiseProxyWithCreate(identifier_);
 
     // When calling UnregisterEventBinding when RegisterEventBinding was never called
-    proxy_->UnregisterEventBinding(memory::AnyStringView{kDummyEventName});
+    proxy_->UnregisterEventBinding(kDummyEventName);
 
     // Then we don't terminate
 }

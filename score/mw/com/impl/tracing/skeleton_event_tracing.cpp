@@ -69,7 +69,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         if (const auto* val = std::get_if<LolaServiceInstanceDeployment>(&service_instance_deployment.bindingInfo_))
         {
             return *val;
-        };
+        }
         mw::log::LogFatal("lola")
             << "While getting number of tracing slots, a bed variant access was made. Provided service instance "
                "deployment, does not hold LolaServiceInstanceDeploymentType. Terminating.";
@@ -127,7 +127,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
 // coverity[autosar_cpp14_a3_1_1_violation]
 SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const InstanceIdentifier& instance_identifier,
                                                                       const BindingType binding_type,
-                                                                      const score::cpp::string_view event_name) noexcept
+                                                                      const std::string_view event_name) noexcept
 {
     auto& runtime = Runtime::getInstance();
     const auto* const tracing_config = runtime.GetTracingFilterConfig();
@@ -173,7 +173,7 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const Inst
 // coverity[autosar_cpp14_a3_1_1_violation]
 SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(const InstanceIdentifier& instance_identifier,
                                                                       const BindingType binding_type,
-                                                                      const score::cpp::string_view field_name) noexcept
+                                                                      const std::string_view field_name) noexcept
 {
     auto& runtime = Runtime::getInstance();
     const auto* const tracing_config = runtime.GetTracingFilterConfig();

@@ -96,7 +96,7 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, GetBindingType)
 
 TEST_F(SkeletonTestMockedSharedMemoryFixture, StopOfferCallsUnregisterShmObjectTraceCallback)
 {
-    MockFunction<void(score::cpp::string_view, impl::ServiceElementType)> unregister_shm_object_trace_callback{};
+    MockFunction<void(std::string_view, impl::ServiceElementType)> unregister_shm_object_trace_callback{};
 
     // Given a deployment based on an default LolaServiceInstanceDeployment which has QM and ASIL B support
     // ... and a skeleton constructed from it
@@ -125,7 +125,7 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, StopOfferCallsUnregisterShmObjectT
     EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kDataChannelPath));
 
     EXPECT_CALL(unregister_shm_object_trace_callback,
-                Call(score::cpp::string_view{tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback},
+                Call(tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
                      tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback));
 
     // Then PrepareOffer will succeed
@@ -212,7 +212,7 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
 
     using namespace memory::shared;
 
-    MockFunction<void(score::cpp::string_view, impl::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
+    MockFunction<void(std::string_view, impl::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
@@ -235,7 +235,7 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
 
     // and that the callback will be called once
     EXPECT_CALL(register_shm_object_trace_callback,
-                Call(score::cpp::string_view{tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback},
+                Call(tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
                      tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback,
                      kDummyShmObjectFileDescriptor,
                      kDummyShmObjectBaseAddress));
@@ -257,7 +257,7 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
 
     using namespace memory::shared;
 
-    MockFunction<void(score::cpp::string_view, impl::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
+    MockFunction<void(std::string_view, impl::ServiceElementType, ISharedMemoryResource::FileDescriptor, void*)>
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
@@ -499,7 +499,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCa
         data_shared_memory_resource_mock_);
 
     MockFunction<void(
-        score::cpp::string_view, impl::ServiceElementType, memory::shared::ISharedMemoryResource::FileDescriptor, void*)>
+        std::string_view, impl::ServiceElementType, memory::shared::ISharedMemoryResource::FileDescriptor, void*)>
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
@@ -524,7 +524,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCa
 
     // Expecting that the register shm object trace callback will be called once
     EXPECT_CALL(register_shm_object_trace_callback,
-                Call(score::cpp::string_view{tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback},
+                Call(tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
                      tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback,
                      kDummyShmObjectFileDescriptor,
                      kDummyShmObjectBaseAddress));

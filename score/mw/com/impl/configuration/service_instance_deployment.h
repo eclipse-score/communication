@@ -25,7 +25,6 @@
 #include "score/mw/log/logging.h"
 
 #include <score/blank.hpp>
-#include <score/string_view.hpp>
 
 #include <cstdint>
 #include <exception>

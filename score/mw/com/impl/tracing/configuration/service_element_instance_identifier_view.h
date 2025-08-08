@@ -16,12 +16,11 @@
 #include "score/mw/com/impl/tracing/configuration/hash_helper_utility.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_identifier_view.h"
 
-#include <score/string_view.hpp>
-
 #include <array>
 #include <cstring>
 #include <exception>
 #include <string>
+#include <string_view>
 
 namespace score::mw
 {
@@ -41,7 +40,7 @@ struct ServiceElementInstanceIdentifierView
     // coverity[autosar_cpp14_m11_0_1_violation]
     ServiceElementIdentifierView service_element_identifier_view;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::string_view instance_specifier;
+    std::string_view instance_specifier;
 };
 
 bool operator==(const ServiceElementInstanceIdentifierView& lhs,

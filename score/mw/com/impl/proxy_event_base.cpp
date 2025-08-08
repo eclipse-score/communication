@@ -42,7 +42,7 @@ class EventBindingRegistrationGuard final
   public:
     EventBindingRegistrationGuard(ProxyBase& proxy_base,
                                   ProxyEventBindingBase* proxy_event_binding_base,
-                                  score::cpp::string_view event_name) noexcept
+                                  std::string_view event_name) noexcept
         : proxy_binding_{ProxyBaseView{proxy_base}.GetBinding()},
           proxy_event_binding_base_{proxy_event_binding_base},
           event_name_{event_name}
@@ -74,7 +74,7 @@ class EventBindingRegistrationGuard final
   private:
     ProxyBinding* proxy_binding_;
     ProxyEventBindingBase* proxy_event_binding_base_;
-    score::cpp::string_view event_name_;
+    std::string_view event_name_;
 };
 
 // Suppress "AUTOSAR C++14 A3-1-1", The rule states: "It shall be possible to include any header file
@@ -83,7 +83,7 @@ class EventBindingRegistrationGuard final
 // coverity[autosar_cpp14_a3_1_1_violation]
 ProxyEventBase::ProxyEventBase(ProxyBase& proxy_base,
                                std::unique_ptr<ProxyEventBindingBase> proxy_event_binding,
-                               score::cpp::string_view event_name) noexcept
+                               std::string_view event_name) noexcept
     : binding_base_{std::move(proxy_event_binding)},
       tracker_{std::make_unique<SampleReferenceTracker>()},
       tracing_data_{},

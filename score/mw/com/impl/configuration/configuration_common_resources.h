@@ -18,12 +18,12 @@
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
-#include <score/string_view.hpp>
 
 #include <cstddef>
 #include <iomanip>
 #include <limits>
 #include <sstream>
+#include <string_view>
 #include <type_traits>
 
 namespace score::mw::com::impl
@@ -40,13 +40,13 @@ std::string ToStringImpl(const json::Object& serialized_json_object) noexcept;
 
 /// \brief Helper function to get a value from a json object.
 ///
-/// Since json::Object::As can either return a value (e.g. for integer types, score::cpp::string_view etc.) or a
+/// Since json::Object::As can either return a value (e.g. for integer types, std::string_view etc.) or a
 /// reference_wrapper (e.g. for json::Object), we need to return the same from this function.
 template <typename T,
           typename = std::enable_if_t<!std::is_arithmetic<T>::value>,
-          typename = std::enable_if_t<!std::is_same<T, score::cpp::string_view>::value, bool>>
+          typename = std::enable_if_t<!std::is_same<T, std::string_view>::value, bool>>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto GetValueFromJson(const score::json::Object& json_object, score::cpp::string_view key) noexcept -> const T&
+auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) noexcept -> const T&
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());
@@ -57,7 +57,7 @@ auto GetValueFromJson(const score::json::Object& json_object, score::cpp::string
 
 template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value, bool>>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto GetValueFromJson(const score::json::Object& json_object, score::cpp::string_view key) noexcept -> T
+auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) noexcept -> T
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(it != json_object.end());
@@ -66,9 +66,9 @@ auto GetValueFromJson(const score::json::Object& json_object, score::cpp::string
     return json_result.value();
 }
 
-template <typename T, typename = std::enable_if_t<std::is_same<T, score::cpp::string_view>::value, bool>>
+template <typename T, typename = std::enable_if_t<std::is_same<T, std::string_view>::value, bool>>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto GetValueFromJson(const score::json::Object& json_object, score::cpp::string_view key) noexcept -> score::cpp::string_view
+auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) noexcept -> std::string_view
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());
@@ -100,7 +100,7 @@ template <typename VariantHeldType>
 class DoConstructVariant
 {
   public:
-    static VariantHeldType Do(const score::json::Object& json_object, score::cpp::string_view json_variant_key) noexcept
+    static VariantHeldType Do(const score::json::Object& json_object, std::string_view json_variant_key) noexcept
     {
         const auto& binding_info_json_object = GetValueFromJson<json::Object>(json_object, json_variant_key);
         return VariantHeldType{binding_info_json_object};
@@ -111,7 +111,7 @@ template <>
 class DoConstructVariant<score::cpp::blank>
 {
   public:
-    static score::cpp::blank Do(const score::json::Object&, score::cpp::string_view) noexcept
+    static score::cpp::blank Do(const score::json::Object&, std::string_view) noexcept
     {
         return score::cpp::blank{};
     }
@@ -119,7 +119,7 @@ class DoConstructVariant<score::cpp::blank>
 
 /// ConstructVariant dispatches to DoConstructVariant in a template class to avoid function template specialization
 template <typename VariantHeldType>
-auto ConstructVariant(const score::json::Object& json_object, score::cpp::string_view json_variant_key) noexcept
+auto ConstructVariant(const score::json::Object& json_object, std::string_view json_variant_key) noexcept
     -> VariantHeldType
 {
     return DoConstructVariant<VariantHeldType>::Do(json_object, json_variant_key);
@@ -139,7 +139,7 @@ template <std::size_t VariantIndex,
           typename std::enable_if<VariantIndex == std::variant_size<VariantType>::value>::type* = nullptr>
 auto DeserializeVariant(const score::json::Object& /* json_object */,
                         std::ptrdiff_t /* variant_index */,
-                        score::cpp::string_view /* json_variant_key */) noexcept -> VariantType
+                        std::string_view /* json_variant_key */) noexcept -> VariantType
 {
     std::terminate();
 }
@@ -149,7 +149,7 @@ template <std::size_t VariantIndex,
           typename std::enable_if<VariantIndex<std::variant_size<VariantType>::value>::type* = nullptr> auto
               DeserializeVariant(const score::json::Object& json_object,
                                  std::ptrdiff_t variant_index,
-                                 score::cpp::string_view json_variant_key) noexcept -> VariantType
+                                 std::string_view json_variant_key) noexcept -> VariantType
 {
     if (static_cast<std::size_t>(variant_index) == VariantIndex)
     {
@@ -178,7 +178,7 @@ json::Object ConvertServiceElementMapToJson(const ServiceElementInstanceMapping&
 
 template <typename ServiceElementInstanceMapping>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto ConvertJsonToServiceElementMap(const json::Object& json_object, score::cpp::string_view key) noexcept
+auto ConvertJsonToServiceElementMap(const json::Object& json_object, std::string_view key) noexcept
     -> ServiceElementInstanceMapping
 {
     const auto& service_element_json = GetValueFromJson<json::Object>(json_object, key);

@@ -29,7 +29,6 @@
 #include "score/result/result.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 #include <score/utility.hpp>
 
 #include <gmock/gmock.h>

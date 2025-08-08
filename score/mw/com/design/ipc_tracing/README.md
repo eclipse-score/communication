@@ -124,18 +124,18 @@ The `trace filter config` contains many strings (service type or service element
 these `trace filter config` can be very big, the JSON object will be disposed at the end to free resources. So any
 string, which we need within `TracingFilterConfig` needs to be copied from the provided JSON objects into the
 `TracingFilterConfig` instance. As many of those strings are very frequently used, we create a `std::string` copy of
-the JSON-provided string once and then reference this string contained by the `std::string` with `score::cpp::string_view` from
+the JSON-provided string once and then reference this string contained by the `std::string` with `std::string_view` from
 several locations.
 
 **Example**:
 In the *trace filter config* we will have several trace points for a service type S1 identified by a short-name-path
 "&lt;S1 service type short name path&gt;". So we will call several times `Add<Proxy|Skeleton><Event|Field>TracePoint`
-with the same 1st `score::cpp::string_view parameter` "&lt;S1 service type short name path&gt;". In each such call the implementation
+with the same 1st `std::string_view parameter` "&lt;S1 service type short name path&gt;". In each such call the implementation
 will check, whether the internal member `TracingFilterConfig::config_names_` already contains a `std::string` matching
 "&lt;S1 service type short name path&gt;". If not, a std::string for "&lt;S1 service type short name path&gt;" gets
 created and inserted into `TracingFilterConfig::config_names_`. Then the corresponding trace point is inserted into
 one of the related maps (`skeleton_event_trace_points`, `skeleton_field_trace_points`, `proxy_event_trace_points` or
-`proxy_field_trace_points`). But the key created for the insertion will use an `score::cpp::string_view` referencing the
+`proxy_field_trace_points`). But the key created for the insertion will use an `std::string_view` referencing the
 `std::string`, which was inserted into `TracingFilterConfig::config_names_`.
 
 ### Enriching `mw::com` classes with trace switches

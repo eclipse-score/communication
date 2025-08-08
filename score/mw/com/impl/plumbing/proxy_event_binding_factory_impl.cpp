@@ -30,7 +30,7 @@ namespace score::mw::com::impl
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 std::unique_ptr<GenericProxyEventBinding> GenericProxyEventBindingFactoryImpl::Create(
     ProxyBase& parent,
-    const score::cpp::string_view event_name) noexcept
+    const std::string_view event_name) noexcept
 {
     return CreateProxyServiceElement<GenericProxyEventBinding, lola::GenericProxyEvent, ServiceElementType::EVENT>(
         parent, event_name);

@@ -52,7 +52,7 @@ class ProxyEventBase
   public:
     ProxyEventBase(ProxyBase& proxy_base,
                    std::unique_ptr<ProxyEventBindingBase> proxy_event_binding,
-                   score::cpp::string_view event_name) noexcept;
+                   std::string_view event_name) noexcept;
 
     /// \brief A ProxyEventBase shall not be copyable
     ProxyEventBase(const ProxyEventBase&) = delete;

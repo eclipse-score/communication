@@ -63,7 +63,7 @@ template <typename ServiceElementIdType>
 // ToDo: implement a runtime validation check for json, after parsing when the first json object is created, s.t. we can
 // be sure json.As<T> call will return a value. See Ticket-177855.
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const score::cpp::string_view key) noexcept
+auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std::string_view key) noexcept
     -> std::unordered_map<std::string, ServiceElementIdType>
 {
     const auto& service_element_json = GetValueFromJson<json::Object>(json_object, key);

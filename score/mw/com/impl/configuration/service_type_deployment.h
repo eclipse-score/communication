@@ -18,11 +18,10 @@
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
 
-#include <score/string_view.hpp>
-
 #include <cstdint>
 #include <exception>
 #include <string>
+#include <string_view>
 #include <variant>
 
 namespace score::mw::com::impl

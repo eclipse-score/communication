@@ -255,13 +255,13 @@ class FindServiceGuard final
     std::unique_ptr<FindServiceHandle> service_availability_change_handle_;
 };
 
-ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const score::cpp::string_view event_name) const noexcept
+ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_view event_name) const noexcept
 {
     const auto& events = events_.get();
     const auto event_it = events.find(std::string{event_name.data()});
 
     std::stringstream sstream{};
-    sstream << "Event name " << event_name.data() << " does not exists in event map.";
+    sstream << "Event name " << event_name << " does not exists in event map.";
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != events.end(), sstream.str().c_str());
     return {service_id_, event_it->second, instance_id_, ServiceElementType::EVENT};
 }
@@ -452,7 +452,7 @@ const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) co
 // key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw
 // an exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-bool Proxy::IsEventProvided(const score::cpp::string_view event_name) const noexcept
+bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                  "ExecutePartialRestartLogic: Managed memory control pointer is Null");
@@ -463,7 +463,7 @@ bool Proxy::IsEventProvided(const score::cpp::string_view event_name) const noex
     return event_exists;
 }
 
-void Proxy::RegisterEventBinding(const score::cpp::string_view service_element_name,
+void Proxy::RegisterEventBinding(const std::string_view service_element_name,
                                  ProxyEventBindingBase& proxy_event_binding) noexcept
 {
     // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
@@ -475,7 +475,7 @@ void Proxy::RegisterEventBinding(const score::cpp::string_view service_element_n
     proxy_event_binding.NotifyServiceInstanceChangedAvailability(is_service_instance_available_, GetSourcePid());
 }
 
-void Proxy::UnregisterEventBinding(const score::cpp::string_view service_element_name) noexcept
+void Proxy::UnregisterEventBinding(const std::string_view service_element_name) noexcept
 {
     // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced initialization.
     // This is a false positive, we don't use auto here

@@ -17,9 +17,8 @@
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
-#include <score/string_view.hpp>
-
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -44,7 +43,7 @@ class IProxyFieldBindingFactory
     /// \param handle The handle containing the binding information.
     /// \param field_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
-    virtual auto CreateEventBinding(ProxyBase& parent, const score::cpp::string_view field_name) noexcept
+    virtual auto CreateEventBinding(ProxyBase& parent, const std::string_view field_name) noexcept
         -> std::unique_ptr<ProxyEventBinding<SampleType>> = 0;
 };
 }  // namespace score::mw::com::impl

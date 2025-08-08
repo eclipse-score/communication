@@ -18,8 +18,6 @@
 
 #include "score/filesystem/filesystem.h"
 
-#include <score/string_view.hpp>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>

@@ -26,17 +26,17 @@
 #include "score/mw/com/impl/tracing/proxy_event_tracing_data.h"
 
 #include <score/callback.hpp>
-#include <score/string_view.hpp>
 
 #include <cstddef>
+#include <string_view>
 
 namespace score::mw::com::impl::tracing
 {
 
 ProxyEventTracingData GenerateProxyTracingStructFromEventConfig(const InstanceIdentifier& instance_identifier,
-                                                                const score::cpp::string_view event_name) noexcept;
+                                                                const std::string_view event_name) noexcept;
 ProxyEventTracingData GenerateProxyTracingStructFromFieldConfig(const InstanceIdentifier& instance_identifier,
-                                                                const score::cpp::string_view field_name) noexcept;
+                                                                const std::string_view field_name) noexcept;
 
 void TraceSubscribe(ProxyEventTracingData& proxy_event_tracing_data,
                     const ProxyEventBindingBase& proxy_event_binding_base,

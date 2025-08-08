@@ -19,7 +19,7 @@
 #include "score/mw/com/impl/tracing/configuration/skeleton_event_trace_point_type.h"
 #include "score/mw/com/impl/tracing/configuration/skeleton_field_trace_point_type.h"
 
-#include <score/string_view.hpp>
+#include <string_view>
 
 namespace score::mw::com::impl::tracing
 {
@@ -27,7 +27,7 @@ namespace score::mw::com::impl::tracing
 class ITracingFilterConfig
 {
   public:
-    using InstanceSpecifierView = score::cpp::string_view;
+    using InstanceSpecifierView = std::string_view;
 
     ITracingFilterConfig() noexcept = default;
     virtual ~ITracingFilterConfig() = default;
@@ -39,37 +39,37 @@ class ITracingFilterConfig
     ITracingFilterConfig& operator=(ITracingFilterConfig&&) noexcept = default;
 
   public:
-    virtual bool IsTracePointEnabled(score::cpp::string_view service_type,
-                                     score::cpp::string_view event_name,
+    virtual bool IsTracePointEnabled(std::string_view service_type,
+                                     std::string_view event_name,
                                      InstanceSpecifierView instance_specifier,
                                      SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept = 0;
-    virtual bool IsTracePointEnabled(score::cpp::string_view service_type,
-                                     score::cpp::string_view field_name,
+    virtual bool IsTracePointEnabled(std::string_view service_type,
+                                     std::string_view field_name,
                                      InstanceSpecifierView instance_specifier,
                                      SkeletonFieldTracePointType skeleton_field_trace_point_type) const noexcept = 0;
-    virtual bool IsTracePointEnabled(score::cpp::string_view service_type,
-                                     score::cpp::string_view event_name,
+    virtual bool IsTracePointEnabled(std::string_view service_type,
+                                     std::string_view event_name,
                                      InstanceSpecifierView instance_specifier,
                                      ProxyEventTracePointType proxy_event_trace_point_type) const noexcept = 0;
-    virtual bool IsTracePointEnabled(score::cpp::string_view service_type,
-                                     score::cpp::string_view field_name,
+    virtual bool IsTracePointEnabled(std::string_view service_type,
+                                     std::string_view field_name,
                                      InstanceSpecifierView instance_specifier,
                                      ProxyFieldTracePointType proxy_field_trace_point_type) const noexcept = 0;
 
-    virtual void AddTracePoint(score::cpp::string_view service_type,
-                               score::cpp::string_view event_name,
+    virtual void AddTracePoint(std::string_view service_type,
+                               std::string_view event_name,
                                InstanceSpecifierView instance_specifier,
                                SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept = 0;
-    virtual void AddTracePoint(score::cpp::string_view service_type,
-                               score::cpp::string_view field_name,
+    virtual void AddTracePoint(std::string_view service_type,
+                               std::string_view field_name,
                                InstanceSpecifierView instance_specifier,
                                SkeletonFieldTracePointType skeleton_field_trace_point_type) noexcept = 0;
-    virtual void AddTracePoint(score::cpp::string_view service_type,
-                               score::cpp::string_view event_name,
+    virtual void AddTracePoint(std::string_view service_type,
+                               std::string_view event_name,
                                InstanceSpecifierView instance_specifier,
                                ProxyEventTracePointType proxy_event_trace_point_type) noexcept = 0;
-    virtual void AddTracePoint(score::cpp::string_view service_type,
-                               score::cpp::string_view field_name,
+    virtual void AddTracePoint(std::string_view service_type,
+                               std::string_view field_name,
                                InstanceSpecifierView instance_specifier,
                                ProxyFieldTracePointType proxy_field_trace_point_type) noexcept = 0;
 

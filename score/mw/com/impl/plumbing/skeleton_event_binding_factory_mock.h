@@ -26,7 +26,7 @@ class SkeletonEventBindingFactoryMock : public ISkeletonEventBindingFactory<Samp
   public:
     MOCK_METHOD(std::unique_ptr<SkeletonEventBinding<SampleType>>,
                 Create,
-                (const InstanceIdentifier&, SkeletonBase&, score::cpp::string_view),
+                (const InstanceIdentifier&, SkeletonBase&, std::string_view),
                 (noexcept, override));
 };
 

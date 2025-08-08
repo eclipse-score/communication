@@ -29,6 +29,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -76,7 +77,7 @@ class ProxyEvent final : public ProxyEventBase
     /// \param proxy_binding The binding that shall be associated with this proxy.
     ProxyEvent(ProxyBase& base,
                std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
-               const score::cpp::string_view event_name);
+               const std::string_view event_name);
 
     /// Constructor that allows to set the binding directly.
     ///
@@ -85,7 +86,7 @@ class ProxyEvent final : public ProxyEventBase
     /// \param proxy_binding The binding that shall be associated with this proxy.
     ProxyEvent(ProxyBase& base,
                std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
-               const score::cpp::string_view event_name,
+               const std::string_view event_name,
                PrivateConstructorEnabler);
 
     /// \brief Constructs a ProxyEvent by querying the base proxie's ProxyBinding for the respective ProxyEventBinding.
@@ -93,7 +94,23 @@ class ProxyEvent final : public ProxyEventBase
     /// \param base Proxy that contains this event
     /// \param event_name Event name of the event, taken from the AUTOSAR model
     /// \todo Remove unneeded parameter once we get these information from the configuration
-    ProxyEvent(ProxyBase& base, const score::cpp::string_view event_name);
+    ProxyEvent(ProxyBase& base, const std::string_view event_name);
+
+    [[deprecated("SPP_DEPRECATION: Use overload with std::string_view instead")]] ProxyEvent(
+        ProxyBase& base,
+        const score::cpp::string_view event_name)
+        : ProxyEvent{base, std::string_view{event_name.data(), event_name.size()}}
+    {
+    }
+
+    // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
+    // it will be removed once the overload with score::cpp::string_view is removed
+    template <typename StringViewConveritbleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
+    ProxyEvent(ProxyBase& base, const StringViewConveritbleType event_name)
+        : ProxyEvent{base, std::string_view{event_name}}
+    {
+    }
 
     /// \brief Receive pending data from the event.
     ///
@@ -117,13 +134,13 @@ class ProxyEvent final : public ProxyEventBase
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
                                    std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
-                                   const score::cpp::string_view event_name)
+                                   const std::string_view event_name)
     : ProxyEventBase{base, std::move(proxy_binding), event_name}
 {
 }
 
 template <typename SampleType>
-ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const score::cpp::string_view event_name)
+ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event_name)
     : ProxyEventBase{base, ProxyEventBindingFactory<SampleType>::Create(base, event_name), event_name}
 {
     const ProxyBaseView proxy_base_view{base};
@@ -134,7 +151,7 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const score::cpp::string_vie
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
                                    std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
-                                   const score::cpp::string_view event_name,
+                                   const std::string_view event_name,
                                    PrivateConstructorEnabler)
     : ProxyEventBase{base, std::move(proxy_binding), event_name}
 {

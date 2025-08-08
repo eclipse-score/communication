@@ -30,7 +30,7 @@ namespace
 
 using InstanceSpecifierView = ITracingFilterConfig::InstanceSpecifierView;
 
-const score::cpp::string_view GetOrInsertStringInSet(const score::cpp::string_view key,
+const std::string_view GetOrInsertStringInSet(const std::string_view key,
                                               std::set<std::string, std::less<>>& search_set) noexcept
 {
     const auto find_result = search_set.find(std::string_view{key.data(), key.size()});
@@ -70,8 +70,8 @@ void InsertTracePointIntoMap(
 }
 
 template <typename TracePointType>
-void AddTracePointToMap(score::cpp::string_view service_type,
-                        score::cpp::string_view service_element_name,
+void AddTracePointToMap(std::string_view service_type,
+                        std::string_view service_element_name,
                         ServiceElementType service_element_type,
                         InstanceSpecifierView instance_specifier,
                         TracePointType trace_point_type,
@@ -96,8 +96,8 @@ void AddTracePointToMap(score::cpp::string_view service_type,
 
 template <typename TracePointType>
 bool IsTracePointEnabledInMap(
-    score::cpp::string_view service_type,
-    score::cpp::string_view service_element_name,
+    std::string_view service_type,
+    std::string_view service_element_name,
     ServiceElementType service_element_type,
     InstanceSpecifierView instance_specifier,
     TracePointType trace_point_type,
@@ -262,8 +262,8 @@ std::size_t FindNumberOfTracingSlots(
 }  // namespace
 
 bool TracingFilterConfig::IsTracePointEnabled(
-    score::cpp::string_view service_type,
-    score::cpp::string_view event_name,
+    std::string_view service_type,
+    std::string_view event_name,
     InstanceSpecifierView instance_specifier,
     SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept
 {
@@ -276,8 +276,8 @@ bool TracingFilterConfig::IsTracePointEnabled(
 }
 
 bool TracingFilterConfig::IsTracePointEnabled(
-    score::cpp::string_view service_type,
-    score::cpp::string_view field_name,
+    std::string_view service_type,
+    std::string_view field_name,
     InstanceSpecifierView instance_specifier,
     SkeletonFieldTracePointType skeleton_field_trace_point_type) const noexcept
 {
@@ -289,8 +289,8 @@ bool TracingFilterConfig::IsTracePointEnabled(
                                     skeleton_field_trace_points_);
 }
 
-bool TracingFilterConfig::IsTracePointEnabled(score::cpp::string_view service_type,
-                                              score::cpp::string_view event_name,
+bool TracingFilterConfig::IsTracePointEnabled(std::string_view service_type,
+                                              std::string_view event_name,
                                               InstanceSpecifierView instance_specifier,
                                               ProxyEventTracePointType proxy_event_trace_point_type) const noexcept
 {
@@ -302,8 +302,8 @@ bool TracingFilterConfig::IsTracePointEnabled(score::cpp::string_view service_ty
                                     proxy_event_trace_points_);
 }
 
-bool TracingFilterConfig::IsTracePointEnabled(score::cpp::string_view service_type,
-                                              score::cpp::string_view field_name,
+bool TracingFilterConfig::IsTracePointEnabled(std::string_view service_type,
+                                              std::string_view field_name,
                                               InstanceSpecifierView instance_specifier,
                                               ProxyFieldTracePointType proxy_field_trace_point_type) const noexcept
 {
@@ -315,8 +315,8 @@ bool TracingFilterConfig::IsTracePointEnabled(score::cpp::string_view service_ty
                                     proxy_field_trace_points_);
 }
 
-void TracingFilterConfig::AddTracePoint(score::cpp::string_view service_type,
-                                        score::cpp::string_view event_name,
+void TracingFilterConfig::AddTracePoint(std::string_view service_type,
+                                        std::string_view event_name,
                                         InstanceSpecifierView instance_specifier,
                                         SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept
 {
@@ -329,8 +329,8 @@ void TracingFilterConfig::AddTracePoint(score::cpp::string_view service_type,
                        config_names_);
 }
 
-void TracingFilterConfig::AddTracePoint(score::cpp::string_view service_type,
-                                        score::cpp::string_view field_name,
+void TracingFilterConfig::AddTracePoint(std::string_view service_type,
+                                        std::string_view field_name,
                                         InstanceSpecifierView instance_specifier,
                                         SkeletonFieldTracePointType skeleton_field_trace_point_type) noexcept
 {
@@ -343,8 +343,8 @@ void TracingFilterConfig::AddTracePoint(score::cpp::string_view service_type,
                        config_names_);
 }
 
-void TracingFilterConfig::AddTracePoint(score::cpp::string_view service_type,
-                                        score::cpp::string_view event_name,
+void TracingFilterConfig::AddTracePoint(std::string_view service_type,
+                                        std::string_view event_name,
                                         InstanceSpecifierView instance_specifier,
                                         ProxyEventTracePointType proxy_event_trace_point_type) noexcept
 {
@@ -357,8 +357,8 @@ void TracingFilterConfig::AddTracePoint(score::cpp::string_view service_type,
                        config_names_);
 }
 
-void TracingFilterConfig::AddTracePoint(score::cpp::string_view service_type,
-                                        score::cpp::string_view field_name,
+void TracingFilterConfig::AddTracePoint(std::string_view service_type,
+                                        std::string_view field_name,
                                         InstanceSpecifierView instance_specifier,
                                         ProxyFieldTracePointType proxy_field_trace_point_type) noexcept
 {

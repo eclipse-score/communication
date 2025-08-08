@@ -263,8 +263,8 @@ Dispatches all calls to functions in ProxyEventBindingBase interface to ProxyEve
     <panel_attributes>ProxyEventBindingFactory
 --
 _ template &lt;typename SampleType&gt;_
-_+Create(ProxyBase&amp; parent, score::cpp::string_view event_name): std::unique_ptr&lt;ProxyEventBinding&lt;SampleType&gt; &gt;_
-*_+CreateGeneric(ProxyBase&amp; parent, score::cpp::string_view event_name): std::unique_ptr&lt;GenericProxyEventBinding &gt;_*</panel_attributes>
+_+Create(ProxyBase&amp; parent, std::string_view event_name): std::unique_ptr&lt;ProxyEventBinding&lt;SampleType&gt; &gt;_
+*_+CreateGeneric(ProxyBase&amp; parent, std::string_view event_name): std::unique_ptr&lt;GenericProxyEventBinding &gt;_*</panel_attributes>
     <additional_attributes/>
   </element>
   <element>

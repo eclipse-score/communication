@@ -24,7 +24,6 @@
 #include "score/os/utils/inotify/inotify_instance_mock.h"
 
 #include <score/expected.hpp>
-#include <score/string_view.hpp>
 
 #include <gtest/gtest.h>
 #include <cerrno>
@@ -32,6 +31,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 namespace score::mw::com::impl::lola
 {

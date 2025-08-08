@@ -23,14 +23,14 @@
 namespace score::mw::com::impl
 {
 
-GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const score::cpp::string_view event_name)
+GenericProxyEvent::GenericProxyEvent(ProxyBase& base, const std::string_view event_name)
     : ProxyEventBase{base, GenericProxyEventBindingFactory::Create(base, event_name), event_name}
 {
 }
 
 GenericProxyEvent::GenericProxyEvent(ProxyBase& base,
                                      std::unique_ptr<GenericProxyEventBinding> proxy_binding,
-                                     const score::cpp::string_view event_name)
+                                     const std::string_view event_name)
     : ProxyEventBase{base, std::move(proxy_binding), event_name}
 {
 }

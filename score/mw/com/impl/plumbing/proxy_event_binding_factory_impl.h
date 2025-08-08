@@ -23,10 +23,10 @@
 
 #include <score/blank.hpp>
 #include <score/overload.hpp>
-#include <score/string_view.hpp>
 
 #include <limits>
 #include <memory>
+#include <string_view>
 #include <utility>
 #include <variant>
 
@@ -45,7 +45,7 @@ class ProxyEventBindingFactoryImpl : public IProxyEventBindingFactory<SampleType
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
     std::unique_ptr<ProxyEventBinding<SampleType>> Create(ProxyBase& parent,
-                                                          const score::cpp::string_view event_name) noexcept override;
+                                                          const std::string_view event_name) noexcept override;
 };
 
 /// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
@@ -58,7 +58,7 @@ class GenericProxyEventBindingFactoryImpl : public IGenericProxyEventBindingFact
     /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
     std::unique_ptr<GenericProxyEventBinding> Create(ProxyBase& parent,
-                                                     const score::cpp::string_view event_name) noexcept override;
+                                                     const std::string_view event_name) noexcept override;
 };
 
 template <typename SampleType>
@@ -72,7 +72,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyEventBindingFactoryImpl<SampleType>::Create(
     ProxyBase& parent,
-    const score::cpp::string_view event_name) noexcept
+    const std::string_view event_name) noexcept
 {
     return CreateProxyServiceElement<ProxyEventBinding<SampleType>,
                                      lola::ProxyEvent<SampleType>,

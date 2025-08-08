@@ -33,11 +33,11 @@
 
 #include <score/assert.hpp>
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 #include <score/utility.hpp>
 
 #include <mutex>
 #include <optional>
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -69,7 +69,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     SkeletonEvent(Skeleton& parent,
                   const ElementFqId event_fqn,
-                  const score::cpp::string_view event_name,
+                  const std::string_view event_name,
                   const SkeletonEventProperties properties,
                   impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {}) noexcept;
 
@@ -114,7 +114,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     Skeleton& parent_;
     const ElementFqId event_fqn_;
-    const score::cpp::string_view event_name_;
+    const std::string_view event_name_;
     const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
     std::optional<EventDataControlComposite> event_data_control_composite_;
@@ -132,7 +132,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 template <typename SampleType>
 SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          const ElementFqId event_fqn,
-                                         const score::cpp::string_view event_name,
+                                         const std::string_view event_name,
                                          const SkeletonEventProperties properties,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},

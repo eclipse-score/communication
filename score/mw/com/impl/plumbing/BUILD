@@ -172,7 +172,6 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl:proxy_base",
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",
@@ -236,7 +235,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/configuration",

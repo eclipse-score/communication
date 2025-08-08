@@ -9,7 +9,10 @@ case of strongly typed proxies. The special case of "generic proxies" is describ
 
 <a name="classdiagram"></a>
 
-![Skeleton Proxy Binding](broken_link_k/swh/ddad_score/mw/com/design/skeleton_proxy/skeleton_proxy_binding_model.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+![Skeleton Binding Model](broken_link_k/swh/safe-posix-platform/score/mw/com/design/skeleton_proxy/skeleton_binding_model.puml)
+
+![Proxy Binding Model](broken_link_k/swh/safe-posix-platform/score/mw/com/design/skeleton_proxy/proxy_binding_model.puml)
+
 
 The overall structure foresees proxies (`DummyProxy`) and skeletons (`DummySkeleton`), which are generated from IDL.
 Both inherit from a respective base class, where otherwise redundant code that can be reused by any proxy or skeleton is

@@ -12,9 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/proxy_binding.h"
 
-#include <score/string_view.hpp>
-
 #include <gtest/gtest.h>
+
+#include <string_view>
 #include <type_traits>
 
 namespace score::mw::com::impl
@@ -25,12 +25,12 @@ namespace
 class MyProxy final : public ProxyBinding
 {
   public:
-    bool IsEventProvided(const score::cpp::string_view) const noexcept override
+    bool IsEventProvided(const std::string_view) const noexcept override
     {
         return true;
     }
-    void RegisterEventBinding(score::cpp::string_view, ProxyEventBindingBase&) noexcept override {}
-    void UnregisterEventBinding(score::cpp::string_view) noexcept override {}
+    void RegisterEventBinding(std::string_view, ProxyEventBindingBase&) noexcept override {}
+    void UnregisterEventBinding(std::string_view) noexcept override {}
 };
 
 TEST(ProxyBindingTest, ProxyBindingShouldNotBeCopyable)

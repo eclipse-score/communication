@@ -215,5 +215,55 @@ INSTANTIATE_TEST_SUITE_P(ServiceInstanceIdHashFixture,
                          ServiceInstanceIdHashFixture,
                          ::testing::ValuesIn(instance_id_to_hash_string_variations));
 
+TEST(ServiceInstanceIdTest, CanGetLolaBindingFromServiceInstanceIdContainingLolaBinding)
+{
+    // Given a ServiceInstanceId containing a Lola binding
+    const LolaServiceInstanceId lola_service_instance_id{10U};
+    const ServiceInstanceId service_instance_id{lola_service_instance_id};
+
+    // When getting the LolaServiceInstanceId
+    const auto& returned_service_instance_id_binding =
+        GetServiceInstanceIdBinding<LolaServiceInstanceId>(service_instance_id);
+
+    // Then the lola binding of the ServiceInstanceId is returned
+    EXPECT_EQ(lola_service_instance_id, returned_service_instance_id_binding);
+}
+
+TEST(ServiceInstanceIdTest, CanGetSomeIpBindingFromServiceInstanceIdContainingSomeIpBinding)
+{
+    // Given a ServiceInstanceId containing a SomeIp binding
+    const SomeIpServiceInstanceId some_ip_service_instance_id{10U};
+    const ServiceInstanceId service_instance_id{some_ip_service_instance_id};
+
+    // When getting the SomeIpServiceInstanceId
+    const auto returned_service_instance_id_binding =
+        GetServiceInstanceIdBinding<SomeIpServiceInstanceId>(service_instance_id);
+
+    // Then the SomeIp binding of the ServiceInstanceId is returned
+    EXPECT_EQ(some_ip_service_instance_id, returned_service_instance_id_binding);
+}
+
+TEST(ServiceInstanceIdDeathTest, GettingLolaBindingFromServiceInstanceIdNotContainingLolaBindingTerminates)
+{
+    // Given a ServiceInstanceId containing a SomeIp binding
+    const SomeIpServiceInstanceId some_ip_service_instance_id{10U};
+    ServiceInstanceId service_instance_id{some_ip_service_instance_id};
+
+    // When getting the LolaServiceInstanceId
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = GetServiceInstanceIdBinding<LolaServiceInstanceId>(service_instance_id), ".*");
+}
+
+TEST(ServiceInstanceIdDeathTest, GettingSomeIpBindingFromServiceInstanceIdNotContainingSomeIpBindingTerminates)
+{
+    // Given a ServiceInstanceId containing a Lola binding
+    const LolaServiceInstanceId lola_service_instance_id{10U};
+    ServiceInstanceId service_instance_id{lola_service_instance_id};
+
+    // When getting the SomeIpServiceInstanceId
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = GetServiceInstanceIdBinding<SomeIpServiceInstanceId>(service_instance_id), ".*");
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

@@ -27,9 +27,9 @@
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <cstdint>
+#include <string_view>
 
 namespace score::mw::com::impl::tracing
 {
@@ -150,11 +150,11 @@ void UpdateTracingDataFromTraceResult(const ResultBlank trace_result,
 tracing::SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(
     const InstanceIdentifier& instance_identifier,
     const BindingType binding_type,
-    const score::cpp::string_view event_name) noexcept;
+    const std::string_view event_name) noexcept;
 tracing::SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(
     const InstanceIdentifier& instance_identifier,
     const BindingType binding_type,
-    const score::cpp::string_view field_name) noexcept;
+    const std::string_view field_name) noexcept;
 
 template <typename SampleType>
 void TraceSend(SkeletonEventTracingData& skeleton_event_tracing_data,

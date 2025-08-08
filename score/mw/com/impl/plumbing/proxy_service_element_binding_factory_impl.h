@@ -19,17 +19,16 @@
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/proxy_base.h"
 
-#include "score/memory/any_string_view.h"
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 #include <score/blank.hpp>
 #include <score/overload.hpp>
-#include <score/string_view.hpp>
 
 #include <chrono>
 #include <exception>
 #include <memory>
+#include <string_view>
 #include <thread>
 #include <variant>
 
@@ -52,7 +51,7 @@ template <typename ProxyServiceElementBinding, typename ProxyServiceElement, Ser
 // coverity[autosar_cpp14_a8_2_1_violation]
 std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
     ProxyBase& parent,
-    const score::cpp::string_view service_element_name) noexcept
+    const std::string_view service_element_name) noexcept
 {
     using ReturnType = std::unique_ptr<ProxyServiceElementBinding>;
 
@@ -75,9 +74,8 @@ std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
                                    "ServiceInstanceId does not contain lola binding.");
 
-            const std::string service_element_name_string{service_element_name.data(), service_element_name.size()};
             const auto lola_service_element_id =
-                GetServiceElementId<element_type>(lola_type_deployment, service_element_name_string);
+                GetServiceElementId<element_type>(lola_type_deployment, std::string{service_element_name});
             const lola::ElementFqId element_fq_id{lola_type_deployment.service_id_,
                                                   lola_service_element_id,
                                                   lola_service_instance_id->GetId(),

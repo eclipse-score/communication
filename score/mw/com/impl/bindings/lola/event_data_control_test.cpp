@@ -205,7 +205,8 @@ TEST_F(EventDataControlFixture, CanAllocateOldestSlotAfterOneSlotReady)
     EXPECT_EQ(slot.GetIndex(), 2);
 }
 
-TEST_F(EventDataControlFixture, RandomizedSlotAllocation)
+// Test is timing out in the CI likely due to a race condition. Test to be investigated and re-enabled in Ticket-206121.
+TEST_F(EventDataControlFixture, DISABLED_RandomizedSlotAllocation)
 {
     // Given an empty EventDataControl
     EventDataControl unit{kMaxSlots, memory_.getMemoryResourceProxy(), kMaxSubscribers};

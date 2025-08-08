@@ -26,13 +26,13 @@
 
 #include "score/result/result.h"
 
-#include <score/string_view.hpp>
-
 #include <gtest/gtest.h>
+
 #include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl::tracing
@@ -51,14 +51,14 @@ const ConfigurationStore kConfigStore{
     LolaServiceInstanceId{2U},
 };
 const auto& kInstanceIdentifier = kConfigStore.GetInstanceIdentifier();
-constexpr score::cpp::string_view kEventName{"DummyEvent1"};
-constexpr score::cpp::string_view kFieldName{"DummyField1"};
+constexpr std::string_view kEventName{"DummyEvent1"};
+constexpr std::string_view kFieldName{"DummyField1"};
 
 class MyDummyField : public SkeletonFieldBase
 {
   public:
     MyDummyField(SkeletonBase& skeleton_base,
-                 const score::cpp::string_view field_name,
+                 const std::string_view field_name,
                  std::unique_ptr<SkeletonEventBindingBase> skeleton_event_base)
         : SkeletonFieldBase{
               skeleton_base,
@@ -123,8 +123,8 @@ class SkeletonTracingFixture : public ::testing::Test
     SkeletonEventBase skeleton_event_base_;
     MyDummyField skeleton_field_base_;
 
-    std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>> events_map_;
-    std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>> fields_map_;
+    std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>> events_map_;
+    std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>> fields_map_;
 };
 
 using SkeletonTracingCreateRegisterShmCallbackFixture = SkeletonTracingFixture;

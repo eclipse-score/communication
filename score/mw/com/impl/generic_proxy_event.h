@@ -27,9 +27,9 @@
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
-#include <score/string_view.hpp>
 
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -52,13 +52,13 @@ class GenericProxyEvent : public ProxyEventBase
     /// \param proxy_binding The binding that shall be associated with this proxy.
     explicit GenericProxyEvent(ProxyBase& base,
                                std::unique_ptr<GenericProxyEventBinding> proxy_binding,
-                               const score::cpp::string_view event_name);
+                               const std::string_view event_name);
 
     /// \brief Constructs a ProxyEvent by querying the base proxie's ProxyBinding for the respective ProxyEventBinding.
     ///
     /// \param parent Proxy that contains this event
     /// \param event_name Event name of the event, taken from the AUTOSAR model
-    GenericProxyEvent(ProxyBase& base, const score::cpp::string_view event_name);
+    GenericProxyEvent(ProxyBase& base, const std::string_view event_name);
 
     /// \brief A ProxyEventBase shall not be copyable or copyable
     GenericProxyEvent(const GenericProxyEvent&) = delete;

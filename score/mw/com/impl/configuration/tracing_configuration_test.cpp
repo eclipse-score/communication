@@ -27,9 +27,7 @@ const tracing::ServiceElementIdentifierView kDummyServiceElementIdentifierView{
     kDummyServiceElementIdentifier.service_element_name.data(),
     kDummyServiceElementIdentifier.service_element_type};
 const auto kDummyInstanceSpecifier = InstanceSpecifier::Create("my_dummy_instance_specifier").value();
-const std::string_view kDummyInstanceSpecifierStdView = kDummyInstanceSpecifier.ToString();
-const score::cpp::string_view kDummyInstanceSpecifierView =
-    score::cpp::string_view{kDummyInstanceSpecifierStdView.data(), kDummyInstanceSpecifierStdView.size()};
+const std::string_view kDummyInstanceSpecifierView = kDummyInstanceSpecifier.ToString();
 
 TEST(TracingConfigurationTest, GettingTracingEnabledReturnsSetValue)
 {
@@ -55,14 +53,14 @@ TEST(TracingConfigurationTest, GettingApplicationInstanceIDReturnsSetValue)
         const auto set_tracing_application_instance_id = "a";
         tracing_configuration.SetApplicationInstanceID(set_tracing_application_instance_id);
         const auto get_tracing_application_instance_id = tracing_configuration.GetApplicationInstanceID();
-        EXPECT_EQ(get_tracing_application_instance_id, score::cpp::string_view{set_tracing_application_instance_id});
+        EXPECT_EQ(get_tracing_application_instance_id, set_tracing_application_instance_id);
     }
     {
         const auto set_tracing_application_instance_id =
             "this_other_really_long_application_id_that_is_probably_too_long_for_sso";
         tracing_configuration.SetApplicationInstanceID(set_tracing_application_instance_id);
         const auto get_tracing_application_instance_id = tracing_configuration.GetApplicationInstanceID();
-        EXPECT_EQ(get_tracing_application_instance_id, score::cpp::string_view{set_tracing_application_instance_id});
+        EXPECT_EQ(get_tracing_application_instance_id, set_tracing_application_instance_id);
     }
 }
 
@@ -73,14 +71,14 @@ TEST(TracingConfigurationTest, GettingTracingTraceFilterConfigPath)
         const auto set_tracing_filter_config_path = "b";
         tracing_configuration.SetTracingTraceFilterConfigPath(set_tracing_filter_config_path);
         const auto get_tracing_filter_config_path = tracing_configuration.GetTracingFilterConfigPath();
-        EXPECT_EQ(get_tracing_filter_config_path, score::cpp::string_view{set_tracing_filter_config_path});
+        EXPECT_EQ(get_tracing_filter_config_path, set_tracing_filter_config_path);
     }
     {
         const auto set_tracing_application_instance_id =
             "this_other_really_long_configuration_path_that_is_probably_too_long_for_sso";
         tracing_configuration.SetTracingTraceFilterConfigPath(set_tracing_application_instance_id);
         const auto get_tracing_application_instance_id = tracing_configuration.GetTracingFilterConfigPath();
-        EXPECT_EQ(get_tracing_application_instance_id, score::cpp::string_view{set_tracing_application_instance_id});
+        EXPECT_EQ(get_tracing_application_instance_id, set_tracing_application_instance_id);
     }
 }
 
@@ -104,8 +102,7 @@ TEST(TracingConfigurationTest, CheckingIsServiceElementTracingEnabledAfterSettin
 TEST(TracingConfigurationTest, CheckingIsServiceElementTracingEnabledAfterSettingMultipleSpecifiersReturnsTrue)
 {
     auto other_instance_specifier = InstanceSpecifier::Create("a_completely_different_specifier").value();
-    auto other_instance_specifier_view =
-        score::cpp::string_view{other_instance_specifier.ToString().data(), other_instance_specifier.ToString().size()};
+    auto other_instance_specifier_view = other_instance_specifier.ToString();
     TracingConfiguration tracing_configuration{};
     tracing_configuration.SetServiceElementTracingEnabled(kDummyServiceElementIdentifier, kDummyInstanceSpecifier);
     tracing_configuration.SetServiceElementTracingEnabled(kDummyServiceElementIdentifier, other_instance_specifier);

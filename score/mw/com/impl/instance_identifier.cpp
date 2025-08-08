@@ -43,7 +43,7 @@ Configuration* InstanceIdentifier::configuration_{nullptr};
 // std::bad_optional_access which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<InstanceIdentifier> InstanceIdentifier::Create(score::cpp::string_view serialized_format) noexcept
+score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string_view serialized_format) noexcept
 {
     if (configuration_ == nullptr)
     {

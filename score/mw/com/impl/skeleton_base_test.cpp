@@ -115,13 +115,13 @@ class SkeletonBaseFixture : public ::testing::Test
         field_binding_mock_ = skeleton_field_mock_ptr.get();
 
         EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                    Create(instance_identifier, _, score::cpp::string_view{kDummyEventName}))
+                    Create(instance_identifier, _, kDummyEventName))
             .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_1))));
         EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                    Create(instance_identifier, _, score::cpp::string_view{kDummyEventName2}))
+                    Create(instance_identifier, _, kDummyEventName2))
             .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_2))));
         EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                    CreateEventBinding(instance_identifier, _, score::cpp::string_view{kDummyFieldName}))
+                    CreateEventBinding(instance_identifier, _, kDummyFieldName))
             .WillOnce(Return(ByMove(std::move(skeleton_field_mock_ptr))));
 
         EXPECT_CALL(*event_binding_mock_1_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
@@ -637,13 +637,13 @@ TEST_F(SkeletonBaseMoveFixture, MovingAssigningOfferedSkeletonBaseCallsPrepareSt
 
     // Expect that both events and the field are created with mock bindings for the second skeleton
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(valid_instance_identifier2, _, score::cpp::string_view{kDummyEventName}))
+                Create(valid_instance_identifier2, _, kDummyEventName))
         .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_1))));
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(valid_instance_identifier2, _, score::cpp::string_view{kDummyEventName2}))
+                Create(valid_instance_identifier2, _, kDummyEventName2))
         .WillOnce(Return(ByMove(std::move(skeleton_event_mock_ptr_2))));
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(valid_instance_identifier2, _, score::cpp::string_view{kDummyFieldName}))
+                CreateEventBinding(valid_instance_identifier2, _, kDummyFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_mock_ptr))));
 
     // and GetBindingType is called on each event / field
@@ -739,13 +739,13 @@ TEST_F(SkeletonBaseMoveFixture, MovingAssigningUnOfferedSkeletonBaseDoesNotCallP
 
     // Expect that both events and the field are created with mock bindings
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(valid_instance_identifier2, _, score::cpp::string_view{kDummyEventName}))
+                Create(valid_instance_identifier2, _, kDummyEventName))
         .WillOnce(Return(ByMove(std::move(second_skeleton_event_mock_ptr_1))));
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(valid_instance_identifier2, _, score::cpp::string_view{kDummyEventName2}))
+                Create(valid_instance_identifier2, _, kDummyEventName2))
         .WillOnce(Return(ByMove(std::move(second_skeleton_event_mock_ptr_2))));
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(valid_instance_identifier2, _, score::cpp::string_view{kDummyFieldName}))
+                CreateEventBinding(valid_instance_identifier2, _, kDummyFieldName))
         .WillOnce(Return(ByMove(std::move(second_skeleton_field_mock_ptr))));
 
     // and GetBindingType is called on each event / field
@@ -1007,13 +1007,13 @@ TEST_F(SkeletonBaseOfferFixture, NoStopOfferOnErrorIdentifier)
 
     // Expect that the events and field bindings are never created
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(instance_identifier, _, score::cpp::string_view{kDummyEventName}))
+                Create(instance_identifier, _, kDummyEventName))
         .Times(0);
     EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
-                Create(instance_identifier, _, score::cpp::string_view{kDummyEventName2}))
+                Create(instance_identifier, _, kDummyEventName2))
         .Times(0);
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
-                CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, score::cpp::string_view{kDummyFieldName}))
+                CreateEventBinding(GetInstanceIdentifierWithoutBinding(), _, kDummyFieldName))
         .Times(0);
 
     // Given a constructed Skeleton with a invalid identifier

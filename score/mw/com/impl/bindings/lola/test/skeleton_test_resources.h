@@ -49,7 +49,6 @@
 #include "score/os/mocklib/unistdmock.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

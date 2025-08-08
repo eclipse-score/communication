@@ -20,10 +20,10 @@
 
 #include <score/callback.hpp>
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <functional>
 #include <map>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -37,13 +37,13 @@ class SkeletonEventBindingBase;
 class SkeletonBinding
 {
   public:
-    using SkeletonEventBindings = std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBindingBase>>;
+    using SkeletonEventBindings = std::map<std::string_view, std::reference_wrapper<SkeletonEventBindingBase>>;
 
     /// \brief callback type for registering shared-memory objects with tracing
     /// \details Needs only get used/called by bindings, which use shared-memory as their underlying communication/
     ///          data-exchange mechanism.
     using RegisterShmObjectTraceCallback =
-        score::cpp::callback<void(score::cpp::string_view element_name,
+        score::cpp::callback<void(std::string_view element_name,
                            ServiceElementType element_type,
                            memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
                            void* shm_memory_start_address),
@@ -53,7 +53,7 @@ class SkeletonBinding
     /// \details Needs only get used/called by bindings, which use shared-memory as their underlying communication/
     ///          data-exchange mechanism.
     using UnregisterShmObjectTraceCallback =
-        score::cpp::callback<void(score::cpp::string_view element_name, ServiceElementType element_type), 64U>;
+        score::cpp::callback<void(std::string_view element_name, ServiceElementType element_type), 64U>;
 
     // For the moment, SkeletonFields use only SkeletonEventBindings. However, in the future when Get / Set are
     // supported in fields, then SkeletonFieldBindings will be a map in which the values are:

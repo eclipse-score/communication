@@ -130,7 +130,6 @@ Our implementation of `mw::com` depends on the following components/libraries:
   will be refactored in the future). Details of its usage can be found
   [here](events_fields/README.md#notifications-between-skeleton-and-proxy). It also enlists the dependencies it has and
   which therefore become transient dependencies for our `mw::com` implementation.
-* `//platform/aas/lib/memory:any_string_view`
 * `//score/os/utils/acl:acl`
 * `//score/os/utils/inotify`
 * `/platform/aas/mw/log`

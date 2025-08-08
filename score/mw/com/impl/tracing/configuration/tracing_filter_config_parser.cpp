@@ -18,12 +18,11 @@
 #include "score/mw/log/logging.h"
 
 #include <score/overload.hpp>
-#include <score/string_view.hpp>
-#include <string_view>
 
 #include <exception>
 #include <set>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -157,17 +156,15 @@ bool IsOptionalBoolPropertyEnabled(const score::json::Object& json, const std::s
 /// \param service_type identification of the service type (which is an AUTOSAR short-name-path representation)
 /// \return set of string_views reflecting an InstanceSpecifier. Those string_views reference into strings held by
 ///         our single/global Configuration object. Their lifetime is the same as the LoLa runtime!
-std::set<score::cpp::string_view> GetInstancesOfServiceType(const Configuration& configuration, score::cpp::string_view service_type)
+std::set<std::string_view> GetInstancesOfServiceType(const Configuration& configuration, std::string_view service_type)
 {
-    std::set<score::cpp::string_view> result{};
+    std::set<std::string_view> result{};
     for (const auto& service_instance_element : configuration.GetServiceInstances())
     {
         if (service_instance_element.second.service_.ToString() ==
             std::string_view{service_type.data(), service_type.size()})
         {
-            const auto element_std_string_view = service_instance_element.first.ToString();
-            const auto element_string_view =
-                score::cpp::string_view{element_std_string_view.data(), element_std_string_view.size()};
+            const auto element_string_view = service_instance_element.first.ToString();
             score::cpp::ignore = result.insert(element_string_view);
         }
     }
@@ -181,11 +178,11 @@ std::set<score::cpp::string_view> GetInstancesOfServiceType(const Configuration&
 /// \param element_type element type of which to get names
 /// \param configuration configuration object to get consulted for the search/lookup
 /// \return a set of string_views denoting the service element names.
-std::set<score::cpp::string_view> GetElementNamesOfServiceType(const score::cpp::string_view service_type,
+std::set<std::string_view> GetElementNamesOfServiceType(const std::string_view service_type,
                                                         ServiceElementType element_type,
                                                         const Configuration& configuration)
 {
-    std::set<score::cpp::string_view> result{};
+    std::set<std::string_view> result{};
     auto service_type_deployment_visitor = score::cpp::overload(
         [&result, element_type](const LolaServiceTypeDeployment& lola_service_deployment) {
             if (element_type == ServiceElementType::EVENT)
@@ -246,8 +243,8 @@ std::set<score::cpp::string_view> GetElementNamesOfServiceType(const score::cpp:
 template <typename TP>
 void AddTracePoint(const score::json::Object& json,
                    const std::string_view bool_prop_name,
-                   score::cpp::string_view service_type,
-                   score::cpp::string_view service_element_name,
+                   std::string_view service_type,
+                   std::string_view service_element_name,
                    ITracingFilterConfig::InstanceSpecifierView instance_id,
                    TP trace_point_type,
                    TracingFilterConfig& filter_config)
@@ -266,10 +263,10 @@ void AddTracePoint(const score::json::Object& json,
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void ParseEvent(const score::json::Any& json,
-                score::cpp::string_view service_type,
-                const std::set<score::cpp::string_view>& event_names,
+                std::string_view service_type,
+                const std::set<std::string_view>& event_names,
                 const Configuration& configuration,
-                const std::set<score::cpp::string_view>& instance_specifiers,
+                const std::set<std::string_view>& instance_specifiers,
                 TracingFilterConfig& filter_config) noexcept
 {
     const auto& object = json.As<score::json::Object>().value().get();
@@ -339,9 +336,9 @@ void ParseEvent(const score::json::Any& json,
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void ParseEvents(const score::json::Any& json,
-                 score::cpp::string_view service_short_name_path,
+                 std::string_view service_short_name_path,
                  const Configuration& configuration,
-                 const std::set<score::cpp::string_view>& instance_specifiers,
+                 const std::set<std::string_view>& instance_specifiers,
                  TracingFilterConfig& filter_config) noexcept
 {
     const auto& object = json.As<score::json::Object>().value().get();
@@ -353,7 +350,7 @@ void ParseEvents(const score::json::Any& json,
     }
     else
     {
-        const std::set<score::cpp::string_view>& event_names =
+        const std::set<std::string_view>& event_names =
             GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::EVENT, configuration);
 
         for (const auto& event : events->second.As<score::json::List>().value().get())
@@ -376,8 +373,8 @@ void ParseEvents(const score::json::Any& json,
 template <typename Mapping>
 void AddTracePointsFromSubObject(const score::json::Object& json_object,
                                  const std::string_view sub_object_name,
-                                 score::cpp::string_view service_type,
-                                 score::cpp::string_view service_element_name,
+                                 std::string_view service_type,
+                                 std::string_view service_element_name,
                                  ITracingFilterConfig::InstanceSpecifierView instance_id,
                                  Mapping& property_name_trace_point_mappings,
                                  TracingFilterConfig& filter_config)
@@ -428,10 +425,10 @@ void WarnNotImplementedTracePointsFromSubObject(const score::json::Object& json_
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void ParseField(const score::json::Any& json,
-                score::cpp::string_view service_type,
-                const std::set<score::cpp::string_view>& field_names,
+                std::string_view service_type,
+                const std::set<std::string_view>& field_names,
                 const Configuration& configuration,
-                const std::set<score::cpp::string_view>& instance_specifiers,
+                const std::set<std::string_view>& instance_specifiers,
                 TracingFilterConfig& filter_config) noexcept
 {
     const auto& object = json.As<score::json::Object>().value().get();
@@ -523,9 +520,9 @@ void ParseField(const score::json::Any& json,
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void ParseFields(const score::json::Any& json,
-                 score::cpp::string_view service_short_name_path,
+                 std::string_view service_short_name_path,
                  const Configuration& configuration,
-                 const std::set<score::cpp::string_view>& instance_specifiers,
+                 const std::set<std::string_view>& instance_specifiers,
                  TracingFilterConfig& filter_config) noexcept
 {
     const auto& object = json.As<score::json::Object>().value().get();
@@ -537,7 +534,7 @@ void ParseFields(const score::json::Any& json,
     }
     else
     {
-        const std::set<score::cpp::string_view>& field_names =
+        const std::set<std::string_view>& field_names =
             GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::FIELD, configuration);
 
         for (const auto& field : fields->second.As<score::json::List>().value().get())
@@ -555,9 +552,9 @@ void ParseFields(const score::json::Any& json,
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void ParseMethods(const score::json::Any& json,
-                  score::cpp::string_view /*service_short_name_path*/,
+                  std::string_view /*service_short_name_path*/,
                   const Configuration& /*configuration*/,
-                  const std::set<score::cpp::string_view>& /*instance_specifiers*/,
+                  const std::set<std::string_view>& /*instance_specifiers*/,
                   TracingFilterConfig& /*filter_config*/) noexcept
 {
     const auto& object = json.As<score::json::Object>().value().get();
@@ -586,7 +583,7 @@ void ParseMethods(const score::json::Any& json,
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void ParseService(const score::json::Any& json,
-                  const std::set<score::cpp::string_view>& configured_service_types,
+                  const std::set<std::string_view>& configured_service_types,
                   const Configuration& configuration,
                   TracingFilterConfig& filter_config) noexcept
 {
@@ -629,12 +626,10 @@ score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json, c
     }
 
     // which service types are configured locally in mw::com/LoLa?
-    std::set<score::cpp::string_view> configured_service_types{};
+    std::set<std::string_view> configured_service_types{};
     for (const auto& map_entry : configuration.GetServiceTypes())
     {
-        const auto service_type_std_string_view = map_entry.first.ToString();
-        const auto service_type_string_view =
-            score::cpp::string_view{service_type_std_string_view.data(), service_type_std_string_view.size()};
+        const auto service_type_string_view = map_entry.first.ToString();
         score::cpp::ignore = configured_service_types.insert(service_type_string_view);
     }
 
@@ -654,13 +649,13 @@ score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json, c
 // which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<TracingFilterConfig> Parse(const score::cpp::string_view path, const Configuration& configuration) noexcept
+score::Result<TracingFilterConfig> Parse(const std::string_view path, const Configuration& configuration) noexcept
 {
     const score::json::JsonParser json_parser_obj{};
     // Reason for banning is AoU of vaJson library about integrity of provided path.
     // This AoU is forwarded as AoU of Lola. See broken_link_c/issue/5835192
     // NOLINTNEXTLINE(score-banned-function): The user has to guarantee the integrity of the path
-    auto json_result = json_parser_obj.FromFile(path);
+    auto json_result = json_parser_obj.FromFile(score::cpp::string_view{path.data(), path.size()});
     if (!json_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << "Parsing trace filter config file" << path
