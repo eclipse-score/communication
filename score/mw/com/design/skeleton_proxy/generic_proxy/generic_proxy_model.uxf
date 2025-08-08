@@ -751,7 +751,7 @@ r1=common_dispatch_</panel_attributes>
     </coordinates>
     <panel_attributes>ServiceElementMap
 --
-using key_type = score::cpp::stringview
+using key_type = std::stringview
 using mapped_type = GenericProxyEvent
 using value_type = 	std::pair&lt;const key_type, mapped_type&gt;
 using const_iterator = LegacyBidirectionalIterator to const value_type
