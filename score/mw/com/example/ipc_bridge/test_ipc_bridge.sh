@@ -1,14 +1,8 @@
 #!/bin/bash
 set -eux
 
-CPP_EXAMPLE_CMD="./bazel-bin/score/mw/com/example/ipc_bridge/ipc_bridge_cpp -s score/mw/com/example/ipc_bridge/etc/mw_com_config.json -n 20 -t 1000"
-RUST_EXAMPLE_CMD="./bazel-bin/score/mw/com/example/ipc_bridge/ipc_bridge_rs -s score/mw/com/example/ipc_bridge/etc/mw_com_config.json"
-
-function build_examples() {
-    bazel build \
-        //score/mw/com/example/ipc_bridge:ipc_bridge_rs \
-        //score/mw/com/example/ipc_bridge:ipc_bridge_cpp
-}
+CPP_EXAMPLE_CMD="score/mw/com/example/ipc_bridge/ipc_bridge_cpp -s score/mw/com/example/ipc_bridge/etc/mw_com_config.json -n 20 -t 1000"
+RUST_EXAMPLE_CMD="score/mw/com/example/ipc_bridge/ipc_bridge_rs -s score/mw/com/example/ipc_bridge/etc/mw_com_config.json"
 
 function run_receiver_sender() {
     EXAMPLE_CMD_RECV="$1"
@@ -39,8 +33,6 @@ function run_receiver_sender() {
     set -e
     [[ "$RECEIVER_RETURN_CODE" == "$receiver_return_code" ]]
 }
-
-build_examples
 
 echo -e "\n\n\nRunning Rust receiver and Rust sender"
 run_receiver_sender "$RUST_EXAMPLE_CMD" "$RUST_EXAMPLE_CMD" 143 true
