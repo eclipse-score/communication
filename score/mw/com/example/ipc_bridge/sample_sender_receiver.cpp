@@ -18,12 +18,12 @@
 #include "score/concurrency/notification.h"
 
 #include "score/mw/com/impl/proxy_event.h"
+#include <random>
 #include <score/assert.hpp>
 #include <score/hash.hpp>
 #include <score/optional.hpp>
 
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
