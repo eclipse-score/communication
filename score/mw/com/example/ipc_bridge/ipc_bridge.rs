@@ -32,9 +32,23 @@ enum Mode {
 
 #[derive(Parser)]
 struct Arguments {
+    /// Number of cycles that are executed before determining success or failure. 0 indicates no limit
+    #[arg(
+        short,
+        long,
+        default_value = "0",
+    )]
+    num_cyles: usize,
     /// Set to either send/skeleton or recv/proxy to determine the role of the process
     #[arg(value_enum, short, long)]
     mode: Mode,
+    /// Cycle time in milliseconds for sending/polling
+    #[arg(
+        short,
+        long,
+    )]
+    // std::time::Duration is not directly supported by clap, so we use usize and convert it later
+    cycle_time: usize,
     #[arg(
         short,
         long,
