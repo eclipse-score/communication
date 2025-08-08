@@ -59,12 +59,12 @@ TEST(ApplicationIdPidMapping, RegisterMaxRetryFailure)
     {
         if (i != unused_entry)
         {
-            mapping_entries.at(i).SetStatusAndUidAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, i);
+            mapping_entries.at(i).SetStatusAndApplicationIdAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, i);
             mapping_entries.at(i).pid_ = i;
         }
         else
         {
-            mapping_entries.at(i).SetStatusAndUidAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUnused, i);
+            mapping_entries.at(i).SetStatusAndApplicationIdAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUnused, i);
             mapping_entries.at(i).pid_ = 0;
         }
     }
@@ -106,11 +106,11 @@ TEST(ApplicationIdPidMapping, RegisterUpdatesPidWhenEntryIsInUpdatingStateForSam
     // Given a single entry array that can be controlled
     score::containers::DynamicArray<ApplicationIdPidMappingEntry> mapping_entries(1);
 
-    const uid_t test_application_id = 42;
+    const std::uint32_t test_application_id = 42;
     const pid_t new_pid = 200;
     const pid_t old_pid = 100;
     // Set up the entry in kUpdating state for our test application ID
-    mapping_entries.at(0).SetStatusAndUidAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUpdating, test_application_id);
+    mapping_entries.at(0).SetStatusAndApplicationIdAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUpdating, test_application_id);
     mapping_entries.at(0).pid_ = old_pid;
 
     // When tried to register
@@ -128,10 +128,10 @@ TEST(ApplicationIdPidMapping, ConcurrentAccess)
     using namespace std::chrono_literals;
 
     // given a thread, which tries to Register 30 different application_id/pid pairs, by ...
-    auto thread_action = [&unit](uid_t start_application_id) {
+    auto thread_action = [&unit](std::uint32_t start_application_id) {
         for (int i = 0; i < 30; i++)
         {
-            uid_t application_id = start_application_id;
+            std::uint32_t application_id = start_application_id;
             auto pid = static_cast<pid_t>(application_id + 100);
             for (int j = 0; j < 3; j++)
             {

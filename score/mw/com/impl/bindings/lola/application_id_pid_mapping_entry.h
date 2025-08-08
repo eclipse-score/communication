@@ -32,18 +32,16 @@ class ApplicationIdPidMappingEntry
         kInvalid,  // this is a value, which we shall NOT see in an entry!
     };
 
-    // \brief our key-type is a combination of 4 byte status and 4 byte uid
+    /// \brief our key-type is a combination of 4 byte status and 4 byte application id
     using key_type = std::uint64_t;
-    // \brief we use key_type for our lock-free sync algo -> atomic access needs to be always lock-free therefore
+    /// \brief we use key_type for our lock-free sync algo -> atomic access needs to be always lock-free therefore
     static_assert(std::atomic<key_type>::is_always_lock_free);
-    // \brief we are encoding the uid into our key-type and have foreseen 4 byte for it!
-    static_assert(sizeof(uid_t) <= 4);
 
     /// \brief Load key atomically and return its parts as a pair.
     /// \return parts, which make up the key
-    std::pair<MappingEntryStatus, uid_t> GetStatusAndUidAtomic() noexcept;
-    void SetStatusAndUidAtomic(MappingEntryStatus status, uid_t application_id) noexcept;
-    static key_type CreateKey(MappingEntryStatus status, uid_t application_id) noexcept;
+    std::pair<MappingEntryStatus, std::uint32_t> GetStatusAndApplicationIdAtomic() noexcept;
+    void SetStatusAndApplicationIdAtomic(MappingEntryStatus status, std::uint32_t application_id) noexcept;
+    static key_type CreateKey(MappingEntryStatus status, std::uint32_t application_id) noexcept;
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". There are no class invariants to maintain so member variable can be safely accessed directly.
     // coverity[autosar_cpp14_m11_0_1_violation]

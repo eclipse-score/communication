@@ -1018,7 +1018,7 @@ auto ParseGlobalProperties(const score::json::Any& json) noexcept -> GlobalConfi
         const auto& application_id_it = process_properties_map.find(kApplicationIdKey.data());
         if (application_id_it != process_properties_map.cend())
         {
-            const auto app_id = application_id_it->second.As<uid_t>().value();
+            const auto app_id = application_id_it->second.As<std::uint32_t>().value();
             global_configuration.SetApplicationId(app_id);
         }
     }

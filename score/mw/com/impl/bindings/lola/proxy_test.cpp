@@ -589,9 +589,9 @@ class ProxyUidPidRegistrationFixture : public ProxyMockedMemoryFixture
   protected:
     ProxyUidPidRegistrationFixture() noexcept {}
 
-    void AddUidPidMapping(uid_t uid, pid_t pid) noexcept
+    void AddApplicationIdPidMapping(std::uint32_t application_id, pid_t pid) noexcept
     {
-        auto result = fake_data_.data_control->application_id_pid_mapping_.RegisterPid(uid, pid);
+        auto result = fake_data_.data_control->application_id_pid_mapping_.RegisterPid(application_id, pid);
         ASSERT_TRUE(result.has_value());
         ASSERT_EQ(result.value(), pid);
     }
@@ -617,16 +617,16 @@ TEST_F(ProxyUidPidRegistrationFixture, NoOutdatedPidNotificationWillBeSent)
 
 TEST_F(ProxyUidPidRegistrationFixture, OutdatedPidNotificationWillBeSent)
 {
-    uid_t our_uid{22};
+    std::uint32_t our_application_id{22};
     pid_t old_pid{1};
     pid_t new_pid{2};
 
     // Given a fake Skeleton which sets up ServiceDataControl with an UidPidMapping, which contains an "old pid" for
     // our uid
-    AddUidPidMapping(our_uid, old_pid);
+    AddApplicationIdPidMapping(our_application_id, old_pid);
 
     // expect, that the LoLa runtime returns our application id (simulating fallback to uid) and new pid
-    EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(our_uid));
+    EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(our_application_id));
     EXPECT_CALL(binding_runtime_, GetPid()).WillRepeatedly(Return(new_pid));
 
     // we expect that IMessagePassingService::NotifyOutdatedNodeId() will get called to notify about an outdated pid!
@@ -645,7 +645,8 @@ class ProxyTransactionLogRollbackFixture : public ProxyMockedMemoryFixture
         InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
     }
 
-    TransactionLogId transaction_log_id_{kDummyUid};
+    static constexpr std::uint32_t kDummyApplicationId{665U};
+    TransactionLogId transaction_log_id_{kDummyApplicationId};
     const InstanceIdentifier instance_identifier_{
         make_InstanceIdentifier(kServiceInstanceDeployment, kServiceTypeDeployment)};
 

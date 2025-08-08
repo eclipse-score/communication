@@ -67,7 +67,8 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
     // Register the application's unique identifier (which is the transaction_log_id_ for this context) and
     // current pid in the shared mapping.
     const auto current_pid = lola_runtime.GetPid();
-    const auto previous_pid = service_data_control_.application_id_pid_mapping_.RegisterPid(transaction_log_id_, current_pid);
+    const auto previous_pid = service_data_control_.application_id_pid_mapping_.RegisterPid(
+        static_cast<std::uint32_t>(transaction_log_id_), current_pid);
     if (!(previous_pid.has_value()))
     {
         score::mw::log::LogFatal("lola") << "Couldn't Register current PID for UID within shared memory. This can occurr "

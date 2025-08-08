@@ -46,10 +46,8 @@ class LolaRuntimeApplicationIdTest : public ::testing::Test
 TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdUsesConfiguredValueWhenPresent)
 {
     // Given a configuration with an explicit applicationID
-    const uid_t configured_id = 12345;
-    const uid_t process_uid = 999;
-    EXPECT_CALL(*unistd_mock_guard_, getuid()).WillOnce(Return(process_uid));
-
+    const std::uint32_t configured_id = 12345;
+    
     GlobalConfiguration global_config;
     global_config.SetApplicationId(configured_id);
     Configuration config({}, {}, std::move(global_config), {});
@@ -64,7 +62,7 @@ TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdUsesConfiguredValueWhenPres
 TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdFallsBackToProcessUidWhenNotConfigured)
 {
     // Given a configuration without an explicit applicationID
-    const uid_t process_uid = 999;
+    const uid_t process_uid = 999; // This remains uid_t as it mocks the OS call
     EXPECT_CALL(*unistd_mock_guard_, getuid()).WillOnce(Return(process_uid));
     Configuration config({}, {}, {}, {});
 
@@ -72,13 +70,13 @@ TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdFallsBackToProcessUidWhenNo
     Runtime lola_runtime(config, executor_, nullptr);
 
     // Then the process UID is used as a fallback
-    EXPECT_EQ(lola_runtime.GetApplicationId(), process_uid);
+    EXPECT_EQ(lola_runtime.GetApplicationId(), static_cast<std::uint32_t>(process_uid));
 }
 
 TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdHandlesZeroValue)
 {
     // Given a configuration with an applicationID of 0
-    const uid_t configured_id = 0;
+    const std::uint32_t configured_id = 0;
     GlobalConfiguration global_config;
     global_config.SetApplicationId(configured_id);
     Configuration config({}, {}, std::move(global_config), {});
@@ -95,7 +93,7 @@ TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdHandlesMaxValue)
     // Given a configuration with the maximum uint32_t value.
     // This also covers the case where a negative value like -1 is
     // provided in the JSON config, which is cast to UINT32_MAX.
-    const uid_t configured_id = std::numeric_limits<std::uint32_t>::max();
+    const std::uint32_t configured_id = std::numeric_limits<std::uint32_t>::max();
     GlobalConfiguration global_config;
     global_config.SetApplicationId(configured_id);
     Configuration config({}, {}, std::move(global_config), {});

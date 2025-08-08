@@ -70,12 +70,12 @@ class GlobalConfiguration final
         return process_asil_level_;
     }
 
-    void SetApplicationId(const uid_t application_id)
+    void SetApplicationId(const std::uint32_t application_id)
     {
         application_id_ = application_id;
     }
 
-    score::cpp::optional<uid_t> GetApplicationId() const
+    score::cpp::optional<std::uint32_t> GetApplicationId() const
     {
         return application_id_;
     }
@@ -88,7 +88,7 @@ class GlobalConfiguration final
   private:
     /// properties/settings from the "global" section
     QualityType process_asil_level_;
-    score::cpp::optional<uid_t> application_id_;
+    score::cpp::optional<std::uint32_t> application_id_;
 
     std::int32_t message_rx_queue_size_qm;
     std::int32_t message_rx_queue_size_b;
