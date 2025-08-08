@@ -79,7 +79,7 @@ async fn get_samples<
             println!("Received sample: {}", data.x);
         }
     }
-    println!("Stream ended");
+    println!("Unsubscribing...");
 }
 
 /// Deliberately add Send to ensure that this is a future that can also be run by multithreaded
@@ -132,7 +132,7 @@ fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier, args: &Arguments
             .send(sample)
             .expect("Failed sending event");
 
-        println!("published {} sleeping", x);
+        println!("Sending sample: {}", x);
         x += 1;
         sleep(Duration::from_millis(args.cycle_time));
     }
