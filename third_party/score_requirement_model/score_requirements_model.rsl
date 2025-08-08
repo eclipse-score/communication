@@ -62,6 +62,9 @@ type CompReq extends Requirement {
     derived_from		    FeatReqId[1 .. *]
 }
 
+abstract type StdReq extends Requirement {
+}
+
 checks Requirement {
 
     not matches(description, "(shall|should)"),
