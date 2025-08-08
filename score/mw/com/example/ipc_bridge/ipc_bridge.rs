@@ -38,7 +38,7 @@ struct Arguments {
         long,
         default_value = "0",
     )]
-    num_cyles: usize,
+    num_cycles: usize,
     /// Set to either send/skeleton or recv/proxy to determine the role of the process
     #[arg(value_enum, short, long)]
     mode: Mode,
@@ -48,7 +48,7 @@ struct Arguments {
         long,
     )]
     // std::time::Duration is not directly supported by clap, so we use usize and convert it later
-    cycle_time: usize,
+    cycle_time: u64,
     #[arg(
         short,
         long,
@@ -57,8 +57,7 @@ struct Arguments {
     service_instance_manifest: PathBuf,
 }
 
-const SERVICE_DISCOVERY_SLEEP_DURATION: Duration = Duration::from_secs(1);
-const DATA_RECEPTION_COUNT: usize = 100;
+const SERVICE_DISCOVERY_SLEEP_DURATION: Duration = Duration::from_millis(500);
 
 /// Async function that takes `count` samples from the stream and prints the `x` field of each
 /// sample that is received.
@@ -69,10 +68,16 @@ async fn get_samples<
     map_api_lanes_stamped: S,
     count: usize,
 ) {
-    let map_api_lanes_stamped = pin!(map_api_lanes_stamped);
-    let mut limited_map_api_lanes_stamped = map_api_lanes_stamped.take(count);
-    while let Some(data) = limited_map_api_lanes_stamped.next().await {
-        println!("Received sample: {}", data.x);
+    let mut map_api_lanes_stamped = pin!(map_api_lanes_stamped);
+    if count > 0 {
+        let mut limited_map_api_lanes_stamped = map_api_lanes_stamped.take(count);
+        while let Some(data) = limited_map_api_lanes_stamped.next().await {
+            println!("Received sample: {}", data.x);
+        }
+    } else {
+        while let Some(data) = map_api_lanes_stamped.next().await {
+            println!("Received sample: {}", data.x);
+        }
     }
     println!("Stream ended");
 }
@@ -83,14 +88,14 @@ fn run<F: std::future::Future<Output = ()> + Send>(future: F) {
     futures::executor::block_on(future);
 }
 
-fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
+fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier, args: &Arguments) {
     let handles = loop {
         let handles = mw_com::proxy::find_service(instance_specifier.clone())
             .expect("Instance specifier resolution failed");
         if handles.len() > 0 {
             break handles;
         } else {
-            println!("No service found, retrying in 1 second");
+            println!("No service found, retrying in 0.5 seconds");
             sleep(SERVICE_DISCOVERY_SLEEP_DURATION);
         }
     };
@@ -107,17 +112,17 @@ fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
         .expect("Failed to convert to stream");
     run(get_samples(
         map_api_lanes_stamped_stream,
-        DATA_RECEPTION_COUNT,
+        args.num_cycles,
     ));
 }
 
-fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier) {
+fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier, args: &Arguments) {
     let skeleton = ipc_bridge_gen_rs::IpcBridge::Skeleton::new(&instance_specifier)
         .expect("BigDataSkeleton creation failed");
 
     let skeleton = skeleton.offer_service().expect("Failed offering from rust");
     let mut x: u32 = 0;
-    while x < 10 {
+    while x < args.num_cycles as u32 || args.num_cycles == 0 {
         let mut sample: ipc_bridge_gen_rs::MapApiLanesStamped =
             ipc_bridge_gen_rs::MapApiLanesStamped::default();
         sample.x = x;
@@ -129,28 +134,7 @@ fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier) {
 
         println!("published {} sleeping", x);
         x += 1;
-        sleep(Duration::from_millis(100));
-    }
-
-    println!("stopping offering and sleeping for 5sec");
-    let skeleton = skeleton.stop_offer_service();
-    sleep(Duration::from_secs(5));
-
-    let skeleton = skeleton.offer_service().expect("Reoffering failed");
-    x = 0;
-    while x < 10 {
-        let mut sample: ipc_bridge_gen_rs::MapApiLanesStamped =
-            ipc_bridge_gen_rs::MapApiLanesStamped::default();
-        sample.x = x;
-        skeleton
-            .events
-            .map_api_lanes_stamped_
-            .send(sample)
-            .expect("Failed sending event");
-
-        println!("published {} sleeping", x);
-        x += 1;
-        sleep(Duration::from_millis(100));
+        sleep(Duration::from_millis(args.cycle_time));
     }
 }
 
@@ -172,11 +156,11 @@ fn main() {
     match args.mode {
         Mode::Send | Mode::Skeleton => {
             println!("Running in Send/Skeleton mode");
-            run_send_mode(instance_specifier);
+            run_send_mode(instance_specifier, &args);
         }
         Mode::Recv | Mode::Proxy => {
             println!("Running in Recv/Proxy mode");
-            run_recv_mode(instance_specifier);
+            run_recv_mode(instance_specifier, &args);
         }
     }
 }
