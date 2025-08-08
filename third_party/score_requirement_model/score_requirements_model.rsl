@@ -24,10 +24,9 @@ enum Status {
 }
 
 abstract type Requirement {
-    title                   String
     description				String
     version                 Integer
-	safety                  Asil
+	  safety                  Asil
     note optional           String
     status                  Status
     freeze status =         Status.valid
@@ -64,10 +63,6 @@ type CompReq extends Requirement {
 }
 
 checks Requirement {
-
-    not matches(title, "(shall)"),
-        warning "A title must not include shall or should",
-	    title
 
     not matches(description, "(shall|should)"),
         warning "The description must include (shall|should)",

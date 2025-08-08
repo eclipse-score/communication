@@ -1,0 +1,270 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+
+package Communication
+
+import ScoreReq
+
+import AssumedSystemRequirements
+
+ScoreReq.FeatReq SupportForTimeBasedArchitecture {
+    description = "The communication framework shall provide API to support a time-based architecture."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForTimeBasedArchitectures@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SupportForDataDrivenArchitecture {
+    description = "The communication framework shall provide API to support a data-driven architecture."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForDataDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SupportForRequestDrivenArchitecture {
+    description = "The communication framework shall provide API to support a request-driven architecture."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForRequestDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq CommunicationInterfaces {
+    description = "A communication interface consists of a combination of any number of the following elements: Event-Types, Methods, Signals."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForDataDrivenArchitecture@1, AssumedSystemRequirements.SupportForTimeBasedArchitectures@1, AssumedSystemRequirements.SafeCommunication@1, AssumedSystemRequirements.SupportForRequestDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq EventType {
+    description = "An event-type is part of a communication interface and has a name and a data type. The producer can assign a value to it. Consumers can subscribe to value-changed events of the element or poll unseen, cached events."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForTimeBasedArchitectures@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq Method {
+    description = "A method is part of a communication interface and has a name, a specified application routine with a given set of parameters and a return type. When a communication partner issues a call to the method with the required parameters, it shall invoke the application routine with the provided parameters, and return its result to the communication partner. A method call shall be possible both synchronously and asynchronously."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForRequestDrivenArchitecture@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq Signal {
+    description = "A signal is part of a communication interface and has a name. A client can trigger the signal. The service instance offering the trigger can wait for the signal to be triggered or check if the signal was triggered. Signals can not transport data."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForRequestDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq ProducerConsumerPattern {
+    description = "Communication shall be cached based on the producer-consumer pattern."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForTimeBasedArchitectures@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq ServiceInstance {
+    description = "Multiple service instances shall be able to offer the same interface."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq ServiceInstanceNames {
+    description = "A service instance is offered under one or more unique names by which it can be discovered. Names follow a POSIX path style."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq Versioning {
+    description = "The communication framework shall support versioning of service instances. Version information of a service instance is binding-specific."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq ServiceLocationTransparency {
+    description = "The interface to access service instances is agnostic to the binding used to communicate with the service."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq StatelessCommunication {
+    description = "The communication framework shall support stateless communication."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq ServiceInstanceGranularity {
+    description = "The communication framework shall support multiple service instances per software architecture element."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq ServiceDiscovery {
+    description = "The communication framework shall provide service discovery to find available services during runtime. Service discovery shall consider version compatibility."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SafeCommunication {
+    description = "The communication framework shall support safe communication involving communication partners on the same or multiple criticality levels."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq DataCorruption {
+    description = "Consumers with lower criticality shall not be able to corrupt data consumed by partners with higher criticality."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq DataReordering {
+    description = "Consumers with lower criticality shall not be able to modify the order of data consumed by partners with higher criticality."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq DataRepetition {
+    description = "Consumers with lower criticality shall not be able to duplicate data consumed by other communication partners with higher criticality."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq DataLoss {
+    description = "Consumers with lower criticality shall not be able to drop data before it is consumed by partners with higher criticality."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq ZeroCopy {
+    description = "The communication framework shall enable Zero-Copy communication without copying to-be-transferred data."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForDataDrivenArchitecture@1, AssumedSystemRequirements.SupportForRequestDrivenArchitecture@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SupportForMultipleProgrammingLanguages {
+    description = "The communication framework shall provide a public API for each supported programming language of S-CORE."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.ProgrammingLanguagesForApplicationDevelopment@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SupportForProgrammingLanguageIdioms {
+    description = "Each public API shall support the idioms of the programming language it is written in."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.ProgrammingLanguagesForApplicationDevelopment@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq UseProgrammingLanguageInfrastructure {
+    description = "Each public API shall use core infrastructure of its programming language and accompanying standard libraries, whenever possible and meaningful."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.ProgrammingLanguagesForApplicationDevelopment@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FullyMockablePublicAPI {
+    description = "The public API shall be fully mockable."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FakeBinding {
+    description = "The communication framework shall provide a fake binding."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq MultiBindingSupport {
+    description = "The communication framework shall support multiple bindings."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq BindingAgnosticPublicAPI {
+    description = "The public API of the communication framework shall be binding-agnostic."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq MultiBindingDeploymentConfiguration {
+    description = "The association of a service instance and the appropriate binding shall be specified in the deployment configuration."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq DeploymentConfigurationAtRuntime {
+    description = "Deployment configuration shall be read from an integrity-checked configuration file at runtime."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq SupportForTracing {
+    description = "The communication framework shall provide infrastructure to enable binding-agnostic, zero-copy, read-only tracing of communication."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.TracingOfCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq AccessControlListPlacement {
+    description = "The communication framework shall support an Access Control Lists in the deployment configuration."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SecureCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq AccessControlListPerServiceInstance {
+    description = "The communication framework shall support an Access Control List per service instance."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SecureCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq AccessControlListForProducer {
+    description = "The communication framework shall support an Access Control List for the communication partner offering a service instance (producer)."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SecureCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq AccessControlListForConsumer {
+    description = "The communication framework shall support an Access Control List for the communication partner consuming a service instance."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SecureCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq CommunicationASILLevel {
+    description = "The communication framework shall support safe communication up to ASIL-B."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
