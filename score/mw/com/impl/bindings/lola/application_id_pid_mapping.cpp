@@ -36,7 +36,7 @@ std::optional<pid_t> TryUpdatePidForExistingId(
     // coverity[autosar_cpp14_a8_4_10_violation]
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
-    const uid_t application_id,
+    const std::uint32_t application_id,
     const pid_t pid)
 {
     // Suppress "AUTOSAR C++14 M5-0-15". This rule states:"indexing shall be the only form of pointer arithmetic.".
@@ -46,17 +46,17 @@ std::optional<pid_t> TryUpdatePidForExistingId(
     for (auto it = entries_begin; it != entries_end; it++)
     {
         // extract out into a separate function
-        const auto status_uid = it->GetStatusAndUidAtomic();
-        const auto entry_status = status_uid.first;
-        const auto entry_uid = status_uid.second;
-        if ((entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed) && (entry_uid == application_id))
+        const auto status_applicationid = it->GetStatusAndApplicationIdAtomic();
+        const auto entry_status = status_applicationid.first;
+        const auto entry_applicationid = status_applicationid.second;
+        if ((entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed) && (entry_applicationid == application_id))
         {
             // application ID already exists. It is "owned" by us, so we can directly update pid, without atomic state changes ...
             pid_t old_pid = it->pid_;
             it->pid_ = pid;
             return old_pid;
         }
-        else if ((entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUpdating) && (entry_uid == application_id))
+        else if ((entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUpdating) && (entry_applicationid == application_id))
         {
             // This is a very odd situation! I.e. someone is currently updating the pid for OUR application ID!
             // this could only be possible, when our application has crashed before, while updating the pid
@@ -65,7 +65,7 @@ std::optional<pid_t> TryUpdatePidForExistingId(
                 << "ApplicationIdPidMapping: Found mapping entry for own application ID in state kUpdating. Maybe we "
                    "crashed before!? Now taking over entry and updating with current PID.";
             it->pid_ = pid;
-            it->SetStatusAndUidAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, application_id);
+            it->SetStatusAndApplicationIdAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, application_id);
             return pid;
         }
     }
@@ -88,7 +88,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a8_4_10_violation]
 std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
                                  score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
-                                 const uid_t application_id,
+                                 const std::uint32_t application_id,
                                  const pid_t pid)
 {
     const auto result_pid = TryUpdatePidForExistingId(entries_begin, entries_end, application_id, pid);
@@ -109,13 +109,13 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPi
         // coverity[autosar_cpp14_m5_0_15_violation]
         for (auto it = entries_begin; it != entries_end; it++)
         {
-            const auto status_uid = it->GetStatusAndUidAtomic();
-            const auto entry_status = status_uid.first;
-            const auto entry_uid = status_uid.second;
+            const auto status_applicationid = it->GetStatusAndApplicationIdAtomic();
+            const auto entry_status = status_applicationid.first;
+            const auto entry_applicationid = status_applicationid.second;
 
             if (entry_status == ApplicationIdPidMappingEntry::MappingEntryStatus::kUnused)
             {
-                auto current_entry_key = ApplicationIdPidMappingEntry::CreateKey(entry_status, entry_uid);
+                auto current_entry_key = ApplicationIdPidMappingEntry::CreateKey(entry_status, entry_applicationid);
                 auto new_entry_key =
                     ApplicationIdPidMappingEntry::CreateKey(ApplicationIdPidMappingEntry::MappingEntryStatus::kUpdating, application_id);
 
@@ -123,7 +123,7 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPi
                         it->key_application_id_status_, current_entry_key, new_entry_key, std::memory_order_acq_rel))
                 {
                     it->pid_ = pid;
-                    it->SetStatusAndUidAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, application_id);
+                    it->SetStatusAndApplicationIdAtomic(ApplicationIdPidMappingEntry::MappingEntryStatus::kUsed, application_id);
                     return pid;
                 }
             }
@@ -137,12 +137,12 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPi
 template std::optional<pid_t> RegisterPid<memory::shared::AtomicIndirectorMock>(
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
-    const uid_t application_id,
+    const std::uint32_t application_id,
     const pid_t pid);
 template std::optional<pid_t> RegisterPid<memory::shared::AtomicIndirectorReal>(
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
-    const uid_t application_id,
+    const std::uint32_t application_id,
     const pid_t pid);
 
 }  // namespace detail

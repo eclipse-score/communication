@@ -17,32 +17,33 @@
 namespace score::mw::com::impl::lola
 {
 
-std::pair<ApplicationIdPidMappingEntry::MappingEntryStatus, uid_t> ApplicationIdPidMappingEntry::GetStatusAndUidAtomic() noexcept
+std::pair<ApplicationIdPidMappingEntry::MappingEntryStatus, std::uint32_t> ApplicationIdPidMappingEntry::
+    GetStatusAndApplicationIdAtomic() noexcept
 {
-    constexpr std::uint64_t kMaskUid = 0x00000000FFFFFFFFU;
-    auto status_uid = key_application_id_status_.load();
-    const auto status_part = static_cast<std::uint32_t>(status_uid >> 32U);
-    const auto uid_part = static_cast<std::uint32_t>(status_uid & kMaskUid);
+    constexpr std::uint64_t kMaskApplicationId = 0x00000000FFFFFFFFU;
+    auto status_applictionid = key_application_id_status_.load();
+    const auto status_part = static_cast<std::uint32_t>(status_applictionid >> 32U);
+    const auto application_id_part = static_cast<std::uint32_t>(status_applictionid & kMaskApplicationId);
     // Suppress "AUTOSAR C++14 A7-2-1" rule: "An expression with enum underlying type shall only have values
     // corresponding to the enumerators of the enumeration.".
     // Callers of this function process only the MappingEntryStatus enumeration values ​​of interest, the rest are
     // discarded.
     // coverity[autosar_cpp14_a7_2_1_violation]
-    return {static_cast<ApplicationIdPidMappingEntry::MappingEntryStatus>(status_part), static_cast<uid_t>(uid_part)};
+    return {static_cast<ApplicationIdPidMappingEntry::MappingEntryStatus>(status_part), application_id_part};
 }
 
-void ApplicationIdPidMappingEntry::SetStatusAndUidAtomic(MappingEntryStatus status, uid_t application_id) noexcept
+void ApplicationIdPidMappingEntry::SetStatusAndApplicationIdAtomic(MappingEntryStatus status,
+                                                                   std::uint32_t application_id) noexcept
 {
     key_application_id_status_.store(CreateKey(status, application_id));
 }
 
-ApplicationIdPidMappingEntry::key_type ApplicationIdPidMappingEntry::CreateKey(MappingEntryStatus status, uid_t application_id) noexcept
+ApplicationIdPidMappingEntry::key_type ApplicationIdPidMappingEntry::CreateKey(MappingEntryStatus status,
+                                                                               std::uint32_t application_id) noexcept
 {
     ApplicationIdPidMappingEntry::key_type result = static_cast<std::uint16_t>(status);
     result = result << 32U;
-    static_assert(sizeof(uid_t) <= 4, "For more than 32 bits we cannot guarantee the key to be unique");
-    const auto fixed_size_uid = static_cast<std::uint32_t>(application_id);
-    result |= fixed_size_uid;
+    result |= application_id;
     return result;
 }
 

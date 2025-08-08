@@ -42,7 +42,7 @@ template <template <class> class AtomicIndirectorType = memory::shared::AtomicIn
 // coverity[autosar_cpp14_m3_2_3_violation] This is false positive. Function is declared only once.
 std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
                                  score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
-                                 const uid_t application_id,
+                                 const std::uint32_t application_id,
                                  const pid_t pid);
 
 }  // namespace detail
@@ -92,7 +92,7 @@ class ApplicationIdPidMapping
     /// \return if the application ID had a previous mapping to a pid, the old pid will be returned. If there wasn't yet a mapping
     ///         for the pid, the new pid is returned. If the registration/mapping couldn't be done (no space left) an
     ///         empty optional will be returned.
-    std::optional<pid_t> RegisterPid(const uid_t application_id, const pid_t pid)
+    std::optional<pid_t> RegisterPid(const std::uint32_t application_id, const pid_t pid)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != mapping_entries_.begin());
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != mapping_entries_.end());

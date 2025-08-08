@@ -82,9 +82,7 @@ class Runtime final : public IRuntime
 
     pid_t GetPid() const noexcept override;
 
-    uid_t GetApplicationId() const noexcept override;
-
-    uid_t GetUid() const noexcept override;
+    std::uint32_t GetApplicationId() const noexcept override;
 
   private:
     const Configuration& configuration_;
@@ -107,10 +105,9 @@ class Runtime final : public IRuntime
                                       const std::unordered_map<QualityType, std::vector<uid_t>>& allowed_user_ids,
                                       const QualityType asil_level);
     pid_t pid_;
-    uid_t uid_;
-    uid_t application_id_;
+    std::uint32_t application_id_;
 
-    uid_t DetermineApplicationIdentifier(const Configuration& config) const noexcept;
+    std::uint32_t DetermineApplicationIdentifier(const Configuration& config) const noexcept;
 };
 
 }  // namespace score::mw::com::impl::lola

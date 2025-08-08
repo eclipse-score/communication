@@ -34,7 +34,7 @@ class RegisterPidFake
   public:
     std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator,
                                      score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator,
-                                     const uid_t /*application_id*/,
+                                     const std::uint32_t /*application_id*/,
                                      const pid_t) const
     {
         return expected_register_pid_result_;

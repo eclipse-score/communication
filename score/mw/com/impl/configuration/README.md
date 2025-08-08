@@ -407,6 +407,7 @@ configuration object, which is of a json object type.
     ...
     "global": {
         "asil-level": "B",
+        "applicationID": 1234,
         "queue-size": {
             "QM-receiver": 8,
             "B-receiver": 5,
@@ -426,6 +427,14 @@ With the `asil-level` property the ASIL level of the `mw::com` application itsel
 It is essential for an application with `ASIL B` safety requirements to set this correctly to `B`! Safety related
 mechanisms like `bounds-checking` in case of shared-memory access are only turned on in case the property is configured
 to `B`.
+
+##### applicationID
+
+This is an optional property that assigns a stable, unique identifier to the application. Its primary purpose is to enable robust crash-recovery.
+
+- **Data Type**: `unsigned integer` (32-bit)
+- **Default**: If this property is not provided, `mw::com` will fall back to using the process's real user ID (`uid`) as the identifier.
+- **Usage**: It is **strongly recommended** to configure a unique `applicationID` for any production application that uses `mw::com`. Relying on the `uid` fallback is less robust, as system UIDs can be reused or changed for reasons unrelated to the application's identity. When the fallback is used, an informational message is logged to alert the user.
 
 ##### queue-size
 

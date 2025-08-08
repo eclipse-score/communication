@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/configuration/shm_size_calc_mode.h"
 #include "score/mw/com/impl/i_runtime_binding.h"
 
+#include <cstdint>
+
 namespace score::mw::com::impl::lola
 {
 
@@ -43,10 +45,8 @@ class IRuntime : public impl::IRuntimeBinding
 
     /// \brief We need our PID in several locations/frequently. So the runtime shall provide/cache it.
     virtual pid_t GetPid() const noexcept = 0;
-    /// \brief We need our UID in several locations/frequently. So the runtime shall provide/cache it.
-    virtual uid_t GetUid() const noexcept = 0;
     /// \brief We need our Application ID in several locations/frequently. So the runtime shall provide/cache it.
-    virtual uid_t GetApplicationId() const noexcept = 0;
+    virtual std::uint32_t GetApplicationId() const noexcept = 0;
 
   protected:
     IRuntime(IRuntime&&) noexcept = default;
