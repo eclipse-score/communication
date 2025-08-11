@@ -37,7 +37,8 @@ class InstanceSpecifier
   public:
     static score::Result<InstanceSpecifier> Create(const std::string_view shortname_path) noexcept;
 
-    [[deprecated("SCORE_DEPRECATION: Use overload with std::string_view instead")]] static score::Result<InstanceSpecifier>
+    [[deprecated("SCORE_DEPRECATION: Use overload with std::string_view instead (Ticket-207128)")]] static score::Result<
+        InstanceSpecifier>
     Create(const score::cpp::string_view shortname_path) noexcept;
 
     // NOTE: This overload is only needed to not have ambiguities with string literals and strings,

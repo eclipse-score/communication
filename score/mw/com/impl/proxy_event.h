@@ -96,7 +96,7 @@ class ProxyEvent final : public ProxyEventBase
     /// \todo Remove unneeded parameter once we get these information from the configuration
     ProxyEvent(ProxyBase& base, const std::string_view event_name);
 
-    [[deprecated("SCORE_DEPRECATION: Use overload with std::string_view instead")]] ProxyEvent(
+    [[deprecated("SCORE_DEPRECATION: Use overload with std::string_view instead (Ticket-207128)")]] ProxyEvent(
         ProxyBase& base,
         const score::cpp::string_view event_name)
         : ProxyEvent{base, std::string_view{event_name.data(), event_name.size()}}
