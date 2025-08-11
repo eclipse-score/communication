@@ -23,6 +23,8 @@
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
 
+#include <score/string_view.hpp>
+
 #include <cstdlib>
 #include <exception>
 #include <set>
