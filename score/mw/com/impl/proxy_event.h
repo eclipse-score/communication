@@ -105,9 +105,9 @@ class ProxyEvent final : public ProxyEventBase
 
     // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
     // it will be removed once the overload with score::cpp::string_view is removed
-    template <typename StringViewConveritbleType,
-              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
-    ProxyEvent(ProxyBase& base, const StringViewConveritbleType event_name)
+    template <typename StringViewConvertibleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConvertibleType>, bool> = true>
+    ProxyEvent(ProxyBase& base, const StringViewConvertibleType event_name)
         : ProxyEvent{base, std::string_view{event_name}}
     {
     }

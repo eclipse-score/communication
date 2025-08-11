@@ -75,9 +75,9 @@ class SkeletonEvent : public SkeletonEventBase
 
     // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
     // it will be removed once the overload with score::cpp::string_view is removed
-    template <typename StringViewConveritbleType,
-              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
-    SkeletonEvent(SkeletonBase& skeleton_base, const StringViewConveritbleType event_name)
+    template <typename StringViewConvertibleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConvertibleType>, bool> = true>
+    SkeletonEvent(SkeletonBase& skeleton_base, const StringViewConvertibleType event_name)
         : SkeletonEvent{skeleton_base, std::string_view{event_name}}
     {
     }

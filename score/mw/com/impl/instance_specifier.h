@@ -42,9 +42,9 @@ class InstanceSpecifier
 
     // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
     // it will be removed once the overload with score::cpp::string_view is removed
-    template <typename StringViewConveritbleType,
-              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
-    static score::Result<InstanceSpecifier> Create(const StringViewConveritbleType shortname_path) noexcept
+    template <typename StringViewConvertibleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConvertibleType>, bool> = true>
+    static score::Result<InstanceSpecifier> Create(const StringViewConvertibleType shortname_path) noexcept
     {
         return InstanceSpecifier::Create(std::string_view{shortname_path});
     }
