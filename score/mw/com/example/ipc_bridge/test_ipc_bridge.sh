@@ -49,5 +49,5 @@ run_receiver_sender "$CPP_EXAMPLE_CMD" "$CPP_EXAMPLE_CMD"
 echo -e "\n\n\nRunning Rust receiver and C++ sender"
 run_receiver_sender "$RUST_EXAMPLE_CMD" "$CPP_EXAMPLE_CMD"
 
-# echo -e "\n\n\nRunning C++ receiver and Rust sender"
-# run_receiver_sender "$CPP_EXAMPLE_CMD" "$RUST_EXAMPLE_CMD"
+echo -e "\n\n\nRunning C++ receiver and Rust sender"
+run_receiver_sender "$CPP_EXAMPLE_CMD" "$RUST_EXAMPLE_CMD"
