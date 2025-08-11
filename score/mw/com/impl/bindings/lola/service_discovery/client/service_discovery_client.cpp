@@ -432,8 +432,10 @@ auto ServiceDiscoveryClient::HandleEvents(
             else
             {
                 const auto enriched_instance_identifier = watch_iterator->second.enriched_instance_identifier;
+                // TODO: In the next line remove .data() once filesystem supports concatenation of string views
+                // (Ticket-207000)
                 const auto file_path =
-                    GetSearchPathForIdentifier(enriched_instance_identifier) / event.GetName().to_string().c_str();
+                    GetSearchPathForIdentifier(enriched_instance_identifier) / event.GetName().data();
                 mw::log::LogWarn("lola") << "Received unexpected event on" << file_path << "with mask"
                                          << static_cast<underlying_type_readmask>(event.GetMask());
             }
