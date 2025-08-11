@@ -69,7 +69,7 @@ class ApplicationIdPidMapping
   public:
     /// \brief Create a ApplicationIdPidMapping instance with a capacity of up to max_mappings mappings for application IDs.
     /// \param alloc allocator to be used to allocate the mapping data structure
-    ApplicationIdPidMapping(std::uint16_t max_mappings, const Allocator& alloc) : mapping_entries_(max_mappings, alloc){};
+    ApplicationIdPidMapping(std::uint16_t max_mappings, const Allocator& alloc) : mapping_entries_(max_mappings, alloc) {};
 
     /// \brief Registers the given pid for the given application ID. Eventually overwriting an existing mapping for this ID.
     /// \attention We intentionally do NOT provide an unregister functionality. Semantically an unregister is not
