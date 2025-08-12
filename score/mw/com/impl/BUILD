@@ -126,7 +126,6 @@ cc_library(
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -533,7 +532,6 @@ cc_library(
         ":error",
         "@score-baselibs//score/result",
         "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
