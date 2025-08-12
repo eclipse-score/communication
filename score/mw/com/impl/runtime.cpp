@@ -12,26 +12,26 @@
  ********************************************************************************/
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/memory/shared/memory_resource_registry.h"
 #include "score/mw/com/impl/configuration/config_parser.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/plumbing/runtime_binding_factory.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config_parser.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime_binding.h"
+
+#include "score/memory/any_string_view.h"
+#include "score/memory/shared/memory_resource_registry.h"
+#include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
 #include "score/mw/log/runtime.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
-#include <iostream>
-#include <string>
+#include <string_view>
 #include <utility>
 
 namespace
 {
-constexpr auto default_manifest_path = "./etc/mw_com_config.json";
-constexpr auto ServiceInstanceManifestOption = "-service_instance_manifest";
 
 inline void warn_double_init()
 {
@@ -106,52 +106,7 @@ score::cpp::optional<TracingFilterConfig> ParseTraceConfig(const Configuration& 
 
 }  // namespace
 
-void Runtime::Initialize() noexcept
-{
-    std::lock_guard<std::mutex> lock{mutex_};
-    if (runtime_initialization_locked_)
-    {
-        error_double_init();
-        return;
-    }
-    if (initialization_config_.has_value())
-    {
-        warn_double_init();
-    }
-    auto config = configuration::Parse(default_manifest_path);
-    StoreConfiguration(std::move(config));
-}
-
-void Runtime::Initialize(const std::string& buffer)
-{
-    std::lock_guard<std::mutex> lock{mutex_};
-    if (runtime_initialization_locked_)
-    {
-        error_double_init();
-        return;
-    }
-    if (initialization_config_.has_value())
-    {
-        warn_double_init();
-    }
-
-    const score::json::JsonParser json_parser_obj;
-    auto json = json_parser_obj.FromBuffer(buffer);
-    if (!json.has_value())
-    {
-        // Suppress AUTOSAR C++14 M8-4-4, rule finding: A function identifier shall either be used to call the function
-        // or it shall be preceded by &. This is a valid syntax of std::endl and std::endl is not a function
-        // indentifier.
-        // coverity[autosar_cpp14_m8_4_4_violation]
-        std::cerr << "Error Parsing JSON" << json.error() << std::endl;
-        /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-        std::terminate();
-    }
-    auto config = configuration::Parse(std::move(json).value());
-    StoreConfiguration(std::move(config));
-}
-
-void Runtime::Initialize(const score::cpp::span<const score::StringLiteral> arguments)
+void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configuration)
 {
     std::lock_guard<std::mutex> lock{mutex_};
     if (runtime_initialization_locked_)
@@ -165,27 +120,7 @@ void Runtime::Initialize(const score::cpp::span<const score::StringLiteral> argu
         warn_double_init();
     }
 
-    const auto num_args = arguments.size();
-    score::StringLiteral manifestFilePath = nullptr;
-    for (std::int32_t argNum = 0; argNum < num_args; argNum++)
-    {
-        const std::string inputServiceInstanceManifestOption{score::cpp::at(arguments, static_cast<std::int64_t>(argNum))};
-        if (inputServiceInstanceManifestOption == ServiceInstanceManifestOption)
-        {
-            if (static_cast<std::size_t>(argNum) + 1U < static_cast<std::size_t>(num_args))
-            {
-                manifestFilePath = score::cpp::at(arguments, static_cast<std::int64_t>(argNum) + 1);
-            }
-            break;
-        }
-    }
-
-    if (manifestFilePath == nullptr)
-    {
-        manifestFilePath = default_manifest_path;
-    }
-
-    auto config = configuration::Parse(manifestFilePath);
+    auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
     StoreConfiguration(std::move(config));
 }
 
@@ -218,7 +153,8 @@ Runtime& Runtime::getInstanceInternal() noexcept
         runtime_initialization_locked_ = true;
         if (!initialization_config_.has_value())
         {
-            auto configuration = configuration::Parse(default_manifest_path);
+            runtime::RuntimeConfiguration runtime_configuration{};
+            auto configuration = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
             auto tracing_config = ParseTraceConfig(configuration);
             return std::make_pair(std::move(configuration), std::move(tracing_config));
         }

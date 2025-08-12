@@ -12,12 +12,19 @@
  ********************************************************************************/
 #include "score/mw/com/impl/find_service_handle.h"
 
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
+
+#include "score/mw/log/slot_handle.h"
 #include <gtest/gtest.h>
 
 namespace score::mw::com::impl
 {
 namespace
 {
+
+using ::testing::_;
+using ::testing::Return;
 
 TEST(FindServiceHandle, CanBeCopiedAndEqualCompared)
 {
@@ -45,6 +52,40 @@ TEST(FindServiceHandle, LessCompareable)
     const auto less = make_FindServiceHandle(1U);
 
     ASSERT_LT(less, unit);
+}
+
+TEST(FindServiceHandle, StreamOperatorOutputsUid)
+{
+    // Given a FindServiceHandle
+    const auto unit = make_FindServiceHandle(2U);
+
+    // When calling the stream operator
+    std::stringstream buffer{};
+    buffer << unit;
+
+    // Then the output should contain the underlying Uid
+    ASSERT_EQ(buffer.str(), "2");
+}
+
+TEST(FindServiceHandle, LogStreamOperatorOutputsUid)
+{
+    const std::size_t uid{2U};
+
+    // Given a mocked LogRecorder
+    mw::log::RecorderMock recorder_mock{};
+    score::mw::log::SetLogRecorder(&recorder_mock);
+
+    // Expecting that StartRecord and StopRecord will be called with a SlotHandle containing the uid of the
+    // FindServiceHandle to be logged
+    mw::log::SlotHandle handle{uid};
+    EXPECT_CALL(recorder_mock, StartRecord(_, mw::log::LogLevel::kVerbose)).WillOnce(Return(handle));
+    EXPECT_CALL(recorder_mock, StopRecord(handle)).Times(1);
+
+    // Given a FindServiceHandle
+    const auto unit = make_FindServiceHandle(uid);
+
+    // When calling the stream operator
+    score::mw::log::LogVerbose() << unit;
 }
 
 TEST(FindServiceHandleView, GetUid)

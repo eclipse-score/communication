@@ -761,7 +761,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
     ],
 )
@@ -805,11 +804,10 @@ cc_unit_test(
 )
 
 cc_test(
-    name = "event_data_control_unit_tests",
+    name = "event_data_control_unit_test",
     size = "small",
     timeout = "long",
     srcs = [
-        "event_data_control_composite_test.cpp",
         "event_data_control_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES + [
@@ -826,6 +824,22 @@ cc_test(
         "//score/mw/com/impl/bindings/lola:event_data_control_composite",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "event_data_control_composite_unit_test",
+    srcs = ["event_data_control_composite_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "@score-baselibs//score/containers:dynamic_array",
+        "@score-baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score-baselibs//score/memory/shared:new_delete_delegate_resource",
+        "//score/mw/com/impl:instance_specifier",
+        "//score/mw/com/impl/bindings/lola:event_data_control",
+        "//score/mw/com/impl/bindings/lola:event_data_control_composite",
+        "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -856,7 +870,6 @@ cc_gtest_unit_test(
     deps = [
         ":proxy",
         ":shm_path_builder_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "@score-baselibs//score/result",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
@@ -903,91 +916,282 @@ cc_gtest_unit_test(
     ],
 )
 
-cc_test(
-    name = "unit_test",
-    size = "small",
-    timeout = "long",
+cc_gtest_unit_test(
+    name = "control_slot_composite_indicator_test",
     srcs = [
         "control_slot_composite_indicator_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":control_slot_indicator",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "control_slot_indicator_test",
+    srcs = [
         "control_slot_indicator_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":control_slot_indicator",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "element_fq_id_test",
+    srcs = [
         "element_fq_id_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":element_fq_id",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "event_data_storage_test",
+    srcs = [
         "event_data_storage_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":event_data_storage",
+        "@score-baselibs//score/containers:dynamic_array",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "event_slot_status_test",
+    srcs = [
         "event_slot_status_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":event_slot_status",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "event_subscription_control_test",
+    srcs = [
         "event_subscription_control_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":event_subscription_control",
+        "@score-baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "proxy_event_common_test",
+    srcs = [
         "proxy_event_common_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "runtime_test",
+    srcs = [
         "runtime_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":runtime",
+        "@score-baselibs//score/os/mocklib:unistd_mock",
+        "//score/mw/com/message_passing:mock",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "sample_allocatee_ptr_test",
+    srcs = [
         "sample_allocatee_ptr_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl/bindings/lola/test_doubles",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "sample_ptr_test",
+    srcs = [
         "sample_ptr_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl/bindings/lola/test_doubles",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "service_data_storage_test",
+    srcs = [
         "service_data_storage_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":skeleton",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "skeleton_event_test",
+    srcs = [
         "skeleton_event_test.cpp",
-        "skeleton_event_tracing_test.cpp",
-        "slot_collector_test.cpp",
-        "subscription_state_machine_events_test.cpp",
-        "subscription_state_machine_methods_test.cpp",
-        "subscription_state_machine_states_test.cpp",
-        "transaction_log_registration_guard_test.cpp",
-        "transaction_log_set_test.cpp",
-        "transaction_log_slot_test.cpp",
-        "transaction_log_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
-    ],
-    tags = ["unit"],
+    features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_data_control_test_resources",
-        ":lola",
-        ":shm_path_builder_mock",
-        ":transaction_log",
-        ":transaction_log_id",
-        ":transaction_log_rollback_executor",
-        ":transaction_log_set",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/concurrency:long_running_threads_container",
-        "@score-baselibs//score/filesystem",
-        "@score-baselibs//score/filesystem:mock",
-        "@score-baselibs//score/memory/shared",
-        "@score-baselibs//score/memory/shared:atomic_indirector_mock_binding",
-        "@score-baselibs//score/memory/shared:shared_memory_factory_mock",
-        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
-        "@score-baselibs//score/memory/shared:shared_memory_resource_mock",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
-        "@score-baselibs//score/os/mocklib:glob_mock",
-        "@score-baselibs//score/os/mocklib:grp_mock",
-        "@score-baselibs//score/os/mocklib:mqueue_mock",
-        "@score-baselibs//score/os/mocklib:stat_mock",
-        "@score-baselibs//score/os/mocklib:stdlib_mock",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
-        "@score-baselibs//score/os/utils/inotify:inotify_instance_facade",
-        "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",
-        "//score/mw/com/impl:instance_specifier",
-        "//score/mw/com/impl:runtime",
-        "//score/mw/com/impl:runtime_mock",
-        "//score/mw/com/impl/bindings/lola:runtime_mock",
-        "//score/mw/com/impl/bindings/lola/messaging:mock",
-        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
-        "//score/mw/com/impl/bindings/lola/test:service_discovery_test_resources",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
-        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "skeleton_event_tracing_test",
+    srcs = [
+        "skeleton_event_tracing_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":event_data_control_test_resources",
+        "//score/mw/com/impl/bindings/lola/messaging:mock",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-        "//score/mw/com/impl/bindings/lola/test_doubles",
-        "//score/mw/com/impl/bindings/mock_binding",
-        "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
-        "//score/mw/com/impl/tracing:skeleton_event_tracing",
-        "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
-        "//score/mw/com/impl/tracing:tracing_runtime_mock",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_mock",
-        "//score/mw/com/message_passing:mock",
-        "@score-baselibs//score/mw/log",
-        "@googletest//:gtest_main",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "slot_collector_test",
+    srcs = [
+        "slot_collector_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl/bindings/lola/test_doubles",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "subscription_state_machine_events_test",
+    srcs = [
+        "subscription_state_machine_events_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":event_data_control_test_resources",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "subscription_state_machine_methods_test",
+    srcs = [
+        "subscription_state_machine_methods_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "subscription_state_machine_states_test",
+    srcs = [
+        "subscription_state_machine_states_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":proxy",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "transaction_log_registration_guard_test",
+    srcs = [
+        "transaction_log_registration_guard_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "transaction_log_set_test",
+    srcs = [
+        "transaction_log_set_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        "//score/mw/com/impl/bindings/lola:runtime_mock",
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "transaction_log_slot_test",
+    srcs = [
+        "transaction_log_slot_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":transaction_log_slot",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "transaction_log_test",
+    srcs = [
+        "transaction_log_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":transaction_log",
+        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )
 
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
+        ":control_slot_composite_indicator_test",
+        ":control_slot_indicator_test",
+        ":element_fq_id_test",
+        ":event_data_storage_test",
+        ":event_slot_status_test",
+        ":event_subscription_control_test",
+        ":proxy_event_common_test",
+        ":runtime_test",
+        "sample_allocatee_ptr_test",
+        ":sample_ptr_test",
+        ":service_data_storage_test",
+        ":skeleton_event_test",
+        ":skeleton_event_tracing_test",
+        ":slot_collector_test",
+        ":subscription_state_machine_events_test",
+        ":subscription_state_machine_methods_test",
+        ":subscription_state_machine_states_test",
+        ":transaction_log_registration_guard_test",
+        ":transaction_log_set_test",
+        ":transaction_log_slot_test",
+        ":transaction_log_test",
         ":dynamic_array_bounds_checking_test",
-        ":event_data_control_unit_tests",
+        ":event_data_control_unit_test",
+        ":event_data_control_composite_unit_test",
         ":generic_proxy_event_test",
         ":partial_restart_path_builder_test",
         ":proxy_event_test",
@@ -998,7 +1202,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":transaction_log_rollback_executor_test",
         ":type_erased_sample_ptrs_guard_test",
         ":uid_pid_mapping_test",
-        ":unit_test",
         "//score/mw/com/impl/bindings/lola/test:proxy_component_test",
         "//score/mw/com/impl/bindings/lola/test:skeleton_component_test",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_component_test",

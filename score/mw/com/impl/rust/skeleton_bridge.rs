@@ -15,7 +15,7 @@ use std::sync::Arc;
 mod ffi {
     use std::marker::PhantomData;
 
-    /// This type represents bmw::mw::com::impl::SkeletonWrapperClass as an opaque struct for any
+    /// This type represents score::mw::com::impl::SkeletonWrapperClass as an opaque struct for any
     /// template argument, as the type isn't relevant when dealing with it as an opaque type.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
@@ -23,7 +23,7 @@ mod ffi {
         _dummy: [u8; 0],
     }
 
-    /// This type represents bmw::mw::com::impl::SkeletonEventBase as an opaque struct.
+    /// This type represents score::mw::com::impl::SkeletonEventBase as an opaque struct.
     /// Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
     pub struct SkeletonEvent<T> {

@@ -21,8 +21,6 @@
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/configuration/service_version_type.h"
 
-#include <score/string_view.hpp>
-
 #include <functional>
 #include <string>
 #include <string_view>
@@ -43,7 +41,7 @@ class InstanceIdentifier final
      * \brief Exception-less constructor to create InstanceIdentifier from a serialized InstanceIdentifier created with
      * InstanceIdentifier::ToString()
      */
-    static score::Result<InstanceIdentifier> Create(score::cpp::string_view serialized_format) noexcept;
+    static score::Result<InstanceIdentifier> Create(std::string_view serialized_format) noexcept;
 
     InstanceIdentifier() = delete;
     ~InstanceIdentifier() noexcept = default;
@@ -53,7 +51,7 @@ class InstanceIdentifier final
      *
      * Constructor is required by adaptive AUTOSAR Standard. But it uses exceptions, thus we will not implement it.
      *
-     * explicit InstanceIdentifier(score::cpp::string_view value);
+     * explicit InstanceIdentifier(std::string_view value);
      */
 
     /**

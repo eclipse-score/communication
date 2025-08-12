@@ -48,7 +48,7 @@ cc_library(
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
     }),
 )
 
@@ -204,7 +204,7 @@ cc_library(
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
     }),
 )
 
@@ -233,7 +233,7 @@ cc_library(
         "//score/mw/com/flags:tracing_library_real": [
             "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api:generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
     }),
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
@@ -347,7 +347,6 @@ cc_gtest_unit_test(
     deps = [
         ":common_event_tracing",
         ":tracing_runtime_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/tracing/test:runtime_mock_guard",
     ],
@@ -360,7 +359,6 @@ cc_gtest_unit_test(
     deps = [
         ":skeleton_event_tracing",
         ":tracing_runtime_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_mock",

@@ -56,9 +56,7 @@ SkeletonBinding::SkeletonFieldBindings kEmptyFields{};
 
 std::size_t GetSize(const std::string& file_path)
 {
-    struct stat data
-    {
-    };
+    struct stat data{};
     const auto result = stat(file_path.c_str(), &data);
     if (result == 0 && data.st_size > 0)
     {
@@ -70,9 +68,7 @@ std::size_t GetSize(const std::string& file_path)
 
 bool IsWriteableForOwner(const std::string& filePath)
 {
-    struct stat data
-    {
-    };
+    struct stat data{};
     const auto result = stat(filePath.c_str(), &data);
     if (result == 0)
     {
@@ -85,9 +81,7 @@ bool IsWriteableForOwner(const std::string& filePath)
 
 bool IsWriteableForOthers(const std::string& filePath)
 {
-    struct stat data
-    {
-    };
+    struct stat data{};
     const auto result = stat(filePath.c_str(), &data);
     if (result == 0)
     {

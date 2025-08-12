@@ -23,7 +23,7 @@ namespace
 const ServiceElementIdentifierView kServiceElementIdentifier{"my_service_type",
                                                              "my_service_element",
                                                              ServiceElementType::EVENT};
-const score::cpp::string_view kInstanceSpecifier = "my_instance_specifier";
+const std::string_view kInstanceSpecifier = "my_instance_specifier";
 
 TEST(ServiceElementInstanceIdentifierHashTest, CanHash)
 {

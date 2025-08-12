@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/find_service_handle.h"
 
+#include "score/mw/log/logging.h"
+
 namespace score::mw::com::impl
 {
 
@@ -25,6 +27,18 @@ auto operator==(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noex
 auto operator<(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noexcept -> bool
 {
     return lhs.uid_ < rhs.uid_;
+}
+
+mw::log::LogStream& operator<<(mw::log::LogStream& log_stream, const FindServiceHandle& find_service_handle)
+{
+    log_stream << find_service_handle.uid_;
+    return log_stream;
+}
+
+std::ostream& operator<<(std::ostream& ostream_out, const FindServiceHandle& find_service_handle)
+{
+    ostream_out << find_service_handle.uid_;
+    return ostream_out;
 }
 
 auto make_FindServiceHandle(const std::size_t uid) -> FindServiceHandle

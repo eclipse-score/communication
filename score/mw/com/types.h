@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_TYPES_H
-#define SCORE_MW_COM_IMPL_TYPES_H
+#ifndef SCORE_MW_COM_TYPES_H
+#define SCORE_MW_COM_TYPES_H
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
@@ -107,4 +107,4 @@ using GenericProxy = impl::GenericProxy;
 
 }  // namespace score::mw::com
 
-#endif  // SCORE_MW_COM_IMPL_TYPES_H
+#endif  // SCORE_MW_COM_TYPES_H

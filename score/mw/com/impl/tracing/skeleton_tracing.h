@@ -31,13 +31,13 @@ namespace score::mw::com::impl::tracing
 
 std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept;
 std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> CreateUnregisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept;
 
 }  // namespace score::mw::com::impl::tracing

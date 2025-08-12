@@ -25,8 +25,6 @@
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
 
-#include <score/string_view.hpp>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>

@@ -24,11 +24,11 @@
 #include "score/memory/shared/i_shared_memory_resource.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <cstddef>
 #include <mutex>
 #include <optional>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 
@@ -42,7 +42,7 @@ class TracingRuntime : public impl::tracing::ITracingRuntimeBinding
     friend class TracingRuntimeAttorney;
 
   public:
-    constexpr static score::cpp::string_view kDummyElementNameForShmRegisterCallback{"DUMMY_ELEMENT_NAME"};
+    constexpr static std::string_view kDummyElementNameForShmRegisterCallback{"DUMMY_ELEMENT_NAME"};
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"
     // Variable is used in the implementation(.cpp) file.

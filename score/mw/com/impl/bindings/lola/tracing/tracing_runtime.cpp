@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
-#include "score/analysis/tracing/common/types.h"
+#include "score/analysis/tracing/common/interface_types/types.h"
 #include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"

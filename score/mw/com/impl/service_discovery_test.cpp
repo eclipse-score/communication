@@ -29,7 +29,6 @@
 #include "score/result/result.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 #include <score/utility.hpp>
 
 #include <gmock/gmock.h>
@@ -757,6 +756,35 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceWillDestroyRegiste
 
     // Then the handler passed to StartFindService should be destroyed
     destructor_notifier_future.wait();
+}
+
+TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceSilentlyIgnoresSecondCallWithSameHandle)
+{
+    RecordProperty("ParentRequirement", "SCR-21792394");
+    RecordProperty(
+        "Description",
+        "Checks that calling StopFindService multiple times with the same FindServiceHandle returns without an error.");
+    RecordProperty("TestingTechnique", "Requirements-based test");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    // Given a ServiceDiscovery with a mocked ServiceDiscoveryClient
+    WithAServiceContainingOneInstances();
+
+    // and a FindServiceHandler
+    auto find_service_handler = [](auto, auto) noexcept {};
+
+    // and given that StartFindService has been called with an InstanceSpecifier and the handler
+    const auto find_service_handle = unit_->StartFindService(std::move(find_service_handler), instance_specifier_);
+
+    // Expecting only a single call to StopFindService of the ServiceDiscoveryClient
+    EXPECT_CALL(service_discovery_client_, StopFindService(_)).Times(1);
+
+    // When calling StopFindService with the returned handle twice
+    score::cpp::ignore = unit_->StopFindService(find_service_handle.value());
+    auto result = unit_->StopFindService(find_service_handle.value());
+
+    // Then the return value of the second call contains no error
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(ServiceDiscoveryStopFindServiceFixture, CallingStopFindServiceInHandlerWillNotDestroyHandlerWhileItsBeingCalled)

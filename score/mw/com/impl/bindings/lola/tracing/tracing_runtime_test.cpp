@@ -16,7 +16,7 @@
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 
-#include "score/analysis/tracing/common/types.h"
+#include "score/analysis/tracing/common/interface_types/types.h"
 #include "score/analysis/tracing/library/generic_trace_api/mocks/trace_library_mock.h"
 
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
@@ -1045,9 +1045,7 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementFixture,
     TracingRuntime tracing_runtime{kNumberOfTotalConfiguredTracingSlots, configuration};
 
     // When converting ServiceElementIdentifierViews to ServiceInstanceElements
-    const auto instance_specifier_std_string_view = instance_specifier_.ToString();
-    const auto instance_specifier_string_view =
-        score::cpp::string_view{instance_specifier_std_string_view.data(), instance_specifier_std_string_view.size()};
+    const auto instance_specifier_string_view = instance_specifier_.ToString();
     impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view_event{
         {service_type_name_, event_name_, impl::ServiceElementType::EVENT}, instance_specifier_string_view};
     const auto actual_service_instance_element_event =
@@ -1088,9 +1086,7 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathFixture,
 
     // When converting a ServiceElementIdentifierView to a ServiceInstanceElement
     // Then we should terminate
-    const auto instance_specifier_std_string_view = instance_specifier_.ToString();
-    const auto instance_specifier_string_view =
-        score::cpp::string_view{instance_specifier_std_string_view.data(), instance_specifier_std_string_view.size()};
+    const auto instance_specifier_string_view = instance_specifier_.ToString();
     impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view_event{
         {service_type_name_, event_name_, impl::ServiceElementType::EVENT}, instance_specifier_string_view};
     EXPECT_DEATH(tracing_runtime.ConvertToTracingServiceInstanceElement(service_element_instance_identifier_view_event),
@@ -1119,9 +1115,7 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementDeathFixture,
 
     // When converting a ServiceElementIdentifierView with an invalid ServiceElementType to a ServiceInstanceElement
     // Then we should terminate
-    const auto instance_specifier_std_string_view = instance_specifier_.ToString();
-    const auto instance_specifier_string_view =
-        score::cpp::string_view{instance_specifier_std_string_view.data(), instance_specifier_std_string_view.size()};
+    const auto instance_specifier_string_view = instance_specifier_.ToString();
     impl::tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier_view_event{
         {service_type_name_, event_name_, impl::ServiceElementType::INVALID}, instance_specifier_string_view};
     EXPECT_DEATH(tracing_runtime.ConvertToTracingServiceInstanceElement(service_element_instance_identifier_view_event),

@@ -38,7 +38,7 @@ TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithoutO
     const std::uint16_t max_samples{12};
     const std::optional<std::uint8_t> max_subscribers{13};
     const std::optional<std::uint8_t> max_concurrent_allocations{};
-    const std::optional<bool> enforce_max_samples{};
+    const bool enforce_max_samples{true};
 
     const LolaFieldInstanceDeployment unit{
         MakeLolaFieldInstanceDeployment(max_samples, max_subscribers, max_concurrent_allocations, enforce_max_samples)};

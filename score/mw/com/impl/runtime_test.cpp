@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/analysis/tracing/common/types.h"
+#include "score/analysis/tracing/common/interface_types/types.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/configuration/configuration.h"
@@ -29,11 +29,11 @@
 
 #include <score/optional.hpp>
 #include <score/span.hpp>
-#include <score/string_view.hpp>
 
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -43,37 +43,6 @@ namespace
 
 using testing::_;
 using testing::Return;
-
-/**
- * @brief TC verifies, that Runtime::Initialize() fails with abort, when NO "-service_instance_manifest" option is
- * given.
- */
-TEST(RuntimeDeathTest, initNoManifestOption)
-{
-    score::StringLiteral test_args[] = {"dummyname", "arg1", "arg2", "arg3"};
-    const score::cpp::span<const score::StringLiteral> test_args_span{test_args};
-
-    // Initialize without mandatory option "-service_instance_manifest"
-    EXPECT_DEATH(Runtime::Initialize(test_args_span), ".*");
-}
-
-/**
- * @brief TC verifies, that Runtime::Initialize() fails with abort, when "-service_instance_manifest" option is
- * given, but no additional path parameter.
- */
-TEST(RuntimeDeathTest, initMissingManifestPath)
-{
-    score::StringLiteral test_args[] = {"dummyname", "-service_instance_manifest"};
-    const score::cpp::span<const score::StringLiteral> test_args_span{test_args};
-
-    // Initialize without arg/path-value for mandatory option "-service_instance_manifest"
-    EXPECT_DEATH(Runtime::Initialize(test_args_span), ".*");
-}
-
-TEST(RuntimeDeathTest, InvalidJSONTerminates)
-{
-    EXPECT_DEATH(Runtime::Initialize(std::string{"{"}), ".*");
-}
 
 TEST(RuntimeTest, CanRetrieveServiceDiscovery)
 {
@@ -485,12 +454,12 @@ TEST_F(RuntimeTracingConfigTest, GetTracingFilterConfigWillReturnConfigPassedToC
 
 TEST_F(RuntimeTracingConfigTest, TracingFilterConfigRetrievedFromRuntimeWillHaveSameTracePointedEnabled)
 {
-    const score::cpp::string_view service_type_0{"service_type_0"};
-    const score::cpp::string_view service_type_1{"service_type_1"};
-    const score::cpp::string_view event_name_0{"event_name_0"};
-    const score::cpp::string_view event_name_1{"event_name_1"};
-    const score::cpp::string_view instance_specifier_view_0{"instance_specifier_view_0"};
-    const score::cpp::string_view instance_specifier_view_1{"instance_specifier_view_1"};
+    const std::string_view service_type_0{"service_type_0"};
+    const std::string_view service_type_1{"service_type_1"};
+    const std::string_view event_name_0{"event_name_0"};
+    const std::string_view event_name_1{"event_name_1"};
+    const std::string_view instance_specifier_view_0{"instance_specifier_view_0"};
+    const std::string_view instance_specifier_view_1{"instance_specifier_view_1"};
     const auto trace_point_0 = tracing::SkeletonEventTracePointType::SEND_WITH_ALLOCATE;
     const auto trace_point_1 = tracing::ProxyEventTracePointType::GET_NEW_SAMPLES;
 

@@ -19,9 +19,9 @@
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <cstdint>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl::tracing
@@ -51,7 +51,7 @@ ResultBlank TraceShmData(const BindingType binding_type,
 
 ServiceElementInstanceIdentifierView GetServiceElementInstanceIdentifierView(
     const InstanceIdentifier& instance_identifier,
-    const score::cpp::string_view service_element_name,
+    const std::string_view service_element_name,
     const ServiceElementType service_element_type) noexcept;
 
 }  // namespace score::mw::com::impl::tracing

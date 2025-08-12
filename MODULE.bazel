@@ -12,12 +12,7 @@
 # *******************************************************************************
 module(name = "communication")
 
-bazel_dep(name = "score_toolchains_gcc", version = "0.5", dev_dependency=True)
-git_override(
-   module_name = "score_toolchains_gcc",
-   remote = "git@github.com:Elektrobit/eclipse-score_toolchains_gcc.git",
-   commit = "fb009e490b9b8f28805d587f50d0bf6d885f3414",
-)
+bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency=True)
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
 gcc.toolchain(
@@ -61,12 +56,7 @@ archive_override(
     urls = "https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz",
     strip_prefix = "rules_boost-master",
 )
-
-non_module_boost_repositories = use_extension("@com_github_nelhage_rules_boost//:boost/repositories.bzl", "non_module_dependencies")
-use_repo(
-    non_module_boost_repositories,
-    "boost",
-)
+bazel_dep(name = "boost.program_options", version = "1.87.0")
 
 
 bazel_dep(name = "download_utils", version = "1.0.1")
@@ -84,8 +74,8 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "score-baselibs", version = "0.0.0")
 git_override(
     module_name = "score-baselibs",
-    remote = "git@github.com:Elektrobit/eclipse-score_baselibs.git",
-    commit = "9ac6b9d003f2fa049b9a153edf687f67a51671b8",
+    remote = "https://github.com/eclipse-score/baselibs.git",
+    commit = "46923f5c4f302bd9feae0261588687aaf32e3c5c",
 )
 
 bazel_dep(name = "aspect_bazel_lib", version = "2.20.0")

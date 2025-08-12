@@ -19,53 +19,171 @@ package(default_visibility = [
 
 cc_library(
     name = "impl",
-    srcs = [
-        "generic_proxy.cpp",
-        "generic_proxy_event.cpp",
-        "proxy_event.cpp",
-        "proxy_field.cpp",
-        "skeleton_event.cpp",
-        "skeleton_field.cpp",
-        "traits.cpp",
-    ],
-    hdrs = [
-        "generic_proxy.h",
-        "generic_proxy_event.h",
-        "proxy_event.h",
-        "proxy_field.h",
-        "skeleton_event.h",
-        "skeleton_field.h",
-        "traits.h",
-    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//score/mw/com:__pkg__",
-        "//score/mw/com/impl/rust:__pkg__",
-        "//score/mw/com/impl/test:__pkg__",
-        "//score/mw/com/impl/test/uat:__pkg__",
-        "//score/mw/com/impl/tracing:__subpackages__",
+        "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":generic_proxy",
+        ":generic_proxy_event",
+        ":proxy_event",
+        ":proxy_field",
+        ":skeleton_event",
+        ":skeleton_field",
+        ":traits",
+    ],
+)
+
+cc_library(
+    name = "generic_proxy",
+    srcs = ["generic_proxy.cpp"],
+    hdrs = ["generic_proxy.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
         ":error",
+        "//score/mw/com/impl/plumbing",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":generic_proxy_event",
+        ":handle_type",
+        ":proxy_base",
+        ":proxy_binding",
+        ":service_element_map",
+        "@score-baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "generic_proxy_event",
+    srcs = ["generic_proxy_event.cpp"],
+    hdrs = ["generic_proxy_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "//score/mw/com/impl/plumbing:event",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
         ":generic_proxy_event_binding",
+        ":proxy_base",
+        ":proxy_event_base",
+        "//score/mw/com/impl/tracing:proxy_event_tracing",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
+    name = "proxy_event",
+    srcs = ["proxy_event.cpp"],
+    hdrs = ["proxy_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":generic_proxy_event",
         ":instance_identifier",
         ":proxy_base",
         ":proxy_event_base",
         ":proxy_event_binding",
         ":runtime",
-        ":service_element_map",
+        "@score-baselibs//score/result",
+        "//score/mw/com/impl/plumbing:event",
+        "//score/mw/com/impl/tracing:proxy_event_tracing",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_event",
+    srcs = ["skeleton_event.cpp"],
+    hdrs = ["skeleton_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":instance_identifier",
+        ":runtime",
         ":skeleton_base",
-        ":skeleton_binding",
         ":skeleton_event_base",
         ":skeleton_event_binding",
-        ":skeleton_field_base",
-        "//score/mw/com/impl/configuration",
+        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing:event",
-        "//score/mw/com/impl/plumbing:field",
-        "//score/mw/com/impl/tracing:proxy_event_tracing",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_field",
+    srcs = ["skeleton_field.cpp"],
+    hdrs = ["skeleton_field.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":skeleton_event",
+        ":skeleton_field_base",
+        "@score-baselibs//score/result",
+        "//score/mw/com/impl/plumbing:field",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "traits",
+    srcs = ["traits.cpp"],
+    hdrs = ["traits.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":proxy_base",
+        ":proxy_event",
+        ":proxy_field",
+        ":skeleton_base",
+        ":skeleton_event",
+        ":skeleton_field",
+        "//score/mw/com/impl/plumbing:event",
+    ],
+)
+
+cc_library(
+    name = "proxy_field",
+    srcs = ["proxy_field.cpp"],
+    hdrs = ["proxy_field.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":proxy_event",
+        ":proxy_event_binding",
+        "@score-baselibs//score/result",
+        "//score/mw/com/impl/plumbing:field",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -134,6 +252,7 @@ cc_library(
     srcs = ["find_service_handle.cpp"],
     hdrs = ["find_service_handle.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["@score-baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
@@ -621,7 +740,9 @@ cc_library(
         ":runtime_interfaces",
         ":service_discovery",
         "@score-baselibs//score/concurrency:long_running_threads_container",
+        "@score-baselibs//score/memory:any_string_view",
         "@score-baselibs//score/memory/shared:types",
+        "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/plumbing:runtime",
@@ -688,6 +809,7 @@ cc_test(
     tags = ["unit"],
     deps = [
         ":impl",
+        ":runtime",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@score-baselibs//score/mw/log",
         "@googletest//:gtest_main",
@@ -748,6 +870,34 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "runtime_test",
+    srcs = ["runtime_test.cpp"],
+    deps = [
+        ":runtime",
+        ":runtime_mock",
+        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
+        "//score/mw/com/impl/bindings/lola:runtime_mock",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/tracing:tracing_runtime",
+        "//score/mw/com/impl/tracing:tracing_test_resources",
+        "//score/mw/com/impl/tracing/configuration:proxy_event_trace_point_type",
+        "//score/mw/com/impl/tracing/configuration:skeleton_event_trace_point_type",
+        "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
+        "@score-baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "find_service_handle_test",
+    srcs = ["find_service_handle_test.cpp"],
+    deps = [
+        ":find_service_handle",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:recorder_mock",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -755,7 +905,6 @@ cc_test(
     srcs = [
         "com_error_test.cpp",
         "enriched_instance_identifier_test.cpp",
-        "find_service_handle_test.cpp",
         "generic_proxy_event_test.cpp",
         "handle_type_test.cpp",
         "instance_identifier_test.cpp",
@@ -766,7 +915,6 @@ cc_test(
         "proxy_event_binding_base_test.cpp",
         "proxy_event_test.cpp",
         "proxy_field_test.cpp",
-        "runtime_test.cpp",
         "service_element_map_test.cpp",
         "skeleton_base_test.cpp",
         "skeleton_binding_test.cpp",
@@ -818,8 +966,10 @@ cc_unit_test_suites_for_host_and_qnx(
         ":flag_owner_test",
         ":generic_proxy_test",
         ":sample_reference_tracker_test",
+        ":find_service_handle_test",
         ":service_discovery_test",
         ":unit_test",
+        ":runtime_test",
         ":unit_test_runtime_single_exec",
     ],
     test_suites_from_sub_packages = [

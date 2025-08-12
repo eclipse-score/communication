@@ -12,12 +12,12 @@
     <panel_attributes>TracingFilterConfig
 --
 
-+IsTracePointEnabled(score::cpp::string_view service_type, score::cpp::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept : bool
++IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept : bool
 +IsTracePointEnabled(                        ...                           ,                         ...                          ,                                        ...                               , SkeletonFieldTracePointType skeleton_field_trace_point_type) const noexcept : bool
 +IsTracePointEnabled(                        ...                           ,                         ...                          ,                                        ...                               , ProxyEventTracePointType proxy_event_trace_point_type) const noexcept : bool
 +IsTracePointEnabled(                        ...                           ,                         ...                          ,                                        ...                               , ProxyFieldTracePointType proxy_field_trace_point_type) const noexcept : bool
 
-+AddTracePoint(score::cpp::string_view service_type, score::cpp::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept : void
++AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept : void
 +AddTracePoint(                        ...                           ,                         ...                          ,                                        ...                               , SkeletonFieldTracePointType skeleton_field_trace_point_type) noexcept : void
 +AddTracePoint(                        ...                           ,                         ...                          ,                                        ...                               , ProxyEventTracePointType proxy_event_trace_point_type) noexcept : void
 +AddTracePoint(                        ...                           ,                         ...                          ,                                        ...                               , ProxyFieldTracePointType proxy_field_trace_point_type) noexcept : void
@@ -236,12 +236,12 @@ Creates in Initialize()</panel_attributes>
     </coordinates>
     <panel_attributes>/ITracingFilterConfig/
 --
-+IsTracePointEnabled(score::cpp::string_view service_type, score::cpp::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept = 0 : bool
++IsTracePointEnabled(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept = 0 : bool
 +IsTracePointEnabled(                        ...                           ,                         ...                          ,                                        ...                               , SkeletonFieldTracePointType skeleton_field_trace_point_type) const noexcept = 0 : bool
 +IsTracePointEnabled(                        ...                           ,                         ...                          ,                                        ...                               , ProxyEventTracePointType proxy_event_trace_point_type) const noexcept = 0 : bool
 +IsTracePointEnabled(                        ...                           ,                         ...                          ,                                        ...                               , ProxyFieldTracePointType proxy_field_trace_point_type) const noexcept = 0 : bool
 
-+AddTracePoint(score::cpp::string_view service_type, score::cpp::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept = 0 : void
++AddTracePoint(std::string_view service_type, std::string_view event_name, InstanceSpecifierView instance_specifier, SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept = 0 : void
 +AddTracePoint(                        ...                           ,                         ...                          ,                                        ...                               , SkeletonFieldTracePointType skeleton_field_trace_point_type) noexcept = 0 : void
 +AddTracePoint(                        ...                           ,                         ...                          ,                                        ...                               , ProxyEventTracePointType proxy_event_trace_point_type) noexcept = 0 : void
 +AddTracePoint(                        ...                           ,                         ...                          ,                                        ...                               , ProxyFieldTracePointType proxy_field_trace_point_type) noexcept = 0 : void

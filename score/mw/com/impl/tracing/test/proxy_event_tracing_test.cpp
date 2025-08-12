@@ -39,13 +39,11 @@ using TestSampleType = std::uint16_t;
 
 const auto kInstanceSpecifier{InstanceSpecifier::Create("abc/abc/TirePressurePort").value()};
 const auto kInstanceSpecifierStdStringView = kInstanceSpecifier.ToString();
-const auto kInstanceSpecifierStringView =
-    score::cpp::string_view{kInstanceSpecifierStdStringView.data(), kInstanceSpecifierStdStringView.size()};
+const auto kInstanceSpecifierStringView = kInstanceSpecifierStdStringView;
 const std::string kServiceTypeName{"foo"};
 const ServiceIdentifierType kServiceIdentifier{make_ServiceIdentifierType(kServiceTypeName, 13, 37)};
 const auto kServiceIdentifierStdStringView = kServiceIdentifier.ToString();
-const auto kServiceIdentifierStringView =
-    score::cpp::string_view{kServiceIdentifierStdStringView.data(), kServiceIdentifierStdStringView.size()};
+const auto kServiceIdentifierStringView = kServiceIdentifierStdStringView;
 const ServiceInstanceDeployment kInstanceDeployment{kServiceIdentifier,
                                                     LolaServiceInstanceDeployment{LolaServiceInstanceId{23U}},
                                                     QualityType::kASIL_QM,
@@ -117,7 +115,7 @@ class ProxyEventTracingFixture : public ::testing::Test
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent<TestSampleType>>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(_, score::cpp::string_view{kServiceElementName}))
+        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(_, kServiceElementName))
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 
@@ -125,7 +123,7 @@ class ProxyEventTracingFixture : public ::testing::Test
     {
         auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent<TestSampleType>>();
         mock_proxy_event_binding_ = proxy_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, CreateEventBinding(_, score::cpp::string_view{kServiceElementName}))
+        EXPECT_CALL(factory_mock_guard.factory_mock_, CreateEventBinding(_, kServiceElementName))
             .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     }
 
@@ -151,9 +149,9 @@ class ProxyEventTracingFixture : public ::testing::Test
 
     template <typename TracePointType>
     void ExpectIsTracePointEnabledCalls(const tracing::ProxyEventTracingData& expected_enabled_trace_points,
-                                        const score::cpp::string_view service_type,
-                                        const score::cpp::string_view event_name,
-                                        const score::cpp::string_view instance_specifier_view) const noexcept
+                                        const std::string_view service_type,
+                                        const std::string_view event_name,
+                                        const std::string_view instance_specifier_view) const noexcept
     {
         const std::pair<TracePointType, bool> trace_points[] = {
             {TracePointType::SUBSCRIBE, expected_enabled_trace_points.enable_subscribe},
@@ -302,10 +300,8 @@ TEST_P(ProxyEventTracingEnabledTracePointsParamaterizedFixture, TracePointsAreCo
         .WillOnce(Return(&tracing_filter_config_mock_));
 
     // and that a ProxyEvent binding is created and is filled by calling IsTracePointEnabled()
-    ExpectIsTracePointEnabledCalls<tracing::ProxyEventTracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+    ExpectIsTracePointEnabledCalls<tracing::ProxyEventTracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Given a proxy containing a Service Element which is connected to a mock binding
     CreateProxy();
@@ -350,10 +346,8 @@ TEST_P(ProxyFieldTracingEnabledTracePointsParamaterizedFixture, TracePointsAreCo
         .WillOnce(Return(&tracing_filter_config_mock_));
 
     // Expecting that a ProxyEvent binding is created and is filled by calling IsTracePointEnabled()
-    ExpectIsTracePointEnabledCalls<tracing::ProxyFieldTracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+    ExpectIsTracePointEnabledCalls<tracing::ProxyFieldTracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Given a proxy containing a Service Element which is connected to a mock binding
     CreateProxy();
@@ -465,10 +459,8 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreTracedWhenEnabled
 
     // and that a ProxyEvent binding is created with the Subscribe trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Subscribe should be called containing the correct max_sample_count
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -536,10 +528,8 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
 
     // and that a ProxyEvent binding is created with the Subscribe trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Subscribe should be called containing the correct max_sample_count which returns an
     // error
@@ -616,10 +606,8 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
 
     // and that a ProxyEvent binding is created with the Subscribe trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Subscribe should be called containing the correct max_sample_count which returns an
     // error
@@ -689,10 +677,8 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreNotTracedWhenDisa
 
     // and that a ProxyEvent binding is created with the Subscribe trace point disabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Subscribe should never be called
 
@@ -737,10 +723,8 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreTracedWhenEna
 
     // and that a ProxyEvent binding is created with the Unsubscribe trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Unsubscribe should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -799,10 +783,8 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     // and that a ProxyEvent binding is created with the Unsubscribe trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Unsubscribe should be called containing the correct max_sample_count which returns
     // an error
@@ -870,10 +852,8 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
 
     // and that a ProxyEvent binding is created with the Unsubscribe trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Unsubscribe should be called containing the correct max_sample_count which returns
     // an error
@@ -934,10 +914,8 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreNotTracedWhen
 
     // and that a ProxyEvent binding is created with the Unsubscribe trace point disabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to Unsubscribe should never be called
 
@@ -981,10 +959,8 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture, SetReceiveHandlerCallsAreT
 
     // and that a ProxyEvent binding is created with the SetReceiveHandler trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to SetReceiveHandler should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1040,10 +1016,8 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
 
     // and that a ProxyEvent binding is created with the SetReceiveHandler trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to SetReceiveHandler should be called which returns an error
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1106,10 +1080,8 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
 
     // and that a ProxyEvent binding is created with the SetReceiveHandler trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to SetReceiveHandler should be called which returns an error
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1166,10 +1138,8 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture, SetReceiveHandlerCallsAreN
 
     // and that a ProxyEvent binding is created with the SetReceiveHandler trace point disabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to SetReceiveHandler should never be called
 
@@ -1209,10 +1179,8 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture, ReceiveHandlerCallbac
 
     // and that a ProxyEvent binding is created with the ReceiveHandlerCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that SetReceiveHandler will be registered with the binding with the wrapped handler containing the trace call
     std::weak_ptr<ScopedEventReceiveHandler> scoped_event_receive_handler_weak_ptr{};
@@ -1279,10 +1247,8 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
 
     // and that a ProxyEvent binding is created with the ReceiveHandlerCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that SetReceiveHandler will be registered with the binding with the wrapped handler containing the trace call
     std::weak_ptr<ScopedEventReceiveHandler> scoped_event_receive_handler_weak_ptr{};
@@ -1357,10 +1323,8 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
 
     // and that a ProxyEvent binding is created with the ReceiveHandlerCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that SetReceiveHandler will be registered with the binding with the wrapped handler containing the trace call
     std::weak_ptr<ScopedEventReceiveHandler> scoped_event_receive_handler_weak_ptr{};
@@ -1429,10 +1393,8 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture, ReceiveHandlerCallbac
 
     // and that a ProxyEvent binding is created with the ReceiveHandlerCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that SetReceiveHandler will be registered with the binding with the wrapped handler containing the trace call
     std::weak_ptr<ScopedEventReceiveHandler> scoped_event_receive_handler_weak_ptr{};
@@ -1484,10 +1446,8 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture, UnsetReceiveHandlerCalls
 
     // and that a ProxyEvent binding is created with the UnsetReceiveHandler trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to UnsetReceiveHandler should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1545,10 +1505,8 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
 
     // and that a ProxyEvent binding is created with the UnsetReceiveHandler trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to UnsetReceiveHandler should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1614,10 +1572,8 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
 
     // and that a ProxyEvent binding is created with the UnsetReceiveHandler trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to UnsetReceiveHandler should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1677,10 +1633,8 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture, UnsetReceiveHandlerCalls
 
     // and that a ProxyEvent binding is created with the UnsetReceiveHandler trace point disabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to UnsetReceiveHandler should never be called
 
@@ -1725,10 +1679,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture, GetNewSamplesCallsAreTracedWhe
 
     // and that a ProxyEvent binding is created with the GetNewSamples trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to GetNewSamples should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1781,10 +1733,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
 
     // and that a ProxyEvent binding is created with the GetNewSamples trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to GetNewSamples should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1846,10 +1796,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
 
     // and that a ProxyEvent binding is created with the GetNewSamples trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to GetNewSamples should be called with no data
     tracing::ITracingRuntime::TracePointType trace_point_type{
@@ -1905,10 +1853,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture, GetNewSamplesCallsAreNotTraced
 
     // and that a ProxyEvent binding is created with the GetNewSamples trace point disabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // Then a trace call relating to GetNewSamples should never be called
 
@@ -1950,10 +1896,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture, GetNewSamplesCallbackC
 
     // and that a ProxyEvent binding is created with the GetNewSamplesCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that GetNewSamples will be called on the binding with the wrapped handler containing the trace call
     typename ProxyEventBinding<TestSampleType>::Callback wrapper_get_new_samples_callback{};
@@ -2026,10 +1970,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture,
 
     // and that a ProxyEvent binding is created with the GetNewSamplesCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that GetNewSamples will be called on the binding with the wrapped handler containing the trace call
     typename ProxyEventBinding<TestSampleType>::Callback wrapper_get_new_samples_callback{};
@@ -2110,10 +2052,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture,
 
     // and that a ProxyEvent binding is created with the GetNewSamplesCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that GetNewSamples will be called on the binding with the wrapped handler containing the trace call
     typename ProxyEventBinding<TestSampleType>::Callback wrapper_get_new_samples_callback{};
@@ -2188,10 +2128,8 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture, GetNewSamplesCallbackC
 
     // and that a ProxyEvent binding is created with the GetNewSamplesCallback trace point enabled.
     ProxyEventTracingFixture<TypeParam>::template ExpectIsTracePointEnabledCalls<
-        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(expected_enabled_trace_points,
-                                                                      kServiceIdentifierStringView,
-                                                                      score::cpp::string_view{kServiceElementName},
-                                                                      kInstanceSpecifierStringView);
+        typename ProxyEventTracingFixture<TypeParam>::TracePointType>(
+        expected_enabled_trace_points, kServiceIdentifierStringView, kServiceElementName, kInstanceSpecifierStringView);
 
     // and that GetNewSamples will be called on the binding with the wrapped handler containing the trace call
     typename ProxyEventBinding<TestSampleType>::Callback wrapper_get_new_samples_callback{};
