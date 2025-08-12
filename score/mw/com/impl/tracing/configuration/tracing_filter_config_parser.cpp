@@ -161,8 +161,7 @@ std::set<std::string_view> GetInstancesOfServiceType(const Configuration& config
     std::set<std::string_view> result{};
     for (const auto& service_instance_element : configuration.GetServiceInstances())
     {
-        if (service_instance_element.second.service_.ToString() ==
-            std::string_view{service_type.data(), service_type.size()})
+        if (service_instance_element.second.service_.ToString() == service_type)
         {
             const auto element_string_view = service_instance_element.first.ToString();
             score::cpp::ignore = result.insert(element_string_view);

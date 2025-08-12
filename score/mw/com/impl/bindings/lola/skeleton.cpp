@@ -365,7 +365,7 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
         // we can't add noexcept to score::cpp::callback signature.
         // coverity[autosar_cpp14_a15_4_2_violation]
         unregister_shm_object_callback.value()(
-            std::string_view{tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback},
+            tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
             // Suppress "AUTOSAR C++14 A4-5-1" rule findings. This rule states: "Expressions with type enum or enum
             // class shall not be used as operands to built-in and overloaded operators other than the subscript
             // operator [ ], the assignment operator =, the equality operators == and ! =, the unary & operator, and the
