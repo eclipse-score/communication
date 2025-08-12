@@ -324,9 +324,9 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, minimalTest)
     // Given an empty ipc tracing filter config
     TracingFilterConfig tracing_filter_config{};
 
-    const std::string_view service_type = "/bmw/ncar/services/TirePressureService";
-    const std::string_view event_name = "CurrentPressureFrontLeft";
-    const std::string_view instance_specifier = "abc/abc/TirePressurePort";
+    constexpr auto service_type = "/bmw/ncar/services/TirePressureService"sv;
+    constexpr auto event_name = "CurrentPressureFrontLeft"sv;
+    constexpr auto instance_specifier = "abc/abc/TirePressurePort"sv;
 
     // When adding a trace point for this TracePointType and the same service element, which has been configured with
     // the need for 27 sample slots for tracing
