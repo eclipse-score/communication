@@ -45,7 +45,7 @@ class RuntimeMock : public IRuntime
     // coverity[autosar_cpp14_m3_9_1_violation]
     MOCK_METHOD(pid_t, GetPid, (), (const, noexcept, override));
     // coverity[autosar_cpp14_m3_9_1_violation]
-    MOCK_METHOD(uid_t, GetUid, (), (const, noexcept, override));
+    MOCK_METHOD(std::uint32_t, GetApplicationId, (), (const, noexcept, override));
 };
 
 }  // namespace score::mw::com::impl::lola
