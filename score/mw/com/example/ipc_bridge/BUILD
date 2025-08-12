@@ -103,7 +103,6 @@ sh_test(
     data = [
         ":ipc_bridge_cpp",
         ":ipc_bridge_rs",
-        "etc/mw_com_config.json",
     ],
     tags = ["no-parallel-with-proxy-component-test"],
 )
