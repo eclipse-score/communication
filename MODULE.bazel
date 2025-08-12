@@ -13,6 +13,11 @@
 module(name = "communication")
 
 bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency=True)
+git_override(
+   module_name = "score_toolchains_gcc",
+   remote = "https://github.com/Elektrobit/eclipse-score_toolchains_gcc.git",
+   commit = "fb009e490b9b8f28805d587f50d0bf6d885f3414",
+)
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
 gcc.toolchain(
@@ -74,8 +79,8 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "score-baselibs", version = "0.0.0")
 git_override(
     module_name = "score-baselibs",
-    remote = "https://github.com/eclipse-score/baselibs.git",
-    commit = "46923f5c4f302bd9feae0261588687aaf32e3c5c",
+    remote = "https://github.com/Elektrobit/eclipse-score_baselibs.git",
+    commit = "a89c6f2682c6f465d2afacf2f2c0c6240d277b6a",
 )
 
 bazel_dep(name = "aspect_bazel_lib", version = "2.20.0")
