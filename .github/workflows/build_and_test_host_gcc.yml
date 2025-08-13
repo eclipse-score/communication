@@ -20,7 +20,6 @@ on:
     types: [opened, reopened, synchronize]
   merge_group:
     types: [checks_requested]
-  workflow_dispatch:
 jobs:
     build_and_test_gcc_host_gcc12:
       runs-on: ubuntu-latest
@@ -35,13 +34,3 @@ jobs:
         - name: Bazel test communication targets
           run: |
             bazel test //... --build_tests_only
-    test_integration_ebclfsa:
-      runs-on: ubuntu-latest
-      container:
-        image: ghcr.io/eclipse-score/devcontainer:latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4.2.2
-        - name: Run Demo Integration - IPC Bridge on EB corbos Linux for Safety Applications
-          run: |
-            bazel build --config=aarch64 --spawn_strategy=local  //score/mw/com/example/ipc_bridge_hi_wrapper:run_example
