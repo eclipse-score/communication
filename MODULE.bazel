@@ -12,6 +12,8 @@
 # *******************************************************************************
 module(name = "communication")
 
+
+bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency=True)
 git_override(
    module_name = "score_toolchains_gcc",
