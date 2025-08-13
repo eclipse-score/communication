@@ -49,7 +49,6 @@ cc_library(
         ":quality_type",
         ":service_type_deployment",
         ":someip_service_instance_deployment",
-        "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/mw/log",
     ],
     tags = ["FFI"],
@@ -268,7 +267,6 @@ cc_library(
         ":configuration_common_resources",
         ":service_version_type",
         "@score-baselibs//score/json",
-        "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/language/futurecpp",
     ],
 )

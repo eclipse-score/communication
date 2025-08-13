@@ -16,7 +16,6 @@
 #include "score/mw/com/impl/configuration/service_version_type.h"
 
 #include "score/json/json_parser.h"
-#include "score/memory/string_literal.h"
 
 #include <cstdint>
 #include <string>

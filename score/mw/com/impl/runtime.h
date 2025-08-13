@@ -14,7 +14,6 @@
 #define SCORE_MW_COM_IMPL_RUNTIME_H
 
 #include "score/concurrency/long_running_threads_container.h"
-#include "score/memory/string_literal.h"
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/impl/i_runtime.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -30,7 +29,6 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
