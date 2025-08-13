@@ -84,5 +84,3 @@ git_override(
     remote = "https://github.com/Elektrobit/eclipse-score_baselibs.git",
     commit = "a89c6f2682c6f465d2afacf2f2c0c6240d277b6a",
 )
-
-bazel_dep(name = "aspect_bazel_lib", version = "2.20.0")
