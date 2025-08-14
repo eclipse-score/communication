@@ -82,12 +82,23 @@ class ProxyWithRealMemFixture : public ::testing::Test
         shm_files_.push_back(std::move(shm_file));
     }
 
+    void Cleanup() {
+        score::filesystem::IStandardFilesystem::instance().Remove("/dev/shm/lola-ctl-0000000000052719-00016");
+        score::filesystem::IStandardFilesystem::instance().Remove("/dev/shm/lola-data-0000000000052719-00016");
+        score::filesystem::IStandardFilesystem::instance().Remove("/tmp/lola-ctl-0000000000052719-00016_lock");
+        score::filesystem::IStandardFilesystem::instance().Remove(kTmpPath);
+        score::filesystem::IStandardFilesystem::instance().Remove(kServiceInstanceUsageMarkerFile);
+    }
+
     void SetUp() override
     {
         EXPECT_CALL(runtime_mock_.mock_, GetBindingRuntime(BindingType::kLoLa))
             .WillRepeatedly(::testing::Return(&lola_runtime_mock_));
         ON_CALL(lola_runtime_mock_, GetRollbackSynchronization())
             .WillByDefault(::testing::ReturnRef(rollback_synchronization_));
+
+        // Ensure we start with a clean state
+        Cleanup();
     }
 
     void TearDown() override
@@ -97,6 +108,9 @@ class ProxyWithRealMemFixture : public ::testing::Test
             score::filesystem::IStandardFilesystem::instance().Remove(std::string{"/dev/shm"} + file);
         }
         shm_files_.clear();
+
+        // Ensure we leave with a clean state
+        Cleanup();
     }
 
     ProxyWithRealMemFixture& WithAMockedServiceDiscovery()

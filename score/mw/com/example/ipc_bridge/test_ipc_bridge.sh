@@ -12,6 +12,7 @@ function cleanup_lola() {
     # Ensure tests are run in a clean state
     rm -rf /dev/shm/lola-*6432*
     rm -rf /tmp/mw_com_lola/*/*6432*
+    rm -rf /tmp/lola-ctl-*6432*_lock
 }
 
 function create_service_manifest() {
