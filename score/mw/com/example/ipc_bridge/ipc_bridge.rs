@@ -46,9 +46,9 @@ struct Arguments {
     #[arg(
         short,
         long,
+        value_parser = |s: &str| s.parse::<u64>().map(Duration::from_millis),
     )]
-    // std::time::Duration is not directly supported by clap, so we use usize and convert it later
-    cycle_time: u64,
+    cycle_time: Duration,
     #[arg(
         short,
         long,
@@ -134,7 +134,7 @@ fn run_send_mode(instance_specifier: mw_com::InstanceSpecifier, args: &Arguments
 
         println!("Sending sample: {}", x);
         x += 1;
-        sleep(Duration::from_millis(args.cycle_time));
+        sleep(args.cycle_time);
     }
 }
 
