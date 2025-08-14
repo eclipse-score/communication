@@ -16,7 +16,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use clap::{Parser, ValueEnum};
-use futures::{Stream, StreamExt};
+use futures::{future::Either, Stream, StreamExt};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, ValueEnum)]
 enum Mode {
@@ -68,16 +68,15 @@ async fn get_samples<
     map_api_lanes_stamped: S,
     count: usize,
 ) {
-    let mut map_api_lanes_stamped = pin!(map_api_lanes_stamped);
-    if count > 0 {
-        let mut limited_map_api_lanes_stamped = map_api_lanes_stamped.take(count);
-        while let Some(data) = limited_map_api_lanes_stamped.next().await {
-            println!("Received sample: {}", data.x);
-        }
-    } else {
-        while let Some(data) = map_api_lanes_stamped.next().await {
-            println!("Received sample: {}", data.x);
-        }
+    let map_api_lanes_stamped = pin!(map_api_lanes_stamped);
+
+    let mut map_api_lanes_stamped_iterator = if count > 0 {
+            Either::Left(map_api_lanes_stamped.take(count))
+        } else {
+            Either::Right(map_api_lanes_stamped)
+        };
+    while let Some(data) = map_api_lanes_stamped_iterator.next().await {
+        println!("Received sample: {}", data.x);
     }
     println!("Unsubscribing...");
 }
