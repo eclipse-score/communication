@@ -128,7 +128,7 @@ cc_test(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
+    tags = ["unit", "exclusive"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -151,7 +151,7 @@ cc_test(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
+    tags = ["unit", "exclusive"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -193,4 +193,5 @@ cc_test(
         "//score/mw/com/impl/configuration/test:configuration_store",
         "@googletest//:gtest_main",
     ],
+    tags = ["exclusive"],
 )

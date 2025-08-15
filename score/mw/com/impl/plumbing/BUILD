@@ -644,7 +644,7 @@ cc_test(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
+    tags = ["unit", "exclusive"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
