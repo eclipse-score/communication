@@ -104,4 +104,5 @@ sh_test(
         ":ipc_bridge_cpp",
         ":ipc_bridge_rs",
     ],
+    tags = ["exclusive"],
 )

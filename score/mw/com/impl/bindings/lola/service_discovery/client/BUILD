@@ -61,6 +61,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
     ],
+    tags = ["exclusive"],
 )
 
 cc_unit_test_suites_for_host_and_qnx(
