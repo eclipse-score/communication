@@ -86,7 +86,8 @@ class ProxyWithRealMemFixture : public ::testing::Test
         score::filesystem::IStandardFilesystem::instance().Remove("/dev/shm/lola-ctl-0000000000052719-00016");
         score::filesystem::IStandardFilesystem::instance().Remove("/dev/shm/lola-data-0000000000052719-00016");
         score::filesystem::IStandardFilesystem::instance().Remove("/tmp/lola-ctl-0000000000052719-00016_lock");
-        score::filesystem::IStandardFilesystem::instance().Remove(kTmpPath);
+        score::filesystem::IStandardFilesystem::instance().Remove("/tmp/lola-data-0000000000052719-00016_lock");
+        score::filesystem::IStandardFilesystem::instance().Remove("/tmp/mw_com_lola/service_discovery/52719/16");
         score::filesystem::IStandardFilesystem::instance().Remove(kServiceInstanceUsageMarkerFile);
     }
 
