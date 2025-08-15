@@ -64,9 +64,25 @@ using namespace ::testing;
 const filesystem::Path kTmpPath{"/tmp_discovery/mw_com_lola/service_discovery"};
 constexpr auto kServiceInstanceUsageMarkerFile =
     "/tmp_discovery/mw_com_lola/partial_restart/usage-0000000000052719-00016";
+const std::vector<char const *> files_for_cleanup {
+        "/dev/shmem/lola-ctl-0000000000052719-00016",
+        "/dev/shmem/lola-data-0000000000052719-00016",
+        "/tmp_discovery/lola-ctl-0000000000052719-00016_lock",
+        "/tmp_discovery/lola-data-0000000000052719-00016_lock",
+        "/tmp_discovery/mw_com_lola/service_discovery/52719/16",
+        kServiceInstanceUsageMarkerFile,
+};
 #else
 const filesystem::Path kTmpPath{"/tmp/mw_com_lola/service_discovery"};
 constexpr auto kServiceInstanceUsageMarkerFile = "/tmp/mw_com_lola/partial_restart/usage-0000000000052719-00016";
+const std::vector<char const *> files_for_cleanup {
+        "/dev/shm/lola-ctl-0000000000052719-00016",
+        "/dev/shm/lola-data-0000000000052719-00016",
+        "/tmp/lola-ctl-0000000000052719-00016_lock",
+        "/tmp/lola-data-0000000000052719-00016_lock",
+        "/tmp/mw_com_lola/service_discovery/52719/16",
+        kServiceInstanceUsageMarkerFile,
+};
 #endif
 
 const std::string kEventName{"DummyEvent1"};
@@ -83,12 +99,10 @@ class ProxyWithRealMemFixture : public ::testing::Test
     }
 
     void Cleanup() {
-        score::filesystem::IStandardFilesystem::instance().Remove("/dev/shm/lola-ctl-0000000000052719-00016");
-        score::filesystem::IStandardFilesystem::instance().Remove("/dev/shm/lola-data-0000000000052719-00016");
-        score::filesystem::IStandardFilesystem::instance().Remove("/tmp/lola-ctl-0000000000052719-00016_lock");
-        score::filesystem::IStandardFilesystem::instance().Remove("/tmp/lola-data-0000000000052719-00016_lock");
-        score::filesystem::IStandardFilesystem::instance().Remove("/tmp/mw_com_lola/service_discovery/52719/16");
-        score::filesystem::IStandardFilesystem::instance().Remove(kServiceInstanceUsageMarkerFile);
+        for (const auto* file : files_for_cleanup)
+        {
+            score::filesystem::IStandardFilesystem::instance().Remove(file);
+        }
     }
 
     void SetUp() override

@@ -10,9 +10,16 @@ RUST_EXAMPLE_CMD="score/mw/com/example/ipc_bridge/ipc_bridge_rs -s $MANIFEST_LOC
 
 function cleanup_lola() {
     # Ensure tests are run in a clean state
+
+    # Linux
     rm -rf /dev/shm/lola-*6432*
     rm -rf /tmp/mw_com_lola/*/*6432*
     rm -rf /tmp/lola-*-*6432*_lock
+
+    # QNX
+    rm -rf /dev/shmem/lola-*6432*
+    rm -rf /tmp_discovery/mw_com_lola/*/*6432*
+    rm -rf /tmp_discovery/lola-*-*6432*_lock
 }
 
 function create_service_manifest() {
