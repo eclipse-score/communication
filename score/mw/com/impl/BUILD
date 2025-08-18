@@ -567,7 +567,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
 )
 
