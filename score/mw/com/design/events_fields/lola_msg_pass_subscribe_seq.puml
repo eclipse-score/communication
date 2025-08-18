@@ -94,7 +94,7 @@ deactivate Receiver1
 MessagePassing1 -> ProxyEvent : callback()
 deactivate MessagePassing1
 activate ProxyEvent
-ProxyEvent -[#white]> SkeletoProxyEventn
+ProxyEvent -[#white]> ProxyEvent
 deactivate ProxyEvent
 
 @enduml

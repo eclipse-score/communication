@@ -34,7 +34,7 @@ else
 endif
 
 Activity_5 -down-> if "" as TimestampCheck then
-  -down->[slot timestamp < oldest_timestamp] "Set oldest_timestamp = timestamp of slot in ASIL-B segment at current_slot_index\nfound_slot_index = current_slot_index;" as Activity_7
+  -down->[slot timestamp < oldest_timestamp] "Set oldest_timestamp = timestamp of slot in ASIL-B segment at current_slot_index\nfound_slot_index = current_slot_index;" as Activity_9
   -up-> Activity_6
 else
   -right->[slot timestamp >= oldest_timestamp] Activity_6
