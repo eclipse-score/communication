@@ -1,0 +1,233 @@
+@startuml lola_message_passing_model
+title "Structural View_MessagePassing"
+
+class "mw::com::impl::IRuntimeBinding" {
+  +GetBindingType() : BindingType
+}
+
+class "mw::com::impl::lola::IRuntime" {
+  +GetLolaMessaging() : lola::IMessagePassingService&
+  +HasAsilBSupport() : bool
+}
+
+interface "messaging::IMessagePassingService" {
+  +using HandlerRegistrationNoType std::uint32_t
+  +using EventSubscriptionNoType std::uint32_t
+  --
+  {abstract} +RegisterEventNotification(QualityType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): HandlerRegistrationNoType
+  {abstract} +ReregisterEventNotification(QualityType, ElementFqId, pid_t)
+  {abstract} +UnregisterEventNotification(QualityType, HandlerRegistrationNoType): void
+  {abstract} +NotifyEvent(QualityType, ElementFqId): void
+  {abstract} +NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id): void
+}
+
+enum "lola::ASILType" {
+  INVALID
+  ASIL_QM
+  ASIL_B
+}
+
+class "MessageReceiveCtrl" {
+  +receiver: std::unique_ptr<IReceiver>
+  +threadPool: std::unique_ptr<concurrency::ThreadPool>
+}
+
+class "lola::messaging::MessagePassingFacade" {
+  -msg_receiver_asil_b_: MessageReceiveCtrl
+  -msg_receiver_qm_: MessageReceiveCtrl
+  -notify_event_handler_ : NotifyEventHandler
+  -message_passing_ctrl_ : IMessagePassingControl&
+  +MessagePassingFacade(IMessagePassingControl& msgpass_ctrl, const AsilSpecificCfg config_asil_qm, const score::cpp::optional<AsilSpecificCfg> config_asil_b)
+  +RegisterEventNotification(ASILType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): RegistrationHandle
+  +ReregisterEventNotification(QualityType, ElementFqId, pid_t)
+  +UnregisterEventNotification(ASILType, RegistrationHandle) : void
+  +NotifyEvent(ASILType, ElementFqId): void
+  +NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id) : void
+}
+
+class "lola::ElementFqId" {
+  +serviceId_ : uint16_t
+  +instanceId_ : uint16_t
+  +elementId_ : uint16_t
+  +element_type_ : ServiceElementType
+  +ElementFqId(service_id : const std::uint16_t, event_id : const std::uint8_t, instance_id : const std::uint16_t)
+  +ToString() : std::string
+  ..
+  <u>Notes</u>
+  Full qualified event ID within a LoLa process.\nAt least WITHIN one LoLa enabled process the\nnamespace provided by those types should be enough.
+}
+
+interface "mw::com::message_passing::ISender" {
+  {abstract} +Send(ShortMessage) : score::cpp::expected<Error>
+  {abstract} +Send(MediumMessage) : score::cpp::expected<Error>
+  {abstract} +HasNonBlockingGuarantee() : bool
+  ..
+  <u>Notes</u>
+  Opens an OS specific underlying communication\nchannel and transmits the specified message.
+}
+
+interface "mw::com::message_passing::IReceiver" {
+  {abstract} +Register(MessageId, score::cpp::callback<void(ShortMessagePayload), pid_t>) : bool
+  {abstract} +Register(MessageId, score::cpp::callback<void(MediumMessagePayload, pid_t)>) : bool
+  {abstract} +StartListening() : score::cpp::expected<Error>
+  ..
+  <u>Notes</u>
+  Creates/Opens an OS specific underlying communication channel\nand receives specified messages.\nIf a handler has been registered for a specific message, it is invoked.
+}
+
+enum "lola::MessageIds" {
+  SUBSCRIBE_EVENT
+  SUBSCRIBE_EVENT_RESULT
+  UNSUBSCRIBE_EVENT
+  UNSUBSCRIBE_EVENT_ACK
+  REGISTER_EVENT_NOTIFIER
+  UNREGISTER_EVENT_NOTIFIER
+  NOTIFY_EVENT
+  DISCONNECT_EVENT
+}
+
+class "lola::SubscribeEventMessage" {
+  +element_fq_id_ : ElementFqId
+  +max_samples_: std::uint8_t
+  +call_seq_count_: CallSeqCounterType
+  +sender_node_id_: pid_t
+  +DeserializeToSubscribeEventMessage(const MediumMessage&, pid_t sender_node_id): SubscribeEventMessage
+  +SubscribeEventMsg(ElementFqId, uint8_t max_samples_, CallSeqCounterType, pid_t sender_node_id)
+  +SerializeToMediumMessage() : MediumMessage
+}
+
+class "lola::CallSeqCounterType" <<typedef>> {
+  using std::uint16_t
+}
+
+class "mw::com::message_passing::MediumMessage" {
+}
+
+class "lola::messaging::SubscribeEventResultMessage" {
+  +subscribeSuccess: bool
+  +call_seq_count_: CallSeqCounterType
+  +sender_node_id_: pid_t
+  +SerializeToShortMessage() : ShortMessage const
+  +DeserializeToSubscribeEventResultMessage(ShortMessage, pid_t sender_node_id): SubscribeEventResultMessage
+  +SubscribeEventResultMsg(bool subscribeSuccess, CallSeqCounterType, pid_t sender_node_id)
+}
+
+class "mw::com::message_passing::ShortMessage" {
+}
+
+class "lola::messaging::UnsubscribeEventMessage" {
+  +element_fq_id_ : ElementFqId
+  +max_samples_: std::uint8_t
+  +call_seq_count_: CallSeqCounterType
+  +sender_node_id_: pid_t
+  +DeserializeToUnsubscribeEventMessage(const MediumMessage&, pid_t sender_node_id): UnsubscribeEventMessage
+  +UnsubscribeEventMsg(ElementFqId, uint8_t max_samples_, CallSeqCounterType, pid_t sender_node_id)
+  +SerializeToMediumMessage() : MediumMessage
+}
+
+class "RegisterEventNotifierMsg" {
+}
+
+class "<u>score::com::impl::lola::Runtime</u>" {
+  +Runtime(config : const Configuration&)
+  +GetBindingType() : BindingType
+  +GetLolaMessaging() : lola::IMessagePassingService&
+  +HasAsilBSupport() : bool
+  +GetMessagePassingCfg(asil_level : const QualityType) : MessagePassingFacade::AsilSpecificCfg
+}
+
+class "lola::messaging::NotifyEventHandler" {
+  +NotifyEventHandler(IMessagePassingControl&, bool asilBCapability, const score::cpp::stop_token&)
+  +RegisterMessageReceivedCallbacks(QualityType, message_passing::IReceiver&) : void
+  +NotifyEvent(QualityType, ElementFqId) : void
+  +RegisterEventNotification(QualityType, ElementFqId, IMessagePassingService::EventUpdateNotificationHandler, pid_t) : IMessagePassingService::HandlerRegistrationNoType
+  +RegisterEventNotification(ASILType, ElementFqId, std::weak_ptr<ScopedEventReceiveHandler>, pid_t): RegistrationHandle
+  +UnregisterEventNotification(QualityType, ElementFqId, IMessagePassingService::HandlerRegistrationNoType, pid_t) : void
+  +NotifyOutdatedNodeId(QualityType asil_level, pid_t outdated_node_id, pid_t target_node_id) : void
+}
+
+interface "lola::messaging::IMessagePassingControl" {
+  {abstract} +GetMessagePassingSender(QualityType, pid_t targetNodeId): message_passing::ISender*
+  {abstract} +CreateMessagePassingName(QualityType, pid_t): std::string
+  {abstract} +GetNodeIdentifier(): pid_t
+}
+
+class "lola::messaging::MessagePassingControl" {
+  -senders_qm_ : std::unordered_map<pid_t, std::unique_ptr<ISender>>
+  -senders_asil_ : std::unordered_map<pid_t, std::unique_ptr<ISender>>
+  +MessagePassingCtrl(asil_b_capability : const bool, sender_queue_size : const std::int32_t)
+  +GetMessagePassingSender(QualityType, pid_t targetNodeId) : message_passing::ISender
+  +GetNodeIdentifier(): pid_t
+  +CreateMessagePassingName(QualityType, pid_t targetNodeId): std::string
+}
+
+class "mw::com::message_passing::SenderFactory" {
+  {static} +Create(std::string identifier, score::cpp::stop_token const&, std::int32_t maxNumbersOfRetry = 5) : std::unique_ptr<ISender>
+}
+
+class "mw::com::message_passing::ReceiverFactory" {
+  {static} +Create(std::string identifier, concurrency::Executor&, std::vector<uid_t> allowedUserIds, std::int32_t maxNumberMessageInQueue = 10) : std::unique_ptr<IReceiver>
+}
+
+abstract "lola::messaging::HandlerBase" {
+  #mp_control_: IMessagePassingControl&
+  #asil_b_capability_: bool
+  +HandlerBase(mp_control : IMessagePassingControl&, asil_b_capability : const bool)
+  {abstract} +RegisterMessageReceivedCallbacks(QualityType, message_passing::IReceiver& receiver): void
+}
+
+class "NotifyEventMsg" {
+}
+
+class "lola::messaging::ElementFqIdMessage<id>" {
+  +element_fq_id_ : ElementFqId
+  +sender_node_id_: pid_t
+  +DeserializeToElementFqIdMessage(message_payload : ShortMessagePayload, sender_node_id : pid_t): ElementFqIdMessage
+  +ElementFqIdMessage(ElementFqId, pid_t sender_node_id)
+  +SerializeToShortMessage() : ShortMessage
+}
+
+class "lola::messaging::UnsubscribeEventAckMessage" {
+  +call_seq_count_: CallSeqCounterType
+  +sender_node_id_: pid_t
+  +DeserializeToUnsubscribeEventAckMessage(ShortMessage, pid_t sender_node_id): UnsubscribeEventAckMessage
+  +UnsubscribeEventAckMessage(CallSeqCounterType, pid_t sender_node_id)
+  +SerializeToShortMessage() : ShortMessage const
+}
+
+class "UnregisterEventNotifierMsg" {
+}
+
+class "DisconnectEventMessage" {
+}
+
+' Relationships
+"mw::com::impl::lola::IRuntime" <|-- "<u>score::com::impl::lola::Runtime</u>"
+"mw::com::impl::IRuntimeBinding" <|-- "mw::com::impl::lola::IRuntime"
+"messaging::IMessagePassingService" ..> "lola::ASILType"
+"<u>score::com::impl::lola::Runtime</u>" *-- "lola::messaging::MessagePassingFacade" : 1
+"lola::messaging::MessagePassingFacade" *-- "MessageReceiveCtrl"
+"lola::messaging::MessagePassingFacade" --|> "messaging::IMessagePassingService"
+"lola::messaging::MessagePassingFacade" *-- "mw::com::message_passing::IReceiver" : 1..2
+"lola::messaging::MessagePassingFacade" o-- "lola::messaging::NotifyEventHandler"
+"lola::messaging::MessagePassingFacade" ..> "mw::com::message_passing::ReceiverFactory" : uses
+"lola::messaging::MessagePassingControl" --o "lola::messaging::MessagePassingFacade"
+"lola::messaging::IMessagePassingControl" <|-- "lola::messaging::MessagePassingControl"
+"lola::messaging::MessagePassingControl" ..> "mw::com::message_passing::SenderFactory" : uses
+"mw::com::message_passing::SenderFactory" ..> "mw::com::message_passing::ISender" : creates
+"mw::com::message_passing::ReceiverFactory" ..> "mw::com::message_passing::IReceiver" : creates
+
+"lola::messaging::NotifyEventHandler" --|> "lola::messaging::HandlerBase"
+"lola::messaging::NotifyEventHandler" ..> "lola::messaging::IMessagePassingControl" : uses
+
+"lola::SubscribeEventMessage" .up.> "mw::com::message_passing::MediumMessage" : uses
+"lola::messaging::UnsubscribeEventMessage" .up.> "mw::com::message_passing::MediumMessage" : uses
+"lola::messaging::SubscribeEventResultMessage" .up.> "mw::com::message_passing::ShortMessage" : uses
+"lola::messaging::UnsubscribeEventAckMessage" .up.> "mw::com::message_passing::ShortMessage" : uses
+
+"lola::messaging::ElementFqIdMessage<id>" <|.. "NotifyEventMsg" : <<bind>>\n<id -> kNotifyEvent>
+"lola::messaging::ElementFqIdMessage<id>" <|.. "RegisterEventNotifierMsg" : <<bind>>\n<id -> kRegisterEventNotifier>
+"lola::messaging::ElementFqIdMessage<id>" <|.. "UnregisterEventNotifierMsg" : <<bind>>\n<id -> kUnregisterEventNotifier>
+"lola::messaging::ElementFqIdMessage<id>" <|.. "DisconnectEventMessage" : <<bind>>\n<id -> kDisconnectEvent>
+
+@enduml

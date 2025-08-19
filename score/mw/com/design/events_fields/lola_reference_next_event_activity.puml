@@ -1,0 +1,28 @@
+@startuml lola_reference_next_event_activity
+title ReferenceNextEvent\nLastReferenceTime: timestamp\nUpperLimit: timestamp
+
+start
+
+while (search retries reached?) is (no)
+  :Search valid sample slot with\nnewsttimestamp, which is\nin interval (LastReferenceTime, UpperLimit);
+  if (slot found?) then (no)
+    break
+  else (yes)
+    :Verify matching slot timestamp\nhasn't changed since match.;
+    if (slot timestamp changed?) then (no)
+      :Try Slot Refcount Increment;
+      if (refcount increment success?) then (no)
+        'intentionally empty
+      else (yes)
+        break
+      endif
+    else (yes)
+      'intentionally empty
+    endif
+  endif
+
+endwhile
+
+end
+
+@enduml
