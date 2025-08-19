@@ -26,7 +26,7 @@
 namespace score::mw::com::impl::lola
 {
 
-GenericProxyEvent::GenericProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const score::cpp::string_view event_name)
+GenericProxyEvent::GenericProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
     : GenericProxyEventBinding{},
       proxy_event_common_{parent, element_fq_id, event_name},
       meta_info_{parent.GetEventMetaInfo(element_fq_id)}

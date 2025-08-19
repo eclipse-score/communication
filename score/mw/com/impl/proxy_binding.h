@@ -15,7 +15,7 @@
 
 #include "score/mw/com/impl/proxy_event_binding_base.h"
 
-#include <score/string_view.hpp>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -49,14 +49,14 @@ class ProxyBinding
     ///
     /// \param event_name The event name to check.
     /// \return True if the event name exists, otherwise, false
-    virtual bool IsEventProvided(const score::cpp::string_view event_name) const noexcept = 0;
+    virtual bool IsEventProvided(const std::string_view event_name) const noexcept = 0;
 
     /// Registers a ProxyEvent binding with its parent proxy
-    virtual void RegisterEventBinding(const score::cpp::string_view service_element_name,
+    virtual void RegisterEventBinding(const std::string_view service_element_name,
                                       ProxyEventBindingBase& proxy_event_binding) noexcept = 0;
 
     /// Unregisters a ProxyEvent binding with its parent proxy
-    virtual void UnregisterEventBinding(const score::cpp::string_view service_element_name) noexcept = 0;
+    virtual void UnregisterEventBinding(const std::string_view service_element_name) noexcept = 0;
 };
 
 }  // namespace score::mw::com::impl

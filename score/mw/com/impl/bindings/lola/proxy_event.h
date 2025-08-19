@@ -25,7 +25,6 @@
 
 #include <score/assert.hpp>
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <exception>
 #include <iostream>
@@ -33,6 +32,7 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <string_view>
 #include <utility>
 #include <variant>
 
@@ -61,7 +61,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     /// \param parent Parent proxy of the proxy event.
     /// \param element_fq_id The ID of the event inside the proxy type.
     /// \param event_name The name of the event inside the proxy type.
-    ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const score::cpp::string_view event_name)
+    ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
         : ProxyEventBinding<SampleType>{},
           proxy_event_common_{parent, element_fq_id, event_name},
           samples_{parent.GetEventDataStorage<SampleType>(element_fq_id)}

@@ -35,23 +35,35 @@ class InstanceSpecifier
     friend std::hash<InstanceSpecifier>;
 
   public:
-    static score::Result<InstanceSpecifier> Create(const score::cpp::string_view shortname_path) noexcept;
+    static score::Result<InstanceSpecifier> Create(const std::string_view shortname_path) noexcept;
+
+    [[deprecated("SPP_DEPRECATION: Use overload with std::string_view instead")]] static score::Result<InstanceSpecifier>
+    Create(const score::cpp::string_view shortname_path) noexcept;
+
+    // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
+    // it will be removed once the overload with score::cpp::string_view is removed
+    template <typename StringViewConveritbleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
+    static score::Result<InstanceSpecifier> Create(const StringViewConveritbleType shortname_path) noexcept
+    {
+        return InstanceSpecifier::Create(std::string_view{shortname_path});
+    }
 
     std::string_view ToString() const noexcept;
 
   private:
-    explicit InstanceSpecifier(const score::cpp::string_view shortname_path) noexcept;
+    explicit InstanceSpecifier(const std::string_view shortname_path) noexcept;
 
     std::string instance_specifier_string_;
 };
 
 bool operator==(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept;
-bool operator==(const InstanceSpecifier& lhs, const score::cpp::string_view& rhs) noexcept;
-bool operator==(const score::cpp::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
+bool operator==(const InstanceSpecifier& lhs, const std::string_view& rhs) noexcept;
+bool operator==(const std::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
 
 bool operator!=(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept;
-bool operator!=(const InstanceSpecifier& lhs, const score::cpp::string_view& rhs) noexcept;
-bool operator!=(const score::cpp::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
+bool operator!=(const InstanceSpecifier& lhs, const std::string_view& rhs) noexcept;
+bool operator!=(const std::string_view& lhs, const InstanceSpecifier& rhs) noexcept;
 
 bool operator<(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept;
 

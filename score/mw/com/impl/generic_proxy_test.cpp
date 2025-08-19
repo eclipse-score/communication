@@ -33,13 +33,13 @@
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 
-#include <score/string_view.hpp>
 #include <score/utility.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -54,7 +54,7 @@ class GenericProxyAttorney
   public:
     GenericProxyAttorney(GenericProxy& generic_proxy) noexcept : generic_proxy_{generic_proxy} {}
 
-    void FillEventMap(const std::vector<score::cpp::string_view>& event_names) noexcept
+    void FillEventMap(const std::vector<std::string_view>& event_names) noexcept
     {
         generic_proxy_.FillEventMap(event_names);
     }
@@ -296,8 +296,7 @@ TEST_F(GenericProxyFixture, CreatingGenericProxyWithNoGenericProxyEventBindingRe
     // Given a handle created from valid instance and type deployments
     // and that the Create call on the ProxyEventBindingFactory returns a nullptr.
     CreateAHandle({kEventName1, kEventName2, kEventName3});
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_,
-                Create(_, score::cpp::string_view{kEventName1.data(), kEventName1.size()}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName1}))
         .WillRepeatedly(Return(ByMove(nullptr)));
 
     // When creating a GenericProxy
@@ -323,11 +322,11 @@ TEST_F(GenericProxyFixture, GenericProxyWillCreateEventBindingsSpecifiedInHandle
     CreateAHandle({kEventName1, kEventName2, kEventName3});
 
     // Then bindings are created for the provided events
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, score::cpp::string_view{kEventName1}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName1}))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, score::cpp::string_view{kEventName2}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName2}))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, score::cpp::string_view{kEventName3}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName3}))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
 
     // When constructing the generic proxy from the handle
@@ -371,15 +370,15 @@ TEST_F(GenericProxyFixture, GenericProxyWillOnlyCreateEventBindingsForEventsProv
     CreateAHandle({kEventName1, kEventName2, kEventName3});
 
     // When only 2 of the events are provided in shared memory
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName1})).WillByDefault(Return(true));
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName2})).WillByDefault(Return(false));
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName3})).WillByDefault(Return(true));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName1})).WillByDefault(Return(true));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName2})).WillByDefault(Return(false));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName3})).WillByDefault(Return(true));
 
     // Then bindings are only created for the provided events
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, score::cpp::string_view{kEventName1}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName1}))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, score::cpp::string_view{kEventName2})).Times(0);
-    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, score::cpp::string_view{kEventName3}))
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName2})).Times(0);
+    EXPECT_CALL(generic_proxy_event_binding_guard_.factory_mock_, Create(_, std::string_view{kEventName3}))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::GenericProxyEvent>())));
 
     // When constructing the generic proxy
@@ -401,9 +400,9 @@ TEST_F(GenericProxyFixture, GenericProxyWillContainEventsForEventsProvidedInShar
     CreateAHandle({kEventName1, kEventName2, kEventName3});
 
     // When only 2 of the events are provided in shared memory
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName1})).WillByDefault(Return(true));
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName2})).WillByDefault(Return(false));
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName3})).WillByDefault(Return(true));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName1})).WillByDefault(Return(true));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName2})).WillByDefault(Return(false));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName3})).WillByDefault(Return(true));
 
     // When constructing the generic proxy
     auto generic_proxy_result = GenericProxy::Create(*handle_);
@@ -427,9 +426,9 @@ TEST_F(GenericProxyFixture, GenericProxyWillLogErrorMessageForEventsProvidedInCo
     CreateAHandle({kEventName1, kEventName2, kEventName3});
 
     // When only 2 of the events are provided in shared memory
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName1})).WillByDefault(Return(true));
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName2})).WillByDefault(Return(false));
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName3})).WillByDefault(Return(true));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName1})).WillByDefault(Return(true));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName2})).WillByDefault(Return(false));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName3})).WillByDefault(Return(true));
 
     // capture stdout output during Parse() call.
     testing::internal::CaptureStdout();
@@ -465,7 +464,7 @@ TEST_F(GenericProxyDeathFixture, FillingEventMapWithDuplicateEventNamesWillTermi
     auto generic_proxy = GenericProxy::Create(*handle_).value();
 
     // and the event is provided in shared memory
-    ON_CALL(*proxy_binding_mock_, IsEventProvided(score::cpp::string_view{kEventName1})).WillByDefault(Return(true));
+    ON_CALL(*proxy_binding_mock_, IsEventProvided(std::string_view{kEventName1})).WillByDefault(Return(true));
 
     // When trying to fill the event map with duplicate event names
     // Then the process should terminate

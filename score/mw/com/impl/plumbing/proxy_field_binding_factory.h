@@ -19,9 +19,9 @@
 #include "score/mw/com/impl/proxy_event_binding.h"
 
 #include <score/overload.hpp>
-#include <score/string_view.hpp>
 
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -34,7 +34,7 @@ class ProxyFieldBindingFactory final
   public:
     /// \brief See documentation in IProxyFieldBindingFactory.
     static std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(ProxyBase& parent,
-                                                                             score::cpp::string_view field_name) noexcept
+                                                                             std::string_view field_name) noexcept
     {
         return instance().CreateEventBinding(parent, field_name);
     }

@@ -33,7 +33,7 @@ lola::IRuntime& GetBindingRuntime() noexcept
 }
 }  // namespace
 
-ProxyEventCommon::ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_id, const score::cpp::string_view event_name)
+ProxyEventCommon::ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
     : test_slot_collector_{},
       parent_{parent},
       event_fq_id_{element_fq_id},

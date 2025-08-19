@@ -15,10 +15,9 @@
 
 #include "score/json/json_parser.h"
 
-#include <score/string_view.hpp>
-
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace score::mw::com::impl
 {

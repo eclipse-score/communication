@@ -295,7 +295,6 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":tracing_filter_config",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/configuration",
     ],
 )
