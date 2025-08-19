@@ -212,9 +212,8 @@ TYPED_TEST(ProxyEventBaseCreationFixture,
     ProxyEventBindingBase* const mock_proxy_event_binding = valid_proxy_event_binding.get();
 
     // Expecting that the ProxyEvent will register and unregister itself with the parent Proxy
-    EXPECT_CALL(*mock_proxy_binding,
-                RegisterEventBinding(score::cpp::string_view{kEventName}, Ref(*mock_proxy_event_binding)));
-    EXPECT_CALL(*mock_proxy_binding, UnregisterEventBinding(score::cpp::string_view{kEventName}));
+    EXPECT_CALL(*mock_proxy_binding, RegisterEventBinding(kEventName, Ref(*mock_proxy_event_binding)));
+    EXPECT_CALL(*mock_proxy_binding, UnregisterEventBinding(kEventName));
 
     // Given a proxy with a valid binding
     DummyProxy dummy_proxy(std::move(valid_proxy_binding),

@@ -20,10 +20,9 @@
 
 #include "score/result/result.h"
 
-#include <score/string_view.hpp>
-
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -44,7 +43,7 @@ class SkeletonEventBase
 
   public:
     SkeletonEventBase(SkeletonBase& skeleton_base,
-                      const score::cpp::string_view event_name,
+                      const std::string_view event_name,
                       std::unique_ptr<SkeletonEventBindingBase> binding)
         : binding_{std::move(binding)},
           skeleton_base_{skeleton_base},
@@ -121,7 +120,7 @@ class SkeletonEventBase
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::reference_wrapper<SkeletonBase> skeleton_base_;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::cpp::string_view event_name_;
+    std::string_view event_name_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     tracing::SkeletonEventTracingData tracing_data_;
     // coverity[autosar_cpp14_m11_0_1_violation]

@@ -18,9 +18,8 @@
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
-#include <score/string_view.hpp>
-
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -48,7 +47,7 @@ class ISkeletonFieldBindingFactory
     /// \return An instance of SkeletonEventBinding or nullptr in case of an error.
     virtual auto CreateEventBinding(const InstanceIdentifier& identifier,
                                     SkeletonBase& parent,
-                                    const score::cpp::string_view field_name) noexcept
+                                    const std::string_view field_name) noexcept
         -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
 };
 

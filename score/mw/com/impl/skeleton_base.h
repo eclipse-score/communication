@@ -27,12 +27,12 @@
 #include <score/assert.hpp>
 #include <score/optional.hpp>
 #include <score/span.hpp>
-#include <score/string_view.hpp>
 
 #include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -59,8 +59,8 @@ class SkeletonBase
     using EventNameList = score::cpp::span<const score::StringLiteral>;
     // An std::map/ordered map is NEEDED here as we require deterministic order of elements in the map, when iterating
     // over it repeatedly! A hint, that our shared-memory-size-calculation relies on it!
-    using SkeletonEvents = std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>;
-    using SkeletonFields = std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>>;
+    using SkeletonEvents = std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>;
+    using SkeletonFields = std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>;
 
     /// \brief Creation of service skeleton with provided Skeleton binding
     ///
@@ -137,14 +137,14 @@ class SkeletonBaseView
         return skeleton_base_.binding_.get();
     }
 
-    void RegisterEvent(const score::cpp::string_view event_name, SkeletonEventBase& event)
+    void RegisterEvent(const std::string_view event_name, SkeletonEventBase& event)
     {
         const auto result = skeleton_base_.events_.emplace(event_name, event);
         const bool was_event_inserted = result.second;
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_event_inserted, "Event cannot be registered as it already exists.");
     }
 
-    void RegisterField(const score::cpp::string_view field_name, SkeletonFieldBase& field)
+    void RegisterField(const std::string_view field_name, SkeletonFieldBase& field)
     {
         const auto result = skeleton_base_.fields_.emplace(field_name, field);
         const bool was_field_inserted = result.second;
@@ -157,7 +157,7 @@ class SkeletonBaseView
     // events_ container during SkeletonEvent construction so we are sure that the event_name already exists, so no way
     // for throwing std::out_of_range which leds to std::terminate().
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    void UpdateEvent(const score::cpp::string_view event_name, SkeletonEventBase& event) noexcept
+    void UpdateEvent(const std::string_view event_name, SkeletonEventBase& event) noexcept
     {
         // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be
         // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
@@ -168,7 +168,7 @@ class SkeletonBaseView
         skeleton_base_.events_.at(event_name) = event;
     }
 
-    void UpdateField(const score::cpp::string_view field_name, SkeletonFieldBase& field) noexcept
+    void UpdateField(const std::string_view field_name, SkeletonFieldBase& field) noexcept
     {
         auto field_name_it = skeleton_base_.fields_.find(field_name);
         if (field_name_it == skeleton_base_.fields_.cend())

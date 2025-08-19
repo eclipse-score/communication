@@ -18,9 +18,8 @@
 #include "score/mw/com/impl/tracing/configuration/service_element_identifier_view.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_config.h"
 
-#include <score/string_view.hpp>
-
 #include <map>
+#include <string_view>
 #include <unordered_set>
 
 namespace score::mw::com::impl
@@ -66,11 +65,11 @@ class TracingConfiguration final
     {
         return tracing_config_.enabled;
     }
-    score::cpp::string_view GetTracingFilterConfigPath() const noexcept
+    std::string_view GetTracingFilterConfigPath() const noexcept
     {
         return tracing_config_.trace_filter_config_path;
     }
-    score::cpp::string_view GetApplicationInstanceID() const noexcept
+    std::string_view GetApplicationInstanceID() const noexcept
     {
         return tracing_config_.application_instance_id;
     }
@@ -78,7 +77,7 @@ class TracingConfiguration final
     void SetServiceElementTracingEnabled(tracing::ServiceElementIdentifier service_element_identifier,
                                          InstanceSpecifier instance_specifier) noexcept;
     bool IsServiceElementTracingEnabled(tracing::ServiceElementIdentifierView service_element_identifier_view,
-                                        score::cpp::string_view instance_specifier_view) const noexcept;
+                                        std::string_view instance_specifier_view) const noexcept;
 
   private:
     std::map<tracing::ServiceElementIdentifier,

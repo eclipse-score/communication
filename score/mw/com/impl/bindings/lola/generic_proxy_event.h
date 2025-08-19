@@ -21,7 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_event_common.h"
 #include "score/mw/com/impl/generic_proxy_event_binding.h"
 
-#include <score/string_view.hpp>
+#include <string_view>
 
 namespace score::mw::com::impl::lola
 {
@@ -48,7 +48,7 @@ class GenericProxyEvent final : public GenericProxyEventBinding
     /// \param parent Parent proxy of the proxy event.
     /// \param element_fq_id The ID of the event inside the proxy type.
     /// \param event_name The name of the event inside the proxy type.
-    GenericProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const score::cpp::string_view event_name);
+    GenericProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name);
 
     GenericProxyEvent(const GenericProxyEvent&) = delete;
     GenericProxyEvent(GenericProxyEvent&&) noexcept = delete;

@@ -761,7 +761,6 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":proxy",
-        "@score-baselibs//score/memory:any_string_view",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
     ],
 )
@@ -871,7 +870,6 @@ cc_gtest_unit_test(
     deps = [
         ":proxy",
         ":shm_path_builder_mock",
-        "@score-baselibs//score/memory:any_string_view",
         "@score-baselibs//score/result",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",

@@ -50,7 +50,7 @@ SkeletonBinding::SkeletonEventBindings GetSkeletonEventBindingsMap(const Skeleto
     SkeletonBinding::SkeletonEventBindings event_bindings{};
     for (const auto& event : events)
     {
-        const score::cpp::string_view event_name = event.first;
+        const std::string_view event_name = event.first;
         SkeletonEventBase& skeleton_event_base = event.second.get();
 
         auto skeleton_event_base_view = SkeletonEventBaseView{skeleton_event_base};
@@ -67,7 +67,7 @@ SkeletonBinding::SkeletonFieldBindings GetSkeletonFieldBindingsMap(const Skeleto
     SkeletonBinding::SkeletonFieldBindings field_bindings{};
     for (const auto& field : fields)
     {
-        const score::cpp::string_view field_name = field.first;
+        const std::string_view field_name = field.first;
         SkeletonFieldBase& skeleton_field_base = field.second.get();
 
         auto skeleton_field_base_view = SkeletonFieldBaseView{skeleton_field_base};

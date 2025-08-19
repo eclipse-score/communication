@@ -27,9 +27,9 @@ class Proxy : public ProxyBinding
     Proxy() = default;
     ~Proxy() = default;
 
-    MOCK_METHOD(bool, IsEventProvided, (const score::cpp::string_view), (const, noexcept, override));
-    MOCK_METHOD(void, RegisterEventBinding, (score::cpp::string_view, ProxyEventBindingBase&), (noexcept, override));
-    MOCK_METHOD(void, UnregisterEventBinding, (score::cpp::string_view), (noexcept, override));
+    MOCK_METHOD(bool, IsEventProvided, (const std::string_view), (const, noexcept, override));
+    MOCK_METHOD(void, RegisterEventBinding, (std::string_view, ProxyEventBindingBase&), (noexcept, override));
+    MOCK_METHOD(void, UnregisterEventBinding, (std::string_view), (noexcept, override));
 };
 
 }  // namespace score::mw::com::impl::mock_binding
