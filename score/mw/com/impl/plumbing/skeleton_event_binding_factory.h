@@ -23,10 +23,10 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include <score/assert.hpp>
-#include <score/string_view.hpp>
 
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -41,7 +41,7 @@ class SkeletonEventBindingFactory final
     /// \brief See documentation in ISkeletonEventBindingFactory.
     static std::unique_ptr<SkeletonEventBinding<SampleType>> Create(const InstanceIdentifier& identifier,
                                                                     SkeletonBase& parent,
-                                                                    const score::cpp::string_view event_name) noexcept
+                                                                    const std::string_view event_name) noexcept
     {
         return instance().Create(identifier, parent, event_name);
     }

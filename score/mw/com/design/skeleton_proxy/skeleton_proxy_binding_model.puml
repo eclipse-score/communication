@@ -3,11 +3,11 @@ title "Skeleton Proxy Binding Model"
 
 ' Error domain classes
 abstract class "score::result::ErrorDomain" as ScoreResultErrorDomain {
-  +MessageFor(code : const score::result::ErrorCode&) const = 0 : score::cpp::string_view
+  +MessageFor(code : const score::result::ErrorCode&) const = 0 : std::string_view
 }
 
 class "ComErrorDomain" {
-  +MessageFor(code : const score::result::ErrorCode&) const = 0 : score::cpp::string_view
+  +MessageFor(code : const score::result::ErrorCode&) const = 0 : std::string_view
 }
 
 class "<< Stereotype >>\nglobal function" as GlobalFunction {
@@ -20,11 +20,11 @@ end note
 
 ' Skeleton classes
 abstract class "SkeletonBinding" {
-  using SkeletonEventBindings = std::unordered_map<score::cpp::string_view, SkeletonEventBindingBase&>
-  using SkeletonFieldBindings = std::unordered_map<score::cpp::string_view, std::tuple<SkeletonEventBindingBase&, SkeletonServiceMethodBinding, SkeletonServiceMethodBinding>>
+  using SkeletonEventBindings = std::unordered_map<std::string_view, SkeletonEventBindingBase&>
+  using SkeletonFieldBindings = std::unordered_map<std::string_view, std::tuple<SkeletonEventBindingBase&, SkeletonServiceMethodBinding, SkeletonServiceMethodBinding>>
   
-  +{abstract} PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&) : ResultBlank
-  +{abstract} PrepareStopOffer() : void
+  +{abstract} PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&) = 0: ResultBlank
+  +{abstract} PrepareStopOffer() = 0: void
   --
   Notes:
   SkeletonBinding is not moveable or copyable.
@@ -35,7 +35,7 @@ class "lola::Skeleton" as LolaSkeleton {
   +PrepareOffer(SkeletonBinding::SkeletonEventBindings&, SkeletonBinding::SkeletonFieldBindings&): ResultBlank
   +PrepareStopOffer(): void
   
-  +Register<SampleType>(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*, EventDataControlComposite>
+  +template <typename SampleType>\n Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*, EventDataControlComposite>
 }
 
 class "SkeletonBindingFactory" {
@@ -43,13 +43,13 @@ class "SkeletonBindingFactory" {
   +{static} InjectMockBinding(SkeletonBinding* mock_skeleton_binding):void
 }
 
-abstract class "/score::mw::com::impl::SkeletonBase/" as ScoreMwComImplSkeletonBase {
+abstract class "score::mw::com::impl::SkeletonBase" as ScoreMwComImplSkeletonBase {
   #binding_ : std::unique_ptr<SkeletonBinding>
   #events_: SkeletonEvents
   #fields_: SkeletonFields
   #instance_id_: InstanceIdentifier
   --
-  using SkeletonEvents = std::unordered_map<score::cpp::string_view, SkeletonEventBase&>
+  using SkeletonEvents = std::unordered_map<std::string_view, SkeletonEventBase&>
   +SkeletonBase(std::unique_ptr<SkeletonBinding>, InstanceIdentifier, MethodCallProcessingMode)
   +OfferService(): void
   +StopOfferService(): void
@@ -59,7 +59,7 @@ abstract class "/score::mw::com::impl::SkeletonBase/" as ScoreMwComImplSkeletonB
   events and fields within its events_ and fields_ maps.
 }
 
-abstract class "/DummySkeleton/\n{{generated}}" as DummySkeleton {
+abstract class "DummySkeleton\n{{generated}}" as DummySkeleton {
   +{static} Create(InstanceSpecifier, MethodCallProcessingMode) : Result<DummySkeleton>
   +{static} Create(InstanceIdentifier, MethodCallProcessingMode) : Result<DummySkeleton>
   
@@ -89,14 +89,14 @@ class "score::mw::com::impl::SkeletonEventBase" as ScoreMwComImplSkeletonEventBa
 }
 
 class "score::mw::com::impl::SkeletonFieldBase" as ScoreMwComImplSkeletonFieldBase {
-  +SkeletonFieldBase(SkeletonBase&, score::cpp::string_view field_name, std::unique_ptr<impl::SkeletonEventBase>)
+  +SkeletonFieldBase(SkeletonBase&, std::string_view field_name, std::unique_ptr<impl::SkeletonEventBase>)
   +PrepareOffer(): ResultBlank
   +PrepareStopOffer(): void
   +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
   --
   #skeleton_event_dispatch_ : std::unique_ptr<impl::SkeletonEventBase>
   #skeleton_base_ : std::reference_wrapper<SkeletonBase>
-  #field_name_ : score::cpp::string_view
+  #field_name_ : std::string_view
   #was_prepare_offer_called_ : bool
   --
   +{abstract} IsInitialValueSaved(): bool = 0
@@ -110,13 +110,13 @@ class "score::mw::com::impl::SkeletonFieldBase" as ScoreMwComImplSkeletonFieldBa
   SkeletonEvent<SampleType> in order to use type dependent methods.
 }
 
-abstract class "/SkeletonEventBindingBase/" as SkeletonEventBindingBase {
+abstract class "SkeletonEventBindingBase" as SkeletonEventBindingBase {
   +{abstract} PrepareOffer() = 0: score::ResultBlank
   +{abstract} PrepareStopOffer() = 0: void
   +{abstract} GetMaxSize() = 0: std::size_t
 }
 
-abstract class "/SkeletonEventBinding<SampleType>/" as SkeletonEventBindingTemplate {
+abstract class "SkeletonEventBinding<SampleType>" as SkeletonEventBindingTemplate {
   +{abstract} Send(SampleType const&) = 0: void
   +{abstract} Send(SampleAllocateePtr<SampleType>) = 0: void
   +{abstract} Allocate() = 0: SampleAllocateePtr<SampleType>
@@ -132,7 +132,7 @@ class "score::mw::com::impl::SkeletonEvent<SampleType>" as ScoreMwComImplSkeleto
 }
 
 class "lola::SkeletonEvent<SampleType>" as LolaSkeletonEventTemplate {
-  +SkeletonEvent(SkeletonBase& parent, ElementFqId, score::cpp::string_view event_name, 
+  +SkeletonEvent(SkeletonBase& parent, ElementFqId, std::string_view event_name, 
                 size_t max_number_slots, bool enforce_max_samples = true)
   +Send(SampleType const&): void
   +Send(SampleAllocateePtr<SampleType>): void
@@ -189,7 +189,7 @@ class "score::mw::com::impl::HandleType" as ScoreMwComImplHandleType {
   +GetServiceInstanceDeployment(): ServiceInstanceDeployment&
 }
 
-abstract class "/score::mw::com::impl::ProxyBase/" as ScoreMwComImplProxyBase {
+abstract class "score::mw::com::impl::ProxyBase" as ScoreMwComImplProxyBase {
   -proxy_binding_ : std::unique_ptr<ProxyBinding>
   -handle_ : HandleType
   --
@@ -207,7 +207,7 @@ abstract class "/score::mw::com::impl::ProxyBase/" as ScoreMwComImplProxyBase {
   Note: ProxyBase is not copyable but moveable
 }
 
-abstract class "/ProxyBinding/" as ProxyBinding {
+abstract class "ProxyBinding" as ProxyBinding {
 }
 
 class "DummyProxy\n{{generated}}" as DummyProxy {
@@ -225,9 +225,7 @@ class "ProxyBindingFactory" {
 }
 
 class "lola::Proxy" as LolaProxy {
-  +{static} Create(const LolaServiceInstanceDeployment& shm_binding,
-        const LolaServiceTypeDeployment& service_deployment,
-        QualityType quality_type) : Result<Proxy>
+  +{static} Create(const LolaServiceInstanceDeployment& shm_binding, \n const LolaServiceTypeDeployment& service_deployment, \n QualityType quality_type) : Result<Proxy>
   +Proxy(Proxy&&)
   +GetServiceHandles(instance_identifier : InstanceIdentifier) : score::Result<std::vector<HandleType>>
   +GetEventDataControl(element_fq_id : const ElementFqId) : EventDataControl* 
@@ -250,15 +248,15 @@ class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
 }
 
 class "score::mw::com::impl::ProxyEvent<SampleType>" as ScoreMwComImplProxyEventTemplate {
-  +ProxyEvent(ProxyBase& base, const score::cpp::string_view event_name)
+  +ProxyEvent(ProxyBase& base, const std::string_view event_name)
   
-  +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
+  +template <typename F>\n GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
   
   --
   -GetTypedEventBinding() : ProxyEventBinding<SampleType>*
 }
 
-abstract class "/ProxyEventBindingBase/" as ProxyEventBindingBase {
+abstract class "ProxyEventBindingBase" as ProxyEventBindingBase {
   +{abstract} Subscribe(size_t maxSampleCount) = 0: void
   +{abstract} GetSubscriptionState() = 0: SubscriptionState
   +{abstract} Unsubscribe() = 0: void
@@ -267,7 +265,7 @@ abstract class "/ProxyEventBindingBase/" as ProxyEventBindingBase {
   +{abstract} GetNumNewSamplesAvailable(): Result<std::size_t>
 }
 
-abstract class "/ProxyEventBinding<SampleType>/" as ProxyEventBindingTemplate {
+abstract class "ProxyEventBinding<SampleType>" as ProxyEventBindingTemplate {
   using Callback = score::cpp::callback<void(SamplePtr<SampleType>) noexcept>
   
   +{abstract} GetNewSamples(Callback&&, TrackerGuardFactory&) = 0: Result<size_t>
@@ -324,7 +322,7 @@ class "mw::com::impl::ProxyField<SampleType>" as MwComImplProxyFieldTemplate {
   +GetNumNewSamplesAvailable(): Result<std::size_t>
   +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
   +UnsetReceiveHandler() : ResultBlank
-  +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
+  +template <typename F>\n GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
   +Get(): Future<SampleType>
   +Set(const SampleType& value): Future<SampleType>
   --
@@ -337,7 +335,7 @@ class "mw::com::impl::ProxyServiceMethod<ServiceCallArgTypes>" as MwComImplProxy
   +Call(ServiceCallArgTypes in, ServiceCallArgTypes out)
 }
 
-abstract class "/ProxyServiceMethodBindings<ServiceCallArgTypes>/" as ProxyServiceMethodBindingsTemplate {
+abstract class "ProxyServiceMethodBindings<ServiceCallArgTypes>" as ProxyServiceMethodBindingsTemplate {
   +{abstract} Call(ServiceCallArgTypes in, ServiceCallArgTypes out) = 0
 }
 
@@ -346,11 +344,11 @@ class "lola::ProxyServiceMethod<ServiceCallArgTypes>" as LolaProxyServiceMethodT
 }
 
 class "ProxyEventBindingFactory" {
-  +{static} Create<SampleType>(ProxyBase& parent, score::cpp::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+  +{static} template <typename SampleType>\n Create(ProxyBase& parent, std::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
 }
 
 class "ProxyFieldBindingFactory" {
-  +{static} CreateEventBinding<SampleType>(ProxyBase& parent, score::cpp::string_view field_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+  +{static} template <typename SampleType>\n CreateEventBinding(ProxyBase& parent, std::string_view field_name): std::unique_ptr<ProxyEventBinding<SampleType>>
 }
 
 class "SampleReferenceTracker" {
@@ -438,9 +436,9 @@ ScoreMwComImplSkeletonBase *-- "1" "SkeletonBinding"
 LolaSkeleton ..> ScoreMemorySharedSharedMemoryFactory : uses for shared_mem_object creation
 LolaProxy ..> ScoreMemorySharedSharedMemoryFactory : uses for openening\nshared_mem_objects
 ScoreMwComImplSkeletonBase <|-- DummySkeleton
-ScoreMwComImplSkeletonBase *-- "0..n" ScoreMwComImplSkeletonEventBase
+ScoreMwComImplSkeletonBase o-- "0..n" ScoreMwComImplSkeletonEventBase
 ScoreMwComImplSkeletonBase ..> ScoreMwComImplSkeletonEventBase : knows
-ScoreMwComImplSkeletonBase <.. ScoreMwComImplSkeletonFieldTemplate : knows
+ScoreMwComImplSkeletonBase <.. ScoreMwComImplSkeletonFieldTemplate : uses
 ScoreMwComImplSkeletonFieldTemplate "0..n" -up-* DummySkeleton
 ScoreMwComImplSkeletonFieldBase "1" *-- "1" ScoreMwComImplSkeletonEventBase : event_dispatch_
 ScoreMwComImplSkeletonEventBase *-- SkeletonEventBindingBase
@@ -454,7 +452,7 @@ SkeletonFieldBindingFactoryTemplate ..> SkeletonEventBindingTemplate: creates
 ScoreMwComImplSkeletonFieldTemplate ..> SkeletonFieldBindingFactoryTemplate: uses
 ScoreMwComImplSkeletonFieldBase <|-- ScoreMwComImplSkeletonFieldTemplate
 ScoreMwComImplSkeletonFieldTemplate "0..2" *-- SkeletonServiceMethodTemplateInOut
-SkeletonServiceMethodTemplateInOut *-- SkeletonServiceMethodBindingTemplate : 1
+SkeletonServiceMethodTemplateInOut *-- "1"  SkeletonServiceMethodBindingTemplate
 SkeletonServiceMethodBindingTemplate <|-- SkeletonServiceMethodTemplate
 
 ScoreMwComImplHandleType <.down. ScoreMwComImplProxyBase : uses
@@ -472,7 +470,7 @@ ScoreMwComImplProxyEventTemplate ..> SamplePtrTemplate : <<creates>>
 ScoreMwComImplProxyEventTemplate ..> "ProxyEventBindingFactory": uses
 ScoreMwComImplProxyEventTemplate *-- SampleReferenceTracker
 ScoreMwComImplProxyEventTemplate --* MwComImplProxyFieldTemplate : event_dispatch_
-LolaProxy *-- LolaProxyEventCommon
+LolaProxy --o LolaProxyEventCommon
 ProxyEventBindingBase <|-- ProxyEventBindingTemplate
 "ProxyEventBindingFactory" ..> ProxyEventBindingTemplate : <<creates>>
 "ProxyFieldBindingFactory" ..> ProxyEventBindingTemplate : <<creates>>
@@ -482,9 +480,9 @@ MwComImplProxyServiceMethodTemplate *-- ProxyServiceMethodBindingsTemplate : 1
 ProxyServiceMethodBindingsTemplate <|-- LolaProxyServiceMethodTemplate
 MwComImplProxyFieldTemplate ..> "ProxyFieldBindingFactory" : uses
 LolaProxyEventTemplate ..> "SampleReferenceTracker" : uses
-"TrackerGuardFactory" *-- "SampleReferenceTracker"
+"TrackerGuardFactory" o-- "SampleReferenceTracker"
 "TrackerGuardFactory" <.. "SampleReferenceTracker" : <<creates>>
-"SampleReferenceGuard" *-- "SampleReferenceTracker"
+"SampleReferenceGuard" o-- "SampleReferenceTracker"
 "TrackerGuardFactory" ..> "SampleReferenceGuard" : <<creates>>
 SamplePtrTemplate *-- "SampleReferenceGuard"
 SamplePtrTemplate --* LolaSamplePtrTemplate

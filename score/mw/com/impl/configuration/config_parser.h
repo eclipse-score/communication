@@ -16,12 +16,12 @@
 #include "score/json/json_parser.h"
 #include "score/mw/com/impl/configuration/configuration.h"
 
-#include <score/string_view.hpp>
+#include <string_view>
 
 namespace score::mw::com::impl::configuration
 {
 
-Configuration Parse(const score::cpp::string_view path) noexcept;
+Configuration Parse(const std::string_view path) noexcept;
 Configuration Parse(score::json::Any json) noexcept;
 
 }  // namespace score::mw::com::impl::configuration

@@ -23,8 +23,6 @@
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
 
-#include <score/string_view.hpp>
-
 #include <cstdlib>
 #include <exception>
 #include <set>
@@ -468,7 +466,7 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceI
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseServiceElementTracingEnabled(const score::json::Any& json,
                                        TracingConfiguration& tracing_configuration,
-                                       const score::cpp::string_view service_type_name_view,
+                                       const std::string_view service_type_name_view,
                                        const InstanceSpecifier& instance_specifier,
                                        const ServiceElementType service_element_type) noexcept
 {
@@ -612,8 +610,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
             {
                 constexpr auto EVENT = ServiceElementType::EVENT;
                 constexpr auto FIELD = ServiceElementType::FIELD;
-                const auto service_name_std_view = service.ToString();
-                const auto service_name = score::cpp::string_view{service_name_std_view.data(), service_name_std_view.size()};
+                const auto service_name = service.ToString();
                 ParseServiceElementTracingEnabled(
                     deploymentInstance, tracing_configuration, service_name, instance_specifier, EVENT);
                 ParseServiceElementTracingEnabled(
@@ -1178,13 +1175,13 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
 // see the suppression of Parse.
 // This is not an
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto score::mw::com::impl::configuration::Parse(const score::cpp::string_view path) noexcept -> Configuration
+auto score::mw::com::impl::configuration::Parse(const std::string_view path) noexcept -> Configuration
 {
     const score::json::JsonParser json_parser_obj;
     // Reason for banning is AoU of vaJson library about integrity of provided path.
     // This AoU is forwarded as AoU of Lola. See broken_link_c/issue/5835192
     // NOLINTNEXTLINE(score-banned-function): The user has to guarantee the integrity of the path
-    auto json_result = json_parser_obj.FromFile(path);
+    auto json_result = json_parser_obj.FromFile(score::cpp::string_view{path.data(), path.size()});
     if (!json_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << "Parsing config file" << path

@@ -53,7 +53,7 @@ class "lola::Proxy" {
 }
 
 class "mw::com::impl::ProxyEvent<SampleType>" {
-  +GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
+  + template <typename F> GetNewSamples(F&& receiver, size_t max_num_samples): Result<size_t>
 }
 
 abstract class "ProxyEventBindingBase" {
@@ -90,8 +90,8 @@ class "lola::ProxyEvent<SampleType>" {
 }
 
 class "ProxyEventBindingFactory" {
-  +{static}<SampleType> Create(ProxyBase& parent, score::cpp::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
-  +{static} <b>CreateGeneric(ProxyBase& parent, score::cpp::string_view event_name): std::unique_ptr<GenericProxyEventBinding></b>
+  +{static} template <typename SampleType> Create(ProxyBase& parent, std::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+  +{static} <b>CreateGeneric(ProxyBase& parent, std::string_view event_name): std::unique_ptr<GenericProxyEventBinding></b>
 }
 
 class "lola::SubscriptionStateMachine" {
@@ -201,7 +201,7 @@ class "ServiceElementMap" {
 "mw::com::impl::GenericProxy" *-- "ServiceElementMap"
 "ProxyBindingFactory" ..> "ProxyBinding" : creates
 "ProxyBinding" <|-- "lola::Proxy"
-"lola::ProxyEventCommon" *-- "lola::Proxy"
+"lola::ProxyEventCommon" o-- "1" "lola::Proxy"
 "ProxyBindingFactory" <.. "mw::com::impl::GenericProxy" : uses
 "ProxyBindingFactory" <.. "DummyProxy" : uses
 "DummyProxy" *--> "mw::com::impl::ProxyEvent<SampleType>" : "0..n"
@@ -211,8 +211,8 @@ class "ServiceElementMap" {
 "mw::com::impl::ProxyEventBase" <|-- "mw::com::impl::GenericProxyEvent"
 "SampleReferenceTracker" <.. "lola::ProxyEvent<SampleType>" : uses
 "SampleReferenceTracker" <.. "lola::GenericProxyEvent" : uses
-"GenericProxyEventBinding" *--> "mw::com::impl::GenericProxyEvent" : "1"
-"ProxyEventBindingFactory" o--> "ProxyBaseView"
+"GenericProxyEventBinding" <--* "mw::com::impl::GenericProxyEvent" : "1"
+"ProxyEventBindingFactory" *--> "ProxyBaseView"
 "ProxyEventBindingFactory" ..> "ProxyEventBinding<SampleType>" : creates
 "mw::com::impl::ProxyEvent<SampleType>" ..> "ProxyEventBindingFactory" : uses
 "ProxyEventBinding<SampleType>" --* "mw::com::impl::ProxyEvent<SampleType>" : "1"
@@ -226,7 +226,7 @@ class "ServiceElementMap" {
 "lola::ProxyEvent<SampleType>" *-- "lola::ProxyEventCommon" : common_dispatch_
 "lola::GenericProxyEvent" *-- "lola::ProxyEventCommon" : common_dispatch_
 
-"lola::SubscriptionStateMachine" *-- "lola::SlotCollector"
+"lola::SubscriptionStateMachine" --* "lola::ProxyEventCommon"
 
 "lola::ProxyEventCommon" *-- "lola::SlotCollector" : slot_collector_
 

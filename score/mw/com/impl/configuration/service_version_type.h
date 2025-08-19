@@ -16,10 +16,10 @@
 #include "score/json/json_parser.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -168,7 +168,7 @@ inline ServiceVersionType make_ServiceVersionType(const std::uint32_t major_vers
 class ServiceVersionTypeView
 {
   public:
-    constexpr explicit ServiceVersionTypeView(const ServiceVersionType& type) : service_version_type_(type){};
+    constexpr explicit ServiceVersionTypeView(const ServiceVersionType& type) : service_version_type_(type) {};
 
     constexpr inline std::uint32_t getMajor() const
     {

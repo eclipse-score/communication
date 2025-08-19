@@ -22,7 +22,6 @@
 #include <score/blank.hpp>
 #include <score/overload.hpp>
 #include <score/span.hpp>
-#include <score/string_view.hpp>
 
 #include <score/utility.hpp>
 #include <gmock/gmock.h>
@@ -32,6 +31,7 @@
 #include <fstream>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <variant>
 
@@ -109,9 +109,9 @@ class SingleTestPerProcessFixture : public ::testing::Test
     }
 };
 
-std::vector<score::cpp::string_view> GetEventNameListFromHandle(const HandleType& handle_type) noexcept
+std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handle_type) noexcept
 {
-    using ReturnType = std::vector<score::cpp::string_view>;
+    using ReturnType = std::vector<std::string_view>;
 
     const auto& identifier = handle_type.GetInstanceIdentifier();
     const auto& service_type_deployment = InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
@@ -120,7 +120,7 @@ std::vector<score::cpp::string_view> GetEventNameListFromHandle(const HandleType
             ReturnType event_names;
             for (const auto& event : deployment.events_)
             {
-                const auto event_name = score::cpp::string_view{event.first.data(), event.first.size()};
+                const auto event_name = std::string_view{event.first.data(), event.first.size()};
                 event_names.push_back(event_name);
             }
             return event_names;

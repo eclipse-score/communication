@@ -28,6 +28,7 @@
 #include <score/string_view.hpp>
 
 #include <memory>
+#include <string_view>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -63,7 +64,23 @@ class SkeletonEvent : public SkeletonEventBase
 
     /// \brief Constructor that should be called when instantiating a SkeletonEvent within a generated Skeleton. It
     /// should register itself with the skeleton on creation.
-    SkeletonEvent(SkeletonBase& skeleton_base, const score::cpp::string_view event_name);
+    SkeletonEvent(SkeletonBase& skeleton_base, const std::string_view event_name);
+
+    [[deprecated("SPP_DEPRECATION: Use overload with std::string_view instead")]] SkeletonEvent(
+        SkeletonBase& skeleton_base,
+        const score::cpp::string_view event_name)
+        : SkeletonEvent{skeleton_base, std::string_view{event_name.data(), event_name.size()}}
+    {
+    }
+
+    // NOTE: This overload is only needed to not have ambiguities with string literals and strings,
+    // it will be removed once the overload with score::cpp::string_view is removed
+    template <typename StringViewConveritbleType,
+              std::enable_if_t<std::is_constructible_v<std::string_view, StringViewConveritbleType>, bool> = true>
+    SkeletonEvent(SkeletonBase& skeleton_base, const StringViewConveritbleType event_name)
+        : SkeletonEvent{skeleton_base, std::string_view{event_name}}
+    {
+    }
 
     /// \brief Constructor that should be called by a SkeletonField. This constructor does not register itself with the
     /// skeleton on creation.
@@ -71,7 +88,7 @@ class SkeletonEvent : public SkeletonEventBase
     /// We use PrivateConstructorEnabler as an argument to prevent public usage of this constructor instead of using a
     /// private constructor to allow the constructor to be used with std::make_unique.
     SkeletonEvent(SkeletonBase& skeleton_base,
-                  const score::cpp::string_view event_name,
+                  const std::string_view event_name,
                   std::unique_ptr<SkeletonEventBinding<EventType>> binding,
                   PrivateConstructorEnabler);
 
@@ -101,7 +118,7 @@ class SkeletonEvent : public SkeletonEventBase
 };
 
 template <typename SampleDataType>
-SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const score::cpp::string_view event_name)
+SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const std::string_view event_name)
     : SkeletonEventBase{skeleton_base,
                         event_name,
                         SkeletonEventBindingFactory<EventType>::Create(
@@ -125,7 +142,7 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base, const 
 
 template <typename SampleDataType>
 SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
-                                             const score::cpp::string_view event_name,
+                                             const std::string_view event_name,
                                              std::unique_ptr<SkeletonEventBinding<EventType>> binding,
                                              PrivateConstructorEnabler)
     : SkeletonEventBase{skeleton_base, event_name, std::move(binding)}

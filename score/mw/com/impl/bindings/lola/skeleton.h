@@ -39,7 +39,6 @@
 
 #include <score/assert.hpp>
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <memory>
 #include <string>
