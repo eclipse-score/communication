@@ -100,7 +100,7 @@ Only if this is the case the `trace filter config` in the path given by
 `tracing::TracingFilterConfig`, which inherits from `tracing::ITracingFilterConfig` to support testing/mocking and has
 the following structure:
 
-![STRUCTURAL_VIEW](broken_link_k/swh/safe-posix-platform/score/mw/com/design/ipc_tracing/structural_view.puml")
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/structural_view.puml">
 
 For each activated/enabled trace point in the `trace filter config` a corresponding
 `tracing::TracingFilterConfig::AddTracePoint` is called, but **only** if for the enclosing service element (field/event)
@@ -147,14 +147,14 @@ not.
 Therefore, existing binding independent classes for events/fields at proxy and skeleton side get extended with
 `tracing_data_` members, which contain simple enable/disable flags per API:
 
-![STRUCTURAL_EVENT_FIELD_EXTENSIONS](broken_link_k/swh/safe-posix-platform/score/mw/com/design/ipc_tracing/structural_event_field_extensions.puml")
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/structural_event_field_extensions.puml">
 
 Due to our current architecture, we can not hand those `<Skeleton|Proxy>EventTracingData` instances over in the
 constructor calls of the binding independent classes for events/fields at proxy and skeleton side, since at least on the
 skeleton side binding specific information is required for setting `SkeletonEventTracingData::trace_context_id`.
 So instead these classes create those `tracing_data_` members within their constructor in the following way:
 
-![SEQUENCE_API_TRACE_SETUP](broken_link_k/swh/safe-posix-platform/score/mw/com/design/ipc_tracing/sequence_API_trace_setup.puml")
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/sequence_API_trace_setup.puml">
 
 As mentioned above the `SkeletonEventTracingData` has (opposed to `ProxyEventTracingData`) an additional member
 `trace_context_id`, which has to be set up, because only the skeleton side tracing deals with the asynchronous trace
@@ -233,7 +233,7 @@ with the binding specific information/arguments.
 
 The following sequence shows as an example the call to `SkeletonEvent<SampleDataType>::Send`
 
-![SEQUENCE_LAYER_INTERACTION_SAMPLE](broken_link_k/swh/safe-posix-platform/score/mw/com/design/ipc_tracing/sequence_layer_interaction_sample.puml")
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/ipc_tracing/sequence_layer_interaction_sample.puml">
 
 Like explained above &ndash; the `LoLa` binding specific `lola::SkeletonEvent` doesn't know anything, which is really
 tracing specific! It gets handed over an optional "tracing callback", which has been prepared by the binding independent
