@@ -69,7 +69,7 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
         transaction_log.SubscribeTransactionAbort();
         std::stringstream ss{};
         ss << "Subscribe was rejected by skeleton. Cannot complete SubscribeEvent() call due to "
-           << ToString(subscription_result).data();
+           << ToString(subscription_result);
         ::score::mw::log::LogError("lola") << CreateLoggingString(
             ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
         state_machine_.transaction_log_registration_guard_.reset();

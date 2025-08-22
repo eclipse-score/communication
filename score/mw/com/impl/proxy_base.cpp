@@ -63,8 +63,7 @@ auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler,
         std::move(handler), std::move(instance_identifier));
     if (!(start_find_service_result.has_value()))
     {
-        return MakeUnexpected(ComErrc::kFindServiceHandlerFailure,
-                              start_find_service_result.error().UserMessage().data());
+        return MakeUnexpected(ComErrc::kFindServiceHandlerFailure, start_find_service_result.error().UserMessage());
     }
     return start_find_service_result;
 }
@@ -76,8 +75,7 @@ auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler, Instanc
         std::move(handler), std::move(instance_specifier));
     if (!(start_find_service_result.has_value()))
     {
-        return MakeUnexpected(ComErrc::kFindServiceHandlerFailure,
-                              start_find_service_result.error().UserMessage().data());
+        return MakeUnexpected(ComErrc::kFindServiceHandlerFailure, start_find_service_result.error().UserMessage());
     }
     return start_find_service_result;
 }
@@ -87,7 +85,7 @@ score::ResultBlank ProxyBase::StopFindService(const FindServiceHandle handle) no
     const auto stop_find_service_result = Runtime::getInstance().GetServiceDiscovery().StopFindService(handle);
     if (!(stop_find_service_result.has_value()))
     {
-        return MakeUnexpected(ComErrc::kInvalidHandle, stop_find_service_result.error().UserMessage().data());
+        return MakeUnexpected(ComErrc::kInvalidHandle, stop_find_service_result.error().UserMessage());
     }
     return stop_find_service_result;
 }

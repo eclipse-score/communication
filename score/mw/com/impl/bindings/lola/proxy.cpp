@@ -258,7 +258,7 @@ class FindServiceGuard final
 ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_view event_name) const noexcept
 {
     const auto& events = events_.get();
-    const auto event_it = events.find(std::string{event_name.data()});
+    const auto event_it = events.find(std::string{event_name});
 
     std::stringstream sstream{};
     sstream << "Event name " << event_name << " does not exists in event map.";

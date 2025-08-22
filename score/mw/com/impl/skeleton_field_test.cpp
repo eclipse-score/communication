@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <memory>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -41,7 +42,7 @@ using ::testing::Return;
 using ::testing::StrictMock;
 using ::testing::WithArg;
 
-const auto kFieldName{"Field1"};
+constexpr std::string_view kFieldName{"Field1"};
 
 ServiceIdentifierType kServiceIdentifier{make_ServiceIdentifierType("foo", 1U, 0U)};
 std::uint16_t kInstanceId{23U};
@@ -899,7 +900,7 @@ TEST(SkeletonFieldTest, SkeletonFieldsRegisterThemselvesWithSkeleton)
     const auto& field = fields.begin()->second.get();
 
     // the name corresponds to the correct field name
-    EXPECT_STREQ(field_name.data(), kFieldName);
+    EXPECT_EQ(field_name, kFieldName);
 
     // and the field in the map corresponds to the correct skeleton field address
     EXPECT_EQ(&field, &unit.my_dummy_field_);
@@ -931,7 +932,7 @@ TEST(SkeletonFieldTest, MovingConstructingSkeletonUpdatesFieldMapReference)
     const auto& field = fields.begin()->second.get();
 
     // the name corresponds to the correct field name
-    EXPECT_STREQ(field_name.data(), kFieldName);
+    EXPECT_EQ(field_name, kFieldName);
 
     // and the field in the map corresponds to the correct skeleton field address
     EXPECT_EQ(&field, &unit2.my_dummy_field_);
@@ -975,7 +976,7 @@ TEST(SkeletonFieldTest, MovingAssigningSkeletonUpdatesFieldMapReference)
     const auto& field = fields.begin()->second.get();
 
     // the name corresponds to the correct field name
-    EXPECT_STREQ(field_name.data(), kFieldName);
+    EXPECT_EQ(field_name, kFieldName);
 
     // and the field in the map corresponds to the correct skeleton field address
     EXPECT_EQ(&field, &unit2.my_dummy_field_);

@@ -660,7 +660,7 @@ score::Result<TracingFilterConfig> Parse(const std::string_view path, const Conf
         ::score::mw::log::LogFatal("lola") << "Parsing trace filter config file" << path
                                          << "failed with error:" << json_result.error().Message() << ": "
                                          << json_result.error().UserMessage() << " .";
-        return MakeUnexpected(TraceErrorCode::JsonConfigParseError, json_result.error().UserMessage().data());
+        return MakeUnexpected(TraceErrorCode::JsonConfigParseError, json_result.error().UserMessage());
     }
     return Parse(std::move(json_result).value(), configuration);
 }

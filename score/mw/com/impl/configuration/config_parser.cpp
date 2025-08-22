@@ -274,12 +274,12 @@ auto ParseAllowedUser(const score::json::Any& json, std::string_view key) noexce
 
 auto ParseAllowedConsumer(const score::json::Any& json) noexcept -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
-    return ParseAllowedUser(json, kAllowedConsumerKey.data());
+    return ParseAllowedUser(json, kAllowedConsumerKey);
 }
 
 auto ParseAllowedProvider(const score::json::Any& json) noexcept -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
-    return ParseAllowedUser(json, kAllowedProviderKey.data());
+    return ParseAllowedUser(json, kAllowedProviderKey);
 }
 
 class ServiceElementInstanceDeploymentParser
