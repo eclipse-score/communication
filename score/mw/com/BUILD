@@ -13,7 +13,6 @@
 load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 load("@score-baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
-load("//platform/aas/tools/traceability:traceability.bzl", "safety_software_unit")
 
 cc_library(
     name = "com_error_domain",
@@ -145,17 +144,4 @@ cc_unit_test_suites_for_host_and_qnx(
 clang_tidy_extra_checks(
     name = "clang_tidy_extra_checks",
     tidy_config_file = ".clang-tidy-extra",
-)
-
-safety_software_unit(
-    name = "safety_software_unit_com",
-    # design = ["*.puml"], TODO: Add also design parts, work based on Zhaoxiong
-    impl = [":com"],
-    reqs = [
-        "//score/mw/com/requirements/component_requirements:component_requirements_ipc",
-    ],
-    tests = [
-        ":runtime_configuration_test",
-        "//score/mw/com:unit_test",
-    ],
 )
