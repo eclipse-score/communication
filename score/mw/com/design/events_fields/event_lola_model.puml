@@ -249,7 +249,7 @@ SamplePtr o-- lola::SamplePtr
 lola::ProxyEvent *-- lola::ProxyEventCommon
 lola::ProxyEventCommon *-- lola::SubscriptionStateMachine
 lola::ProxyEventCommon --* lola::SlotCollector
-ProxyEventBindingBase o-- SubscriptionState
+ProxyEventBindingBase *-- SubscriptionState
 lola::SampleAllocateePtr *-- EventDataControlCompositeImpl
 EventDataControlCompositeImpl *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
 lola::Skeleton ..> lola::ShmPathBuilder : uses
