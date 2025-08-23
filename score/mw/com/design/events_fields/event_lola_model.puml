@@ -258,7 +258,7 @@ lola::SubscriptionStateMachine ..> lola::SlotCollector : <<creates>>
 SkeletonEventBinding ..> SampleAllocateePtr
 lola::ProxyEvent ..> lola::SamplePtr
 SkeletonDataStorage *-- "EventDataStorage" : "0..n"
-lola::SlotCollector o-- "<<SharedMemory>>\nlola::EventDataControlImpl"
+lola::SlotCollector *-- "<<SharedMemory>>\nlola::EventDataControlImpl"
 ProxyEventBinding ..> SamplePtr
 lola::SkeletonEvent ..> lola::SampleAllocateePtr
 lola::SamplePtr ..> "<<SharedMemory>>\nlola::EventDataControlImpl"
