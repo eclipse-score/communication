@@ -41,7 +41,7 @@ lolaClass -> lolaClass : dynamic_cast<impl::lola::Runtime*>(impl::IRuntimeBindin
 
 lolaClass -> lolaRuntime : GetLoLaMessaging()
 activate lolaRuntime
-lolaRuntime --> lolaClass : return : impl::lola:IMessagePassingService&
+lolaRuntime --> lolaClass : return : impl::lola::IMessagePassingService&
 deactivate lolaRuntime
 deactivate lolaClass
 
