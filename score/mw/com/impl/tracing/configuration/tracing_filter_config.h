@@ -17,10 +17,9 @@
 #include "score/mw/com/impl/tracing/configuration/i_tracing_filter_config.h"
 #include "score/mw/com/impl/tracing/configuration/trace_point_key.h"
 
-#include <score/string_view.hpp>
-
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace score::mw::com::impl::tracing
@@ -29,37 +28,37 @@ namespace score::mw::com::impl::tracing
 class TracingFilterConfig : public ITracingFilterConfig
 {
   public:
-    bool IsTracePointEnabled(score::cpp::string_view service_type,
-                             score::cpp::string_view event_name,
+    bool IsTracePointEnabled(std::string_view service_type,
+                             std::string_view event_name,
                              InstanceSpecifierView instance_specifier,
                              SkeletonEventTracePointType skeleton_event_trace_point_type) const noexcept override;
-    bool IsTracePointEnabled(score::cpp::string_view service_type,
-                             score::cpp::string_view field_name,
+    bool IsTracePointEnabled(std::string_view service_type,
+                             std::string_view field_name,
                              InstanceSpecifierView instance_specifier,
                              SkeletonFieldTracePointType skeleton_field_trace_point_type) const noexcept override;
-    bool IsTracePointEnabled(score::cpp::string_view service_type,
-                             score::cpp::string_view event_name,
+    bool IsTracePointEnabled(std::string_view service_type,
+                             std::string_view event_name,
                              InstanceSpecifierView instance_specifier,
                              ProxyEventTracePointType proxy_event_trace_point_type) const noexcept override;
-    bool IsTracePointEnabled(score::cpp::string_view service_type,
-                             score::cpp::string_view field_name,
+    bool IsTracePointEnabled(std::string_view service_type,
+                             std::string_view field_name,
                              InstanceSpecifierView instance_specifier,
                              ProxyFieldTracePointType proxy_field_trace_point_type) const noexcept override;
 
-    void AddTracePoint(score::cpp::string_view service_type,
-                       score::cpp::string_view event_name,
+    void AddTracePoint(std::string_view service_type,
+                       std::string_view event_name,
                        InstanceSpecifierView instance_specifier,
                        SkeletonEventTracePointType skeleton_event_trace_point_type) noexcept override;
-    void AddTracePoint(score::cpp::string_view service_type,
-                       score::cpp::string_view field_name,
+    void AddTracePoint(std::string_view service_type,
+                       std::string_view field_name,
                        InstanceSpecifierView instance_specifier,
                        SkeletonFieldTracePointType skeleton_field_trace_point_type) noexcept override;
-    void AddTracePoint(score::cpp::string_view service_type,
-                       score::cpp::string_view event_name,
+    void AddTracePoint(std::string_view service_type,
+                       std::string_view event_name,
                        InstanceSpecifierView instance_specifier,
                        ProxyEventTracePointType proxy_event_trace_point_type) noexcept override;
-    void AddTracePoint(score::cpp::string_view service_type,
-                       score::cpp::string_view field_name,
+    void AddTracePoint(std::string_view service_type,
+                       std::string_view field_name,
                        InstanceSpecifierView instance_specifier,
                        ProxyFieldTracePointType proxy_field_trace_point_type) noexcept override;
 

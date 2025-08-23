@@ -58,12 +58,7 @@ archive_override(
     urls = "https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz",
     strip_prefix = "rules_boost-master",
 )
-
-non_module_boost_repositories = use_extension("@com_github_nelhage_rules_boost//:boost/repositories.bzl", "non_module_dependencies")
-use_repo(
-    non_module_boost_repositories,
-    "boost",
-)
+bazel_dep(name = "boost.program_options", version = "1.87.0")
 
 
 bazel_dep(name = "download_utils", version = "1.0.1")
@@ -82,5 +77,5 @@ bazel_dep(name = "score-baselibs", version = "0.0.0")
 git_override(
     module_name = "score-baselibs",
     remote = "https://github.com/eclipse-score/baselibs.git",
-    commit = "ae349b99cafc1e79d98c0391a851fc5664c04ebc",
+    commit = "46923f5c4f302bd9feae0261588687aaf32e3c5c",
 )

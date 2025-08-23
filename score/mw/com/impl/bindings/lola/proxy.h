@@ -28,13 +28,13 @@
 #include "score/memory/shared/managed_memory_resource.h"
 
 #include <score/assert.hpp>
-#include <score/string_view.hpp>
 
 #include <exception>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string_view>
 
 namespace score::mw::com::impl::lola
 {
@@ -73,7 +73,7 @@ class Proxy : public ProxyBinding
         {
         }
 
-        ElementFqId Convert(const score::cpp::string_view event_name) const noexcept;
+        ElementFqId Convert(const std::string_view event_name) const noexcept;
 
       private:
         const std::uint16_t service_id_;
@@ -134,7 +134,7 @@ class Proxy : public ProxyBinding
     /// It does this by checking whether the event corresponding to event_name exists in shared memory.
     /// \param event_name The event name to check.
     /// \return True if the event name exists, otherwise, false
-    bool IsEventProvided(const score::cpp::string_view event_name) const noexcept override;
+    bool IsEventProvided(const std::string_view event_name) const noexcept override;
 
     /// \brief Adds a reference to a Proxy service element binding to an internal map
     ///
@@ -144,7 +144,7 @@ class Proxy : public ProxyBinding
     /// ProxyEventBindingBase. Since this function first locks proxy_event_registration_mutex_, it is ensured that the
     /// provided Proxy service element will be notified synchronously about the availability of the provider and will
     /// then be notified of any future changes via the callback, without missing any notifications.
-    void RegisterEventBinding(const score::cpp::string_view service_element_name,
+    void RegisterEventBinding(const std::string_view service_element_name,
                               ProxyEventBindingBase& proxy_event_binding) noexcept override;
 
     /// \brief Removes the reference to a Proxy service element binding from an internal map
@@ -152,7 +152,7 @@ class Proxy : public ProxyBinding
     /// This must be called by a Proxy service element before destructing to ensure that the FindService handler in
     /// find_service_guard_ does not call NotifyServiceInstanceChangedAvailability on a Proxy service element after it's
     /// been destructed.
-    void UnregisterEventBinding(const score::cpp::string_view service_element_name) noexcept override;
+    void UnregisterEventBinding(const std::string_view service_element_name) noexcept override;
 
     QualityType GetQualityType() const noexcept;
 
@@ -169,7 +169,7 @@ class Proxy : public ProxyBinding
     QualityType quality_type_;
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter_;
     HandleType handle_;
-    std::unordered_map<score::cpp::string_view, std::reference_wrapper<ProxyEventBindingBase>> event_bindings_;
+    std::unordered_map<std::string_view, std::reference_wrapper<ProxyEventBindingBase>> event_bindings_;
 
     /// Mutex which synchronises registration of Proxy service elements via Proxy::RegisterEventBinding with the
     /// FindServiceHandler in find_service_guard_ which will call NotifyServiceInstanceChangedAvailability on all

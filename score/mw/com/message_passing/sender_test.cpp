@@ -115,7 +115,7 @@ class SenderFixture : public ::testing::Test
         EXPECT_CALL(mock_, try_open(kSomeValidPath, _))
             .WillRepeatedly(
                 Invoke([counter, this](auto, auto) mutable
-                       -> score::cpp::expected<ForwardingSenderChannelTraits::file_descriptor_type, score::os::Error> {
+                           -> score::cpp::expected<ForwardingSenderChannelTraits::file_descriptor_type, score::os::Error> {
                     if (counter < kRequestStopAfterRetries)
                     {
                         ++counter;

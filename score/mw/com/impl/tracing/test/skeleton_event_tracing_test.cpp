@@ -82,8 +82,7 @@ TEST(SkeletonEventTracingTest, TracePointsAreDisabledIfConfigNotReturnedByRuntim
 
     // Expecting that a SkeletonEvent binding is created
     auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdentifier, _, score::cpp::string_view{kEventName}))
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdentifier, _, kEventName))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
     EXPECT_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillOnce(Return(nullptr));
 
@@ -117,13 +116,12 @@ TEST_P(SkeletonEventTracingParamaterisedFixture, TracePointsAreCorrectlySet)
     const tracing::ServiceElementIdentifierView service_element_identifier_view{
         service_type, kEventName, ServiceElementType::EVENT};
     const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
-        service_element_identifier_view, score::cpp::string_view{kInstanceSpecifier.ToString()}};
+        service_element_identifier_view, kInstanceSpecifier.ToString()};
 
     // Expecting that a SkeletonEvent binding is created
     auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
     auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(kInstanceIdentifier, _, score::cpp::string_view{kEventName}))
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdentifier, _, kEventName))
         .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
     EXPECT_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillOnce(Return(&tracing_mock));
     EXPECT_CALL(runtime_mock_guard.runtime_mock_, GetTracingRuntime()).WillOnce(Return(&tracing_runtime_mock));
@@ -141,12 +139,10 @@ TEST_P(SkeletonEventTracingParamaterisedFixture, TracePointsAreCorrectlySet)
     /// \todo When Instance id is supported by TracingFilterConfig, this instance_id should be properly filled
     // and expecting that status of each trace point is queried via the IcpTracingFilterConfig
     using SkeletonEventTracePointType = tracing::SkeletonEventTracePointType;
-    EXPECT_CALL(tracing_mock,
-                IsTracePointEnabled(service_type, score::cpp::string_view{kEventName}, _, SkeletonEventTracePointType::SEND))
+    EXPECT_CALL(tracing_mock, IsTracePointEnabled(service_type, kEventName, _, SkeletonEventTracePointType::SEND))
         .WillOnce(Return(expected_enabled_trace_points.enable_send));
     EXPECT_CALL(tracing_mock,
-                IsTracePointEnabled(
-                    service_type, score::cpp::string_view{kEventName}, _, SkeletonEventTracePointType::SEND_WITH_ALLOCATE))
+                IsTracePointEnabled(service_type, kEventName, _, SkeletonEventTracePointType::SEND_WITH_ALLOCATE))
         .WillOnce(Return(expected_enabled_trace_points.enable_send_with_allocate));
 
     // When a Skeleton containing a SkeletonEvent is created based on a lola deployment
@@ -201,7 +197,7 @@ class SkeletonEventTracingFixture : public ::testing::Test
     {
         auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
         mock_skeleton_event_binding_ = skeleton_event_binding_mock_ptr.get();
-        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(kInstanceIdentifier, _, score::cpp::string_view{kEventName}))
+        EXPECT_CALL(factory_mock_guard.factory_mock_, Create(kInstanceIdentifier, _, kEventName))
             .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
     }
 
@@ -210,14 +206,14 @@ class SkeletonEventTracingFixture : public ::testing::Test
         const tracing::ServiceElementIdentifierView service_element_identifier_view{
             kServiceTypeName, kEventName, ServiceElementType::EVENT};
         const tracing::ServiceElementInstanceIdentifierView expected_service_element_instance_identifier_view{
-            service_element_identifier_view, score::cpp::string_view{kInstanceSpecifier.ToString()}};
+            service_element_identifier_view, kInstanceSpecifier.ToString()};
         return expected_service_element_instance_identifier_view;
     }
 
     void ExpectIsTracePointEnabledCalls(const tracing::SkeletonEventTracingData& expected_enabled_trace_points,
-                                        const score::cpp::string_view service_type,
-                                        const score::cpp::string_view event_name,
-                                        const score::cpp::string_view instance_specifier_view) const noexcept
+                                        const std::string_view service_type,
+                                        const std::string_view event_name,
+                                        const std::string_view instance_specifier_view) const noexcept
     {
         const std::pair<tracing::SkeletonEventTracePointType, bool> trace_points[] = {
             {tracing::SkeletonEventTracePointType::SEND, expected_enabled_trace_points.enable_send},
@@ -277,10 +273,8 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is called on the GetTracingRuntime binding
     EXPECT_CALL(tracing_runtime_mock, RegisterServiceElement(BindingType::kLoLa));
@@ -366,10 +360,8 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is called on the GetTracingRuntime binding
     EXPECT_CALL(tracing_runtime_mock, RegisterServiceElement(BindingType::kLoLa));
@@ -458,10 +450,8 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is called on the GetTracingRuntime binding
     EXPECT_CALL(tracing_runtime_mock, RegisterServiceElement(BindingType::kLoLa));
@@ -541,10 +531,8 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenDisabled)
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is NOT called on the TracingRuntime binding, because no TraceDoneCB relevant
     // trace-points are enabled.
@@ -716,10 +704,8 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreTracedWhenEnable
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is called on the GetTracingRuntime binding
     EXPECT_CALL(tracing_runtime_mock, RegisterServiceElement(BindingType::kLoLa));
@@ -816,10 +802,8 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is called on the GetTracingRuntime binding
     EXPECT_CALL(tracing_runtime_mock, RegisterServiceElement(BindingType::kLoLa));
@@ -919,10 +903,8 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is called on the GetTracingRuntime binding
     EXPECT_CALL(tracing_runtime_mock, RegisterServiceElement(BindingType::kLoLa));
@@ -1012,10 +994,8 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenDis
         .WillOnce(Return(&(tracing_filter_config_mock_)));
 
     // and that a SkeletonEvent binding is created with the Send trace point enabled.
-    ExpectIsTracePointEnabledCalls(expected_enabled_trace_points,
-                                   kServiceIdentifier.ToString(),
-                                   score::cpp::string_view{kEventName},
-                                   score::cpp::string_view{kInstanceSpecifier.ToString()});
+    ExpectIsTracePointEnabledCalls(
+        expected_enabled_trace_points, kServiceIdentifier.ToString(), kEventName, kInstanceSpecifier.ToString());
 
     // and that RegisterServiceElement is NOT called on the TracingRuntime binding, because no TraceDoneCB relevant
     // trace-points are enabled.

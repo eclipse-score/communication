@@ -35,7 +35,7 @@ bool IsTracingEnabledForInterfaceEvent(const SkeletonEventTracingData& skeleton_
 }
 
 bool IsTracingEnabledForAnyEvent(
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>& events) noexcept
+    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events) noexcept
 {
     for (const auto& event : events)
     {
@@ -52,7 +52,7 @@ bool IsTracingEnabledForAnyEvent(
 }
 
 bool IsTracingEnabledForAnyField(
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields) noexcept
+    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields) noexcept
 {
     for (const auto& field : fields)
     {
@@ -71,8 +71,8 @@ bool IsTracingEnabledForAnyField(
 
 bool IsTracingEnabledForInstance(
     ITracingRuntime* const tracing_runtime,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields) noexcept
+    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields) noexcept
 {
     if (tracing_runtime == nullptr)
     {
@@ -92,8 +92,8 @@ bool IsTracingEnabledForInstance(
 
 std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept
 {
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> tracing_handler{};
@@ -101,21 +101,17 @@ std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShm
     if (IsTracingEnabledForInstance(tracing_runtime, events, fields))
     {
         tracing_handler = [&instance_id, &skeleton_binding, tracing_runtime](
-                              score::cpp::string_view element_name,
+                              std::string_view element_name,
                               ServiceElementType element_type,
                               memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
                               void* shm_memory_start_address) -> void {
             const auto instance_identifier_view = InstanceIdentifierView(instance_id);
-            const auto service_std_string_view =
-                instance_identifier_view.GetServiceInstanceDeployment().service_.ToString();
             const auto service_string_view =
-                score::cpp::string_view{service_std_string_view.data(), service_std_string_view.size()};
+                instance_identifier_view.GetServiceInstanceDeployment().service_.ToString();
             tracing::ServiceElementIdentifierView service_element_identifier{
                 service_string_view, element_name, element_type};
-            const auto instance_specifier_std_string_view =
-                instance_identifier_view.GetServiceInstanceDeployment().instance_specifier_.ToString();
             const auto instance_specifier_string_view =
-                score::cpp::string_view{instance_specifier_std_string_view.data(), instance_specifier_std_string_view.size()};
+                instance_identifier_view.GetServiceInstanceDeployment().instance_specifier_.ToString();
             tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier{
                 service_element_identifier, instance_specifier_string_view};
             tracing_runtime->RegisterShmObject(skeleton_binding.GetBindingType(),
@@ -129,27 +125,23 @@ std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> CreateRegisterShm
 
 std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> CreateUnregisterShmObjectCallback(
     const InstanceIdentifier& instance_id,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
-    const std::map<score::cpp::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>& events,
+    const std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>& fields,
     const SkeletonBinding& skeleton_binding) noexcept
 {
     std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> tracing_handler{};
     auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();
     if (IsTracingEnabledForInstance(tracing_runtime, events, fields))
     {
-        tracing_handler = [&instance_id, &skeleton_binding, tracing_runtime](score::cpp::string_view element_name,
+        tracing_handler = [&instance_id, &skeleton_binding, tracing_runtime](std::string_view element_name,
                                                                              ServiceElementType element_type) -> void {
             const auto instance_identifier_view = InstanceIdentifierView(instance_id);
-            const auto service_std_string_view =
-                instance_identifier_view.GetServiceInstanceDeployment().service_.ToString();
             const auto service_string_view =
-                score::cpp::string_view{service_std_string_view.data(), service_std_string_view.size()};
+                instance_identifier_view.GetServiceInstanceDeployment().service_.ToString();
             tracing::ServiceElementIdentifierView service_element_identifier{
                 service_string_view, element_name, element_type};
-            const auto instance_specifier_std_string_view =
-                instance_identifier_view.GetServiceInstanceDeployment().instance_specifier_.ToString();
             const auto instance_specifier_string_view =
-                score::cpp::string_view{instance_specifier_std_string_view.data(), instance_specifier_std_string_view.size()};
+                instance_identifier_view.GetServiceInstanceDeployment().instance_specifier_.ToString();
             tracing::ServiceElementInstanceIdentifierView service_element_instance_identifier{
                 service_element_identifier, instance_specifier_string_view};
             tracing_runtime->UnregisterShmObject(skeleton_binding.GetBindingType(),

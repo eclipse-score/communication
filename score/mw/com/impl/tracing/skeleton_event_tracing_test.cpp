@@ -30,10 +30,7 @@
 #include "score/mw/com/impl/tracing/trace_error.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
 
-#include "score/memory/any_string_view.h"
-
 #include <score/assert.hpp>
-#include <score/string_view.hpp>
 
 #include <gtest/gtest.h>
 #include <cstdint>
@@ -395,12 +392,12 @@ class SkeletonEventTracingGenerateTracingStructFixture : public ::testing::TestW
         if (GetParam() == ServiceElementType::EVENT)
         {
             return GenerateSkeletonTracingStructFromEventConfig(
-                instance_identifier, binding_type, memory::AnyStringView{service_element_name});
+                instance_identifier, binding_type, service_element_name);
         }
         else
         {
             return GenerateSkeletonTracingStructFromFieldConfig(
-                instance_identifier, binding_type, memory::AnyStringView{service_element_name});
+                instance_identifier, binding_type, service_element_name);
         }
     }
 
@@ -408,11 +405,11 @@ class SkeletonEventTracingGenerateTracingStructFixture : public ::testing::TestW
     {
         if (GetParam() == ServiceElementType::EVENT)
         {
-            return memory::AnyStringView{kDummyEventName};
+            return kDummyEventName;
         }
         else
         {
-            return memory::AnyStringView{kDummyFieldName};
+            return kDummyFieldName;
         }
     }
 
@@ -476,7 +473,7 @@ TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
     // identifier
     const auto service_element_type = GetParam();
     const auto expected_service_element_instance_identifier_view = GetServiceElementInstanceIdentifierView(
-        kConfigStore.GetInstanceIdentifier(), memory::AnyStringView{GetServiceElementName()}, service_element_type);
+        kConfigStore.GetInstanceIdentifier(), GetServiceElementName(), service_element_type);
     EXPECT_EQ(tracing_data.service_element_instance_identifier_view, expected_service_element_instance_identifier_view);
 }
 
@@ -570,10 +567,9 @@ TEST_P(SkeletonEventTracingGenerateTracingStructDeathTest,
 
     // When calling GenerateSkeletonTracingStructFromEventConfig / GenerateSkeletonTracingStructFromFieldConfig with a
     // service element name which doesn't exist in the configuration
-    EXPECT_DEATH(
-        score::cpp::ignore = GenerateSkeletonTracingStruct(
-            kConfigStore.GetInstanceIdentifier(), BindingType::kFake, memory::AnyStringView{"invalid_event_name"}),
-        ".*");
+    EXPECT_DEATH(score::cpp::ignore = GenerateSkeletonTracingStruct(
+                     kConfigStore.GetInstanceIdentifier(), BindingType::kFake, "invalid_event_name"),
+                 ".*");
 }
 
 }  // namespace

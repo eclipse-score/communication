@@ -81,16 +81,15 @@ ResultBlank TraceShmData(const BindingType binding_type,
 
 ServiceElementInstanceIdentifierView GetServiceElementInstanceIdentifierView(
     const InstanceIdentifier& instance_identifier,
-    const score::cpp::string_view service_element_name,
+    const std::string_view service_element_name,
     const ServiceElementType service_element_type) noexcept
 {
     const auto instance_specifier_view = GetInstanceSpecifier(instance_identifier);
     const auto service_type = GetServiceType(instance_identifier);
     const ServiceElementIdentifierView service_element_identifier_view{
-        score::cpp::string_view{service_type.data(), service_type.size()}, service_element_name, service_element_type};
-    const ServiceElementInstanceIdentifierView service_element_instance_identifier_view{
-        service_element_identifier_view,
-        score::cpp::string_view{instance_specifier_view.data(), instance_specifier_view.size()}};
+        service_type, service_element_name, service_element_type};
+    const ServiceElementInstanceIdentifierView service_element_instance_identifier_view{service_element_identifier_view,
+                                                                                        instance_specifier_view};
     return service_element_instance_identifier_view;
 }
 

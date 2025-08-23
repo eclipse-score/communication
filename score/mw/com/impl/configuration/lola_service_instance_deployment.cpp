@@ -43,7 +43,7 @@ constexpr auto kAllowedProviderKeyInstDepl = "allowedProvider";
 // be sure json.As<T> call will return a value. See Ticket-177855.
 // coverity[autosar_cpp14_a15_5_3_violation]
 std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const json::Object& json_object,
-                                                                        score::cpp::string_view key) noexcept
+                                                                        std::string_view key) noexcept
 {
     const auto& uid_map_json = GetValueFromJson<json::Object>(json_object, key);
 

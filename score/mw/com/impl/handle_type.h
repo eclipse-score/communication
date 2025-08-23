@@ -18,9 +18,9 @@
 #include "score/mw/com/impl/instance_identifier.h"
 
 #include <score/optional.hpp>
-#include <score/string_view.hpp>
 
 #include <cstring>
+#include <string_view>
 
 namespace score::mw::com::impl
 {

@@ -16,9 +16,8 @@
 #include "score/mw/com/impl/tracing/configuration/hash_helper_utility.h"
 #include "score/mw/log/logging.h"
 
-#include <score/string_view.hpp>
-
 #include <array>
+#include <string_view>
 #include <type_traits>
 
 namespace score::mw::com::impl::tracing
