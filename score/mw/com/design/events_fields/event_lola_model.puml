@@ -251,7 +251,7 @@ lola::ProxyEventCommon *-- lola::SubscriptionStateMachine
 lola::ProxyEventCommon --* lola::SlotCollector
 ProxyEventBindingBase o-- SubscriptionState
 lola::SampleAllocateePtr *-- EventDataControlCompositeImpl
-EventDataControlCompositeImpl o-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
+EventDataControlCompositeImpl *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
 lola::Skeleton ..> lola::ShmPathBuilder : uses
 lola::Skeleton ..> EventDataControlCompositeImpl
 lola::SubscriptionStateMachine ..> lola::SlotCollector : <<creates>>
