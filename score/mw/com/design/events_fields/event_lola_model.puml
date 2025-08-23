@@ -241,7 +241,7 @@ ProxyEventBinding <|-- lola::ProxyEvent
 lola::Skeleton *-- SkeletonDataStorage : "1..1"
 lola::Skeleton *-- "<<SharedMemory>>\nlola::SkeletonDataControl" : "1..2"
 "<<SharedMemory>>\nlola::SkeletonDataControl" *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "0..n"
-lola::SkeletonEvent o-- "EventDataStorage"
+lola::SkeletonEvent *-- "EventDataStorage"
 lola::SkeletonEvent *-- EventDataControlCompositeImpl
 "<<SharedMemory>>\nlola::EventDataControlImpl" ..> "<<SharedMemory>>\nlola::EventSlotStatus"
 SampleAllocateePtr o-- lola::SampleAllocateePtr
