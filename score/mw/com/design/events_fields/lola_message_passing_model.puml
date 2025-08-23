@@ -207,6 +207,7 @@ class "DisconnectEventMessage" {
 "messaging::IMessagePassingService" ..> "lola::ASILType"
 "<u>score::com::impl::lola::Runtime</u>" *-- "lola::messaging::MessagePassingFacade" : 1
 "lola::messaging::MessagePassingFacade" *-- "MessageReceiveCtrl"
+"<u>score::com::impl::lola::Runtime</u>" *-- "lola::messaging::MessagePassingControl" : 1
 "lola::messaging::MessagePassingFacade" --|> "messaging::IMessagePassingService"
 "lola::messaging::MessagePassingFacade" *-- "mw::com::message_passing::IReceiver" : 1..2
 "lola::messaging::MessagePassingFacade" o-- "lola::messaging::NotifyEventHandler"
