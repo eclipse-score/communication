@@ -112,8 +112,8 @@ class "SubscriptionData" {
 }
 
 "lola::SubscriptionStateMachine" *-- "lola::SubscriptionStateBase" : "1..n"
-"lola::SubscriptionStateMachine" o-- "SubscriptionData" : "1"
-"lola::SubscriptionStateMachine" o-- "lola::EventReceiveHandlerManager" : "1"
+"lola::SubscriptionStateMachine" *-- "SubscriptionData" : "1"
+"lola::SubscriptionStateMachine" *-- "lola::EventReceiveHandlerManager" : "1"
 "lola::SubscriptionStateMachine" *-- "lola::SubscriptionDispatchManager" : "1"
 "lola::SubscriptionStateBase" --> "lola::SubscriptionStateMachine"
 "lola::BaseMessagePassingManager" <|-- "lola::EventReceiveHandlerManager"

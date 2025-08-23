@@ -236,6 +236,8 @@ enum SubscriptionState {
 
 SkeletonEventBindingBase <|-- SkeletonEventBinding
 SkeletonEventBinding <|-- lola::SkeletonEvent
+"SkeletonBinding" <|-- "lola::SkeletonEvent"
+"SkeletonBinding" ..> "lola::SkeletonEvent"
 ProxyEventBindingBase <|-- ProxyEventBinding
 ProxyEventBinding <|-- lola::ProxyEvent
 lola::Skeleton *-- SkeletonDataStorage : "1..1"
