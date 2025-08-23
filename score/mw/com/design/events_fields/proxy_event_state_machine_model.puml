@@ -111,7 +111,7 @@ class "SubscriptionData" {
   +next_max_sample_count_ : score::cpp::optional<std::uint8_t>
 }
 
-"lola::SubscriptionStateMachine" o-- "lola::SubscriptionStateBase" : "1..n"
+"lola::SubscriptionStateMachine" *-- "lola::SubscriptionStateBase" : "1..n"
 "lola::SubscriptionStateMachine" o-- "SubscriptionData" : "1"
 "lola::SubscriptionStateMachine" o-- "lola::EventReceiveHandlerManager" : "1"
 "lola::SubscriptionStateMachine" *-- "lola::SubscriptionDispatchManager" : "1"
