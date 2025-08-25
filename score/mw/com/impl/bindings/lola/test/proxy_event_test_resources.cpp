@@ -60,7 +60,6 @@ ProxyMockedMemoryFixture::ProxyMockedMemoryFixture() noexcept
 {
     ON_CALL(runtime_mock_.mock_, GetBindingRuntime(BindingType::kLoLa))
         .WillByDefault(::testing::Return(&binding_runtime_));
-    ON_CALL(binding_runtime_, GetUid()).WillByDefault(::testing::Return(kDummyUid));
     ON_CALL(binding_runtime_, GetPid()).WillByDefault(::testing::Return(kDummyPid));
     ON_CALL(runtime_mock_.mock_, GetServiceDiscovery()).WillByDefault(ReturnRef(service_discovery_mock_));
 
