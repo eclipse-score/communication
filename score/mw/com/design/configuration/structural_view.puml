@@ -108,10 +108,10 @@ package "configuration" {
     + SetApplicationInstanceID(std::string tracing_application_instance_id) noexcept : void
     + SetTracingTraceFilterConfigPath(std::string trace_filter_config_path) noexcept : void
     + IsTracingEnabled() const noexcept : bool
-    + GetTracingFilterConfigPath() const noexcept : score::cpp::string_view noexcept
-    + GetApplicationInstanceID() const noexcept : score::cpp::string_view
+    + GetTracingFilterConfigPath() const noexcept : std::string_view noexcept
+    + GetApplicationInstanceID() const noexcept : std::string_view
     + SetServiceElementTracingEnabled(tracing::ServiceElementIdentifier service_element_identifier, InstanceSpecifier instance_specifier) noexcept : void
-    + IsServiceElementTracingEnabled(tracing::ServiceElementIdentifierView service_element_identifier_view, score::cpp::string_view instance_specifier) const noexcept : bool
+    + IsServiceElementTracingEnabled(tracing::ServiceElementIdentifierView service_element_identifier_view, std::string_view instance_specifier) const noexcept : bool
     - service_element_tracing_enabled_map_ : std::unordered_map<tracing::ServiceElementIdentifier, std::unordered_set<InstanceSpecifier>>
     - tracing_config_ : tracing::TracingConfig
   }
@@ -145,7 +145,7 @@ package "configuration" {
   }
 
   class "Global Functions" {
-    + Parse(const score::cpp::string_view path) : Configuration
+    + Parse(const std::string_view path) : Configuration
     + Parse(score::json::Any json) : Configuration
   }
 
