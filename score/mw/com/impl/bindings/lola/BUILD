@@ -1173,8 +1173,6 @@ cc_gtest_unit_test(
     deps = [
         ":runtime",
         "@score-baselibs//score/os/mocklib:unistd_mock",
-        "//score/mw/com/impl/configuration:configuration_mock",
-        "//score/mw/com/impl/configuration:global_configuration_mock",
     ],
 )
 
