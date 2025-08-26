@@ -193,4 +193,5 @@ cc_test(
         "//score/mw/com/impl/configuration/test:configuration_store",
         "@googletest//:gtest_main",
     ],
+    tags = ["exclusive"],
 )

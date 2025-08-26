@@ -64,9 +64,25 @@ using namespace ::testing;
 const filesystem::Path kTmpPath{"/tmp_discovery/mw_com_lola/service_discovery"};
 constexpr auto kServiceInstanceUsageMarkerFile =
     "/tmp_discovery/mw_com_lola/partial_restart/usage-0000000000052719-00016";
+const std::vector<char const *> files_for_cleanup {
+        "/dev/shmem/lola-ctl-0000000000052719-00016",
+        "/dev/shmem/lola-data-0000000000052719-00016",
+        "/tmp_discovery/lola-ctl-0000000000052719-00016_lock",
+        "/tmp_discovery/lola-data-0000000000052719-00016_lock",
+        "/tmp_discovery/mw_com_lola/service_discovery/52719/16",
+        kServiceInstanceUsageMarkerFile,
+};
 #else
 const filesystem::Path kTmpPath{"/tmp/mw_com_lola/service_discovery"};
 constexpr auto kServiceInstanceUsageMarkerFile = "/tmp/mw_com_lola/partial_restart/usage-0000000000052719-00016";
+const std::vector<char const *> files_for_cleanup {
+        "/dev/shm/lola-ctl-0000000000052719-00016",
+        "/dev/shm/lola-data-0000000000052719-00016",
+        "/tmp/lola-ctl-0000000000052719-00016_lock",
+        "/tmp/lola-data-0000000000052719-00016_lock",
+        "/tmp/mw_com_lola/service_discovery/52719/16",
+        kServiceInstanceUsageMarkerFile,
+};
 #endif
 
 const std::string kEventName{"DummyEvent1"};
@@ -82,12 +98,22 @@ class ProxyWithRealMemFixture : public ::testing::Test
         shm_files_.push_back(std::move(shm_file));
     }
 
+    void Cleanup() {
+        for (const auto* file : files_for_cleanup)
+        {
+            score::filesystem::IStandardFilesystem::instance().Remove(file);
+        }
+    }
+
     void SetUp() override
     {
         EXPECT_CALL(runtime_mock_.mock_, GetBindingRuntime(BindingType::kLoLa))
             .WillRepeatedly(::testing::Return(&lola_runtime_mock_));
         ON_CALL(lola_runtime_mock_, GetRollbackSynchronization())
             .WillByDefault(::testing::ReturnRef(rollback_synchronization_));
+
+        // Ensure we start with a clean state
+        Cleanup();
     }
 
     void TearDown() override
@@ -97,6 +123,9 @@ class ProxyWithRealMemFixture : public ::testing::Test
             score::filesystem::IStandardFilesystem::instance().Remove(std::string{"/dev/shm"} + file);
         }
         shm_files_.clear();
+
+        // Ensure we leave with a clean state
+        Cleanup();
     }
 
     ProxyWithRealMemFixture& WithAMockedServiceDiscovery()
