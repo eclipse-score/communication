@@ -400,8 +400,8 @@ cc_library(
         ":polymorphic_offset_ptr_allocator",
     ] + select({
         "@platforms//os:linux": [
-            "//third_party/boost:container",
-            "//third_party/boost:interprocess",
+            "@boost.container",
+            "@boost.interprocess",
         ],
         "@platforms//os:qnx": [],
     }),
