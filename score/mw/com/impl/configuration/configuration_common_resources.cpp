@@ -22,8 +22,7 @@ std::string ToHashStringImpl(const std::uint16_t instance_id, const std::size_t 
     /// \todo When we can use C++17 features, use std::to_chars so that we can convert from an int to a hex string
     /// with no dynamic allocations.
     std::stringstream stream;
-    // coverity[autosar_cpp14_m5_0_4_violation] False positive: No implicit conversion happening in the following line
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(hash_string_size <= std::numeric_limits<int>::max());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(hash_string_size <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
     // Passing std::hex to std::stringstream object with the stream operator follows the idiomatic way that both
     // features in conjunction were designed in the C++ standard.
     // coverity[autosar_cpp14_m8_4_4_violation] See above
