@@ -41,7 +41,7 @@ checking has to be attempted every time an `OffsetPtr` is dereferenced, even if 
 bounds checked. Each class deriving from `ManagedMemoryResource` (e.g. `SharedMemoryResource`) can decide whether the memory that it is managing 
 should be bounds checked by an `OffsetPtr`. It does this by implementing the function `ManagedMemoryResource::IsOffsetPtrBoundsCheckBypassingEnabled()`. 
 
-[Bounds checking](broken_link_k/swh/ddad_score/memory/design/shared_memory/bounds_checking.uxf) contains a 
+[Bounds checking](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/ddad_score/memory/design/shared_memory/bounds_checking.uxf) contains a 
 minimalistic UML diagram of the bounds checking.
 
 #### Bounds Checking Performance - Memory Bounds Lookup

@@ -12,7 +12,7 @@ In fact, the usage of shared memory or its allocators shall be fully transparent
 ## Shared Memory based allocation
 The following section gives a textual reasoning and explanation of the class diagram that can be seen [here](memory_allocation.uxf).
 
-![Memory Allocation](broken_link_k/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation.uxf?ref=c8a52e508408b2f3905b833f32563264ccf4069c)
+![Memory Allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation.uxf?ref=c8a52e508408b2f3905b833f32563264ccf4069c)
 
 Further also some [guidance](#guidance-for-data-types-in-shared-memory) is given, which data types can be stored
 in shared memory.
@@ -65,7 +65,7 @@ it needs to be constructed with the same identifier. This workflow is further il
 On a second process, that did not create the shared memory, the workflow would look the same, with the only difference,
 that the `MemoryResourceProxy` is not created, but rather reinterpreted from the shared memory region.
 
-![Memory Allocation](broken_link_k/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation_workflow.uxf?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
+![Memory Allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation_workflow.uxf?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
 
 The key idea of this `MemoryResourceRegistry` concept is, that the keys used for registering a `ManagedMemoryResource` into
 the registry (and being the essential part of the proxy) is globally (across all processes) unique and deterministic.
@@ -267,7 +267,7 @@ The underlying `shm_open()` call uses the `O_EXCL` and `O_CREAT` flags, ensuring
 
 From a safety standpoint, `ASIL-B` applications should avoid creating shared memory objects with `world-readable` or `world-writable` permissions in order to reduce security risks. For more details check [Access Control concepts](broken_link_a/ui/api/v1/download/contentBrowsing/ipnext-platform-documentation/master/html/features/dac/README.html)
 
-![Named memory allocation](broken_link_k/swh/safe-posix-platform/score/memory/design/shared_memory/named_memory_allocation.uxf?ref=897553326c7c5317cd79d4ffb6323b32849e2758)
+![Named memory allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/named_memory_allocation.uxf?ref=897553326c7c5317cd79d4ffb6323b32849e2758)
 
 ### Anonymous Shared Memory
 Anonymous shared memory created with `SharedMemoryFactory::CreateAnonymous(...)` does not have a representation in the file system. In fact, there is no way for a random process to identify an anonymous shared memory object. Thus, there are no corresponding implementations of `SharedMemoryFactory::Open(...)` and `SharedMemoryFactory::CreateOrOpen(...)`. To share an anonymous shared memory object with another process it must be actively shared at runtime by:
@@ -283,7 +283,7 @@ underlying `shm_open()` call is made with `mode` argument based on the`permissio
 Anonymous Shared Memory objects are created without `SHM_CREATE_HANDLE_OPT_NOFD`, such that the user is able to create further `shm_handle_t` for other processes.
 These objects are then sealed by calling `shm_ctl()` with `SHMCTL_SEAL` flag to prevents the object's layout (e.g., its size and backing memory) and attributes from being modified. So that no process (including the object's creator) can modify the layout or change any attributes.
 
-![Anonymous memory allocation](broken_link_k/swh/safe-posix-platform/score/memory/design/shared_memory/anonymous_memory_allocation.uxf?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
+![Anonymous memory allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/anonymous_memory_allocation.uxf?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
 
 ## Memory Management Algorithm
 The allocated shared memory needs to be managed in some way. Meaning, freed memory needs to be reused before
@@ -361,4 +361,4 @@ It also does not have any impact on security as [PathTrust](https://www.qnx.com/
 
 The complete sequence to find the owner is:
 
-![GetOwnerUid sequence](broken_link_k/swh/safe-posix-platform/score/memory/design/shared_memory/get_owner_uid_seq.puml?ref=7f42212f92084db1c548d7361c2cf4336cafc6dd)
+![GetOwnerUid sequence](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/get_owner_uid_seq.puml?ref=7f42212f92084db1c548d7361c2cf4336cafc6dd)
