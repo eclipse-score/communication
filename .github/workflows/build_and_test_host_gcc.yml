@@ -15,22 +15,51 @@
 # This workflow runs Bazel build and test when triggered by specific pull request events.
 
 name: Bazel Build & Test communication module (with host toolchain GCC12.2)
+
 on:
   pull_request:
     types: [opened, reopened, synchronize]
   merge_group:
     types: [checks_requested]
+
 jobs:
-    build_and_test_gcc_host_gcc12:
-      runs-on: ubuntu-latest
-      container:
-        image: ghcr.io/eclipse-score/devcontainer:latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4.2.2
-        - name: Bazel build communication targets
-          run: |
-            bazel build //...
-        - name: Bazel test communication targets
-          run: |
-            bazel test //... --build_tests_only
+  build_and_test_gcc_host_gcc12:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/eclipse-score/devcontainer:latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      # Ensure JDK is available for Bazel
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Install Bazel via Bazelisk (will use the version in .bazelversion, e.g. 8.3.0)
+      - name: Set up Bazel
+        uses: bazelbuild/setup-bazel@v5
+        with:
+          bazelisk: true
+
+      # Optional but recommended: cache Bazel outputs to speed up CI
+      - name: Bazel cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel
+            ~/.cache/bazelisk
+          key: bazel-${{ runner.os }}-${{ hashFiles('WORKSPACE*', 'MODULE.bazel', '.bazelversion', '**/*.bzl', '**/*BUILD*') }}
+          restore-keys: |
+            bazel-${{ runner.os }}-
+
+      - name: Show Bazel version
+        run: bazel --version
+
+      - name: Bazel build communication targets
+        run: bazel build //...
+
+      - name: Bazel test communication targets
+        run: bazel test //... --build_tests_only
