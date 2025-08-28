@@ -128,7 +128,7 @@ cc_test(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
+    tags = ["exclusive"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -151,7 +151,7 @@ cc_test(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    tags = ["unit"],
+    tags = ["exclusive"],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -175,8 +175,10 @@ cc_test(
     name = "proxy_component_test",
     size = "small",
     timeout = "moderate",
+    tags = ["exclusive"],
     srcs = ["proxy_component_test.cpp"],
     features = COMPILER_WARNING_FEATURES + ["aborts_upon_exception"],
+ 
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],

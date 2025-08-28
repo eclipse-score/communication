@@ -6,3 +6,5 @@ user.bazelrc
 .cache/*
 compile_commands.json
 rust-project.json
+.proxy_repro.txt
+.tests.txt

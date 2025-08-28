@@ -12,15 +12,15 @@
 # *******************************************************************************
 module(name = "communication")
 
-
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency=True)
 
-gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
+bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency = True)
+
+gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency = True)
 gcc.toolchain(
-    url = "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/0.0.1/x86_64-unknown-linux-gnu_gcc12.tar.gz",
     sha256 = "457f5f20f57528033cb840d708b507050d711ae93e009388847e113b11bf3600",
     strip_prefix = "x86_64-unknown-linux-gnu",
+    url = "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/0.0.1/x86_64-unknown-linux-gnu_gcc12.tar.gz",
 )
 
 # TODO to be moved to toolchain. https://github.com/eclipse-score/toolchains_gcc/issues/11
@@ -31,51 +31,63 @@ gcc.extra_features(
     ],
 )
 gcc.warning_flags(
-    minimal_warnings = ["-Wall", "-Wno-error=deprecated-declarations"],
-    strict_warnings = ["-Wextra", "-Wpedantic"],
+    minimal_warnings = [
+        "-Wall",
+        "-Wno-error=deprecated-declarations",
+    ],
+    strict_warnings = [
+        "-Wextra",
+        "-Wpedantic",
+    ],
     treat_warnings_as_errors = ["-Werror"],
 )
-
 use_repo(gcc, "gcc_toolchain", "gcc_toolchain_gcc")
 
 bazel_dep(name = "googletest", version = "1.15.0")
 bazel_dep(name = "google_benchmark", version = "1.9.1")
-
 bazel_dep(name = "rules_rust", version = "0.61.0")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
-
-crate.spec(package = "futures", version = "0.3.31")
-crate.spec(package = "libc", version = "0.2.155")
-crate.spec(package = "clap", version = "4.5.4", features = ["derive"])
-
+crate.spec(
+    package = "futures",
+    version = "0.3.31",
+)
+crate.spec(
+    package = "libc",
+    version = "0.2.155",
+)
+crate.spec(
+    features = ["derive"],
+    package = "clap",
+    version = "4.5.4",
+)
 crate.from_specs(name = "crate_index")
 use_repo(crate, "crate_index")
 
 bazel_dep(name = "rules_boost", repo_name = "com_github_nelhage_rules_boost")
 archive_override(
     module_name = "rules_boost",
-    urls = "https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz",
     strip_prefix = "rules_boost-master",
+    urls = ["https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz"],
 )
+
 bazel_dep(name = "boost.program_options", version = "1.87.0")
-
-
 bazel_dep(name = "download_utils", version = "1.0.1")
+
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
+
 download_archive(
     name = "json_schema_validator",
-    urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
     build = "//third_party/json_schema_validator:json_schema_validator.BUILD",
     strip_prefix = "json-schema-validator-2.1.0",
+    urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
 )
 
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
-
 bazel_dep(name = "score-baselibs", version = "0.0.0")
 git_override(
     module_name = "score-baselibs",
-    remote = "https://github.com/eclipse-score/baselibs.git",
     commit = "46923f5c4f302bd9feae0261588687aaf32e3c5c",
+    remote = "https://github.com/eclipse-score/baselibs.git",
 )
