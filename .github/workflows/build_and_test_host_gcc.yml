@@ -31,20 +31,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
 
-      # Ensure JDK is available for Bazel
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # Install Bazel via Bazelisk (will use the version in .bazelversion, e.g. 8.3.0)
+
       - name: Set up Bazel
         uses: bazelbuild/setup-bazel@v5
         with:
           bazelisk: true
 
-      # Optional but recommended: cache Bazel outputs to speed up CI
+  
       - name: Bazel cache
         uses: actions/cache@v4
         with:
