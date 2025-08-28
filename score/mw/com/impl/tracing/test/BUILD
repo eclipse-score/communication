@@ -35,6 +35,7 @@ cc_gtest_unit_test(
     name = "proxy_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+     tags = ["exclusive"],
     deps = [
         ":runtime_mock_guard",
         "//score/mw/com/impl",
@@ -51,6 +52,7 @@ cc_gtest_unit_test(
     name = "skeleton_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["exclusive"],
     deps = [
         ":runtime_mock_guard",
         "//score/mw/com/impl",

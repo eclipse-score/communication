@@ -278,6 +278,8 @@ cc_gtest_unit_test(
         "tracing_runtime_trace_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["exclusive"],
+
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
@@ -356,6 +358,7 @@ cc_gtest_unit_test(
     name = "skeleton_event_tracing_test",
     srcs = ["skeleton_event_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+     tags = ["exclusive"],
     deps = [
         ":skeleton_event_tracing",
         ":tracing_runtime_mock",
@@ -370,6 +373,7 @@ cc_gtest_unit_test(
     name = "proxy_event_tracing_test",
     srcs = ["proxy_event_tracing_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["exclusive"],
     deps = [
         ":proxy_event_tracing",
         ":tracing_runtime_mock",

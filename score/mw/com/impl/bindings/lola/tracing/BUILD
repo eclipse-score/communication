@@ -42,6 +42,7 @@ cc_gtest_unit_test(
     name = "tracing_runtime_test",
     srcs = ["tracing_runtime_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["exclusive"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],

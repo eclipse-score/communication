@@ -867,6 +867,7 @@ cc_gtest_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["exclusive"],
     deps = [
         ":proxy",
         ":shm_path_builder_mock",
@@ -1063,6 +1064,7 @@ cc_gtest_unit_test(
         "skeleton_event_tracing_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
+     tags = ["exclusive"],
     deps = [
         ":event_data_control_test_resources",
         "//score/mw/com/impl/bindings/lola/messaging:mock",
