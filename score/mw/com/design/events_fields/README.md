@@ -340,7 +340,7 @@ instance has been described [here](../skeleton_proxy/README.md#proxy-auto-reconn
 
 The structure and transitions of the state machine are shown in:
 
-![LOLA_MSG_PASS_PROXY_EVENT_STATE_MACHINEINITIALIZE_SEQ](broken_link_k/swh/safe-posix-platform/score/mw/com/design/events_fields/lola_msg_pass_proxy_event_state_machineinitialize_seq.puml)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/events_fields/proxy_event_state_machine.puml">
 
 The structural model of the state machine design is as follows:
 
