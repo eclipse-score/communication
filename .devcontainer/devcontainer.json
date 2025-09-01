@@ -1,5 +1,5 @@
 {
     "name": "eclipse-s-core",
     "image": "ghcr.io/eclipse-score/devcontainer:latest",
-    "initializeCommand": "mkdir -p ${localEnv:HOME}/.cache/bazel"
+    "postStartCommand": "ssh-keygen -f '/home/vscode/.ssh/known_hosts' -R '[localhost]:2222'"
 }

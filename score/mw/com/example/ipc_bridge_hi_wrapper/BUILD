@@ -81,6 +81,7 @@ genrule(
         cp $(RULEDIR)/deb-qemuarm64/* $(RULEDIR)/deb-qemuarm64-modified/ &&\
         $(location run_qemu.sh) $(RULEDIR)/deb-qemuarm64-modified -pidfile $(RULEDIR)/qemu.pid > $(RULEDIR)/qemu_upload.log &\
         sleep 30 ; \
+        ssh-keygen -f '/home/vscode/.ssh/known_hosts' -R '[localhost]:2222' && \
         sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location :ipc_bridge_cpp_sil) root@localhost:/usr/bin &&\
         sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location //score/mw/com/example/ipc_bridge:ipc_bridge_cpp) root@localhost:/usr/bin &&\
         sshpass -p linux scp -o StrictHostKeyChecking=no -P 2222 $(location :hi_app) root@localhost:/usr/bin &&\
