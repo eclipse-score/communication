@@ -1,0 +1,186 @@
+@startuml memory_allocation
+allowmixing
+skinparam usecaseBorderType dashed
+skinparam linetype ortho
+
+
+note as N1 #yellow
+Usage:
+using ara::core::Vector<T> = std::vector<T, std::scoped_allocator_adaptor<score::memory::shared::PolymorphicOffsetAllocator<T>>>\n
+auto top_level_memory_ressource = score::memory::shared::SharedMemoryFactory("/my_shm_name");\n
+auto sub_memory_resource_event1 = top_level_memory_ressource.createSubResource(10000, 20000);\n
+ara::core::Vector<std::uint8_t> myVector(sub_memory_resource_event1.getProxy()());\n
+myVector.push_back(42u); // Will land on shared memory\n
+ara::core::Vector<std::uint8_t> onHeap();\n+onHeap.push_back(42u); // Will land on heap
+end note
+
+
+class "score::cpp::pmr::memory_resource" as MemoryResource
+{
+  --
+  memory_resource()
+  memory_resource(const MemoryResource&)
+  ~memory_resource()
+
+  + allocate(std::size_t bytes, std::size_t alignment = alignof(max_align_t)): void*
+  + deallocate(void* p, std::size_t bytes, std::size_t alignment = alignof(max_align_t)): void
+  + is_equal(const memory_resource& other) const noexcept: bool
+
+  -do_allocate(std::size_t bytes, std::size_t alignment): void*
+  -do_allocate(void* p, std::size_t bytes, std::size_t alignment): void
+  -do_is_equal(const offsetmemory_resource& other) const noexcept: bool
+  --
+  Notes:
+  This data type shall apply requirements stated by \nhttps://en.cppreference.com/w/cpp/memory/memory_resource
+}
+
+class "score::memory::shared::MemoryResourceRegistry" as MemoryResourceRegistry
+{
+  - MemoryResourceRegistry()
+  + getInstance(): MemoryResourceRegistry&
+  + at(std::unit64_t): ManagedMemoryResource*
+  + insert_resource(std::pair<std::uint64_t, ManagedMemoryResource*>): void
+  + remove_resource(std::uint64_t identifier): void
+  + get_bounds_for(void*): std::pair<void*, void*>
+  + get_bounds_for(uint64 identifier): std::pair<void*, void*>
+  --
+  Notes:
+  Not copyable, not movable
+
+
+}
+
+class "score::memory::shared::ManagedMemoryResource" as ManagedMemoryResource
+{
+  -subresources: std::map<std::uint64_t, SubResource>
+  --
+  +getMemoryResourceProxy(): MemoryResourceProxy*
+  +construct<T*>(args...):T*
+  +destruct<T*>(T*): void
+  +getBaseAddress() = 0: void*
+  +getUsableBaseAddress() = 0: void*
+  +getEndAddress() = 0: void*
+
+
+}
+
+class "score::memory::shared::SharedMemoryResource" as SharedMemoryResource
+{
+  fd: int
+  base: void*
+  --
+  # SharedMemoryResource(StringLiteral, ...)
+  + getMemoryResourceProxy(): MemoryResourceProxy*
+  + getBaseAddress(): void*
+  + getUsableBaseAddress(): void*
+  + getEndAddress(): void*
+  + getPath(): std::string*
+
+  - do_allocate(std::size_t bytes, std::size_t alignment): void*
+  - do_deallocate(void* p, std::size_t bytes, std::size_t alignment): void
+  - do_is_equal(const offset_memory_resource& other) const noexcept: bool
+  --
+  Notes:
+  Not copyable or movable and not public constructable\nonly Factory can create
+}
+
+class "score::memory::shared::SharedMemoryFactory" as SharedMemoryFactory
+{
+  # alreadyOpenedFiles
+  --
+  +static getInstance()
+
+  +static Open(...) noexcept: std::shared_ptr<ManagedMemoryResource>
+  +static Create(...) noexcept: std::shared_ptr<ManagedMemoryResource>
+  +static CreateAnonymous(...) noexcept: std::shared_ptr<ManagedMemoryResource>
+  +static CreateOrOpen(...) noexcept: std::shared_ptr<ManagedMemoryResource>
+  +static Remove(std:string path): void
+  --
+  Notes:
+  SharedMemoryFactory is not movable or copyable.\nFactory Singleton, ensures that SharedMemoryResource is created only once.
+}
+
+class "score::memory::shared::MemoryResourceProxy" as MemoryResourceProxy
+{
+  - memory_identifier_: std::unit64_t
+  --
+  + MemoryResourceProxy(const std::uint64_t& memoryId)
+  + allocate(std::size_t n ): void*
+  + deallocate(void* p, std::size_t n ): void
+  --
+  Notes:
+  MemoryResourceProxy is not movable or copyable.
+  Only does the dispatching to right MemoryResource via MemoryResourceRegistry.
+  Dispatching is needed as we can't put instances of real memory resources into shared memory as
+  they have vtables.
+
+
+}
+
+class "score::memory::shared::PolymorphicOffsetPtrAllocator<T:class>" as PolymorphicOffsetPtrAllocator
+{
+  - proxy: offset_ptr<MemoryResourceProxy>
+  --
+  + PolymorphicOffsetPtrAllocator(MemoryResourceProxy* proxy)
+  + PolymorphicOffsetPtrAllocator()
+  + allocate( std::size_t n ): offset_ptr<T>
+  + deallocate(offset_ptr<T> p, std::size_t n ): void
+  + getMemoryResourceProxy(): offset_ptr<MemoryResourceProxy>
+  --
+  Notes:
+  This data type shall apply requirements
+  stated by
+  https://en.cppreference.com/w/cpp/memory/allocator_traits
+  If default constructed, it will not use any indirection via a
+  MemoryResourceProxy to the MemoryResourceRegistry. Instead, it will
+  simply allocate memory on the heap.
+
+
+}
+
+class "score::memory::shared::OffsetPtr<PointedType>" as OffsetPtr
+{
+  - offset: std::ptrdiff_t
+  --
+  + offset_ptr() noexcept;
+  + offset_ptr(pointer) noexcept;
+  --
+  Notes:
+  In addition to the specified members,
+  this data type shall apply requirements stated by
+  https://en.cppreference.com/w/cpp/memory/pointer_traits
+}
+
+class "score::memory::shared::SubResource" as SubResource
+{
+  - parent: ManagedMemoryResource&
+  --
+  + SubResource(ManagedMemoryResource& parent, std::size_t initialSize, void* memory_start, std::size_t maxSize)
+  --
+  Notes:
+  Not copyable and not public constructable
+  only parent resource can create.
+  This entity/class is used to create multi levels of memory resources.
+}
+
+class "score::memory::shared::HeapMemoryResource" as HeapMemoryResource
+
+
+usecase osabstraction
+
+
+ManagedMemoryResource -u-o MemoryResourceRegistry : holds
+ManagedMemoryResource .u.|> MemoryResource
+MemoryResourceProxy -d-o MemoryResourceRegistry : lookup dispatch \ntarget
+MemoryResourceProxy -d-> ManagedMemoryResource : dispatch\nallocate\ndeallocate
+MemoryResourceProxy -d-o PolymorphicOffsetPtrAllocator : allocates memory \nusing
+PolymorphicOffsetPtrAllocator -d-> OffsetPtr : constructs and \nreturns
+SharedMemoryResource -u.|> ManagedMemoryResource
+HeapMemoryResource -l.|> ManagedMemoryResource
+SubResource -l.|> ManagedMemoryResource
+SharedMemoryResource -r-> osabstraction : manage\nshared memory
+
+SharedMemoryFactory -u-> SharedMemoryResource : Creates
+
+
+@enduml

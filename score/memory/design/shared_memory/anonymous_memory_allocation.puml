@@ -1,0 +1,145 @@
+@startuml anonymous_memory_allocation_sequence
+' Sequence diagram for anonymous memory allocation
+
+participant InstanceP1 as Instance
+participant SharedMemoryFactoryP1 as Factory
+participant SharedMemoryResourceP1 as Resource
+participant TypedMemoryP1 as TypedMemory
+participant tmd_ITypedSharedMemory as ITypedSharedMemory
+
+participant os_Stat as Stat
+
+
+participant os_utils_AccessControlList as ACL
+participant os_Unistd as Unistd
+
+participant os_Mman as Mman
+participant MemoryResourceProxyP1 as Proxy
+participant AnonymousSharedMemoryObject as AnonymousObject
+participant MemoryResourceRegistryP1 as Registry
+
+
+
+
+
+activate Instance
+activate Factory
+
+Instance -> Factory: CreateAnonymous(prefer_typed_memory, permissions, size)
+
+activate TypedMemory
+Factory -> TypedMemory: TypedMemory::Default()
+TypedMemory --> Factory: return TypedMemoryP1
+
+
+activate Resource
+
+Factory -> Resource: CreateAnonymous(TypedMemoryP1, permissions, size)
+
+
+deactivate Resource
+
+
+alt typed_memory_ptr_ != nullptr (AllocateInTypedmemory)
+
+
+
+    Resource -> TypedMemory: AllocateAndOpenAnonymousTypedMemory(size)
+    activate Resource
+
+    TypedMemory --> Resource: file_descriptor
+    TypedMemory -> ITypedSharedMemory: AllocateAndOpenAnonymousTypedMemory(size)
+    activate ITypedSharedMemory
+    ITypedSharedMemory --> TypedMemory: return shm_handle
+    deactivate ITypedSharedMemory
+    activate Mman
+    TypedMemory -> Mman: shm_open_handle(shm_handle, O_RDWR)
+
+    Mman --> TypedMemory: return file descriptor
+    deactivate Mman
+    deactivate TypedMemory
+    deactivate Resource
+
+end
+
+
+
+
+alt AllocateInTypedmemory failed or AllocateInSysram (typed_memory_ptr_ == nullptr)
+    Resource -> Resource: mode = calcStatModeForPermissions(permissions)
+    activate Resource
+
+    deactivate Resource
+
+
+
+    Resource -> Mman: shm_open(SHM_ANON, O_RDWR | O_CREAT | O_ANON, mode)
+    activate Resource
+    activate Mman
+    Mman --> Resource: file_descriptor
+    deactivate Mman
+    deactivate Resource
+
+    alt mode == world-readable
+        Resource -> Stat: fchmod(file_descriptor, mode)
+        activate Resource
+        activate Stat
+        Stat --> Resource
+        deactivate Stat
+    else mode == UserPermissions
+        Resource -> ACL: AllowUser(file_descriptor, os::Acl::Permission)
+        activate ACL
+        ACL --> Resource
+        deactivate ACL
+        deactivate Resource
+    end
+
+
+    Resource -> Mman: shm_ctl(fd, SHMCTL_ANON | SHMCTL_SEAL, 0UL, size)
+    activate Resource
+    Mman --> Resource
+    deactivate Resource
+
+    Resource -> Unistd: ftruncate(file_descriptor, size)
+    activate Resource
+    activate Unistd
+    Unistd --> Resource
+    deactivate Unistd
+    deactivate Resource
+
+end
+
+Resource -> Resource: GetOwnerUidAndSizeOf(file_descriptor)
+activate Resource
+
+
+
+
+Resource -> Mman: mmap(map memory into process)
+activate Mman
+Mman --> Resource
+deactivate Mman
+
+Resource -> Proxy: Instantiate(Unique ID)
+activate Proxy
+Proxy --> Resource
+deactivate Proxy
+
+Resource -> Registry: insert_resource(uniqueID, this)
+activate Registry
+Registry --> Resource
+deactivate Registry
+
+Resource -> AnonymousObject: initializeInternalsInSharedMemory() - MemoryResourceProxyP1, alreadyAllocatedBytes, mutex
+activate AnonymousObject
+AnonymousObject --> Resource
+deactivate AnonymousObject
+
+
+
+Resource --> Factory: instance
+Factory --> Instance: instance
+deactivate Resource
+deactivate Factory
+deactivate Instance
+@enduml

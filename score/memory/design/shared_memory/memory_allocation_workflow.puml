@@ -1,0 +1,93 @@
+@startuml memory_allocation_workflow_sequence
+' Sequence diagram for memory allocation workflow
+
+participant InstanceP1 as Instance
+participant SharedMemoryFactoryP1 as Factory
+participant PolymorphicOffsetAllocator as Allocator
+participant MemoryResourceProxy as Proxy
+participant SharedMemoryResourceP1 as Resource
+participant FooSharedMemoryObject as FooObject
+participant MemoryResourceRegistryP1 as Registry
+
+
+activate Instance
+activate Factory
+Instance -> Factory: open("/foo")
+Factory -> Factory: Check if instances was already opened
+
+
+alt Open new instance
+    Factory -> Resource: instantiate
+    activate Resource
+    Resource -> FooObject: shm_open(open)
+
+    Resource -> Resource: GetOwnerUid()
+
+    Resource -> Registry: insert_resource(uniqueID, this)
+    activate Registry
+    Registry --> Resource
+
+
+    Resource -> FooObject: read(shared state)
+    activate FooObject
+    FooObject --> Resource
+    deactivate FooObject
+
+    Resource -> Proxy: reinterprete(shared state)
+
+    Resource --> Factory
+
+    Factory -> Factory: InsertResourceIntoMap
+
+end
+
+
+deactivate Registry
+
+
+alt AllowedProviderCheck
+    Factory-> Resource: getowneruid()
+    Resource --> Factory
+
+end
+deactivate Resource
+
+Factory --> Instance: instance
+
+Instance -> Resource: getMemoryResourceProxy()
+activate Resource
+Resource --> Instance: MemoryResourceProxy*
+deactivate Resource
+
+Instance -> Allocator: instantiate(MemoryResourceProxy*)
+activate Allocator
+Instance -> Allocator: allocate(Bytes)
+Allocator -> Proxy: allocate(Bytes)
+activate Proxy
+Proxy -> Registry: at(unique)
+activate Registry
+Registry --> Proxy: ManagedMemoryResource*
+deactivate Registry
+
+Proxy -> Resource: allocate(Bytes)
+activate Resource
+Resource -> FooObject: ftruncate(Bytes)
+activate FooObject
+deactivate FooObject
+
+Resource --> Proxy: void*
+deactivate Resource
+
+Proxy --> Allocator: void*
+deactivate Proxy
+
+Allocator --> Instance: offsetPtr<void>
+deactivate Allocator
+
+
+
+
+
+deactivate Factory
+deactivate Instance
+@enduml
