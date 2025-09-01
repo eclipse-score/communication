@@ -15,7 +15,7 @@ it.
 ### Structural and class diagram extensions
 
 The main extensions on structural level have been done by the addition of `TransactionLog`s. A `TransactionLog`
-is maintained per `ProxyEvent`. Each `ProxyEvent` during runtime modifies its shared state (subscribing and 
+is maintained per `ProxyEvent`. Each `ProxyEvent` during runtime modifies its shared state (subscribing and
 unsubscribing, and incrementing and decrementing the refcount of event samples) and therefore uses a related
 `TransactionLog` to be able to recreate the shared state after restarting.
 The `lola::EventDataControlImpl` instance in shared memory manages the control of one `SkeletonEvent`. It has been
@@ -35,7 +35,7 @@ Each `ProxyEvent` calls `lola::TransactionLogSet::RegisterProxyElement()` once d
 `SkeletonEvent`, thereby acquiring an index which uniquely identifies the `TransactionLog` in the
 `lola::TransactionLogSet`, allowing it to use the `TransactionLog` throughout its lifetime.
 
-![TransactionLogSet](broken_link_k/swh/ddad_score/mw/com/design/partial_restart/artifacts/transaction_log_model.uxf)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/transaction_log_model.puml">
 
 ### Identification of transaction logs
 
@@ -56,7 +56,7 @@ create **multiple** proxy instances, either:
 - from deserialized `InstanceIdentifiers`,
 - a mixture of both.
 
-Where the contained `ProxyEvent`s all relate to the exact same (provider side) `SkeletonEvent`. 
+Where the contained `ProxyEvent`s all relate to the exact same (provider side) `SkeletonEvent`.
 Although this is a rather pathological case, we therefore store potentially multiple transaction logs for the same
 `lola::TransactionLogId` within a `TransactionLogSet` instance (`TransactionLogSet::proxy_transaction_logs_`).
 This is not a problem because when a `ProxyEvent` of a specific proxy instance registers its
@@ -112,7 +112,7 @@ proxy instance **even** gets created, checks are done to discover, whether there
 with the same proxy instance, which has crashed and left a `lola::TransactionLog` with existing transactions
 (`TransactionLog::ContainsTransactions() == true`) for one of its `ProxyEvent`s to get recovered:
 
-![Proxy Restart Sequence](broken_link_k/swh/ddad_score/mw/com/design/partial_restart/artifacts/proxy_restart_sequence.uxf)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/proxy_restart_sequence.puml">
 
 The (re)start sequence, done during the proxy instance creation, shows three main steps, which have been introduced newly
 for the partial restart support:
@@ -206,7 +206,7 @@ Provider resp. skeleton side restart sequence specific extensions for partial re
 
 The following sequence diagram therefore shows both parts:
 
-![Skeleton Restart Sequence](broken_link_k/swh/ddad_score/mw/com/design/partial_restart/artifacts/skeleton_restart_sequence.uxf)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/skeleton_restart_sequence.puml">
 
 #### Partial restart specific extensions to Skeleton::Create
 

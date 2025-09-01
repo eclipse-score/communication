@@ -113,8 +113,8 @@ TEST_F(ServiceDiscoveryClientStartFindServiceFixture, CallingStartFindServiceFor
     EXPECT_TRUE(start_find_service_result.has_value());
 }
 
-using ServiceDiscoveryClientStartFindServiceDeathFixture = ServiceDiscoveryClientStartFindServiceFixture;
-TEST_F(ServiceDiscoveryClientStartFindServiceDeathFixture, CallingStartFindServiceWithInvalidQualityTypeTerminates)
+using ServiceDiscoveryClientStartFindServiceDeathTest = ServiceDiscoveryClientStartFindServiceFixture;
+TEST_F(ServiceDiscoveryClientStartFindServiceDeathTest, CallingStartFindServiceWithInvalidQualityTypeTerminates)
 {
     const ConfigurationStore config_store_invalid_quality_type{
         kInstanceSpecifierString,
@@ -140,7 +140,7 @@ TEST_F(ServiceDiscoveryClientStartFindServiceDeathFixture, CallingStartFindServi
     EXPECT_DEATH(test_function(), ".*");
 }
 
-TEST_F(ServiceDiscoveryClientStartFindServiceDeathFixture, CallingStartFindServiceWithUnknownQualityTypeTerminates)
+TEST_F(ServiceDiscoveryClientStartFindServiceDeathTest, CallingStartFindServiceWithUnknownQualityTypeTerminates)
 {
     const auto unknown_quality_type = static_cast<QualityType>(100U);
     const ConfigurationStore config_store_unknown_quality_type{
@@ -184,9 +184,7 @@ TEST_F(ServiceDiscoveryClientStartFindServiceFixture, CallingStartFindServiceAdd
     // Expecting that a watch is added to the instance path
     const auto expected_instance_directory_path =
         GenerateExpectedInstanceDirectoryPath(kServiceId, kConfigStoreQm1.lola_instance_id_->GetId()).Native();
-    const score::cpp::string_view expected_instance_directory_path_view{expected_instance_directory_path.data(),
-                                                                 expected_instance_directory_path.size()};
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path_view, _));
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path, _));
 
     // When calling StartFindService with an InstanceIdentifier with a specified instance ID
     FindServiceHandle handle{make_FindServiceHandle(1U)};
@@ -203,9 +201,7 @@ TEST_F(ServiceDiscoveryClientStartFindServiceFixture,
     // Expecting that a attempting to add a watch to the instance path returns an error
     const auto expected_instance_directory_path =
         GenerateExpectedInstanceDirectoryPath(kServiceId, kConfigStoreQm1.lola_instance_id_->GetId()).Native();
-    const score::cpp::string_view expected_instance_directory_path_view{expected_instance_directory_path.data(),
-                                                                 expected_instance_directory_path.size()};
-    ON_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path_view, _))
+    ON_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path, _))
         .WillByDefault(Return(score::cpp::make_unexpected(::score::os::Error::createFromErrno(EACCES))));
 
     // When calling StartFindService with an InstanceIdentifier with a specified instance ID
@@ -233,9 +229,7 @@ TEST_F(ServiceDiscoveryClientStartFindServiceFixture, CallingStartFindServiceFor
 
     // Expecting that a watch is added to the service path
     const auto expected_service_directory_path = GenerateExpectedServiceDirectoryPath(kServiceId).Native();
-    const score::cpp::string_view expected_service_directory_path_view{expected_service_directory_path.data(),
-                                                                expected_service_directory_path.size()};
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_service_directory_path_view, _));
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_service_directory_path, _));
 
     // When calling StartFindService with an InstanceIdentifier without a specified instance ID
     const FindServiceHandle handle{make_FindServiceHandle(1U)};
@@ -251,9 +245,7 @@ TEST_F(ServiceDiscoveryClientStartFindServiceFixture,
 
     // Expecting that a attempting to add a watch to the service path returns an error
     const auto expected_service_directory_path = GenerateExpectedServiceDirectoryPath(kServiceId).Native();
-    const score::cpp::string_view expected_service_directory_path_view{expected_service_directory_path.data(),
-                                                                expected_service_directory_path.size()};
-    ON_CALL(inotify_instance_mock_, AddWatch(expected_service_directory_path_view, _))
+    ON_CALL(inotify_instance_mock_, AddWatch(expected_service_directory_path, _))
         .WillByDefault(Return(score::cpp::make_unexpected(::score::os::Error::createFromErrno(EACCES))));
 
     // When calling StartFindService with an InstanceIdentifier with a specified instance ID
@@ -774,17 +766,15 @@ TEST_F(ServiceDiscoveryClientStartFindServiceFixture,
         });
 
     const auto service_path = GenerateExpectedServiceDirectoryPath(kServiceId).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(score::cpp::string_view{service_path}, _)).WillOnce([](auto, auto) {
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(service_path, _)).WillOnce([](auto, auto) {
         return os::InotifyWatchDescriptor{2};
     });
 
     const auto instance_path =
         GenerateExpectedInstanceDirectoryPath(kServiceId, kConfigStoreQm1.lola_instance_id_->GetId()).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(score::cpp::string_view{instance_path}, _))
-        .Times(2)
-        .WillRepeatedly([](auto, auto) {
-            return os::InotifyWatchDescriptor{3};
-        });
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(instance_path, _)).Times(2).WillRepeatedly([](auto, auto) {
+        return os::InotifyWatchDescriptor{3};
+    });
 
     WhichContainsAServiceDiscoveryClient().WithAnOfferedService(kConfigStoreQm1.GetInstanceIdentifier());
 

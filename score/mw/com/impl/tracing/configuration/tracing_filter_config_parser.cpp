@@ -161,8 +161,7 @@ std::set<std::string_view> GetInstancesOfServiceType(const Configuration& config
     std::set<std::string_view> result{};
     for (const auto& service_instance_element : configuration.GetServiceInstances())
     {
-        if (service_instance_element.second.service_.ToString() ==
-            std::string_view{service_type.data(), service_type.size()})
+        if (service_instance_element.second.service_.ToString() == service_type)
         {
             const auto element_string_view = service_instance_element.first.ToString();
             score::cpp::ignore = result.insert(element_string_view);
@@ -655,13 +654,13 @@ score::Result<TracingFilterConfig> Parse(const std::string_view path, const Conf
     // Reason for banning is AoU of vaJson library about integrity of provided path.
     // This AoU is forwarded as AoU of Lola. See broken_link_c/issue/5835192
     // NOLINTNEXTLINE(score-banned-function): The user has to guarantee the integrity of the path
-    auto json_result = json_parser_obj.FromFile(score::cpp::string_view{path.data(), path.size()});
+    auto json_result = json_parser_obj.FromFile(path);
     if (!json_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << "Parsing trace filter config file" << path
                                          << "failed with error:" << json_result.error().Message() << ": "
                                          << json_result.error().UserMessage() << " .";
-        return MakeUnexpected(TraceErrorCode::JsonConfigParseError, json_result.error().UserMessage().data());
+        return MakeUnexpected(TraceErrorCode::JsonConfigParseError, json_result.error().UserMessage());
     }
     return Parse(std::move(json_result).value(), configuration);
 }

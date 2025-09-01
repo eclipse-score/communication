@@ -3,11 +3,11 @@ title "Proxy Binding Model"
 
 ' Error domain classes
 abstract class "score::result::ErrorDomain" as ScoreResultErrorDomain {
-  +MessageFor(code : const score::result::ErrorCode&) const = 0 : score::cpp::string_view
+  +MessageFor(code : const score::result::ErrorCode&) const = 0 : std::string_view
 }
 
 class "ComErrorDomain" {
-  +MessageFor(code : const score::result::ErrorCode&) const = 0 : score::cpp::string_view
+  +MessageFor(code : const score::result::ErrorCode&) const = 0 : std::string_view
 }
 
 class "<< Stereotype >>\nglobal function" as GlobalFunction {
@@ -87,7 +87,7 @@ class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
 }
 
 class "score::mw::com::impl::ProxyEvent<SampleType>" as ScoreMwComImplProxyEventTemplate {
-  +ProxyEvent(ProxyBase& base, const score::cpp::string_view event_name)
+  +ProxyEvent(ProxyBase& base, const std::string_view event_name)
 
   template <typename F>
   +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
@@ -184,11 +184,11 @@ class "lola::ProxyMethod<ServiceCallArgTypes>" as LolaProxyMethodTemplate {
 }
 
 class "ProxyEventBindingFactory" {
-  +{static} Create<SampleType>(ProxyBase& parent, score::cpp::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+  +{static} Create<SampleType>(ProxyBase& parent, std::string_view event_name): std::unique_ptr<ProxyEventBinding<SampleType>>
 }
 
 class "ProxyFieldBindingFactory" {
-  +{static} CreateEventBinding<SampleType>(ProxyBase& parent, score::cpp::string_view field_name): std::unique_ptr<ProxyEventBinding<SampleType>>
+  +{static} CreateEventBinding<SampleType>(ProxyBase& parent, std::string_view field_name): std::unique_ptr<ProxyEventBinding<SampleType>>
 }
 
 class "SampleReferenceTracker" {

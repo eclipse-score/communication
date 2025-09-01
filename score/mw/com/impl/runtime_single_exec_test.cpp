@@ -118,11 +118,12 @@ std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handl
     auto visitor = score::cpp::overload(
         [](const LolaServiceTypeDeployment& deployment) -> ReturnType {
             ReturnType event_names;
-            for (const auto& event : deployment.events_)
-            {
-                const auto event_name = std::string_view{event.first.data(), event.first.size()};
-                event_names.push_back(event_name);
-            }
+            std::transform(deployment.events_.cbegin(),
+                           deployment.events_.cend(),
+                           std::back_inserter(event_names),
+                           [](const auto& event) -> std::string_view {
+                               return event.first;
+                           });
             return event_names;
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {

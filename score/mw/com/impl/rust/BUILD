@@ -77,7 +77,6 @@ rust_library(
     srcs = ["skeleton_bridge.rs"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
     deps = [
         ":common",

@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
@@ -126,7 +126,6 @@ cc_library(
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -533,7 +532,6 @@ cc_library(
         ":error",
         "@score-baselibs//score/result",
         "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -567,7 +565,6 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
-        # "@ddad//score/mw/com:__subpackages__",
     ],
 )
 
@@ -740,7 +737,6 @@ cc_library(
         ":runtime_interfaces",
         ":service_discovery",
         "@score-baselibs//score/concurrency:long_running_threads_container",
-        "@score-baselibs//score/memory:any_string_view",
         "@score-baselibs//score/memory/shared:types",
         "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",

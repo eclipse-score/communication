@@ -1395,6 +1395,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId
     CleanUpSkeleton();
 }
 
+using SkeletonRegisterParamaterisedDeathTest = SkeletonRegisterParamaterisedFixture;
 TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceElementTwiceWillTerminate)
 {
     RecordProperty("Verifies", "SCR-21555839");
@@ -1626,7 +1627,8 @@ TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfExistenceMarkerFileCannotBeE
               nullptr);
 }
 
-TEST_F(SkeletonCreateFixture,
+using SkeletonCreateDeathTest = SkeletonCreateFixture;
+TEST_F(SkeletonCreateDeathTest,
        CreatingSkeletonWithInstanceIdentifierWhichDoesNotContainLolaServiceInstanceDeploymentTerminates)
 {
     // When creating a Skeleton with an InstanceIdentifier which contains a blank service instance deployment
@@ -1640,7 +1642,7 @@ TEST_F(SkeletonCreateFixture,
                  ".*");
 }
 
-TEST_F(SkeletonCreateFixture,
+TEST_F(SkeletonCreateDeathTest,
        CreatingSkeletonWithInstanceIdentifierWhichDoesNotContainLolaServiceTypeDeploymentTerminates)
 {
     // When creating a Skeleton with an InstanceIdentifier which contains a blank service instance deployment

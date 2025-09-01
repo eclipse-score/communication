@@ -99,8 +99,8 @@ TEST_F(LolaGenericProxyEventFixture, SampleConstness)
     static_assert(std::is_const<MetaInfoMemberType>::value, "Proxy should hold const slot data.");
 }
 
-using LolaGenericProxyEventDeathFixture = LolaGenericProxyEventFixture;
-TEST_F(LolaGenericProxyEventDeathFixture, FailOnEventNotFound)
+using LolaGenericProxyEventDeathTest = LolaGenericProxyEventFixture;
+TEST_F(LolaGenericProxyEventDeathTest, FailOnEventNotFound)
 {
     const ElementFqId bad_element_fq_id{0xcdef, 0x6, 0x10, ServiceElementType::EVENT};
     const std::string_view bad_event_name{"BadEventName"};
@@ -110,7 +110,7 @@ TEST_F(LolaGenericProxyEventDeathFixture, FailOnEventNotFound)
     EXPECT_DEATH(WithAGenericProxyEvent(bad_element_fq_id, bad_event_name), ".*");
 }
 
-TEST_F(LolaGenericProxyEventDeathFixture, OverflowWhenCalculatingRawEventsSlotsArraySizeTerminates)
+TEST_F(LolaGenericProxyEventDeathTest, OverflowWhenCalculatingRawEventsSlotsArraySizeTerminates)
 {
     SampleReferenceTracker sample_reference_tracker_{kMaxSampleCount};
     TrackerGuardFactory guard_factory{sample_reference_tracker_.Allocate(1U)};

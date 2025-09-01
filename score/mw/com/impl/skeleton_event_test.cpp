@@ -38,7 +38,9 @@ using ::testing::WithArg;
 
 using TestSampleType = std::uint8_t;
 
-const std::string_view kEventName{"Event1"};
+using std::string_view_literals::operator""sv;
+
+constexpr auto kEventName = "Event1"sv;
 
 const auto kInstanceSpecifier = InstanceSpecifier::Create("abc/abc/TirePressurePort").value();
 const auto kServiceIdentifier = make_ServiceIdentifierType("foo", 13, 37);

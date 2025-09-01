@@ -82,5 +82,20 @@ bazel_dep(name = "score-baselibs", version = "0.0.0")
 git_override(
     module_name = "score-baselibs",
     remote = "https://github.com/Elektrobit/eclipse-score_baselibs.git",
-    commit = "a89c6f2682c6f465d2afacf2f2c0c6240d277b6a",
+    commit = "8fad3bceb53dc5d6120cc190b51b8b04a3f8d31f",
+)
+
+# Python 3.12 toolchain for Bazel
+bazel_dep(name = "rules_python", version = "0.32.0")
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    python_version = "3.12",
+)
+
+# TRLC dependency for requirements traceability
+bazel_dep(name = "trlc", version = "0.0.0")
+git_override(
+    module_name = "trlc",
+    remote = "https://github.com/bmw-software-engineering/trlc.git",
+    commit = "650b51a47264a4f232b3341f473527710fc32669",  # trlc-2.0.2 release
 )

@@ -356,7 +356,8 @@ TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenFieldBindingFailsReturns
     ASSERT_EQ(offer_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(SkeletonBaseOfferFixture, TerminateOnOfferWithNoBinding)
+using SkeletonBaseOfferDeathTest = SkeletonBaseOfferFixture;
+TEST_F(SkeletonBaseOfferDeathTest, TerminateOnOfferWithNoBinding)
 {
     RecordProperty("Verifies", "SCR-6222081, SCR-21856131");
     RecordProperty("Description",
@@ -378,7 +379,7 @@ TEST_F(SkeletonBaseOfferFixture, TerminateOnOfferWithNoBinding)
     EXPECT_DEATH(offer_unit_with_prepare_offering_failure(), ".*");
 }
 
-TEST_F(SkeletonBaseOfferFixture, OfferServiceTerminatesWhenBindingIsNull)
+TEST_F(SkeletonBaseOfferDeathTest, OfferServiceTerminatesWhenBindingIsNull)
 {
     std::unique_ptr<SkeletonBinding> skeleton_binding_null{nullptr};
 

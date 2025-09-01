@@ -115,6 +115,11 @@ class UidPidMapping
         register_pid_fake_ = &register_pid_fake;
     }
 
+    static void ClearRegisterPidFake()
+    {
+        register_pid_fake_ = nullptr;
+    }
+
   private:
     using mapping_entry_alloc = typename std::allocator_traits<Allocator>::template rebind_alloc<UidPidMappingEntry>;
 

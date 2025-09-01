@@ -174,7 +174,8 @@ TEST(EventSubscriptionControl, CompareExchangeBehaviour_Subscribe)
     EXPECT_EQ(unit.Subscribe(5), SubscribeResult::kUpdateRetryFailure);
 }
 
-TEST(EventSubscriptionControl, CompareExchangeBehaviour_Unsubscribe_RetryLimit)
+using EventSubscriptionControlDeathTest = EventSubscriptionControl;
+TEST(EventSubscriptionControlDeathTest, CompareExchangeBehaviour_Unsubscribe_RetryLimit)
 {
     using namespace score::memory::shared;
     using ::testing::_;
@@ -208,7 +209,7 @@ TEST(EventSubscriptionControl, CompareExchangeBehaviour_Unsubscribe_RetryLimit)
     EXPECT_DEATH(unsubscribe_hits_retry_limit(), ".*");
 }
 
-TEST(EventSubscriptionControl, Unsubscribe_SubscriberUnderflow_Dies)
+TEST(EventSubscriptionControlDeathTest, Unsubscribe_SubscriberUnderflow_Dies)
 {
     auto unsubscribe_without_subscribe = []() -> void {
         //  Given a unit with a given slot count and max subscribers
@@ -223,7 +224,7 @@ TEST(EventSubscriptionControl, Unsubscribe_SubscriberUnderflow_Dies)
     EXPECT_DEATH(unsubscribe_without_subscribe(), ".*");
 }
 
-TEST(EventSubscriptionControl, Unsubscribe_SlotUnderflow_Dies)
+TEST(EventSubscriptionControlDeathTest, Unsubscribe_SlotUnderflow_Dies)
 {
     auto unsubscribe_with_slot_underflow = []() -> void {
         //  Given a unit with a given slot count and max subscribers

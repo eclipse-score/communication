@@ -157,8 +157,8 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const Inst
             skeleton_event_tracing_data.enable_send || skeleton_event_tracing_data.enable_send_with_allocate;
         if (isTraceDoneCallbackNeeded)
         {
-            auto number_of_tracing_slots = GetNumberOfTracingSlots<ServiceElementType::EVENT>(
-                instance_identifier, std::string_view{event_name.data(), event_name.size()});
+            auto number_of_tracing_slots =
+                GetNumberOfTracingSlots<ServiceElementType::EVENT>(instance_identifier, event_name);
             const auto service_element_tracing_data =
                 tracing_runtime->RegisterServiceElement(binding_type, number_of_tracing_slots);
             skeleton_event_tracing_data.service_element_tracing_data = service_element_tracing_data;
@@ -203,8 +203,8 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(const Inst
             skeleton_event_tracing_data.enable_send || skeleton_event_tracing_data.enable_send_with_allocate;
         if (isTraceDoneCallbackNeeded)
         {
-            auto number_of_tracing_slots = GetNumberOfTracingSlots<ServiceElementType::FIELD>(
-                instance_identifier, std::string_view{field_name.data(), field_name.size()});
+            auto number_of_tracing_slots =
+                GetNumberOfTracingSlots<ServiceElementType::FIELD>(instance_identifier, field_name);
             const auto service_element_tracing_data =
                 tracing_runtime->RegisterServiceElement(binding_type, number_of_tracing_slots);
             skeleton_event_tracing_data.service_element_tracing_data = service_element_tracing_data;

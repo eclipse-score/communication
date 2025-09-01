@@ -120,7 +120,8 @@ TEST_F(SlotCollectorWithFakeMem, DoNotReceiveEventsFromThePast)
     EXPECT_EQ(CalculateNumberOfCollectedSlots(no_new_sample), 0);
 }
 
-TEST_F(SlotCollectorWithFakeMem, CreatingSlotCollectorWith0MaxSlotsTerminates)
+using SlotCollectorWithFakeMemDeathTest = SlotCollectorWithFakeMem;
+TEST_F(SlotCollectorWithFakeMemDeathTest, CreatingSlotCollectorWith0MaxSlotsTerminates)
 {
     // Given an EventDataControl and registered TransactionLog
     EventDataControl event_data_control{3, fake_memory_resource_.getMemoryResourceProxy(), kMaxSubscribers};

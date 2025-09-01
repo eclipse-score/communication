@@ -101,7 +101,7 @@ std::shared_ptr<message_passing::ISender> MessagePassingControl::CreateNewSender
     score::cpp::pmr::memory_resource* const memory_resource = score::cpp::pmr::get_default_resource();
 
     auto new_sender_unique_p = message_passing::SenderFactory::Create(
-        senderName.data(), stop_source_.get_token(), sender_config, std::move(logging_callback), memory_resource);
+        senderName, stop_source_.get_token(), sender_config, std::move(logging_callback), memory_resource);
 
     // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
     // both branches (true / false) being covered. Suppression can be removed when bug is fixed in Ticket-188259).

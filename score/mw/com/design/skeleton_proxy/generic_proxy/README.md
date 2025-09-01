@@ -19,10 +19,10 @@ Details about the concept of generic proxies can be found
 ## LoLa supported feature set for Generic Proxies
 
 Since `LoLa`s support for fields is restricted to only the event-functionality of fields, we will in a 1st step **only**
-implement event specific functionality for the `Generic Proxy`. 
+implement event specific functionality for the `Generic Proxy`.
 
 This comprises the following items:
-* `GenericProxy` class: We will provide a class `GenericProxy`, but opposed to the concept (linked above) **not** in 
+* `GenericProxy` class: We will provide a class `GenericProxy`, but opposed to the concept (linked above) **not** in
   the `ara::com`, but in the `mw::com` namespace.
 * This `GenericProxy` class will (in relation to the concept) **only** provide a public method `GetEvents()`, which
   returns a `GenericProxy::EventMap` (which is a stripped down `std::map`)
@@ -101,7 +101,7 @@ specification) class (see [Sys-Req-13525992](broken_link_c/issue/13525992)), der
 `impl::ProxyBase` (like `DummyProxy` example) and contains one member `events_`, which is a map of
 `impl::GenericProxyEvent` in the form of `mw::com::EventMap`.
 
-![Generic Proxy Extension](broken_link_k/swh/ddad_score/mw/com/design/skeleton_proxy/generic_proxy/generic_proxy_model.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/generic_proxy/generic_proxy_model.puml">
 
 Classes drawn with yellow background are extensions of the class diagram to support `GenericProxy` functionality beside
 "normal" proxies.
@@ -114,7 +114,7 @@ Both derive from `impl::ProxyEventBase`, which contains all the `SampleType` agn
 implementations a proxy-event needs to have.
 The method `GetNewSamples()` is `SampleType` specific (via its callback argument, which depends on the `SampleType`).
 Therefore, it isn't contained in `impl::ProxyEventBase` but specifically implemented in `impl::GenericProxyEvent` and
-`impl::ProxyEvent>SampleType>`. 
+`impl::ProxyEvent>SampleType>`.
 
 We have a similar setup on the binding side: `impl::GenericProxyEventBinding` has been introduced beside
 `impl::ProxyEventBinding>SampleType>` as abstract classes/interface definitions for "normal", respectively generic
@@ -135,4 +135,3 @@ Even if this hadn't been problematic (in terms of potential diamond pattern), we
 it due to the `ASIL-B` nature of our code base and the general avoidance pattern of multi-inheritance.
 To make sure, that the dispatch to `lola::ProxyEventCommon` is free from any overhead, we should take into account
 making all the methods of `lola::ProxyEventCommon` inline.
-

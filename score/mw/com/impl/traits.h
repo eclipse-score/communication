@@ -38,8 +38,8 @@ namespace score::mw::com::impl
 ///   public:
 ///     using Trait::Base::Base;
 ///
-///     typename Trait::template Event<DataType1> struct_event_1_{*this, event_names[0]};
-///     typename Trait::template Event<DataType2> struct_event_2_{*this, event_names[1]};
+///     typename Trait::template Event<DataType1> struct_event_1_{*this, event_name_0};
+///     typename Trait::template Event<DataType2> struct_event_2_{*this, event_name_1};
 ///
 ///     typename Trait::template Field<DataType1> struct_field_1_{*this, field_name_0};
 ///     typename Trait::template Field<DataType2> struct_field_2_{*this, field_name_1};

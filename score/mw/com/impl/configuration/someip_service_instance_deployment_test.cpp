@@ -86,7 +86,7 @@ TEST_F(SomeIpServiceInstanceDeploymentFixture, CanCreateFromSerializedObjectWith
     ExpectSomeIpServiceInstanceDeploymentObjectsEqual(reconstructed_unit, unit);
 }
 
-TEST(SomeIpServiceInstanceDeploymentDeath, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
+TEST(SomeIpServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
 {
     const SomeIpServiceInstanceDeployment unit{42U};
 

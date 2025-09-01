@@ -256,8 +256,8 @@ TEST_F(ProxyCreationFixture, CreatingProxyWithoutLolaServiceInstanceIdReturnsNul
     EXPECT_EQ(proxy_result, nullptr);
 }
 
-using ProxyCreationDeathFixture = ProxyCreationFixture;
-TEST_F(ProxyCreationDeathFixture, GettingEventDataControlWithoutInitialisedEventDataControlTerminates)
+using ProxyCreationDeathTest = ProxyCreationFixture;
+TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDataControlTerminates)
 {
     // Given a fake Skeleton which creates an empty ServiceDataControl
 
@@ -271,7 +271,7 @@ TEST_F(ProxyCreationDeathFixture, GettingEventDataControlWithoutInitialisedEvent
     EXPECT_DEATH(proxy_->GetEventControl(uninitialised_element_fq_id), ".*");
 }
 
-TEST_F(ProxyCreationDeathFixture, GettingRawDataStorageWithoutInitialisedEventDataStorageTerminates)
+TEST_F(ProxyCreationDeathTest, GettingRawDataStorageWithoutInitialisedEventDataStorageTerminates)
 {
     // Given a fake Skeleton which creates an empty ServiceDataStorage
 
@@ -454,8 +454,8 @@ TEST_F(ProxyAutoReconnectFixture, RegisterEventBindingCallsNotifyOnEventWithLate
     saved_find_service_handler(filled_service_handle_container, valid_find_service_handle);
 }
 
-using ProxyAutoReconnectDeathFixture = ProxyAutoReconnectFixture;
-TEST_F(ProxyAutoReconnectDeathFixture, ProxyCreateWillTerminateIfStartFindServiceReturnsError)
+using ProxyAutoReconnectDeathTest = ProxyAutoReconnectFixture;
+TEST_F(ProxyAutoReconnectDeathTest, ProxyCreateWillTerminateIfStartFindServiceReturnsError)
 {
     auto start_find_service_fails = [this] {
         // Expecting that StartFindService is called and returns an error

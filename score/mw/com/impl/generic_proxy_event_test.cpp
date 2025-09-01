@@ -110,7 +110,7 @@ TEST(GenericProxyEventTest, SamplePtrsToSlotDataAreConst)
     EXPECT_EQ(get_result.value(), 1U);
 }
 
-TEST(GenericProxyEventTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
+TEST(GenericProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
 {
     using SampleType = void;
     const std::size_t max_num_samples{1};

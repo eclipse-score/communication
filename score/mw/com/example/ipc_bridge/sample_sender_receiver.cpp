@@ -43,7 +43,7 @@ constexpr std::size_t START_HASH = 64738U;
 
 std::ostream& operator<<(std::ostream& stream, const InstanceSpecifier& instance_specifier)
 {
-    stream << instance_specifier.ToString().data();
+    stream << instance_specifier.ToString();
     return stream;
 }
 

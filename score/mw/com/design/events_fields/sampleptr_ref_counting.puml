@@ -1,0 +1,43 @@
+@startuml sampleptr_ref_counting
+title "Sequence during sample reception on proxy side"
+hide footbox
+
+participant "<u>App</u>" as App
+participant "<u>ProxyEvent</u>" as ProxyEvent
+participant "<u>tracker:SampleReferenceTracker</u>" as Tracker
+participant "<u>ProxyEventBinding</u>" as Binding
+participant "<u>guard_factory:TrackerGuardFactory</u>" as GuardFactory
+participant "<u>sample_ptr:SamplePtr</u>" as SamplePtr
+participant "<u>SampleReferenceGuard</u>" as Guard
+
+activate App
+activate ProxyEvent
+activate Tracker
+activate Binding
+App -> ProxyEvent: GetNewSamples(callback, num_samples)
+ProxyEvent -> Tracker: Allocate(num_samples)
+Tracker --> ProxyEvent: guard_factory
+activate GuardFactory
+ProxyEvent -> Binding: GetNewSamples(callback, guard_factory)
+
+loop num_samples
+    Binding -> GuardFactory: TakeGuard
+    GuardFactory --> Binding: SampleReferenceGuard
+    Binding --> App: callback(sample_ptr)
+end
+
+GuardFactory -> Tracker: Deallocate(unused_samples)
+GuardFactory -[#white]> GuardFactory
+deactivate GuardFactory
+
+activate SamplePtr
+App -> SamplePtr: (sample_ptr destruction)
+activate Guard
+SamplePtr -> Guard: (SampleReferenceGuard destruction)
+Guard -> Tracker: Deallocate(1)
+SamplePtr -[#white]> SamplePtr
+Guard -[#white]> Guard
+deactivate Guard
+deactivate SamplePtr
+
+@enduml

@@ -52,10 +52,9 @@ will be represented by a flag file, and the path towards these files represent a
 
 ## Implementation
 
-The following section gives a written explanation for the structural view that is illustrated in
-[Structural View](structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+The following section gives a written explanation for the structural view that is illustrated in the following diagram.
 
-![Structural View](broken_link_k/swh/ddad_score/mw/com/design/service_discovery/structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/service_discovery/structural_view.puml">
 
 All possible user interactions with service discovery related functionalities are service specific. Since an API user
 should not bother about implementation specific representations of services (e.g. the service identifier),
@@ -117,7 +116,7 @@ As shown in [Sequential View](./sequence_view.uxf?ref=18c835c8d7b01056dd48f257c1
 `ServiceDiscovery` which directly dispatches the requests - based on the `InstanceIdentifier` - to either one or both
 bindings.
 
-![Sequence View](broken_link_k/swh/ddad_score/mw/com/design/service_discovery/sequence_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d)
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/service_discovery/sequence_view.puml">
 
 In the special case of starting an asynchronous search for service instances (aka `StartFindService()`) a unique handle
 (`FindServiceHandle`) needs to be returned, to enable the user to later stop this search. This identifier needs to be
@@ -135,7 +134,7 @@ The callback will then construct the necessary `HandleTypes`, find the right `Fi
 the `ServiceDiscovery`
 and invoke it. What should be especially noted is, that in case of `ANY` semantics, the `InstanceIdentifier` provided
 to the `HandleType` needs to be bound to a specific setting. For example an instance id `ANY` would need to be replaced
-with a found one - for example _42_. The same is true for the binding type. Otherwise, a later construction of the Proxy 
+with a found one - for example _42_. The same is true for the binding type. Otherwise, a later construction of the Proxy
 will fail.
 
 ### `LoLa` Service Discovery

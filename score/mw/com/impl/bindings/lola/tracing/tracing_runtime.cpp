@@ -289,14 +289,12 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
         service_element_instance_identifier_view.service_element_identifier_view.service_element_name;
     if (service_element_type == impl::ServiceElementType::EVENT)
     {
-        const auto lola_event_id = lola_service_type_deployment->events_.at(
-            std::string{service_element_name.data(), service_element_name.size()});
+        const auto lola_event_id = lola_service_type_deployment->events_.at(std::string{service_element_name});
         output_service_instance_element.element_id_ = static_cast<ServiceInstanceElement::EventIdType>(lola_event_id);
     }
     else if (service_element_type == impl::ServiceElementType::FIELD)
     {
-        const auto lola_field_id = lola_service_type_deployment->fields_.at(
-            std::string{service_element_name.data(), service_element_name.size()});
+        const auto lola_field_id = lola_service_type_deployment->fields_.at(std::string{service_element_name});
         output_service_instance_element.element_id_ = static_cast<ServiceInstanceElement::FieldIdType>(lola_field_id);
     }
     else

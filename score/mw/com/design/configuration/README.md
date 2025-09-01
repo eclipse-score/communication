@@ -1,6 +1,6 @@
 # Configuration
 
-The main configuration items we have to deal with in `mw::com` are mappings from "logical" service instances to real 
+The main configuration items we have to deal with in `mw::com` are mappings from "logical" service instances to real
 existing service instances with their concrete used technical binding.
 Currently, we prepare our configuration to support the following technical bindings:
 - SOME/IP
@@ -22,7 +22,7 @@ So our implementation of `score::mw::com::ServiceIdentifierType` contains the fu
 of its short-name-path as its identifying name member.
 
 _Important_: `score::mw::com::ServiceIdentifierType` is a fully binding independent identification of a service type.
-The technical bindings might use complete different data types for identification of a specific service type. 
+The technical bindings might use complete different data types for identification of a specific service type.
 Service versioning is still a very immature topic in AUTOSAR and especially in the SWS Communication Management. So
 right now our implementation of `score::mw::com::ServiceVersionType` fulfills the minimal requirements by providing a major
 and minor part each typed as `std::uint32_t` to fulfill minimal model compatibility.
@@ -34,7 +34,7 @@ We have to clearly separate those two notions within our configuration.
 The `ServiceTypeDeployment` aka `Service Interface Deployment` in AUTOSAR speech, maps a binding independent
 `ServiceType` to a concrete technical implementation.
 The binding independent `ServiceType` is defined within AUTOSAR metamodel by its Service Interface and its
-corresponding [service type identification](#service-type-identification).  
+corresponding [service type identification](#service-type-identification).
 So within the configuration we might need to express, how a certain abstract `ServiceType` shall be represented in a
 `SOME/IP` or a `LoLa` binding. For instance, both bindings might use their own, distinct service ID
 for identification and also the embedded service parts (events, fields, methods) might have different identification and
@@ -54,7 +54,7 @@ specific properties are:
 
 ### Deployment time decisions
 While AUTOSAR generally foresees, that `ServiceTypeDeployment` aka `Service Interface Deployment` is a
-generation, i.e. pre-compile step, this is **not** true for our implementation! The amount of code, which is affected at 
+generation, i.e. pre-compile step, this is **not** true for our implementation! The amount of code, which is affected at
 generation time is kept minimal and only applies to binding independent parts of `mw::com`. As this is required by the
 `ara::com` specification.
 
@@ -63,20 +63,20 @@ Our technical binding implementation is configured during runtime, when both art
 
 ### Responsibility for `ServiceTypeDeployment` and `ServiceInstanceDeployment`
 
-The responsibility for `ServiceInstanceDeployment` is clearly assigned to the integrator of the ECU. The knowledge 
+The responsibility for `ServiceInstanceDeployment` is clearly assigned to the integrator of the ECU. The knowledge
 about processes and applications is needed, in addition to the knowledge on how to package the `ServiceInstanceDeployment`
 config artifacts with the applications.
 
-For `ServiceTypeDeployment` this is not so clear. In case of `ServiceTypeDeployments` for local only communication, 
-which is the case of our `LoLa` binding, it is also the job of the ECU integrator, as it is only a local ECU 
-optimization. Without any effect to the boardnet. In case of `SOME/IP` `ServiceTypeDeployments`, it might be expected 
+For `ServiceTypeDeployment` this is not so clear. In case of `ServiceTypeDeployments` for local only communication,
+which is the case of our `LoLa` binding, it is also the job of the ECU integrator, as it is only a local ECU
+optimization. Without any effect to the boardnet. In case of `SOME/IP` `ServiceTypeDeployments`, it might be expected
 for the future, that parts of `ServiceTypeDeployment` come from central toolchains (Symphony).
 
 ## Instance Specifiers
 
 `InstanceSpecifier` is an AUTOSAR AP mechanism to specify some instance of a service type in a binding or deployment
 independent way **within the source code**!
-If you look at the underlying (`ARXML`) model of your software component, you express the provision of a specific 
+If you look at the underlying (`ARXML`) model of your software component, you express the provision of a specific
 service instance or the requirement of a specific service instance with a P-port or R-port respectively, which is typed
 by the service interface, from which the [service type identification](#service-type-identification) is deduced.
 Such a port instance also has (like a service interface) a fully qualified name (expressed via a short-name-path),
@@ -160,7 +160,7 @@ part and a `ServiceInstanceDeployment` (`service_instances`) in the lower part.
 
 As you see in this example, we map the `InstanceSpecifier` (i.e. port) `"abc/abc/TirePressurePort"` to concrete service
 instances.
-What is **not** visible here: Whether `"abc/abc/TirePressurePort"` is a provided or required service instance. Both 
+What is **not** visible here: Whether `"abc/abc/TirePressurePort"` is a provided or required service instance. Both
 could be possible, since we do support 1 to n mappings in both cases.
 Here we have a mapping of `"abc/abc/TirePressurePort"` to two different concrete technical instances: The first one is a
 SOME/IP based instance (so it is most likely used for inter ECU, network communication) and the second is a concrete
@@ -173,7 +173,7 @@ initialization from a default manifest or configuration path, an explicit user p
 a directly handed over JSON.
 The sequence during startup would look like this:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/configuration/sequence_startup_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/configuration/sequence_startup_view.puml">
 
 During this call a singleton instance of `score::mw::com::impl::Runtime` gets created, which gets the parsed/validated
 configuration in the form of `score::mw::com::detail::Configuration`.
@@ -182,7 +182,6 @@ configuration in the form of `score::mw::com::detail::Configuration`.
 * one (`instanceInstances`), which holds the `ServiceInstanceDeployment`s, where the key is the `InstanceSpecifier`. The
   `ServiceInstanceDeployment`s refer to/depend on the `ServiceTypeDeployment`s.
 
-Details can
-be seen in the following class diagram:
+Details can be seen in the following class diagram:
 
-<img src="broken_link_k/swh/ddad_score/mw/com/design/configuration/structural_view.uxf?ref=18c835c8d7b01056dd48f257c14f435795a48b7d" />
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/configuration/structural_view.puml">

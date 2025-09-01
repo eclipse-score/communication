@@ -32,7 +32,7 @@ namespace
 {
 
 constexpr auto kDefaultConfigurationPath = "./etc/mw_com_config.json";
-constexpr auto kConfigurationPathCommandLineKey = "-service_instance_manifest";
+constexpr auto kConfigurationPathCommandLineKey = std::string_view{"-service_instance_manifest"};
 
 }  // namespace
 

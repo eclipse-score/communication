@@ -60,11 +60,6 @@ score::Result<InstanceSpecifier> InstanceSpecifier::Create(const std::string_vie
     return instance_specifier;
 }
 
-score::Result<InstanceSpecifier> InstanceSpecifier::Create(const score::cpp::string_view shortname_path) noexcept
-{
-    return InstanceSpecifier::Create(std::string_view{shortname_path.data(), shortname_path.size()});
-}
-
 std::string_view InstanceSpecifier::ToString() const noexcept
 {
     return instance_specifier_string_;

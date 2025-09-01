@@ -1,0 +1,93 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package AssumedSystemRequirements
+
+import ScoreReq
+
+ScoreReq.AssumedSystemReq InterProcessCommunication {
+    description = "The platform shall support inter-process communication."
+    safety = ScoreReq.Asil.B
+    rationale = "Application software typically consists of multiple processes which need to interact."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq IntraProcessCommunication {
+    description = "The platform shall support intra-process communication."
+    safety = ScoreReq.Asil.B
+    rationale = "Application software typically maps software building blocks into the same process."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq StableApplicationInterfaces {
+    description = "The platform shall provide a framework to mitigate incompatible changes on external interfaces to keep application interfaces stable."
+    safety = ScoreReq.Asil.B
+    rationale = "In case of incompatible changes on external interface the portability effort shall be reduced."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ExtensibleExternalCommunication {
+    description = "The platform shall support external communication via well established protocols e.g. Zenoh, DDS."
+    safety = ScoreReq.Asil.B
+    rationale = "ECUs need to interact with each other. There are multiple protocols today and more to come in the future."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq SafeCommunication {
+    description = "The platform shall support safe communication."
+    safety = ScoreReq.Asil.B
+    rationale = "Distributed safe systems often require communication to be safe."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq SecureCommunication{
+    description = "The following security features shall be supported by the platform: Mandatory access control, Secure boot, Secure onboard communication, IPSec and MACSec, Firewall, Certificate installation and storage in HSM or ARM trustzone, Kernel hardening (ASLR, Pointer obfuscation …) in libc and compiler, Identity and Access Management, Secure Feature Activation, Secure software update."
+    safety = ScoreReq.Asil.QM
+    rationale = "tbd tbd tbd"
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq SupportForTimeBasedArchitectures {
+    description = "The platform shall support a deterministic, time-based application execution model that triggers logic based on predefined schedules or polling intervals."
+    safety = ScoreReq.Asil.B
+    rationale = "tbd - potentially above explanation"
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq SupportForDataDrivenArchitecture {
+    description = "The platform shall support an event-driven, high-throughput application architecture where execution is triggered by data changes."
+    safety = ScoreReq.Asil.QM
+    rationale = "tbd - potentially above explanation"
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq SupportForRequestDrivenArchitecture {
+    description = "The platform shall support a request-driven, asynchronous application architecture that processes requests on-demand."
+    safety = ScoreReq.Asil.QM
+    rationale = "tbd - potentially above explanation"
+    version = 1
+}
+
+
+ScoreReq.AssumedSystemReq ProgrammingLanguagesForApplicationDevelopment {
+    description = "The platform shall support implementation of applications in the following programming languages up to the highest ASIL level as defined in automotive_safety: C, C++, Rust."
+    safety = ScoreReq.Asil.QM
+    rationale = "tbd tbd tbd"
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq TracingOfCommunication {
+    description = "The platform shall support the tracing of communication events for internal and external communication systems."
+    safety = ScoreReq.Asil.B
+    rationale = "tbd tbd tbd"
+    version = 1
+}

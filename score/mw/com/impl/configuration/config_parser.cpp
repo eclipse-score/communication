@@ -23,6 +23,8 @@
 #include "score/json/json_parser.h"
 #include "score/mw/log/logging.h"
 
+#include <score/string_view.hpp>
+
 #include <cstdlib>
 #include <exception>
 #include <set>
@@ -272,12 +274,12 @@ auto ParseAllowedUser(const score::json::Any& json, std::string_view key) noexce
 
 auto ParseAllowedConsumer(const score::json::Any& json) noexcept -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
-    return ParseAllowedUser(json, kAllowedConsumerKey.data());
+    return ParseAllowedUser(json, kAllowedConsumerKey);
 }
 
 auto ParseAllowedProvider(const score::json::Any& json) noexcept -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
-    return ParseAllowedUser(json, kAllowedProviderKey.data());
+    return ParseAllowedUser(json, kAllowedProviderKey);
 }
 
 class ServiceElementInstanceDeploymentParser
@@ -1181,7 +1183,7 @@ auto score::mw::com::impl::configuration::Parse(const std::string_view path) noe
     // Reason for banning is AoU of vaJson library about integrity of provided path.
     // This AoU is forwarded as AoU of Lola. See broken_link_c/issue/5835192
     // NOLINTNEXTLINE(score-banned-function): The user has to guarantee the integrity of the path
-    auto json_result = json_parser_obj.FromFile(score::cpp::string_view{path.data(), path.size()});
+    auto json_result = json_parser_obj.FromFile(path);
     if (!json_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << "Parsing config file" << path

@@ -143,7 +143,7 @@ void Sender<ChannelTraits>::OpenOrWaitForChannel(const std::string_view identifi
                 // Using std::endl to std::ostream object with the stream operator follows the idiomatic way that both
                 // features in conjunction were designed in the C++ standard.
                 // coverity[autosar_cpp14_m8_4_4_violation] See above
-                out << "channel finally opened " << identifier.data() << std::endl;
+                out << "channel finally opened " << identifier << std::endl;
             });
         }
     }
@@ -155,7 +155,7 @@ void Sender<ChannelTraits>::OpenOrWaitForChannel(const std::string_view identifi
                 // Using std::endl to std::ostream object with the stream operator follows the idiomatic way that both
                 // features in conjunction were designed in the C++ standard.
                 // coverity[autosar_cpp14_m8_4_4_violation] See above
-                out << "Could not open channel " << identifier.data() << " with error: " << ret.error() << std::endl;
+                out << "Could not open channel " << identifier << " with error: " << ret.error() << std::endl;
             });
             is_connect_failed_msg_printed_ = true;
         }

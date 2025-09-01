@@ -26,6 +26,8 @@ namespace score::mw::com::impl
 namespace
 {
 
+using std::string_view_literals::operator""sv;
+
 TEST(InstanceSpecifierTest, Copyable)
 {
     RecordProperty("Verifies", "SCR-18442922");
@@ -59,8 +61,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, EqualityOperatorForTwoInstanceSpec
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given 2 valid instance specifier strings with the same value
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
-    const auto valid_instance_specifier_string_2 = "/good/instance/specifier";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
+    constexpr auto valid_instance_specifier_string_2 = "/good/instance/specifier"sv;
 
     // When creating 2 instance specifiers from each string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -84,8 +86,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, EqualityOperatorForInstanceSpecifi
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given 2 valid instance specifier string views with the same value
-    const std::string_view valid_instance_specifier_string = "/good/instance/specifier";
-    const std::string_view valid_instance_specifier_string_2 = "/good/instance/specifier";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
+    constexpr auto valid_instance_specifier_string_2 = "/good/instance/specifier"sv;
 
     // When creating an instance specifier from one string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -106,8 +108,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, InequalityOperatorForTwoInstanceSp
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given 2 a valid instance specifier strings
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
-    const auto valid_instance_specifier_string_2 = "/good/instance/specifier2";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
+    constexpr auto valid_instance_specifier_string_2 = "/good/instance/specifier2"sv;
 
     // When creating an instance specifier from each string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -131,8 +133,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, InequalityOperatorForInstanceSpeci
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given 2 a valid instance specifier string views
-    const std::string_view valid_instance_specifier_string = "/good/instance/specifier";
-    const std::string_view valid_instance_specifier_string_2 = "/good/instance/specifier2";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
+    constexpr auto valid_instance_specifier_string_2 = "/good/instance/specifier2"sv;
 
     // When creating an instance specifier from the first string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -153,8 +155,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, LessThanOperatorForTwoInstanceSpec
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given 2 a valid instance specifier string views
-    const std::string_view valid_instance_specifier_string = "/good/instance/specifier";
-    const std::string_view valid_instance_specifier_string_2 = "/good/instance/specifier2";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
+    constexpr auto valid_instance_specifier_string_2 = "/good/instance/specifier2"sv;
 
     // When creating an instance specifier from each string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -181,8 +183,8 @@ TEST(InstanceSpecifierComparisonOperatorTest, HashOperatorForDifferentUnderlying
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given 2 a valid instance specifier strings
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
-    const auto valid_instance_specifier_string_2 = "/good/instance/specifier2";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
+    constexpr auto valid_instance_specifier_string_2 = "/good/instance/specifier2"sv;
 
     // When creating an instance specifier from each string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -209,8 +211,8 @@ TEST(InstanceSpecifierHashTest, HashOperatorForTheSameUnderlyingStringIsTheSame)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given 2 valid instance specifier strings with the same value
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
-    const auto valid_instance_specifier_string_2 = "/good/instance/specifier";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
+    constexpr auto valid_instance_specifier_string_2 = "/good/instance/specifier"sv;
 
     // When creating 2 instance specifiers from each string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -236,7 +238,7 @@ TEST(InstanceSpecifierHashTest, InstanceSpecifierCanBeKeyForStlContainer)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a valid instance specifier string
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
 
     // When creating an instance specifier from the string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);
@@ -258,7 +260,7 @@ TEST(InstanceSpecifierToStringTest, ToStringWillReturnTheUnderlyingString)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a valid instance specifier string
-    const auto valid_instance_specifier_string = "/good/instance/specifier";
+    constexpr auto valid_instance_specifier_string = "/good/instance/specifier"sv;
 
     // When creating an instance specifier from the string
     const auto instance_specifier_result = InstanceSpecifier::Create(valid_instance_specifier_string);

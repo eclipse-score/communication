@@ -273,7 +273,7 @@ TEST_F(InstanceIdentifierFixture, CanCreateFromSerializedObject)
 
     const auto identifier = make_InstanceIdentifier(service_instance_deployment, service_type_deployment);
 
-    const auto serialized_identifier = std::string_view{identifier.ToString().data(), identifier.ToString().size()};
+    const auto serialized_identifier = identifier.ToString();
 
     const auto reconstructed_identifier_result = InstanceIdentifier::Create(serialized_identifier);
     ASSERT_TRUE(reconstructed_identifier_result.has_value());

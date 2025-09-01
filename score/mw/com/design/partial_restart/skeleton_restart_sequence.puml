@@ -1,0 +1,92 @@
+@startuml skeleton_restart_sequence
+title "Skeleton Restart Sequence"
+hide footbox
+
+actor Caller
+
+participant "<u>lola::Skeleton:class</u>" as Skeleton
+participant "lola::PartialRestartPathBuilder:Instance" as PathBuilder
+participant "<u>shared::LockFile:class</u>" as LockFile
+participant "shared::LockFile:instance_existance" as LockFileInstance
+participant "_FlockMutexAndLock<memory::shared::ExclusiveFlockMutex>:Instance_" as FlockMutex
+participant "lola::Skeleton:instance" as SkeletonInstance
+participant "ExclusiveFlockMutex:usage_marker_file_flock" as ExclusiveFlockMutex
+
+Caller -> Skeleton: Create(InstanceIdentifier,\npartial_restart_path_builder)
+activate Skeleton
+
+Skeleton -> PathBuilder: GetServiceInstanceExistenceMarkerFilePath(InstanceIdentifier)
+activate PathBuilder
+PathBuilder --> Skeleton: retun path
+
+Skeleton -> LockFile: CreateOrOpen(path, false)
+activate LockFile
+
+alt CreateOrOpenSuccess = True
+    LockFile -> LockFileInstance: create
+    LockFile --> Skeleton: return optional LockFile
+else CreateOrOpenSuccess = False
+    LockFile --> Skeleton: return empty optional
+end
+
+alt !result.has_value()
+    Skeleton --> Caller: return nullptr
+end
+
+Skeleton -> FlockMutex: create(lockfile)
+Skeleton -> FlockMutex: TryLock()
+activate FlockMutex
+FlockMutex --> Skeleton: return true or fals
+deactivate FlockMutex
+
+alt TryLock == False
+    Skeleton --> Caller: return nullptr
+end
+
+Skeleton -> LockFileInstance: TakeOwnership()
+activate LockFileInstance
+LockFileInstance --> Skeleton: return
+deactivate LockFileInstance
+
+Skeleton -> SkeletonInstance: Create(identifier,filesystem,shm_path_builder,partial_restart_path_builder,service_instance_existence_marker_file,service_instance_existence_flock_mutex_and_lock)
+Skeleton --> Caller: returm skeleton instance
+deactivate Skeleton
+
+Caller -> SkeletonInstance: PrepareOffer()
+activate SkeletonInstance
+
+SkeletonInstance -> PathBuilder: GetServiceInstanceUsageMarkerFilePath()
+activate PathBuilder
+PathBuilder --> SkeletonInstance: retun path
+deactivate PathBuilder
+
+SkeletonInstance -> LockFile: CreateOrOpen(path, false)
+activate LockFile
+
+alt CreateOrOpenSuccess = True
+    LockFile -> LockFileInstance: create
+    LockFile --> SkeletonInstance: return optional LockFile
+else CreateOrOpenSuccess = False
+    LockFile --> SkeletonInstance: return empty optional
+    SkeletonInstance --> Caller: return unexpected(ComErrc::kBindingFailure)
+end
+deactivate LockFile
+
+SkeletonInstance -> ExclusiveFlockMutex: create
+SkeletonInstance -> ExclusiveFlockMutex: TryLock()
+activate ExclusiveFlockMutex
+ExclusiveFlockMutex --> SkeletonInstance: return true or false
+deactivate ExclusiveFlockMutex
+
+alt TryLock Result = True
+    SkeletonInstance -> SkeletonInstance: RemoveStaleSharedMemoryArtefacts
+    SkeletonInstance -> SkeletonInstance: CreateSharedMemory
+else TryLock Result = False
+    SkeletonInstance -> SkeletonInstance: OpenExistingSharedMemory
+    SkeletonInstance -> SkeletonInstance: CleanupSharedMemoryAfterCrash
+end
+
+SkeletonInstance --> Caller: return expected
+deactivate SkeletonInstance
+
+@enduml

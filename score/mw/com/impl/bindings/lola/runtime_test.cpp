@@ -345,7 +345,8 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgOneEmptyQMConsumer)
     }
 }
 
-TEST_F(RuntimeFixture, GettingAsilBConfigInQmProcessTerminates)
+using RuntimeDeathTest = RuntimeFixture;
+TEST_F(RuntimeDeathTest, GettingAsilBConfigInQmProcessTerminates)
 {
     // Given a configuration with a LoLa service instance deployment
     LolaServiceInstanceDeployment lolaServiceInstanceDeployment1;

@@ -271,7 +271,8 @@ TEST_F(StateMachineSubscriptionPendingStateFixture, CallingUnsubscribeTransition
     EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE);
 }
 
-TEST_F(StateMachineSubscriptionPendingStateFixture, CallingStopOfferEventTerminates)
+using StateMachineSubscriptionPendingStateDeathTest = StateMachineSubscriptionPendingStateFixture;
+TEST_F(StateMachineSubscriptionPendingStateDeathTest, CallingStopOfferEventTerminates)
 {
     const auto test_function = [this] {
         EnterSubscriptionPending(max_num_slots_);

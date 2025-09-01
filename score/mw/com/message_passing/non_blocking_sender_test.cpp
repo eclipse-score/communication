@@ -125,7 +125,8 @@ TEST_F(NonBlockingSenderFixture, Creation)
     PrepareNonBlockingSender();
 }
 
-TEST_F(NonBlockingSenderFixture, CreationDeath)
+using NonBlockingSenderDeathTest = NonBlockingSenderFixture;
+TEST_F(NonBlockingSenderDeathTest, CreationDeath)
 {
     // we try to create a NonBlockingSender instance with too large queue and expect termination.
     EXPECT_DEATH(TryPrepareNonBlockingSenderQueueTooLarge(), "max_queue_size");

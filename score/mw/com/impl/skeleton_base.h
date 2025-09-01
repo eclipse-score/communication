@@ -19,7 +19,6 @@
 #include "score/mw/com/impl/skeleton_binding.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
-#include "score/memory/string_literal.h"
 #include "score/result/result.h"
 
 #include "score/mw/log/logging.h"
@@ -56,7 +55,6 @@ enum class MethodCallProcessingMode : std::uint8_t
 class SkeletonBase
 {
   public:
-    using EventNameList = score::cpp::span<const score::StringLiteral>;
     // An std::map/ordered map is NEEDED here as we require deterministic order of elements in the map, when iterating
     // over it repeatedly! A hint, that our shared-memory-size-calculation relies on it!
     using SkeletonEvents = std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>;

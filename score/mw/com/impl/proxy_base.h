@@ -21,7 +21,6 @@
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
-#include "score/memory/string_literal.h"
 #include "score/result/result.h"
 
 #include <score/span.hpp>
@@ -43,7 +42,6 @@ class ProxyBase
   public:
     /// \brief Identifier for a specific instance of a specific service
     using HandleType = ::score::mw::com::impl::HandleType;
-    using EventNameList = score::cpp::span<const score::StringLiteral>;
 
     /// \brief Creation of ProxyBase which should be called by parent class (generated Proxy or GenericProxy)
     ProxyBase(std::unique_ptr<ProxyBinding> proxy_binding, HandleType handle);

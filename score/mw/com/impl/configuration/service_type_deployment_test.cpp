@@ -90,7 +90,8 @@ TEST(ServiceTypeDeploymentTest, CanCreateFromSerializedBlankObject)
     ServiceTypeDeployment reconstructed_unit{serialized_unit};
 }
 
-TEST(ServiceTypeDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
+using ServiceTypeDeploymentDeathTest = ServiceTypeDeploymentFixture;
+TEST_F(ServiceTypeDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
 {
     const ServiceTypeDeployment unit{MakeLolaServiceTypeDeployment()};
 
@@ -132,7 +133,7 @@ TEST_F(ServiceTypeDeploymentFixture, CanGetBlankBindingFromServiceTypeDeployment
     EXPECT_EQ(score::cpp::blank{}, returned_service_type_deployment_binding);
 }
 
-TEST_F(ServiceTypeDeploymentFixture, GettingLolaBindingFromServiceTypeDeploymentNotContainingLolaBindingTerminates)
+TEST_F(ServiceTypeDeploymentDeathTest, GettingLolaBindingFromServiceTypeDeploymentNotContainingLolaBindingTerminates)
 {
     // Given a ServiceTypeDeployment containing a blank binding
     ServiceTypeDeployment service_type_deployment{score::cpp::blank{}};
@@ -143,7 +144,7 @@ TEST_F(ServiceTypeDeploymentFixture, GettingLolaBindingFromServiceTypeDeployment
                  ".*");
 }
 
-TEST_F(ServiceTypeDeploymentFixture, GettingBlankBindingFromServiceTypeDeploymentNotContainingBlankBindingTerminates)
+TEST_F(ServiceTypeDeploymentDeathTest, GettingBlankBindingFromServiceTypeDeploymentNotContainingBlankBindingTerminates)
 {
     // Given a ServiceTypeDeployment containing a Lola binding
     const auto& lola_service_type_deployment = MakeLolaServiceTypeDeployment();

@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
-load("@score-baselibs//bazel:unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
@@ -49,7 +49,6 @@ cc_library(
         ":quality_type",
         ":service_type_deployment",
         ":someip_service_instance_deployment",
-        "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/mw/log",
     ],
     tags = ["FFI"],
@@ -268,7 +267,6 @@ cc_library(
         ":configuration_common_resources",
         ":service_version_type",
         "@score-baselibs//score/json",
-        "@score-baselibs//score/memory:string_literal",
         "@score-baselibs//score/language/futurecpp",
     ],
 )

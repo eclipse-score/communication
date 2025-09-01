@@ -333,8 +333,8 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillReturnErrorIfAnyLo
     EXPECT_TRUE(transaction_log_node_1.NeedsRollback());
 }
 
-using TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture = TransactionLogRollbackExecutorFixture;
-TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToGetLolaRuntimeTerminates)
+using TransactionLogRollbackExecutorMarkNeedRollbackDeathTest = TransactionLogRollbackExecutorFixture;
+TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToGetLolaRuntimeTerminates)
 {
     WithTransactionLogRollbackExecutor();
 
@@ -342,7 +342,7 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToGetL
     EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
 }
 
-TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToRegisterPidTerminates)
+TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegisterPidTerminates)
 {
     WithTransactionLogRollbackExecutor();
 
@@ -356,6 +356,8 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathFixture, FailingToRegi
     // When calling RollbackTransactionLogs
     // Then the program terminates
     EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
+
+    UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>::ClearRegisterPidFake();
 }
 
 }  // namespace
