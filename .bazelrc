@@ -16,9 +16,11 @@ common --@score-baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Onl
 common --@score-baselibs//score/mw/log/flags:KRemote_Logging=False
 common --@score-baselibs//score/json:base_library=nlohmann
 common --//score/mw/com/flags:tracing_library=stub
-common --extra_toolchains=@gcc_toolchain//:host_gcc_12
+common --extra_toolchains=@gcc_toolchain//:aarch64_gcc_13
 build --incompatible_strict_action_env
 test --test_tag_filters=-manual
+
+build:aarch64 --platforms=@score_toolchains_gcc//platforms:aarch64-linux
 
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
 common --registry=https://bcr.bazel.build

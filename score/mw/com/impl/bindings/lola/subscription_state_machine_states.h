@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_STATES_H
 
 #include <string>
+#include <cstdint>
 
 namespace score::mw::com::impl::lola
 {

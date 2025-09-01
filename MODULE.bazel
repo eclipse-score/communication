@@ -15,12 +15,17 @@ module(name = "communication")
 
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency=True)
+git_override(
+   module_name = "score_toolchains_gcc",
+   remote = "https://github.com/Elektrobit/eclipse-score_toolchains_gcc.git",
+   commit = "fb009e490b9b8f28805d587f50d0bf6d885f3414",
+)
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency=True)
 gcc.toolchain(
-    url = "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/0.0.1/x86_64-unknown-linux-gnu_gcc12.tar.gz",
-    sha256 = "457f5f20f57528033cb840d708b507050d711ae93e009388847e113b11bf3600",
-    strip_prefix = "x86_64-unknown-linux-gnu",
+    url = "https://linux.elektrobit.com/tmp/score/fastdev-sdk-ubuntu-ebcl-deb-qemu-arm64.tar.xz",
+    sha256 = "cf8d277a2b95bbdad3e177c488fa77d01723510690a911218ef33747574d78fe",
+    strip_prefix = "fastdev-sdk-ubuntu-ebcl-deb-qemuarm64",
 )
 
 # TODO to be moved to toolchain. https://github.com/eclipse-score/toolchains_gcc/issues/11
@@ -76,8 +81,8 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "score-baselibs", version = "0.0.0")
 git_override(
     module_name = "score-baselibs",
-    remote = "https://github.com/eclipse-score/baselibs.git",
-    commit = "abc2b675ed0d5ac6d23981af6543d4a7ae662782",
+    remote = "https://github.com/Elektrobit/eclipse-score_baselibs.git",
+    commit = "8fad3bceb53dc5d6120cc190b51b8b04a3f8d31f",
 )
 
 # Python 3.12 toolchain for Bazel
