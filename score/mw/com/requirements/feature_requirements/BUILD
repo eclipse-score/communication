@@ -35,7 +35,7 @@ trlc_requirements_test(
 
 # lobster_trlc(
 #     name = "feature_requirements_lobster",
-#     config = "@//platform/aas/tools/traceability/config/lobster:feature_reqs_conf",
+#     config = "@//third_party/lobster:feature_reqs_conf",
 #     requirements = [
 #         ":assumed_feature_requirements_ipc",
 #     ],
@@ -44,7 +44,7 @@ trlc_requirements_test(
 
 # lobster_test(
 #     name = "traceability",
-#     config = "@//platform/aas/tools/traceability/config/lobster:traceability_feat_conf",
+#     config = "@//third_party/lobster:traceability_feat_conf",
 #     inputs = [
 #         "@//score/mw/com/requirements/assumed_system_requirements:assumed_system_requirements_lobster",
 #         ":feature_requirements_lobster",

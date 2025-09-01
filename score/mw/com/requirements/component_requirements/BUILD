@@ -21,7 +21,7 @@ trlc_requirements(
         "//score/mw/com/requirements/feature_requirements:feature_requirements_ipc",
     ],
     spec = [
-        "//platform/aas/tools/traceability/config/trlc/score_model:requirement_metamodel",
+        "//third_party/score_requirement_model:requirement_metamodel",
     ],
     visibility = ["//visibility:public"],
 )
