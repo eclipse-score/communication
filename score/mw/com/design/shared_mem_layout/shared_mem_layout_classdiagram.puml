@@ -34,7 +34,7 @@ class "lola::EventDataStorage<SampleType>" <<Shared Memory>> <<typedef>> {
 
 class "lola::ServiceDataControl" <<Shared Memory>> {
   +event_controls_ : score::memory::shared::Map<ElementFqId, EventControl>
-  +uid_pid_mapping_ : UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>
+  +application_id_pid_mapping_ : ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>
 }
 
 class "lola::EventDataControl" <<Shared Memory>> <<typedef>> {
@@ -89,13 +89,13 @@ class "lola::detail_event_subscription_control::EventSubscriptionControlImpl<>" 
   -enforce_max_samples_ : const bool
 }
 
-class "lola::UidPidMapping" <<Shared Memory>> {
-  +RegisterPid(const uid_t uid, const pid_t pid) : score::cpp::optional<pid_t>
-  -mapping_entries_ : score::containers::DynamicArray<UidPidMappingEntry, mapping_entry_alloc>
+class "lola::ApplicationIdPidMapping" <<Shared Memory>> {
+  +RegisterPid(const std::uint32_t application_id, const pid_t pid) : std::optional<pid_t>
+  -mapping_entries_ : score::containers::DynamicArray<ApplicationIdPidMappingEntry, mapping_entry_alloc>
 }
 
-class "lola::UidPidMappingEntry" <<Shared Memory>> {
-  +key_uid_status_ : std::atomic<key_type>
+class "lola::ApplicationIdPidMappingEntry" <<Shared Memory>> {
+  +key_application_id_status_ : std::atomic<key_type>
   +pid_ : pid_t
 }
 
@@ -149,12 +149,12 @@ lola::ServiceDataStorage *-- "1..n" lola::EventMetaInfo
 lola::EventMetaInfo *-- lola::DataTypeMetaInfo
 
 lola::ServiceDataControl *-- "1..n" lola::EventControl
-lola::ServiceDataControl *-- lola::UidPidMapping
+lola::ServiceDataControl *-- lola::ApplicationIdPidMapping
 
 lola::EventControl *-- lola::EventDataControl
 lola::EventControl *-- lola::EventSubscriptionControl
 
-lola::UidPidMapping *-- "0..n" lola::UidPidMappingEntry
+lola::ApplicationIdPidMapping *-- "0..n" lola::ApplicationIdPidMappingEntry
 
 lola::EventDataControl .> EventDataControlImpl : type
 lola::EventSubscriptionControl .> EventSubscriptionControlImpl : type

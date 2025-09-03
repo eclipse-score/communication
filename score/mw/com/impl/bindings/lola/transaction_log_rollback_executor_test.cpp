@@ -357,7 +357,7 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegiste
     // Then the program terminates
     EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
 
-    UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>::ClearRegisterPidFake();
+    ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>::ClearRegisterPidFake();
 }
 
 }  // namespace
