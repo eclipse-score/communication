@@ -889,6 +889,17 @@ cc_gtest_unit_test(
     ],
 )
 
+# Separate test suite for string test as it should not be executed on qnx
+test_suite(
+    name = "unit_tests",
+    tests = [
+        ":string_test",
+    ],
+    visibility = [
+        "@score-baselibs//score/memory:__pkg__",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -911,7 +922,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":shared_memory_resource_create_test",
         ":shared_memory_resource_misc_test",
         ":shared_memory_resource_open_test",
-        ":string_test",
         ":vector_test",
     ],
     test_suites_from_sub_packages = [
