@@ -31,9 +31,12 @@ jobs:
             repository-cache: true
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
+        - name: Install Bazel until we can use fixed container image with Bazel pre-installed
+          run: |
+            sudo apt-get update && sudo apt-get install -y --allow-downgrades bazel=$(cat .bazelversion)
         - name: Bazel build communication targets
           run: |
             bazel build //...
         - name: Bazel test communication targets
           run: |
-            bazel test //... --build_tests_only
+            bazel test //... --build_tests_only --test_output=errors
