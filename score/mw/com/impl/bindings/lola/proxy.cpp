@@ -178,7 +178,9 @@ score::ResultBlank ExecutePartialRestartLogic(QualityType quality_type,
         dynamic_cast<lola::IRuntime*>(mw::com::impl::Runtime::getInstance().GetBindingRuntime(BindingType::kLoLa));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_runtime != nullptr, "No LoLa Runtime available although we are creating a LoLa proxy!");
 
-    const TransactionLogId transaction_log_id{lola_runtime->GetUid()};
+    // The transaction log is identified by the application's unique identifier, which is either the configured
+    // 'applicationID' or the process UID as a fallback.
+    const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(lola_runtime->GetApplicationId())};
     auto& service_data_control = GetServiceDataControlProxySide(control);
     TransactionLogRollbackExecutor transaction_log_rollback_executor{
         service_data_control, quality_type, service_data_storage.skeleton_pid_, transaction_log_id};

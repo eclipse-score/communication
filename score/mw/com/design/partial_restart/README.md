@@ -35,18 +35,17 @@ Each `ProxyEvent` calls `lola::TransactionLogSet::RegisterProxyElement()` once d
 `SkeletonEvent`, thereby acquiring an index which uniquely identifies the `TransactionLog` in the
 `lola::TransactionLogSet`, allowing it to use the `TransactionLog` throughout its lifetime.
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/transaction_log_model.puml">
+<img alt="TRANSACTION_LOG_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/transaction_log_model.puml">
 
 ### Identification of transaction logs
 
 A transaction log is associated with a specific `ProxyEvent`. Since transaction logs of `ProxyEvent`s for the same
 `SkeletonEvent` are aggregated within one `TransactionLogSet` it needs still distinction to which specific
 `ProxyEvent` it corresponds to.
-Since transaction logs are stored within shared memory (in the control shm-object) the transaction logs of a
-`TransactionLogSet` can come from `ProxyEvent`s from different processes. To identify them, we use a so called
-`lola::TransactionLogId`, which currently solely consists of:
-
-- `uid`: UID of the proxy application
+Since transaction logs are stored within shared memory (in the control shm-object), the transaction logs of a
+`TransactionLogSet` can come from `ProxyEvent`s from different processes. To identify them, we use a
+`lola::TransactionLogId`. This ID is initialized with the application's unique identifier, which is either the
+explicitly configured `applicationID` or, as a fallback, the process's user ID (`uid`).
 
 Unambiguous assignment from `ProxyEvent`s (contained in proxy instances created within user code) to their corresponding
 transaction logs stored in shared memory (`lola::EventDataControlImpl`) is **not** possible, because an application can
@@ -112,7 +111,7 @@ proxy instance **even** gets created, checks are done to discover, whether there
 with the same proxy instance, which has crashed and left a `lola::TransactionLog` with existing transactions
 (`TransactionLog::ContainsTransactions() == true`) for one of its `ProxyEvent`s to get recovered:
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/proxy_restart_sequence.puml">
+<img alt="PROXY_RESTART_SEQUENCE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/proxy_restart_sequence.puml">
 
 The (re)start sequence, done during the proxy instance creation, shows three main steps, which have been introduced newly
 for the partial restart support:
@@ -174,14 +173,14 @@ restarting proxy instance get marked as `needing rollback` initially and any tra
 this marker, which allows for the needed differentiation.
 
 #### UID/PID registration
-A proxy instance registers its `uid` with its current `pid` at the `lola::UidPidMapping` member held by
-`lola::ServiceDataControl`.
-If the `uid` wasn't previously registered, it will get back its current `pid`. Otherwise, it will get back the `pid`,
+A proxy instance registers its application identifier (configured `applicationID` or fallback `uid`) with its current
+`pid` at the `lola::ApplicationIdPidMapping` member held by `lola::ServiceDataControl`.
+If the application identifier wasn't previously registered, it will get back its current `pid`. Otherwise, it will get back the `pid`,
 which it registered in its last run (where it exited normally or crashed). The latter only happens, when the provider
 did not remove the shared memory in the meantime and the proxy instance opens/maps exactly the same shared memory object
 again.
 
-If `lola::UidPidMapping::RegisterPid()` returns a `pid`, which is not equal to the calling process current `pid`, this
+If `lola::ApplicationIdPidMapping::RegisterPid()` returns a `pid`, which is not equal to the calling process current `pid`, this
 means, the last registration stems from a process/`pid`, which doesn't exist anymore. Then the proxy instance detecting
 this shall notify its provider side (where the related skeleton instance is running) about this previous `pid` being
 outdated, to allow the target `LoLa` process to clean up any artifacts related to the old/outdated `pid`. This is done
@@ -206,7 +205,7 @@ Provider resp. skeleton side restart sequence specific extensions for partial re
 
 The following sequence diagram therefore shows both parts:
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/skeleton_restart_sequence.puml">
+<img alt="SKELETON_RESTART_SEQUENCE" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/partial_restart/skeleton_restart_sequence.puml">
 
 #### Partial restart specific extensions to Skeleton::Create
 

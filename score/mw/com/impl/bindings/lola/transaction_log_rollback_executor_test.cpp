@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
 
+#include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
 #include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
@@ -19,7 +20,6 @@
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
-#include "score/mw/com/impl/bindings/lola/uid_pid_mapping.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 
@@ -101,9 +101,9 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         ASSERT_TRUE(emplace_result.second);
     }
 
-    void AddUidPidMapping(uid_t uid, pid_t pid) noexcept
+    void AddApplicationIdPidMapping(std::uint32_t application_id, pid_t pid) noexcept
     {
-        const auto result_pid = service_data_control_->uid_pid_mapping_.RegisterPid(uid, pid);
+        const auto result_pid = service_data_control_->application_id_pid_mapping_.RegisterPid(application_id, pid);
         ASSERT_TRUE(result_pid.has_value());
         ASSERT_EQ(result_pid.value(), pid);
     }
@@ -193,8 +193,8 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillNotifyProviderOutd
 {
     WithTransactionLogRollbackExecutor();
 
-    // given, we already have an existing uid/pid mapping registered for our uid (= kDummyTransactionLogId)
-    AddUidPidMapping(kDummyTransactionLogId, kDummyOldConsumerPid);
+    // given, we already have an existing application_id/pid mapping registered for our application_id
+    AddApplicationIdPidMapping(static_cast<std::uint32_t>(kDummyTransactionLogId), kDummyOldConsumerPid);
 
     // expect, that the provider will get notified about the old/previous pid being outdated
     EXPECT_CALL(message_passing_service_mock_,
@@ -209,7 +209,7 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, WillNotNotifyProviderO
 {
     WithTransactionLogRollbackExecutor();
 
-    // given, we don't have yet an existing uid/pid mapping registered for our uid (= kDummyTransactionLogId)
+    // given, we don't have yet an existing application_id/pid mapping registered for our application_id
 
     // expect, that NO provider notification happens about an old/previous pid being outdated
     EXPECT_CALL(message_passing_service_mock_, NotifyOutdatedNodeId(_, _, _)).Times(0);
@@ -350,14 +350,15 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegiste
     RegisterPidFake register_pid_fake{};
     const std::optional<pid_t> empty_register_pid_result{};
     register_pid_fake.InjectRegisterPidResult(empty_register_pid_result);
-    UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>::InjectRegisterPidFake(
-        register_pid_fake);
+    ApplicationIdPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>::
+        InjectRegisterPidFake(register_pid_fake);
 
     // When calling RollbackTransactionLogs
     // Then the program terminates
     EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
 
-    UidPidMapping<score::memory::shared::PolymorphicOffsetPtrAllocator<UidPidMappingEntry>>::ClearRegisterPidFake();
+    ApplicationIdPidMapping<
+        score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>::ClearRegisterPidFake();
 }
 
 }  // namespace

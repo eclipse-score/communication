@@ -102,7 +102,8 @@ class LolaProxyEventCommonFixture : public ProxyMockedMemoryFixture
   protected:
     ::testing::MockFunction<void()> event_handler_{};
     std::unique_ptr<T> proxy_event_{nullptr};
-    TransactionLogId transaction_log_id_{kDummyUid};
+    static constexpr std::uint32_t kDummyApplicationId{665U};
+    TransactionLogId transaction_log_id_{kDummyApplicationId};
 };
 
 // Gtest will run all tests in the LolaProxyEventFixture once for every type, t, in MyTypes, such that TypeParam

@@ -51,7 +51,7 @@ score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string_view se
         return MakeUnexpected(ComErrc::kInvalidConfiguration);
     }
     json::JsonParser json_parser{};
-    auto json_result = json_parser.FromBuffer(serialized_format.data());
+    auto json_result = json_parser.FromBuffer({serialized_format.data(), serialized_format.size()});
     if (!json_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << "InstanceIdentifier serialized string is invalid. Exiting";

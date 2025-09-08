@@ -9,9 +9,9 @@ case of strongly typed proxies. The special case of "generic proxies" is describ
 
 <a name="classdiagram"></a>
 
-![Skeleton Binding Model](broken_link_k/swh/safe-posix-platform/score/mw/com/design/skeleton_proxy/skeleton_binding_model.puml)
+<img alt="SKELETON_BINDING_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_binding_model.puml">
 
-![Proxy Binding Model](broken_link_k/swh/safe-posix-platform/score/mw/com/design/skeleton_proxy/proxy_binding_model.puml)
+<img alt="PROXY_BINDING_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/proxy_binding_model.puml">
 
 
 The overall structure foresees proxies (`DummyProxy`) and skeletons (`DummySkeleton`), which are generated from IDL.
@@ -90,7 +90,7 @@ binding. The mechanism to initialize the `pImpl` is conceptually the same as wit
 The following sequence shows the instantiation of a service class up to its service offering based on our `LoLa`
 (shared-mem) binding:
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.puml">
+<img alt="SKELETON_CREATE_OFFER_SEQ" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/skeleton_create_offer_seq.puml">
 
 #### Binding independent level Registration of skeleton events/fields at their parent skeleton
 

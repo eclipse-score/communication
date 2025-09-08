@@ -20,6 +20,10 @@ common --extra_toolchains=@gcc_toolchain//:aarch64_gcc_13
 build --incompatible_strict_action_env
 test --test_tag_filters=-manual
 
+# unshare /dev/shm and /tmp
+test --sandbox_tmpfs_path=/dev/shm
+test --sandbox_tmpfs_path=/tmp
+
 build:aarch64 --platforms=@score_toolchains_gcc//platforms:aarch64-linux
 
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/

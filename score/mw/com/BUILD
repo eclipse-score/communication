@@ -106,7 +106,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//score/mw/com:__pkg__",
+        "//score/mw/com:__subpackages__",
     ],
     deps = [
         ":runtime",

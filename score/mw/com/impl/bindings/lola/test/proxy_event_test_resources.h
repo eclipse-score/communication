@@ -137,7 +137,7 @@ class LolaRuntimeMock : public IRuntime
     MOCK_METHOD(impl::tracing::ITracingRuntimeBinding*, GetTracingRuntime, (), (noexcept, override));
     MOCK_METHOD(RollbackSynchronization&, GetRollbackSynchronization, (), (noexcept, override));
     MOCK_METHOD(pid_t, GetPid, (), (const, noexcept, override));
-    MOCK_METHOD(uid_t, GetUid, (), (const, noexcept, override));
+    MOCK_METHOD(std::uint32_t, GetApplicationId, (), (const, noexcept, override));
 
   private:
     MessagePassingPtr<IMessagePassingService> message_passing_service_{};
@@ -177,7 +177,6 @@ class ProxyMockedMemoryFixture : public ::testing::Test
 {
   protected:
     using SampleType = std::uint32_t;
-    static constexpr uid_t kDummyUid{665};
     static constexpr pid_t kDummyPid{123456};
 
     ProxyMockedMemoryFixture() noexcept;

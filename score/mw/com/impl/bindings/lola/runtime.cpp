@@ -29,6 +29,31 @@
 namespace score::mw::com::impl::lola
 {
 
+/// \brief Determines the unique identifier for this application instance.
+/// \details This function implements the logic to select the application identifier. It prioritizes the
+///          explicitly configured 'applicationID' from the global configuration. If that is not present,
+///          it falls back to using the process's real user ID (uid) as the identifier.
+/// \param config The application's configuration object.
+/// \return The determined application identifier (either the configured ID or the process UID).
+
+std::uint32_t Runtime::DetermineApplicationIdentifier(const Configuration& config) const noexcept
+{
+    const auto& global_config = config.GetGlobalConfiguration();
+    const auto application_id = global_config.GetApplicationId();
+    if (application_id.has_value())
+    {
+        return application_id.value();
+    }
+    else
+    {
+        score::mw::log::LogInfo("lola") << "No explicit applicationID configured. Falling back to using process UID. "
+                                      << "Ensure unique UIDs for applications using mw::com.";
+        // The uid_t is only used internally (in the fallback case) and then casted to an std::uint32_t
+        static_assert(sizeof(uid_t) <= 4, "For more than 32 bits we cannot guarantee the key to be unique");
+        return static_cast<std::uint32_t>(os::Unistd::instance().getuid());
+    }
+}
+
 Runtime::Runtime(const Configuration& config,
                  concurrency::Executor& long_running_threads,
                  std::unique_ptr<lola::tracing::TracingRuntime> lola_tracing_runtime)
@@ -61,7 +86,7 @@ Runtime::Runtime(const Configuration& config,
       tracing_runtime_{std::move(lola_tracing_runtime)},
       rollback_data_{},
       pid_{os::Unistd::instance().getpid()},
-      uid_{os::Unistd::instance().getuid()}
+      application_id_{DetermineApplicationIdentifier(config)}
 {
     // At this stage we know/can decide, whether we are an ASIL-B or ASIL-QM application. OffsetPtr bounds-checking
     // is costly and is only done in case we are an ASIL-B app!
@@ -184,9 +209,9 @@ pid_t Runtime::GetPid() const noexcept
     return pid_;
 }
 
-uid_t Runtime::GetUid() const noexcept
+std::uint32_t Runtime::GetApplicationId() const noexcept
 {
-    return uid_;
+    return application_id_;
 }
 
 }  // namespace score::mw::com::impl::lola

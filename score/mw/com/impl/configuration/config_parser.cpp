@@ -82,6 +82,7 @@ constexpr auto kTracingPropertiesKey = "tracing"sv;
 constexpr auto kTracingEnabledKey = "enable"sv;
 constexpr auto kTracingGloballyEnabledDefaultValue = false;
 constexpr auto kTracingApplicationInstanceIDKey = "applicationInstanceID"sv;
+constexpr auto kApplicationIdKey = "applicationID"sv;
 constexpr auto kTracingTraceFilterConfigPathKey = "traceFilterConfigPath"sv;
 constexpr auto kNumberOfIpcTracingSlotsKey = "numberOfIpcTracingSlots"sv;
 using NumberOfIpcTracingSlots_t = std::uint8_t;
@@ -1011,6 +1012,14 @@ auto ParseGlobalProperties(const score::json::Any& json) noexcept -> GlobalConfi
         if (shm_size_calc_mode.has_value())
         {
             global_configuration.SetShmSizeCalcMode(shm_size_calc_mode.value());
+        }
+
+        const auto& process_properties_map = process_properties->second.As<json::Object>().value().get();
+        const auto& application_id_it = process_properties_map.find(kApplicationIdKey.data());
+        if (application_id_it != process_properties_map.cend())
+        {
+            const auto app_id = application_id_it->second.As<std::uint32_t>().value();
+            global_configuration.SetApplicationId(app_id);
         }
     }
     else
