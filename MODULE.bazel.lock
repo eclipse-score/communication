@@ -189,6 +189,7 @@
     "https://bcr.bazel.build/modules/rules_cc/0.0.8/MODULE.bazel": "964c85c82cfeb6f3855e6a07054fdb159aced38e99a5eecf7bce9d53990afa3e",
     "https://bcr.bazel.build/modules/rules_cc/0.0.9/MODULE.bazel": "836e76439f354b89afe6a911a7adf59a6b2518fafb174483ad78a2a2fde7b1c5",
     "https://bcr.bazel.build/modules/rules_cc/0.1.1/MODULE.bazel": "2f0222a6f229f0bf44cd711dc13c858dad98c62d52bd51d8fc3a764a83125513",
+    "https://bcr.bazel.build/modules/rules_cc/0.1.2/MODULE.bazel": "557ddc3a96858ec0d465a87c0a931054d7dcfd6583af2c7ed3baf494407fd8d0",
     "https://bcr.bazel.build/modules/rules_cc/0.2.0/MODULE.bazel": "b5c17f90458caae90d2ccd114c81970062946f49f355610ed89bebf954f5783c",
     "https://bcr.bazel.build/modules/rules_cc/0.2.0/source.json": "5f7f4e578e950adbf194217d4b607237a8197fc53ba46c367b3d61a86ecf35c2",
     "https://bcr.bazel.build/modules/rules_foreign_cc/0.10.1/MODULE.bazel": "b9527010e5fef060af92b6724edb3691970a5b1f76f74b21d39f7d433641be60",
@@ -264,7 +265,6 @@
     "https://bcr.bazel.build/modules/zlib/1.3.1/MODULE.bazel": "751c9940dcfe869f5f7274e1295422a34623555916eb98c174c1e945594bf198",
     "https://bcr.bazel.build/modules/zstd/1.5.6/MODULE.bazel": "471ebe7d3cdd8c6469390fcf623eb4779ff55fbee0a87f1dc57a1def468b96d4",
     "https://bcr.bazel.build/modules/zstd/1.5.6/source.json": "02010c3333fc89b44fe861db049968decb6e688411f7f9d4f6791d74f9adfb51",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/bazel_registry.json": "8a28e4aff06ee60aed2a8c281907fb8bcbf3b753c91fb5a5c57da3215d5b3497",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/abseil-cpp/20210324.2/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/abseil-cpp/20211102.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/abseil-cpp/20230125.1/MODULE.bazel": "not found",
@@ -391,6 +391,7 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_cc/0.0.8/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_cc/0.0.9/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_cc/0.1.1/MODULE.bazel": "not found",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_cc/0.1.2/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_cc/0.2.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_foreign_cc/0.10.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_foreign_cc/0.9.0/MODULE.bazel": "not found",
@@ -438,8 +439,6 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.61.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_shell/0.2.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_shell/0.3.0/MODULE.bazel": "not found",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_gcc/0.4/MODULE.bazel": "370458c92c6cd9f91ea316d7658a5b82ee7422e22186328c86c570947508dc64",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_toolchains_gcc/0.4/source.json": "2a15ebc5b338c0223d172e2b1eca9d459c20f767ab406661ff82f76da8434bc3",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/stardoc/0.5.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/stardoc/0.5.3/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/stardoc/0.5.6/MODULE.bazel": "not found",
@@ -4444,8 +4443,8 @@
     },
     "@@score_toolchains_gcc+//extentions:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "o/+Ff/fsotFJMxOHvFi205VRu+OlBnf0grk+/5KWhFU=",
-        "usagesDigest": "rwMEL5DALKbk9zErVBTI+10JwHZr8nYaf6+K1KM++aI=",
+        "bzlTransitiveDigest": "UWv40+7NS5kg+hxiOtJ+7Yxmwku0MYhza9vf5WJLd9I=",
+        "usagesDigest": "aTyqWTeqWmbhSJkSM7g/gVLWjI64hP8OTRJL27tfnu4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -4454,11 +4453,11 @@
             "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
             "attributes": {
               "urls": [
-                "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/0.0.1/x86_64-unknown-linux-gnu_gcc12.tar.gz"
+                "https://linux.elektrobit.com/tmp/score/fastdev-sdk-ubuntu-ebcl-deb-qemu-arm64.tar.xz"
               ],
               "build_file": "@@score_toolchains_gcc+//toolchain/third_party:gcc.BUILD",
-              "sha256": "457f5f20f57528033cb840d708b507050d711ae93e009388847e113b11bf3600",
-              "strip_prefix": "x86_64-unknown-linux-gnu"
+              "sha256": "cf8d277a2b95bbdad3e177c488fa77d01723510690a911218ef33747574d78fe",
+              "strip_prefix": "fastdev-sdk-ubuntu-ebcl-deb-qemuarm64"
             }
           },
           "gcc_toolchain": {
