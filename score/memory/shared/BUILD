@@ -891,7 +891,7 @@ cc_gtest_unit_test(
 
 # Separate test suite for string test as it should not be executed on qnx
 test_suite(
-    name = "unit_tests",
+    name = "unit_tests_host",
     tests = [
         ":string_test",
     ],
