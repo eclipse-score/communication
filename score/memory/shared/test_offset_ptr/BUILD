@@ -38,12 +38,12 @@ cc_unit_test(
     ],
     deps = [
         ":bounds_check_memory_pool",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/memory/shared:offset_ptr",
-        "@score-baselibs//score/mw/log",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@score-baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score-baselibs//score/memory/shared:offset_ptr",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -55,10 +55,10 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["@score-baselibs//score/memory/shared:__pkg__"],
     deps = [
-        "@score-baselibs//score/memory/shared",
-        "@score-baselibs//score/memory/shared:fake_memory_resources",
         "@googletest//:gtest_main",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory/shared",
+        "@score-baselibs//score/memory/shared:fake_memory_resources",
     ],
 )
 
@@ -70,8 +70,8 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":offset_ptr_test_resources",
-        "@score-baselibs//score/memory/shared",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory/shared",
     ],
 )
 

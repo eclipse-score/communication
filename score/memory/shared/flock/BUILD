@@ -19,8 +19,8 @@ cc_library(
     hdrs = ["flock_mutex.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score-baselibs//score/os:fcntl",
         "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/os:fcntl",
     ],
     tags = ["FFI"],
     deps = [
@@ -38,7 +38,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":flock_mutex",
@@ -56,7 +56,7 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":flock_mutex",
@@ -71,7 +71,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         "@score-baselibs//score/memory/shared:lock_file",

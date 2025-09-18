@@ -43,10 +43,10 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
+        "@score-baselibs//score/language/futurecpp",
         "@score-baselibs//score/memory/shared:user_permission",
         "@score-baselibs//score/os:errno_logging",
         "@score-baselibs//score/os/utils/acl",
-        "@score-baselibs//score/language/futurecpp",
     ] + select({
         ":QNX_AND_USE_TYPED_SHMD": [
             "//platform/aas/intc/typedmemd/code/clientlib:typedmemd_clientlib",
@@ -75,9 +75,9 @@ cc_test(
     ],
     deps = [
         "//platform/aas/intc/typedmemd/code/clientlib/mock:typedsharedmemory_mock",
+        "@googletest//:gtest_main",
         "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@score-baselibs//score/os/mocklib/qnx:mman_mock",
-        "@googletest//:gtest_main",
     ],
 )
 

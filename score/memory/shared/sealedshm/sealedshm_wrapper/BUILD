@@ -29,8 +29,8 @@ cc_library(
         "@score-baselibs//score/memory/shared/test:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/os:errno_logging",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/os:errno_logging",
     ] + select({
         "@platforms//os:qnx": [
             "@score-baselibs//score/os/qnx:mman",
@@ -54,9 +54,9 @@ cc_library(
         "@score-baselibs//score/memory/shared:__pkg__",
     ],
     deps = [
-        "@score-baselibs//score/os:errno_logging",
         "@googletest//:gtest",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/os:errno_logging",
     ],
 )
 

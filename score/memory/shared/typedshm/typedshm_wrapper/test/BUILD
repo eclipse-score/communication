@@ -17,7 +17,7 @@ cc_library(
     hdrs = ["typed_memory_mock.h"],
     visibility = ["@score-baselibs//score/memory/shared:__pkg__"],
     deps = [
-        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@googletest//:gtest",
+        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
     ],
 )
