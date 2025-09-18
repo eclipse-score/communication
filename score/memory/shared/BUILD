@@ -118,6 +118,9 @@ cc_library(
     srcs = ["shared_memory_resource.cpp"],
     hdrs = ["shared_memory_resource.h"],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score-baselibs//score/language/safecpp/string_view:null_termination_check",
+    ],
     tags = ["FFI"],
     deps = [
         ":i_shared_memory_resource",

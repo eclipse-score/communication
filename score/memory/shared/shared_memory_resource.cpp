@@ -19,6 +19,8 @@
 #include "score/memory/shared/typedshm/typedshm_wrapper/typed_memory.h"
 
 #include "score/language/safecpp/safe_math/safe_math.h"
+#include "score/language/safecpp/string_view/null_termination_check.h"
+
 #include "score/bitmanipulation/bitmask_operators.h"
 #include "score/os/errno.h"
 #include "score/os/errno_logging.h"
@@ -128,7 +130,12 @@ static std::shared_ptr<SharedMemoryResource> CreateInstance(Args&&... args)
 bool doesFileExist(const score::cpp::string_view filePath)
 {
     ::score::os::StatBuffer buffer{};
-    const auto result = ::score::os::Stat::instance().stat(filePath.data(), buffer);
+    // NOTE: Below uses of `safecpp::GetPtrToNullTerminatedUnderlyingBufferOf()` will emit a deprecation warning here
+    //       since it is used in conjunction with `std::string_view`. Thus, it must get fixed appropriately instead!
+    //       For examples about how to achieve that, see
+    //       broken_link_g/swh/safe-posix-platform/blob/master/score/language/safecpp/string_view/README.md
+    const auto result =
+        ::score::os::Stat::instance().stat(safecpp::GetPtrToNullTerminatedUnderlyingBufferOf(filePath), buffer);
     if (!result.has_value())
     {
         if (result.error() != Error::Code::kNoSuchFileOrDirectory)
