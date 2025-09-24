@@ -104,6 +104,7 @@ constexpr auto kShmSizeCalcModeSimulation = "SIMULATION"sv;
 constexpr auto kTracingTraceFilterConfigPathDefaultValue = "./etc/mw_com_trace_filter.json"sv;
 constexpr auto kStrictPermission = "strict"sv;
 constexpr auto kFilePermissionsOnEmpty = "file-permissions-on-empty"sv;
+constexpr auto kDefaultPermissionChecks = "strict"sv;
 
 void ErrorIfFound(const score::json::Object::const_iterator& iterator_to_element, const score::json::Object& json_obj)
 {
@@ -121,12 +122,22 @@ void ErrorIfFound(const score::json::Object::const_iterator& iterator_to_element
 
 auto ParseInstanceSpecifier(const score::json::Any& json) -> InstanceSpecifier
 {
-    const auto& instanceSpecifierJson = json.As<score::json::Object>().value().get().find(kInstanceSpecifierKey.data());
-    if (instanceSpecifierJson != json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "No instance specifier provided. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& instanceSpecifierJson = json_map.find(kInstanceSpecifierKey.data());
+    if (instanceSpecifierJson != json_map.cend())
     {
-        const auto& string_view = instanceSpecifierJson->second.As<std::string>()->get();
-        const auto instance_specifier_result =
-            InstanceSpecifier::Create(std::string{string_view.data(), string_view.size()});
+        auto string_result = instanceSpecifierJson->second.As<std::string>();
+        if (!string_result.has_value()) {
+            score::mw::log::LogFatal("lola") << "Invalid InstanceSpecifier.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& string_view = string_result.value().get();
+        const auto instance_specifier_result = InstanceSpecifier::Create(string_view);
         if (!instance_specifier_result.has_value())
         {
             score::mw::log::LogFatal("lola") << "Invalid InstanceSpecifier.";
@@ -142,10 +153,21 @@ auto ParseInstanceSpecifier(const score::json::Any& json) -> InstanceSpecifier
 
 auto ParseServiceTypeName(const score::json::Any& json) -> const std::string&
 {
-    const auto& serviceTypeName = json.As<score::json::Object>().value().get().find(kServiceTypeNameKey.data());
-    if (serviceTypeName != json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "No service type name provided. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& serviceTypeName = json_map.find(kServiceTypeNameKey.data());
+    if (serviceTypeName != json_map.cend())
     {
-        return serviceTypeName->second.As<std::string>().value().get();
+        auto string_result = serviceTypeName->second.As<std::string>();
+        if (!string_result.has_value()) {
+            score::mw::log::LogFatal("lola") << "No service type name provided. Required argument.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        return string_result.value().get();
     }
 
     score::mw::log::LogFatal("lola") << "No service type name provided. Required argument.";
@@ -155,10 +177,21 @@ auto ParseServiceTypeName(const score::json::Any& json) -> const std::string&
 
 auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std::uint32_t>
 {
-    const auto& version = json.As<score::json::Object>().value().get().find(kVersionKey.data());
-    if (version != json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "No Version provided. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& version = json_map.find(kVersionKey.data());
+    if (version != json_map.cend())
     {
-        const auto& version_object = version->second.As<score::json::Object>().value().get();
+        auto version_obj = version->second.As<score::json::Object>();
+        if (!version_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "No Version provided. Required argument.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& version_object = version_obj.value().get();
         const auto major_version_number = version_object.find(kMajorVersionKey.data());
         const auto minor_version_number = version_object.find(kMinorVersionKey.data());
 
@@ -190,10 +223,21 @@ auto ParseServiceTypeIdentifier(const score::json::Any& json) -> ServiceIdentifi
 
 auto ParseAsilLevel(const score::json::Any& json) -> score::cpp::optional<QualityType>
 {
-    const auto& quality = json.As<score::json::Object>().value().get().find(kAsilKey.data());
-    if (quality != json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "No" << kAsilKey << "provided. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& quality = json_map.find(kAsilKey.data());
+    if (quality != json_map.cend())
     {
-        const auto& qualityValue = quality->second.As<std::string>().value().get();
+        auto quality_result = quality->second.As<std::string>();
+        if (!quality_result.has_value()) {
+            score::mw::log::LogFatal("lola") << "Attribute" << kAsilKey << "not parsable. Required argument.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& qualityValue = quality_result.value().get();
 
         if (qualityValue == "QM")
         {
@@ -213,10 +257,22 @@ auto ParseAsilLevel(const score::json::Any& json) -> score::cpp::optional<Qualit
 
 auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<ShmSizeCalculationMode>
 {
-    const auto& shm_size_calc_mode = json.As<score::json::Object>().value().get().find(kShmSizeCalcModeKey.data());
-    if (shm_size_calc_mode != json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << kShmSizeCalcModeKey << "not parsable. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& shm_size_calc_mode = json_map.find(kShmSizeCalcModeKey.data());
+    if (shm_size_calc_mode != json_map.cend())
     {
-        const auto& shm_size_calc_mode_value = shm_size_calc_mode->second.As<std::string>().value().get();
+        auto mode_result = shm_size_calc_mode->second.As<std::string>();
+        if (!mode_result.has_value()) {
+            score::mw::log::LogError("lola") << "Configuration error: shm-size-calc-mode must be a string value. "
+                                             << "Valid values are: 'SIMULATION'. Please check your configuration file.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& shm_size_calc_mode_value = mode_result.value().get();
 
         if (shm_size_calc_mode_value == kShmSizeCalcModeSimulation)
         {
@@ -225,9 +281,10 @@ auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<
         else
         {
             score::mw::log::LogError("lola")
-                << "Unknown value " << shm_size_calc_mode_value << " in key " << kShmSizeCalcModeKey;
+                << "Configuration error: Invalid shm-size-calc-mode value '" << shm_size_calc_mode_value
+                << "'. Valid values are: 'SIMULATION'. Please update your configuration file.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
 
@@ -248,14 +305,30 @@ auto ParseAllowedUser(const score::json::Any& json, std::string_view key) noexce
     -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     std::unordered_map<QualityType, std::vector<uid_t>> user_map{};
-    auto allowed_user = json.As<score::json::Object>().value().get().find(key.data());
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << key << "not parsable. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    auto allowed_user = json_map.find(key.data());
 
-    if (allowed_user != json.As<score::json::Object>().value().get().cend())
+    if (allowed_user != json_map.cend())
     {
-        for (const auto& user : allowed_user->second.As<score::json::Object>().value().get())
+        auto user_obj = allowed_user->second.As<score::json::Object>();
+        if (!user_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Attribute" << key << "not parsable. Required argument.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        for (const auto& user : user_obj.value().get())
         {
             std::vector<uid_t> user_ids{};
-            for (const auto& user_id : user.second.As<score::json::List>().value().get())
+            auto user_list = user.second.As<score::json::List>();
+            if (!user_list.has_value()) {
+                score::mw::log::LogFatal("lola") << "Attribute" << key << "not parsable. Required argument.";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            }
+            for (const auto& user_id : user_list.value().get())
             {
                 user_ids.push_back(user_id.As<uid_t>().value());
             }
@@ -381,15 +454,31 @@ class ServiceElementInstanceDeploymentParser
 auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) noexcept
     -> void
 {
-    const auto& events = json.As<score::json::Object>().value().get().find(kEventsKey.data());
-    if (events == json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << kEventsKey << "not parsable. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& events = json_map.find(kEventsKey.data());
+    if (events == json_map.cend())
     {
         return;
     }
 
-    for (const auto& event : events->second.As<score::json::List>().value().get())
+    auto events_list = events->second.As<score::json::List>();
+    if (!events_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << kEventsKey << "not parsable. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& event : events_list.value().get())
     {
-        const auto& event_object = event.As<score::json::Object>().value().get();
+        auto event_obj = event.As<score::json::Object>();
+        if (!event_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Attribute" << kEventsKey << "not parsable. Required argument.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& event_object = event_obj.value().get();
         const auto& max_concurrent_allocations_it = event_object.find(kEventMaxConcurrentAllocationsKey);
         ErrorIfFound(max_concurrent_allocations_it, event_object);
 
@@ -430,15 +519,31 @@ auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceI
 auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) noexcept
     -> void
 {
-    const auto& fields = json.As<score::json::Object>().value().get().find(kFieldsKey.data());
-    if (fields == json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << kFieldsKey << "not parsable. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& fields = json_map.find(kFieldsKey.data());
+    if (fields == json_map.cend())
     {
         return;
     }
 
-    for (const auto& field : fields->second.As<score::json::List>().value().get())
+    auto fields_list = fields->second.As<score::json::List>();
+    if (!fields_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << kFieldsKey << "not parsable. Required argument.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& field : fields_list.value().get())
     {
-        const auto& field_object = field.As<score::json::Object>().value().get();
+        auto field_obj = field.As<score::json::Object>();
+        if (!field_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Attribute" << kFieldsKey << "not parsable. Required argument.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& field_object = field_obj.value().get();
         const auto& max_concurrent_allocations_it = field_object.find(kFieldMaxConcurrentAllocationsKey);
         ErrorIfFound(max_concurrent_allocations_it, field_object);
 
@@ -514,15 +619,31 @@ auto ParseServiceElementTracingEnabled(const score::json::Any& json,
         (service_element_type == ServiceElementType::EVENT ? std::make_pair(kEventsKey, kEventNameKey)
                                                            : std::make_pair(kFieldsKey, kFieldNameKey));
 
-    const auto& service_elements = json.As<score::json::Object>().value().get().find(ElementKey);
-    if (service_elements == json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << ElementKey << "not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& service_elements = json_map.find(ElementKey);
+    if (service_elements == json_map.cend())
     {
         return;
     }
 
-    for (const auto& element : service_elements->second.As<score::json::List>().value().get())
+    auto elements_list = service_elements->second.As<score::json::List>();
+    if (!elements_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << ElementKey << "not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& element : elements_list.value().get())
     {
-        const auto& element_object = element.As<score::json::Object>().value().get();
+        auto element_obj = element.As<score::json::Object>();
+        if (!element_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Attribute" << ElementKey << "not parsable.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& element_object = element_obj.value().get();
         const auto service_element_name = element_object.find(ElementNameKey);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(service_element_name != element_object.end());
 
@@ -548,11 +669,21 @@ auto ParseServiceElementTracingEnabled(const score::json::Any& json,
 
 auto ParsePermissionChecks(const score::json::Any& deployment_instance) -> std::string_view
 {
-    const auto permission_checks =
-        deployment_instance.As<score::json::Object>().value().get().find(kPermissionChecksKey.data());
-    if (permission_checks != deployment_instance.As<score::json::Object>().value().get().cend())
+    auto deployment_obj = deployment_instance.As<score::json::Object>();
+    if (!deployment_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Deployment instance not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& deployment_map = deployment_obj.value().get();
+    const auto permission_checks = deployment_map.find(kPermissionChecksKey.data());
+    if (permission_checks != deployment_map.cend())
     {
-        const auto& perm_result = permission_checks->second.As<std::string>().value().get();
+        auto perm_result_obj = permission_checks->second.As<std::string>();
+        if (!perm_result_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Attribute" << kPermissionChecksKey << "not parsable.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& perm_result = perm_result_obj.value().get();
         if (perm_result != kFilePermissionsOnEmpty && perm_result != kStrictPermission)
         {
             score::mw::log::LogFatal("lola") << "Unknown permission" << perm_result << "in permission-checks attribute";
@@ -568,28 +699,32 @@ auto ParsePermissionChecks(const score::json::Any& deployment_instance) -> std::
 auto ParseLolaServiceInstanceDeployment(const score::json::Any& json) -> LolaServiceInstanceDeployment
 {
     LolaServiceInstanceDeployment service{};
-    const auto& found_shm_size = json.As<score::json::Object>().value().get().find(kLolaShmSizeKey.data());
-    if (found_shm_size != json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Attribute" << kLolaShmSizeKey << "not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& found_shm_size = json_map.find(kLolaShmSizeKey.data());
+    if (found_shm_size != json_map.cend())
     {
         service.shared_memory_size_ = found_shm_size->second.As<std::uint64_t>().value();
     }
 
-    const auto& found_control_asil_b_shm_size =
-        json.As<score::json::Object>().value().get().find(kLolaControlAsilBShmSizeKey.data());
-    if (found_control_asil_b_shm_size != json.As<score::json::Object>().value().get().cend())
+    const auto& found_control_asil_b_shm_size = json_map.find(kLolaControlAsilBShmSizeKey.data());
+    if (found_control_asil_b_shm_size != json_map.cend())
     {
         service.control_asil_b_memory_size_ = found_control_asil_b_shm_size->second.As<std::uint64_t>().value();
     }
 
-    const auto& found_control_qm_shm_size =
-        json.As<score::json::Object>().value().get().find(kLolaControlQmShmSizeKey.data());
-    if (found_control_qm_shm_size != json.As<score::json::Object>().value().get().cend())
+    const auto& found_control_qm_shm_size = json_map.find(kLolaControlQmShmSizeKey.data());
+    if (found_control_qm_shm_size != json_map.cend())
     {
         service.control_qm_memory_size_ = found_control_qm_shm_size->second.As<std::uint64_t>().value();
     }
 
-    const auto& instance_id = json.As<score::json::Object>().value().get().find(kInstanceIdKey.data());
-    if (instance_id != json.As<score::json::Object>().value().get().cend())
+    const auto& instance_id = json_map.find(kInstanceIdKey.data());
+    if (instance_id != json_map.cend())
     {
         service.instance_id_ =
             LolaServiceInstanceId{instance_id->second.As<LolaServiceInstanceId::InstanceId>().value()};
@@ -613,17 +748,28 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
                                      const InstanceSpecifier& instance_specifier)
     -> std::vector<ServiceInstanceDeployment>
 {
-    const auto& deploymentInstances = json.As<score::json::Object>().value().get().find(kDeploymentInstancesKey);
-    if (deploymentInstances == json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Invalid JSON object for service instance deployments. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& deploymentInstances = json_map.find(kDeploymentInstancesKey);
+    if (deploymentInstances == json_map.cend())
     {
         score::mw::log::LogFatal("lola") << "No deployment instances provided. Required argument.";
         /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
 
     std::vector<ServiceInstanceDeployment> deployments{};
 
-    auto& deplymentObjs = deploymentInstances->second.As<score::json::List>().value().get();
+    auto deplymentObjs_result = deploymentInstances->second.As<score::json::List>();
+    if (!deplymentObjs_result.has_value()) {
+        score::mw::log::LogFatal("lola") << "Deployment instances is not a valid JSON list. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    auto& deplymentObjs = deplymentObjs_result.value().get();
     for (const auto& deploymentInstance : deplymentObjs)
     {
         const auto asil_level = ParseAsilLevel(deploymentInstance);
@@ -633,10 +779,21 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             std::terminate();
         }
-        const auto binding = deploymentInstance.As<score::json::Object>().value().get().find(kBindingKey.data());
-        if (binding != deploymentInstance.As<score::json::Object>().value().get().cend())
+        auto deployment_obj = deploymentInstance.As<score::json::Object>();
+        if (!deployment_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Invalid deployment instance object in configuration. Terminating";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& deployment_map = deployment_obj.value().get();
+        const auto binding = deployment_map.find(kBindingKey.data());
+        if (binding != deployment_map.cend())
         {
-            const auto& bindingValue = binding->second.As<std::string>().value().get();
+            auto bindingValue_result = binding->second.As<std::string>();
+            if (!bindingValue_result.has_value()) {
+                score::mw::log::LogFatal("lola") << "Invalid binding value in deployment instance. Terminating";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            }
+            const auto& bindingValue = bindingValue_result.value().get();
             if (bindingValue == kSomeIpBinding)
             {
                 score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which can not be parsed.";
@@ -683,7 +840,12 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
 auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& tracing_configuration) noexcept
     -> Configuration::ServiceInstanceDeployments
 {
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Invalid JSON object for service instances. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& object = json_obj.value().get();
     const auto& servicesInstances = object.find(kServiceInstancesKey.data());
     if (servicesInstances == object.cend())
     {
@@ -692,7 +854,12 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
         std::terminate();
     }
     Configuration::ServiceInstanceDeployments service_instance_deployments{};
-    for (const auto& serviceInstance : servicesInstances->second.As<score::json::List>().value().get())
+    auto services_list = servicesInstances->second.As<score::json::List>();
+    if (!services_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "Service instances is not a valid JSON list. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& serviceInstance : services_list.value().get())
     {
         auto instanceSpecifier = ParseInstanceSpecifier(serviceInstance);
 
@@ -725,14 +892,30 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) noexcept -> bool
 {
-    const auto& events = json.As<score::json::Object>().value().get().find(kEventsKey.data());
-    if (events == json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "LolaEventTypeDeployments not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& events = json_map.find(kEventsKey.data());
+    if (events == json_map.cend())
     {
         return false;
     }
-    for (const auto& event : events->second.As<score::json::List>().value().get())
+    auto events_list = events->second.As<score::json::List>();
+    if (!events_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "LolaEventTypeDeployments not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& event : events_list.value().get())
     {
-        const auto& event_object = event.As<score::json::Object>().value().get();
+        auto event_obj = event.As<score::json::Object>();
+        if (!event_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "LolaEventTypeDeployments not parsable.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& event_object = event_obj.value().get();
         const auto& event_name = event_object.find(kEventNameKey.data());
         const auto& event_id = event_object.find(kEventIdKey.data());
 
@@ -764,15 +947,31 @@ auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceType
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) noexcept -> bool
 {
-    const auto& fields = json.As<score::json::Object>().value().get().find(kFieldsKey.data());
-    if (fields == json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "LolaFieldTypeDeployments not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& fields = json_map.find(kFieldsKey.data());
+    if (fields == json_map.cend())
     {
         return false;
     }
 
-    for (const auto& field : fields->second.As<score::json::List>().value().get())
+    auto fields_list = fields->second.As<score::json::List>();
+    if (!fields_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "LolaFieldTypeDeployments not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& field : fields_list.value().get())
     {
-        const auto& field_object = field.As<score::json::Object>().value().get();
+        auto field_obj = field.As<score::json::Object>();
+        if (!field_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "LolaFieldTypeDeployments not parsable.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& field_object = field_obj.value().get();
         const auto& field_name = field_object.find(kFieldNameKey.data());
         const auto& field_id = field_object.find(kFieldIdKey.data());
 
@@ -885,8 +1084,14 @@ auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_servi
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) noexcept -> LolaServiceTypeDeployment
 {
-    const auto& service_id = json.As<score::json::Object>().value().get().find(kServiceIdKey.data());
-    if (service_id != json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Invalid JSON object for LoLa service type deployments. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& service_id = json_map.find(kServiceIdKey.data());
+    if (service_id != json_map.cend())
     {
         LolaServiceTypeDeployment lola{service_id->second.As<std::uint16_t>().value()};
         const bool events_exist = ParseLolaEventTypeDeployments(json, lola);
@@ -918,13 +1123,35 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) noexcept -> L
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseServiceTypeDeployment(const score::json::Any& json) noexcept -> ServiceTypeDeployment
 {
-    const auto& bindings = json.As<score::json::Object>().value().get().find(kBindingsKey.data());
-    for (const auto& binding : bindings->second.As<score::json::List>().value().get())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Invalid JSON object for service type deployment. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& bindings = json_obj.value().get().find(kBindingsKey.data());
+
+    auto bindings_list = bindings->second.As<score::json::List>();
+    if (!bindings_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "Service type bindings is not a valid JSON list. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& binding : bindings_list.value().get())
     {
-        auto binding_type = binding.As<score::json::Object>().value().get().find(kBindingKey.data());
-        if (binding_type != binding.As<score::json::Object>().value().get().cend())
+        auto binding_obj = binding.As<score::json::Object>();
+        if (!binding_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Invalid binding object in service type deployment. Terminating";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& binding_map = binding_obj.value().get();
+        auto binding_type = binding_map.find(kBindingKey.data());
+        if (binding_type != binding_map.cend())
         {
-            const auto& value = binding_type->second.As<std::string>().value().get();
+            auto value_result = binding_type->second.As<std::string>();
+            if (!value_result.has_value()) {
+                score::mw::log::LogFatal("lola") << "Invalid binding value in service type deployment. Terminating";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            }
+            const auto& value = value_result.value().get();
             if (value == kShmBinding)
             {
                 LolaServiceTypeDeployment lola_deployment = ParseLoLaServiceTypeDeployments(binding);
@@ -955,8 +1182,14 @@ auto ParseServiceTypeDeployment(const score::json::Any& json) noexcept -> Servic
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseServiceTypes(const score::json::Any& json) noexcept -> Configuration::ServiceTypeDeployments
 {
-    const auto& service_types = json.As<score::json::Object>().value().get().find(kServiceTypesKey.data());
-    if (service_types == json.As<score::json::Object>().value().get().cend())
+    auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Invalid JSON object for service types. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+    const auto& service_types = json_map.find(kServiceTypesKey.data());
+    if (service_types == json_map.cend())
     {
         score::mw::log::LogFatal("lola") << "No service type deployments provided. Terminating";
         /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
@@ -964,7 +1197,12 @@ auto ParseServiceTypes(const score::json::Any& json) noexcept -> Configuration::
     }
 
     Configuration::ServiceTypeDeployments service_type_deployments{};
-    for (const auto& service_type : service_types->second.As<score::json::List>().value().get())
+    auto service_types_list = service_types->second.As<score::json::List>();
+    if (!service_types_list.has_value()) {
+        score::mw::log::LogFatal("lola") << "Service types is not a valid JSON list. Terminating";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    for (const auto& service_type : service_types_list.value().get())
     {
         const auto service_identifier = ParseServiceTypeIdentifier(service_type);
 
@@ -986,7 +1224,12 @@ auto ParseServiceTypes(const score::json::Any& json) noexcept -> Configuration::
 auto ParseReceiverQueueSize(const score::json::Any& global_config, const QualityType quality_type)
     -> score::cpp::optional<std::int32_t>
 {
-    const auto& global_config_map = global_config.As<json::Object>().value().get();
+    auto global_config_obj = global_config.As<json::Object>();
+    if (!global_config_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Service types not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& global_config_map = global_config_obj.value().get();
     const auto& queue_size = global_config_map.find(kQueueSizeKey.data());
     if (queue_size != global_config_map.cend())
     {
@@ -1007,7 +1250,12 @@ auto ParseReceiverQueueSize(const score::json::Any& global_config, const Quality
                 break;
         }
 
-        const auto& queue_size_map = queue_size->second.As<json::Object>().value().get();
+        auto queue_size_obj = queue_size->second.As<json::Object>();
+        if (!queue_size_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Receiver queue size not parsable.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& queue_size_map = queue_size_obj.value().get();
         const auto& asil_queue_size = queue_size_map.find(queue_type_str.data());
         if (asil_queue_size != queue_size_map.cend())
         {
@@ -1026,11 +1274,21 @@ auto ParseReceiverQueueSize(const score::json::Any& global_config, const Quality
 
 auto ParseSenderQueueSize(const score::json::Any& global_config) -> score::cpp::optional<std::int32_t>
 {
-    const auto& global_config_map = global_config.As<json::Object>().value().get();
+    auto global_config_obj = global_config.As<json::Object>();
+    if (!global_config_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Sender queue size not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& global_config_map = global_config_obj.value().get();
     const auto& queue_size = global_config_map.find(kQueueSizeKey.data());
     if (queue_size != global_config_map.cend())
     {
-        const auto& queue_size_map = queue_size->second.As<json::Object>().value().get();
+        auto queue_size_obj = queue_size->second.As<json::Object>();
+        if (!queue_size_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Sender queue size not parsable.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& queue_size_map = queue_size_obj.value().get();
         const auto& asil_tx_queue_size = queue_size_map.find("B-sender");
         if (asil_tx_queue_size != queue_size_map.cend())
         {
@@ -1053,7 +1311,12 @@ auto ParseGlobalProperties(const score::json::Any& json) noexcept -> GlobalConfi
 {
     GlobalConfiguration global_configuration{};
 
-    const auto& top_level_object = json.As<score::json::Object>().value().get();
+    auto top_level_obj = json.As<score::json::Object>();
+    if (!top_level_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Global properties not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& top_level_object = top_level_obj.value().get();
     const auto& process_properties = top_level_object.find(kGlobalPropertiesKey.data());
     if (process_properties != top_level_object.cend())
     {
@@ -1115,7 +1378,12 @@ auto ParseGlobalProperties(const score::json::Any& json) noexcept -> GlobalConfi
             global_configuration.SetShmSizeCalcMode(shm_size_calc_mode.value());
         }
 
-        const auto& process_properties_map = process_properties->second.As<json::Object>().value().get();
+        auto process_properties_obj = process_properties->second.As<json::Object>();
+        if (!process_properties_obj.has_value()) {
+            score::mw::log::LogFatal("lola") << "Global properties not parsable.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& process_properties_map = process_properties_obj.value().get();
         const auto& application_id_it = process_properties_map.find(kApplicationIdKey.data());
         if (application_id_it != process_properties_map.cend())
         {
@@ -1132,7 +1400,12 @@ auto ParseGlobalProperties(const score::json::Any& json) noexcept -> GlobalConfi
 
 auto ParseTracingEnabled(const score::json::Any& tracing_config) -> bool
 {
-    const auto& tracing_config_map = tracing_config.As<json::Object>().value().get();
+    auto tracing_config_obj = tracing_config.As<json::Object>();
+    if (!tracing_config_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Tracing configuration map not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& tracing_config_map = tracing_config_obj.value().get();
     const auto& tracing_enabled = tracing_config_map.find(kTracingEnabledKey);
     if (tracing_enabled != tracing_config_map.cend())
     {
@@ -1143,7 +1416,12 @@ auto ParseTracingEnabled(const score::json::Any& tracing_config) -> bool
 
 auto ParseTracingApplicationInstanceId(const score::json::Any& tracing_config) -> const std::string&
 {
-    const auto& tracing_config_map = tracing_config.As<json::Object>().value().get();
+    auto tracing_config_obj = tracing_config.As<json::Object>();
+    if (!tracing_config_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Could not parse tracing config as JSON object. Exiting";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& tracing_config_map = tracing_config_obj.value().get();
     const auto& tracing_application_instance_id = tracing_config_map.find(kTracingApplicationInstanceIDKey.data());
     if (tracing_application_instance_id != tracing_config_map.cend())
     {
@@ -1156,7 +1434,12 @@ auto ParseTracingApplicationInstanceId(const score::json::Any& tracing_config) -
 
 auto ParseTracingTraceFilterConfigPath(const score::json::Any& tracing_config) -> std::string_view
 {
-    const auto& tracing_config_map = tracing_config.As<json::Object>().value().get();
+    auto tracing_config_obj = tracing_config.As<json::Object>();
+    if (!tracing_config_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Tracing filter config path not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& tracing_config_map = tracing_config_obj.value().get();
     const auto& tracing_filter_config_path = tracing_config_map.find(kTracingTraceFilterConfigPathKey.data());
     if (tracing_filter_config_path != tracing_config_map.cend())
     {
@@ -1173,7 +1456,12 @@ auto ParseTracingTraceFilterConfigPath(const score::json::Any& tracing_config) -
 auto ParseTracingProperties(const score::json::Any& json) noexcept -> TracingConfiguration
 {
     TracingConfiguration tracing_configuration{};
-    const auto& top_level_object = json.As<score::json::Object>().value().get();
+    auto top_level_obj = json.As<score::json::Object>();
+    if (!top_level_obj.has_value()) {
+        score::mw::log::LogFatal("lola") << "Tracing properties not parsable.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& top_level_object = top_level_obj.value().get();
     const auto& tracing_properties = top_level_object.find(kTracingPropertiesKey);
     if (tracing_properties != top_level_object.cend())
     {
