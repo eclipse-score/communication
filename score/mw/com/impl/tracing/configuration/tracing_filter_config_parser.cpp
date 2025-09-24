@@ -268,7 +268,11 @@ void ParseEvent(const score::json::Any& json,
                 const std::set<std::string_view>& instance_specifiers,
                 TracingFilterConfig& filter_config) noexcept
 {
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto object_result = json.As<score::json::Object>();
+    if (!object_result.has_value()) {
+        return;
+    }
+    const auto& object = object_result.value().get();
     const auto& shortname = object.find(kShortnameKey);
     if (shortname == object.cend())
     {
@@ -278,7 +282,12 @@ void ParseEvent(const score::json::Any& json,
         return;
     }
 
-    const auto& event_name = shortname->second.As<std::string>().value().get();
+    auto event_name_result = shortname->second.As<std::string>();
+    if (!event_name_result.has_value()) {
+        score::mw::log::LogError("lola") << "Trace Filter Configuration: event shortname not a valid string!";
+        return;
+    }
+    const auto& event_name = event_name_result.value().get();
     // check if event exists at all on our side. If not silently ignore it according to:
     // [SCR-18159328] Trace Filter Config reference to non-existing trace-point
     if (event_names.count(event_name) == 0U)
@@ -340,7 +349,11 @@ void ParseEvents(const score::json::Any& json,
                  const std::set<std::string_view>& instance_specifiers,
                  TracingFilterConfig& filter_config) noexcept
 {
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto object_result = json.As<score::json::Object>();
+    if (!object_result.has_value()) {
+        return;
+    }
+    const auto& object = object_result.value().get();
     const auto& events = object.find(kEventsKey);
     if (events == object.cend())
     {
@@ -352,7 +365,11 @@ void ParseEvents(const score::json::Any& json,
         const std::set<std::string_view>& event_names =
             GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::EVENT, configuration);
 
-        for (const auto& event : events->second.As<score::json::List>().value().get())
+        auto events_list = events->second.As<score::json::List>();
+        if (!events_list.has_value()) {
+            return;
+        }
+        for (const auto& event : events_list.value().get())
         {
             ParseEvent(event, service_short_name_path, event_names, configuration, instance_specifiers, filter_config);
         }
@@ -381,7 +398,11 @@ void AddTracePointsFromSubObject(const score::json::Object& json_object,
     const auto& block = json_object.find(sub_object_name);
     if (block != json_object.cend())
     {
-        auto& block_object = block->second.As<score::json::Object>().value().get();
+        auto block_result = block->second.As<score::json::Object>();
+        if (!block_result.has_value()) {
+            return;
+        }
+        auto& block_object = block_result.value().get();
         // trace points for the proxy side
         for (auto& prop_mapping : property_name_trace_point_mappings)
         {
@@ -403,9 +424,13 @@ void WarnNotImplementedTracePointsFromSubObject(const score::json::Object& json_
     const auto& block = json_object.find(sub_object_name);
     if (block != json_object.cend())
     {
+        auto block_result = block->second.As<score::json::Object>();
+        if (!block_result.has_value()) {
+            return;
+        }
+        auto& block_object = block_result.value().get();
         for (auto& not_implemented_property_name : service_element_notifier_filter_properties_not_implemented_array)
         {
-            auto& block_object = block->second.As<score::json::Object>().value().get();
             if (IsOptionalBoolPropertyEnabled(block_object, not_implemented_property_name))
             {
                 ::score::mw::log::LogWarn("lola")
@@ -430,7 +455,11 @@ void ParseField(const score::json::Any& json,
                 const std::set<std::string_view>& instance_specifiers,
                 TracingFilterConfig& filter_config) noexcept
 {
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto object_result = json.As<score::json::Object>();
+    if (!object_result.has_value()) {
+        return;
+    }
+    const auto& object = object_result.value().get();
     const auto& shortname = object.find(kShortnameKey);
     if (shortname == object.cend())
     {
@@ -440,7 +469,12 @@ void ParseField(const score::json::Any& json,
         return;
     }
 
-    const auto& field_name = shortname->second.As<std::string>().value().get();
+    auto field_name_result = shortname->second.As<std::string>();
+    if (!field_name_result.has_value()) {
+        score::mw::log::LogError("lola") << "Trace Filter Configuration: field shortname not a valid string!";
+        return;
+    }
+    const auto& field_name = field_name_result.value().get();
     // check if field exists at all on our side. If not silently ignore it according to:
     // [SCR-18159328] Trace Filter Config reference to non existing trace-point
     if (field_names.count(field_name) == 0U)
@@ -524,7 +558,11 @@ void ParseFields(const score::json::Any& json,
                  const std::set<std::string_view>& instance_specifiers,
                  TracingFilterConfig& filter_config) noexcept
 {
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto object_result = json.As<score::json::Object>();
+    if (!object_result.has_value()) {
+        return;
+    }
+    const auto& object = object_result.value().get();
     const auto& fields = object.find(kFieldsKey);
     if (fields == object.cend())
     {
@@ -536,7 +574,11 @@ void ParseFields(const score::json::Any& json,
         const std::set<std::string_view>& field_names =
             GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::FIELD, configuration);
 
-        for (const auto& field : fields->second.As<score::json::List>().value().get())
+        auto fields_list = fields->second.As<score::json::List>();
+        if (!fields_list.has_value()) {
+            return;
+        }
+        for (const auto& field : fields_list.value().get())
         {
             ParseField(field, service_short_name_path, field_names, configuration, instance_specifiers, filter_config);
         }
@@ -556,7 +598,11 @@ void ParseMethods(const score::json::Any& json,
                   const std::set<std::string_view>& /*instance_specifiers*/,
                   TracingFilterConfig& /*filter_config*/) noexcept
 {
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto object_result = json.As<score::json::Object>();
+    if (!object_result.has_value()) {
+        return;
+    }
+    const auto& object = object_result.value().get();
     const auto& methods = object.find(kMethodsKey);
     if (methods == object.cend())
     {
@@ -586,7 +632,11 @@ void ParseService(const score::json::Any& json,
                   const Configuration& configuration,
                   TracingFilterConfig& filter_config) noexcept
 {
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto object_result = json.As<score::json::Object>();
+    if (!object_result.has_value()) {
+        return;
+    }
+    const auto& object = object_result.value().get();
     const auto& shortname_path = object.find(kShortnamePathKey);
     if (shortname_path == object.cend())
     {
@@ -594,7 +644,12 @@ void ParseService(const score::json::Any& json,
         return;
     }
 
-    const auto& shortname_path_string = shortname_path->second.As<std::string>().value().get();
+    auto shortname_path_result = shortname_path->second.As<std::string>();
+    if (!shortname_path_result.has_value()) {
+        score::mw::log::LogError("lola") << "Trace Filter Configuration: shortname_path not a valid string!";
+        return;
+    }
+    const auto& shortname_path_string = shortname_path_result.value().get();
     if (configured_service_types.count(shortname_path_string) > 0U)
     {
         // determine the configured service-instances of the given service-type
@@ -616,7 +671,11 @@ void ParseService(const score::json::Any& json,
 score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json, const Configuration& configuration) noexcept
 {
     TracingFilterConfig tracing_filter_config{};
-    const auto& object = json.As<score::json::Object>().value().get();
+    auto object_result = json.As<score::json::Object>();
+    if (!object_result.has_value()) {
+        return score::Result<TracingFilterConfig>{tracing_filter_config};
+    }
+    const auto& object = object_result.value().get();
     const auto& services = object.find(kServicesKey);
     if (services == object.cend())
     {
@@ -632,7 +691,11 @@ score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json, c
         score::cpp::ignore = configured_service_types.insert(service_type_string_view);
     }
 
-    for (const auto& service : services->second.As<score::json::List>().value().get())
+    auto services_list = services->second.As<score::json::List>();
+    if (!services_list.has_value()) {
+        return score::Result<TracingFilterConfig>{tracing_filter_config};
+    }
+    for (const auto& service : services_list.value().get())
     {
 
         ParseService(service, configured_service_types, configuration, tracing_filter_config);
