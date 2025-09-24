@@ -58,8 +58,16 @@ score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& seria
         ::score::mw::log::LogFatal("lola") << "InstanceIdentifier serialized string is invalid. Exiting";
         return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
     }
-    const auto& json_object = std::move(json_result).value().As<json::Object>().value().get();
-    return InstanceIdentifier{json_object, std::move(serialized_format)};
+    auto json_obj_result = std::move(json_result).value().As<json::Object>();
+    if (!json_obj_result.has_value())
+    {
+        ::score::mw::log::LogFatal("lola") << "InstanceIdentifier JSON object conversion failed. Exiting";
+        return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
+    }
+    const auto& json_object = json_obj_result.value().get();
+    std::string serialized_string{serialized_format.data(), serialized_format.size()};
+    InstanceIdentifier instance_identifier{json_object, std::move(serialized_string)};
+    return instance_identifier;
 }
 
 InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string) noexcept
