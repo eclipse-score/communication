@@ -55,7 +55,6 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
     {
         std::string quality_string{it.first.GetAsStringView().data(), it.first.GetAsStringView().size()};
         const QualityType quality_type{FromString(std::move(quality_string))};
-
         // Check if the UID list structure itself is valid
         const auto uids_json_result = it.second.As<score::json::List>();
         if (!uids_json_result.has_value())
