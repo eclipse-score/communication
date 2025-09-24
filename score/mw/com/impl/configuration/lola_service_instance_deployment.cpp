@@ -55,7 +55,12 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
     {
         std::string quality_string{it.first.GetAsStringView().data(), it.first.GetAsStringView().size()};
         const QualityType quality_type{FromString(std::move(quality_string))};
-        const auto& uids_json = it.second.As<score::json::List>().value().get();
+        auto uids_result = it.second.As<score::json::List>();
+        if (!uids_result.has_value()) {
+            score::mw::log::LogFatal("lola") << "Invalid UID list in configuration. Terminating";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& uids_json = uids_result.value().get();
 
         std::vector<uid_t> uids{};
         for (auto& uid_json : uids_json)
