@@ -19,7 +19,7 @@ cc_library(
     hdrs = ["flock_mutex.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:frontend",
         "@score-baselibs//score/os:fcntl",
     ],
     tags = ["FFI"],
@@ -90,6 +90,7 @@ cc_gtest_unit_test(
     deps = [
         ":exclusive_flock_mutex",
         ":shared_flock_mutex",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
         "@score-baselibs//score/os:fcntl",
         "@score-baselibs//score/os/mocklib:fcntl_mock",
         "@score-baselibs//score/os/mocklib:stat_mock",

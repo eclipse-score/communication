@@ -504,7 +504,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score-baselibs//score/language/safecpp/safe_math",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:frontend",
     ],
     tags = ["FFI"],
     visibility = [
@@ -567,7 +567,7 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score-baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",  # TODO: Remove when SubtractPointersBytes is no longer noexcept and we remove the last death test.
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -583,7 +583,7 @@ cc_gtest_unit_test(
     deps = [
         ":shared_memory_factory",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -626,7 +626,7 @@ cc_gtest_unit_test(
     deps = [
         ":lock_file",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -641,7 +641,7 @@ cc_gtest_unit_test(
         ":fake_memory_resources",
         ":managed_memory_resource",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -657,7 +657,7 @@ cc_gtest_unit_test(
     deps = [
         ":fake_memory_resources",
         ":map",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -674,7 +674,7 @@ cc_gtest_unit_test(
         ":atomic_indirector_mock_binding",
         ":memory_region_map",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -690,7 +690,7 @@ cc_gtest_unit_test(
     deps = [
         ":fake_memory_resources",
         ":memory_resource_proxy",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -707,7 +707,7 @@ cc_gtest_unit_test(
         ":memory_resource_registry",
         ":pointer_arithmetic_util",
         ":shared_memory_error",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -723,6 +723,7 @@ cc_gtest_unit_test(
     deps = [
         ":new_delete_delegate_resource",
         ":shared_memory_test_resources",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -738,7 +739,7 @@ cc_gtest_unit_test(
     deps = [
         ":fake_memory_resources",
         ":polymorphic_offset_ptr_allocator",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -769,7 +770,7 @@ cc_gtest_unit_test(
         ":fake_memory_resources",
         ":pointer_arithmetic_util",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -785,7 +786,7 @@ cc_gtest_unit_test(
     deps = [
         ":shared_memory_test_resources",
         "@score-baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
         "@score-baselibs//score/os/utils/acl:mock",
     ],
 )
@@ -801,7 +802,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -818,7 +819,7 @@ cc_gtest_unit_test(
         ":pointer_arithmetic_util",
         ":shared_memory_resource",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
         "@score-baselibs//score/os/utils/acl:mock",
     ],
 )
@@ -836,7 +837,7 @@ cc_gtest_unit_test(
         ":fake_memory_resources",
         ":pointer_arithmetic_util",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -852,7 +853,7 @@ cc_gtest_unit_test(
     deps = [
         ":fake_memory_resources",
         ":shared_memory_test_resources",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
         "@score-baselibs//score/os/utils/acl:mock",
     ],
 )
@@ -869,7 +870,7 @@ cc_gtest_unit_test(
     deps = [
         ":fake_memory_resources",
         ":vector",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -888,7 +889,7 @@ cc_gtest_unit_test(
     deps = [
         ":fake_memory_resources",
         ":string",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 

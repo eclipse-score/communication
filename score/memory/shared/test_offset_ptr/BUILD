@@ -18,7 +18,7 @@ cc_gtest_unit_test(
     deps = [
         ":offset_ptr_test_resources",
         "@score-baselibs//score/memory/shared:offset_ptr",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
@@ -43,7 +43,7 @@ cc_unit_test(
         "@score-baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@score-baselibs//score/memory/shared:offset_ptr",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
