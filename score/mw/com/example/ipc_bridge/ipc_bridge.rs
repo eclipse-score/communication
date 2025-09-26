@@ -57,7 +57,7 @@ struct Arguments {
     service_instance_manifest: PathBuf,
 }
 
-const SERVICE_DISCOVERY_SLEEP_DURATION: Duration = Duration::from_millis(500);
+const SERVICE_DISCOVERY_SLEEP_DURATION: Duration = Duration::from_millis(10);
 
 /// Async function that takes `count` samples from the stream and prints the `x` field of each
 /// sample that is received.
