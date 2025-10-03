@@ -79,6 +79,7 @@ auto CastIntegerToPointer(std::uintptr_t integer) noexcept -> PointerType
 }
 template void* CastIntegerToPointer<void*>(std::uintptr_t) noexcept;
 template const void* CastIntegerToPointer<const void*>(std::uintptr_t) noexcept;
+template std::byte* CastIntegerToPointer<std::byte*>(std::uintptr_t) noexcept;
 
 score::mw::log::LogHex64 PointerToLogValue(const void* const pointer)
 {
