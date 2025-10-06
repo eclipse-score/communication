@@ -123,6 +123,24 @@ TEST_F(TypedMemoryFixture, AllocateAndOpenAnonymousTypedMemoryOpenHandleOk)
     EXPECT_EQ(result.value(), 1);
 }
 
+TEST_F(TypedMemoryFixture, UnlinkOk)
+{
+    EXPECT_CALL(*shared_memory_mock_, Unlink(_)).WillOnce(Return(score::cpp::blank{}));
+    score::memory::shared::internal::TypedMemoryImpl typed_memory{std::move(mman_mock_), std::move(shared_memory_mock_)};
+    const auto result = typed_memory.Unlink(std::string{"/dev/example"});
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(TypedMemoryFixture, UnlinkFail)
+{
+    EXPECT_CALL(*shared_memory_mock_, Unlink(_))
+        .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOSYS))));
+    score::memory::shared::internal::TypedMemoryImpl typed_memory{std::move(mman_mock_), std::move(shared_memory_mock_)};
+    const auto result = typed_memory.Unlink(std::string{"/dev/example"});
+    EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), score::os::Error::createFromErrno(ENOSYS));
+}
+
 TEST_F(TypedMemoryFixture, DefaultIsNotNull)
 {
     auto typed_mem_impl = score::memory::shared::internal::TypedMemoryImpl::Default();
