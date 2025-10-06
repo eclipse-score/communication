@@ -1,5 +1,4 @@
 {
     "name": "eclipse-s-core",
-    "image": "ghcr.io/eclipse-score/devcontainer:latest",
-    "initializeCommand": "mkdir -p ${localEnv:HOME}/.cache/bazel"
+    "image": "ghcr.io/eclipse-score/devcontainer:latest"
 }
