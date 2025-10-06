@@ -1,4 +1,7 @@
 {
     "name": "eclipse-s-core",
-    "image": "ghcr.io/eclipse-score/devcontainer:latest"
+    "image": "ghcr.io/eclipse-score/devcontainer:latest",
+    "runArgs": [
+        "--privileged"
+    ]
 }
