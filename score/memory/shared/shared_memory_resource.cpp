@@ -102,6 +102,10 @@ struct ShmObjectStatInfo
     // coverity[autosar_cpp14_a9_6_1_violation]
     uid_t owner_uid;
     std::size_t size;
+
+    // This struct is not intended for communication between binaries that are compiled with different toolchains, and
+    // does not provide guarantees for that case. Thus using a non fixed size member here is not an actual problem.
+    // coverity[autosar_cpp14_a9_6_1_violation]
     bool is_shm_in_typed_memory;
 };
 
