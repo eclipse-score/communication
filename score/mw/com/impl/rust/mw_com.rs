@@ -13,7 +13,7 @@
 pub use macros::*;
 pub use proxy_bridge_rs::{initialize, InstanceSpecifier}; // TODO: Move to common
 pub mod proxy {
-    pub use proxy_bridge_rs::{find_service, SamplePtr};
+    pub use proxy_bridge_rs::{find_service, SamplePtr, ProxyManager, SubscribedProxyEvent, ProxyEventStream, HandleType};
 }
 pub mod skeleton {
     pub use skeleton_bridge_rs::{OfferState, Offered, SkeletonEvent, SkeletonOps, UnOffered};
