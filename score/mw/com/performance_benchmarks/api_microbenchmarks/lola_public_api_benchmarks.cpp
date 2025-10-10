@@ -83,7 +83,7 @@ BENCHMARK_F(LolaBenchmarkFixture, LoLaInstanceSpecifierCreatePartialLoopBenchmar
     }
 }
 
-// // Run the benchmark
-BENCHMARK_MAIN();
-
 }  // namespace score::mw::com::test
+
+// Run the benchmark (must be at global scope)
+BENCHMARK_MAIN();
