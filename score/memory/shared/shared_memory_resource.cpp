@@ -320,10 +320,26 @@ void SharedMemoryResource::UnlinkFilesystemEntry() const noexcept
     // there's no way for path to equal nullptr using the public interface.)
     if (path != nullptr)
     {
-        // This requirement broken_link_c/issue/57467 directly excludes memory::shared (which is
-        // part of mw::com) from the ban by listing it in the not relevant for field.
-        // NOLINTNEXTLINE(score-banned-function): explanation on lines above.
-        score::cpp::ignore = ::score::os::Mman::instance().shm_unlink(path->c_str());
+        if (!is_shm_in_typed_memory_)
+        {
+            // This requirement broken_link_c/issue/57467 directly excludes memory::shared (which
+            // is part of mw::com) from the ban by listing it in the not relevant for field.
+            // NOLINTNEXTLINE(score-banned-function): explanation on lines above.
+            score::cpp::ignore = ::score::os::Mman::instance().shm_unlink(path->c_str());
+            return;
+        }
+
+        const auto unlink_result = typed_memory_ptr_->Unlink(path->c_str());
+        if (unlink_result.has_value())
+        {
+            score::mw::log::LogDebug("shm") << __func__ << "Shm " << *path << " unlinked";
+        }
+        else
+        {
+            score::mw::log::LogError("shm")
+                << __func__ << __LINE__ << "Unexpected error while trying to unlink shared-memory " << *path
+                << " in typed memory. Reason: " << unlink_result.error();
+        }
     }
     // LCOV_EXCL_BR_STOP
 }

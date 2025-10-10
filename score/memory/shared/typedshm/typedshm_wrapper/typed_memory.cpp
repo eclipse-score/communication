@@ -113,7 +113,7 @@ score::cpp::expected<int, score::os::Error> TypedMemoryImpl::AllocateAndOpenAnon
 #endif
 }
 
-score::cpp::expected_blank<score::os::Error> TypedMemoryImpl::Unlink(const std::string shm_name) const noexcept
+score::cpp::expected_blank<score::os::Error> TypedMemoryImpl::Unlink(std::string_view shm_name) const noexcept
 {
 // coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
 #if defined(__QNX__) && defined(USE_TYPEDSHMD)
