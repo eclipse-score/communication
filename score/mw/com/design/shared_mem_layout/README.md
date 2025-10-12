@@ -36,13 +36,13 @@ The following class diagram provides an overview of the classes, whose instances
 also a rough indication how the provider side (in the form of `LoLa` skeleton) and the consumer side (in the form of
 `LoLa` proxy/proxy-event) interact with them.
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/shared_mem_layout/shared_mem_layout_classdiagram.puml">
+<img alt="SHARED_MEM_LAYOUT_CLASSDIAGRAM" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/shared_mem_layout/shared_mem_layout_classdiagram.puml">
 
 This object diagram below (showing a concrete instantiation of the class diagram above for some example service instance)
 depicts more clearly the relation between the `SharedMemoryResource` instances representing a shared-memory object and the
 anchor/root elements placed within shared-memory:
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/shared_mem_layout/shared_mem_layout_objectdiagram.puml">
+<img alt="SHARED_MEM_LAYOUT_OBJECTDIAGRAM" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/shared_mem_layout/shared_mem_layout_objectdiagram.puml">
 
 So - the first object/element created within the shared-memory object for **Data** (represented by `SharedMemoryResource`
 instance `shmResource_storage_SI_1`) is the instance `serviceDataStorage_SI_1` of class `ServiceDataStorage` and

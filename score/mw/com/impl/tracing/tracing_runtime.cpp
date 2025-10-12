@@ -13,9 +13,9 @@
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 
 #include "score/analysis/tracing/common/interface_types/types.h"
-#include "score/analysis/tracing/library/generic_trace_api/error_code/error_code.h"
-#include "score/analysis/tracing/library/interface/ara_com_meta_info.h"
-#include "score/analysis/tracing/library/interface/generic_trace_api.h"
+#include "score/analysis/tracing/generic_trace_library/interface_types/ara_com_meta_info.h"
+#include "score/analysis/tracing/generic_trace_library/interface_types/error_code/error_code.h"
+#include "score/analysis/tracing/generic_trace_library/interface_types/generic_trace_api.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/mw/com/impl/tracing/trace_error.h"
 

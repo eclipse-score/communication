@@ -1,0 +1,17 @@
+inputs:
+  - .
+
+to-string-rules:
+  - package: ScoreReq
+    tuple-type: AssumedSystemReqId
+    to-string:
+      - $(item)@$(version)
+      - $(item)
+
+conversion-rules:
+  - package: ScoreReq
+    record-type: FeatReq
+    namespace: req
+    description-fields: description
+    tags:
+      - derived_from

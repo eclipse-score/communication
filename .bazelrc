@@ -19,6 +19,11 @@ common --//score/mw/com/flags:tracing_library=stub
 common --extra_toolchains=@gcc_toolchain//:host_gcc_12
 build --incompatible_strict_action_env
 test --test_tag_filters=-manual
+build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
+
+# unshare /dev/shm and /tmp
+test --sandbox_tmpfs_path=/dev/shm
+test --sandbox_tmpfs_path=/tmp
 
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
 common --registry=https://bcr.bazel.build

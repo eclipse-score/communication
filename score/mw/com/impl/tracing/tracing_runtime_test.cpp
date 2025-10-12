@@ -16,8 +16,8 @@
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/tracing/tracing_test_resources.h"
 
-#include "score/analysis/tracing/library/generic_trace_api/error_code/error_code.h"
-#include "score/analysis/tracing/library/generic_trace_api/mocks/trace_library_mock.h"
+#include "score/analysis/tracing/generic_trace_library/interface_types/error_code/error_code.h"
+#include "score/analysis/tracing/generic_trace_library/mock/trace_library_mock.h"
 
 #include <score/utility.hpp>
 

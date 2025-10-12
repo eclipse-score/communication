@@ -268,3 +268,13 @@ ScoreReq.FeatReq CommunicationASILLevel {
     derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SafeCommunication@1 ]
     version = 1
 }
+
+ScoreReq.FeatReq ErrorHandling {
+    description = """(C++) exceptions shall not be used for error handling.
+    The best way to deal with errors is to try to resolve those component internally. If not possible the caller of the function shall be notified of the error.
+    For (error) returns there is a specific library to be used in S-CORE, it is the Score::Result library which is part of
+    the Base Libraries feature."""
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.ErrorHandling@1 ]
+    version = 1
+}

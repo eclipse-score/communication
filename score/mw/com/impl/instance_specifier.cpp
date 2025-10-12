@@ -14,7 +14,7 @@
 
 #include "score/mw/com/impl/com_error.h"
 
-#include <regex>
+#include <cctype>
 
 namespace score::mw::com::impl
 {
@@ -22,32 +22,52 @@ namespace score::mw::com::impl
 namespace
 {
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate()
-// function shall not be called implicitly". std::regex_search() will not throw exception
-// as characters passed are pre checked for invalid data.
-// coverity[autosar_cpp14_a15_5_3_violation]
+/**
+ * @brief Validates whether a shortname string adheres to the naming requirements.
+ *
+ * @details Validation Rules:
+ * - Must not be empty
+ * - First character must be: letter (a-z, A-Z), underscore (_), or forward slash (/)
+ * - Subsequent characters must be: alphanumeric (a-z, A-Z, 0-9), underscore (_), or forward slash (/)
+ * - Must not end with a forward slash (/)
+ * - Must not contain consecutive forward slashes (//)
+ *
+ * @param shortname The shortname string to validate
+ * @return true if the shortname is valid according to all rules, false otherwise
+ */
 bool IsShortNameValid(const std::string_view shortname) noexcept
 {
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized". std::regex does not have a constexpr constructor and hence cannot be constexpr.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_characters_regex("^[A-Za-z_/][A-Za-z_/0-9]*", std::regex_constants::basic);
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_trailing_slash_regex("/$", std::regex_constants::basic);
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_duplicate_slashes_regex("/{2,}", std::regex_constants::extended);
+    if (shortname.empty() || shortname.back() == '/')
+    {
+        return false;
+    }
 
-    const bool all_characters_valid = std::regex_match(shortname.begin(), shortname.end(), check_characters_regex);
-    const bool duplicate_slashes_found =
-        std::regex_search(shortname.begin(), shortname.end(), check_duplicate_slashes_regex);
-    const bool trailing_slash_found = std::regex_search(shortname.begin(), shortname.end(), check_trailing_slash_regex);
+    // Validate first character
+    const char first_char = shortname[0];
+    if (!((static_cast<bool>(std::isalpha(first_char)) || first_char == '_') || first_char == '/'))
+    {
+        return false;
+    }
+    // Single pass validation
+    for (std::size_t char_index = 1; char_index < shortname.size(); ++char_index)
+    {
+        const char current_char = shortname[char_index];
+        if (!((static_cast<bool>(std::isalnum(current_char)) || current_char == '_') || current_char == '/'))
+        {
+            return false;
+        }
+        if (current_char == '/' && shortname[char_index - 1] == '/')
+        {
+            return false;
+        }
+    }
 
-    return (((all_characters_valid) && (!duplicate_slashes_found)) && (!trailing_slash_found));
+    return true;
 }
 
 }  // namespace
 
-score::Result<InstanceSpecifier> InstanceSpecifier::Create(const std::string_view shortname_path) noexcept
+score::Result<InstanceSpecifier> InstanceSpecifier::Create(std::string&& shortname_path) noexcept
 {
     if (!IsShortNameValid(shortname_path))
     {
@@ -56,8 +76,7 @@ score::Result<InstanceSpecifier> InstanceSpecifier::Create(const std::string_vie
         return MakeUnexpected(ComErrc::kInvalidMetaModelShortname);
     }
 
-    const InstanceSpecifier instance_specifier{shortname_path};
-    return instance_specifier;
+    return InstanceSpecifier{std::move(shortname_path)};
 }
 
 std::string_view InstanceSpecifier::ToString() const noexcept
@@ -65,8 +84,8 @@ std::string_view InstanceSpecifier::ToString() const noexcept
     return instance_specifier_string_;
 }
 
-InstanceSpecifier::InstanceSpecifier(const std::string_view shortname_path) noexcept
-    : instance_specifier_string_{shortname_path}
+InstanceSpecifier::InstanceSpecifier(std::string&& shortname_path) noexcept
+    : instance_specifier_string_{std::move(shortname_path)}
 {
 }
 

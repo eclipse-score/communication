@@ -38,7 +38,7 @@ cc_library(
     hdrs = ["bridge_macros.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         "//score/mw/com:types",
@@ -53,7 +53,7 @@ cc_library(
     hdrs = ["proxy_bridge_macros.h"],
     deprecation = "Please change your dependency to //score/mw/com/impl/rust:bridge_macros",
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
         # "@ddad//platform/aas:__subpackages__",
     ],
     deps = [":bridge_macros"],
@@ -98,7 +98,7 @@ rust_library(
     name = "mw_com",
     srcs = ["mw_com.rs"],
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":common",

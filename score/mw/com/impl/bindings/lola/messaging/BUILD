@@ -97,13 +97,13 @@ cc_library(
         ":i_message_passing_service",
         ":i_notify_event_handler",
         ":thread_abstraction",
-        "@score-baselibs//score/concurrency:thread_pool",
-        "@score-baselibs//score/os:errno_logging",
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola:element_fq_id",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/message_passing",
+        "@score-baselibs//score/concurrency:thread_pool",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/os:errno_logging",
     ],
 )
 
@@ -145,10 +145,10 @@ cc_library(
         ":i_message_passing_control",
         ":i_message_passing_service",
         ":i_notify_event_handler",
+        "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/os:errno_logging",
         "@score-baselibs//score/os:unistd",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -179,6 +179,53 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
+    ],
+)
+
+# MessagePassingFacade::AsilSpecificCfg
+cc_library(
+    name = "messaging2_legacy_headers_to_remove",
+    hdrs = [
+        "i_message_passing_control.h",
+        "message_passing_facade.h",
+        "notify_event_handler.h",
+    ],
+    tags = ["FFI"],
+    deps = [
+        # TODO:
+        ":i_message_passing_service",
+        ":i_notify_event_handler",
+        ":thread_abstraction",
+        #
+        "@score-baselibs//score/os:errno_logging",
+        "//score/mw/com/impl/bindings/lola/messaging/messages",
+        "//score/mw/com/message_passing",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "messaging2",
+    srcs = [
+        "message_passing_client_cache.cpp",
+        "message_passing_service.cpp",
+        "message_passing_service_instance.cpp",
+    ],
+    hdrs = [
+        "message_passing_client_cache.h",
+        "message_passing_service.h",
+        "message_passing_service_instance.h",
+        "thread_abstraction.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        ":messaging2_legacy_headers_to_remove",
+        "@communication//score/message_passing",
+        "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -246,12 +293,12 @@ cc_test(
         ":mock",
         ":notify_event_handler_facade",
         ":notify_event_handler_mock",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
         "//score/mw/com/message_passing",
         "//score/mw/com/message_passing:mock",
-        "@score-baselibs//score/mw/log",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/os/mocklib:unistd_mock",
     ],
 )
 
@@ -273,11 +320,11 @@ cc_test(
     deps = [
         ":mock",
         ":notify_event_handler",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "//score/mw/com/message_passing",
         "//score/mw/com/message_passing:mock",
-        "@score-baselibs//score/mw/log",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score-baselibs//score/mw/log",
     ],
 )
 

@@ -20,9 +20,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        "@score-baselibs//score/memory/shared:shared_memory_factory_mock",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl:service_discovery_mock",
@@ -32,6 +29,9 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/test_doubles",
         "@googletest//:gtest_main",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory/shared:shared_memory_factory_mock",
+        "@score-baselibs//score/os/mocklib:fcntl_mock",
+        "@score-baselibs//score/os/mocklib:unistd_mock",
     ],
 )
 
@@ -45,12 +45,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/filesystem:mock",
-        "@score-baselibs//score/memory/shared:shared_memory_factory_mock",
-        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
-        "@score-baselibs//score/memory/shared:shared_memory_resource_mock",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder_mock",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
@@ -60,7 +54,13 @@ cc_library(
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:tracing_runtime_mock",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/filesystem:mock",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/memory/shared:shared_memory_factory_mock",
+        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
+        "@score-baselibs//score/memory/shared:shared_memory_resource_mock",
+        "@score-baselibs//score/os/mocklib:fcntl_mock",
+        "@score-baselibs//score/os/mocklib:unistd_mock",
     ],
 )
 
@@ -70,6 +70,10 @@ cc_library(
     srcs = ["skeleton_event_test_resources.cpp"],
     hdrs = ["skeleton_event_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
+    target_compatible_with = select({
+        "@platforms//os:qnx": ["@score-baselibs//bazel/platforms/qnx_version:qnx7"],  # TODO: Ticket-214229 QNX8 incompatible
+        "//conditions:default": [],
+    }),
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
@@ -89,14 +93,18 @@ cc_library(
     srcs = ["service_discovery_test_resources.cpp"],
     hdrs = ["service_discovery_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
+    target_compatible_with = select({
+        "@platforms//os:qnx": ["@score-baselibs//bazel/platforms/qnx_version:qnx7"],  # TODO: Ticket-214229 QNX8 incompatible
+        "//conditions:default": [],
+    }),
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":skeleton_test_resources",
-        "@score-baselibs//score/filesystem",
         "//score/mw/com/impl:find_service_handle",
         "//score/mw/com/impl:find_service_handler",
         "//score/mw/com/impl:handle_type",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/filesystem",
         "@score-baselibs//score/language/futurecpp",
     ],
 )
@@ -129,17 +137,21 @@ cc_test(
         "aborts_upon_exception",
     ],
     tags = ["unit"],
+    target_compatible_with = select({
+        "@platforms//os:qnx": ["@score-baselibs//bazel/platforms/qnx_version:qnx7"],  # TODO: Ticket-214229 QNX8 incompatible
+        "//conditions:default": [],
+    }),
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":skeleton_test_resources",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/os/mocklib:acl_mock",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/mock_binding",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score-baselibs//score/os/mocklib:acl_mock",
+        "@score-baselibs//score/os/mocklib:fcntl_mock",
     ],
 )
 
@@ -152,14 +164,15 @@ cc_test(
         "aborts_upon_exception",
     ],
     tags = ["unit"],
+    target_compatible_with = select({
+        "@platforms//os:qnx": ["@score-baselibs//bazel/platforms/qnx_version:qnx7"],  # TODO: Ticket-214229 QNX8 incompatible
+        "//conditions:default": [],
+    }),
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
     ],
     deps = [
         ":skeleton_test_resources",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/filesystem",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl:service_discovery_mock",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
@@ -168,6 +181,9 @@ cc_test(
         "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
         "//score/mw/com/impl/tracing:tracing_runtime_mock",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/filesystem",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score-baselibs//score/os/mocklib:fcntl_mock",
     ],
 )
 
@@ -183,8 +199,6 @@ cc_test(
     deps = [
         ":proxy_event_test_resources",
         ":service_discovery_test_resources",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/filesystem",
         "//score/mw/com/impl:proxy_base",
         "//score/mw/com/impl/bindings/lola:proxy",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
@@ -192,5 +206,7 @@ cc_test(
         "//score/mw/com/impl/bindings/lola/test_doubles",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "@googletest//:gtest_main",
+        "@score-baselibs//score/filesystem",
+        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
     ],
 )

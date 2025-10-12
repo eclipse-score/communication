@@ -25,9 +25,9 @@ cc_binary(
     deps = [
         ":sample_sender_receiver",
         "//score/mw/com",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
         "@boost.program_options",
+        "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
     ],
 )
 

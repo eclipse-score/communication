@@ -137,11 +137,14 @@ package "configuration" {
     + GetSenderMessageQueueSize() const noexcept : std::int32_t
     + GetProcessAsilLevel() const : QualityType
     + GetShmSizeCalcMode() const noexcept : ShmSizeCalculationMode
+    + GetApplicationId() const : score::cpp::optional<uid_t>
+    + SetApplicationId(uid_t application_id) : void
     - process_asil_level_ : QualityType
     - message_rx_queue_size_qm : std::int32_t
     - message_rx_queue_size_b : std::int32_t
     - message_tx_queue_size_b : std::int32_t
     - shm_size_calc_mode_ : ShmSizeCalculationMode
+    - application_id_ : score::cpp::optional<uid_t>
   }
 
   class "Global Functions" {

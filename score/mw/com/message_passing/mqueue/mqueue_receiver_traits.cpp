@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/message_passing/mqueue/mqueue_receiver_traits.h"
 
+#include "score/language/safecpp/string_view/null_termination_check.h"
+
 #include "score/os/unistd.h"
 
 #include <score/utility.hpp>
@@ -44,7 +46,12 @@ score::cpp::expected<MqueueReceiverTraits::file_descriptor_type, score::os::Erro
     const auto& mq = os_resources.mqueue;
     // Temporarily set the umask to 0 to allow for world-accessible queues.
     const auto old_umask = os_stat->umask(score::os::Stat::Mode::kNone).value();
-    const auto result = mq->mq_open(identifier.data(), flags, perms, &queue_attributes);
+    // NOTE: Below use of `safecpp::GetPtrToNullTerminatedUnderlyingBufferOf()` will emit a deprecation warning here
+    //       since it is used in conjunction with `std::string_view`. Thus, it must get fixed appropriately instead!
+    //       For examples about how to achieve that, see
+    //       broken_link_g/swh/safe-posix-platform/blob/master/score/language/safecpp/string_view/README.md
+    const auto result =
+        mq->mq_open(safecpp::GetPtrToNullTerminatedUnderlyingBufferOf(identifier), flags, perms, &queue_attributes);
     // no error code is returned. And return value is ignored as it is not needed.
     score::cpp::ignore = os_stat->umask(old_umask).value();
     return result;
@@ -56,8 +63,12 @@ void MqueueReceiverTraits::close_receiver(const MqueueReceiverTraits::file_descr
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");
     score::cpp::ignore = os_resources.mqueue->mq_close(file_descriptor);
-    score::cpp::ignore = os_resources.mqueue->mq_unlink(identifier.data());
-    score::cpp::ignore = os_resources.unistd->unlink(identifier.data());
+    // NOTE: Below uses of `safecpp::GetPtrToNullTerminatedUnderlyingBufferOf()` will emit a deprecation warning here
+    //       since it is used in conjunction with `std::string_view`. Thus, it must get fixed appropriately instead!
+    //       For examples about how to achieve that, see
+    //       broken_link_g/swh/safe-posix-platform/blob/master/score/language/safecpp/string_view/README.md
+    score::cpp::ignore = os_resources.mqueue->mq_unlink(safecpp::GetPtrToNullTerminatedUnderlyingBufferOf(identifier));
+    score::cpp::ignore = os_resources.unistd->unlink(safecpp::GetPtrToNullTerminatedUnderlyingBufferOf(identifier));
 }
 
 void MqueueReceiverTraits::stop_receive(const MqueueReceiverTraits::file_descriptor_type file_descriptor,

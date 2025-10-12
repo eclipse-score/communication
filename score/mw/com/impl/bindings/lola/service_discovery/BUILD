@@ -26,9 +26,9 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
+        "//score/mw/com/impl:enriched_instance_identifier",
         "@score-baselibs//score/filesystem",
         "@score-baselibs//score/result",
-        "//score/mw/com/impl:enriched_instance_identifier",
     ],
 )
 
@@ -38,10 +38,10 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":flag_file",
-        "@score-baselibs//score/filesystem:mock",
-        "@score-baselibs//score/os:unistd",
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
+        "@score-baselibs//score/filesystem:mock",
+        "@score-baselibs//score/os:unistd",
     ],
 )
 
@@ -57,10 +57,10 @@ cc_library(
         ":flag_file",
         ":known_instances_container",
         ":quality_aware_container",
+        "//score/mw/com/impl:instance_identifier",
         "@score-baselibs//score/filesystem",
         "@score-baselibs//score/os/utils/inotify:inotify_instance",
         "@score-baselibs//score/os/utils/inotify:inotify_watch_descriptor",
-        "//score/mw/com/impl:instance_identifier",
     ],
 )
 
@@ -70,10 +70,10 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":flag_file_crawler",
-        "@score-baselibs//score/filesystem:mock",
-        "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
+        "@score-baselibs//score/filesystem:mock",
+        "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",
     ],
 )
 

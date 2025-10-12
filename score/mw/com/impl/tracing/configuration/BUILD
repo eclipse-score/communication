@@ -1,3 +1,5 @@
+load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+
 # *******************************************************************************
 # Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
@@ -11,7 +13,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
@@ -110,8 +111,8 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":hash_helper_utility",
-        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -125,8 +126,8 @@ cc_library(
     deps = [
         ":hash_helper_for_service_element_and_se_view",
         "//score/mw/com/impl:service_element_type",
-        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -140,8 +141,8 @@ cc_library(
     deps = [
         ":hash_helper_for_service_element_and_se_view",
         "//score/mw/com/impl:service_element_type",
-        "@score-baselibs//score/mw/log",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -226,10 +227,10 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":tracing_filter_config",
-        "@score-baselibs//score/json",
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:trace_error",
+        "@score-baselibs//score/json",
         "@score-baselibs//score/language/futurecpp",
     ],
 )

@@ -11,11 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/instance_identifier.h"
-
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
 #include "score/json/json_writer.h"
+#include "score/result/result.h"
 
 #include <score/utility.hpp>
 
@@ -273,9 +273,8 @@ TEST_F(InstanceIdentifierFixture, CanCreateFromSerializedObject)
 
     const auto identifier = make_InstanceIdentifier(service_instance_deployment, service_type_deployment);
 
-    const auto serialized_identifier = identifier.ToString();
-
-    const auto reconstructed_identifier_result = InstanceIdentifier::Create(serialized_identifier);
+    const score::Result<InstanceIdentifier> reconstructed_identifier_result =
+        InstanceIdentifier::Create(std::string{identifier.ToString()});
     ASSERT_TRUE(reconstructed_identifier_result.has_value());
     const auto& reconstructed_identifier = reconstructed_identifier_result.value();
 
@@ -296,16 +295,18 @@ TEST_F(InstanceIdentifierFixture, CreatingFromInvalidSerializedObjectReturnsErro
 
     ConfigurationGuard configuration_guard{};
 
-    const std::string invalid_serialized_identifier{"invalid identifier"};
-    const auto reconstructed_identifier_result = InstanceIdentifier::Create(invalid_serialized_identifier);
+    std::string invalid_serialized_identifier{"invalid identifier"};
+    const score::Result<InstanceIdentifier> reconstructed_identifier_result =
+        InstanceIdentifier::Create(std::move(invalid_serialized_identifier));
     ASSERT_FALSE(reconstructed_identifier_result.has_value());
     EXPECT_EQ(reconstructed_identifier_result.error(), ComErrc::kInvalidInstanceIdentifierString);
 }
 
 TEST_F(InstanceIdentifierFixture, CreatingWithoutInitializingConfigurationReturnsError)
 {
-    const std::string serialized_identifier{""};
-    const auto reconstructed_identifier_result = InstanceIdentifier::Create(serialized_identifier);
+    std::string serialized_identifier{""};
+    const score::Result<InstanceIdentifier> reconstructed_identifier_result =
+        InstanceIdentifier::Create(std::move(serialized_identifier));
     ASSERT_FALSE(reconstructed_identifier_result.has_value());
     EXPECT_EQ(reconstructed_identifier_result.error(), ComErrc::kInvalidConfiguration);
 }
@@ -338,14 +339,16 @@ using InstanceIdentifierDeathTest = InstanceIdentifierUtilityFixture;
 TEST_F(InstanceIdentifierDeathTest, DeathOnCreationWithDuplicateServiceIdentifierType)
 {
     // Given a serialized InstanceIdentifier
-    const auto serialized_string_form = GenerateSerializedInstanceIdentifier(kService1, kInstanceSpecifier1);
+    const std::string serialized_string_form = GenerateSerializedInstanceIdentifier(kService1, kInstanceSpecifier1);
 
     // and that an InstanceIdentifier has been created from the serialized InstanceIdentifier
-    score::cpp::ignore = InstanceIdentifier::Create(serialized_string_form);
+    std::string first_serialized_string_form_copy{serialized_string_form};
+    score::cpp::ignore = InstanceIdentifier::Create(std::move(first_serialized_string_form_copy));
 
     // When creating a second InstanceIdentifier with the same ServiceIdentifierType
     // Then the program terminates
-    EXPECT_DEATH(InstanceIdentifier::Create(serialized_string_form), ".*");
+    std::string second_serialized_string_form_copy{serialized_string_form};
+    EXPECT_DEATH(InstanceIdentifier::Create(std::move(second_serialized_string_form_copy)), ".*");
 }
 
 TEST_F(InstanceIdentifierDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
@@ -360,24 +363,24 @@ TEST_F(InstanceIdentifierDeathTest, CreatingFromSerializedObjectWithMismatchedSe
     ASSERT_NE(it, serialized_unit.end());
     it->second = json::Any{invalid_serialization_version};
     score::json::JsonWriter writer{};
-    const std::string serialized_string_form = writer.ToBuffer(serialized_unit).value();
+    std::string serialized_string_form = writer.ToBuffer(serialized_unit).value();
 
     // Then: Verify creation of identifier with mismatched serialization version causes program termination
-    EXPECT_DEATH(InstanceIdentifier::Create(serialized_string_form), ".*");
+    EXPECT_DEATH(InstanceIdentifier::Create(std::move(serialized_string_form)), ".*");
 }
 
 TEST_F(InstanceIdentifierDeathTest, DeathOnCreationWithDuplicateInstanceSpecifier)
 {
     // Given: Two serialized instance identifiers with the same instance specifier
-    const std::string serialized_form_service1 = GenerateSerializedInstanceIdentifier(kService1, kInstanceSpecifier1);
-    const std::string serialized_form_service2 = GenerateSerializedInstanceIdentifier(kService2, kInstanceSpecifier1);
+    std::string serialized_form_service1 = GenerateSerializedInstanceIdentifier(kService1, kInstanceSpecifier1);
+    std::string serialized_form_service2 = GenerateSerializedInstanceIdentifier(kService2, kInstanceSpecifier1);
 
     // And: An instance identifier has been created from the first serialized form
-    score::cpp::ignore = InstanceIdentifier::Create(serialized_form_service1);
+    score::cpp::ignore = InstanceIdentifier::Create(std::move(serialized_form_service1));
 
     // When: Creating a second instance identifier with the same instance specifier
     // Then: The program terminates
-    EXPECT_DEATH(InstanceIdentifier::Create(serialized_form_service2), ".*");
+    EXPECT_DEATH(InstanceIdentifier::Create(std::move(serialized_form_service2)), ".*");
 }
 
 TEST_F(InstanceIdentifierFixture, HashInstanceIdentifierComparesEqual)

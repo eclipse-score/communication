@@ -21,11 +21,11 @@ alias(
     }),
     tags = ["FFI"],
     visibility = [
+        "//platform/aas/pas/logging:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
         "//score/mw/com/message_passing/test:__pkg__",
         "@score-baselibs//score/mw/log:__subpackages__",
         "@score-baselibs//score/mw/log/detail/data_router:__pkg__",
-        "//platform/aas/pas/logging:__subpackages__",
     ],
 )
 
@@ -101,6 +101,9 @@ cc_library(
         ":common_hdrs",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score-baselibs//score/language/safecpp/string_view:null_termination_check",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -113,11 +116,11 @@ cc_library(
         ":serializer",
         ":shared_properties",
         "@score-baselibs//score/concurrency",
+        "@score-baselibs//score/language/futurecpp",
         "@score-baselibs//score/memory:pmr_ring_buffer",
         "@score-baselibs//score/os:mqueue",
         "@score-baselibs//score/os:stat",
         "@score-baselibs//score/os:unistd",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -148,13 +151,13 @@ cc_library(
         ":message",
         ":shared_properties",
         "@score-baselibs//score/concurrency",
+        "@score-baselibs//score/language/futurecpp",
         "@score-baselibs//score/memory:pmr_ring_buffer",
         "@score-baselibs//score/os:fcntl",
         "@score-baselibs//score/os:unistd",
         "@score-baselibs//score/os/qnx:channel",
         "@score-baselibs//score/os/qnx:dispatch",
         "@score-baselibs//score/os/qnx:iofunc",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 
@@ -171,8 +174,8 @@ cc_library(
         "//score/mw/com/message_passing:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/os:errno",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/os:errno",
     ],
 )
 
@@ -187,9 +190,9 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
+        "//platform/aas/pas/logging:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
         "@score-baselibs//score/mw/log:__subpackages__",
-        "//platform/aas/pas/logging:__subpackages__",
     ],
     deps = [
         ":interface",
@@ -247,13 +250,13 @@ cc_library(
     target_compatible_with = ["@platforms//os:qnx"],
     deps = [
         ":message",
+        "@score-baselibs//score/language/futurecpp",
         "@score-baselibs//score/memory:pmr_ring_buffer",
         "@score-baselibs//score/os:fcntl",
         "@score-baselibs//score/os:unistd",
         "@score-baselibs//score/os/qnx:channel",
         "@score-baselibs//score/os/qnx:dispatch",
         "@score-baselibs//score/os/qnx:iofunc",
-        "@score-baselibs//score/language/futurecpp",
     ],
 )
 

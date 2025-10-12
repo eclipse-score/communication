@@ -172,7 +172,8 @@ ResultBlank SkeletonEvent<SampleDataType>::Send(const EventType& sample_value) n
 {
     if (!service_offered_flag_.IsSet())
     {
-        score::mw::log::LogError("lola") << "SkeletonEvent::Send with copy failed as Event has not yet been offered";
+        score::mw::log::LogError("lola")
+            << "SkeletonEvent::Send with copy failed as Event has not yet been offered or has been stop offered";
         return MakeUnexpected(ComErrc::kNotOffered);
     }
     auto tracing_handler = impl::tracing::CreateTracingSendCallback<SampleDataType>(tracing_data_, *binding_);
@@ -190,6 +191,13 @@ ResultBlank SkeletonEvent<SampleDataType>::Send(const EventType& sample_value) n
 template <typename SampleDataType>
 ResultBlank SkeletonEvent<SampleDataType>::Send(SampleAllocateePtr<EventType> sample) noexcept
 {
+    if (!service_offered_flag_.IsSet())
+    {
+        score::mw::log::LogError("lola")
+            << "SkeletonEvent::Send zero-copy failed as Event has not yet been offered or has been stop offered";
+        return MakeUnexpected(ComErrc::kNotOffered);
+    }
+
     auto tracing_handler =
         impl::tracing::CreateTracingSendWithAllocateCallback<SampleDataType>(tracing_data_, *binding_);
 
@@ -208,7 +216,8 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonEvent<SampleDataType>::Alloca
 {
     if (!service_offered_flag_.IsSet())
     {
-        score::mw::log::LogError("lola") << "SkeletonEvent::Allocate failed as Event has not yet been offered";
+        score::mw::log::LogError("lola")
+            << "SkeletonEvent::Allocate failed as Event has not yet been offered or has been stop offered";
         return MakeUnexpected(ComErrc::kNotOffered);
     }
 

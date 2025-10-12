@@ -24,17 +24,17 @@ cc_library(
         "//score/mw/com/impl/plumbing:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/language/safecpp/safe_math",
-        "@score-baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
-        "@score-baselibs//score/containers:dynamic_array",
-        "@score-baselibs//score/memory/shared:i_shared_memory_resource",
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:i_tracing_runtime_binding",
         "//score/mw/com/impl/tracing:service_element_tracing_data",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/mw/log",
+        "@score-baselibs//score/containers:dynamic_array",
         "@score-baselibs//score/language/futurecpp",
+        "@score-baselibs//score/language/safecpp/safe_math",
+        "@score-baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
+        "@score-baselibs//score/memory/shared:i_shared_memory_resource",
+        "@score-baselibs//score/mw/log",
     ],
 )
 
@@ -42,13 +42,17 @@ cc_gtest_unit_test(
     name = "tracing_runtime_test",
     srcs = ["tracing_runtime_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
+    target_compatible_with = select({
+        "@platforms//os:qnx": ["@score-baselibs//bazel/platforms/qnx_version:qnx7"],  # TODO: Ticket-214229 QNX8 incompatible
+        "//conditions:default": [],
+    }),
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         ":tracing_runtime",
-        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "@score-baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
     ],
 )
 

@@ -18,10 +18,15 @@
 
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace score::mw::com::impl
 {
-
+/** \api
+ * \brief Identifier for an application port. Maps design to deployment.
+ * \public
+ * \requirement SWS_CM_00350
+ */
 class InstanceSpecifier
 {
 
@@ -33,12 +38,49 @@ class InstanceSpecifier
     friend std::hash<InstanceSpecifier>;
 
   public:
-    static score::Result<InstanceSpecifier> Create(const std::string_view shortname_path) noexcept;
+    /**
+     * \api
+     * \brief Create an InstanceSpecifier from a shortname path.
+     * \param shortname_path The shortname path to create the InstanceSpecifier from.
+     * \return A Result containing the created InstanceSpecifier or an error.
+     * \public
+     */
+    static score::Result<InstanceSpecifier> Create(std::string&& shortname_path) noexcept;
 
+    /**
+     * \brief Create an InstanceSpecifier from various string-like types (deprecated template version).
+     * \details Converting former static score::Result<InstanceSpecifier> Create(const std::string_view shortname_path)
+     *          to this method template fixes the potential "ambiguity", when calling Create() with a string literal.
+     *          With the former (non-template) signature, there would be an ambiguity between both Create() overloads,
+     *          one with std::string&& and one with std::string_view. But replacing the std::string_view overload
+     *          with the method-template solves the ambiguity, because Template Create(T&&) Matches, as T = const
+     *          char(&)[]
+     * \param shortname_path The shortname path to create the InstanceSpecifier from (convertible to std::string_view).
+     * \return A Result containing the created InstanceSpecifier or an error.
+     * \deprecated Use Create(std::string&&) instead for better performance.
+     */
+    template <typename T>
+    [[deprecated(
+        "Please use Create(std::string&&) instead for better performance"
+        "The API will be removed from November 2025. A ticket is already created to track the removal: Ticket-214582")]]
+    static score::Result<InstanceSpecifier> Create(T&& shortname_path) noexcept
+    {
+        static_assert(std::is_same_v<std::decay_t<T>, std::string_view> ||
+                          std::is_constructible_v<std::string_view, std::decay_t<T>>,
+                      "Parameter must be convertible to std::string_view");
+        return Create(std::string{shortname_path});
+    }
+
+    /**
+     * \api
+     * \brief Convert the InstanceSpecifier to a string representation.
+     * \return A string representation of the InstanceSpecifier.
+     * \public
+     */
     std::string_view ToString() const noexcept;
 
   private:
-    explicit InstanceSpecifier(const std::string_view shortname_path) noexcept;
+    explicit InstanceSpecifier(std::string&& shortname_path) noexcept;
 
     std::string instance_specifier_string_;
 };

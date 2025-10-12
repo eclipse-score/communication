@@ -46,7 +46,7 @@ ServiceIdentifierType::ServiceIdentifierType(std::string serviceTypeName,
 
 ServiceIdentifierType::ServiceIdentifierType(const score::json::Object& json_object) noexcept
     : ServiceIdentifierType(
-          GetValueFromJson<std::string_view>(json_object, kServiceTypeKeyServIdentType).data(),
+          std::string{GetValueFromJson<std::string_view>(json_object, kServiceTypeKeyServIdentType)},
           static_cast<ServiceVersionType>(GetValueFromJson<json::Object>(json_object, kVersionKeyServIdentType)))
 {
     const auto serialization_version =

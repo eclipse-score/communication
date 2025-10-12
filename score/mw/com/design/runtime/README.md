@@ -24,14 +24,14 @@ creation/instantiation of binding specific runtimes is done by `impl::Runtime` w
 
 The class diagram of this design is as follows:
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/runtime/runtime_structural_view.puml">
+<img alt="RUNTIME_STRUCTURAL_VIEW" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/runtime/runtime_structural_view.puml">
 
 Since `impl::IRuntimeBinding` is only a **_very coarse grained_** interface and binding specific runtimes will have each
 very specific methods/types, the binding specific code, which needs to access its specific binding runtime needs to do
 a "downcast", when it gets a `IRuntimeBinding` instance from the binding independent `impl::Runtime`. The sequence is
 shown in the following sequence diagram:
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/runtime/runtime_sequence_view.puml">
+<img alt="RUNTIME_SEQUENCE_VIEW" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/runtime/runtime_sequence_view.puml">
 
 ## Static dependencies
 Binding specific runtimes might use infrastructure in the form of static instances. E.g. the `lola::Runtime` uses

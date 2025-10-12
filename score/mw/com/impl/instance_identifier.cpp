@@ -11,12 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/instance_identifier.h"
-
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 
-#include "score/json/json_writer.h"
 #include "score/mw/log/logging.h"
+
+#include "score/json/json_writer.h"
+#include "score/result/result.h"
 
 #include <score/overload.hpp>
 
@@ -43,7 +44,7 @@ Configuration* InstanceIdentifier::configuration_{nullptr};
 // std::bad_optional_access which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string_view serialized_format) noexcept
+score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& serialized_format) noexcept
 {
     if (configuration_ == nullptr)
     {
@@ -51,19 +52,17 @@ score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string_view se
         return MakeUnexpected(ComErrc::kInvalidConfiguration);
     }
     json::JsonParser json_parser{};
-    auto json_result = json_parser.FromBuffer(serialized_format.data());
+    auto json_result = json_parser.FromBuffer({serialized_format.data(), serialized_format.size()});
     if (!json_result.has_value())
     {
         ::score::mw::log::LogFatal("lola") << "InstanceIdentifier serialized string is invalid. Exiting";
         return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
     }
     const auto& json_object = std::move(json_result).value().As<json::Object>().value().get();
-    std::string serialized_string{serialized_format.data(), serialized_format.size()};
-    InstanceIdentifier instance_identifier{json_object, std::move(serialized_string)};
-    return instance_identifier;
+    return InstanceIdentifier{json_object, std::move(serialized_format)};
 }
 
-InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string serialized_string) noexcept
+InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string) noexcept
     : instance_deployment_{nullptr}, type_deployment_{nullptr}, serialized_string_{std::move(serialized_string)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
