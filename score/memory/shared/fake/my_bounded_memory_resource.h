@@ -54,7 +54,9 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
 
     void* getUsableBaseAddress() const noexcept override
     {
-        return baseAddress_;
+        // Memory is allocated on construction to store a MemoryResourceProxy in the memory region. This is part of the
+        // "ControlBlock" of the memory region and therefore set the BaseAddress after it.
+        return baseAddress_ + memoryResourceProxyAllocationSize_;
     }
 
     const void* getEndAddress() const noexcept override
@@ -69,7 +71,10 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
 
     std::size_t GetUserAllocatedBytes() const noexcept override
     {
-        return allocatedMemory_;
+        // Memory is allocated on construction to store a MemoryResourceProxy in the memory region. This is part of the
+        // "ControlBlock" of the memory region and therefore we don't take it into account in the number of user
+        // allocated bytes.
+        return allocatedMemory_ - memoryResourceProxyAllocationSize_;
     };
 
     bool IsOffsetPtrBoundsCheckBypassingEnabled() const noexcept override
@@ -92,7 +97,10 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
         return false;
     }
 
+    MemoryResourceProxy* AllocateMemoryResourceProxy(const std::uint64_t memory_resource_id);
+
     static std::uint64_t instanceId;
+    static std::size_t memoryResourceProxyAllocationSize_;
 
     std::uint8_t* baseAddress_;
     std::uint8_t* currentAddress_;

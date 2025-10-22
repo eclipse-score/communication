@@ -15,8 +15,12 @@
 #include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/memory_resource_registry.h"
 
+#include "score/memory/shared/pointer_arithmetic_util.h"
+
 #include <score/assert.hpp>
+
 #include <cstddef>
+#include <cstdint>
 
 namespace score::memory::shared::test
 {
@@ -34,10 +38,13 @@ std::pair<void*, void*> AllocateMemoryRange(const std::size_t memory_resource_si
 }  // namespace
 
 std::uint64_t MyBoundedMemoryResource::instanceId = 0U;
+std::size_t MyBoundedMemoryResource::memoryResourceProxyAllocationSize_{
+    CalculateAlignedSize(sizeof(MemoryResourceProxy), alignof(std::max_align_t))};
 
 MyBoundedMemoryResource::MyBoundedMemoryResource(const std::size_t memory_resource_size,
                                                  const bool register_resource_with_registry)
-    : MyBoundedMemoryResource{AllocateMemoryRange(memory_resource_size), register_resource_with_registry}
+    : MyBoundedMemoryResource{AllocateMemoryRange(memory_resource_size + memoryResourceProxyAllocationSize_),
+                              register_resource_with_registry}
 {
     should_free_memory_on_destruction_ = true;
 }
@@ -55,7 +62,7 @@ MyBoundedMemoryResource::MyBoundedMemoryResource(const std::pair<void*, void*> m
       endAddress_{static_cast<std::uint8_t*>(memory_range.second)},
       allocatedMemory_{0U},
       memoryResourceId_{instanceId++},
-      manager_{construct<MemoryResourceProxy>(memoryResourceId_)},
+      manager_{nullptr},
       should_free_memory_on_destruction_{false}
 {
     if (register_resource_with_registry)
@@ -64,6 +71,7 @@ MyBoundedMemoryResource::MyBoundedMemoryResource(const std::pair<void*, void*> m
             MemoryResourceRegistry::getInstance().insert_resource({memoryResourceId_, this});
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(registration_result, "Could not register memory resource with registry");
     }
+    manager_ = AllocateMemoryResourceProxy(memoryResourceId_);
 }
 
 MyBoundedMemoryResource::~MyBoundedMemoryResource()
@@ -98,6 +106,15 @@ void MyBoundedMemoryResource::do_deallocate(void* /*memory*/, const std::size_t 
     currentAddress_ -= bytes;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(currentAddress_ >= baseAddress_,
                            "Current address must be smaller than end address after allocating.");
+}
+
+MemoryResourceProxy* MyBoundedMemoryResource::AllocateMemoryResourceProxy(const std::uint64_t memory_resource_id)
+{
+    // We allocate the MemoryResourceProxy using worst case alignment so that any further allocations will start at an
+    // aligned memory address. This is important so that GetUserAllocatedBytes() is never affected by the allocation of
+    // the MemoryResourceProxy.
+    auto* storage = do_allocate(memoryResourceProxyAllocationSize_, alignof(std::max_align_t));
+    return new (storage) MemoryResourceProxy(memory_resource_id);
 }
 
 }  // namespace score::memory::shared::test
