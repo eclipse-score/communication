@@ -61,6 +61,7 @@ MyBoundedMemoryResource::MyBoundedMemoryResource(const std::pair<void*, void*> m
       currentAddress_{baseAddress_},
       endAddress_{static_cast<std::uint8_t*>(memory_range.second)},
       allocatedMemory_{0U},
+      deallocatedMemory_{0U},
       memoryResourceId_{instanceId++},
       manager_{nullptr},
       should_free_memory_on_destruction_{false}
@@ -104,6 +105,7 @@ void* MyBoundedMemoryResource::do_allocate(const std::size_t bytes, std::size_t 
 void MyBoundedMemoryResource::do_deallocate(void* /*memory*/, const std::size_t bytes, std::size_t)
 {
     currentAddress_ -= bytes;
+    deallocatedMemory_ += bytes;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(currentAddress_ >= baseAddress_,
                            "Current address must be smaller than end address after allocating.");
 }

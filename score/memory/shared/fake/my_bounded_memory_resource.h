@@ -77,6 +77,11 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
         return allocatedMemory_ - memoryResourceProxyAllocationSize_;
     };
 
+    std::size_t GetUserDeAllocatedBytes() const noexcept
+    {
+        return deallocatedMemory_;
+    }
+
     bool IsOffsetPtrBoundsCheckBypassingEnabled() const noexcept override
     {
         return false;
@@ -106,6 +111,7 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
     std::uint8_t* currentAddress_;
     std::uint8_t* endAddress_;
     std::size_t allocatedMemory_;
+    std::size_t deallocatedMemory_;
     std::uint64_t memoryResourceId_;
     MemoryResourceProxy* manager_;
     bool should_free_memory_on_destruction_;
