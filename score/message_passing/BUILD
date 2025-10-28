@@ -21,7 +21,7 @@ py_unittest_qnx_test(
         ":unix_domain_test",
     ],
     test_suites = [
-        "@communication//score/message_passing/non_allocating_future:unit_test_suite_qnx",
+        "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_qnx",
     ],
     visibility = ["//score/message_passing:__pkg__"],
 )
@@ -31,7 +31,7 @@ test_suite(
     tests = [
         ":client_connection_test",
         ":unix_domain_test",
-        "@communication//score/message_passing/non_allocating_future:unit_test_suite_host",
+        "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_host",
     ],
     visibility = ["//score/message_passing:__pkg__"],
 )
@@ -102,7 +102,7 @@ cc_library(
     ],
     deps = [
         ":common_headers",
-        "@communication//score/message_passing/non_allocating_future",
+        "@score_communication//score/message_passing/non_allocating_future",
     ],
 )
 

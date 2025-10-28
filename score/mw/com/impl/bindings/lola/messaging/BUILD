@@ -223,7 +223,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         ":messaging2_legacy_headers_to_remove",
-        "@communication//score/message_passing",
+        "@score_communication//score/message_passing",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],

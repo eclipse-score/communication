@@ -3,8 +3,8 @@ py_binary(
     srcs = ["trlc_renderer.py"],
     visibility = ["//visibility:public"],
     deps = [
-        "@communication_pip//bigtree",
-        "@communication_pip//pydot",
+        "@score_communication_pip//bigtree",
+        "@score_communication_pip//pydot",
         #"@//third_party/trlc:trlc_whl",
     ],
 )

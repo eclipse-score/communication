@@ -520,8 +520,6 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_rust/0.61.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_shell/0.2.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/rules_shell/0.3.0/MODULE.bazel": "not found",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_baselibs/0.1.1/MODULE.bazel": "55c8d8195fcf4a69a11826549cdd80cc3fd30ce9dbf5ad36c0c28fdedf0ae668",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_baselibs/0.1.1/source.json": "ae5d07cfb6130da960efbc531dc7c800ff0b0203b2c1afafd8536457d0baee21",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.0.2/MODULE.bazel": "32f0cbc08bb1c60279448d666aead6b5a000374a8a67f08822b258bf00a6a183",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_bazel_platforms/0.0.2/source.json": "bd7468bbc4f6b807c61b6609d93b3ae2beb137e5e1be9663723353eeec4af794",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/modules/score_cr_checker/0.2.2/MODULE.bazel": "dc36d9c35543db918c3fb5b93a8e684431f56c7c784cf2a1b90f35802a373c98",
@@ -2001,7 +1999,7 @@
           "communication_pip_312_bigtree": {
             "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
             "attributes": {
-              "dep_template": "@communication_pip//{name}:{target}",
+              "dep_template": "@score_communication_pip//{name}:{target}",
               "python_interpreter_target": "@@rules_python++python+python_3_12_host//:python",
               "repo": "communication_pip_312",
               "requirement": "bigtree<1.0.0,>=0.30.0"
@@ -2010,7 +2008,7 @@
           "communication_pip_312_pydot": {
             "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
             "attributes": {
-              "dep_template": "@communication_pip//{name}:{target}",
+              "dep_template": "@score_communication_pip//{name}:{target}",
               "python_interpreter_target": "@@rules_python++python+python_3_12_host//:python",
               "repo": "communication_pip_312",
               "requirement": "pydot>=1.4.0"
@@ -2019,7 +2017,7 @@
           "communication_pip_312_pyparsing": {
             "repoRuleId": "@@rules_python+//python/private/pypi:whl_library.bzl%whl_library",
             "attributes": {
-              "dep_template": "@communication_pip//{name}:{target}",
+              "dep_template": "@score_communication_pip//{name}:{target}",
               "python_interpreter_target": "@@rules_python++python+python_3_12_host//:python",
               "repo": "communication_pip_312",
               "requirement": "pyparsing>=3.0.0"
@@ -5815,7 +5813,7 @@
     "@@score_toolchains_gcc+//extentions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "o/+Ff/fsotFJMxOHvFi205VRu+OlBnf0grk+/5KWhFU=",
-        "usagesDigest": "rwMEL5DALKbk9zErVBTI+10JwHZr8nYaf6+K1KM++aI=",
+        "usagesDigest": "CryxKCkOAf32egHIfrjSWVvLJ3MbzC8An0HDRpsAEfY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -5872,7 +5870,7 @@
     "@@score_toolchains_qnx+//:extensions.bzl%toolchains_qnx": {
       "general": {
         "bzlTransitiveDigest": "cPq5Y3ehr3HGzHzLWyGXyjtXht8FYKYh6dA5HrR4PM0=",
-        "usagesDigest": "7WGJn2kK+1iR4Pg7Yznq0A5qm/cXgw4b9lZCCHBbYg8=",
+        "usagesDigest": "t1jZUDJr2wICXwk5Ov9D8gh3BhDc5S4FbtGgZF2kHZY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
