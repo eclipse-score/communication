@@ -1,0 +1,82 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow configuration for S-CORE CI - Release Check
+# This workflow runs Bazel build and test when triggered by tag creation.
+
+name: Bazel Build & Test baselibs (with host toolchain GCC12.2)
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on version tags like v1.0.0
+      - 'release-*' # Triggers on release tags like release-1.0.0
+
+permissions:
+  contents: write
+
+jobs:
+  build_host:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.9.1
+      - name: Bazel build baselibs targets
+        run: |
+          bazel build --config com-x86_64-linux -- \
+          //score/...
+  build_target:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.9.1
+      - name: Setup QNX License
+        env:
+          SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+        run: |
+          mkdir -p /opt/score_qnx/license
+          echo "${SCORE_QNX_LICENSE}" | base64 --decode > /opt/score_qnx/license/licenses
+      - name: Bazel build baselibs targets
+        env:
+          SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+          SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+        run: |
+          bazel build --config com-x86_64-qnx --credential_helper=*.qnx.com=%worksapce%/.github/tools/qnx_credential_helper.py -- \
+          //score/...
+      - name: Cleanup QNX License
+        if: always()
+        run: rm -rf /opt/score_qnx
+  test_host:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.9.1
+      - name: Bazel test baselibs targets
+        run: |
+          bazel test --config com-x86_64-linux -- \
+          //score/...
+  release_verification:
+    runs-on: ubuntu-latest
+    needs: [build_host, build_target, test_host]
+    if: always() && (needs.build_host.result == 'failure' || needs.build_target.result == 'failure' || needs.test_host.result == 'failure')
+    steps:
+      - name: Remove release and tag (if exists)
+        uses: nikhilbadyal/ghaction-rm-releases@v0.7.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_PATTERN: ${{ github.ref_name }}

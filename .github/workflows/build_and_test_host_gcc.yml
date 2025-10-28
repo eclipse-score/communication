@@ -33,7 +33,7 @@ jobs:
           uses: actions/checkout@v4.2.2
         - name: Bazel build communication targets
           run: |
-            bazel build //...
+            bazel build --config com-x86_64-linux //score/...
         - name: Bazel test communication targets
           run: |
-            bazel test //... --build_tests_only
+            bazel test --config com-x86_64-linux //score/...

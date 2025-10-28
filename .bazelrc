@@ -11,29 +11,56 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
+# Registry references
+common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
 common --registry=https://bcr.bazel.build
 
-# use mw/log stub implementation by default
-build:_bl_common_stub --@score_baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=False
-build:_bl_common_stub --@score_baselibs//score/mw/log/flags:KRemote_Logging=False
-build:_bl_common_stub --@score_baselibs//score/json:base_library=nlohmann
-build:_bl_common_stub --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
-build:_bl_common_stub --//score/mw/com/flags:tracing_library=stub
-build:_bl_common_stub --cxxopt=-Wno-error=mismatched-new-delete
+# unshare /dev/shm and /tmp
+test --sandbox_tmpfs_path=/dev/shm
+test --sandbox_tmpfs_path=/tmp
 
-# use mw/log stub implementation by default
-build:_bl_common --config=_bl_common_stub
-build:_bl_common --incompatible_strict_action_env
-build:_bl_common --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
-build:_bl_common --host_platform=@score_bazel_platforms//:x86_64-linux
+# Needed flags for baselibs
+build:com_stub --@score_baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=False
+build:com_stub --@score_baselibs//score/mw/log/flags:KRemote_Logging=False
+build:com_stub --@score_baselibs//score/json:base_library=nlohmann
+build:com_stub --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
+build:com_stub --cxxopt=-Wno-error=mismatched-new-delete
 
-# This config us for internal module usage ONLY.
-build:bl-x86_64-linux --config=_bl_common
-build:bl-x86_64-linux --platforms=@score_bazel_platforms//:x86_64-linux
-build:bl-x86_64-linux --extra_toolchains=@gcc_toolchain//:host_gcc_12
+# Needed flags for communication
+build:com_stub --//score/mw/com/flags:tracing_library=stub
 
-# This config us for internal module usage ONLY.
-build:bl-x86_64-qnx --config=_bl_common
-build:bl-x86_64-qnx --platforms=@score_bazel_platforms//:x86_64-qnx
-build:bl-x86_64-qnx --extra_toolchains=@toolchains_qnx_qcc//:qcc_x86_64
+# Common communication flags for build
+build:com_common --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
+
+# Common communication flags for test
+test:com_common --build_tests_only
+test:com_common --test_tag_filters=-manual
+test:com_common --test_output=errors
+
+# Common toolchan flags (needed for toolchain resolution)
+build:com_toolchain_common --incompatible_strict_action_env
+build:com_toolchain_common --host_platform=@score_bazel_platforms//:x86_64-linux
+
+# This config is for internal module usage ONLY.
+build:com-x86_64-linux --config=com_stub
+build:com-x86_64-linux --config=com_common
+build:com-x86_64-linux --config=com_toolchain_common
+build:com-x86_64-linux --platforms=@score_bazel_platforms//:x86_64-linux
+build:com-x86_64-linux --extra_toolchains=@gcc_toolchain//:host_gcc_12
+
+# This config is for internal module usage ONLY.
+test:com-x86_64-linux --config=com_common
+test:com-x86_64-linux --sandbox_tmpfs_path=/dev/shm
+test:com-x86_64-linux --sandbox_tmpfs_path=/tmp
+
+# This config is for internal module usage ONLY.
+build:com-x86_64-qnx --config=com_stub
+build:com-x86_64-qnx --config=com_common
+build:com-x86_64-qnx --config=com_toolchain_common
+build:com-x86_64-qnx --platforms=@score_bazel_platforms//:x86_64-qnx
+build:com-x86_64-qnx --extra_toolchains=@toolchains_qnx_qcc//:qcc_x86_64
+
+# This config is for internal module usage ONLY.
+test:com-x86_64-qnx --config=com_common
+test:com-x86_64-qnx --sandbox_tmpfs_path=/dev/shm
+test:com-x86_64-qnx --sandbox_tmpfs_path=/tmp
