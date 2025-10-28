@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_binary(
     name = "lola_public_api_benchmarks",
@@ -25,7 +25,7 @@ cc_binary(
     deps = [
         "//score/mw/com",
         "@google_benchmark//:benchmark_main",
-        "@score-baselibs//score/language/futurecpp",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
     ],
 )

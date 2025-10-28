@@ -10,8 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
-load("@score-baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -46,7 +46,7 @@ cc_library(
     srcs = ["runtime.cpp"],
     hdrs = ["runtime.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/language/futurecpp"],
+    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__subpackages__",
@@ -81,10 +81,10 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/filesystem",
-        "@score-baselibs//score/language/futurecpp",
-        "@score-baselibs//score/memory:string_literal",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory:string_literal",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -112,7 +112,7 @@ cc_gtest_unit_test(
         ":runtime",
         ":types",
         "//score/mw/com/impl:runtime_mock",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

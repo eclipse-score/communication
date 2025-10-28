@@ -43,7 +43,7 @@ cc_library(
         "//score/mw/com/impl:skeleton_event_binding",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "@googletest//:gtest",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -55,6 +55,6 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
     deps = [
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )

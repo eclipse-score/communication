@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # ToDo: Ticket-213780: These targets are duplicated from mw/com/test/common_test_resources since that folder is not open
 # source yet. After open sourcing the common resources this whole folder should be deleted.
@@ -25,18 +25,18 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score-baselibs//score/language/safecpp/string_view:null_termination_check",
+        "@score_baselibs//score/language/safecpp/string_view:null_termination_check",
     ],
     visibility = [
         "//score/mw/com/performance_benchmarks:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/language/futurecpp",
-        "@score-baselibs//score/memory/shared",
-        "@score-baselibs//score/os:fcntl",
-        "@score-baselibs//score/os:mman",
-        "@score-baselibs//score/os:stat",
-        "@score-baselibs//score/os:unistd",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory/shared",
+        "@score_baselibs//score/os:fcntl",
+        "@score_baselibs//score/os:mman",
+        "@score_baselibs//score/os:stat",
+        "@score_baselibs//score/os:unistd",
     ],
 )
 
@@ -71,6 +71,6 @@ cc_library(
     ],
     deps = [
         "//score/mw/com",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )

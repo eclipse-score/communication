@@ -28,7 +28,7 @@ cc_library(
         "//score/mw/com:types",
         "//score/mw/com/impl:proxy_event_base",
         "//score/mw/com/impl/plumbing:sample_ptr",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -44,7 +44,7 @@ cc_library(
         "//score/mw/com:types",
         "//score/mw/com/impl",
         "//score/mw/com/impl/plumbing:sample_ptr",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

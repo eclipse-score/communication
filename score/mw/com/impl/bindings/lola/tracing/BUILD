@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -29,12 +29,12 @@ cc_library(
         "//score/mw/com/impl/tracing:i_tracing_runtime_binding",
         "//score/mw/com/impl/tracing:service_element_tracing_data",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/containers:dynamic_array",
-        "@score-baselibs//score/language/futurecpp",
-        "@score-baselibs//score/language/safecpp/safe_math",
-        "@score-baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
-        "@score-baselibs//score/memory/shared:i_shared_memory_resource",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/safe_math",
+        "@score_baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
+        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -43,7 +43,7 @@ cc_gtest_unit_test(
     srcs = ["tracing_runtime_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     target_compatible_with = select({
-        "@platforms//os:qnx": ["@score-baselibs//bazel/platforms/qnx_version:qnx7"],  # TODO: Ticket-214229 QNX8 incompatible
+        "@platforms//os:qnx": ["@score_baselibs//bazel/platforms/qnx_version:qnx7"],  # TODO: Ticket-214229 QNX8 incompatible
         "//conditions:default": [],
     }),
     visibility = [
@@ -52,7 +52,7 @@ cc_gtest_unit_test(
     deps = [
         ":tracing_runtime",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
-        "@score-baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
+        "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
     ],
 )
 

@@ -28,7 +28,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:skeleton_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_field_binding_factory_mock",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -42,7 +42,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl",
         "//score/mw/com/impl/bindings/mock_binding",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -51,7 +51,7 @@ cc_library(
     srcs = ["dummy_instance_identifier_builder.cpp"],
     hdrs = ["dummy_instance_identifier_builder.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/language/futurecpp"],
+    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = ["//score/mw/com/impl"],
 )

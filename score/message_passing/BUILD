@@ -10,8 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test")
-load("@score-baselibs//third_party/itf:py_unittest_qnx_test.bzl", "py_unittest_qnx_test")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test")
+load("@score_baselibs//third_party/itf:py_unittest_qnx_test.bzl", "py_unittest_qnx_test")
 
 py_unittest_qnx_test(
     name = "unit_tests_qnx",
@@ -74,9 +74,9 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/containers:intrusivelist",
-        "@score-baselibs//score/language/futurecpp",
-        "@score-baselibs//score/os:errno",
+        "@score_baselibs//score/containers:intrusivelist",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/os:errno",
     ],
 )
 
@@ -131,9 +131,9 @@ cc_library(
     ],
     deps = [
         ":message_passing_common",
-        "@score-baselibs//score/os:socket",
-        "@score-baselibs//score/os:sys_poll",
-        "@score-baselibs//score/os:unistd",
+        "@score_baselibs//score/os:socket",
+        "@score_baselibs//score/os:sys_poll",
+        "@score_baselibs//score/os:unistd",
     ],
 )
 
@@ -165,13 +165,13 @@ cc_library(
     ],
     deps = [
         ":message_passing_common",
-        "@score-baselibs//score/os:fcntl",
-        "@score-baselibs//score/os:sys_uio",
-        "@score-baselibs//score/os:unistd",
-        "@score-baselibs//score/os/qnx:channel",
-        "@score-baselibs//score/os/qnx:dispatch",
-        "@score-baselibs//score/os/qnx:iofunc",
-        "@score-baselibs//score/os/qnx:timer",
+        "@score_baselibs//score/os:fcntl",
+        "@score_baselibs//score/os:sys_uio",
+        "@score_baselibs//score/os:unistd",
+        "@score_baselibs//score/os/qnx:channel",
+        "@score_baselibs//score/os/qnx:dispatch",
+        "@score_baselibs//score/os/qnx:iofunc",
+        "@score_baselibs//score/os/qnx:timer",
     ],
 )
 
@@ -245,13 +245,13 @@ cc_gtest_unit_test(
     target_compatible_with = ["@platforms//os:qnx"],
     deps = [
         ":message_passing_qnx_dispatch",
-        "@score-baselibs//score/concurrency",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
-        "@score-baselibs//score/os/mocklib:sys_uio_mock",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
-        "@score-baselibs//score/os/mocklib/qnx:channel_mock",
-        "@score-baselibs//score/os/mocklib/qnx:dispatch_mock",
-        "@score-baselibs//score/os/mocklib/qnx:iofunc_mock",
-        "@score-baselibs//score/os/mocklib/qnx:timer_mock",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/os/mocklib:fcntl_mock",
+        "@score_baselibs//score/os/mocklib:sys_uio_mock",
+        "@score_baselibs//score/os/mocklib:unistd_mock",
+        "@score_baselibs//score/os/mocklib/qnx:channel_mock",
+        "@score_baselibs//score/os/mocklib/qnx:dispatch_mock",
+        "@score_baselibs//score/os/mocklib/qnx:iofunc_mock",
+        "@score_baselibs//score/os/mocklib/qnx:timer_mock",
     ],
 )

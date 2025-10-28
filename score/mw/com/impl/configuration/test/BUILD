@@ -23,7 +23,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl/configuration",
         "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

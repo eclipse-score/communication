@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
@@ -22,13 +22,13 @@ cc_library(
     srcs = ["flag_file.cpp"],
     hdrs = ["flag_file.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/language/futurecpp"],
+    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "//score/mw/com/impl:enriched_instance_identifier",
-        "@score-baselibs//score/filesystem",
-        "@score-baselibs//score/result",
+        "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -40,8 +40,8 @@ cc_gtest_unit_test(
         ":flag_file",
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
-        "@score-baselibs//score/filesystem:mock",
-        "@score-baselibs//score/os:unistd",
+        "@score_baselibs//score/filesystem:mock",
+        "@score_baselibs//score/os:unistd",
     ],
 )
 
@@ -50,7 +50,7 @@ cc_library(
     srcs = ["flag_file_crawler.cpp"],
     hdrs = ["flag_file_crawler.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/language/futurecpp"],
+    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -58,9 +58,9 @@ cc_library(
         ":known_instances_container",
         ":quality_aware_container",
         "//score/mw/com/impl:instance_identifier",
-        "@score-baselibs//score/filesystem",
-        "@score-baselibs//score/os/utils/inotify:inotify_instance",
-        "@score-baselibs//score/os/utils/inotify:inotify_watch_descriptor",
+        "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/os/utils/inotify:inotify_instance",
+        "@score_baselibs//score/os/utils/inotify:inotify_watch_descriptor",
     ],
 )
 
@@ -72,8 +72,8 @@ cc_gtest_unit_test(
         ":flag_file_crawler",
         "//score/mw/com/impl/bindings/lola/service_discovery/test:service_discovery_client_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
-        "@score-baselibs//score/filesystem:mock",
-        "@score-baselibs//score/os/utils/inotify:inotify_instance_mock",
+        "@score_baselibs//score/filesystem:mock",
+        "@score_baselibs//score/os/utils/inotify:inotify_instance_mock",
     ],
 )
 
@@ -82,7 +82,7 @@ cc_library(
     srcs = ["known_instances_container.cpp"],
     hdrs = ["known_instances_container.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/language/futurecpp"],
+    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
