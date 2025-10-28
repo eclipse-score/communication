@@ -1,3 +1,4 @@
+
 # *******************************************************************************
 # Copyright (c) 2024 Contributors to the Eclipse Foundation
 #
@@ -33,7 +34,7 @@ jobs:
           uses: actions/checkout@v4.2.2
         - name: Bazel build communication targets
           run: |
-            bazel build --config com-x86_64-linux //score/...
+            bazel build //...
         - name: Bazel test communication targets
           run: |
-            bazel test --config com-x86_64-linux //score/...
+            bazel test //... --build_tests_only
