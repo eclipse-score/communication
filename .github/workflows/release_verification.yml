@@ -14,7 +14,7 @@
 # Workflow configuration for S-CORE CI - Release Check
 # This workflow runs Bazel build and test when triggered by tag creation.
 
-name: Bazel Build & Test baselibs (with host toolchain GCC12.2)
+name: Bazel Build & Test communication (with host toolchain GCC12.2)
 on:
   push:
     tags:
@@ -32,10 +32,9 @@ jobs:
         uses: actions/checkout@v4.2.2
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.9.1
-      - name: Bazel build baselibs targets
+      - name: Bazel build communication targets
         run: |
-          bazel build --config com-x86_64-linux -- \
-          //score/...
+          bazel build --config com-x86_64-linux -- //score/mw/com:com
   build_target:
     runs-on: ubuntu-latest
     steps:
@@ -49,13 +48,12 @@ jobs:
         run: |
           mkdir -p /opt/score_qnx/license
           echo "${SCORE_QNX_LICENSE}" | base64 --decode > /opt/score_qnx/license/licenses
-      - name: Bazel build baselibs targets
+      - name: Bazel build communication targets
         env:
           SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
           SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
         run: |
-          bazel build --config com-x86_64-qnx --credential_helper=*.qnx.com=%worksapce%/.github/tools/qnx_credential_helper.py -- \
-          //score/...
+          bazel build --config com-x86_64-qnx --credential_helper=*.qnx.com=${{ github.workspace }}/.github/tools/qnx_credential_helper.py -- //score/mw/com:com
       - name: Cleanup QNX License
         if: always()
         run: rm -rf /opt/score_qnx
@@ -66,7 +64,7 @@ jobs:
         uses: actions/checkout@v4.2.2
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.9.1
-      - name: Bazel test baselibs targets
+      - name: Bazel test communication targets
         run: |
           bazel test --config com-x86_64-linux -- \
           //score/...
