@@ -11,11 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
-load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
-    "@score-baselibs//score/memory:__subpackages__",
+    "@score_baselibs//score/memory:__subpackages__",
 ])
 
 cc_library(
@@ -37,7 +37,7 @@ cc_library(
         "//platform/aas/lib/serialization:__subpackages__",
         "//platform/aas/pas/sysmon/library:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/language/futurecpp"],
+    deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
 cc_library(
@@ -55,7 +55,7 @@ cc_library(
     ],
     deps = [
         ":string_literal",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -74,7 +74,7 @@ cc_test(
     deps = [
         ":string_comparison_adaptor",
         "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -89,9 +89,9 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "@score-baselibs//score/mw/log:__subpackages__",
+        "@score_baselibs//score/mw/log:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/language/futurecpp"],
+    deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
 cc_library(
@@ -105,7 +105,7 @@ cc_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -172,7 +172,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":string_comparison_adaptor_unit_test",
     ],
     test_suites_from_sub_packages = [
-        "@score-baselibs//score/memory/shared:unit_test_suite",
+        "@score_baselibs//score/memory/shared:unit_test_suite",
     ],
     visibility = [
         "//visibility:public",

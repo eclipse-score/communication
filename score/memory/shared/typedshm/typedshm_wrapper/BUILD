@@ -12,14 +12,14 @@
 # *******************************************************************************
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
-load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 selects.config_setting_group(
     name = "QNX_AND_USE_TYPED_SHMD",
     match_all = [
         "@platforms//os:qnx",
-        "@score-baselibs//score/memory/shared/flags:config_use_typedshmd",
+        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd",
     ],
 )
 
@@ -32,7 +32,7 @@ cc_library(
         "typed_memory.h",
     ],
     defines = select({
-        "@score-baselibs//score/memory/shared/flags:config_use_typedshmd": [
+        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd": [
             "USE_TYPEDSHMD",
             "ALLOW_QM",
         ],
@@ -44,15 +44,15 @@ cc_library(
         "//visibility:public",
     ],
     deps = [
-        "@score-baselibs//score/language/futurecpp",
-        "@score-baselibs//score/memory/shared:user_permission",
-        "@score-baselibs//score/os:errno_logging",
-        "@score-baselibs//score/os/utils/acl",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory/shared:user_permission",
+        "@score_baselibs//score/os:errno_logging",
+        "@score_baselibs//score/os/utils/acl",
     ] + select({
         ":QNX_AND_USE_TYPED_SHMD": [
             "//platform/aas/intc/typedmemd/code/clientlib:typedmemd_clientlib",
             "//platform/aas/intc/typedmemd/code/clientlib:typedmemd_clientlib_interface",
-            "@score-baselibs//score/os/qnx:mman",
+            "@score_baselibs//score/os/qnx:mman",
         ],
         "//conditions:default": [],
     }),
@@ -68,17 +68,17 @@ cc_test(
         "unit",
     ],
     target_compatible_with = select({
-        "@score-baselibs//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
+        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = [
-        "@score-baselibs//score/memory:__pkg__",
+        "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
         "//platform/aas/intc/typedmemd/code/clientlib/mock:typedsharedmemory_mock",
         "@googletest//:gtest_main",
-        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
-        "@score-baselibs//score/os/mocklib/qnx:mman_mock",
+        "@score_baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
+        "@score_baselibs//score/os/mocklib/qnx:mman_mock",
     ],
 )
 
@@ -88,6 +88,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":typed_memory_test",
     ],
     visibility = [
-        "@score-baselibs//score/memory/shared:__pkg__",
+        "@score_baselibs//score/memory/shared:__pkg__",
     ],
 )

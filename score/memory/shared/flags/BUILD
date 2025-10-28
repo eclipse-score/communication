@@ -24,6 +24,6 @@ config_setting(
         ":use_typedshmd": "True",
     },
     visibility = [
-        "@score-baselibs//score/memory/shared/typedshm/typedshm_wrapper:__subpackages__",
+        "@score_baselibs//score/memory/shared/typedshm/typedshm_wrapper:__subpackages__",
     ],
 )
