@@ -54,21 +54,21 @@ const std::unordered_map<ProxyEventTracePointType, analysis::tracing::TracePoint
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kProxyEventTracePointToTracingTracePointMap{
-        {ProxyEventTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::PROXY_EVENT_SUB},
-        {ProxyEventTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::PROXY_EVENT_UNSUB},
+        {ProxyEventTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyEventSub},
+        {ProxyEventTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyEventUnsub},
         {ProxyEventTracePointType::SUBSCRIBE_STATE_CHANGE,
-         analysis::tracing::TracePointType::PROXY_EVENT_SUBSTATE_CHANGE},
+         analysis::tracing::TracePointType::kProxyEventSubstateChange},
         {ProxyEventTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_EVENT_SET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyEventSetChghdl},
         {ProxyEventTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_EVENT_UNSET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyEventUnsetChghdl  },
         {ProxyEventTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
-         analysis::tracing::TracePointType::PROXY_EVENT_CHGHDL},
-        {ProxyEventTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_EVENT_SET_RECHDL},
-        {ProxyEventTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_EVENT_UNSET_RECHDL},
-        {ProxyEventTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::PROXY_EVENT_RECHDL},
-        {ProxyEventTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::PROXY_EVENT_GET_SAMPLES},
-        {ProxyEventTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::PROXY_EVENT_SAMPLE_CB},
+         analysis::tracing::TracePointType::kProxyEventChghdl},
+        {ProxyEventTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyEventSetRechdl},
+        {ProxyEventTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyEventUnsetRechdl},
+        {ProxyEventTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyEventRechdl},
+        {ProxyEventTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyEventGetSamples},
+        {ProxyEventTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::kProxyEventSampleCb},
     };
 
 const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePointType>
@@ -77,25 +77,25 @@ const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePoint
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kProxyFieldTracePointToTracingTracePointMap{
-        {ProxyFieldTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::PROXY_FIELD_SUB},
-        {ProxyFieldTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::PROXY_FIELD_UNSUB},
+        {ProxyFieldTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldSub},
+        {ProxyFieldTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldUnsub},
         {ProxyFieldTracePointType::SUBSCRIBE_STATE_CHANGE,
-         analysis::tracing::TracePointType::PROXY_FIELD_SUBSTATE_CHANGE},
+         analysis::tracing::TracePointType::kProxyFieldSubstateChange},
         {ProxyFieldTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_FIELD_SET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyFieldSetChghdl},
         {ProxyFieldTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_FIELD_UNSET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyFieldUnsetChghdl},
         {ProxyFieldTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
-         analysis::tracing::TracePointType::PROXY_FIELD_CHGHDL},
-        {ProxyFieldTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_FIELD_SET_RECHDL},
-        {ProxyFieldTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_FIELD_UNSET_RECHDL},
-        {ProxyFieldTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::PROXY_FIELD_RECHDL},
-        {ProxyFieldTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::PROXY_FIELD_GET_SAMPLES},
-        {ProxyFieldTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::PROXY_FIELD_SAMPLE_CB},
-        {ProxyFieldTracePointType::GET, analysis::tracing::TracePointType::PROXY_FIELD_GET},
-        {ProxyFieldTracePointType::GET_RESULT, analysis::tracing::TracePointType::PROXY_FIELD_GET_RESULT},
-        {ProxyFieldTracePointType::SET, analysis::tracing::TracePointType::PROXY_FIELD_SET},
-        {ProxyFieldTracePointType::SET_RESULT, analysis::tracing::TracePointType::PROXY_FIELD_SET_RESULT},
+         analysis::tracing::TracePointType::kProxyFieldChghdl},
+        {ProxyFieldTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyFieldSetRechdl},
+        {ProxyFieldTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyFieldUnsetRechdl},
+        {ProxyFieldTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyFieldRechdl},
+        {ProxyFieldTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyFieldGetSamples},
+        {ProxyFieldTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::kProxyFieldSampleCb},
+        {ProxyFieldTracePointType::GET, analysis::tracing::TracePointType::kProxyFieldGet},
+        {ProxyFieldTracePointType::GET_RESULT, analysis::tracing::TracePointType::kProxyFieldGetResult},
+        {ProxyFieldTracePointType::SET, analysis::tracing::TracePointType::kProxyFieldSet},
+        {ProxyFieldTracePointType::SET_RESULT, analysis::tracing::TracePointType::kProxyFieldSetResult},
     };
 
 const std::unordered_map<SkeletonEventTracePointType, analysis::tracing::TracePointType>
@@ -104,8 +104,8 @@ const std::unordered_map<SkeletonEventTracePointType, analysis::tracing::TracePo
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kSkeletonEventTracePointToTracingTracePointMap{
-        {SkeletonEventTracePointType::SEND, analysis::tracing::TracePointType::SKEL_EVENT_SND},
-        {SkeletonEventTracePointType::SEND_WITH_ALLOCATE, analysis::tracing::TracePointType::SKEL_EVENT_SND_A},
+        {SkeletonEventTracePointType::SEND, analysis::tracing::TracePointType::kSkelEventSnd},
+        {SkeletonEventTracePointType::SEND_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelEventSndA},
     };
 
 const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePointType>
@@ -114,12 +114,12 @@ const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePo
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kSkeletonFieldTracePointToTracingTracePointMap{
-        {SkeletonFieldTracePointType::UPDATE, analysis::tracing::TracePointType::SKEL_FIELD_UPD},
-        {SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE, analysis::tracing::TracePointType::SKEL_FIELD_UPD_A},
-        {SkeletonFieldTracePointType::GET_CALL, analysis::tracing::TracePointType::SKEL_FIELD_GET_CALL},
-        {SkeletonFieldTracePointType::GET_CALL_RESULT, analysis::tracing::TracePointType::SKEL_FIELD_GET_CALL_RESULT},
-        {SkeletonFieldTracePointType::SET_CALL, analysis::tracing::TracePointType::SKEL_FIELD_SET_CALL},
-        {SkeletonFieldTracePointType::SET_CALL_RESULT, analysis::tracing::TracePointType::SKEL_FIELD_SET_CALL_RESULT},
+        {SkeletonFieldTracePointType::UPDATE, analysis::tracing::TracePointType::kSkelFieldUpd},
+        {SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelFieldUpdA},
+        {SkeletonFieldTracePointType::GET_CALL, analysis::tracing::TracePointType::kSkelFieldGetCall},
+        {SkeletonFieldTracePointType::GET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldGetCallResult},
+        {SkeletonFieldTracePointType::SET_CALL, analysis::tracing::TracePointType::kSkelFieldSetCall},
+        {SkeletonFieldTracePointType::SET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldSetCallResult},
     };
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall

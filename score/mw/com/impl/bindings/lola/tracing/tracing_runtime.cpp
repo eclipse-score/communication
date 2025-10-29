@@ -290,12 +290,12 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     if (service_element_type == impl::ServiceElementType::EVENT)
     {
         const auto lola_event_id = lola_service_type_deployment->events_.at(std::string{service_element_name});
-        output_service_instance_element.element_id_ = static_cast<ServiceInstanceElement::EventIdType>(lola_event_id);
+        output_service_instance_element.element_id = static_cast<ServiceInstanceElement::EventIdType>(lola_event_id);
     }
     else if (service_element_type == impl::ServiceElementType::FIELD)
     {
         const auto lola_field_id = lola_service_type_deployment->fields_.at(std::string{service_element_name});
-        output_service_instance_element.element_id_ = static_cast<ServiceInstanceElement::FieldIdType>(lola_field_id);
+        output_service_instance_element.element_id = static_cast<ServiceInstanceElement::FieldIdType>(lola_field_id);
     }
     else
     {
@@ -304,7 +304,7 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
         std::terminate();
     }
 
-    output_service_instance_element.service_id_ =
+    output_service_instance_element.service_id =
         static_cast<ServiceInstanceElement::ServiceIdType>(lola_service_type_deployment->service_id_);
 
     if (!lola_service_instance_deployment->instance_id_.has_value())
@@ -313,12 +313,12 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
             << "Tracing should not be done on service element without configured instance ID. Terminating.";
         std::terminate();
     }
-    output_service_instance_element.instance_id_ = static_cast<ServiceInstanceElement::InstanceIdType>(
+    output_service_instance_element.instance_id = static_cast<ServiceInstanceElement::InstanceIdType>(
         lola_service_instance_deployment->instance_id_.value().GetId());
 
     const auto version = ServiceIdentifierTypeView{service_identifier}.GetVersion();
-    output_service_instance_element.major_version_ = ServiceVersionTypeView{version}.getMajor();
-    output_service_instance_element.minor_version_ = ServiceVersionTypeView{version}.getMinor();
+    output_service_instance_element.major_version = ServiceVersionTypeView{version}.getMajor();
+    output_service_instance_element.minor_version = ServiceVersionTypeView{version}.getMinor();
     return output_service_instance_element;
 }
 
