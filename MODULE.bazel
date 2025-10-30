@@ -15,13 +15,15 @@ module(name = "communication")
 bazel_dep(name = "platforms", version = "0.0.11")
 
 include("//third_party/host_gcc:host_gcc.MODULE.bazel")
+
 include("//third_party/host_llvm:host_llvm.MODULE.bazel")
 
+bazel_dep(name = "aspect_rules_lint", version = "1.10.2")
 bazel_dep(name = "googletest", version = "1.15.0")
 bazel_dep(name = "google_benchmark", version = "1.9.1")
 bazel_dep(name = "rules_rust", version = "0.61.0")
+bazel_dep(name = "buildifier_prebuilt", version = "6.3.3")
 bazel_dep(name = "score_crates", version = "0.0.2", repo_name = "crate_index")
-
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "download_utils", version = "1.0.1")
 
@@ -48,10 +50,10 @@ bazel_dep(name = "score_baselibs", version = "0.2.0")
 git_override(
     module_name = "score_baselibs",
     commit = "de5bb275ee9957433b3587582ac07d3eeb98dd6a",
+    patch_strip = 1,
     patches = [
         "//:wait_free_stack_fix.patch",
     ],
-    patch_strip = 1,
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
