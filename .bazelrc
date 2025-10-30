@@ -27,8 +27,6 @@ test --sandbox_tmpfs_path=/dev/shm
 test --sandbox_tmpfs_path=/tmp
 
 # Tests require to be run in a sandbox. Otherwise some will be flaky.
-test --spawn_strategy=worker,linux-sandbox
-test:macos --spawn_strategy=worker,darwin-sandbox
 test --nosandbox_default_allow_network
 
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
