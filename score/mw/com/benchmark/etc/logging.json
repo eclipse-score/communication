@@ -1,0 +1,8 @@
+{
+  "appId": "IPBR",
+  "appDesc": "ipc_bridge",
+  "logLevel": "kOff",
+  "logLevelThresholdConsole": "kOff",
+  "logMode": "kConsole",
+  "dynamicDatarouterIdentifiers" : true
+}

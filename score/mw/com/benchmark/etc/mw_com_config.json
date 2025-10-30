@@ -1,0 +1,75 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/lola/benchmark",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 1234,
+          "events": [
+            {
+              "eventName": "dummy_data_arrived",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "benchmark/InstanceA",
+      "serviceTypeName": "/lola/benchmark",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {},
+          "allowedProvider": {},
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "dummy_data_arrived",
+              "numberOfSampleSlots": 1,
+              "maxSubscribers": 3
+            }
+          ],
+          "permission-checks": "file-permissions-on-empty"
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "benchmark/InstanceB",
+      "serviceTypeName": "/lola/benchmark",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 2,
+          "allowedConsumer": {},
+          "allowedProvider": {},
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "dummy_data_arrived",
+              "numberOfSampleSlots": 1,
+              "maxSubscribers": 3
+            }
+          ],
+          "permission-checks": "file-permissions-on-empty"
+        }
+      ]
+    }
+  ]
+}
