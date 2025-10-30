@@ -534,6 +534,15 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "data_type_size_info",
+    srcs = ["data_type_size_info.cpp"],
+    hdrs = ["data_type_size_info.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//visibility:public"],
+)
+
 cc_unit_test(
     name = "pointer_arithmetic_util_precondition_violation_test",
     srcs = [
@@ -878,6 +887,16 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "data_type_size_info_test",
+    srcs = ["data_type_size_info_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":data_type_size_info",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
 # Separate test suite for string test as it should not be executed on qnx
 test_suite(
     name = "unit_tests_host",
@@ -896,6 +915,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":lock_file_test",
         ":managed_memory_resource_test",
         ":map_test",
+        ":data_type_size_info_test",
         ":memory_region_bounds_test",
         ":memory_region_map_test",
         ":memory_resource_proxy_test",
