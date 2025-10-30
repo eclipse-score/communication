@@ -19,11 +19,13 @@ exports_files([
 
 format_multirun(
     name = "format",
+    cc = "@clang_format//:executable",
     starlark = "@buildifier_prebuilt//:buildifier",
 )
 
 format_test(
     name = "format_test",
+    cc = "@clang_format//:executable",
     no_sandbox = True,
     starlark = "@buildifier_prebuilt//:buildifier",
     workspace = "//:LICENSE",
