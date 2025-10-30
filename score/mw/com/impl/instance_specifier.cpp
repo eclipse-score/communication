@@ -83,7 +83,7 @@ score::Result<InstanceSpecifier> InstanceSpecifier::Create(std::string&& shortna
     if (!IsShortNameValid(shortname_path))
     {
         score::mw::log::LogWarn("lola") << "Shortname" << shortname_path
-                                      << "does not adhere to shortname naming requirements.";
+                                        << "does not adhere to shortname naming requirements.";
         return MakeUnexpected(ComErrc::kInvalidMetaModelShortname);
     }
 

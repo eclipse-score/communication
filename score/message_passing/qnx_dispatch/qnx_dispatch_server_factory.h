@@ -36,7 +36,7 @@ class QnxDispatchServerFactory final : public IServerFactory
     QnxDispatchServerFactory& operator=(QnxDispatchServerFactory&&) = delete;
 
     score::cpp::pmr::unique_ptr<IServer> Create(const ServiceProtocolConfig& protocol_config,
-                                         const ServerConfig& server_config) noexcept override;
+                                                const ServerConfig& server_config) noexcept override;
 
     std::shared_ptr<QnxDispatchEngine> GetEngine() const noexcept
     {

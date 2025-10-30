@@ -317,7 +317,8 @@ auto Skeleton::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_
     // coverity[autosar_cpp14_a5_3_2_violation]
     auto* const typed_event_data_storage_ptr =
         event_data_storage_it->second.template get<EventDataStorage<SampleType>>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event_data_storage_ptr != nullptr, "Could not get EventDataStorage*");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event_data_storage_ptr != nullptr,
+                                                "Could not get EventDataStorage*");
 
     // Suppress "AUTOSAR C++14 A3-8-1" rule findings. This rule declares:
     // "An object shall not be accessed outside of its lifetime"
@@ -352,7 +353,8 @@ auto Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_f
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
                                                          std::forward_as_tuple(element_fq_id),
                                                          std::forward_as_tuple(typed_event_data_storage_ptr));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second, "Couldn't register/emplace event-storage in data-section.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
+                                                "Couldn't register/emplace event-storage in data-section.");
 
     constexpr DataTypeMetaInfo sample_meta_info{sizeof(SampleType), static_cast<std::uint8_t>(alignof(SampleType))};
     auto* event_data_raw_array = typed_event_data_storage_ptr->data();
@@ -360,7 +362,8 @@ auto Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_f
         storage_->events_metainfo_.emplace(std::piecewise_construct,
                                            std::forward_as_tuple(element_fq_id),
                                            std::forward_as_tuple(sample_meta_info, event_data_raw_array));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second, "Couldn't register/emplace event-meta-info in data-section.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
+                                                "Couldn't register/emplace event-meta-info in data-section.");
 
     auto control_qm =
         control_qm_->event_controls_.emplace(std::piecewise_construct,
@@ -369,7 +372,8 @@ auto Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_f
                                                                    element_properties.max_subscribers,
                                                                    element_properties.enforce_max_samples,
                                                                    control_qm_resource_->getMemoryResourceProxy()));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second, "Couldn't register/emplace event-meta-info in data-section.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second,
+                                                "Couldn't register/emplace event-meta-info in data-section.");
 
     EventDataControl* control_asil_result{nullptr};
     if (control_asil_resource_ != nullptr)

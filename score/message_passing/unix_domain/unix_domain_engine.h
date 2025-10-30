@@ -77,7 +77,8 @@ class UnixDomainEngine final : public ISharedResourceEngine
 
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
 
-    score::cpp::expected<std::int32_t, score::os::Error> TryOpenClientConnection(std::string_view identifier) noexcept override;
+    score::cpp::expected<std::int32_t, score::os::Error> TryOpenClientConnection(
+        std::string_view identifier) noexcept override;
 
     void CloseClientConnection(std::int32_t client_fd) noexcept override;
 

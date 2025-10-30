@@ -96,8 +96,9 @@ class TransactionLogSet
 
         void Release()
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(transaction_log_id_.GetUnderlying().load() != kInvalidTransactionLogId,
-                                   "Trying to Release() TransactionLogNode, which was not acquired.");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                transaction_log_id_.GetUnderlying().load() != kInvalidTransactionLogId,
+                "Trying to Release() TransactionLogNode, which was not acquired.");
             transaction_log_id_.GetUnderlying().store(kInvalidTransactionLogId);
         }
 
@@ -216,7 +217,7 @@ class TransactionLogSet
   private:
     using TransactionLogCollection =
         score::containers::DynamicArray<TransactionLogNode,
-                                      memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>;
+                                        memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>;
 
     /// \brief Returns iterators to all TransactionLogNodes for the given target_transaction_log_id, which needs roll
     /// back.

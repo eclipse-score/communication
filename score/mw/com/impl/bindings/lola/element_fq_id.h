@@ -34,7 +34,8 @@ class LogStream;
 namespace com::impl::lola
 {
 
-/// \brief unique identification of a service element (event, field, method) instance within one score::mw runtime/process
+/// \brief unique identification of a service element (event, field, method) instance within one score::mw
+/// runtime/process
 ///
 /// \detail Identification consists of the four dimensions: Service-Type (service_id), instance of service
 ///         (instance_id), the id of the element (element_id) within this service and an enum which tracks the type of

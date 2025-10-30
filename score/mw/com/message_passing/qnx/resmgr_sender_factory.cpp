@@ -15,12 +15,12 @@
 #include "score/mw/com/message_passing/qnx/resmgr_sender_traits.h"
 #include "score/mw/com/message_passing/sender.h"
 
-score::cpp::pmr::unique_ptr<score::mw::com::message_passing::ISender> score::mw::com::message_passing::SenderFactoryImpl::Create(
-    const std::string_view identifier,
-    const score::cpp::stop_token& token,
-    const SenderConfig& sender_config,
-    LoggingCallback logging_callback,
-    score::cpp::pmr::memory_resource* const memory_resource)
+score::cpp::pmr::unique_ptr<score::mw::com::message_passing::ISender>
+score::mw::com::message_passing::SenderFactoryImpl::Create(const std::string_view identifier,
+                                                           const score::cpp::stop_token& token,
+                                                           const SenderConfig& sender_config,
+                                                           LoggingCallback logging_callback,
+                                                           score::cpp::pmr::memory_resource* const memory_resource)
 {
     return score::cpp::pmr::make_unique<Sender<ResmgrSenderTraits>>(
         memory_resource, identifier, token, sender_config, std::move(logging_callback));

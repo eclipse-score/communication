@@ -105,7 +105,8 @@ bool ClientConnection::TryQueueMessage(score::cpp::span<const std::uint8_t> mess
     return true;
 }
 
-score::cpp::expected_blank<score::os::Error> ClientConnection::Send(score::cpp::span<const std::uint8_t> message) noexcept
+score::cpp::expected_blank<score::os::Error> ClientConnection::Send(
+    score::cpp::span<const std::uint8_t> message) noexcept
 {
     if (message.size() > max_send_size_)
     {
@@ -165,7 +166,8 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
     score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> result{};
     NonAllocatingFuture future(send_mutex_, send_condition_, result);
 
-    auto callback = [&reply, &future](score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
+    auto callback = [&reply, &future](
+                        score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
         if (!message_expected.has_value())
         {
             future.UpdateValueMarkReady(score::cpp::make_unexpected(message_expected.error()));
@@ -228,8 +230,9 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
     return result;
 }
 
-score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(score::cpp::span<const std::uint8_t> message,
-                                                                       ReplyCallback callback) noexcept
+score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
+    score::cpp::span<const std::uint8_t> message,
+    ReplyCallback callback) noexcept
 {
     if (message.size() > max_send_size_)
     {
@@ -347,7 +350,7 @@ void ClientConnection::TryConnect() noexcept
 {
     // The order of access to these atomics is important, as stop_reason_ can change in background
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(((stop_reason_ == StopReason::kNone) && (state_ == State::kStarting)) ||
-                   ((state_ == State::kStopping) && (stop_reason_ == StopReason::kUserRequested)));
+                                        ((state_ == State::kStopping) && (stop_reason_ == StopReason::kUserRequested)));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(IsInCallback());
 
     // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
@@ -491,8 +494,8 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
         if (!send.callback.empty())
         {
             waiting_for_reply_ = std::move(send.callback);
-            const auto expected =
-                engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
+            const auto expected = engine_->SendProtocolMessage(
+                client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
             if (expected.has_value())
             {
                 break;

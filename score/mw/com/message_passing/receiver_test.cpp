@@ -179,12 +179,12 @@ TEST_F(ReceiverFixture, CorrectCallbackIsInvokedForProperMessage)
     //        that it will wait on next message
     //  - 3rd will indicate that it has received a stop-request and won't wait for any further message
     EXPECT_CALL(mock_, receive_next)
-        .WillOnce(
-            Invoke([](const file_descriptor_type /*file_descriptor*/,
-                      std::size_t /*thread*/,
-                      ShortMessageProcessor /*fShort*/,
-                      MediumMessageProcessor fMedium,
-                      const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
+        .WillOnce(Invoke(
+            [](const file_descriptor_type /*file_descriptor*/,
+               std::size_t /*thread*/,
+               ShortMessageProcessor /*fShort*/,
+               MediumMessageProcessor fMedium,
+               const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
                 MediumMessage message{};
                 message.id = 0x50;
                 message.pid = 1233;
@@ -192,12 +192,12 @@ TEST_F(ReceiverFixture, CorrectCallbackIsInvokedForProperMessage)
                 fMedium(message);
                 return true;
             }))
-        .WillOnce(
-            Invoke([](const file_descriptor_type /*file_descriptor*/,
-                      std::size_t /*thread*/,
-                      ShortMessageProcessor fShort,
-                      MediumMessageProcessor /*fMedium*/,
-                      const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
+        .WillOnce(Invoke(
+            [](const file_descriptor_type /*file_descriptor*/,
+               std::size_t /*thread*/,
+               ShortMessageProcessor fShort,
+               MediumMessageProcessor /*fMedium*/,
+               const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
                 ShortMessage message{};
                 message.id = 0x42;
                 message.pid = 1233;
@@ -269,12 +269,12 @@ TEST_F(ReceiverFixture, CorrectCallbackIsInvokedForProperMessageWithoutDelay)
     //        that it will wait on next message
     //  - 3rd will indicate that it has received a stop-request and won't wait for any further message
     EXPECT_CALL(mock_, receive_next)
-        .WillOnce(
-            Invoke([](const file_descriptor_type /*file_descriptor*/,
-                      std::size_t /*thread*/,
-                      ShortMessageProcessor /*fShort*/,
-                      MediumMessageProcessor fMedium,
-                      const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
+        .WillOnce(Invoke(
+            [](const file_descriptor_type /*file_descriptor*/,
+               std::size_t /*thread*/,
+               ShortMessageProcessor /*fShort*/,
+               MediumMessageProcessor fMedium,
+               const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
                 MediumMessage message{};
                 message.id = 0x50;
                 message.pid = 1233;
@@ -282,12 +282,12 @@ TEST_F(ReceiverFixture, CorrectCallbackIsInvokedForProperMessageWithoutDelay)
                 fMedium(message);
                 return true;
             }))
-        .WillOnce(
-            Invoke([](const file_descriptor_type /*file_descriptor*/,
-                      std::size_t /*thread*/,
-                      ShortMessageProcessor fShort,
-                      MediumMessageProcessor /*fMedium*/,
-                      const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
+        .WillOnce(Invoke(
+            [](const file_descriptor_type /*file_descriptor*/,
+               std::size_t /*thread*/,
+               ShortMessageProcessor fShort,
+               MediumMessageProcessor /*fMedium*/,
+               const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
                 ShortMessage message{};
                 message.id = 0x42;
                 message.pid = 1233;
@@ -336,12 +336,12 @@ TEST_F(ReceiverFixture, ReceiveMessageWhileNoCallbackIsRegistered)
     //        that it will wait on next message
     //  - 3rd will indicate that it has received a stop-request and won't wait for any further message
     EXPECT_CALL(mock_, receive_next)
-        .WillOnce(
-            Invoke([](const file_descriptor_type /*file_descriptor*/,
-                      std::size_t /*thread*/,
-                      ShortMessageProcessor /*fShort*/,
-                      MediumMessageProcessor fMedium,
-                      const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
+        .WillOnce(Invoke(
+            [](const file_descriptor_type /*file_descriptor*/,
+               std::size_t /*thread*/,
+               ShortMessageProcessor /*fShort*/,
+               MediumMessageProcessor fMedium,
+               const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
                 MediumMessage message{};
                 message.id = 0x50;
                 message.pid = 1233;
@@ -349,20 +349,19 @@ TEST_F(ReceiverFixture, ReceiveMessageWhileNoCallbackIsRegistered)
                 fMedium(message);
                 return true;
             }))
-        .WillOnce(
-            Invoke([&receive_function_called](
-                       const file_descriptor_type /*file_descriptor*/,
-                       std::size_t /*thread*/,
-                       ShortMessageProcessor fShort,
-                       MediumMessageProcessor /*fMedium*/,
-                       const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
-                ShortMessage message{};
-                message.id = 0x42;
-                message.payload = 0x42;
-                fShort(message);
-                receive_function_called = true;
-                return true;
-            }))
+        .WillOnce(Invoke([&receive_function_called](const file_descriptor_type /*file_descriptor*/,
+                                                    std::size_t /*thread*/,
+                                                    ShortMessageProcessor fShort,
+                                                    MediumMessageProcessor /*fMedium*/,
+                                                    const FileDescriptorResourcesType& /*os_resources*/)
+                             -> score::cpp::expected<bool, score::os::Error> {
+            ShortMessage message{};
+            message.id = 0x42;
+            message.payload = 0x42;
+            fShort(message);
+            receive_function_called = true;
+            return true;
+        }))
         .WillOnce(Invoke([](const file_descriptor_type,
                             std::size_t,
                             ShortMessageProcessor,
@@ -397,15 +396,15 @@ TEST_F(ReceiverFixture, ReceivedErrorFromChannelTraits)
     //  - 1st will call will return EOF error
     //  - 2nd will indicate that it has received a stop-request and won't wait for any further message
     EXPECT_CALL(mock_, receive_next)
-        .WillOnce(Invoke(
-            [&error_flag](const file_descriptor_type /*file_descriptor*/,
-                          std::size_t /*thread*/,
-                          ShortMessageProcessor /*fShort*/,
-                          MediumMessageProcessor /*fMedium*/,
-                          const FileDescriptorResourcesType& /*os_resources*/) -> score::cpp::expected<bool, score::os::Error> {
-                error_flag = true;
-                return score::cpp::make_unexpected(score::os::Error::createFromErrno(EOF));
-            }))
+        .WillOnce(Invoke([&error_flag](const file_descriptor_type /*file_descriptor*/,
+                                       std::size_t /*thread*/,
+                                       ShortMessageProcessor /*fShort*/,
+                                       MediumMessageProcessor /*fMedium*/,
+                                       const FileDescriptorResourcesType& /*os_resources*/)
+                             -> score::cpp::expected<bool, score::os::Error> {
+            error_flag = true;
+            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EOF));
+        }))
         .WillOnce(Invoke([](const file_descriptor_type,
                             std::size_t,
                             ShortMessageProcessor,

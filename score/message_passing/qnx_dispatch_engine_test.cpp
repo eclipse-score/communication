@@ -106,7 +106,8 @@ TEST_F(QnxDispatchEngineDeathTest, EngineCreation_CreateTimer)
     EXPECT_CALL(*timer_, TimerCreate).Times(AnyNumber()).WillOnce(Return(kFakeOsError));
 
     std::optional<QnxDispatchEngine> engine;
-    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()), "Unable to create timer");
+    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()),
+                 "Unable to create timer");
 }
 
 TEST_F(QnxDispatchEngineDeathTest, EngineCreation_SetUpResourceManager)

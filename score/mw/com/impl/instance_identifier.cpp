@@ -69,7 +69,7 @@ InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::str
     if (serialization_version != serializationVersion)
     {
         ::score::mw::log::LogFatal("lola") << "InstanceIdentifier serialization versions don't match. "
-                                         << serialization_version << "!=" << serializationVersion << ". Terminating.";
+                                           << serialization_version << "!=" << serializationVersion << ". Terminating.";
         std::terminate();
     }
 
@@ -81,14 +81,14 @@ InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::str
     const auto* const type_deployment_ptr =
         configuration_->AddServiceTypeDeployment(std::move(service_identifier_type), std::move(type_deployment));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_deployment_ptr != nullptr,
-                           "Could not insert service type deployment into configuration map");
+                                                "Could not insert service type deployment into configuration map");
     type_deployment_ = type_deployment_ptr;
 
     auto instance_specifier = instance_deployment.instance_specifier_;
     const auto* const service_instance_deployment_ptr =
         configuration_->AddServiceInstanceDeployments(std::move(instance_specifier), std::move(instance_deployment));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_instance_deployment_ptr != nullptr,
-                           "Could not insert instance deployment into configuration map");
+                                                "Could not insert instance deployment into configuration map");
     instance_deployment_ = service_instance_deployment_ptr;
 }
 

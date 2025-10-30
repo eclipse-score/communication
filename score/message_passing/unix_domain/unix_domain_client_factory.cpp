@@ -32,8 +32,9 @@ UnixDomainClientFactory::UnixDomainClientFactory(const std::shared_ptr<UnixDomai
 
 UnixDomainClientFactory::~UnixDomainClientFactory() noexcept {}
 
-score::cpp::pmr::unique_ptr<IClientConnection> UnixDomainClientFactory::Create(const ServiceProtocolConfig& protocol_config,
-                                                                        const ClientConfig& client_config) noexcept
+score::cpp::pmr::unique_ptr<IClientConnection> UnixDomainClientFactory::Create(
+    const ServiceProtocolConfig& protocol_config,
+    const ClientConfig& client_config) noexcept
 {
     return score::cpp::pmr::make_unique<detail::ClientConnection>(
         engine_->GetMemoryResource(), engine_, protocol_config, client_config);

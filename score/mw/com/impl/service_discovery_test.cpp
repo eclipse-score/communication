@@ -275,7 +275,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTermina
 
     // When finding a service instance
     // Then the program terminates
-    EXPECT_DEATH({ score::cpp::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_); }, ".*");
+    EXPECT_DEATH(
+        { score::cpp::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_); }, ".*");
 }
 
 using ServiceDiscoveryFindServiceInstanceIdentifierFixture = ServiceDiscoveryTest;
@@ -664,7 +665,8 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture,
     auto find_service_handler = [destructor_notifier = std::move(destructor_notifier)](auto, auto) noexcept {};
 
     // When calling StartFindService with an InstanceSpecifier and the handler
-    score::cpp::ignore = unit_->StartFindService(std::move(find_service_handler), config_stores_[0].GetInstanceIdentifier());
+    score::cpp::ignore =
+        unit_->StartFindService(std::move(find_service_handler), config_stores_[0].GetInstanceIdentifier());
 
     // Then the handler should not have been destroyed by StartFindService, indicating that the handler has been stored
     // internally (since it's move-only)

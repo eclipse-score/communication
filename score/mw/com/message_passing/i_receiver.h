@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_MESSAGE_PASSING_I_RECEIVER_H
 #define SCORE_MW_COM_MESSAGE_PASSING_I_RECEIVER_H
 
-#include "score/os/errno.h"
 #include "score/mw/com/message_passing/shared_properties.h"
+#include "score/os/errno.h"
 
 #include <score/callback.hpp>
 #include <score/expected.hpp>

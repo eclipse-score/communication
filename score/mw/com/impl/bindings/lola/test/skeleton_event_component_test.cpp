@@ -106,13 +106,13 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         parent_skeleton_.reset();
         score::memory::shared::MemoryResourceRegistry::getInstance().clear();
 
-        const auto is_regular_file_data =
-            score::filesystem::IStandardFilesystem::instance().IsRegularFile("/dev/shm/lola-data-0000000000000002-00016");
+        const auto is_regular_file_data = score::filesystem::IStandardFilesystem::instance().IsRegularFile(
+            "/dev/shm/lola-data-0000000000000002-00016");
         ASSERT_TRUE(is_regular_file_data.has_value());
         EXPECT_FALSE(is_regular_file_data.value());
 
-        const auto is_regular_file_ctl =
-            score::filesystem::IStandardFilesystem::instance().IsRegularFile("/dev/shm/lola-ctl-0000000000000002-00016");
+        const auto is_regular_file_ctl = score::filesystem::IStandardFilesystem::instance().IsRegularFile(
+            "/dev/shm/lola-ctl-0000000000000002-00016");
         ASSERT_TRUE(is_regular_file_ctl.has_value());
         EXPECT_FALSE(is_regular_file_ctl.value());
 

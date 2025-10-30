@@ -66,7 +66,8 @@ std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
     std::optional<std::string> configuration_path{};
     for (std::uint32_t arg_idx = 0U; arg_idx < num_args; arg_idx++)
     {
-        const std::string& command_line_argument_key{score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(arg_idx))};
+        const std::string& command_line_argument_key{
+            score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(arg_idx))};
         if (command_line_argument_key == kConfigurationPathCommandLineKey)
         {
             const auto index_of_configuration_path = arg_idx + 1U;

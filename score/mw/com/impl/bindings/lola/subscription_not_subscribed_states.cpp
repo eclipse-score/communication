@@ -18,8 +18,8 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/com_error.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/utility.hpp>
 
@@ -42,8 +42,8 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
         std::stringstream ss{};
         ss << "Subscribe was rejected by skeleton. Could not Register TransactionLog due to "
            << transaction_log_registration_guard_result.error();
-        ::score::mw::log::LogError("lola") << CreateLoggingString(
-            ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
+        ::score::mw::log::LogError("lola")
+            << CreateLoggingString(ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
         return MakeUnexpected(ComErrc::kMaxSubscribersExceeded);
     }
     score::cpp::ignore = state_machine_.transaction_log_registration_guard_.emplace(
@@ -70,8 +70,8 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
         std::stringstream ss{};
         ss << "Subscribe was rejected by skeleton. Cannot complete SubscribeEvent() call due to "
            << ToString(subscription_result);
-        ::score::mw::log::LogError("lola") << CreateLoggingString(
-            ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
+        ::score::mw::log::LogError("lola")
+            << CreateLoggingString(ss.str(), state_machine_.GetElementFqId(), state_machine_.GetCurrentStateNoLock());
         state_machine_.transaction_log_registration_guard_.reset();
         return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);
     }
@@ -125,28 +125,29 @@ void NotSubscribedState::UnsetReceiveHandler() noexcept
 std::optional<std::uint16_t> NotSubscribedState::GetMaxSampleCount() const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(!state_machine_.subscription_data_.max_sample_count_.has_value(),
-                       "Max sample count should not be set until Subscribe is called.");
+                                            "Max sample count should not be set until Subscribe is called.");
     return {};
 }
 
 score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(!state_machine_.subscription_data_.slot_collector_.has_value(),
-                       "Slot collector should not be created until Subscribe is called.");
+                                            "Slot collector should not be created until Subscribe is called.");
     return state_machine_.subscription_data_.slot_collector_;
 }
 
 const score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector() const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(!state_machine_.subscription_data_.slot_collector_.has_value(),
-                       "Slot collector should not be created until Subscribe is called.");
+                                            "Slot collector should not be created until Subscribe is called.");
     return state_machine_.subscription_data_.slot_collector_;
 }
 
 score::cpp::optional<TransactionLogSet::TransactionLogIndex> NotSubscribedState::GetTransactionLogIndex() const noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(!state_machine_.transaction_log_registration_guard_.has_value(),
-                       "TransactionLogRegistrationGuard should not be set until Subscribe is called.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
+        !state_machine_.transaction_log_registration_guard_.has_value(),
+        "TransactionLogRegistrationGuard should not be set until Subscribe is called.");
     return {};
 }
 

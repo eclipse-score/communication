@@ -14,8 +14,8 @@
 
 #include "score/mw/com/impl/bindings/lola/messaging/messages/message_common.h"
 
-#include <score/optional.hpp>
 #include <gtest/gtest.h>
+#include <score/optional.hpp>
 
 #include <cstdint>
 #include <cstring>

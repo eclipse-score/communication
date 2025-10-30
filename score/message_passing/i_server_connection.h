@@ -33,8 +33,10 @@ class IServerConnection
     virtual const ClientIdentity& GetClientIdentity() const noexcept = 0;
     virtual UserData& GetUserData() noexcept = 0;
 
-    virtual score::cpp::expected_blank<score::os::Error> Reply(score::cpp::span<const std::uint8_t> message) noexcept = 0;
-    virtual score::cpp::expected_blank<score::os::Error> Notify(score::cpp::span<const std::uint8_t> message) noexcept = 0;
+    virtual score::cpp::expected_blank<score::os::Error> Reply(
+        score::cpp::span<const std::uint8_t> message) noexcept = 0;
+    virtual score::cpp::expected_blank<score::os::Error> Notify(
+        score::cpp::span<const std::uint8_t> message) noexcept = 0;
     virtual void RequestDisconnect() noexcept = 0;
 
   protected:

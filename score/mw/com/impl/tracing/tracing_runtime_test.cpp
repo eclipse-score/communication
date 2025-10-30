@@ -154,13 +154,13 @@ TEST(TracingRuntime, TracingRuntimeTraceWillReceivePointerToConstShmData)
     using ShmPointerType = const void*;
 
     // Check that ShmPointerType is the type that is passed to TracingRuntime::Trace
-    constexpr auto trace_shm_signature = static_cast<score::ResultBlank (score::mw::com::impl::tracing::TracingRuntime::*)(
-        BindingType,
-        ServiceElementInstanceIdentifierView,
-        ITracingRuntime::TracePointType,
-        score::cpp::optional<ITracingRuntime::TracePointDataId>,
-        ShmPointerType,
-        std::size_t)>(&TracingRuntime::Trace);
+    constexpr auto trace_shm_signature = static_cast<score::ResultBlank (
+        score::mw::com::impl::tracing::TracingRuntime::*)(BindingType,
+                                                          ServiceElementInstanceIdentifierView,
+                                                          ITracingRuntime::TracePointType,
+                                                          score::cpp::optional<ITracingRuntime::TracePointDataId>,
+                                                          ShmPointerType,
+                                                          std::size_t)>(&TracingRuntime::Trace);
     static_assert(std::is_member_function_pointer_v<decltype(trace_shm_signature)>,
                   "shm_trace_signature is not a method of TracingRuntime.");
 
@@ -524,9 +524,9 @@ TEST_F(TracingRuntimeRegisterServiceElementDeathTest,
 
     // When calling RegisterServiceElement
     // Then the program terminates
-    EXPECT_DEATH(
-        score::cpp::ignore = unit_under_test->RegisterServiceElement(registered_binding_type_, kNumberOfIpcTracingSlots),
-        ".*");
+    EXPECT_DEATH(score::cpp::ignore =
+                     unit_under_test->RegisterServiceElement(registered_binding_type_, kNumberOfIpcTracingSlots),
+                 ".*");
 }
 
 using TracingRuntimeDisableTracingFixture = TracingRuntimeFixture;

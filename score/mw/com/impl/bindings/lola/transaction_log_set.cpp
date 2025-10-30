@@ -12,9 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
-#include "score/result/result.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 
@@ -27,22 +27,24 @@ namespace score::mw::com::impl::lola
 bool TransactionLogSet::TransactionLogNode::TryAcquire(TransactionLogId transaction_log_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(transaction_log_id != kInvalidTransactionLogId,
-                           "Called TransactionLogNode::TryAcquire with kInvalidTransactionLogId");
+                                                "Called TransactionLogNode::TryAcquire with kInvalidTransactionLogId");
     TransactionLogId expected_transaction_log_id{kInvalidTransactionLogId};
     return transaction_log_id_.GetUnderlying().compare_exchange_strong(expected_transaction_log_id, transaction_log_id);
 }
 
 bool TransactionLogSet::TransactionLogNode::TryAcquireForRead(TransactionLogId transaction_log_id) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(transaction_log_id != kInvalidTransactionLogId,
-                           "Called TransactionLogNode::TryAcquireForRead with kInvalidTransactionLogId");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        transaction_log_id != kInvalidTransactionLogId,
+        "Called TransactionLogNode::TryAcquireForRead with kInvalidTransactionLogId");
     return (transaction_log_id_ == transaction_log_id);
 }
 
 void TransactionLogSet::TransactionLogNode::Reset() noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!transaction_log_.ContainsTransactions(),
-                           "Cannot Reset TransactionLog as it still contains some old transactions.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        !transaction_log_.ContainsTransactions(),
+        "Cannot Reset TransactionLog as it still contains some old transactions.");
     needs_rollback_ = false;
     Release();
 }
@@ -147,8 +149,9 @@ score::Result<TransactionLogSet::TransactionLogIndex> TransactionLogSet::Registe
             "TransactionLogSet. This is likely because the number of subscribers has exceeded the configuration "
             "value of max_subscribers.");
     }
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!next_available_slot_result.value().first->GetTransactionLog().ContainsTransactions(),
-                           "Cannot reuse TransactionLog as it still contains some old transactions.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        !next_available_slot_result.value().first->GetTransactionLog().ContainsTransactions(),
+        "Cannot reuse TransactionLog as it still contains some old transactions.");
     return next_available_slot_result.value().second;
 }
 
@@ -158,9 +161,10 @@ TransactionLogSet::TransactionLogIndex TransactionLogSet::RegisterSkeletonTracin
     // we don't need e.g. an uid here.
     constexpr TransactionLogId kDummyTransactionLogIdSkeleton{1};
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!skeleton_tracing_transaction_log_.IsActive(),
-                           "Can only register a single Skeleton Tracing element.");
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton_tracing_transaction_log_.TryAcquire(kDummyTransactionLogIdSkeleton),
-                           "Unexpected failure to acquire TransactionLogNode for SkeletonEvent!");
+                                                "Can only register a single Skeleton Tracing element.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        skeleton_tracing_transaction_log_.TryAcquire(kDummyTransactionLogIdSkeleton),
+        "Unexpected failure to acquire TransactionLogNode for SkeletonEvent!");
     return kSkeletonIndexSentinel;
 }
 
@@ -177,7 +181,8 @@ void TransactionLogSet::Unregister(const TransactionLogIndex transaction_log_ind
     }
     else
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(transaction_log_index) < proxy_transaction_logs_.size());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(transaction_log_index) <
+                                            proxy_transaction_logs_.size());
         proxy_transaction_logs_.at(static_cast<std::size_t>(transaction_log_index)).Reset();
     }
 }
@@ -191,13 +196,16 @@ TransactionLog& TransactionLogSet::GetTransactionLog(const TransactionLogIndex t
 {
     if (IsSkeletonElementTransactionLogIndex(transaction_log_index))
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(skeleton_tracing_transaction_log_.IsActive(),
-                                     "Skeleton tracing transaction log must be registered before being retrieved.");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            skeleton_tracing_transaction_log_.IsActive(),
+            "Skeleton tracing transaction log must be registered before being retrieved.");
         return skeleton_tracing_transaction_log_.GetTransactionLog();
     }
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(transaction_log_index) < proxy_transaction_logs_.size());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(proxy_transaction_logs_.at(static_cast<std::size_t>(transaction_log_index)).IsActive(),
-                                 "Proxy tracing transaction log must be registered before being retrieved.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(transaction_log_index) <
+                                        proxy_transaction_logs_.size());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        proxy_transaction_logs_.at(static_cast<std::size_t>(transaction_log_index)).IsActive(),
+        "Proxy tracing transaction log must be registered before being retrieved.");
     return proxy_transaction_logs_.at(static_cast<std::size_t>(transaction_log_index)).GetTransactionLog();
 }
 
@@ -238,8 +246,9 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
 std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogSet::TransactionLogIndex>>
 TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_transaction_logs_.size() <= std::numeric_limits<std::uint8_t>::max(),
-                           "proxy_transaction_logs_.size() does not fit uint8_t");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        proxy_transaction_logs_.size() <= std::numeric_limits<std::uint8_t>::max(),
+        "proxy_transaction_logs_.size() does not fit uint8_t");
     //  The size of the transaction logs reflects the size of max subscribers and therefore the potential upper-bound
     //  of concurrent proxies accessing these transaction_logs, from which we deduce our max retry count!
     const std::uint8_t max_retry_count{static_cast<std::uint8_t>(proxy_transaction_logs_.size())};

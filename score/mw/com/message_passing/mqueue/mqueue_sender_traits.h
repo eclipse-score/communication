@@ -65,9 +65,10 @@ class MqueueSenderTraits
         return SerializeToRawMessage(message);
     }
 
-    static score::cpp::expected_blank<score::os::Error> try_send(const file_descriptor_type file_descriptor,
-                                                        const score::mw::com::message_passing::RawMessageBuffer& buffer,
-                                                        const FileDescriptorResourcesType& os_resources) noexcept
+    static score::cpp::expected_blank<score::os::Error> try_send(
+        const file_descriptor_type file_descriptor,
+        const score::mw::com::message_passing::RawMessageBuffer& buffer,
+        const FileDescriptorResourcesType& os_resources) noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");
         return os_resources.mqueue->mq_send(

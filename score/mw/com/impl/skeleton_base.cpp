@@ -40,8 +40,9 @@ void StopOfferServiceInServiceDiscovery(const InstanceIdentifier& instance_ident
     const auto result = Runtime::getInstance().GetServiceDiscovery().StopOfferService(instance_identifier);
     if (!result.has_value())
     {
-        score::mw::log::LogError("lola") << "SkeletonBinding::OfferService failed: service discovery could not stop offer"
-                                       << result.error().Message() << ": " << result.error().UserMessage();
+        score::mw::log::LogError("lola")
+            << "SkeletonBinding::OfferService failed: service discovery could not stop offer"
+            << result.error().Message() << ": " << result.error().UserMessage();
     }
 }
 
@@ -55,8 +56,8 @@ SkeletonBinding::SkeletonEventBindings GetSkeletonEventBindingsMap(const Skeleto
 
         auto skeleton_event_base_view = SkeletonEventBaseView{skeleton_event_base};
         auto* event_binding = skeleton_event_base_view.GetBinding();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_binding != nullptr,
-                               "Skeleton should not have been created if event binding failed to create.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_binding != nullptr, "Skeleton should not have been created if event binding failed to create.");
         score::cpp::ignore = event_bindings.insert({event_name, *event_binding});
     }
     return event_bindings;
@@ -72,8 +73,8 @@ SkeletonBinding::SkeletonFieldBindings GetSkeletonFieldBindingsMap(const Skeleto
 
         auto skeleton_field_base_view = SkeletonFieldBaseView{skeleton_field_base};
         auto* event_binding = skeleton_field_base_view.GetEventBinding();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_binding != nullptr,
-                               "Skeleton should not have been created if event binding failed to create.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_binding != nullptr, "Skeleton should not have been created if event binding failed to create.");
         score::cpp::ignore = field_bindings.insert({field_name, *event_binding});
     }
     return field_bindings;
@@ -215,7 +216,7 @@ auto SkeletonBase::OfferService() noexcept -> ResultBlank
         if (!result.has_value())
         {
             score::mw::log::LogError("lola") << "SkeletonBinding::OfferService failed: " << result.error().Message()
-                                           << ": " << result.error().UserMessage();
+                                             << ": " << result.error().UserMessage();
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 

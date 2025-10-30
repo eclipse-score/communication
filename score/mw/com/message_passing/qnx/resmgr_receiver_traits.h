@@ -92,10 +92,10 @@ class ResmgrReceiverTraits
     // coverity[autosar_cpp14_a8_4_10_violation]
     // coverity[autosar_cpp14_a15_5_3_violation]
     static score::cpp::expected<bool, score::os::Error> receive_next(const file_descriptor_type file_descriptor,
-                                                            const std::size_t thread,
-                                                            ShortMessageProcessor fShort,
-                                                            MediumMessageProcessor fMedium,
-                                                            const FileDescriptorResourcesType&) noexcept
+                                                                     const std::size_t thread,
+                                                                     ShortMessageProcessor fShort,
+                                                                     MediumMessageProcessor fMedium,
+                                                                     const FileDescriptorResourcesType&) noexcept
     {
         ResmgrReceiverState& receiver_state = *file_descriptor;
         // Suppress "AUTOSAR C++14 A9-5-1", The rule states: "Unions shall not be used."

@@ -121,8 +121,8 @@ bool operator<(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstan
     return lhs.instance_id_ < rhs.instance_id_;
 }
 
-// In this case the constructor delegation does not provide additional code structuring because of the score::cpp::optional
-// By adding a third private constructor additional complexity would be introduced
+// In this case the constructor delegation does not provide additional code structuring because of the
+// score::cpp::optional By adding a third private constructor additional complexity would be introduced
 //
 // See Note 1 for autosar_cpp14_a15_5_3_violation.
 // coverity[autosar_cpp14_a12_1_5_violation]

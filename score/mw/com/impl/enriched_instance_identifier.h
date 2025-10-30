@@ -58,9 +58,10 @@ class EnrichedInstanceIdentifier final
     {
         const bool config_contains_instance_id =
             InstanceIdentifierView{instance_identifier_}.GetServiceInstanceId().has_value();
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!config_contains_instance_id,
-                                     "An ServiceInstanceId should only be provided to EnrichedInstanceIdentifier if "
-                                     "one doesn't exist in the config.");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            !config_contains_instance_id,
+            "An ServiceInstanceId should only be provided to EnrichedInstanceIdentifier if "
+            "one doesn't exist in the config.");
     }
 
     EnrichedInstanceIdentifier(EnrichedInstanceIdentifier instance_identifier, const QualityType quality_type) noexcept

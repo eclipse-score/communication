@@ -15,8 +15,8 @@
 #include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 
 #include "score/message_passing/i_server_connection.h"
-#include "score/os/errno_logging.h"
 #include "score/mw/log/logging.h"
+#include "score/os/errno_logging.h"
 
 #include <sstream>
 
@@ -52,28 +52,28 @@ score::mw::com::impl::lola::MessagePassingService::MessagePassingService(
     if (config_asil_b.has_value())
     {
         score::cpp::ignore = asil_b_.emplace(MessagePassingServiceInstance::ClientQualityType::kASIL_B,
-                                      *config_asil_b,
-                                      *server_factory_,
-                                      *client_factory_,
-                                      local_event_thread_pool_);
+                                             *config_asil_b,
+                                             *server_factory_,
+                                             *client_factory_,
+                                             local_event_thread_pool_);
         score::cpp::ignore = qm_.emplace(MessagePassingServiceInstance::ClientQualityType::kASIL_QMfromB,
-                                  config_asil_qm,
-                                  *server_factory_,
-                                  *client_factory_,
-                                  local_event_thread_pool_);
+                                         config_asil_qm,
+                                         *server_factory_,
+                                         *client_factory_,
+                                         local_event_thread_pool_);
     }
     else
     {
         score::cpp::ignore = qm_.emplace(MessagePassingServiceInstance::ClientQualityType::kASIL_QM,
-                                  config_asil_qm,
-                                  *server_factory_,
-                                  *client_factory_,
-                                  local_event_thread_pool_);
+                                         config_asil_qm,
+                                         *server_factory_,
+                                         *client_factory_,
+                                         local_event_thread_pool_);
     }
 }
 
 void score::mw::com::impl::lola::MessagePassingService::NotifyEvent(const QualityType asil_level,
-                                                                  const ElementFqId event_id) noexcept
+                                                                    const ElementFqId event_id) noexcept
 {
     auto& instance = asil_level == QualityType::kASIL_QM ? qm_ : asil_b_;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance.has_value(), "Invalid asil level.");
@@ -95,8 +95,8 @@ score::mw::com::impl::lola::MessagePassingService::RegisterEventNotification(
 }
 
 void score::mw::com::impl::lola::MessagePassingService::ReregisterEventNotification(const QualityType asil_level,
-                                                                                  const ElementFqId event_id,
-                                                                                  const pid_t target_node_id) noexcept
+                                                                                    const ElementFqId event_id,
+                                                                                    const pid_t target_node_id) noexcept
 {
     auto& instance = asil_level == QualityType::kASIL_QM ? qm_ : asil_b_;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance.has_value(), "Invalid asil level.");
@@ -117,8 +117,8 @@ void score::mw::com::impl::lola::MessagePassingService::UnregisterEventNotificat
 }
 
 void score::mw::com::impl::lola::MessagePassingService::NotifyOutdatedNodeId(const QualityType asil_level,
-                                                                           const pid_t outdated_node_id,
-                                                                           const pid_t target_node_id) noexcept
+                                                                             const pid_t outdated_node_id,
+                                                                             const pid_t target_node_id) noexcept
 {
     auto& instance = asil_level == QualityType::kASIL_QM ? qm_ : asil_b_;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance.has_value(), "Invalid asil level.");

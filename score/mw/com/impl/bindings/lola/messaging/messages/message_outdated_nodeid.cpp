@@ -46,8 +46,8 @@ message_passing::ShortMessage SerializeToShortMessage(const OutdatedNodeIdMessag
     message.pid = outdated_node_id_message.sender_node_id;
     // NOLINTNEXTLINE(score-banned-function): copies pid into message payload.
     score::cpp::ignore = std::memcpy(static_cast<void*>(&message.payload),
-                              static_cast<const void*>(&outdated_node_id_message.pid_to_unregister),
-                              sizeof(outdated_node_id_message.pid_to_unregister));
+                                     static_cast<const void*>(&outdated_node_id_message.pid_to_unregister),
+                                     sizeof(outdated_node_id_message.pid_to_unregister));
     return message;
 }
 

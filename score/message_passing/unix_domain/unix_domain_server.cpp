@@ -80,7 +80,8 @@ score::cpp::expected_blank<score::os::Error> UnixDomainServer::ServerConnection:
     {
         return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
     }
-    return server_.engine_->SendProtocolMessage(endpoint_.fd, score::cpp::to_underlying(ServerToClient::REPLY), message);
+    return server_.engine_->SendProtocolMessage(
+        endpoint_.fd, score::cpp::to_underlying(ServerToClient::REPLY), message);
 }
 
 score::cpp::expected_blank<score::os::Error> UnixDomainServer::ServerConnection::Notify(
@@ -90,7 +91,8 @@ score::cpp::expected_blank<score::os::Error> UnixDomainServer::ServerConnection:
     {
         return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
     }
-    return server_.engine_->SendProtocolMessage(endpoint_.fd, score::cpp::to_underlying(ServerToClient::NOTIFY), message);
+    return server_.engine_->SendProtocolMessage(
+        endpoint_.fd, score::cpp::to_underlying(ServerToClient::NOTIFY), message);
 }
 
 void UnixDomainServer::ServerConnection::RequestDisconnect() noexcept
@@ -166,10 +168,11 @@ UnixDomainServer::~UnixDomainServer() noexcept
     StopListening();
 }
 
-score::cpp::expected_blank<score::os::Error> UnixDomainServer::StartListening(ConnectCallback connect_callback,
-                                                                     DisconnectCallback disconnect_callback,
-                                                                     MessageCallback sent_callback,
-                                                                     MessageCallback sent_with_reply_callback) noexcept
+score::cpp::expected_blank<score::os::Error> UnixDomainServer::StartListening(
+    ConnectCallback connect_callback,
+    DisconnectCallback disconnect_callback,
+    MessageCallback sent_callback,
+    MessageCallback sent_with_reply_callback) noexcept
 {
     connect_callback_ = std::move(connect_callback);
     disconnect_callback_ = std::move(disconnect_callback);
@@ -252,7 +255,8 @@ void UnixDomainServer::ProcessConnect() noexcept
 
     ClientIdentity identity{cr.pid, cr.uid, cr.gid};
 #endif
-    auto connection = score::cpp::pmr::make_unique<ServerConnection>(engine_->GetMemoryResource(), *this, data_fd, identity);
+    auto connection =
+        score::cpp::pmr::make_unique<ServerConnection>(engine_->GetMemoryResource(), *this, data_fd, identity);
 
     std::lock_guard<std::recursive_mutex> guard(connection_setup_mutex_);
     // It should be possible to request disconnect for other connections from this callback;

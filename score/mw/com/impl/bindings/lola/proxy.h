@@ -191,13 +191,14 @@ template <typename EventSampleType>
 auto Proxy::GetEventDataStorage(const ElementFqId element_fq_id) const noexcept
     -> const EventDataStorage<EventSampleType>&
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr, "Proxy::GetEventDataStorage: Managed memory data pointer is Null");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        data_ != nullptr, "Proxy::GetEventDataStorage: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
     const auto event_entry = service_data_storage.events_.find(element_fq_id);
     if (event_entry == service_data_storage.events_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
-                                       << "Unable to find data storage for given event instance. Terminating.";
+                                         << "Unable to find data storage for given event instance. Terminating.";
         std::terminate();
     }
     // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
@@ -206,7 +207,8 @@ auto Proxy::GetEventDataStorage(const ElementFqId element_fq_id) const noexcept
     // does not return nullptr.
     // coverity[autosar_cpp14_a5_3_2_violation]
     const auto* event_data_storage_ptr = event_entry->second.template get<EventDataStorage<EventSampleType>>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ptr != nullptr, "Could not get EventDataStorage from OffsetPtr");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_storage_ptr != nullptr,
+                                                "Could not get EventDataStorage from OffsetPtr");
     return *event_data_storage_ptr;
 }
 

@@ -50,7 +50,7 @@ class TransactionLog
 
     using TransactionLogSlots =
         score::containers::DynamicArray<TransactionLogSlot,
-                                      memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>;
+                                        memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>;
 
     /// \brief Callbacks called during Roll back
     ///

@@ -52,7 +52,7 @@ class ClientConnection final : public IClientConnection
         score::cpp::span<std::uint8_t> reply) noexcept override;
 
     score::cpp::expected_blank<score::os::Error> SendWithCallback(score::cpp::span<const std::uint8_t> message,
-                                                         ReplyCallback callback) noexcept override;
+                                                                  ReplyCallback callback) noexcept override;
 
     State GetState() const noexcept override;
 

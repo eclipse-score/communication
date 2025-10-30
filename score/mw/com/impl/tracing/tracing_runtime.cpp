@@ -265,7 +265,7 @@ ResultBlank TracingRuntime::ProcessTraceCallResult(
     if (IsTerminalFatalError(trace_call_result.error()))
     {
         score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing because of kTerminalFatal Error: "
-                                      << trace_call_result.error();
+                                        << trace_call_result.error();
         atomic_state_.is_tracing_enabled = false;
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }
@@ -274,15 +274,16 @@ ResultBlank TracingRuntime::ProcessTraceCallResult(
     if (atomic_state_.consecutive_failure_counter >= MAX_CONSECUTIVE_ACCEPTABLE_TRACE_FAILURES)
     {
         score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing because of max number of consecutive "
-                                         "errors during call of Trace has been reached.";
+                                           "errors during call of Trace has been reached.";
         atomic_state_.is_tracing_enabled = false;
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }
     if (IsNonRecoverableError(trace_call_result.error()))
     {
-        score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing for " << service_element_instance_identifier
-                                      << " because of non-recoverable error during call of Trace(). Error: "
-                                      << trace_call_result.error();
+        score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing for "
+                                        << service_element_instance_identifier
+                                        << " because of non-recoverable error during call of Trace(). Error: "
+                                        << trace_call_result.error();
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance);
     }
     return {};
@@ -291,7 +292,8 @@ ResultBlank TracingRuntime::ProcessTraceCallResult(
 ITracingRuntimeBinding& TracingRuntime::GetTracingRuntimeBinding(const BindingType binding_type) const noexcept
 {
     const auto& search = tracing_runtime_bindings_.find(binding_type);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != tracing_runtime_bindings_.cend(), "No tracing runtime for given BindingType!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != tracing_runtime_bindings_.cend(),
+                                                "No tracing runtime for given BindingType!");
     return *search->second;
 }
 
@@ -354,7 +356,7 @@ void TracingRuntime::RegisterShmObject(
             if (IsTerminalFatalError(generic_trace_api_shm_handle.error()))
             {
                 score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing because of kTerminalFatal Error: "
-                                              << generic_trace_api_shm_handle.error();
+                                                << generic_trace_api_shm_handle.error();
                 atomic_state_.is_tracing_enabled = false;
             }
             else
@@ -526,8 +528,9 @@ ResultBlank TracingRuntime::Trace(const BindingType binding_type,
 
     const auto shm_region_start = runtime_binding.GetShmRegionStartAddress(service_element_instance_identifier);
     // a valid shm_object_handle ... a shm_region_start should also exist!
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(shm_region_start.has_value(),
-                           "No shared-memory-region start address for shm-object in tracing runtime binding!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        shm_region_start.has_value(),
+        "No shared-memory-region start address for shm-object in tracing runtime binding!");
 
     const auto meta_info =
         CreateMetaInfo(service_element_instance_identifier, trace_point_type, trace_point_data_id, runtime_binding);

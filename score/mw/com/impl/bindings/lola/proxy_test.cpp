@@ -183,7 +183,8 @@ TEST_F(ProxyCreationFixture, ProxyCreationReturnsNullPtrWhenSharedLockOnUsageMar
     // Expecting that it fails even with retries to get shared lock on service instance usage marker file
     EXPECT_CALL(*fcntl_mock_, flock(_, _))
         .Times(3)
-        .WillRepeatedly(::testing::Return(score::cpp::make_unexpected(::score::os::Error::createFromErrno(EWOULDBLOCK))));
+        .WillRepeatedly(
+            ::testing::Return(score::cpp::make_unexpected(::score::os::Error::createFromErrno(EWOULDBLOCK))));
 
     // When creating a proxy
     const auto proxy_result = Proxy::Create(make_HandleType(identifier_, ServiceInstanceId{kLolaServiceInstanceId}));

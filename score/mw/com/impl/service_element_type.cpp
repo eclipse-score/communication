@@ -23,7 +23,7 @@ namespace score::mw::com::impl
 // respective types. code analysis tools tend to assume otherwise hence a false positive.
 // coverity[autosar_cpp14_a13_2_2_violation]
 ::score::mw::log::LogStream& operator<<(::score::mw::log::LogStream& log_stream,
-                                      const ServiceElementType& service_element_type)
+                                        const ServiceElementType& service_element_type)
 {
     switch (service_element_type)
     {

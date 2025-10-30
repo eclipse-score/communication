@@ -122,11 +122,11 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateObj
 
     const auto mmap_result =
         ::score::os::Mman::instance().mmap(NULL,
-                                         sizeof(T),
-                                         ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
-                                         ::score::os::Mman::Map::kShared,
-                                         file_descriptor,
-                                         0);
+                                           sizeof(T),
+                                           ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
+                                           ::score::os::Mman::Map::kShared,
+                                           file_descriptor,
+                                           0);
     if (!mmap_result.has_value())
     {
         std::stringstream ss;
@@ -156,8 +156,9 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObjec
         return score::cpp::make_unexpected<os::Error>(os::Error::createFromErrno(EBUSY));
     }
 
-    const auto open_result = ::score::os::Mman::instance().shm_open(
-        shared_memory_file_name.data(), ::score::os::Fcntl::Open::kReadWrite, score::os::Stat::Mode::kReadWriteExecUser);
+    const auto open_result = ::score::os::Mman::instance().shm_open(shared_memory_file_name.data(),
+                                                                    ::score::os::Fcntl::Open::kReadWrite,
+                                                                    score::os::Stat::Mode::kReadWriteExecUser);
     if (!open_result.has_value())
     {
         return score::cpp::make_unexpected(open_result.error());
@@ -166,11 +167,11 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObjec
 
     const auto mmap_result =
         ::score::os::Mman::instance().mmap(NULL,
-                                         sizeof(T),
-                                         ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
-                                         ::score::os::Mman::Map::kShared,
-                                         file_descriptor,
-                                         0);
+                                           sizeof(T),
+                                           ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
+                                           ::score::os::Mman::Map::kShared,
+                                           file_descriptor,
+                                           0);
     if (!mmap_result.has_value())
     {
         std::stringstream ss;

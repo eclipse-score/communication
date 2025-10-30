@@ -25,8 +25,8 @@
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
-#include <score/jthread.hpp>
 #include <gtest/gtest.h>
+#include <score/jthread.hpp>
 #include <sys/types.h>
 #include <memory>
 #include <optional>

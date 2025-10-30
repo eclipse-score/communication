@@ -55,9 +55,10 @@ void TraceCallGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_d
 void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
                              const ProxyEventBindingBase& proxy_event_binding_base) noexcept;
 
-score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                                                            const ProxyEventBindingBase& proxy_event_binding_base,
-                                                            EventReceiveHandler handler) noexcept;
+score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
+    ProxyEventTracingData& proxy_event_tracing_data,
+    const ProxyEventBindingBase& proxy_event_binding_base,
+    EventReceiveHandler handler) noexcept;
 
 template <typename SampleType, typename ReceiverType>
 auto CreateTracingGetNewSamplesCallback(ProxyEventTracingData& proxy_event_tracing_data,

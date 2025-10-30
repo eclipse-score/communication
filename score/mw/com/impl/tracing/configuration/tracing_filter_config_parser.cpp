@@ -617,7 +617,8 @@ void ParseService(const score::json::Any& json,
 // std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json, const Configuration& configuration) noexcept
+score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json,
+                                                 const Configuration& configuration) noexcept
 {
     TracingFilterConfig tracing_filter_config{};
     const auto& object = json.As<score::json::Object>().value().get();
@@ -661,9 +662,9 @@ score::Result<TracingFilterConfig> Parse(const std::string_view path, const Conf
     auto json_result = json_parser_obj.FromFile(path);
     if (!json_result.has_value())
     {
-        ::score::mw::log::LogFatal("lola") << "Parsing trace filter config file" << path
-                                         << "failed with error:" << json_result.error().Message() << ": "
-                                         << json_result.error().UserMessage() << " .";
+        ::score::mw::log::LogFatal("lola")
+            << "Parsing trace filter config file" << path << "failed with error:" << json_result.error().Message()
+            << ": " << json_result.error().UserMessage() << " .";
         return MakeUnexpected(TraceErrorCode::JsonConfigParseError, json_result.error().UserMessage());
     }
     return Parse(std::move(json_result).value(), configuration);

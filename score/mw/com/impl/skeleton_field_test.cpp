@@ -123,8 +123,8 @@ TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
                   "Incorrect FieldType.");
 }
 
-// When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This test
-// can be reworked to remove the call to PrepareOffer() and simply test Update() before PrepareOffer() is called.
+// When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This
+// test can be reworked to remove the call to PrepareOffer() and simply test Update() before PrepareOffer() is called.
 TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOfferService)
 {
     RecordProperty("Verifies", "SCR-17434775, SCR-17563743, SCR-21553554");
@@ -183,9 +183,9 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOff
     EXPECT_TRUE(is_send_called_on_binding);
 }
 
-// When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This test
-// can be reworked to remove the call to PrepareOffer() and the deferred processing of Update() and simply test Update()
-// before PrepareOffer() is called.
+// When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This
+// test can be reworked to remove the call to PrepareOffer() and the deferred processing of Update() and simply test
+// Update() before PrepareOffer() is called.
 TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBindingFailureToOfferService)
 {
     RecordProperty("Verifies", "SCR-17434775, SCR-21553554");

@@ -75,7 +75,8 @@ class ServiceFinder
         else if (service_finder_mode_ == ServiceFinderMode::ASYNC)
         {
             mw::log::LogInfo(kLogContext) << "Starting find service in async mode!";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_finder_mode_ == ServiceFinderMode::ASYNC, "ASYNC mode is not supported yet");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_finder_mode_ == ServiceFinderMode::ASYNC,
+                                                        "ASYNC mode is not supported yet");
         }
         else
         {
@@ -235,12 +236,12 @@ bool ReceiveEvent(TestDataProxy& lola_proxy,
 
     // stop_callback, which sets reception state to ABORTED and notifies waiting thread.
     score::cpp::stop_callback stop_callback{test_stop_token, [&receive_handler_context]() {
-                                         {
-                                             std::unique_lock lk(receive_handler_context.mutex);
-                                             receive_handler_context.reception_state = ReceptionState::ABORTED;
-                                         }
-                                         receive_handler_context.cv.notify_one();
-                                     }};
+                                                {
+                                                    std::unique_lock lk(receive_handler_context.mutex);
+                                                    receive_handler_context.reception_state = ReceptionState::ABORTED;
+                                                }
+                                                receive_handler_context.cv.notify_one();
+                                            }};
 
     // wait until receive-handler notifies, that it is done (successfully or not) with sample reception or until
     // we get stopped by stop_token.
@@ -292,7 +293,7 @@ bool PollForEvent(TestDataProxy& lola_proxy,
         // GetNumNewSamplesAvailable/GetNewSamples, so that GetNewSamples does NOT lead to a callback, although
         // GetNumNewSamplesAvailable reports one available sample ... but this should not happen in our setup.
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_callbacks_called_result.value() > 0,
-                               "At least one callback from GetNewSamples expected!");
+                                                    "At least one callback from GetNewSamples expected!");
 
         number_of_samples_received += number_of_callbacks_called_result.value();
 

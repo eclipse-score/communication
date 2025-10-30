@@ -27,14 +27,14 @@ namespace message_passing
 
 using UserData = std::variant<void*, std::uintptr_t, score::cpp::pmr::unique_ptr<IConnectionHandler>>;
 
-using ConnectCallback =
-    score::cpp::callback<score::cpp::expected<UserData, score::os::Error>(IServerConnection& connection) /* noexcept */>;
+using ConnectCallback = score::cpp::callback<score::cpp::expected<UserData, score::os::Error>(
+    IServerConnection& connection) /* noexcept */>;
 
 using DisconnectCallback = score::cpp::callback<void(IServerConnection& connection) /* noexcept */>;
 
-using MessageCallback =
-    score::cpp::callback<score::cpp::expected_blank<score::os::Error>(IServerConnection& connection,
-                                                      score::cpp::span<const std::uint8_t> message) /* noexcept */>;
+using MessageCallback = score::cpp::callback<score::cpp::expected_blank<score::os::Error>(
+    IServerConnection& connection,
+    score::cpp::span<const std::uint8_t> message) /* noexcept */>;
 
 // Suppress "AUTOSAR C++14 A9-6-1" rule findings. This rule declares: "Data types used for interfacing with hardware
 // or conforming to communication protocols shall be trivial, standard-layout and only contain members of types with

@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_INSTANCE_SPECIFIER_H
 #define SCORE_MW_COM_IMPL_INSTANCE_SPECIFIER_H
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <string>
 #include <string_view>
@@ -96,7 +96,7 @@ bool operator!=(const std::string_view& lhs, const InstanceSpecifier& rhs) noexc
 bool operator<(const InstanceSpecifier& lhs, const InstanceSpecifier& rhs) noexcept;
 
 ::score::mw::log::LogStream& operator<<(::score::mw::log::LogStream& log_stream,
-                                      const InstanceSpecifier& instance_specifier);
+                                        const InstanceSpecifier& instance_specifier);
 
 }  // namespace score::mw::com::impl
 

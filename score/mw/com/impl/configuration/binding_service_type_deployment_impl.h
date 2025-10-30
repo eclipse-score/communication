@@ -186,7 +186,7 @@ auto GetServiceElementId(
     // LCOV_EXCL_BR_STOP
     {
         score::mw::log::LogFatal() << service_element_type << "name \"" << service_element_name
-                                 << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
+                                   << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
         std::terminate();
     }
     return service_element_id_it->second;

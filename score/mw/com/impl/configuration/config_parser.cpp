@@ -159,7 +159,8 @@ auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std:
         const auto minor_version_number_exists = minor_version_number != version_object.cend();
 
         // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines
-        // in both branches (true / false) being covered. Suppression can be removed when bug is fixed in Ticket-188259).
+        // in both branches (true / false) being covered. Suppression can be removed when bug is fixed in
+        // Ticket-188259).
         if (major_version_number_exists && minor_version_number_exists)
         {
             // LCOV_EXCL_BR_STOP
@@ -287,7 +288,9 @@ auto ParseAllowedProvider(const score::json::Any& json) noexcept -> std::unorder
 class ServiceElementInstanceDeploymentParser
 {
   public:
-    explicit ServiceElementInstanceDeploymentParser(const score::json::Object& json_object) : json_object_{json_object} {}
+    explicit ServiceElementInstanceDeploymentParser(const score::json::Object& json_object) : json_object_{json_object}
+    {
+    }
 
     // See Note 1
     // coverity[autosar_cpp14_a15_5_3_violation]
@@ -302,7 +305,8 @@ class ServiceElementInstanceDeploymentParser
         return name->second.As<std::string>().value().get();
     }
 
-    void CheckContainsEvent(const score::json::Object::const_iterator name, const LolaServiceInstanceDeployment& service)
+    void CheckContainsEvent(const score::json::Object::const_iterator name,
+                            const LolaServiceInstanceDeployment& service)
     {
         if (name != json_object_.cend() && service.ContainsEvent(name->second.As<std::string>().value().get()))
         {
@@ -312,7 +316,8 @@ class ServiceElementInstanceDeploymentParser
         }
     }
 
-    void CheckContainsField(const score::json::Object::const_iterator name, const LolaServiceInstanceDeployment& service)
+    void CheckContainsField(const score::json::Object::const_iterator name,
+                            const LolaServiceInstanceDeployment& service)
     {
         if (name != json_object_.cend() && service.ContainsField(name->second.As<std::string>().value().get()))
         {
@@ -599,9 +604,9 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
             {
                 // Return Value not needed in this context
                 score::cpp::ignore = deployments.emplace_back(service,
-                                                       ParseLolaServiceInstanceDeployment(deploymentInstance),
-                                                       asil_level.value(),
-                                                       instance_specifier);
+                                                              ParseLolaServiceInstanceDeployment(deploymentInstance),
+                                                              asil_level.value(),
+                                                              instance_specifier);
             }
             else
             {
@@ -656,7 +661,7 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
         if (instance_deployments.size() != 1U)
         {
             score::mw::log::LogFatal("lola") << "More or less then one deployment for " << service_identifier.ToString()
-                                           << ". Multi-Binding support right now not supported";
+                                             << ". Multi-Binding support right now not supported";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             std::terminate();
         }
@@ -1050,7 +1055,7 @@ auto ParseTracingApplicationInstanceId(const score::json::Any& tracing_config) -
         return tracing_application_instance_id->second.As<std::string>().value().get();
     }
     score::mw::log::LogFatal("lola") << "Could not find" << kTracingApplicationInstanceIDKey
-                                   << "in json file which is a required attribute.";
+                                     << "in json file which is a required attribute.";
     std::terminate();
 }
 
@@ -1134,8 +1139,9 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
             // LCOV_EXCL_START defensive programming: Parse() currently terminates if the ServiceInstanceDeployment
             // contains anything other than a Lola binding. Therefore, it's impossible to reach this point without
             // a LolaServiceInstanceDeployment.
-            ::score::mw::log::LogFatal("lola") << "Service instance " << service_instance.first
-                                             << "refers to an not yet supported binding. This is invalid, terminating";
+            ::score::mw::log::LogFatal("lola")
+                << "Service instance " << service_instance.first
+                << "refers to an not yet supported binding. This is invalid, terminating";
             std::terminate(); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             // LCOV_EXCL_STOP
         }
@@ -1196,9 +1202,9 @@ auto score::mw::com::impl::configuration::Parse(const std::string_view path) noe
     auto json_result = json_parser_obj.FromFile(path);
     if (!json_result.has_value())
     {
-        ::score::mw::log::LogFatal("lola") << "Parsing config file" << path
-                                         << "failed with error:" << json_result.error().Message() << ": "
-                                         << json_result.error().UserMessage() << " . Terminating.";
+        ::score::mw::log::LogFatal("lola")
+            << "Parsing config file" << path << "failed with error:" << json_result.error().Message() << ": "
+            << json_result.error().UserMessage() << " . Terminating.";
         std::terminate();
     }
     return Parse(std::move(json_result).value());

@@ -18,8 +18,8 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/i_runtime_binding.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>
@@ -60,7 +60,8 @@ ServiceDiscovery::~ServiceDiscovery()
     }
 }
 
-auto ServiceDiscovery::OfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) noexcept -> ResultBlank
+auto ServiceDiscovery::OfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) noexcept
+    -> ResultBlank
 {
     auto& service_discovery_client = GetServiceDiscoveryClient(instance_identifier);
 
@@ -97,7 +98,8 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
     std::unique_lock lock{container_mutex_};
     auto handler_weak_ptr = StoreUserCallback(find_service_handle, std::move(handler));
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(handle_to_instances_.count(find_service_handle) == 0U, "FindServiceHandle is not unique!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(handle_to_instances_.count(find_service_handle) == 0U,
+                                                "FindServiceHandle is not unique!");
     for (const auto& enriched_instance_identifier : enriched_instance_identifiers)
     {
         StoreInstanceIdentifier(find_service_handle, enriched_instance_identifier);
@@ -284,8 +286,8 @@ auto ServiceDiscovery::StoreInstanceIdentifier(const FindServiceHandle& find_ser
     -> void
 {
     score::cpp::ignore = handle_to_instances_.emplace(std::piecewise_construct,
-                                               std::forward_as_tuple(find_service_handle),
-                                               std::forward_as_tuple(enriched_instance_identifier));
+                                                      std::forward_as_tuple(find_service_handle),
+                                                      std::forward_as_tuple(enriched_instance_identifier));
 }
 
 auto ServiceDiscovery::GetServiceDiscoveryClient(const InstanceIdentifier& instance_identifier) noexcept

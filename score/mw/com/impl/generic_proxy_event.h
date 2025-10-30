@@ -108,7 +108,8 @@ Result<std::size_t> GenericProxyEvent::GetNewSamples(F&& receiver, std::size_t m
         tracing::CreateTracingGenericGetNewSamplesCallback<F>(tracing_data_, std::forward<F>(receiver));
 
     auto* const proxy_event_binding = dynamic_cast<GenericProxyEventBinding*>(binding_base_.get());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_event_binding != nullptr, "Downcast to GenericProxyEventBinding failed!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_event_binding != nullptr,
+                                                "Downcast to GenericProxyEventBinding failed!");
     const auto get_new_samples_result = proxy_event_binding->GetNewSamples(std::move(tracing_receiver), guard_factory);
     if (!get_new_samples_result.has_value())
     {

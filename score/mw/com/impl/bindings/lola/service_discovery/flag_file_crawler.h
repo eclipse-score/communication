@@ -17,10 +17,10 @@
 #include "score/mw/com/impl/bindings/lola/service_discovery/quality_aware_container.h"
 
 #include "score/filesystem/filesystem.h"
+#include "score/mw/com/impl/enriched_instance_identifier.h"
 #include "score/os/utils/inotify/inotify_instance.h"
 #include "score/os/utils/inotify/inotify_watch_descriptor.h"
 #include "score/result/result.h"
-#include "score/mw/com/impl/enriched_instance_identifier.h"
 
 #include <cstdint>
 #include <string_view>
@@ -41,12 +41,12 @@ class FlagFileCrawler
 
     auto CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
         -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
-                                  QualityAwareContainer<KnownInstancesContainer>>>;
+                                    QualityAwareContainer<KnownInstancesContainer>>>;
 
     auto CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& enriched_instance_identifier,
                                 const std::uint8_t max_number_of_retries) noexcept
         -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
-                                  QualityAwareContainer<KnownInstancesContainer>>>;
+                                    QualityAwareContainer<KnownInstancesContainer>>>;
 
     static auto ConvertFromStringToInstanceId(std::string_view view) noexcept -> Result<LolaServiceInstanceId>;
     static auto ParseQualityTypeFromString(const std::string_view filename) noexcept -> QualityType;
@@ -55,7 +55,7 @@ class FlagFileCrawler
     auto CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enriched_instance_identifier,
                            const bool add_watch) noexcept
         -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
-                                  QualityAwareContainer<KnownInstancesContainer>>>;
+                                    QualityAwareContainer<KnownInstancesContainer>>>;
 
     static auto GatherExistingInstanceDirectories(
         const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept

@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/proxy_binding_factory.h"
-#include "score/os/mocklib/fcntl_mock.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy.h"
@@ -22,6 +21,7 @@
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
+#include "score/os/mocklib/fcntl_mock.h"
 
 #include <gtest/gtest.h>
 #include <memory>

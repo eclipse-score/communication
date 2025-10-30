@@ -19,8 +19,8 @@
 #include "score/mw/com/impl/tracing/i_tracing_runtime_binding.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
 
-#include "score/language/safecpp/scoped_function/scope.h"
 #include "score/containers/dynamic_array.h"
+#include "score/language/safecpp/scoped_function/scope.h"
 #include "score/memory/shared/i_shared_memory_resource.h"
 
 #include <score/optional.hpp>
@@ -106,8 +106,9 @@ class TracingRuntime : public impl::tracing::ITracingRuntimeBinding
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view)
         const noexcept override;
 
-    score::cpp::optional<void*> GetShmRegionStartAddress(const impl::tracing::ServiceElementInstanceIdentifierView&
-                                                      service_element_instance_identifier_view) const noexcept override;
+    score::cpp::optional<void*> GetShmRegionStartAddress(
+        const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view)
+        const noexcept override;
 
     void CacheFileDescriptorForReregisteringShmObject(
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view,

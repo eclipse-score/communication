@@ -118,7 +118,8 @@ class MessagePassingServiceInstance
                                        const pid_t sender_node_id) noexcept;
     void HandleUnregisterNotificationMsg(const score::cpp::span<const std::uint8_t> payload,
                                          const pid_t sender_node_id) noexcept;
-    void HandleOutdatedNodeIdMsg(const score::cpp::span<const std::uint8_t> payload, const pid_t sender_node_id) noexcept;
+    void HandleOutdatedNodeIdMsg(const score::cpp::span<const std::uint8_t> payload,
+                                 const pid_t sender_node_id) noexcept;
 
     std::uint32_t NotifyEventLocally(const ElementFqId event_id) noexcept;
     void NotifyEventRemote(const ElementFqId event_id) noexcept;

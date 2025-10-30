@@ -10,9 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/bindings/lola/service_discovery/client/service_discovery_client.h"
 #include "score/os/errno.h"
 #include "score/result/result.h"
-#include "score/mw/com/impl/bindings/lola/service_discovery/client/service_discovery_client.h"
 
 #include "score/mw/com/impl/bindings/lola/service_discovery/test/service_discovery_client_test_fixtures.h"
 #include "score/mw/com/impl/bindings/lola/service_discovery/test/service_discovery_client_test_resources.h"
@@ -24,9 +24,9 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/i_service_discovery.h"
 
-#include <score/expected.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <score/expected.hpp>
 #include <unistd.h>
 #include <atomic>
 #include <cstdint>

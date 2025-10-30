@@ -3229,8 +3229,8 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
 }
 
 score::json::Any generate_config_json(const std::string& instance_specifier,
-                                    const std::string& field_name,
-                                    const std::string& number_of_tracing_slots)
+                                      const std::string& field_name,
+                                      const std::string& number_of_tracing_slots)
 {
     std::stringstream config_json_strstr;
     config_json_strstr << R"(

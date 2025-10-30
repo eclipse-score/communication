@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
@@ -20,6 +19,7 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
+#include "score/result/result.h"
 
 #include <gtest/gtest.h>
 
@@ -1525,9 +1525,9 @@ TEST_F(SkeletonCreateFixture, CreatingSkeletonWillCreateExistenceMarkerFile)
 
     // When creating a Skeleton
     score::cpp::ignore = lola::Skeleton::Create(instance_identifier_,
-                                         filesystem::FilesystemFactory{}.CreateInstance(),
-                                         std::move(shm_path_builder_mock_ptr_),
-                                         std::move(partial_restart_path_builder_mock_ptr_));
+                                                filesystem::FilesystemFactory{}.CreateInstance(),
+                                                std::move(shm_path_builder_mock_ptr_),
+                                                std::move(partial_restart_path_builder_mock_ptr_));
 }
 
 TEST_F(SkeletonCreateFixture, CreatingSkeletonWillTryToLockExistenceMarkerFile)
@@ -1546,9 +1546,9 @@ TEST_F(SkeletonCreateFixture, CreatingSkeletonWillTryToLockExistenceMarkerFile)
 
     // When creating a Skeleton
     score::cpp::ignore = lola::Skeleton::Create(instance_identifier_,
-                                         filesystem::FilesystemFactory{}.CreateInstance(),
-                                         std::move(shm_path_builder_mock_ptr_),
-                                         std::move(partial_restart_path_builder_mock_ptr_));
+                                                filesystem::FilesystemFactory{}.CreateInstance(),
+                                                std::move(shm_path_builder_mock_ptr_),
+                                                std::move(partial_restart_path_builder_mock_ptr_));
 }
 
 TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfAnotherInstanceOfTheSameSkeletonStillExists)
@@ -1636,9 +1636,9 @@ TEST_F(SkeletonCreateDeathTest,
     const InstanceIdentifier instance_identifier_with_blank_service_instance_deployment = make_InstanceIdentifier(
         test::kValidMinimalQmInstanceDeploymentWithBlankBinding, test::kValidMinimalTypeDeployment);
     EXPECT_DEATH(score::cpp::ignore = lola::Skeleton::Create(instance_identifier_with_blank_service_instance_deployment,
-                                                      filesystem::FilesystemFactory{}.CreateInstance(),
-                                                      std::move(shm_path_builder_mock_ptr_),
-                                                      std::move(partial_restart_path_builder_mock_ptr_)),
+                                                             filesystem::FilesystemFactory{}.CreateInstance(),
+                                                             std::move(shm_path_builder_mock_ptr_),
+                                                             std::move(partial_restart_path_builder_mock_ptr_)),
                  ".*");
 }
 
@@ -1650,9 +1650,9 @@ TEST_F(SkeletonCreateDeathTest,
     const InstanceIdentifier instance_identifier_with_blank_service_instance_deployment = make_InstanceIdentifier(
         test::kValidMinimalQmInstanceDeployment, test::kValidMinimalTypeDeploymentWithBlankBinding);
     EXPECT_DEATH(score::cpp::ignore = lola::Skeleton::Create(instance_identifier_with_blank_service_instance_deployment,
-                                                      filesystem::FilesystemFactory{}.CreateInstance(),
-                                                      std::move(shm_path_builder_mock_ptr_),
-                                                      std::move(partial_restart_path_builder_mock_ptr_)),
+                                                             filesystem::FilesystemFactory{}.CreateInstance(),
+                                                             std::move(shm_path_builder_mock_ptr_),
+                                                             std::move(partial_restart_path_builder_mock_ptr_)),
                  ".*");
 }
 

@@ -33,7 +33,7 @@ QnxDispatchServerFactory::QnxDispatchServerFactory(const std::shared_ptr<QnxDisp
 QnxDispatchServerFactory::~QnxDispatchServerFactory() noexcept = default;
 
 score::cpp::pmr::unique_ptr<IServer> QnxDispatchServerFactory::Create(const ServiceProtocolConfig& protocol_config,
-                                                               const ServerConfig& server_config) noexcept
+                                                                      const ServerConfig& server_config) noexcept
 {
     return score::cpp::pmr::make_unique<detail::QnxDispatchServer>(
         engine_->GetMemoryResource(), engine_, protocol_config, server_config);

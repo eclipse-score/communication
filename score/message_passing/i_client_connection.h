@@ -51,7 +51,8 @@ class IClientConnection
     ///          send are queued on the client side (ClientConfig::maxQueuedSends is not 0).
     /// \param message The memory span containing the message to send
     /// \return error if fails
-    virtual score::cpp::expected_blank<score::os::Error> Send(score::cpp::span<const std::uint8_t> message) noexcept = 0;
+    virtual score::cpp::expected_blank<score::os::Error> Send(
+        score::cpp::span<const std::uint8_t> message) noexcept = 0;
 
     /// \brief Send a binary message to the respective server, wait for reply
     /// \details The call is blocking.
@@ -78,7 +79,7 @@ class IClientConnection
     /// \param callback The callback to call on reply
     /// \return error if fails
     virtual score::cpp::expected_blank<score::os::Error> SendWithCallback(score::cpp::span<const std::uint8_t> message,
-                                                                 ReplyCallback callback) noexcept = 0;
+                                                                          ReplyCallback callback) noexcept = 0;
 
     /// \brief The type for the callback to be called when a notification from the server is received
     /// \details The callback is called on an unspecified thread.

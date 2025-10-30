@@ -144,7 +144,8 @@ class ResmgrReceiverFixtureBase : public ::testing::Test
 
     void ExpectOpenRequest(uid_t client_uid, int open_result)
     {
-        EXPECT_CALL(*raw_dispatch_mock_, dispatch_block(&dispatch_contexts_[kThreadId])).WillOnce(Return(score::cpp::blank{}));
+        EXPECT_CALL(*raw_dispatch_mock_, dispatch_block(&dispatch_contexts_[kThreadId]))
+            .WillOnce(Return(score::cpp::blank{}));
         EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId]))
             .WillOnce([this, open_result](auto&& ctp) -> score::cpp::expected_blank<std::int32_t> {
                 // prepare arguments for "opening" a channel
@@ -156,15 +157,16 @@ class ResmgrReceiverFixtureBase : public ::testing::Test
             });
         EXPECT_CALL(*raw_channel_mock_, ConnectClientInfo(kScoid, _, 0))
             .Times(AtMost(1))
-            .WillOnce(
-                [client_uid](std::int32_t, _client_info* info, std::int32_t) -> score::cpp::expected_blank<score::os::Error> {
-                    if (client_uid == kUidFailInfo)
-                    {
-                        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
-                    }
-                    info->cred.euid = client_uid;
-                    return {};
-                });
+            .WillOnce([client_uid](std::int32_t,
+                                   _client_info* info,
+                                   std::int32_t) -> score::cpp::expected_blank<score::os::Error> {
+                if (client_uid == kUidFailInfo)
+                {
+                    return score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
+                }
+                info->cred.euid = client_uid;
+                return {};
+            });
     }
 
     void ExpectWriteRequests(std::size_t size)
@@ -391,8 +393,10 @@ TEST_F(ResmgrReceiverFixture, SendStopMessage)
 
 TEST_F(ResmgrReceiverFixture, ReceiveNoMessage)
 {
-    EXPECT_CALL(*raw_dispatch_mock_, dispatch_block(&dispatch_contexts_[kThreadId])).WillOnce(Return(score::cpp::blank{}));
-    EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId])).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*raw_dispatch_mock_, dispatch_block(&dispatch_contexts_[kThreadId]))
+        .WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId]))
+        .WillOnce(Return(score::cpp::blank{}));
 
     ReceiveNextExpectShortMedium(0, 0);
 }
@@ -406,7 +410,8 @@ TEST_F(ResmgrReceiverFixture, ReceiveValidStopMessage)
         (*message_handler_)(&ctp->resmgr_context, 0, 0, nullptr);
         return score::cpp::blank{};
     });
-    EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId])).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId]))
+        .WillOnce(Return(score::cpp::blank{}));
     EXPECT_CALL(*raw_channel_mock_, MsgReply(kSideChannelRcvid, _, _, _));
     EXPECT_CALL(*raw_unistd_mock_, getpid()).Times(2).WillRepeatedly(Return(0));
 
@@ -501,7 +506,8 @@ TEST_F(ResmgrReceiverFixture, IgnoreDispatchErrors)
 {
     auto test_error = score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL));
 
-    EXPECT_CALL(*raw_dispatch_mock_, dispatch_block(&dispatch_contexts_[kThreadId])).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*raw_dispatch_mock_, dispatch_block(&dispatch_contexts_[kThreadId]))
+        .WillOnce(Return(score::cpp::blank{}));
     EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId]))
         .WillOnce(Return(score::cpp::make_unexpected(-1)));
 
@@ -521,7 +527,8 @@ TEST_F(ResmgrReceiverFixture, ReceiveInvalidStopMessage)
         (*message_handler_)(&ctp->resmgr_context, 0, 0, nullptr);
         return score::cpp::blank{};
     });
-    EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId])).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*raw_dispatch_mock_, dispatch_handler(&dispatch_contexts_[kThreadId]))
+        .WillOnce(Return(score::cpp::blank{}));
     EXPECT_CALL(*raw_channel_mock_, MsgError(kSideChannelRcvid, _));
     EXPECT_CALL(*raw_unistd_mock_, getpid()).Times(2).WillRepeatedly(Return(0));
 

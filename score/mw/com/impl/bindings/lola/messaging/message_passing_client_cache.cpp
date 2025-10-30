@@ -61,8 +61,8 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
     auto new_sender = CreateNewClient(target_node_id);
 
     auto elem = clients_.emplace(target_node_id, new_sender);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(elem.second,
-                           "MessagePassingClientCache::GetMessagePassingClient(): Failed to emplace Client!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        elem.second, "MessagePassingClientCache::GetMessagePassingClient(): Failed to emplace Client!");
 
     return elem.first->second;
 }
@@ -98,7 +98,7 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
     }
 
     score::mw::log::LogError("lola") << "MessagePassingClientCache: Connection for " << service_identifier
-                                   << " takes too long co create, might be not working";
+                                     << " takes too long co create, might be not working";
     return new_sender;
 }
 
@@ -117,7 +117,7 @@ void MessagePassingClientCache::RemoveMessagePassingClient(const pid_t target_no
             if (try_attempt >= kStateTryAttempts)
             {
                 score::mw::log::LogFatal("lola") << "MessagePassingClientCache: Cannot close connection to target "
-                                               << target_node_id << " in reasonable time";
+                                                 << target_node_id << " in reasonable time";
                 std::terminate();
             }
             std::this_thread::sleep_for(kStateRetryDelay);

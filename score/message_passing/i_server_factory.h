@@ -40,7 +40,7 @@ class IServerFactory
     };
 
     virtual score::cpp::pmr::unique_ptr<IServer> Create(const ServiceProtocolConfig& protocol_config,
-                                                 const ServerConfig& server_config) noexcept = 0;
+                                                        const ServerConfig& server_config) noexcept = 0;
 
   protected:
     ~IServerFactory() = default;

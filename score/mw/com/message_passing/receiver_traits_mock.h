@@ -102,11 +102,12 @@ class ForwardingReceiverChannelTraits
     }
 
     template <typename ShortMessageCallback, typename MediumMessageCallback>
-    static score::cpp::expected<bool, score::os::Error> receive_next(const file_descriptor_type file_descriptor,
-                                                            const std::size_t thread,
-                                                            ShortMessageCallback fShort,
-                                                            MediumMessageCallback fMedium,
-                                                            const FileDescriptorResourcesType& os_resources) noexcept
+    static score::cpp::expected<bool, score::os::Error> receive_next(
+        const file_descriptor_type file_descriptor,
+        const std::size_t thread,
+        ShortMessageCallback fShort,
+        MediumMessageCallback fMedium,
+        const FileDescriptorResourcesType& os_resources) noexcept
     {
         return Impl()->receive_next(file_descriptor, thread, fShort, fMedium, os_resources);
     }

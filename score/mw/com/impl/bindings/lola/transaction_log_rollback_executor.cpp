@@ -71,8 +71,9 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
         static_cast<std::uint32_t>(transaction_log_id_), current_pid);
     if (!(previous_pid.has_value()))
     {
-        score::mw::log::LogFatal("lola") << "Couldn't Register current PID for UID within shared memory. This can occurr "
-                                          "if there is too high contention accessing the registry. Terminating.";
+        score::mw::log::LogFatal("lola")
+            << "Couldn't Register current PID for UID within shared memory. This can occurr "
+               "if there is too high contention accessing the registry. Terminating.";
         std::terminate();
     }
 

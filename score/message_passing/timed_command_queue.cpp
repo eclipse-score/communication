@@ -37,11 +37,11 @@ void TimedCommandQueue::RegisterTimedEntry(Entry& entry,
 
     std::lock_guard<std::mutex> guard(mutex_);
     score::cpp::ignore = queue_.insert(std::find_if(queue_.begin(),
-                                             queue_.end(),
-                                             [until](const Entry& queue_entry) {
-                                                 return until < queue_entry.until_;
-                                             }),
-                                entry);
+                                                    queue_.end(),
+                                                    [until](const Entry& queue_entry) {
+                                                        return until < queue_entry.until_;
+                                                    }),
+                                       entry);
 }
 
 TimedCommandQueue::TimePoint TimedCommandQueue::ProcessQueue(const TimePoint now) noexcept

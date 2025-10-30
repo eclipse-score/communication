@@ -80,10 +80,10 @@ class MqueueReceiverTraits
 
     template <typename ShortMessageProcessor, typename MediumMessageProcessor>
     static score::cpp::expected<bool, score::os::Error> receive_next(const file_descriptor_type file_descriptor,
-                                                            std::size_t thread,
-                                                            ShortMessageProcessor fShort,
-                                                            MediumMessageProcessor fMedium,
-                                                            const FileDescriptorResourcesType& os_resources)
+                                                                     std::size_t thread,
+                                                                     ShortMessageProcessor fShort,
+                                                                     MediumMessageProcessor fMedium,
+                                                                     const FileDescriptorResourcesType& os_resources)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");
         score::cpp::ignore = thread;

@@ -65,7 +65,7 @@ class IClientFactory
     /// \param client_config the client connection configuration.
     /// \return a platform specific implementation of an IClientConnection.
     virtual score::cpp::pmr::unique_ptr<IClientConnection> Create(const ServiceProtocolConfig& protocol_config,
-                                                           const ClientConfig& client_config) noexcept = 0;
+                                                                  const ClientConfig& client_config) noexcept = 0;
 
   protected:
     ~IClientFactory() = default;

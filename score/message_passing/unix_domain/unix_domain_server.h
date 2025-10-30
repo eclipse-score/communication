@@ -42,8 +42,10 @@ class UnixDomainServer final : public IServer
         const ClientIdentity& GetClientIdentity() const noexcept override;
         UserData& GetUserData() noexcept override;
 
-        score::cpp::expected_blank<score::os::Error> Reply(score::cpp::span<const std::uint8_t> message) noexcept override;
-        score::cpp::expected_blank<score::os::Error> Notify(score::cpp::span<const std::uint8_t> message) noexcept override;
+        score::cpp::expected_blank<score::os::Error> Reply(
+            score::cpp::span<const std::uint8_t> message) noexcept override;
+        score::cpp::expected_blank<score::os::Error> Notify(
+            score::cpp::span<const std::uint8_t> message) noexcept override;
         void RequestDisconnect() noexcept override;
 
         // Server methods

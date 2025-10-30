@@ -67,9 +67,10 @@ class ResmgrSenderTraits
     }
 
     template <typename MessageFormat>
-    static score::cpp::expected_blank<score::os::Error> try_send(const file_descriptor_type file_descriptor,
-                                                        const MessageFormat& message,
-                                                        const FileDescriptorResourcesType& os_resources) noexcept
+    static score::cpp::expected_blank<score::os::Error> try_send(
+        const file_descriptor_type file_descriptor,
+        const MessageFormat& message,
+        const FileDescriptorResourcesType& os_resources) noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");
         // This function in a banned list, however according to the requirement

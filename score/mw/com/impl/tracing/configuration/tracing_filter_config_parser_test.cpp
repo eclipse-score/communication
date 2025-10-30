@@ -670,8 +670,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigJsonError)
     // json parser refuses it.
 
     // when parsing the given tracing filter config
-    auto result =
-        Parse("score/mw/com/impl/tracing/configuration/example/comtrace_filter_config_broken.json", config);
+    auto result = Parse("score/mw/com/impl/tracing/configuration/example/comtrace_filter_config_broken.json", config);
     // expect, that there is an error
     EXPECT_FALSE(result.has_value());
 }

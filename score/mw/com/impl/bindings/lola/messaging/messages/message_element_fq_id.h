@@ -13,10 +13,10 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGE_ELEMENT_FQ_ID_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGE_ELEMENT_FQ_ID_H
 
-#include "score/os/unistd.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/messages/message_common.h"
 #include "score/mw/com/message_passing/message.h"
+#include "score/os/unistd.h"
 
 namespace score::mw::com::impl::lola
 {

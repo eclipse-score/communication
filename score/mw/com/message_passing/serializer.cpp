@@ -28,9 +28,10 @@ void SerializeMessageId(score::mw::com::message_passing::RawMessageBuffer& buffe
     // No overlapping is guaranteed by fact that we take addresses of two different identifiers.
     // We ignore the return of memcpy because we do not need it and does not carry any error information
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
-    score::cpp::ignore = std::memcpy(static_cast<void*>(&buffer.at(score::mw::com::message_passing::GetMessageIdPosition())),
-                              static_cast<const void*>(&message_id),
-                              sizeof(message_id));
+    score::cpp::ignore =
+        std::memcpy(static_cast<void*>(&buffer.at(score::mw::com::message_passing::GetMessageIdPosition())),
+                    static_cast<const void*>(&message_id),
+                    sizeof(message_id));
 }
 score::mw::com::message_passing::MessageId DeserializeMessageId(
     const score::mw::com::message_passing::RawMessageBuffer& buffer)
@@ -81,16 +82,16 @@ auto score::mw::com::message_passing::SerializeToRawMessage(const ShortMessage& 
     // We ignore the return of memcpy because we do not need it and does not carry any error information
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
     score::cpp::ignore = std::memcpy(static_cast<void*>(&buffer.at(GetMessagePidPosition())),
-                              static_cast<const void*>(&message.pid),
-                              sizeof(message.pid));
+                                     static_cast<const void*>(&message.pid),
+                                     sizeof(message.pid));
 
     // Serialization implies operations with raw memory using std::memcpy(). The operand being serialized
     // must comply with TriviallyCopyable which it does. The destination buffer is just a place for bytes.
     // No overlapping is guaranteed by fact that we take addresses of two different identifiers.
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
     score::cpp::ignore = std::memcpy(static_cast<void*>(&buffer.at(GetMessageStartPayload())),
-                              static_cast<const void*>(&message.payload),
-                              sizeof(message.payload));
+                                     static_cast<const void*>(&message.payload),
+                                     sizeof(message.payload));
 
     return buffer;
 }
@@ -127,16 +128,16 @@ auto score::mw::com::message_passing::SerializeToRawMessage(const MediumMessage&
     // No overlapping is guaranteed by fact that we take addresses of two different identifiers.
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
     score::cpp::ignore = std::memcpy(static_cast<void*>(&buffer.at(GetMessagePidPosition())),
-                              static_cast<const void*>(&message.pid),
-                              sizeof(message.pid));
+                                     static_cast<const void*>(&message.pid),
+                                     sizeof(message.pid));
 
     // Serialization implies operations with raw memory using std::memcpy(). The operand being serialized
     // must comply with TriviallyCopyable which it does. The destination buffer is just a place for bytes.
     // No overlapping is guaranteed by fact that we take addresses of two different identifiers.
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
     score::cpp::ignore = std::memcpy(static_cast<void*>(&buffer.at(GetMessageStartPayload())),
-                              static_cast<const void*>(&message.payload),
-                              sizeof(message.payload));
+                                     static_cast<const void*>(&message.payload),
+                                     sizeof(message.payload));
     return buffer;
 }
 
@@ -158,29 +159,31 @@ auto score::mw::com::message_passing::DeserializeToShortMessage(const RawMessage
     // must comply with TriviallyCopyable which it does. The source buffer is just raw bytes.
     // No overlapping is guaranteed by fact that we take addresses of two different identifiers.
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
-    score::cpp::ignore = std::memcpy(static_cast<void*>(&message.pid),
-                              static_cast<const void*>(&buffer.at(GetMessagePidPosition())),
-                              // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
-                              // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
-                              sizeof(ShortMessage::pid));
+    score::cpp::ignore =
+        std::memcpy(static_cast<void*>(&message.pid),
+                    static_cast<const void*>(&buffer.at(GetMessagePidPosition())),
+                    // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
+                    // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
+                    sizeof(ShortMessage::pid));
 
     // Serialization implies operations with raw memory using std::memcpy(). The operand being deserialized
     // must comply with TriviallyCopyable which it does. The source buffer is just raw bytes.
     // No overlapping is guaranteed by fact that we take addresses of two different identifiers.
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
-    score::cpp::ignore = std::memcpy(static_cast<void*>(&message.payload),
-                              static_cast<const void*>(&buffer.at(GetMessageStartPayload())),
-                              // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
-                              // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
-                              sizeof(ShortMessage::payload));
+    score::cpp::ignore =
+        std::memcpy(static_cast<void*>(&message.payload),
+                    static_cast<const void*>(&buffer.at(GetMessageStartPayload())),
+                    // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
+                    // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
+                    sizeof(ShortMessage::payload));
     return message;
 }
 
@@ -192,7 +195,8 @@ auto score::mw::com::message_passing::DeserializeToShortMessage(const RawMessage
 // identifiers. So no way for calling std::terminate().
 // coverity[autosar_cpp14_a3_1_1_violation : FALSE]
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto score::mw::com::message_passing::DeserializeToMediumMessage(const RawMessageBuffer& buffer) noexcept -> MediumMessage
+auto score::mw::com::message_passing::DeserializeToMediumMessage(const RawMessageBuffer& buffer) noexcept
+    -> MediumMessage
 {
     // Suppress "AUTOSAR C++14 M8-5-2" rule finding. This rule declares: "Braces shall be used to indicate and match
     // the structure in the non-zero initialization of arrays and structures"
@@ -207,15 +211,16 @@ auto score::mw::com::message_passing::DeserializeToMediumMessage(const RawMessag
     // must comply with TriviallyCopyable which it does. The source buffer is just raw bytes.
     // No overlapping is guaranteed by fact that we take addresses of two different identifiers.
     // NOLINTNEXTLINE(score-banned-function): std::memcpy() of TriviallyCopyable type and no overlap
-    score::cpp::ignore = std::memcpy(static_cast<void*>(&message.pid),
-                              static_cast<const void*>(&buffer.at(GetMessagePidPosition())),
-                              // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
-                              // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
-                              sizeof(MediumMessage::pid));
+    score::cpp::ignore =
+        std::memcpy(static_cast<void*>(&message.pid),
+                    static_cast<const void*>(&buffer.at(GetMessagePidPosition())),
+                    // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
+                    // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
+                    sizeof(MediumMessage::pid));
 
     // Serialization implies operations with raw memory using std::memcpy(). The operand being deserialized
     // must comply with TriviallyCopyable which it does. The source buffer is just raw bytes.
@@ -228,15 +233,16 @@ auto score::mw::com::message_passing::DeserializeToMediumMessage(const RawMessag
     // TriviallyCopyable, and thus, safe to copy with memcpy.The source buffer is just raw bytes and this low-level
     // operation is necessary for performance optimization in handling raw data.
     // coverity[autosar_cpp14_a12_0_2_violation]
-    score::cpp::ignore = std::memcpy(static_cast<void*>(&message.payload),
-                              static_cast<const void*>(&buffer.at(GetMessageStartPayload())),
-                              // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
-                              // as the null-pointer-constant". No null pointer is used.
-                              // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
-                              // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
-                              sizeof(MediumMessage::payload));
+    score::cpp::ignore =
+        std::memcpy(static_cast<void*>(&message.payload),
+                    static_cast<const void*>(&buffer.at(GetMessageStartPayload())),
+                    // Suppress "AUTOSAR C++14 A4-10-1", The rule states: "Only nullptr literal shall be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // Suppress "AUTOSAR C++14 m4-10-2", The rule states: "Literal zero (0) shall not be used
+                    // as the null-pointer-constant". No null pointer is used.
+                    // coverity[autosar_cpp14_a4_10_1_violation : FALSE]
+                    // coverity[autosar_cpp14_m4_10_2_violation : FALSE]
+                    sizeof(MediumMessage::payload));
     // NOLINTEND(score-banned-function): see above for detailed explanation
     return message;
 }

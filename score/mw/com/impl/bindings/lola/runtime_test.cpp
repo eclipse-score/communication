@@ -12,10 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 
-#include "score/os/mocklib/unistdmock.h"
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/message_passing/receiver_factory.h"
 #include "score/mw/com/message_passing/receiver_mock.h"
+#include "score/os/mocklib/unistdmock.h"
 
 #include "score/concurrency/long_running_threads_container.h"
 

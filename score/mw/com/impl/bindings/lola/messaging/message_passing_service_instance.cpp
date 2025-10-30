@@ -103,18 +103,19 @@ score::mw::com::impl::lola::MessagePassingServiceInstance::MessagePassingService
     // Suppress autosar_cpp14_a15_5_3_violation: False Positive
     // Rationale: Passing an argument by reference cannot throw
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    auto received_send_message_callback = [this](score::message_passing::IServerConnection& connection,
-                                                 const score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::blank {
+    auto received_send_message_callback =
+        [this](score::message_passing::IServerConnection& connection,
+               const score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::blank {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(std::holds_alternative<std::uintptr_t>(connection.GetUserData()),
-                               "Message Passing: UserData does not contain a uintptr_t");
+                                                    "Message Passing: UserData does not contain a uintptr_t");
         // Suppress "AUTOSAR C++14 A15-5-3" The rule states: "Implicit call of std::terminate()"
         // Before accessing the variant with std::get it is checked that the variant holds the alternative unitptr_t
         // coverity[autosar_cpp14_a15_5_3_violation]
         auto UserDataUintPtr = std::get<std::uintptr_t>(connection.GetUserData());
 
         const auto client_pid = score::safe_math::Cast<pid_t>(UserDataUintPtr);
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(client_pid.has_value(),
-                                     "Message Passing : Message Passing: PID is bigger than pid_t::max()");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            client_pid.has_value(), "Message Passing : Message Passing: PID is bigger than pid_t::max()");
         this->MessageCallback(client_pid.value(), message);
         return {};
     };
@@ -126,18 +127,18 @@ score::mw::com::impl::lola::MessagePassingServiceInstance::MessagePassingService
         [](score::message_passing::IServerConnection& connection,
            score::cpp::span<const std::uint8_t> /*message*/) noexcept -> score::cpp::blank {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(std::holds_alternative<std::uintptr_t>(connection.GetUserData()),
-                               "Message Passing: UserData does not contain a uintptr_t");
+                                                    "Message Passing: UserData does not contain a uintptr_t");
         // Suppress "AUTOSAR C++14 A15-5-3" The rule states: "Implicit call of std::terminate()"
         // Before accessing the variant with std::get it is checked that the variant holds the alternative unitptr_t
         // coverity[autosar_cpp14_a15_5_3_violation]
         auto UserDataUintPtr = std::get<std::uintptr_t>(connection.GetUserData());
 
         const auto client_pid = score::safe_math::Cast<pid_t>(UserDataUintPtr);
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(client_pid.has_value(),
-                                     "Message Passing : Message Passing: PID is bigger than pid_t::max()");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            client_pid.has_value(), "Message Passing : Message Passing: PID is bigger than pid_t::max()");
 
         score::mw::log::LogError("lola") << "MessagePassingService: Unexpected request from client "
-                                       << client_pid.error();
+                                         << client_pid.error();
         return {};
     };
 
@@ -152,7 +153,7 @@ score::mw::com::impl::lola::MessagePassingServiceInstance::MessagePassingService
     if (!result.has_value())
     {
         score::mw::log::LogFatal("lola") << "MessagePassingService: Failed to start listening on " << service_identifier
-                                       << " with following error: " << result.error();
+                                         << " with following error: " << result.error();
         std::terminate();
     }
 }
@@ -295,8 +296,8 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::HandleOutdatedNo
     if (remove_count == 0U)
     {
         score::mw::log::LogInfo("lola") << "MessagePassingService: HandleOutdatedNodeIdMsg for outdated node id:"
-                                      << pid_to_unregister << "from node" << sender_node_id
-                                      << ". No update notifications for outdated node existed.";
+                                        << pid_to_unregister << "from node" << sender_node_id
+                                        << ". No update notifications for outdated node existed.";
     }
 
     client_cache_.RemoveMessagePassingClient(pid_to_unregister);
@@ -318,7 +319,8 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::NotifyEventRemot
     {
         if (loop_count == 255U)
         {
-            score::mw::log::LogError("lola") << "An overflow in counting the node identifiers to notifies event update.";
+            score::mw::log::LogError("lola")
+                << "An overflow in counting the node identifiers to notifies event update.";
             break;
         }
         else
@@ -346,8 +348,9 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::NotifyEventRemot
             const auto result = sender->Send(message);
             if (!result.has_value())
             {
-                score::mw::log::LogError("lola") << "MessagePassingService: Sending NotifyEventUpdateMessage to node_id "
-                                               << node_identifier << " failed with error: " << result.error();
+                score::mw::log::LogError("lola")
+                    << "MessagePassingService: Sending NotifyEventUpdateMessage to node_id " << node_identifier
+                    << " failed with error: " << result.error();
             }
         }
         if (num_ids_copied.second == true)
@@ -498,7 +501,7 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::ReregisterEventN
         read_lock.unlock();
         // no registered handler for given event_id -> log as error
         score::mw::log::LogError("lola") << "MessagePassingService: ReregisterEventNotification called for event_id"
-                                       << event_id.ToString() << ", which had not yet been registered!";
+                                         << event_id.ToString() << ", which had not yet been registered!";
         return;
     }
     read_lock.unlock();
@@ -513,7 +516,7 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::ReregisterEventN
         {
             remote_reg_write_lock.unlock();
             score::mw::log::LogError("lola") << "MessagePassingService: ReregisterEventNotification for a remote event "
-                                           << event_id.ToString() << " without current remote registration!";
+                                             << event_id.ToString() << " without current remote registration!";
             return;
         }
         if (registration_count->second.node_id == target_node_id)
@@ -584,8 +587,9 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::UnregisterEventN
     }
 }
 
-void score::mw::com::impl::lola::MessagePassingServiceInstance::NotifyOutdatedNodeId(const pid_t outdated_node_id,
-                                                                                   const pid_t target_node_id) noexcept
+void score::mw::com::impl::lola::MessagePassingServiceInstance::NotifyOutdatedNodeId(
+    const pid_t outdated_node_id,
+    const pid_t target_node_id) noexcept
 {
     const auto message = SerializeToMessage(score::cpp::to_underlying(MessageType::kOutdatedNodeId), outdated_node_id);
 
@@ -598,7 +602,7 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::NotifyOutdatedNo
     if (!result.has_value())
     {
         score::mw::log::LogError("lola") << "MessagePassingService: Sending OutdatedNodeIdMessage to node_id "
-                                       << target_node_id << " failed with error: " << result.error();
+                                         << target_node_id << " failed with error: " << result.error();
     }
 }
 
@@ -652,9 +656,9 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::UnregisterEventN
     if (registration_count == event_update_remote_registrations_.end())
     {
         remote_reg_write_lock.unlock();
-        score::mw::log::LogError("lola") << "MessagePassingService: UnregisterEventNotification called with register_no "
-                                       << registration_no << " for a remote event " << event_id.ToString()
-                                       << " without current remote registration!";
+        score::mw::log::LogError("lola")
+            << "MessagePassingService: UnregisterEventNotification called with register_no " << registration_no
+            << " for a remote event " << event_id.ToString() << " without current remote registration!";
         return;
     }
     else
@@ -690,7 +694,8 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::UnregisterEventN
 
     if (send_message)
     {
-        const auto message = SerializeToMessage(score::cpp::to_underlying(MessageType::kUnregisterEventNotifier), event_id);
+        const auto message =
+            SerializeToMessage(score::cpp::to_underlying(MessageType::kUnregisterEventNotifier), event_id);
         // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function
         // shall have automatic storage duration". The object is a shared_ptr which is allocated in the heap.
         // coverity[autosar_cpp14_a18_5_8_violation]
@@ -718,7 +723,8 @@ void score::mw::com::impl::lola::MessagePassingServiceInstance::SendRegisterEven
     const auto result = sender->Send(message);
     if (!result.has_value())
     {
-        score::mw::log::LogError("lola") << "MessagePassingService: Sending RegisterEventNotificationMessage to node_id "
-                                       << target_node_id << " failed with error: " << result.error();
+        score::mw::log::LogError("lola")
+            << "MessagePassingService: Sending RegisterEventNotificationMessage to node_id " << target_node_id
+            << " failed with error: " << result.error();
     }
 }

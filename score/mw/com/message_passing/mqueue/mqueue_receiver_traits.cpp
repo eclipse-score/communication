@@ -76,7 +76,8 @@ void MqueueReceiverTraits::stop_receive(const MqueueReceiverTraits::file_descrip
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");
     constexpr auto message = static_cast<std::underlying_type<MessageType>::type>(MessageType::kStopMessage);
-    score::cpp::ignore = os_resources.mqueue->mq_send(file_descriptor, &message, sizeof(MessageType), GetMessagePriority());
+    score::cpp::ignore =
+        os_resources.mqueue->mq_send(file_descriptor, &message, sizeof(MessageType), GetMessagePriority());
 }
 
 bool MqueueReceiverTraits::IsOsResourcesValid(const FileDescriptorResourcesType& os_resources) noexcept

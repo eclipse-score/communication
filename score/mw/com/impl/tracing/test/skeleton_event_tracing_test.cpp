@@ -282,9 +282,9 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(sample_data, _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -369,9 +369,9 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(sample_data, _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -459,9 +459,9 @@ TEST_F(SkeletonEventTracingSendFixture, SendTracePointShouldBeDisabledAfterTrace
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(sample_data, _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -544,9 +544,9 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenDisabled)
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(sample_data, _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -593,9 +593,9 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenTracingFilterCo
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(sample_data, _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -645,9 +645,9 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreNotTracedWhenTracingRuntimeC
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(sample_data, _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -717,9 +717,9 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreTracedWhenEnable
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -815,9 +815,9 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -916,9 +916,9 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture,
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -1011,9 +1011,9 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenDis
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -1070,9 +1070,9 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenTra
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));
@@ -1132,9 +1132,9 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendCallsAreNotTracedWhenTra
     // and that Send will be called on the binding with the wrapped handler containing the trace call
     score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback> send_trace_callback_result{};
     EXPECT_CALL(*mock_skeleton_event_binding_, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArgs<1>(
-            Invoke([&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
-                                                     provided_send_trace_callback) -> ResultBlank {
+        .WillOnce(WithArgs<1>(Invoke(
+            [&send_trace_callback_result](score::cpp::optional<SkeletonEventBinding<TestSampleType>::SendTraceCallback>
+                                              provided_send_trace_callback) -> ResultBlank {
                 send_trace_callback_result = std::move(provided_send_trace_callback);
                 return {};
             })));

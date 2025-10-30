@@ -66,7 +66,8 @@ class Sender final : public ISender
     /// \brief Construct a Sender (not move or copyable). Will wait until respective Receiver is available.
     ///
     /// \param identifier The common identifier between Sender and Receiver (maps to a path in the filesystem)
-    /// \param token The score::cpp::stop_token to ensure that waiting for the respective receiver is aborted, once stop is
+    /// \param token The score::cpp::stop_token to ensure that waiting for the respective receiver is aborted, once stop
+    /// is
     ///        requested
     /// \param sender_config additional sender configuration parameters
     /// \param logging_callback provides an output for error messages since we cannot use regular logging
@@ -197,7 +198,8 @@ bool Sender<ChannelTraits>::HasNonBlockingGuarantee() const noexcept
 
 template <typename ChannelTraits>
 template <typename MessagePayload>
-score::cpp::expected_blank<score::os::Error> Sender<ChannelTraits>::SendPrepared(const MessagePayload& payload) const noexcept
+score::cpp::expected_blank<score::os::Error> Sender<ChannelTraits>::SendPrepared(
+    const MessagePayload& payload) const noexcept
 {
     std::int32_t retries{};
     score::cpp::expected_blank<score::os::Error> error{};

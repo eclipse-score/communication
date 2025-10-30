@@ -13,8 +13,6 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 
-#include "score/os/mocklib/fcntl_mock.h"
-#include "score/os/mocklib/unistdmock.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
@@ -30,6 +28,8 @@
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime_binding.h"
+#include "score/os/mocklib/fcntl_mock.h"
+#include "score/os/mocklib/unistdmock.h"
 
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/memory/shared/shared_memory_factory_mock.h"

@@ -17,8 +17,8 @@
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 #include "score/mw/com/impl/tracing/proxy_event_tracing.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 
@@ -131,7 +131,8 @@ ResultBlank ProxyEventBase::Subscribe(const std::size_t max_sample_count) noexce
              (current_state == SubscriptionState::kSubscriptionPending))
     {
         const auto current_max_sample_count = binding_base_->GetMaxSampleCount();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(current_max_sample_count.has_value(), "Current MaxSampleCount must be set when subscribed.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(current_max_sample_count.has_value(),
+                                                "Current MaxSampleCount must be set when subscribed.");
         if (max_sample_count != current_max_sample_count.value())
         {
             return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);

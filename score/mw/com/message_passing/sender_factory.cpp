@@ -62,10 +62,10 @@ namespace score::mw::com::message_passing
 ISender* SenderFactory::sender_mock_{nullptr};
 
 score::cpp::pmr::unique_ptr<ISender> SenderFactory::Create(const std::string_view identifier,
-                                                    const score::cpp::stop_token& token,
-                                                    const SenderConfig& sender_config,
-                                                    LoggingCallback logging_callback,
-                                                    score::cpp::pmr::memory_resource* const memory_resource)
+                                                           const score::cpp::stop_token& token,
+                                                           const SenderConfig& sender_config,
+                                                           LoggingCallback logging_callback,
+                                                           score::cpp::pmr::memory_resource* const memory_resource)
 {
     if (sender_mock_ == nullptr)
     {
@@ -79,7 +79,8 @@ score::cpp::pmr::unique_ptr<ISender> SenderFactory::Create(const std::string_vie
     }
 }
 
-void SenderFactory::InjectSenderMock(ISender* const mock, score::cpp::callback<void(const score::cpp::stop_token&)>&& callback)
+void SenderFactory::InjectSenderMock(ISender* const mock,
+                                     score::cpp::callback<void(const score::cpp::stop_token&)>&& callback)
 {
     sender_mock_ = mock;
     callback_ = std::move(callback);

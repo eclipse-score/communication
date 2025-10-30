@@ -113,9 +113,9 @@ class SenderFixture : public ::testing::Test
         constexpr auto kRequestStopAfterRetries = 3;  // the number does not matter
         auto counter = 0;
         EXPECT_CALL(mock_, try_open(kSomeValidPath, _))
-            .WillRepeatedly(
-                Invoke([counter, this](auto, auto) mutable
-                           -> score::cpp::expected<ForwardingSenderChannelTraits::file_descriptor_type, score::os::Error> {
+            .WillRepeatedly(Invoke(
+                [counter, this](auto, auto) mutable
+                    -> score::cpp::expected<ForwardingSenderChannelTraits::file_descriptor_type, score::os::Error> {
                     if (counter < kRequestStopAfterRetries)
                     {
                         ++counter;
@@ -149,9 +149,9 @@ TEST_F(SenderFixture, WillWaitUntilChannelIsFound)
     int counter = 0;
     // Expect that try_open fails with error EOF three times, afterwards returns valid fd
     EXPECT_CALL(mock_, try_open(kSomeValidPath, _))
-        .WillRepeatedly(Invoke(
-            [&counter](auto,
-                       auto) -> score::cpp::expected<ForwardingSenderChannelTraits::file_descriptor_type, score::os::Error> {
+        .WillRepeatedly(
+            Invoke([&counter](auto, auto)
+                       -> score::cpp::expected<ForwardingSenderChannelTraits::file_descriptor_type, score::os::Error> {
                 if (counter < file_exists_after_retries)
                 {
                     ++counter;
@@ -335,14 +335,15 @@ TEST_F(SenderFixture, StopAfterStopRequest)
     auto invoke_counter = 0;
     constexpr auto number_of_send_attempts_before_stop_request = kMaxNumberOfRetries - 1;
     EXPECT_CALL(mock_, try_send(_, _, _))
-        .WillRepeatedly(Invoke([&invoke_counter, this](auto, auto, auto) -> score::cpp::expected_blank<score::os::Error> {
-            ++invoke_counter;
-            if (invoke_counter == number_of_send_attempts_before_stop_request)
-            {
-                lifecycle_source_.request_stop();
-            }
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EOF));
-        }));
+        .WillRepeatedly(
+            Invoke([&invoke_counter, this](auto, auto, auto) -> score::cpp::expected_blank<score::os::Error> {
+                ++invoke_counter;
+                if (invoke_counter == number_of_send_attempts_before_stop_request)
+                {
+                    lifecycle_source_.request_stop();
+                }
+                return score::cpp::make_unexpected(score::os::Error::createFromErrno(EOF));
+            }));
     EXPECT_CALL(mock_, prepare_payload(::testing::An<const ShortMessage&>()));
 
     // When trying to send a message

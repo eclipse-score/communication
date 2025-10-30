@@ -13,9 +13,9 @@
 #ifndef SCORE_MW_COM_MESSAGE_PASSING_I_SENDER_H
 #define SCORE_MW_COM_MESSAGE_PASSING_I_SENDER_H
 
-#include "score/os/errno.h"
 #include "score/mw/com/message_passing/message.h"
 #include "score/mw/com/message_passing/shared_properties.h"
+#include "score/os/errno.h"
 
 #include <score/expected.hpp>
 

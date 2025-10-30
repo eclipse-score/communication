@@ -280,7 +280,8 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingWhileConnecting)
     EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
         .WillOnce([&connection](auto&&) {
             connection.Stop();
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));  // this error code would be ignored
+            return score::cpp::make_unexpected(
+                score::os::Error::createFromErrno(EIO));  // this error code would be ignored
         });
 
     ExpectCleanUpOwner(connection);

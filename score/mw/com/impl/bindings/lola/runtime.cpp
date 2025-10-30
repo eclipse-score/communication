@@ -13,8 +13,8 @@
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 
 #include "score/memory/shared/offset_ptr.h"
-#include "score/os/unistd.h"
 #include "score/mw/log/logging.h"
+#include "score/os/unistd.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>
@@ -45,7 +45,7 @@ std::uint32_t Runtime::DetermineApplicationIdentifier(const Configuration& confi
     else
     {
         score::mw::log::LogInfo("lola") << "No explicit applicationID configured. Falling back to using process UID. "
-                                      << "Ensure unique UIDs for applications using mw::com.";
+                                        << "Ensure unique UIDs for applications using mw::com.";
         // The uid_t is only used internally (in the fallback case) and then casted to an std::uint32_t
         static_assert(sizeof(uid_t) <= 4, "For more than 32 bits we cannot guarantee the key to be unique");
         return static_cast<std::uint32_t>(os::Unistd::instance().getuid());
@@ -105,8 +105,9 @@ impl::tracing::ITracingRuntimeBinding* Runtime::GetTracingRuntime() noexcept
 
 MessagePassingServiceInstance::AsilSpecificCfg Runtime::GetMessagePassingCfg(const QualityType asil_level) const
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(((asil_level == QualityType::kASIL_B) || (asil_level == QualityType::kASIL_QM)),
-                           "Asil level must be asil_qm or asil_b.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        ((asil_level == QualityType::kASIL_B) || (asil_level == QualityType::kASIL_QM)),
+        "Asil level must be asil_qm or asil_b.");
     if ((!HasAsilBSupport()) && (asil_level == QualityType::kASIL_B))
     {
         score::mw::log::LogFatal("lola")
@@ -121,8 +122,9 @@ MessagePassingServiceInstance::AsilSpecificCfg Runtime::GetMessagePassingCfg(con
     {
         const auto* const instance_deployment =
             std::get_if<LolaServiceInstanceDeployment>(&instanceDeplElement.second.bindingInfo_);
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance_deployment != nullptr,
-                               "Instance deployment must contain Lola binding in order to create a lola runtime!");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            instance_deployment != nullptr,
+            "Instance deployment must contain Lola binding in order to create a lola runtime!");
         if (AggregateAllowedUsers(aggregated_allowed_users, instance_deployment->allowed_consumer_, asil_level))
         {
             break;

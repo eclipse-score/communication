@@ -111,7 +111,7 @@ const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeploym
     // LCOV_EXCL_BR_STOP
     {
         score::mw::log::LogFatal() << service_element_type << "name \"" << event_name
-                                 << "\"does not exist in LolaServiceInstanceDeployment. Terminating.";
+                                   << "\"does not exist in LolaServiceInstanceDeployment. Terminating.";
         std::terminate();
     }
     return service_element_instance_deployment_it->second;

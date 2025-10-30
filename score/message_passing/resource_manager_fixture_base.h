@@ -71,24 +71,25 @@ class ResourceManagerMockHelper
 
     /// Registers the pulse handler callback to call in dispatch loop
     score::cpp::expected<std::int32_t, score::os::Error> pulse_attach(dispatch_t* const /*dpp*/,
-                                                             const std::int32_t /*flags*/,
-                                                             const std::int32_t code,
-                                                             const pulse_handler_t func,
-                                                             void* const handle) noexcept
+                                                                      const std::int32_t /*flags*/,
+                                                                      const std::int32_t code,
+                                                                      const pulse_handler_t func,
+                                                                      void* const handle) noexcept
     {
         pulse_handlers_.emplace(code, std::make_pair(func, handle));
         return code;
     }
 
     /// Registers the `connect_funcs` and `io_funcs` callbacks to call in dispatch loop
-    score::cpp::expected<std::int32_t, score::os::Error> resmgr_attach(dispatch_t* const /*dpp*/,
-                                                              resmgr_attr_t* const /*attr*/,
-                                                              const char* const /*path*/,
-                                                              const enum _file_type /*file_type*/,
-                                                              const std::uint32_t /*flags*/,
-                                                              const resmgr_connect_funcs_t* const connect_funcs,
-                                                              const resmgr_io_funcs_t* const io_funcs,
-                                                              RESMGR_HANDLE_T* const handle) noexcept
+    score::cpp::expected<std::int32_t, score::os::Error> resmgr_attach(
+        dispatch_t* const /*dpp*/,
+        resmgr_attr_t* const /*attr*/,
+        const char* const /*path*/,
+        const enum _file_type /*file_type*/,
+        const std::uint32_t /*flags*/,
+        const resmgr_connect_funcs_t* const connect_funcs,
+        const resmgr_io_funcs_t* const io_funcs,
+        RESMGR_HANDLE_T* const handle) noexcept
     {
         connect_funcs_ = connect_funcs;
         io_funcs_ = io_funcs;
@@ -108,7 +109,8 @@ class ResourceManagerMockHelper
         }
         if (std::holds_alternative<ErrnoPseudoMessage>(*result))
         {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(std::get<ErrnoPseudoMessage>(*result).error));
+            return score::cpp::make_unexpected(
+                score::os::Error::createFromErrno(std::get<ErrnoPseudoMessage>(*result).error));
         }
         current_message_ = std::move(*result);
         return {};
@@ -198,10 +200,10 @@ class ResourceManagerMockHelper
 
     /// Gives the ability to trigger the error handling branch in the `io_open` handler
     score::cpp::expected_blank<std::int32_t> iofunc_open(resmgr_context_t* const /*ctp*/,
-                                                  io_open_t* const /*msg*/,
-                                                  iofunc_attr_t* const /*attr*/,
-                                                  iofunc_attr_t* const /*dattr*/,
-                                                  struct _client_info* const /*info*/) noexcept
+                                                         io_open_t* const /*msg*/,
+                                                         iofunc_attr_t* const /*attr*/,
+                                                         iofunc_attr_t* const /*dattr*/,
+                                                         struct _client_info* const /*info*/) noexcept
     {
         auto& io_open = std::get<IoOpenMessage>(current_message_);
         return io_open.iofunc_open_result;
@@ -209,10 +211,10 @@ class ResourceManagerMockHelper
 
     /// Binds the resource manager connection object to the resource manager server that created the connection
     score::cpp::expected_blank<std::int32_t> iofunc_ocb_attach(resmgr_context_t* const /*ctp*/,
-                                                        io_open_t* const /*msg*/,
-                                                        iofunc_ocb_t* const ocb,
-                                                        iofunc_attr_t* const attr,
-                                                        const resmgr_io_funcs_t* const /*io_funcs*/) noexcept
+                                                               io_open_t* const /*msg*/,
+                                                               iofunc_ocb_t* const ocb,
+                                                               iofunc_attr_t* const attr,
+                                                               const resmgr_io_funcs_t* const /*io_funcs*/) noexcept
     {
         ocb->attr = (extended_dev_attr_t*)attr;
         ocb_ = ocb;
@@ -221,9 +223,9 @@ class ResourceManagerMockHelper
 
     /// Returns the specified iofunc_write_verify result
     score::cpp::expected_blank<std::int32_t> iofunc_write_verify(resmgr_context_t* const /*ctp*/,
-                                                          io_write_t* const /*msg*/,
-                                                          iofunc_ocb_t* const /*ocb*/,
-                                                          std::int32_t* const /*nonblock*/) noexcept
+                                                                 io_write_t* const /*msg*/,
+                                                                 iofunc_ocb_t* const /*ocb*/,
+                                                                 std::int32_t* const /*nonblock*/) noexcept
     {
         auto& io_write = std::get<IoWriteMessage>(current_message_);
         return io_write.iofunc_write_verify_result;
@@ -231,9 +233,9 @@ class ResourceManagerMockHelper
 
     /// Returns the specified iofunc_read_verify result
     score::cpp::expected_blank<std::int32_t> iofunc_read_verify(resmgr_context_t* const /*ctp*/,
-                                                         io_read_t* const /*msg*/,
-                                                         iofunc_ocb_t* const /*ocb*/,
-                                                         std::int32_t* const /*nonblock*/) noexcept
+                                                                io_read_t* const /*msg*/,
+                                                                iofunc_ocb_t* const /*ocb*/,
+                                                                std::int32_t* const /*nonblock*/) noexcept
     {
         auto& io_read = std::get<IoReadMessage>(current_message_);
         return io_read.iofunc_read_verify_result;
@@ -253,9 +255,9 @@ class ResourceManagerMockHelper
 
     /// Queues a pulse event to process in dispatch loop
     score::cpp::expected_blank<score::os::Error> MsgSendPulse(const std::int32_t coid,
-                                                     const std::int32_t priority,
-                                                     const std::int32_t code,
-                                                     const std::int32_t value) noexcept
+                                                              const std::int32_t priority,
+                                                              const std::int32_t code,
+                                                              const std::int32_t value) noexcept
     {
         message_queue_.CreateSender().push(PulseMessage{code, value});
         return {};

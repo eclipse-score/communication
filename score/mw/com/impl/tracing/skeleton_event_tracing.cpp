@@ -110,7 +110,8 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
     const auto service_element_instance_deployment_it = service_instance_map.find(service_element_name_str);
     if (service_element_instance_deployment_it == service_instance_map.end())
     {
-        score::mw::log::LogFatal() << "Lola: requested service element (" << service_element_name << ") does not exist.";
+        score::mw::log::LogFatal() << "Lola: requested service element (" << service_element_name
+                                   << ") does not exist.";
         std::terminate();
     }
 

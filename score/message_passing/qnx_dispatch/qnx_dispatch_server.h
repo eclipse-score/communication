@@ -40,12 +40,15 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
         const ClientIdentity& GetClientIdentity() const noexcept override;
         UserData& GetUserData() noexcept override;
 
-        score::cpp::expected_blank<score::os::Error> Reply(score::cpp::span<const std::uint8_t> message) noexcept override;
-        score::cpp::expected_blank<score::os::Error> Notify(score::cpp::span<const std::uint8_t> message) noexcept override;
+        score::cpp::expected_blank<score::os::Error> Reply(
+            score::cpp::span<const std::uint8_t> message) noexcept override;
+        score::cpp::expected_blank<score::os::Error> Notify(
+            score::cpp::span<const std::uint8_t> message) noexcept override;
         void RequestDisconnect() noexcept override;
 
         // ResourceManagerConnection methods
-        bool ProcessInput(const std::uint8_t code, const score::cpp::span<const std::uint8_t> message) noexcept override;
+        bool ProcessInput(const std::uint8_t code,
+                          const score::cpp::span<const std::uint8_t> message) noexcept override;
         bool HasSomethingToRead() noexcept override;
         std::int32_t ProcessReadRequest(resmgr_context_t* const ctp) noexcept override;
         void ProcessDisconnect() noexcept override;
@@ -100,10 +103,11 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
     QnxDispatchServer& operator=(const QnxDispatchServer&) = delete;
     QnxDispatchServer& operator=(QnxDispatchServer&&) = delete;
 
-    score::cpp::expected_blank<score::os::Error> StartListening(ConnectCallback connect_callback,
-                                                       DisconnectCallback disconnect_callback,
-                                                       MessageCallback sent_callback,
-                                                       MessageCallback sent_with_reply_callback) noexcept override;
+    score::cpp::expected_blank<score::os::Error> StartListening(
+        ConnectCallback connect_callback,
+        DisconnectCallback disconnect_callback,
+        MessageCallback sent_callback,
+        MessageCallback sent_with_reply_callback) noexcept override;
 
     void StopListening() noexcept override;
 
