@@ -15,6 +15,7 @@
 
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/memory_resource_proxy.h"
+#include "score/memory/shared/pointer_arithmetic_util.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -56,7 +57,7 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
     {
         // Memory is allocated on construction to store a MemoryResourceProxy in the memory region. This is part of the
         // "ControlBlock" of the memory region and therefore set the BaseAddress after it.
-        return baseAddress_ + memoryResourceProxyAllocationSize_;
+        return AddOffsetToPointer(baseAddress_, memoryResourceProxyAllocationSize_);
     }
 
     const void* getEndAddress() const noexcept override
@@ -66,7 +67,7 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
 
     size_t getAllocatedMemory() const
     {
-        return allocatedMemory_;
+        return already_allocated_bytes_;
     };
 
     std::size_t GetUserAllocatedBytes() const noexcept override
@@ -74,7 +75,7 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
         // Memory is allocated on construction to store a MemoryResourceProxy in the memory region. This is part of the
         // "ControlBlock" of the memory region and therefore we don't take it into account in the number of user
         // allocated bytes.
-        return allocatedMemory_ - memoryResourceProxyAllocationSize_;
+        return already_allocated_bytes_ - memoryResourceProxyAllocationSize_;
     };
 
     std::size_t GetUserDeAllocatedBytes() const noexcept
@@ -107,10 +108,10 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
     static std::uint64_t instanceId;
     static std::size_t memoryResourceProxyAllocationSize_;
 
-    std::uint8_t* baseAddress_;
-    std::uint8_t* currentAddress_;
-    std::uint8_t* endAddress_;
-    std::size_t allocatedMemory_;
+    void* baseAddress_;
+    void* endAddress_;
+    std::size_t virtual_address_space_to_reserve_;
+    std::size_t already_allocated_bytes_;
     std::size_t deallocatedMemory_;
     std::uint64_t memoryResourceId_;
     MemoryResourceProxy* manager_;

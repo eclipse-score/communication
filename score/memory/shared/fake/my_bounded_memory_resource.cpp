@@ -14,8 +14,10 @@
 
 #include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/memory_resource_registry.h"
-
 #include "score/memory/shared/pointer_arithmetic_util.h"
+#include "score/memory/shared/shared_memory_resource.h"
+
+#include "score/language/safecpp/safe_math/safe_math.h"
 
 #include <score/assert.hpp>
 
@@ -58,9 +60,10 @@ MyBoundedMemoryResource::MyBoundedMemoryResource(const std::pair<void*, void*> m
     // Rationale : fresh allocated memory needs to be converted to the type that shall be stored in it
     // coverity[autosar_cpp14_m5_2_8_violation]
     : baseAddress_{static_cast<std::uint8_t*>(memory_range.first)},
-      currentAddress_{baseAddress_},
       endAddress_{static_cast<std::uint8_t*>(memory_range.second)},
-      allocatedMemory_{0U},
+      virtual_address_space_to_reserve_{
+          static_cast<std::size_t>(SubtractPointersBytes(memory_range.second, memory_range.first))},
+      already_allocated_bytes_{0U},
       deallocatedMemory_{0U},
       memoryResourceId_{instanceId++},
       manager_{nullptr},
@@ -86,28 +89,33 @@ MyBoundedMemoryResource::~MyBoundedMemoryResource()
 
 void* MyBoundedMemoryResource::do_allocate(const std::size_t bytes, std::size_t alignment)
 {
-    void* return_address = currentAddress_;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(alignment <= alignof(std::max_align_t));
+    void* const allocation_start_address = AddOffsetToPointer(baseAddress_, already_allocated_bytes_);
+    void* const allocation_end_address = AddOffsetToPointer(this->baseAddress_, virtual_address_space_to_reserve_);
+    void* const new_address_aligned =
+        detail::do_allocation_algorithm(allocation_start_address, allocation_end_address, bytes, alignment);
 
-    const std::size_t max_buffer_size{bytes + alignof(std::max_align_t)};
-    std::size_t max_buffer_size_after_padding{max_buffer_size};
+    if (new_address_aligned == nullptr)
+    {
+        score::mw::log::LogFatal("shm") << "Cannot allocate memory block of size" << bytes << " at: ["
+                                      << PointerToLogValue(new_address_aligned) << ":"
+                                      << PointerToLogValue(AddOffsetToPointer(new_address_aligned, bytes))
+                                      << "]. Does not fit within shared memory segment: ["
+                                      << PointerToLogValue(baseAddress_) << ":"
+                                      << PointerToLogValue(this->getEndAddress()) << "]";
+        std::terminate();
+    }
+    const auto padding = SubtractPointersBytes(new_address_aligned, allocation_start_address);
 
-    return_address = std::align(alignment, bytes, return_address, max_buffer_size_after_padding);
-    const auto alignment_padding_bytes = max_buffer_size - max_buffer_size_after_padding;
+    const auto total_allocated_bytes = safe_math::Add(bytes, padding).value();
+    already_allocated_bytes_ += total_allocated_bytes;
 
-    const auto total_allocated_bytes{bytes + alignment_padding_bytes};
-    currentAddress_ += total_allocated_bytes;
-    allocatedMemory_ += total_allocated_bytes;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(currentAddress_ <= endAddress_,
-                           "Current address must be smaller than end address after allocating.");
-    return return_address;
+    return new_address_aligned;
 }
 
 void MyBoundedMemoryResource::do_deallocate(void* /*memory*/, const std::size_t bytes, std::size_t)
 {
-    currentAddress_ -= bytes;
     deallocatedMemory_ += bytes;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(currentAddress_ >= baseAddress_,
-                           "Current address must be smaller than end address after allocating.");
 }
 
 MemoryResourceProxy* MyBoundedMemoryResource::AllocateMemoryResourceProxy(const std::uint64_t memory_resource_id)

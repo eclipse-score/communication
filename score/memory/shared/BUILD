@@ -545,6 +545,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
     deps = [
+        ":shared_memory_resource",
         ":types",
         "@score_baselibs//score/language/futurecpp",
     ],
