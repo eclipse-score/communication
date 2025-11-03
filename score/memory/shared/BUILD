@@ -60,6 +60,7 @@ cc_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
+        ":data_type_size_info",
         "@score_baselibs//score/mw/log:frontend",
     ],
 )
@@ -565,6 +566,27 @@ cc_unit_test(
     ],
 )
 
+cc_unit_test(
+    name = "pointer_arithmetic_util_calculate_aligned_size_test",
+    srcs = [
+        "pointer_arithmetic_util_calculate_aligned_size_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    visibility = [
+        "@score_baselibs//score/memory:__pkg__",
+    ],
+    deps = [
+        ":pointer_arithmetic_util",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
 cc_gtest_unit_test(
     name = "shared_memory_factory_test",
     srcs = [
@@ -923,6 +945,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":new_delete_delegate_resource_test",
         ":polymorphic_offset_ptr_allocator_test",
         ":pointer_arithmetic_util_precondition_violation_test",
+        ":pointer_arithmetic_util_calculate_aligned_size_test",
         ":shared_memory_error_test",
         ":shared_memory_factory_test",
         ":shared_memory_resource_allocate_test",

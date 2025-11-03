@@ -49,6 +49,35 @@ std::uintptr_t SubtractOffsetFromPointerAsInteger(const std::uintptr_t pointer_a
 
 }  // namespace detail
 
+std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& data_type_infos)
+{
+    std::size_t total_size{0U};
+    for (std::size_t i = 0; i < data_type_infos.size(); ++i)
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_type_infos[i].alignment != 0);
+        total_size += data_type_infos[i].size;
+
+        // If there is still a remaining next element, we need to calculate the padding between the current element and
+        // the next element.
+        std::size_t padding_between_elements{0U};
+        const auto is_last_element = i == data_type_infos.size() - 1U;
+        if (!is_last_element)
+        {
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_type_infos[i + 1U].alignment != 0);
+
+            // The start location (represented as a distance from the first allocation of the sequence) of the next
+            // element can be calculated by calculating the aligned size of the currently allocated memory (i.e. up to
+            // and including the current element) using the alignment of the next element. We then calculate the padding
+            // by subtracting the total allocated memory from this start location.
+            const auto next_elements_alignment = data_type_infos[i + 1U].alignment;
+            const auto total_size_plus_padding = CalculateAlignedSize(total_size, next_elements_alignment);
+            padding_between_elements = total_size_plus_padding - total_size;
+        }
+        total_size += padding_between_elements;
+    }
+    return total_size;
+}
+
 std::uintptr_t CastPointerToInteger(const void* const pointer) noexcept
 {
     // Suppress "AUTOSAR C++14 A5-2-4" rule finding: reinterpret_cast shall not be used.
@@ -123,5 +152,10 @@ std::ptrdiff_t SubtractPointersBytes(const void* const first, const void* const 
     }
     return -1 * static_cast<std::ptrdiff_t>(absolute_value_result_as_integer);
 }
+
+// std::ptrdiff_t SubtractPointersBytes(const void* const first, const void* const second) noexcept
+// {
+//     return SubtractPointersBytes(const_cast<void*>(first), const_cast<void*>(second));
+// }
 
 }  // namespace score::memory::shared

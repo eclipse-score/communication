@@ -13,6 +13,8 @@
 #ifndef SCORE_LIB_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
 #define SCORE_LIB_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
 
+#include "score/memory/shared/data_type_size_info.h"
+
 #include "score/mw/log/log_types.h"
 #include "score/mw/log/logging.h"
 
@@ -23,6 +25,7 @@
 #include <cstdlib>
 #include <limits>
 #include <type_traits>
+#include <vector>
 
 namespace score::memory::shared
 {
@@ -66,6 +69,18 @@ constexpr std::size_t CalculateAlignedSize(const std::size_t size, const std::si
     }
     return alignment;
 }
+
+/// \brief Calculates the needed size to store a sequence of objects of given size contiguously in memory.
+///
+/// \details Effectively this function calculates the value of size + eventually needed minimal padding between each
+/// element. Assumes that the allocation starts at a location that has worst case alignment. E.g. if you were to
+/// allocate memory for the first DataTypeSizeInfo, it would be allocated without any padding before the element. Note.
+/// Does not calculate any padding after the last element, as this would require knowledge of the alignment of the next
+/// object in memory.
+///
+/// \param data_type_infos vector of DataTypeSizeInfos which contains size and alignment of each element
+/// \return Required memory to allocate all objects (i.e. size of each object plus padding in between elements).
+std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& data_type_infos);
 
 /// \brief Casts a pointer to an integer.
 ///
