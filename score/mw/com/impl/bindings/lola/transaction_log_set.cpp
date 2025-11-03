@@ -12,6 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
+// Suppress false positive maybe-uninitialized warnings from score-baselibs offset pointer system
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+
 #include "score/result/result.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/log/logging.h"
@@ -296,3 +300,5 @@ bool TransactionLogSet::IsSkeletonElementTransactionLogIndex(
 }
 
 }  // namespace score::mw::com::impl::lola
+
+#pragma GCC diagnostic pop

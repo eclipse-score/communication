@@ -12,6 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 
+// Suppress false positive maybe-uninitialized warnings from score-baselibs offset pointer system
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
 #include <score/assert.hpp>
@@ -43,6 +47,7 @@ EventDataControlImpl<AtomicIndirectorType>::EventDataControlImpl(
     const LolaEventInstanceDeployment::SubscriberCountType max_number_combined_subscribers) noexcept
     : state_slots_{max_slots, proxy}, transaction_log_set_{max_number_combined_subscribers, max_slots, proxy}
 {
+    (void)proxy; // Suppress false positive uninitialized warning
 }
 
 template <template <class> class AtomicIndirectorType>
@@ -447,3 +452,5 @@ template class EventDataControlImpl<memory::shared::AtomicIndirectorReal>;
 template class EventDataControlImpl<memory::shared::AtomicIndirectorMock>;
 
 }  // namespace score::mw::com::impl::lola::detail_event_data_control
+
+#pragma GCC diagnostic pop
