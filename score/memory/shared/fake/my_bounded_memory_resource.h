@@ -25,6 +25,8 @@ namespace score::memory::shared::test
 
 class MyBoundedMemoryResource final : public ManagedMemoryResource
 {
+    friend class MyBoundedSharedMemoryResource;
+
   public:
     /// \brief Construct MyBoundedMemoryResource which owns the underlying memory region (i.e. will create and free it
     /// within the lifecyle of this class)
