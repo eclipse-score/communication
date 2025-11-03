@@ -58,7 +58,7 @@ cc_library(
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/memory/shared:fake_memory_resources",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
     ],
 )
 

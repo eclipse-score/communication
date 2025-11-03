@@ -123,6 +123,9 @@ cc_library(
         "@score_baselibs//score/language/safecpp/string_view:null_termination_check",
     ],
     tags = ["FFI"],
+    visibility = [
+        "@score_baselibs//score/memory/shared/fake:__subpackages__",
+    ],
     deps = [
         ":i_shared_memory_resource",
         ":lock_file",
@@ -531,26 +534,6 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "fake_memory_resources",
-    testonly = True,
-    srcs = [
-        "fake/my_bounded_memory_resource.cpp",
-        "fake/my_memory_resource.cpp",
-    ],
-    hdrs = [
-        "fake/my_bounded_memory_resource.h",
-        "fake/my_memory_resource.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],
-    deps = [
-        ":shared_memory_resource",
-        ":types",
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
 cc_unit_test(
     name = "pointer_arithmetic_util_precondition_violation_test",
     srcs = [
@@ -640,9 +623,9 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":managed_memory_resource",
         ":shared_memory_test_resources",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -657,8 +640,8 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":map",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -690,8 +673,8 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":memory_resource_proxy",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -739,8 +722,8 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":polymorphic_offset_ptr_allocator",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -769,9 +752,9 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":pointer_arithmetic_util",
         ":shared_memory_test_resources",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -836,9 +819,9 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":pointer_arithmetic_util",
         ":shared_memory_test_resources",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -853,8 +836,8 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":shared_memory_test_resources",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
         "@score_baselibs//score/os/utils/acl:mock",
     ],
@@ -870,8 +853,8 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":vector",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -889,8 +872,8 @@ cc_gtest_unit_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        ":fake_memory_resources",
         ":string",
+        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
