@@ -75,13 +75,22 @@ std::uintptr_t CastPointerToInteger(const void* const pointer) noexcept;
 /// \brief Casts an integer to a pointer.
 ///
 /// According to https://timsong-cpp.github.io/cppwp/n4659/expr.reinterpret.cast#5, this is implementation defined.
-/// Explicitly instantiates two versions of this function for: void* and const void*.
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding: A type, object or function that is used in multiple translation units
 // shall be declared in one and only one file.
 // Rationale: False positive CastIntegerToPointer is declared only once.
 // coverity[autosar_cpp14_m3_2_3_violation : FALSE]
 template <typename PointerType>
-auto CastIntegerToPointer(std::uintptr_t integer) noexcept -> PointerType;
+auto CastIntegerToPointer(std::uintptr_t integer) noexcept -> PointerType
+{
+    // Suppress "AUTOSAR C++14 A5-2-4" rule finding: reinterpret_cast shall not be used.
+    // Rationale : According to https://timsong-cpp.github.io/cppwp/n4659/expr.reinterpret.cast#5, casting an integer to
+    // a pointer is implementation-defined. We rely on sufficient testing to ensure that the implementation defined
+    // behaviour performs as expected (i.e. the address of the resulting pointer is the same as the integer value).
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast): see rationale above.
+    // coverity[autosar_cpp14_a5_2_4_violation]
+    return reinterpret_cast<PointerType>(integer);
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+}
 
 /// \brief Calculates the pointer resulting from adding an offset to a pointer
 ///

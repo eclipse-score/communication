@@ -65,22 +65,6 @@ std::uintptr_t CastPointerToInteger(const void* const pointer) noexcept
     // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
-template <typename PointerType>
-auto CastIntegerToPointer(std::uintptr_t integer) noexcept -> PointerType
-{
-    // Suppress "AUTOSAR C++14 A5-2-4" rule finding: reinterpret_cast shall not be used.
-    // Rationale : According to https://timsong-cpp.github.io/cppwp/n4659/expr.reinterpret.cast#5, casting an integer to
-    // a pointer is implementation-defined. We rely on sufficient testing to ensure that the implementation defined
-    // behaviour performs as expected (i.e. the address of the resulting pointer is the same as the integer value).
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast): see rationale above.
-    // coverity[autosar_cpp14_a5_2_4_violation]
-    return reinterpret_cast<PointerType>(integer);
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-}
-template void* CastIntegerToPointer<void*>(std::uintptr_t) noexcept;
-template const void* CastIntegerToPointer<const void*>(std::uintptr_t) noexcept;
-template std::byte* CastIntegerToPointer<std::byte*>(std::uintptr_t) noexcept;
-
 score::mw::log::LogHex64 PointerToLogValue(const void* const pointer)
 {
     // Suppress "AUTOSAR C++14 A5-2-4" rule finding: "reinterpret_cast shall not be used.".
