@@ -181,36 +181,24 @@ bool waitForFreeLockFile(const std::string& lock_file_path)
     return !lockFileExists;  // we want to return true if lock file does no longer exist, otherwise false.
 }
 
-score::os::IAccessControlList::UserIdentifier GetCreatorUidFromAcl(
-    const ISharedMemoryResource::FileDescriptor fd,
-    const ISharedMemoryResource::AccessControlListFactory& acl_factory) noexcept
+score::os::IAccessControlList::UserIdentifier GetCreatorUidFromTypedmemd(
+    std::string_view path,
+    const score::memory::shared::TypedMemory& typed_memory_ptr) noexcept
 {
-    // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function
-    // shall have automatic storage duration". Rationale: The object is a unique_ptr which is allocated in the heap.
-    // coverity[autosar_cpp14_a18_5_8_violation]
-    auto acl = acl_factory(fd);
-    const auto result = acl->FindUserIdsWithPermission(score::os::Acl::Permission::kExecute);
+    const auto result = typed_memory_ptr.GetCreatorUid(path);
     if (!result.has_value())
     {
         score::mw::log::LogFatal("shm") << "Finding creator_uid of shm-object failed: " << result.error();
         std::terminate();
     }
 
-    const auto& users_with_exec_permission = result.value();
-    // For named-shm in typedmemd, only creator of shm must have execute permission set in eACL.
-    if (1U != users_with_exec_permission.size())
-    {
-        score::mw::log::LogFatal("shm") << "Invalid number of users with execution permission: Expected 1 user, found "
-                                      << users_with_exec_permission.size();
-        std::terminate();
-    }
-
-    return users_with_exec_permission.front();
+    return result.value();
 }
 
 ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescriptor fd,
-                                       const ISharedMemoryResource::AccessControlListFactory& acl_factory,
-                                       bool is_named_shm)
+                                       bool is_named_shm,
+                                       const std::string* const path,
+                                       const score::memory::shared::TypedMemory* typed_memory_ptr)
 {
     score::os::StatBuffer stat_buffer{};
 
@@ -224,9 +212,11 @@ ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescript
     bool is_shm_in_typed_memory = false;
     if (is_named_shm && (kTypedmemdUid == owner_uid))
     {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(path != nullptr, "shm-object file path is not set.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_memory_ptr != nullptr, "Typed memory is not available.");
         is_shm_in_typed_memory = true;
-        score::mw::log::LogInfo("shm") << "Named-shm is in TypedMemory. Finding creator-uid from from eACL entries.";
-        stat_buffer.st_uid = GetCreatorUidFromAcl(fd, acl_factory);
+        score::mw::log::LogInfo("shm") << "Named-shm is in TypedMemory. Querying typedmemd for shm object creator UID.";
+        stat_buffer.st_uid = GetCreatorUidFromTypedmemd(*path, *typed_memory_ptr);
     }
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"
@@ -522,7 +512,7 @@ score::cpp::expected_blank<Error> SharedMemoryResource::CreateImpl(const std::si
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(file_descriptor_ >= 0, "No valid file descriptor");
 
-    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, acl_factory_, (path != nullptr));
+    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, (path != nullptr), path, typed_memory_ptr_.get());
     file_owner_uid_ = stat_values.owner_uid;
 
     if (!is_shm_in_typed_memory_)
@@ -615,7 +605,7 @@ auto SharedMemoryResource::waitForOtherProcessAndOpen() noexcept -> score::cpp::
         return score::cpp::make_unexpected(result.error());
     }
     file_descriptor_ = result.value();
-    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, acl_factory_, is_named_shm);
+    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, is_named_shm, path, typed_memory_ptr_.get());
     is_shm_in_typed_memory_ = stat_values.is_shm_in_typed_memory;
     file_owner_uid_ = stat_values.owner_uid;
     virtual_address_space_to_reserve_ = stat_values.size;

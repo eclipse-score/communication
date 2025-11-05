@@ -53,6 +53,8 @@ class TypedMemory
 
     virtual score::cpp::expected_blank<score::os::Error> Unlink(std::string_view shm_name) const noexcept = 0;
 
+    virtual score::cpp::expected<uid_t, score::os::Error> GetCreatorUid(std::string_view shm_name) const noexcept = 0;
+
   protected:
     // Make all special member functions protected to prevent them ever being explicitly called (which can lead to
     // slicing errors) but can be called by child classes (so that they can automatically generate special member
@@ -92,6 +94,8 @@ class TypedMemoryImpl final : public TypedMemory
         const std::uint64_t shm_size) const noexcept override;
 
     score::cpp::expected_blank<score::os::Error> Unlink(std::string_view shm_name) const noexcept override;
+
+    score::cpp::expected<uid_t, score::os::Error> GetCreatorUid(std::string_view shm_name) const noexcept override;
 
 // coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
 #if defined(__QNX__) && defined(USE_TYPEDSHMD)

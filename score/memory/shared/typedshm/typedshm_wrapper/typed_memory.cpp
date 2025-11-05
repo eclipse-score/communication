@@ -126,6 +126,25 @@ score::cpp::expected_blank<score::os::Error> TypedMemoryImpl::Unlink(std::string
 #endif
 }
 
+score::cpp::expected<uid_t, score::os::Error> TypedMemoryImpl::GetCreatorUid(std::string_view shm_name) const noexcept
+{
+// coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
+#if defined(__QNX__) && defined(USE_TYPEDSHMD)
+    uid_t uid{};
+    const auto get_creator_uid_result = typed_shm_client_->GetCreatorUid(shm_name, uid);
+    if (!get_creator_uid_result.has_value())
+    {
+        return score::cpp::make_unexpected(get_creator_uid_result.error());
+    }
+    return uid;
+// coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
+#else
+    static_cast<void>(shm_name);
+    return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOSYS));
+// coverity[autosar_cpp14_a16_0_1_violation] Different implementation required for linux and QNX
+#endif
+}
+
 }  // namespace internal
 
 std::shared_ptr<score::memory::shared::TypedMemory> score::memory::shared::TypedMemory::Default() noexcept

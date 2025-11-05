@@ -38,6 +38,11 @@ class TypedMemoryMock : public score::memory::shared::TypedMemory
                 (const, noexcept, override));
 
     MOCK_METHOD(score::cpp::expected_blank<score::os::Error>, Unlink, (std::string_view shm_name), (const, noexcept, override));
+
+    MOCK_METHOD((score::cpp::expected<uid_t, score::os::Error>),
+                GetCreatorUid,
+                (std::string_view shm_name),
+                (const, noexcept, override));
 };
 
 }  // namespace score::memory::shared

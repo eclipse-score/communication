@@ -121,7 +121,8 @@ auto SharedMemoryFactoryImpl::Open(const std::string& path,
     std::shared_ptr<SharedMemoryResource> resource = GetResourceIfAlreadyOpened(path, resources_);
     if (resource == nullptr)
     {
-        const auto result = SharedMemoryResource::Open(path, is_read_write, &CreateAccessControlList, nullptr);
+        const auto result =
+            SharedMemoryResource::Open(path, is_read_write, &CreateAccessControlList, typed_memory_ptr_);
         if (!result.has_value())
         {
             score::mw::log::LogWarn("shm") << "Could not open Shared Memory " << path << ":" << result.error();
