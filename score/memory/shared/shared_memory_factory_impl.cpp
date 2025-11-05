@@ -41,6 +41,15 @@ constexpr auto kSharedMemoryPathPrefix = "/tmp";
 // coverity[autosar_cpp14_a16_0_1_violation]
 #endif
 
+// TODO: Ticket-201663 remove the hardcoded kTypedmemdUid value
+// Suppress "AUTOSAR C++14 A2-10-4" rule finding: The identifier name of a non-member object with static storage
+// duration or static function shall not be reused within a namespace.
+// Justification: Using unnamed namespaces for internal linkage ensures that the identifiers within the unnamed
+// namespace are unique to their translation unit and are not accessible or reusable within other translation units
+// or namespaces.
+// coverity[autosar_cpp14_a2_10_4_violation]
+constexpr score::os::IAccessControlList::UserIdentifier kTypedmemdUid{3020};
+
 std::unique_ptr<score::os::IAccessControlList> CreateAccessControlList(
     ISharedMemoryResource::FileDescriptor file_descriptor)
 {
@@ -95,8 +104,6 @@ auto GetResourceIfAlreadyOpened(
 
 bool IsShmInTypedMemory(const std::string& path)
 {
-    // TODO: Ticket-201663 remove the hardcoded value
-    constexpr score::os::IAccessControlList::UserIdentifier kTypedmemdUid{3020};
     const auto file_path = std::string{kSharedMemoryPathPrefix} + path;
     score::os::StatBuffer stat_buffer{};
 

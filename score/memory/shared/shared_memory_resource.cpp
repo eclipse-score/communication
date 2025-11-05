@@ -212,6 +212,10 @@ ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescript
     bool is_shm_in_typed_memory = false;
     if (is_named_shm && (kTypedmemdUid == owner_uid))
     {
+        // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
+        // variables being given values that are not subsequently used"
+        // Rationale: There is no variable defined in the following line.
+        // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(path != nullptr, "shm-object file path is not set.");
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_memory_ptr != nullptr, "Typed memory is not available.");
         is_shm_in_typed_memory = true;
@@ -649,6 +653,12 @@ auto SharedMemoryResource::getOwnerUid() const noexcept -> uid_t
 auto SharedMemoryResource::GetLockFilePath(const std::string& input_path) noexcept -> std::string
 {
     return std::string{kTmpPathPrefix} + input_path + "_lock";
+}
+
+// coverity[autosar_cpp14_a0_1_3_violation : FALSE] See rationale for autosar_cpp14_a0_1_3_violation above.
+auto SharedMemoryResource::GetShmFilePath(const std::string& input_path) noexcept -> std::string
+{
+    return std::string{kTmpPathPrefix} + input_path;
 }
 
 auto SharedMemoryResource::getMemoryResourceProxy() noexcept -> const MemoryResourceProxy*

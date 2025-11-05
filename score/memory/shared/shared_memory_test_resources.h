@@ -115,6 +115,11 @@ class SharedMemoryResourceTestAttorney
         return SharedMemoryResource::GetLockFilePath(input_path);
     }
 
+    static std::string GetShmFilePath(const std::string& input_path) noexcept
+    {
+        return SharedMemoryResource::GetShmFilePath(input_path);
+    }
+
     void Remove() noexcept
     {
         return resource_.UnlinkFilesystemEntry();

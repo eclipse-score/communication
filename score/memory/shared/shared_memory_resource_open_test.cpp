@@ -279,7 +279,7 @@ TEST_F(SharedMemoryResourceOpenTest, DifferentChildClassIsNotEqual)
     ASSERT_FALSE(resource->is_equal(otherResource));
 }
 
-TEST_F(SharedMemoryResourceOpenTest, OpenTypedSharedMemorySuccessWhenOnlyOneUserHasExecutePermission)
+TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsTrueWhenOpenTypedSharedMemorySuccess)
 {
     InSequence sequence{};
     constexpr std::int32_t file_descriptor = 1;
@@ -288,43 +288,7 @@ TEST_F(SharedMemoryResourceOpenTest, OpenTypedSharedMemorySuccessWhenOnlyOneUser
     auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
     score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
     std::vector<score::os::IAccessControlList::UserIdentifier> users_with_exec_permission = {2025U};
-
-    // Given that the lock file does not exist
-    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
-                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
-
-    // and that we can open the shared memory region
-    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
-
-    // and that the shared memory is in typed memory region
-    expectFstatReturns(
-        file_descriptor, is_death_test, static_cast<uid_t>(TestValues::typedmemd_uid), static_cast<std::int64_t>(1));
-
-    // and that the execute permission is set for only one user in the eACL
-    EXPECT_CALL(*acl_control_list_mock, FindUserIdsWithPermission(score::os::Acl::Permission::kExecute))
-        .WillOnce(Return(users_with_exec_permission));
-
-    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
-
-    // and the memory regions are safely unmapped on destruction
-    EXPECT_CALL(*mman_mock_, munmap(_, _)).Times(1);
-    EXPECT_CALL(*unistd_mock_, close(_)).Times(1);
-
-    const auto resource_result =
-        SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list);
-    ASSERT_TRUE(resource_result.has_value());
-}
-
-TEST_F(SharedMemoryResourceOpenTest,
-       IsShmInTypedMemoryReturnsTrueWhenOpenTypedSharedMemorySuccessWhenOnlyOneUserHasExecutePermission)
-{
-    InSequence sequence{};
-    constexpr std::int32_t file_descriptor = 1;
-    constexpr bool is_read_write = false;
-    constexpr bool is_death_test = false;
-    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
-    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
-    std::vector<score::os::IAccessControlList::UserIdentifier> users_with_exec_permission = {2025U};
+    auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
 
     // Given that the lock file does not exist
     expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
@@ -337,17 +301,20 @@ TEST_F(SharedMemoryResourceOpenTest,
     expectFstatReturns(
         file_descriptor, is_death_test, static_cast<uid_t>(TestValues::typedmemd_uid), static_cast<std::int64_t>(1));
 
-    // and that the execute permission is set for only one user in the eACL
-    EXPECT_CALL(*acl_control_list_mock, FindUserIdsWithPermission(score::os::Acl::Permission::kExecute))
-        .WillOnce(Return(users_with_exec_permission));
+    // and that the creator UID is set
+    EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath)))
+        .WillOnce(Return(users_with_exec_permission.front()));
 
     expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
 
+    // and the memory regions are safely unmapped on destruction
+    EXPECT_CALL(*mman_mock_, munmap(_, _)).Times(1);
     EXPECT_CALL(*unistd_mock_, close(_)).Times(1);
 
     // and given the shared memory region is opened
-    const auto resource_result =
-        SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list);
+    const auto resource_result = SharedMemoryResourceTestAttorney::Open(
+        TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock);
+    ASSERT_TRUE(resource_result.has_value());
 
     // When checking if the shared memory region is in typed memory
     const auto is_in_typed_memory = resource_result.value()->IsShmInTypedMemory();
@@ -356,8 +323,7 @@ TEST_F(SharedMemoryResourceOpenTest,
     EXPECT_TRUE(is_in_typed_memory);
 }
 
-TEST_F(SharedMemoryResourceOpenTest,
-       IsShmInTypedMemoryReturnsFalseWhenOpenTypedSharedMemoryFailWhenOnlyOneUserHasExecutePermission)
+TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenOpenTypedSharedMemoryFail)
 {
     InSequence sequence{};
     constexpr std::int32_t file_descriptor = 1;
@@ -365,7 +331,6 @@ TEST_F(SharedMemoryResourceOpenTest,
     constexpr bool is_death_test = false;
     auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
     score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
-    std::vector<score::os::IAccessControlList::UserIdentifier> users_with_exec_permission = {2025U};
 
     // Given that the lock file does not exist
     expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
@@ -548,7 +513,7 @@ TEST_F(SharedMemoryResourceOpenDeathTest, OpensSharedMemoryEAGAINOnFstatCausesTe
     EXPECT_DEATH(SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write), ".*");
 }
 
-TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorOnRetrievingListOfUserIDsWithExecutePermission)
+TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorWhenGetCreatorUidFails)
 {
     InSequence sequence{};
     constexpr std::int32_t file_descriptor = 5;
@@ -556,6 +521,7 @@ TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorOnRetrieving
     constexpr bool is_death_test = true;
     auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
     score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
+    auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
 
     // Given that the lock file does not exist
     expectOpenLockFileReturns(
@@ -568,79 +534,15 @@ TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorOnRetrieving
     expectFstatReturns(
         file_descriptor, is_death_test, static_cast<uid_t>(TestValues::typedmemd_uid), static_cast<std::int64_t>(1));
 
-    // and that the finding user id with execute permission fails
-    EXPECT_CALL(*acl_control_list_mock, FindUserIdsWithPermission(score::os::Acl::Permission::kExecute))
-        .Times(::testing::AtMost(1))
-        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
+    // and that the creator UID fails
+    EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath)))
+        .Times(AtMost(1))
+        .WillRepeatedly(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
 
     // When Opening a SharedMemoryResource
-    EXPECT_DEATH(
-        SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list),
-        ".*");
-}
-
-TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorInvalidNumberOfUsersWithExecutePermission)
-{
-    InSequence sequence{};
-    constexpr std::int32_t file_descriptor = 5;
-    constexpr bool is_read_write = false;
-    constexpr bool is_death_test = true;
-    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
-    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
-    std::vector<score::os::IAccessControlList::UserIdentifier> users_with_exec_permission = {2025U, 6025U};
-
-    // Given that the lock file does not exist
-    expectOpenLockFileReturns(
-        TestValues::sharedMemorySegmentLockPath, score::cpp::make_unexpected(Error::createFromErrno(ENOENT)), is_death_test);
-
-    // and that we can open the shared memory region
-    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write, is_death_test);
-
-    // and that the fstat returns typedmemd uid
-    expectFstatReturns(
-        file_descriptor, is_death_test, static_cast<uid_t>(TestValues::typedmemd_uid), static_cast<std::int64_t>(1));
-
-    // and that the finding user id with execute permission fails
-    EXPECT_CALL(*acl_control_list_mock, FindUserIdsWithPermission(score::os::Acl::Permission::kExecute))
-        .Times(::testing::AtMost(1))
-        .WillRepeatedly(Return(users_with_exec_permission));
-
-    // When Opening a SharedMemoryResource
-    EXPECT_DEATH(
-        SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list),
-        ".*");
-}
-
-TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorWhenNoUserHasExecutePermission)
-{
-    InSequence sequence{};
-    constexpr std::int32_t file_descriptor = 5;
-    constexpr bool is_read_write = false;
-    constexpr bool is_death_test = true;
-    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
-    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
-    std::vector<score::os::IAccessControlList::UserIdentifier> users_with_exec_permission = {};
-
-    // Given that the lock file does not exist
-    expectOpenLockFileReturns(
-        TestValues::sharedMemorySegmentLockPath, score::cpp::make_unexpected(Error::createFromErrno(ENOENT)), is_death_test);
-
-    // and that we can open the shared memory region
-    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write, is_death_test);
-
-    // and that the fstat returns typedmemd uid
-    expectFstatReturns(
-        file_descriptor, is_death_test, static_cast<uid_t>(TestValues::typedmemd_uid), static_cast<std::int64_t>(1));
-
-    // and that the execute permission is set for no user at all
-    EXPECT_CALL(*acl_control_list_mock, FindUserIdsWithPermission(score::os::Acl::Permission::kExecute))
-        .Times(::testing::AtMost(1))
-        .WillRepeatedly(Return(users_with_exec_permission));
-
-    // When Opening a SharedMemoryResource
-    EXPECT_DEATH(
-        SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list),
-        ".*");
+    EXPECT_DEATH(SharedMemoryResourceTestAttorney::Open(
+                     TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock),
+                 ".*");
 }
 
 }  // namespace score::memory::shared::test
