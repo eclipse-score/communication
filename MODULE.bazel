@@ -10,7 +10,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-module(name = "score_communication")
+module(
+    name = "score_communication",
+    version = "0.1.0",
+)
+
 
 bazel_dep(name = "platforms", version = "1.0.0")
 
