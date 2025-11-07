@@ -18,12 +18,12 @@
 #include "score/concurrency/notification.h"
 
 #include "score/mw/com/impl/proxy_event.h"
+#include <random>
 #include <score/assert.hpp>
 #include <score/hash.hpp>
 #include <score/optional.hpp>
 
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -232,7 +232,7 @@ score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& 
         handles = std::move(handles_result).value();
         if (handles.size() == 0)
         {
-            std::this_thread::sleep_for(500ms);
+            std::this_thread::sleep_for(10ms);
         }
     } while (handles.size() == 0);
 
