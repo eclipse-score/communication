@@ -1,0 +1,41 @@
+{
+  "data": [
+    {
+      "tag": "req SL",
+      "location": {
+        "kind": "file",
+        "file": "https://github.com/test/repo/blob/test_hash/tools/source_code_linker/tests/test_data/input/component_sample.puml#L2",
+        "line": 1,
+        "column": 1
+      },
+      "name": "tools/source_code_linker/tests/test_data/input/component_sample.puml",
+      "messages": [],
+      "just_up": [],
+      "just_down": [],
+      "just_global": [],
+      "framework": "TRLC",
+      "kind": "requirement",
+      "text": "SL"
+    },
+    {
+      "tag": "req TestComponent",
+      "location": {
+        "kind": "file",
+        "file": "https://github.com/test/repo/blob/test_hash/tools/source_code_linker/tests/test_data/input/component_sample.puml#L3",
+        "line": 1,
+        "column": 1
+      },
+      "name": "tools/source_code_linker/tests/test_data/input/component_sample.puml",
+      "messages": [],
+      "just_up": [],
+      "just_down": [],
+      "just_global": [],
+      "framework": "TRLC",
+      "kind": "requirement",
+      "text": "TestComponent"
+    }
+  ],
+  "generator": "lobster-trlc",
+  "schema": "lobster-req-trace",
+  "version": 4
+}

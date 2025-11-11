@@ -18,7 +18,7 @@ constexpr score::mw::com::impl::ConfigurationErrorDomain g_configurationErrorDom
 }  // namespace
 
 score::result::Error score::mw::com::impl::MakeError(const score::mw::com::impl::configuration_errc code,
-                                                 const std::string_view message)
+                                                     const std::string_view message)
 {
     return {static_cast<score::result::ErrorCode>(code), g_configurationErrorDomain, message};
 }

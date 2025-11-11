@@ -192,7 +192,8 @@ void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileCreatedOrOpenedAnd
         .WillOnce(Return(service_existence_marker_file_path));
     EXPECT_CALL(*fcntl_mock_, open(StrEq(service_existence_marker_file_path.data()), kCreateOrOpenFlags, _))
         .WillOnce(Return(lock_file_descriptor));
-    EXPECT_CALL(*stat_mock_, chmod(StrEq(service_existence_marker_file_path.data()), _)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*stat_mock_, chmod(StrEq(service_existence_marker_file_path.data()), _))
+        .WillOnce(Return(score::cpp::blank{}));
 
     EXPECT_CALL(*unistd_mock_, close(lock_file_descriptor));
     // we explicitly expect NO calls to unlink! See Skeleton::CreateOrOpenServiceInstanceUsageMarkerFile!
@@ -208,7 +209,8 @@ void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileFlockAcquired(
 
     EXPECT_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor, non_blocking_exclusive_lock_operation))
         .WillOnce(Return(score::cpp::blank{}));
-    EXPECT_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor, unlock_operation)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor, unlock_operation))
+        .WillOnce(Return(score::cpp::blank{}));
 }
 
 void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileAlreadyFlocked(

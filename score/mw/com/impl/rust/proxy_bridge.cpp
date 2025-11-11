@@ -45,7 +45,7 @@ class RustFnMutCallable<void> final
     explicit RustFnMutCallable(const FatPtr& dyn_fnmut) noexcept : ptr_{dyn_fnmut}
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(dyn_fnmut.data != nullptr,
-                               "Failed creating a RustFnMutCallable due to an invalid pointer");
+                                                    "Failed creating a RustFnMutCallable due to an invalid pointer");
     }
 
     RustFnMutCallable(const RustFnMutCallable&) = delete;
@@ -71,7 +71,8 @@ class RustFnMutCallable<void> final
 
     void operator()() noexcept
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr_.data != nullptr, "Tried to call a Rust FnMut callable without a valid pointer");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr_.data != nullptr,
+                                                    "Tried to call a Rust FnMut callable without a valid pointer");
         mw_com_impl_call_dyn_fnmut(&ptr_);
     }
 
@@ -85,8 +86,8 @@ extern "C" {
     const char* const instance_specifier,
     const std::uint32_t instance_specifier_length) noexcept
 {
-    if (auto result =
-            ::score::mw::com::InstanceSpecifier::Create(std::string_view{instance_specifier, instance_specifier_length});
+    if (auto result = ::score::mw::com::InstanceSpecifier::Create(
+            std::string_view{instance_specifier, instance_specifier_length});
         result.has_value())
     {
         return new ::score::mw::com::InstanceSpecifier{std::move(result).value()};
@@ -115,7 +116,8 @@ void mw_com_impl_instance_specifier_delete(::score::mw::com::InstanceSpecifier* 
             std::move(*instance_specifier));
         result.has_value())
     {
-        return new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{std::move(result).value()};
+        return new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{
+            std::move(result).value()};
     }
     else
     {
@@ -152,7 +154,8 @@ std::uint32_t mw_com_impl_sample_ptr_get_size() noexcept
     return sizeof(::score::mw::com::impl::SamplePtr<std::uint32_t>);
 }
 
-bool mw_com_impl_proxy_event_subscribe(::score::mw::com::impl::ProxyEventBase* proxy_event, std::uint32_t max_num_events)
+bool mw_com_impl_proxy_event_subscribe(::score::mw::com::impl::ProxyEventBase* proxy_event,
+                                       std::uint32_t max_num_events)
 {
     return proxy_event->Subscribe(max_num_events).has_value();
 }
@@ -165,8 +168,8 @@ void mw_com_impl_proxy_event_unsubscribe(::score::mw::com::impl::ProxyEventBase*
 void mw_com_impl_proxy_event_set_receive_handler(::score::mw::com::impl::ProxyEventBase* proxy_event,
                                                  const FatPtr* const boxed_handler)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(boxed_handler != nullptr,
-                           "Call to mw_com_impl_proxy_event_set_receive_handler with a nullptr for the handler");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        boxed_handler != nullptr, "Call to mw_com_impl_proxy_event_set_receive_handler with a nullptr for the handler");
     proxy_event->SetReceiveHandler(RustFnMutCallable<void>{*boxed_handler});
 }
 

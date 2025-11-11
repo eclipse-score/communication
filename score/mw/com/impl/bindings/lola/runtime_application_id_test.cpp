@@ -13,9 +13,9 @@
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 
 #include "score/concurrency/thread_pool.h"
-#include "score/os/mocklib/unistdmock.h"
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
+#include "score/os/mocklib/unistdmock.h"
 
 #include <gtest/gtest.h>
 #include <memory>

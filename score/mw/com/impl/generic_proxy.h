@@ -35,20 +35,22 @@ namespace test
 class GenericProxyAttorney;
 }
 
-/// \brief GenericProxy is a non-binding specific Proxy class which doesn't require any type information for its events.
-/// This means that it can connect to a service providing instance (skeleton) just based on deployment information
-/// specified at runtime.
-///
-/// It contains a map of events which can access strongly-typed events in a type-erased way i.e. by accessing a raw
-/// memory buffer.
-///
-/// It is the generic analogue of a Proxy, which contains strongly-typed events. While the Proxy is usually generated
-/// from the IDL, a GenericProxy can be manually instantiated at runtime based on deployment information.
 /// \todo The EventMap, events, needs to be populated with actual GenericProxyEvents.
 // Suppress "AUTOSAR C++14 A12-1-6" rule findings. This rule states: "Derived classes that do not need further
 // explicit initialization and require all the constructors from the base class shall use inheriting constructors.
 // As per requirement 14005999 constructor shall be private.
 // coverity[autosar_cpp14_a12_1_6_violation]
+/**
+ * \api
+ * \brief GenericProxy is a non-binding specific Proxy class which doesn't require any type information for its events.
+ * This means that it can connect to a service providing instance (skeleton) just based on deployment information
+ * specified at runtime.
+ * \details It contains a map of events which can access strongly-typed events in a type-erased way i.e. by accessing a
+ * raw memory buffer. It is the generic analogue of a Proxy, which contains strongly-typed events. While the Proxy is
+ * usually generated from the IDL, a GenericProxy can be manually instantiated at runtime based on deployment
+ * information.
+ * \public
+ */
 class GenericProxy : public ProxyBase
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -60,9 +62,21 @@ class GenericProxy : public ProxyBase
   public:
     using EventMap = ServiceElementMap<GenericProxyEvent>;
 
-    /// \brief Exception-less GenericProxy constructor
+    /**
+     * \api
+     * \brief Exception-less GenericProxy constructor
+     * \param instance_handle Handle to the instance
+     * \return Result containing the created GenericProxy instance or an error code.
+     * \public
+     */
     static Result<GenericProxy> Create(HandleType instance_handle) noexcept;
 
+    /**
+     * \api
+     * \brief Returns a reference to the event map.
+     * \return Reference to the event map.
+     * \public
+     */
     EventMap& GetEvents() noexcept;
 
   private:

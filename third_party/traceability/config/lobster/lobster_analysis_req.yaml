@@ -1,0 +1,16 @@
+inputs:
+  - .
+
+conversion-rules:
+  - package: SafetyAnalysis
+    record-type: ControlMeasure
+    namespace: req
+    description-fields: description
+    tags:
+      - mitigates
+  - package: SafetyAnalysis
+    record-type: FailureMode
+    namespace: req
+    description-fields: description
+    tags:
+      - function

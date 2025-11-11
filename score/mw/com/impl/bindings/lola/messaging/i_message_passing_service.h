@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
 #include <cstdint>
+#include <memory>
 
 namespace score::mw::com::impl::lola
 {
@@ -76,9 +77,9 @@ class IMessagePassingService
     /// \param asil_level asil level of the provided event.
     /// \param event_id full qualified event id
     /// \param target_node_id node_id, where the event provider is located.
-    virtual void ReregisterEventNotification(QualityType asil_level,
-                                             ElementFqId event_id,
-                                             pid_t target_node_id) noexcept = 0;
+    virtual void ReregisterEventNotification(const QualityType asil_level,
+                                             const ElementFqId event_id,
+                                             const pid_t target_node_id) noexcept = 0;
 
     /// \brief Unregister an event update notification callback, which has been registered with
     /// RegisterEventNotification()
@@ -103,9 +104,9 @@ class IMessagePassingService
     /// \param asil_level asil level of the provided event.
     /// \param outdated_node_id
     /// \param target_node_id
-    virtual void NotifyOutdatedNodeId(QualityType asil_level,
-                                      pid_t outdated_node_id,
-                                      pid_t target_node_id) noexcept = 0;
+    virtual void NotifyOutdatedNodeId(const QualityType asil_level,
+                                      const pid_t outdated_node_id,
+                                      const pid_t target_node_id) noexcept = 0;
 };
 
 }  // namespace score::mw::com::impl::lola

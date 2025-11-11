@@ -12,10 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 
-#include "score/os/mocklib/unistdmock.h"
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/message_passing/receiver_factory.h"
 #include "score/mw/com/message_passing/receiver_mock.h"
+#include "score/os/mocklib/unistdmock.h"
 
 #include "score/concurrency/long_running_threads_container.h"
 
@@ -50,8 +50,8 @@ class RuntimeFixture : public ::testing::Test
         /// covered within component tests (or whatever) in follow up ticket. Currently, trying to avoid any impact on
         /// production logic the Receiver mock is being injected. In fact, the better approach should be implemented as
         /// follows: introduce stand alone parameter for passing it to \c Runtime constructor by pointer/reference and
-        /// assingning it to `MessagePassingFacade& Runtime::lola_messaging_`, having that the mocked object could be
-        /// passed directly
+        /// assingning it to `MessagePassingServiceInstance& Runtime::lola_messaging_service_`, having that the mocked
+        /// object could be passed directly
 
         // mock receiver creation for unit_ member
         score::mw::com::message_passing::ReceiverFactory::InjectReceiverMock(&receiver_mock_);
@@ -181,8 +181,8 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgWithPredefinedTwoLolaServiceConfig)
     // when creating a LoLa runtime with this configuration
     Runtime unit{configuration, long_running_threads_, nullptr};
     // and reading out the ASIL_QM and ASIL_B specific message passing cfgs
-    MessagePassingFacade::AsilSpecificCfg cfg_qm = unit.GetMessagePassingCfg(QualityType::kASIL_QM);
-    MessagePassingFacade::AsilSpecificCfg cfg_b = unit.GetMessagePassingCfg(QualityType::kASIL_B);
+    MessagePassingServiceInstance::AsilSpecificCfg cfg_qm = unit.GetMessagePassingCfg(QualityType::kASIL_QM);
+    MessagePassingServiceInstance::AsilSpecificCfg cfg_b = unit.GetMessagePassingCfg(QualityType::kASIL_B);
 
     // expect that the queue sizes correspond to the sizes set in the configuration
     EXPECT_EQ(cfg_qm.message_queue_rx_size_, 5);
@@ -255,8 +255,8 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgOneEmptyQMProvider)
     // when creating a LoLa runtime with this configuration
     Runtime unit{configuration, long_running_threads_, nullptr};
     // and reading out the ASIL_QM and ASIL_B specific message passing cfgs
-    MessagePassingFacade::AsilSpecificCfg cfg_qm = unit.GetMessagePassingCfg(QualityType::kASIL_QM);
-    MessagePassingFacade::AsilSpecificCfg cfg_b = unit.GetMessagePassingCfg(QualityType::kASIL_B);
+    MessagePassingServiceInstance::AsilSpecificCfg cfg_qm = unit.GetMessagePassingCfg(QualityType::kASIL_QM);
+    MessagePassingServiceInstance::AsilSpecificCfg cfg_b = unit.GetMessagePassingCfg(QualityType::kASIL_B);
 
     // expect that the queue sizes correspond to the sizes set in the configuration
     EXPECT_EQ(cfg_qm.message_queue_rx_size_, 5);
@@ -324,8 +324,8 @@ TEST_F(RuntimeFixture, GetMessagePassingCfgOneEmptyQMConsumer)
     Runtime unit{configuration, long_running_threads_, nullptr};
 
     // and reading out the ASIL_QM and ASIL_B specific message passing cfgs
-    MessagePassingFacade::AsilSpecificCfg cfg_qm = unit.GetMessagePassingCfg(QualityType::kASIL_QM);
-    MessagePassingFacade::AsilSpecificCfg cfg_b = unit.GetMessagePassingCfg(QualityType::kASIL_B);
+    MessagePassingServiceInstance::AsilSpecificCfg cfg_qm = unit.GetMessagePassingCfg(QualityType::kASIL_QM);
+    MessagePassingServiceInstance::AsilSpecificCfg cfg_b = unit.GetMessagePassingCfg(QualityType::kASIL_B);
 
     // expect that the queue sizes correspond to the sizes set in the configuration
     EXPECT_EQ(cfg_qm.message_queue_rx_size_, 5);

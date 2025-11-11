@@ -19,12 +19,12 @@ Both inherit from a respective base class, where otherwise redundant code that c
 shifted to.
 A concrete instance of a proxy or skeleton is always bound to a specific technical binding. Nevertheless, we want to have
 a clear separation between binding independent code and binding specific code. Thus, the interfaces `SkeletonBinding`
-and `ProxyBinding` are introduced, which are implemented binding specific respectively. Based on the provided
+and `ProxyBinding` are introduced for binding specific implementations. Based on the provided
 `InstanceIdentifier`, the proxy and skeletons need to decide which binding to construct. This decision is encapsulated
 within the `.*BindingFactory`.
 
-One central strategy is to **_generate as less code as possible from the IDL_** (arxml), which has then to resort to a
-generic C++ code base (of course applying C++ templating mechanisms).
+One central strategy is to **_generate as little code as possible from the IDL_** (arxml), which then has the consequence
+that we have to resort to a generic templated C++ code base.
 
 In the case of our shared memory implementation (also called `LoLa`), it is necessary to access an underlying, not yet
 further specified shared memory region which is specific to each communication instance. A problem can arise if the same

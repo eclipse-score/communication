@@ -297,7 +297,8 @@ TEST_F(EventDataControlFixture, DISABLED_MultipleReceiverRefCountCheck)
         for (auto counter = 0U; counter < 1000U; counter++)
         {
             // We can increase the ref-count
-            auto receive_slot = unit.ReferenceNextEvent(0, transaction_log_index, EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX);
+            auto receive_slot =
+                unit.ReferenceNextEvent(0, transaction_log_index, EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX);
             ASSERT_TRUE(receive_slot.IsValid());
             EXPECT_EQ(unit[receive_slot.GetIndex()].GetTimeStamp(), 1);
 

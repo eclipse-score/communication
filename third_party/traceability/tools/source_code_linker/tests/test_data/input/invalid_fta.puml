@@ -1,0 +1,8 @@
+@startuml
+' Invalid FTA syntax - these should not be parsed
+$InvalidEvent("Bad syntax")
+$TopEvent("Only one param")
+$BasicEvent()
+' Not actually FTA events
+rectangle "FakeTopEvent"
+@enduml

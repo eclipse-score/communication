@@ -69,24 +69,11 @@ auto operator==(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeplo
 
 auto operator<(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) noexcept -> bool
 {
-    bool bindingLess{false};
-
-    const auto* const lhsShmBindingInfo = std::get_if<LolaServiceInstanceDeployment>(&lhs.bindingInfo_);
-    const auto* const rhsShmBindingInfo = std::get_if<LolaServiceInstanceDeployment>(&rhs.bindingInfo_);
-    if ((lhsShmBindingInfo != nullptr) && (rhsShmBindingInfo != nullptr))
+    if (lhs.bindingInfo_ == rhs.bindingInfo_)
     {
-        bindingLess = lhsShmBindingInfo->instance_id_ < rhsShmBindingInfo->instance_id_;
+        return lhs.asilLevel_ < rhs.asilLevel_;
     }
-    else
-    {
-        const auto* const lhsSomeIpBindingInfo = std::get_if<SomeIpServiceInstanceDeployment>(&lhs.bindingInfo_);
-        const auto* const rhsSomeIpBindingInfo = std::get_if<SomeIpServiceInstanceDeployment>(&rhs.bindingInfo_);
-        if ((lhsSomeIpBindingInfo != nullptr) && (rhsSomeIpBindingInfo != nullptr))
-        {
-            bindingLess = lhsSomeIpBindingInfo->instance_id_ < rhsSomeIpBindingInfo->instance_id_;
-        }
-    }
-    return (((lhs.asilLevel_ < rhs.asilLevel_) && bindingLess));
+    return lhs.bindingInfo_ < rhs.bindingInfo_;
 }
 
 auto areCompatible(const ServiceInstanceDeployment& lhs, const ServiceInstanceDeployment& rhs) -> bool
@@ -116,7 +103,10 @@ ServiceInstanceDeployment::ServiceInstanceDeployment(const score::json::Object& 
           ServiceIdentifierType{GetValueFromJson<json::Object>(json_object, kServiceKey)},
           GetBindingInfoFromJson(json_object),
           GetQualityTypeFromJson(json_object, kAsilLevelKey),
-          InstanceSpecifier::Create(GetValueFromJson<std::string>(json_object, kInstanceSpecifierKey)).value())
+          InstanceSpecifier::Create(
+              std::string(GetValueFromJson<std::string>(json_object, kInstanceSpecifierKey).begin(),
+                          GetValueFromJson<std::string>(json_object, kInstanceSpecifierKey).end()))
+              .value())
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
     if (serialization_version != serializationVersion)

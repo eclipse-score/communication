@@ -43,7 +43,7 @@ ElementFqId::ElementFqId(const std::uint16_t service_id,
     if (element_type > static_cast<std::uint8_t>(ServiceElementType::FIELD))
     {
         score::mw::log::LogFatal("lola") << "ElementFqId::ElementFqId failed: Invalid ServiceElementType:"
-                                       << element_type;
+                                         << element_type;
         std::terminate();
     }
 }

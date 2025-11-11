@@ -1,0 +1,19 @@
+{
+    "common": {
+        "number_of_clients": 4,
+        "asil_level": "B"
+    },
+    "service_config":
+    {
+        "send_cycle_time_ms": 40
+    },
+    "client_config":
+    {
+        "read_cycle_time_ms": 0,
+        "service_finder_mode": "POLLING",
+        "run_time_limit": {
+            "duration": 80,
+            "unit": "s"
+        }
+    }
+}

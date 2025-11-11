@@ -277,7 +277,7 @@
                                             },
                                             "numberOfSampleSlots": {
                                                 "type": "integer",
-                                                "description": "Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535!"
+                                                "description": "Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535! Event subscriptions by consumers will be verified against this value, but currently not ASIL level overarching. See README for details."
                                             },
                                             "maxSubscribers": {
                                                 "type": "integer",

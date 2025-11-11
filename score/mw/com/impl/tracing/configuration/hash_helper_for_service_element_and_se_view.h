@@ -49,9 +49,9 @@ std::size_t hash_helper(const T& value) noexcept
     if (data_overflow_error || (input_value_size > max_buffer_size))
     {
         score::mw::log::LogFatal() << "ServiceElementIdentifier data strings (service_type_name and "
-                                    "service_element_name) are too long: size"
-                                 << input_value_size << "should be less than"
-                                 << (max_buffer_size - service_element_type_size) << ". Terminating.";
+                                      "service_element_name) are too long: size"
+                                   << input_value_size << "should be less than"
+                                   << (max_buffer_size - service_element_type_size) << ". Terminating.";
         std::terminate();
     }
 

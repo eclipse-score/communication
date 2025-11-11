@@ -58,7 +58,8 @@ ResultBlank ProxyEventCommon::Subscribe(const std::size_t max_sample_count)
 {
     std::stringstream sstream{};
     sstream << "Max sample count of" << max_sample_count << "is too large: Lola only supports up to 255 samples.";
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_sample_count <= std::numeric_limits<std::uint8_t>::max(), sstream.str().c_str());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_sample_count <= std::numeric_limits<std::uint8_t>::max(),
+                                                sstream.str().c_str());
     return subscription_event_state_machine_.SubscribeEvent(max_sample_count);
 }
 
@@ -81,7 +82,7 @@ SubscriptionState ProxyEventCommon::GetSubscriptionState() const noexcept
     else
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(current_state == SubscriptionStateMachineState::SUBSCRIBED_STATE,
-                               "Invalid subscription state machine state.");
+                                                    "Invalid subscription state machine state.");
         return SubscriptionState::kSubscribed;
     }
 }

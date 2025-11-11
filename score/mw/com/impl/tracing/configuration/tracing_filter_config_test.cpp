@@ -563,7 +563,7 @@ class ConfigurationFixture : public ::testing::Test
 
     InstanceSpecifier MakeInstanceSpecifier(std::string_view instance_specifier_sv)
     {
-        auto instance_specifier_result = InstanceSpecifier::Create(instance_specifier_sv);
+        auto instance_specifier_result = InstanceSpecifier::Create(std::string{instance_specifier_sv});
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(instance_specifier_result.has_value());
         return instance_specifier_result.value();
     }

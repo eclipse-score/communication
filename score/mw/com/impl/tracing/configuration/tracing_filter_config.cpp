@@ -200,7 +200,7 @@ std::size_t FindNumberOfTracingSlots(
 
         for (const auto& instance_specifier : instance_specifier_view_set)
         {
-            const auto instance_specifier_result = InstanceSpecifier::Create(instance_specifier);
+            const auto instance_specifier_result = InstanceSpecifier::Create(std::string{instance_specifier});
             if (!instance_specifier_result.has_value())
             {
                 score::mw::log::LogFatal() << "Lola: Could not create instance specifier. Terminating.";
@@ -212,8 +212,9 @@ std::size_t FindNumberOfTracingSlots(
             const auto service_instance_it = service.find(instance_specifier_result.value());
             if (service_instance_it == service.end())
             {
-                score::mw::log::LogFatal() << "Lola: provided service instance with name:"
-                                         << instance_specifier_result.value() << " could not be found.";
+                score::mw::log::LogFatal()
+                    << "Lola: provided service instance with name:" << instance_specifier_result.value()
+                    << " could not be found.";
                 std::terminate();
             }
 
@@ -221,8 +222,9 @@ std::size_t FindNumberOfTracingSlots(
                 std::get_if<LolaServiceInstanceDeployment>(&service_instance_it->second.bindingInfo_);
             if (lola_service_instance_deployment == nullptr)
             {
-                score::mw::log::LogFatal("lola") << "FindNumberOfTracingSlots: Wrong Binding! ServiceInstanceDeployment "
-                                                  "doesn't contain a LoLa deployment!";
+                score::mw::log::LogFatal("lola")
+                    << "FindNumberOfTracingSlots: Wrong Binding! ServiceInstanceDeployment "
+                       "doesn't contain a LoLa deployment!";
                 std::terminate();
             }
 
@@ -238,7 +240,8 @@ std::size_t FindNumberOfTracingSlots(
                 // LCOV_EXCL_START Defensive programming.
                 // This function is only used internally and only ever called with EVENT or FIELD ServiceElementType,
                 // thus the following lines can never be reached.
-                score::mw::log::LogFatal() << "Lola: invalid service element (" << service_element_type << ") provided.";
+                score::mw::log::LogFatal()
+                    << "Lola: invalid service element (" << service_element_type << ") provided.";
                 std::terminate();
                 // LCOV_EXCL_STOP
             }();

@@ -249,7 +249,66 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
         config_store_with_invalid_service_element_names.GetInstanceIdentifier();
 
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment), ".*");
+    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment),
+                 ".*");
+}
+
+TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
+       ConstructingWithoutNumberOfSamplesSlotsInServiceInstanceDeploymentTerminatestes)
+{
+    // Given a SkeletonBase which contains a valid lola Skeleton binding
+    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
+    WithASkeletonBaseWithValidBinding(instance_identifier);
+
+    // and given an InstanceIdentifier containing event / field instance deployments which do not contain
+    // number_of_sample_slots
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_without_event_sample_slots{
+        LolaServiceInstanceId{kInstanceId},
+        {{kDummyEventName, LolaEventInstanceDeployment{{}, {3U}, 1U, true, 0U}}},
+        {{kDummyFieldName, LolaFieldInstanceDeployment{{}, {3U}, 1U, true, 0U}}}};
+
+    ConfigurationStore config_store_with_invalid_service_element_names{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        QualityType::kASIL_QM,
+        kConfigStoreAsilQM.lola_service_type_deployment_,
+        lola_service_instance_deployment_without_event_sample_slots};
+    const auto instance_identifier_invalid_instance_deployment =
+        config_store_with_invalid_service_element_names.GetInstanceIdentifier();
+
+    // When creating the service element binding
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment),
+                 ".*");
+}
+
+TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
+       ConstructingWithoutMaxSubscribersInServiceInstanceDeploymentTerminatestes)
+{
+    // Given a SkeletonBase which contains a valid lola Skeleton binding
+    const auto& instance_identifier = kConfigStoreAsilQM.GetInstanceIdentifier();
+    WithASkeletonBaseWithValidBinding(instance_identifier);
+
+    // and given an InstanceIdentifier containing event / field instance deployments which do not contain
+    // max_subscribers
+    const LolaServiceInstanceDeployment lola_service_instance_deployment_without_max_subscribers{
+        LolaServiceInstanceId{kInstanceId},
+        {{kDummyEventName, LolaEventInstanceDeployment{{1U}, {}, 1U, true, 0U}}},
+        {{kDummyFieldName, LolaFieldInstanceDeployment{{2U}, {}, 1U, true, 0U}}}};
+
+    ConfigurationStore config_store_with_invalid_service_element_names{
+        kInstanceSpecifier,
+        make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+        QualityType::kASIL_QM,
+        kConfigStoreAsilQM.lola_service_type_deployment_,
+        lola_service_instance_deployment_without_max_subscribers};
+    const auto instance_identifier_invalid_instance_deployment =
+        config_store_with_invalid_service_element_names.GetInstanceIdentifier();
+
+    // When creating the service element binding
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment),
+                 ".*");
 }
 
 }  // namespace

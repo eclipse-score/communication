@@ -126,6 +126,7 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_QM), 8);
     EXPECT_EQ(config.GetGlobalConfiguration().GetReceiverMessageQueueSize(QualityType::kASIL_B), 5);
     EXPECT_EQ(config.GetGlobalConfiguration().GetSenderMessageQueueSize(), 12);
+    EXPECT_EQ(config.GetGlobalConfiguration().GetApplicationId(), 1234);
 
     EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), ShmSizeCalculationMode::kSimulation);
 }
@@ -3228,8 +3229,8 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
 }
 
 score::json::Any generate_config_json(const std::string& instance_specifier,
-                                    const std::string& field_name,
-                                    const std::string& number_of_tracing_slots)
+                                      const std::string& field_name,
+                                      const std::string& number_of_tracing_slots)
 {
     std::stringstream config_json_strstr;
     config_json_strstr << R"(

@@ -20,8 +20,8 @@
 #include "score/mw/com/impl/subscription_state.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 #include <score/optional.hpp>
@@ -184,8 +184,9 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
 
     auto& event_control = proxy_event_common_.GetEventControl();
     auto transaction_log_index = proxy_event_common_.GetTransactionLogIndex();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(transaction_log_index.has_value(),
-                                 "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        transaction_log_index.has_value(),
+        "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
 
     for (auto slot_indicator_it = slot_indicators.begin; slot_indicator_it != slot_indicators.end; ++slot_indicator_it)
     {

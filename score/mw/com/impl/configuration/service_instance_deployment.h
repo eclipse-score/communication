@@ -38,7 +38,8 @@ namespace score::mw::com::impl
 class ServiceInstanceDeployment
 {
   public:
-    using BindingInformation = std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, score::cpp::blank>;
+    using BindingInformation =
+        std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, score::cpp::blank>;
 
     explicit ServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
     ServiceInstanceDeployment(const ServiceIdentifierType service,
@@ -87,7 +88,16 @@ const ServiceInstanceDeploymentBinding& GetServiceInstanceDeploymentBinding(
 {
     const auto* service_instance_deployment_binding =
         std::get_if<ServiceInstanceDeploymentBinding>(&service_instance_deployment.bindingInfo_);
+
+    // LCOV_EXCL_BR_START False positive: The tool is reporting that the true decision is never taken. We have tests in
+    // service_instance_deployment_test.cpp
+    // (GettingLolaBindingFromServiceInstanceDeploymentNotContainingLolaBindingTerminates,
+    // GettingSomeIpBindingFromServiceInstanceDeploymentNotContainingSomeIpBindingTerminates and
+    // GettingBlankBindingFromServiceInstanceDeploymentNotContainingBlankBindingTerminates) which test the true branch
+    // of this condition. This is a bug with the tool to be fixed in (Ticket-219132). This suppression should be removed
+    // when the tool is fixed.
     if (service_instance_deployment_binding == nullptr)
+    // LCOV_EXCL_BR_STOP
     {
         ::score::mw::log::LogFatal("lola")
             << "Trying to get binding from ServiceInstanceDeployment which contains a different binding. Terminating.";

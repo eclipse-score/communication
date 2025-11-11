@@ -14,9 +14,9 @@
 #define SCORE_MW_COM_IMPL_SKELETON_BINDING_H
 
 #include "score/memory/shared/i_shared_memory_resource.h"
-#include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/service_element_type.h"
+#include "score/result/result.h"
 
 #include <score/callback.hpp>
 #include <score/optional.hpp>
@@ -44,10 +44,10 @@ class SkeletonBinding
     ///          data-exchange mechanism.
     using RegisterShmObjectTraceCallback =
         score::cpp::callback<void(std::string_view element_name,
-                           ServiceElementType element_type,
-                           memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
-                           void* shm_memory_start_address),
-                      64U>;
+                                  ServiceElementType element_type,
+                                  memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd,
+                                  void* shm_memory_start_address),
+                             64U>;
 
     /// \brief callback type for unregistering shared-memory objects with tracing
     /// \details Needs only get used/called by bindings, which use shared-memory as their underlying communication/

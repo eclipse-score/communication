@@ -29,6 +29,9 @@ auto operator<(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noexc
     return lhs.uid_ < rhs.uid_;
 }
 
+// Suppress "AUTOSAR C++14 A13-2-2", The rule states: "A binary arithmetic operator and a bitwise operator shall return
+// a “prvalue”." The code with '<<' is not a left shift operator but an overload for logging the respective types.
+// coverity[autosar_cpp14_a13_2_2_violation : FALSE]
 mw::log::LogStream& operator<<(mw::log::LogStream& log_stream, const FindServiceHandle& find_service_handle)
 {
     log_stream << find_service_handle.uid_;

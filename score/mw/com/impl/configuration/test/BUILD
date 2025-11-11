@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -23,7 +24,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl/configuration",
         "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

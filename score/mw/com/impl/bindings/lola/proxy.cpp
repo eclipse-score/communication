@@ -94,8 +94,8 @@ PlaceSharedLockOnUsageMarkerFileWithRetry(memory::shared::LockFile& service_inst
             << "Flock try_lock failed: Skeleton could have already exclusively flocked the usage marker file: "
             << file_path;
         retry_counter++;
-        score::mw::log::LogWarn("lola") << "Flock try_lock failed: Retry attempt (" << retry_counter << "/" << max_retries
-                                      << ").";
+        score::mw::log::LogWarn("lola") << "Flock try_lock failed: Retry attempt (" << retry_counter << "/"
+                                        << max_retries << ").";
         if (retry_counter >= max_retries)
         {
             score::mw::log::LogWarn("lola") << "Flock try_lock failed: STOP retrying";
@@ -158,7 +158,8 @@ ServiceDataControl& GetServiceDataControlProxySide(const memory::shared::Managed
     // The "ServiceDataStorage" type is strongly defined as shared IPC data between Proxy and Skeleton.
     // coverity[autosar_cpp14_m5_2_8_violation]
     auto* const service_data_control = static_cast<ServiceDataControl*>(control.getUsableBaseAddress());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_control != nullptr, "Could not retrieve service data control.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_control != nullptr,
+                                                "Could not retrieve service data control.");
     return *service_data_control;
 }
 
@@ -169,14 +170,15 @@ ServiceDataControl& GetServiceDataControlProxySide(const memory::shared::Managed
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 score::ResultBlank ExecutePartialRestartLogic(QualityType quality_type,
-                                            const memory::shared::ManagedMemoryResource& control,
-                                            const memory::shared::ManagedMemoryResource& data) noexcept
+                                              const memory::shared::ManagedMemoryResource& control,
+                                              const memory::shared::ManagedMemoryResource& data) noexcept
 {
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(data);
 
     auto* const lola_runtime =
         dynamic_cast<lola::IRuntime*>(mw::com::impl::Runtime::getInstance().GetBindingRuntime(BindingType::kLoLa));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_runtime != nullptr, "No LoLa Runtime available although we are creating a LoLa proxy!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_runtime != nullptr,
+                                                "No LoLa Runtime available although we are creating a LoLa proxy!");
 
     // The transaction log is identified by the application's unique identifier, which is either the configured
     // 'applicationID' or the process UID as a fallback.
@@ -207,7 +209,7 @@ ServiceDataStorage& GetServiceDataStorage(const memory::shared::ManagedMemoryRes
     // coverity[autosar_cpp14_m5_2_8_violation]
     auto* const service_data_storage = static_cast<ServiceDataStorage*>(data.getUsableBaseAddress());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_storage != nullptr,
-                           "Could not retrieve service data storage within shared-memory.");
+                                                "Could not retrieve service data storage within shared-memory.");
     return *service_data_storage;
 }
 
@@ -400,13 +402,14 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available) no
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 EventControl& Proxy::GetEventControl(const ElementFqId element_fq_id) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr, "Proxy::GetEventControl: Managed memory control pointer is Null");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
+                                                      "Proxy::GetEventControl: Managed memory control pointer is Null");
     auto& service_data_control = GetServiceDataControlProxySide(*control_);
     const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
     if (event_entry == service_data_control.event_controls_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
-                                       << "Unable to find control channel for given event instance. Terminating.";
+                                         << "Unable to find control channel for given event instance. Terminating.";
         std::terminate();
     }
     // Suppress "AUTOSAR C++14 M7-5-1" rule: "A function shall not return a reference or a pointer to an automatic
@@ -429,13 +432,14 @@ EventControl& Proxy::GetEventControl(const ElementFqId element_fq_id) noexcept
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) const noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr, "Proxy::GetEventMetaInfo: Managed memory data pointer is Null");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr,
+                                                      "Proxy::GetEventMetaInfo: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
     const auto event_meta_info_entry = service_data_storage.events_metainfo_.find(element_fq_id);
     if (event_meta_info_entry == service_data_storage.events_metainfo_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
-                                       << "Unable to find meta info for given event instance. Terminating.";
+                                         << "Unable to find meta info for given event instance. Terminating.";
         std::terminate();
     }
     // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
@@ -456,8 +460,8 @@ const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) co
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
-                                 "ExecutePartialRestartLogic: Managed memory control pointer is Null");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        control_ != nullptr, "ExecutePartialRestartLogic: Managed memory control pointer is Null");
     auto& service_data_control = GetServiceDataControlProxySide(*control_);
     const auto element_fq_id = event_name_to_element_fq_id_converter_.Convert(event_name);
     const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
@@ -473,7 +477,8 @@ void Proxy::RegisterEventBinding(const std::string_view service_element_name,
     // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
     std::lock_guard lock{proxy_event_registration_mutex_};
     const auto insert_result = event_bindings_.emplace(service_element_name, proxy_event_binding);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second, "Failed to insert proxy event binding into event binding map.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second,
+                                                "Failed to insert proxy event binding into event binding map.");
     proxy_event_binding.NotifyServiceInstanceChangedAvailability(is_service_instance_available_, GetSourcePid());
 }
 
@@ -497,7 +502,8 @@ QualityType Proxy::GetQualityType() const noexcept
 
 pid_t Proxy::GetSourcePid() const noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr, "Proxy::GetSourcePid: Managed memory data pointer is Null");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr,
+                                                      "Proxy::GetSourcePid: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
     return service_data_storage.skeleton_pid_;
 }

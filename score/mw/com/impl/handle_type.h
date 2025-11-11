@@ -38,7 +38,8 @@ class HandleType;
  * this value will be used instead of the value in the configuration, referenced from identifier.
  * \return A constructed InstanceIdentifier
  */
-HandleType make_HandleType(InstanceIdentifier identifier, score::cpp::optional<ServiceInstanceId> instance_id = {}) noexcept;
+HandleType make_HandleType(InstanceIdentifier identifier,
+                           score::cpp::optional<ServiceInstanceId> instance_id = {}) noexcept;
 
 /**
  * \brief It types the handle for a specific service
@@ -156,8 +157,8 @@ class hash<score::mw::com::impl::HandleType>
         const auto second_copy_start_pos =
             std::copy(instance_id_hash_string.begin(), instance_id_hash_string.end(), local_buffer.begin());
         score::cpp::ignore = std::copy(service_type_deployment_hash_string.begin(),
-                                service_type_deployment_hash_string.end(),
-                                second_copy_start_pos);
+                                       service_type_deployment_hash_string.end(),
+                                       second_copy_start_pos);
 
         const std::string_view local_string_buffer{local_buffer.data(), total_string_size};
         return hash<std::string_view>{}(local_string_buffer);

@@ -12,19 +12,13 @@
  ********************************************************************************/
 #include "score/mw/com/message_passing/qnx/resmgr_receiver_traits.h"
 
-#include "score/os/unistd.h"
 #include "score/mw/com/message_passing/qnx/resmgr_traits_common.h"
+#include "score/os/unistd.h"
 
 #include <score/assert.hpp>
 #include <algorithm>
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace message_passing
+namespace score::mw::com::message_passing
 {
 
 namespace
@@ -271,7 +265,8 @@ std::int32_t ResmgrReceiverTraits::io_open(resmgr_context_t* const ctp,
 {
     const auto& context_data = GetContextData(ctp);
     const ResmgrReceiverState& receiver_state = context_data.receiver_state;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(receiver_state.os_resources_), "OS resources are not valid!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(receiver_state.os_resources_),
+                                            "OS resources are not valid!");
     const auto& allowed_uids = receiver_state.allowed_uids_;
 
     if (!allowed_uids.empty())
@@ -304,7 +299,8 @@ std::int32_t ResmgrReceiverTraits::CheckWritePreconditions(resmgr_context_t* con
                                                            RESMGR_OCB_T* const ocb) noexcept
 {
     const auto& context_data = GetContextData(ctp);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(context_data.receiver_state.os_resources_), "OS resources are not valid!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(context_data.receiver_state.os_resources_),
+                                            "OS resources are not valid!");
     const auto& iofunc = context_data.receiver_state.os_resources_.iofunc;
 
     // check if the write operation is allowed
@@ -359,7 +355,8 @@ std::int32_t ResmgrReceiverTraits::GetMessageData(resmgr_context_t* const ctp,
                                                   MessageData& message_data) noexcept
 {
     const auto& context_data = GetContextData(ctp);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(context_data.receiver_state.os_resources_), "OS resources are not valid!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(context_data.receiver_state.os_resources_),
+                                            "OS resources are not valid!");
     const auto& dispatch = context_data.receiver_state.os_resources_.dispatch;
 
     if ((nbytes != sizeof(ShortMessage)) && (nbytes != sizeof(MediumMessage)))
@@ -462,7 +459,8 @@ std::int32_t ResmgrReceiverTraits::private_message_handler(message_context_t* co
                                                            void* const /*handle*/) noexcept
 {
     auto& context_data = GetContextData(ctp);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(context_data.receiver_state.os_resources_), "OS resources are not valid!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(context_data.receiver_state.os_resources_),
+                                            "OS resources are not valid!");
     const auto& os_resources = context_data.receiver_state.os_resources_;
 
     // we only accept private requests from ourselves
@@ -491,7 +489,4 @@ bool ResmgrReceiverTraits::IsOsResourcesValid(const FileDescriptorResourcesType&
             ((os_resources.unistd != nullptr) && (os_resources.iofunc != nullptr)));
 }
 
-}  // namespace message_passing
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::message_passing

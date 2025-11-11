@@ -10,16 +10,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-# load("//platform/aas/tools/traceability:traceability.bzl", "safety_software_unit")
 
-# safety_software_unit(
-#     name = "safety_software_unit_com",
-#     # design = ["*.puml"], TODO: Add also design parts, work based on Zhaoxiong
-#     impl = ["//score/mw/com"],
-#     reqs = [
-#         "//score/mw/com/requirements/component_requirements:component_requirements_ipc",
-#     ],
-#     tests = [
-#         "//score/mw/com:unit_test",
-#     ],
-# )
+load("//third_party/traceability/bazel:traceability.bzl", "safety_software_unit")
+
+safety_software_unit(
+    name = "safety_software_unit_com",
+    # design = ["*.puml"], TODO: Add also design parts, work based on Zhaoxiong
+    impl = ["//score/mw/com"],
+    reqs = [
+        "//score/mw/com/requirements/component_requirements:component_requirements_ipc",
+    ],
+    tests = [
+        "//score/mw/com:unit_test",
+    ],
+)

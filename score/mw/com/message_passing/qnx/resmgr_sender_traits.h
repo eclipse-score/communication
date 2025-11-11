@@ -23,13 +23,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace message_passing
+namespace score::mw::com::message_passing
 {
 
 class ResmgrSenderTraits
@@ -73,9 +67,10 @@ class ResmgrSenderTraits
     }
 
     template <typename MessageFormat>
-    static score::cpp::expected_blank<score::os::Error> try_send(const file_descriptor_type file_descriptor,
-                                                        const MessageFormat& message,
-                                                        const FileDescriptorResourcesType& os_resources) noexcept
+    static score::cpp::expected_blank<score::os::Error> try_send(
+        const file_descriptor_type file_descriptor,
+        const MessageFormat& message,
+        const FileDescriptorResourcesType& os_resources) noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");
         // This function in a banned list, however according to the requirement
@@ -98,9 +93,6 @@ class ResmgrSenderTraits
     static bool IsOsResourcesValid(const FileDescriptorResourcesType& os_resources) noexcept;
 };
 
-}  // namespace message_passing
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::message_passing
 
 #endif  // SCORE_MW_COM_MESSAGE_PASSING_RESMGR_SENDER_TRAITS_H

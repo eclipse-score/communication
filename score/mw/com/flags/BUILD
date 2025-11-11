@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 
 string_flag(

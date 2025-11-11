@@ -10,7 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
@@ -43,8 +44,8 @@ cc_library(
     implementation_deps = [
         ":error",
         "//score/mw/com/impl/plumbing",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -56,7 +57,7 @@ cc_library(
         ":proxy_base",
         ":proxy_binding",
         ":service_element_map",
-        "@score-baselibs//score/result",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -67,7 +68,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl/plumbing:event",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
     tags = ["FFI"],
     visibility = [
@@ -78,7 +79,7 @@ cc_library(
         ":proxy_base",
         ":proxy_event_base",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -98,11 +99,11 @@ cc_library(
         ":proxy_event_base",
         ":proxy_event_binding",
         ":runtime",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -121,11 +122,11 @@ cc_library(
         ":skeleton_base",
         ":skeleton_event_base",
         ":skeleton_event_binding",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -141,11 +142,11 @@ cc_library(
     deps = [
         ":skeleton_event",
         ":skeleton_field_base",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing:field",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -181,9 +182,9 @@ cc_library(
     deps = [
         ":proxy_event",
         ":proxy_event_binding",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing:field",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -199,10 +200,10 @@ cc_library(
     deps = [
         ":flag_owner",
         ":skeleton_event_binding",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -218,9 +219,9 @@ cc_library(
     deps = [
         ":error",
         ":skeleton_event_base",
-        "@score-baselibs//score/result",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -242,7 +243,7 @@ cc_library(
         ":skeleton_field_base",
         "//score/mw/com/impl/plumbing",
         "//score/mw/com/impl/tracing:skeleton_tracing",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -251,7 +252,7 @@ cc_library(
     srcs = ["find_service_handle.cpp"],
     hdrs = ["find_service_handle.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/mw/log"],
+    implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
@@ -271,7 +272,7 @@ cc_library(
     ],
     deps = [
         ":find_service_handle",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -288,9 +289,9 @@ cc_library(
         ":find_service_handle",
         ":find_service_handler",
         ":runtime",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -312,9 +313,9 @@ cc_library(
         ":proxy_base",
         ":proxy_event_binding",
         ":sample_reference_tracker",
-        "@score-baselibs//score/language/safecpp/scoped_function:scope",
         "//score/mw/com/impl/tracing:proxy_event_tracing_data",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/scoped_function:scope",
     ],
 )
 
@@ -347,10 +348,10 @@ cc_library(
     ],
     deps = [
         ":binding_type",
-        "@score-baselibs//score/memory/shared:i_shared_memory_resource",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/configuration",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -372,10 +373,10 @@ cc_library(
     ],
     deps = [
         ":binding_type",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing_data",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -397,7 +398,7 @@ cc_library(
     ],
     deps = [
         "proxy_event_binding",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -424,11 +425,11 @@ cc_library(
         ":sample_reference_tracker",
         ":scoped_event_receive_handler",
         ":subscription_state",
-        "@score-baselibs//score/result",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:i_tracing_runtime",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -471,7 +472,7 @@ cc_library(
     deps = [
         ":instance_identifier",
         "//score/mw/com/impl/configuration",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -503,7 +504,7 @@ cc_library(
         ":handle_type",
         ":instance_identifier",
         "//score/mw/com/impl/configuration:service_instance_id",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -516,7 +517,7 @@ cc_library(
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/result"],
+    deps = ["@score_baselibs//score/result"],
 )
 
 cc_library(
@@ -530,8 +531,8 @@ cc_library(
     ],
     deps = [
         ":error",
-        "@score-baselibs//score/result",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -550,7 +551,7 @@ cc_library(
         ":handle_type",
         ":i_service_discovery",
         ":instance_identifier",
-        "@score-baselibs//score/result",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -560,7 +561,7 @@ cc_library(
     hdrs = ["service_element_type.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -644,7 +645,7 @@ cc_library(
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/language/futurecpp"],
+    deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
 cc_library(
@@ -663,7 +664,7 @@ cc_library(
         ":handle_type",
         ":instance_identifier",
         ":instance_specifier",
-        "@score-baselibs//score/result",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -685,7 +686,7 @@ cc_library(
         ":instance_identifier",
         ":instance_specifier",
         ":runtime_interfaces",
-        "@score-baselibs//score/result",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -698,7 +699,7 @@ cc_library(
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/language/safecpp/scoped_function:move_only_scoped_function"],
+    deps = ["@score_baselibs//score/language/safecpp/scoped_function:move_only_scoped_function"],
 )
 
 cc_library(
@@ -717,8 +718,8 @@ cc_library(
         ":i_service_discovery",
         ":instance_identifier",
         ":instance_specifier",
-        "@score-baselibs//score/result",
         "@googletest//:gtest",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -736,8 +737,6 @@ cc_library(
         ":instance_specifier",
         ":runtime_interfaces",
         ":service_discovery",
-        "@score-baselibs//score/concurrency:long_running_threads_container",
-        "@score-baselibs//score/memory/shared:types",
         "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",
         "//score/mw/com/impl/configuration",
@@ -745,8 +744,10 @@ cc_library(
         "//score/mw/com/impl/tracing:tracing_runtime",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_parser",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/concurrency:long_running_threads_container",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory/shared:types",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -756,8 +757,8 @@ cc_library(
     hdrs = ["sample_reference_tracker.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score-baselibs//score/language/safecpp/safe_math",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/safe_math",
     ],
     tags = ["FFI"],
     visibility = [
@@ -806,9 +807,9 @@ cc_test(
     deps = [
         ":impl",
         ":runtime",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/mw/log",
         "@googletest//:gtest_main",
+        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -821,8 +822,8 @@ cc_gtest_unit_test(
         ":service_discovery_client_mock",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/configuration/test:configuration_store",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -836,7 +837,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -845,7 +846,7 @@ cc_gtest_unit_test(
     srcs = ["sample_reference_tracker_test.cpp"],
     deps = [
         ":sample_reference_tracker",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -862,7 +863,7 @@ cc_gtest_unit_test(
     srcs = ["service_element_type_test.cpp"],
     deps = [
         ":service_element_type",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -872,7 +873,6 @@ cc_gtest_unit_test(
     deps = [
         ":runtime",
         ":runtime_mock",
-        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:tracing_runtime",
@@ -880,7 +880,8 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/tracing/configuration:proxy_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:skeleton_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -889,8 +890,8 @@ cc_gtest_unit_test(
     srcs = ["find_service_handle_test.cpp"],
     deps = [
         ":find_service_handle",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/mw/log:recorder_mock",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 
@@ -931,10 +932,6 @@ cc_test(
         ":runtime_mock",
         ":service_discovery_mock",
         ":service_element_map",
-        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/os/mocklib:mman_mock",
-        "@score-baselibs//score/os/mocklib:stat_mock",
         "//score/mw/com:types",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola/test_doubles",
@@ -949,9 +946,13 @@ cc_test(
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
         "//score/mw/com/impl/tracing:tracing_test_resources",
-        "@score-baselibs//score/mw/log",
         "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/os/mocklib:mman_mock",
+        "@score_baselibs//score/os/mocklib:stat_mock",
     ],
 )
 

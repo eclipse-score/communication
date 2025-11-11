@@ -115,7 +115,7 @@ during the whole design process.
 
 Our implementation of `mw::com` depends on the following components/libraries:
 
-* `//score/analysis/tracing/library/generic_trace_api`
+* `//score/analysis/tracing/generic_trace_library`
 * `//score/language/safecpp/safe_math`
 * `//score/language/safecpp/scoped_function`
 * `//platform/aas/lib/bitmanipulation:bitmask_operators`

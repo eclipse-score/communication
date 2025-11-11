@@ -14,7 +14,6 @@
 #define SCORE_MW_COM_IMPL_TRACING_I_TRACING_RUNTIME_H
 
 #include "score/memory/shared/i_shared_memory_resource.h"
-#include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_event_trace_point_type.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_field_trace_point_type.h"
@@ -24,6 +23,7 @@
 #include "score/mw/com/impl/tracing/i_tracing_runtime_binding.h"
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
 #include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"
+#include "score/result/result.h"
 
 #include <cstdint>
 #include <variant>

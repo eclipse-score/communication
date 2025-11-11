@@ -1,0 +1,45 @@
+{
+  "data": [
+    {
+      "tag": "cpp REQ_001:tools/source_code_linker/tests/test_data/input/sample_cpp.cpp:2",
+      "location": {
+        "kind": "file",
+        "file": "https://github.com/test/repo/blob/test_hash/tools/source_code_linker/tests/test_data/input/sample_cpp.cpp#L2",
+        "line": 1,
+        "column": 1
+      },
+      "name": "tools/source_code_linker/tests/test_data/input/sample_cpp.cpp",
+      "messages": [],
+      "just_up": [],
+      "just_down": [],
+      "just_global": [],
+      "refs": [
+        "req REQ_001"
+      ],
+      "language": "cpp",
+      "kind": "Function"
+    },
+    {
+      "tag": "cpp REQ_002:tools/source_code_linker/tests/test_data/input/sample_cpp.cpp:4",
+      "location": {
+        "kind": "file",
+        "file": "https://github.com/test/repo/blob/test_hash/tools/source_code_linker/tests/test_data/input/sample_cpp.cpp#L4",
+        "line": 1,
+        "column": 1
+      },
+      "name": "tools/source_code_linker/tests/test_data/input/sample_cpp.cpp",
+      "messages": [],
+      "just_up": [],
+      "just_down": [],
+      "just_global": [],
+      "refs": [
+        "req REQ_002"
+      ],
+      "language": "cpp",
+      "kind": "Function"
+    }
+  ],
+  "generator": "lobster_cpp",
+  "schema": "lobster-imp-trace",
+  "version": 3
+}

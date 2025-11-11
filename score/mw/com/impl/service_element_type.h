@@ -35,7 +35,7 @@ enum class ServiceElementType : std::uint8_t
 };
 
 ::score::mw::log::LogStream& operator<<(::score::mw::log::LogStream& log_stream,
-                                      const ServiceElementType& service_element_type);
+                                        const ServiceElementType& service_element_type);
 
 }  // namespace com::impl
 }  // namespace score::mw

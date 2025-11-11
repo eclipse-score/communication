@@ -1,0 +1,36 @@
+@startuml
+
+sprite $and <svg width="80" height="80" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg">
+  <text x="10" y="55" font-size="60" text-anchor="middle" dominant-baseline="middle" font-family="Arial" fill="black">&</text></svg>
+
+sprite $or <svg width="80" height="80" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg">
+  <text x="10" y="55" font-size="60" text-anchor="middle" dominant-baseline="middle" font-family="Arial" fill="black">||</text></svg>
+
+'skinparam linetype polyline
+'skinparam linetype ortho
+
+!procedure $TopEvent($name, $alias)
+  rectangle "$name" as $alias
+!endprocedure
+
+!procedure $IntermediateEvent($name, $alias, $connection)
+  rectangle "$name" as $alias
+  $alias -u-> $connection
+!endprocedure
+
+!procedure $BasicEvent($name, $alias, $connection)
+  ("$name") as $alias
+  $alias -u-> $connection
+!endprocedure
+
+!procedure $AndGate($alias, $connection)
+  rectangle " " <<$and>> as $alias
+  $alias -u-> $connection
+!endprocedure
+
+!procedure $OrGate($alias, $connection)
+  rectangle " " <<$or>> as $alias
+  $alias -u-> $connection
+!endprocedure
+
+@enduml

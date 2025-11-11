@@ -80,6 +80,6 @@ bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, Ser
 
 }  // namespace score::mw::com::impl
 
-#include "score/mw/com/impl/configuration/binding_service_type_deployment.tpp"
+#include "score/mw/com/impl/configuration/binding_service_type_deployment_impl.h"
 
 #endif  // SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H

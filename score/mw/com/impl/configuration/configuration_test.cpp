@@ -264,7 +264,7 @@ TEST_F(ConfigurationDeathTest, AddingAServiceTypeDeploymentWithDuplicateServiceI
     // When inserting another ServiceTypeDeployment with the same ServiceIdentifierType
     // Then the program terminates
     EXPECT_DEATH(score::cpp::ignore = unit_.value().AddServiceTypeDeployment(kConfigStoreQm.service_identifier_,
-                                                                      *kConfigStoreQm.service_type_deployment_),
+                                                                             *kConfigStoreQm.service_type_deployment_),
                  ".*");
 }
 

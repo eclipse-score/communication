@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 load("@rules_rust//rust:defs.bzl", "rust_library")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -28,7 +29,7 @@ cc_library(
         "//score/mw/com:types",
         "//score/mw/com/impl:proxy_event_base",
         "//score/mw/com/impl/plumbing:sample_ptr",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -38,13 +39,13 @@ cc_library(
     hdrs = ["bridge_macros.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         "//score/mw/com:types",
         "//score/mw/com/impl",
         "//score/mw/com/impl/plumbing:sample_ptr",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -53,7 +54,7 @@ cc_library(
     hdrs = ["proxy_bridge_macros.h"],
     deprecation = "Please change your dependency to //score/mw/com/impl/rust:bridge_macros",
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
         # "@ddad//platform/aas:__subpackages__",
     ],
     deps = [":bridge_macros"],
@@ -98,7 +99,7 @@ rust_library(
     name = "mw_com",
     srcs = ["mw_com.rs"],
     visibility = [
-        "//visibility:public", # platform_only
+        "//visibility:public",  # platform_only
     ],
     deps = [
         ":common",

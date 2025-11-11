@@ -49,6 +49,11 @@ bool operator==(const SomeIpServiceInstanceDeployment& lhs, const SomeIpServiceI
     return (lhs.instance_id_ == rhs.instance_id_);
 }
 
+bool operator<(const SomeIpServiceInstanceDeployment& lhs, const SomeIpServiceInstanceDeployment& rhs) noexcept
+{
+    return (lhs.instance_id_ < rhs.instance_id_);
+}
+
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall not be called
 //                                                                   implicitly"
 // coverity reports that json.As<T>().value might throw due to std::bad_variant_access. Which will cause an implicit

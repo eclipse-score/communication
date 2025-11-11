@@ -1,0 +1,11 @@
+diff --git a/score/mw/log/BUILD b/score/mw/log/BUILD
+--- a/score/mw/log/BUILD
++++ b/score/mw/log/BUILD
+@@ -25,6 +25,7 @@ cc_library(
+     visibility = ["//visibility:public"],
+     deps = [
+         ":frontend",
++        "//score/mw/log/detail/wait_free_stack:wait_free_stack",
+     ] + select({
+         "@score_baselibs//score/mw/log/detail/flags:config_KUse_Stub_Implementation_Only": [
+             "@score_baselibs//score/mw/log/detail:recorder_factory_stub",

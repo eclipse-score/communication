@@ -1,0 +1,33 @@
+{
+    "AssumedSystemReq": {
+        "mapped_type": "STKH_REQ",
+        "attributes": [
+            "safety",
+            "rationale",
+            "security = yes",
+            "status = valid"
+        ],
+        "generate_id_format": "{type}__{name}",
+        "id_case_format": {
+            "type": "screaming_snake_case",
+            "package": "snake_case",
+            "name": "snake_case"
+        }
+    },
+    "FeatReq": {
+        "mapped_type": "FEAT_REQ",
+        "attributes": [
+            "safety",
+            "reqtype = functional",
+            "status = valid",
+            "security = yes"
+        ],
+        "links": ["derived_from", "satisfied_by"],
+        "generate_id_format": "{type}__{package}__{name}",
+        "id_case_format": {
+            "type": "screaming_snake_case",
+            "package": "snake_case",
+            "name": "snake_case"
+        }
+    }
+}

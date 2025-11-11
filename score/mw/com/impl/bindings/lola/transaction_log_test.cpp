@@ -37,8 +37,8 @@ class TransactionLogFixture : public ::testing::Test
   protected:
     TransactionLog::DereferenceSlotCallback GetDereferenceSlotCallbackWrapper() noexcept
     {
-        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only stores a
-        // pointer to the MockFunction and therefore fits within the score::cpp::callback.
+        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only
+        // stores a pointer to the MockFunction and therefore fits within the score::cpp::callback.
         return [this](const TransactionLog::SlotIndexType slot_index) noexcept {
             dereference_slot_callback_.AsStdFunction()(slot_index);
         };
@@ -46,8 +46,8 @@ class TransactionLogFixture : public ::testing::Test
 
     TransactionLog::UnsubscribeCallback GetUnsubscribeCallbackWrapper() noexcept
     {
-        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only stores a
-        // pointer to the MockFunction and therefore fits within the score::cpp::callback.
+        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only
+        // stores a pointer to the MockFunction and therefore fits within the score::cpp::callback.
         return [this](const TransactionLog::MaxSampleCountType subscription_max_sample_count) noexcept {
             unsubscribe_callback_.AsStdFunction()(subscription_max_sample_count);
         };

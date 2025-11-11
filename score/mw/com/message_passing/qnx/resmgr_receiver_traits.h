@@ -30,13 +30,7 @@
 #include <string_view>
 #include <type_traits>
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace message_passing
+namespace score::mw::com::message_passing
 {
 
 class ResmgrReceiverTraits
@@ -98,10 +92,10 @@ class ResmgrReceiverTraits
     // coverity[autosar_cpp14_a8_4_10_violation]
     // coverity[autosar_cpp14_a15_5_3_violation]
     static score::cpp::expected<bool, score::os::Error> receive_next(const file_descriptor_type file_descriptor,
-                                                            const std::size_t thread,
-                                                            ShortMessageProcessor fShort,
-                                                            MediumMessageProcessor fMedium,
-                                                            const FileDescriptorResourcesType&) noexcept
+                                                                     const std::size_t thread,
+                                                                     ShortMessageProcessor fShort,
+                                                                     MediumMessageProcessor fMedium,
+                                                                     const FileDescriptorResourcesType&) noexcept
     {
         ResmgrReceiverState& receiver_state = *file_descriptor;
         // Suppress "AUTOSAR C++14 A9-5-1", The rule states: "Unions shall not be used."
@@ -408,9 +402,6 @@ class ResmgrReceiverTraits
                                                 void* const /*handle*/) noexcept;
 };
 
-}  // namespace message_passing
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::message_passing
 
 #endif  // SCORE_MW_COM_MESSAGE_PASSING_RESMGR_RECEIVER_TRAITS_H

@@ -31,6 +31,11 @@ namespace
 
 using score::json::operator""_json;
 
+const char* const kInstanceSpecifier = "abc/abc/TirePressurePort";
+const char* const kInstanceSpecifier2 = "abc/abc/TirePressurePort2";
+const char* const kServiceTypeName = "/bmw/ncar/services/TirePressureService";
+const char* const kServiceTypeName2 = "/bmw/ncar/services/TirePressureService2";
+
 const char* small_mw_com_config_ok = R"(
 {
 "serviceTypes": [
@@ -58,7 +63,33 @@ const char* small_mw_com_config_ok = R"(
         ]
       }
     ]
+  },
+  {
+    "serviceTypeName": "/bmw/ncar/services/TirePressureService2",
+    "version": {
+      "major": 12,
+      "minor": 34
+    },
+    "bindings": [
+      {
+        "binding": "SHM",
+        "serviceId": 1234,
+        "events": [
+          {
+            "eventName": "CurrentPressureFrontLeft2",
+            "eventId": 20
+          }
+        ],
+        "fields": [
+          {
+            "fieldName": "CurrentTemperatureFrontLeft2",
+            "fieldId": 30
+          }
+        ]
+      }
+    ]
   }
+
 ],
 "serviceInstances": [
   {
@@ -85,6 +116,38 @@ const char* small_mw_com_config_ok = R"(
         "fields": [
           {
             "fieldName": "CurrentTemperatureFrontLeft",
+            "numberOfSampleSlots": 60,
+            "maxSubscribers": 6,
+            "numberOfIpcTracingSlots": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "instanceSpecifier": "abc/abc/TirePressurePort2",
+    "serviceTypeName": "/bmw/ncar/services/TirePressureService2",
+    "version": {
+      "major": 12,
+      "minor": 34
+    },
+    "instances": [
+      {
+        "instanceId": 1234,
+        "asil-level": "QM",
+        "binding": "SHM",
+        "shm-size": 10000,
+        "events": [
+          {
+            "eventName": "CurrentPressureFrontLeft2",
+            "numberOfSampleSlots": 50,
+            "maxSubscribers": 5,
+            "numberOfIpcTracingSlots": 1
+          }
+        ],
+        "fields": [
+          {
+            "fieldName": "CurrentTemperatureFrontLeft2",
             "numberOfSampleSlots": 60,
             "maxSubscribers": 6,
             "numberOfIpcTracingSlots": 1
@@ -132,9 +195,10 @@ class TraceConfigParserFixture : public ::testing::Test
   protected:
     void expectAllEventTracePoints(const TracingFilterConfig& tracing_filter_config,
                                    const char* event_name,
-                                   bool enabled)
+                                   bool enabled,
+                                   const char* const instance_specifier = kInstanceSpecifier,
+                                   const char* const service_type_name = kServiceTypeName)
     {
-        const char* instance_specifier{"abc/abc/TirePressurePort"};
         const tracing::ProxyEventTracePointType expected_enabled_proxy_event_trace_points[] = {
             tracing::ProxyEventTracePointType::SUBSCRIBE,
             tracing::ProxyEventTracePointType::UNSUBSCRIBE,
@@ -153,22 +217,23 @@ class TraceConfigParserFixture : public ::testing::Test
         for (auto trace_point : expected_enabled_proxy_event_trace_points)
         {
             EXPECT_EQ(tracing_filter_config.IsTracePointEnabled(
-                          service_type_name_, event_name, instance_specifier, trace_point),
+                          service_type_name, event_name, instance_specifier, trace_point),
                       enabled);
         }
         for (auto trace_point : expected_enabled_skeleton_event_trace_points)
         {
             EXPECT_EQ(tracing_filter_config.IsTracePointEnabled(
-                          service_type_name_, event_name, instance_specifier, trace_point),
+                          service_type_name, event_name, instance_specifier, trace_point),
                       enabled);
         }
     }
 
     void expectAllFieldTracePoints(const TracingFilterConfig& tracing_filter_config,
                                    const char* field_name,
-                                   bool enabled)
+                                   bool enabled,
+                                   const char* const instance_specifier = kInstanceSpecifier,
+                                   const char* const service_type_name = kServiceTypeName)
     {
-        const char* instance_specifier{"abc/abc/TirePressurePort"};
         const tracing::ProxyFieldTracePointType expected_enabled_proxy_field_trace_points[] = {
             tracing::ProxyFieldTracePointType::SUBSCRIBE,
             tracing::ProxyFieldTracePointType::UNSUBSCRIBE,
@@ -191,19 +256,18 @@ class TraceConfigParserFixture : public ::testing::Test
         for (auto trace_point : expected_enabled_proxy_field_trace_points)
         {
             EXPECT_EQ(tracing_filter_config.IsTracePointEnabled(
-                          service_type_name_, field_name, instance_specifier, trace_point),
+                          service_type_name, field_name, instance_specifier, trace_point),
                       enabled);
         }
         for (auto trace_point : expected_enabled_skeleton_field_trace_points)
         {
             EXPECT_EQ(tracing_filter_config.IsTracePointEnabled(
-                          service_type_name_, field_name, instance_specifier, trace_point),
+                          service_type_name, field_name, instance_specifier, trace_point),
                       enabled);
         }
     }
 
     std::unique_ptr<Configuration> config_;
-    static constexpr auto service_type_name_ = "/bmw/ncar/services/TirePressureService";
 };
 
 TEST_F(TraceConfigParserFixture, FilterConfigOK)
@@ -298,6 +362,155 @@ TEST_F(TraceConfigParserFixture, FilterConfigOK)
     TracingFilterConfig tracing_filter_config = std::move(result).value();
     expectAllEventTracePoints(tracing_filter_config, "CurrentPressureFrontLeft", true);
     expectAllFieldTracePoints(tracing_filter_config, "CurrentTemperatureFrontLeft", true);
+}
+
+TEST_F(TraceConfigParserFixture, FilterConfigWithTwoServiceTypesOK)
+{
+    // Given a tracing filter configuration, which enables tracing for all trace-point-types of the
+    // service elements configured (for two different service types), which are "ipcTracing enabled"  in the underlying
+    // mw_com_config.json (TraceConfigParserFixture::config_)
+
+    auto filter_config_json = R"(
+{
+  "services": [
+    {
+      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "events": [
+        {
+          "shortname": "CurrentPressureFrontLeft",
+          "trace_subscribe_send": true,
+          "trace_subscribe_received": true,
+          "trace_unsubscribe_send": true,
+          "trace_unsubscribe_received": true,
+          "trace_subscription_state_changed": true,
+          "trace_subscription_state_change_handler_registered": true,
+          "trace_subscription_state_change_handler_deregistered": true,
+          "trace_subscription_state_change_handler_callback": true,
+          "trace_send": true,
+          "trace_send_allocate": true,
+          "trace_get_new_samples": true,
+          "trace_get_new_samples_callback": true,
+          "trace_receive_handler_registered": true,
+          "trace_receive_handler_deregistered": true,
+          "trace_receive_handler_callback": true
+        }
+      ],
+      "fields": [
+        {
+          "shortname": "CurrentTemperatureFrontLeft",
+          "notifier": {
+            "trace_subscribe_send": true,
+            "trace_subscribe_received": true,
+            "trace_unsubscribe_send": true,
+            "trace_unsubscribe_received": true,
+            "trace_subscription_state_changed": true,
+            "trace_subscription_state_change_handler_registered": true,
+            "trace_subscription_state_change_handler_deregistered": true,
+            "trace_subscription_state_change_handler_callback": true,
+            "trace_update": true,
+            "trace_get_new_samples": true,
+            "trace_get_new_samples_callback": true,
+            "trace_receive_handler_registered": true,
+            "trace_receive_handler_deregistered": true,
+            "trace_receive_handler_callback": true
+          },
+          "getter": {
+            "trace_request_send": true,
+            "trace_request_received": true,
+            "trace_response_send": true,
+            "trace_response_received": true,
+            "trace_get_handler_registered": true,
+            "trace_get_handler_completed": true
+          },
+          "setter": {
+            "trace_request_send": true,
+            "trace_request_received": true,
+            "trace_response_send": true,
+            "trace_response_received": true,
+            "trace_set_handler_registered": true,
+            "trace_set_handler_completed": true
+          }
+        }
+      ]
+    },
+    {
+      "shortname_path": "/bmw/ncar/services/TirePressureService2",
+      "events": [
+        {
+          "shortname": "CurrentPressureFrontLeft2",
+          "trace_subscribe_send": true,
+          "trace_subscribe_received": true,
+          "trace_unsubscribe_send": true,
+          "trace_unsubscribe_received": true,
+          "trace_subscription_state_changed": true,
+          "trace_subscription_state_change_handler_registered": true,
+          "trace_subscription_state_change_handler_deregistered": true,
+          "trace_subscription_state_change_handler_callback": true,
+          "trace_send": true,
+          "trace_send_allocate": true,
+          "trace_get_new_samples": true,
+          "trace_get_new_samples_callback": true,
+          "trace_receive_handler_registered": true,
+          "trace_receive_handler_deregistered": true,
+          "trace_receive_handler_callback": true
+        }
+      ],
+      "fields": [
+        {
+          "shortname": "CurrentTemperatureFrontLeft2",
+          "notifier": {
+            "trace_subscribe_send": true,
+            "trace_subscribe_received": true,
+            "trace_unsubscribe_send": true,
+            "trace_unsubscribe_received": true,
+            "trace_subscription_state_changed": true,
+            "trace_subscription_state_change_handler_registered": true,
+            "trace_subscription_state_change_handler_deregistered": true,
+            "trace_subscription_state_change_handler_callback": true,
+            "trace_update": true,
+            "trace_get_new_samples": true,
+            "trace_get_new_samples_callback": true,
+            "trace_receive_handler_registered": true,
+            "trace_receive_handler_deregistered": true,
+            "trace_receive_handler_callback": true
+          },
+          "getter": {
+            "trace_request_send": true,
+            "trace_request_received": true,
+            "trace_response_send": true,
+            "trace_response_received": true,
+            "trace_get_handler_registered": true,
+            "trace_get_handler_completed": true
+          },
+          "setter": {
+            "trace_request_send": true,
+            "trace_request_received": true,
+            "trace_response_send": true,
+            "trace_response_received": true,
+            "trace_set_handler_registered": true,
+            "trace_set_handler_completed": true
+          }
+        }
+      ]
+    }
+  ]
+}
+)"_json;
+
+    // when parsing the given tracing filter config
+    auto result = Parse(std::move(filter_config_json), *config_);
+    // expect, that there is no error
+    EXPECT_TRUE(result.has_value());
+
+    // and expect, that the trace-points enabled in the json file are all reflected as true/enabled in the returned
+    // TracingFilterConfig
+    TracingFilterConfig tracing_filter_config = std::move(result).value();
+    expectAllEventTracePoints(tracing_filter_config, "CurrentPressureFrontLeft", true);
+    expectAllFieldTracePoints(tracing_filter_config, "CurrentTemperatureFrontLeft", true);
+    expectAllEventTracePoints(
+        tracing_filter_config, "CurrentPressureFrontLeft2", true, kInstanceSpecifier2, kServiceTypeName2);
+    expectAllFieldTracePoints(
+        tracing_filter_config, "CurrentTemperatureFrontLeft2", true, kInstanceSpecifier2, kServiceTypeName2);
 }
 
 TEST_F(TraceConfigParserFixture, FilterConfigOKFromFile)
@@ -457,8 +670,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigJsonError)
     // json parser refuses it.
 
     // when parsing the given tracing filter config
-    auto result =
-        Parse("score/mw/com/impl/tracing/configuration/example/comtrace_filter_config_broken.json", config);
+    auto result = Parse("score/mw/com/impl/tracing/configuration/example/comtrace_filter_config_broken.json", config);
     // expect, that there is an error
     EXPECT_FALSE(result.has_value());
 }
@@ -971,7 +1183,7 @@ TEST_F(TraceConfigParserFixture,
     // TracingFilterConfig
     const auto tracing_filter_config = std::move(result).value();
     const char* instance_specifier{"abc/abc/TirePressurePort"};
-    EXPECT_TRUE(tracing_filter_config.IsTracePointEnabled(service_type_name_,
+    EXPECT_TRUE(tracing_filter_config.IsTracePointEnabled("/bmw/ncar/services/TirePressureService",
                                                           "CurrentPressureFrontLeft",
                                                           instance_specifier,
                                                           tracing::ProxyEventTracePointType::SUBSCRIBE));

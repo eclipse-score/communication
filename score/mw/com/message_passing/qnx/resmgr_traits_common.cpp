@@ -15,13 +15,7 @@
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace message_passing
+namespace score::mw::com::message_passing
 {
 
 QnxResourcePath::QnxResourcePath(const std::string_view identifier) noexcept
@@ -35,7 +29,4 @@ QnxResourcePath::QnxResourcePath(const std::string_view identifier) noexcept
     buffer_.push_back(static_cast<char>(0));
 }
 
-}  // namespace message_passing
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::message_passing

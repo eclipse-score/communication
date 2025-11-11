@@ -12,11 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 
-#include "score/mw/com/impl/bindings/lola/messaging/notify_event_handler.h"
-
 #include "score/memory/shared/offset_ptr.h"
-#include "score/os/unistd.h"
 #include "score/mw/log/logging.h"
+#include "score/os/unistd.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>
@@ -47,7 +45,7 @@ std::uint32_t Runtime::DetermineApplicationIdentifier(const Configuration& confi
     else
     {
         score::mw::log::LogInfo("lola") << "No explicit applicationID configured. Falling back to using process UID. "
-                                      << "Ensure unique UIDs for applications using mw::com.";
+                                        << "Ensure unique UIDs for applications using mw::com.";
         // The uid_t is only used internally (in the fallback case) and then casted to an std::uint32_t
         static_assert(sizeof(uid_t) <= 4, "For more than 32 bits we cannot guarantee the key to be unique");
         return static_cast<std::uint32_t>(os::Unistd::instance().getuid());
@@ -60,28 +58,13 @@ Runtime::Runtime(const Configuration& config,
     : IRuntime{},
       configuration_{config},
       long_running_threads_{long_running_threads},
-      lola_message_passing_control_{Runtime::HasAsilBSupport(),
-                                    config.GetGlobalConfiguration().GetSenderMessageQueueSize()},
       lola_messaging_stop_source_{},
-      lola_messaging_{lola_messaging_stop_source_,
-                      // LCOV_EXCL_START (Tool incorrectly marks this line as not covered. However, the lines before and
-                      // after are covered so this is clearly an error by the tool. Suppression can be removed when bug
-                      // is fixed in Ticket-184253).
-                      std::make_unique<NotifyEventHandler>(lola_message_passing_control_,
-                                                           Runtime::HasAsilBSupport(),
-                                                           lola_messaging_stop_source_.get_token()),
-                      lola_message_passing_control_,
-                      // Suppress "AUTOSAR C++14 M12-1-1", The rule states: "An object’s dynamic type shall not be used
-                      // from the body of its constructor or destructor".
-                      // This is false positive, GetMessagePassingCfg is not a virtual function.
-                      // coverity[autosar_cpp14_m12_1_1_violation]
-                      Runtime::GetMessagePassingCfg(QualityType::kASIL_QM),
-                      // LCOV_EXCL_STOP
-                      Runtime::HasAsilBSupport()
-                          // coverity[autosar_cpp14_m12_1_1_violation]
-                          ? score::cpp::optional<MessagePassingFacade::AsilSpecificCfg>{Runtime::GetMessagePassingCfg(
-                                QualityType::kASIL_B)}
-                          : score::cpp::nullopt},
+      lola_messaging_service_{
+          Runtime::GetMessagePassingCfg(QualityType::kASIL_QM),
+          Runtime::HasAsilBSupport()
+              ? score::cpp::optional<MessagePassingServiceInstance::AsilSpecificCfg>{Runtime::GetMessagePassingCfg(
+                    QualityType::kASIL_B)}
+              : score::cpp::nullopt},
       service_discovery_client_{long_running_threads_},
       tracing_runtime_{std::move(lola_tracing_runtime)},
       rollback_data_{},
@@ -107,7 +90,7 @@ IMessagePassingService& Runtime::GetLolaMessaging() noexcept
     // holder. API callers get the reference and use it in place without leaving the scope, so the reference remains
     // valid.
     // coverity[autosar_cpp14_a9_3_1_violation]
-    return lola_messaging_;
+    return lola_messaging_service_;
 }
 
 bool Runtime::HasAsilBSupport() const noexcept
@@ -120,10 +103,11 @@ impl::tracing::ITracingRuntimeBinding* Runtime::GetTracingRuntime() noexcept
     return tracing_runtime_.get();
 }
 
-MessagePassingFacade::AsilSpecificCfg Runtime::GetMessagePassingCfg(const QualityType asil_level) const
+MessagePassingServiceInstance::AsilSpecificCfg Runtime::GetMessagePassingCfg(const QualityType asil_level) const
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(((asil_level == QualityType::kASIL_B) || (asil_level == QualityType::kASIL_QM)),
-                           "Asil level must be asil_qm or asil_b.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        ((asil_level == QualityType::kASIL_B) || (asil_level == QualityType::kASIL_QM)),
+        "Asil level must be asil_qm or asil_b.");
     if ((!HasAsilBSupport()) && (asil_level == QualityType::kASIL_B))
     {
         score::mw::log::LogFatal("lola")
@@ -138,8 +122,9 @@ MessagePassingFacade::AsilSpecificCfg Runtime::GetMessagePassingCfg(const Qualit
     {
         const auto* const instance_deployment =
             std::get_if<LolaServiceInstanceDeployment>(&instanceDeplElement.second.bindingInfo_);
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance_deployment != nullptr,
-                               "Instance deployment must contain Lola binding in order to create a lola runtime!");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            instance_deployment != nullptr,
+            "Instance deployment must contain Lola binding in order to create a lola runtime!");
         if (AggregateAllowedUsers(aggregated_allowed_users, instance_deployment->allowed_consumer_, asil_level))
         {
             break;

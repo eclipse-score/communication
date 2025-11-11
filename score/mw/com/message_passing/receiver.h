@@ -15,11 +15,11 @@
 
 #include "score/concurrency/executor.h"
 #include "score/concurrency/task_result.h"
-#include "score/os/errno.h"
 #include "score/mw/com/message_passing/i_receiver.h"
 #include "score/mw/com/message_passing/message.h"
 #include "score/mw/com/message_passing/receiver_config.h"
 #include "score/mw/com/message_passing/shared_properties.h"
+#include "score/os/errno.h"
 
 #include <score/callback.hpp>
 #include <score/expected.hpp>
@@ -179,8 +179,8 @@ auto Receiver<ChannelTraits>::StartListening() noexcept -> score::cpp::expected_
         // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
         // We have exceptions disabled by the platform AoUs
         // coverity[autosar_cpp14_a15_4_2_violation]
-        score::cpp::ignore =
-            working_tasks_.emplace_back(executor_.Submit([this, i, max_threads](const score::cpp::stop_token& token) noexcept {
+        score::cpp::ignore = working_tasks_.emplace_back(
+            executor_.Submit([this, i, max_threads](const score::cpp::stop_token& token) noexcept {
                 this->RunListeningThread(token, i, max_threads);
             }));
     }

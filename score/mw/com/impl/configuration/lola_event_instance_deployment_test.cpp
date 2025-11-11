@@ -41,6 +41,27 @@ TEST_F(LolaEventInstanceDeploymentFixture, CanCreateFromSerializedObjectWithoutO
     const std::optional<std::uint8_t> max_subscribers{};
     const std::optional<std::uint8_t> max_concurrent_allocations{};
     const bool enforce_max_samples{true};
+    constexpr std::uint8_t number_of_tracing_slots{5U};
+
+    LolaEventInstanceDeployment unit{MakeLolaEventInstanceDeployment(number_of_sample_slots,
+                                                                     max_subscribers,
+                                                                     max_concurrent_allocations,
+                                                                     enforce_max_samples,
+                                                                     number_of_tracing_slots)};
+
+    const auto serialized_unit{unit.Serialize()};
+
+    LolaEventInstanceDeployment reconstructed_unit{serialized_unit};
+
+    ExpectLolaEventInstanceDeploymentObjectsEqual(reconstructed_unit, unit);
+}
+
+TEST_F(LolaEventInstanceDeploymentFixture, CanCreateFromSerializedObjectWithoutOptionalsWithZeroValuesForNonOptionals)
+{
+    const std::optional<std::uint16_t> number_of_sample_slots{};
+    const std::optional<std::uint8_t> max_subscribers{};
+    const std::optional<std::uint8_t> max_concurrent_allocations{};
+    const bool enforce_max_samples{false};
     constexpr std::uint8_t number_of_tracing_slots{0U};
 
     LolaEventInstanceDeployment unit{MakeLolaEventInstanceDeployment(number_of_sample_slots,

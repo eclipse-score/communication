@@ -12,19 +12,40 @@
 # *******************************************************************************
 
 # use mw/log stub implementation by default
-common --@score-baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=False
-common --@score-baselibs//score/mw/log/flags:KRemote_Logging=False
-common --@score-baselibs//score/json:base_library=nlohmann
+common --@score_baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=False
+common --@score_baselibs//score/mw/log/flags:KRemote_Logging=False
+common --@score_baselibs//score/json:base_library=nlohmann
 common --//score/mw/com/flags:tracing_library=stub
 common --extra_toolchains=@gcc_toolchain//:aarch64_gcc_13
 build --incompatible_strict_action_env
-test --test_tag_filters=-manual
+test --test_output=errors
+build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
 
 # unshare /dev/shm and /tmp
 test --sandbox_tmpfs_path=/dev/shm
 test --sandbox_tmpfs_path=/tmp
 
+# Tests require to be run in a sandbox. Otherwise some will be flaky.
+test --nosandbox_default_allow_network
+
 build:aarch64 --platforms=@score_toolchains_gcc//platforms:aarch64-linux
 
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
 common --registry=https://bcr.bazel.build
+
+# With this instrumentation filter for our two main components, we ensure that `bazel coverage //...` is yielding the correct results
+coverage --instrumentation_filter="^//score/message_passing[/:],^//score/mw/com[/:],-//score/mw/com/performance_benchmarks[/:],-//score/mw/.*/test[/:]".
+coverage --experimental_generate_llvm_lcov
+coverage --experimental_use_llvm_covmap
+coverage --combined_report=lcov
+coverage --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main
+coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+coverage --test_env=COVERAGE_GCOV_OPTIONS=-bcu
+# TODO set toolchain feature once possible
+# These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM
+# LLVM provided these compile-time options in combination with a specific profile setting which is enabled in bazel via `LLVM_PROFILE_CONTINUOUS_MODE`
+coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
+coverage --cxxopt -mllvm
+coverage --cxxopt -runtime-counter-relocation
+
+import quality/sanitizer/sanitizer.bazelrc

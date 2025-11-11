@@ -14,6 +14,7 @@
 
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/tracing/common_event_tracing.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_event_trace_point_type.h"
 #include "score/mw/com/impl/tracing/configuration/proxy_field_trace_point_type.h"
@@ -25,6 +26,7 @@
 #include "score/mw/com/impl/tracing/trace_error.h"
 
 #include <score/assert.hpp>
+
 #include <exception>
 
 namespace score::mw::com::impl::tracing
@@ -63,6 +65,8 @@ template <ServiceElementType service_element_type>
 std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifier,
                                      std::string_view service_element_name) noexcept
 {
+    static_assert(service_element_type != ServiceElementType::INVALID);
+
     const auto instance_identifier_view = InstanceIdentifierView(instance_identifier);
     const auto& service_instance_deployment = instance_identifier_view.GetServiceInstanceDeployment();
     const auto& lola_service_instance_deployment = [&service_instance_deployment]() {
@@ -71,7 +75,7 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
             return *val;
         }
         mw::log::LogFatal("lola")
-            << "While getting number of tracing slots, a bed variant access was made. Provided service instance "
+            << "While getting number of tracing slots, a bad variant access was made. Provided service instance "
                "deployment, does not hold LolaServiceInstanceDeploymentType. Terminating.";
         std::terminate();
     }();
@@ -90,26 +94,24 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
         }
         // coverity[autosar_cpp14_a7_1_8_violation : FALSE]
         // coverity[autosar_cpp14_m6_4_1_violation : FALSE]
-        if constexpr (service_element_type == ServiceElementType::FIELD)
+        else if constexpr (service_element_type == ServiceElementType::FIELD)
         {
             return lola_service_instance_deployment.fields_;
         }
-        // LCOV_EXCL_START: Defensive programming: This state will be unreachable since this is a private function and
-        // the calls to it only ever calls it with a ServiceElementType of EVENT or FIELD.
-        // Suppress "AUTOSAR C++14 M6-4-1" rule finding. This rule declares: "An if ( condition ) construct shall be
-        // followed by a compound statement. The else keyword shall be followed by either a compound statement, or
-        // another if statement". This is a false positive because "if constexpr" is a valid statement since C++17.
-        // coverity[autosar_cpp14_m6_4_1_violation : FALSE]
-        score::mw::log::LogFatal() << "Lola: invalid service element (" << service_element_type << ") provided.";
-        std::terminate();
-        // LCOV_EXCL_STOP
+        // LCOV_EXCL_START: Defensive programming: This state will be unreachable since service_element_type must be an
+        // EVENT or FIELD (we have a static_assert at the start of this function).
+        else
+        {
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+        }
     }();
 
     const std::string service_element_name_str{service_element_name};
     const auto service_element_instance_deployment_it = service_instance_map.find(service_element_name_str);
     if (service_element_instance_deployment_it == service_instance_map.end())
     {
-        score::mw::log::LogFatal() << "Lola: requested service element (" << service_element_name << ") does not exist.";
+        score::mw::log::LogFatal() << "Lola: requested service element (" << service_element_name
+                                   << ") does not exist.";
         std::terminate();
     }
 

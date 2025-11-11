@@ -10,7 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 alias(
@@ -21,11 +22,11 @@ alias(
     }),
     tags = ["FFI"],
     visibility = [
+        "//platform/aas/pas/logging:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
         "//score/mw/com/message_passing/test:__pkg__",
-        "@score-baselibs//score/mw/log:__subpackages__",
-        "@score-baselibs//score/mw/log/detail/data_router:__pkg__",
-        "//platform/aas/pas/logging:__subpackages__",
+        "@score_baselibs//score/mw/log:__subpackages__",
+        "@score_baselibs//score/mw/log/detail/data_router:__pkg__",
     ],
 )
 
@@ -45,7 +46,7 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":message",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -58,7 +59,7 @@ cc_library(
     deps = [
         ":message",
         ":shared_properties",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -101,6 +102,9 @@ cc_library(
         ":common_hdrs",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/safecpp/string_view:null_termination_check",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
@@ -112,12 +116,12 @@ cc_library(
         ":message",
         ":serializer",
         ":shared_properties",
-        "@score-baselibs//score/concurrency",
-        "@score-baselibs//score/memory:pmr_ring_buffer",
-        "@score-baselibs//score/os:mqueue",
-        "@score-baselibs//score/os:stat",
-        "@score-baselibs//score/os:unistd",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory:pmr_ring_buffer",
+        "@score_baselibs//score/os:mqueue",
+        "@score_baselibs//score/os:stat",
+        "@score_baselibs//score/os:unistd",
     ],
 )
 
@@ -147,14 +151,14 @@ cc_library(
         ":interface",
         ":message",
         ":shared_properties",
-        "@score-baselibs//score/concurrency",
-        "@score-baselibs//score/memory:pmr_ring_buffer",
-        "@score-baselibs//score/os:fcntl",
-        "@score-baselibs//score/os:unistd",
-        "@score-baselibs//score/os/qnx:channel",
-        "@score-baselibs//score/os/qnx:dispatch",
-        "@score-baselibs//score/os/qnx:iofunc",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory:pmr_ring_buffer",
+        "@score_baselibs//score/os:fcntl",
+        "@score_baselibs//score/os:unistd",
+        "@score_baselibs//score/os/qnx:channel",
+        "@score_baselibs//score/os/qnx:dispatch",
+        "@score_baselibs//score/os/qnx:iofunc",
     ],
 )
 
@@ -171,8 +175,8 @@ cc_library(
         "//score/mw/com/message_passing:__subpackages__",
     ],
     deps = [
-        "@score-baselibs//score/os:errno",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/os:errno",
     ],
 )
 
@@ -187,9 +191,9 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//score/mw/com/impl:__subpackages__",
-        "@score-baselibs//score/mw/log:__subpackages__",
         "//platform/aas/pas/logging:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
+        "@score_baselibs//score/mw/log:__subpackages__",
     ],
     deps = [
         ":interface",
@@ -224,9 +228,9 @@ cc_gtest_unit_test(
         ":message_passing",
         ":mock",
         ":serializer",
-        "@score-baselibs//score/concurrency:executor_mock",
-        "@score-baselibs//score/os/mocklib:mqueue_mock",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
+        "@score_baselibs//score/concurrency:executor_mock",
+        "@score_baselibs//score/os/mocklib:mqueue_mock",
+        "@score_baselibs//score/os/mocklib:unistd_mock",
     ],
 )
 
@@ -247,13 +251,13 @@ cc_library(
     target_compatible_with = ["@platforms//os:qnx"],
     deps = [
         ":message",
-        "@score-baselibs//score/memory:pmr_ring_buffer",
-        "@score-baselibs//score/os:fcntl",
-        "@score-baselibs//score/os:unistd",
-        "@score-baselibs//score/os/qnx:channel",
-        "@score-baselibs//score/os/qnx:dispatch",
-        "@score-baselibs//score/os/qnx:iofunc",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory:pmr_ring_buffer",
+        "@score_baselibs//score/os:fcntl",
+        "@score_baselibs//score/os:unistd",
+        "@score_baselibs//score/os/qnx:channel",
+        "@score_baselibs//score/os/qnx:dispatch",
+        "@score_baselibs//score/os/qnx:iofunc",
     ],
 )
 
@@ -267,11 +271,11 @@ cc_gtest_unit_test(
     target_compatible_with = ["@platforms//os:qnx"],
     deps = [
         ":resmgr_traits_for_testing",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
-        "@score-baselibs//score/os/mocklib/qnx:channel_mock",
-        "@score-baselibs//score/os/mocklib/qnx:dispatch_mock",
-        "@score-baselibs//score/os/mocklib/qnx:iofunc_mock",
+        "@score_baselibs//score/os/mocklib:fcntl_mock",
+        "@score_baselibs//score/os/mocklib:unistd_mock",
+        "@score_baselibs//score/os/mocklib/qnx:channel_mock",
+        "@score_baselibs//score/os/mocklib/qnx:dispatch_mock",
+        "@score_baselibs//score/os/mocklib/qnx:iofunc_mock",
     ],
 )
 
@@ -291,12 +295,12 @@ cc_gtest_unit_test(
         ":message",
         ":resmgr_traits_for_testing",
         ":shared_properties",
-        "@score-baselibs//score/concurrency:interruptible_wait",
-        "@score-baselibs//score/concurrency:thread_pool",
-        "@score-baselibs//score/os/mocklib:fcntl_mock",
-        "@score-baselibs//score/os/mocklib:unistd_mock",
-        "@score-baselibs//score/os/mocklib/qnx:channel_mock",
-        "@score-baselibs//score/os/mocklib/qnx:dispatch_mock",
-        "@score-baselibs//score/os/mocklib/qnx:iofunc_mock",
+        "@score_baselibs//score/concurrency:interruptible_wait",
+        "@score_baselibs//score/concurrency:thread_pool",
+        "@score_baselibs//score/os/mocklib:fcntl_mock",
+        "@score_baselibs//score/os/mocklib:unistd_mock",
+        "@score_baselibs//score/os/mocklib/qnx:channel_mock",
+        "@score_baselibs//score/os/mocklib/qnx:dispatch_mock",
+        "@score_baselibs//score/os/mocklib/qnx:iofunc_mock",
     ],
 )

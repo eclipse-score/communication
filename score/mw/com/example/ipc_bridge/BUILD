@@ -10,8 +10,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
-load("@score-baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_binary(
     name = "ipc_bridge_cpp",
@@ -25,9 +26,9 @@ cc_binary(
     deps = [
         ":sample_sender_receiver",
         "//score/mw/com",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
         "@boost.program_options",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
     ],
     visibility = [
         "//visibility:public", # platform_only
@@ -46,7 +47,7 @@ cc_library(
     deps = [
         ":datatype",
         "//score/mw/com",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -61,7 +62,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         "//score/mw/com",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

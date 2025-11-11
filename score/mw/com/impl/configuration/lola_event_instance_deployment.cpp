@@ -101,10 +101,7 @@ score::json::Object LolaEventInstanceDeployment::Serialize() const noexcept
         json_object[kMaxConcurrentAllocationsKey] = score::json::Any{max_concurrent_allocations_.value()};
     }
 
-    if (enforce_max_samples_)
-    {
-        json_object[kEnforceMaxSamplesKey] = score::json::Any{enforce_max_samples_};
-    }
+    json_object[kEnforceMaxSamplesKey] = score::json::Any{enforce_max_samples_};
 
     // We always turn of ipc tracing. I.e., serialize  kNumberOfIpcTracingSlotsKey as false
     json_object[kNumberOfIpcTracingSlotsKey] = static_cast<std::uint8_t>(0U);

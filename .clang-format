@@ -1,0 +1,50 @@
+---
+BasedOnStyle: Google
+AccessModifierOffset: -2
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+# Empty is required in AllowShortFunctionsOnASingleLine over Inline because Inline contradicts with AUTOSAR rule A7-1-7
+# Such rule is no longer existing in MISRA C++:2023, once we are fully migrated to MISRA C++:2023, switching to Inline
+# could be reconsidered
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Empty
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterObjCDeclaration: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+BreakBeforeBraces: Custom
+ColumnLimit: 120
+DerivePointerAlignment: false
+IncludeBlocks: Preserve
+IncludeCategories:
+  - Regex: '^(<|")(assert|complex|ctype|errno|fenv|float|inttypes|iso646|limits|locale|math|setjmp|signal|stdalign|stdargh|stdatomic|stdbool|stddef|stdint|stdio|stdlib|stdnoreturn|string|tgmath|threads|time|uchar|wchar|wctype)\.h(>|")$'
+    Priority: 2
+  - Regex: '^(<|")(cstdlib|csignal|csetjmp|cstdarg|typeinfo|typeindex|type_traits|bitset|functional|utility|ctime|chrono|cstddef|initializer_list|tuple|any|optional|variant|new|memory|scoped_allocator|memory_resource|climits|cfloat|cstdint|cinttypes|limits|exception|stdexcept|cassert|system_error|cerrno|cctype|cwctype|cstring|cwchar|cuchar|string|string_view|array|vector|deque|list|forward_list|set|map|unordered_set|unordered_map|stack|queue|algorithm|execution|teratorslibrary|iterator|cmath|complex|valarray|random|numeric|ratio|cfenv|iosfwd|ios|istream|ostream|iostream|fstream|sstream|strstream|iomanip|streambuf|cstdio|locale|clocale|codecvt|regex|atomic|thread|mutex|shared_mutex|future|condition_variable|filesystem|ciso646|ccomplex|ctgmath|cstdalign|cstdbool)(>|")$'
+    Priority: 3
+  - Regex: '^(<|").*(>|")$'
+    Priority: 1
+IndentWidth: 4
+InsertNewlineAtEOF: true
+KeepEmptyLinesAtTheStartOfBlocks: true
+QualifierAlignment: Left
+CommentPragmas: '^.*A2Lfactory:'
+---
+# Make sure language specific settings are below the generic settings to be compatible to all languages.
+Language: Cpp
+Standard: c++17
+...

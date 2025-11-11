@@ -1,0 +1,8 @@
+@startuml
+' This PlantUML file has no valid components or interfaces
+rectangle "Just a rectangle"
+note "This is just a note"
+' Missing interface methods
+interface "EmptyInterface" {
+}
+@enduml

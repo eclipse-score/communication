@@ -64,10 +64,10 @@ class EventDataControlAttorney
     /// \param expected_result to be expected result for ReferenceNextEvent()
     /// \param last_search_time see ReferenceNextEvent()
     /// \param upper_limit see ReferenceNextEvent()
-    void PrepareReferenceNextEvent(
-        const score::cpp::optional<SlotIndexType> expected_result,
-        const EventSlotStatus::EventTimeStamp last_search_time,
-        const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX) noexcept;
+    void PrepareReferenceNextEvent(const score::cpp::optional<SlotIndexType> expected_result,
+                                   const EventSlotStatus::EventTimeStamp last_search_time,
+                                   const EventSlotStatus::EventTimeStamp upper_limit =
+                                       EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX) noexcept;
 
     /// \brief Prepares the underlying EventDataControl in a way, that the next call to GetNumNewEvents() will return
     /// the given expected_result

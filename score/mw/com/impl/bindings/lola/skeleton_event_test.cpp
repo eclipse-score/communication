@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_test_resources.h"
-#include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 

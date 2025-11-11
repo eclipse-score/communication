@@ -52,9 +52,10 @@ class IForwardingSenderChannelTraits
 
     virtual RawMessageBuffer prepare_payload(const MediumMessage& message) noexcept = 0;
 
-    virtual score::cpp::expected_blank<score::os::Error> try_send(const file_descriptor_type file_descriptor,
-                                                         const RawMessageBuffer& buffer,
-                                                         const FileDescriptorResourcesType& os_resources) noexcept = 0;
+    virtual score::cpp::expected_blank<score::os::Error> try_send(
+        const file_descriptor_type file_descriptor,
+        const RawMessageBuffer& buffer,
+        const FileDescriptorResourcesType& os_resources) noexcept = 0;
 
     virtual bool has_non_blocking_guarantee() noexcept = 0;
 };
@@ -96,9 +97,10 @@ class ForwardingSenderChannelTraits
         return Impl()->prepare_payload(message);
     }
 
-    static score::cpp::expected_blank<score::os::Error> try_send(const file_descriptor_type file_descriptor,
-                                                        const RawMessageBuffer& buffer,
-                                                        const FileDescriptorResourcesType& os_resources) noexcept
+    static score::cpp::expected_blank<score::os::Error> try_send(
+        const file_descriptor_type file_descriptor,
+        const RawMessageBuffer& buffer,
+        const FileDescriptorResourcesType& os_resources) noexcept
     {
         return Impl()->try_send(file_descriptor, buffer, os_resources);
     }

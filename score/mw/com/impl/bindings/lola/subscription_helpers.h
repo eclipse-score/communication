@@ -28,8 +28,8 @@ namespace score::mw::com::impl::lola
 {
 
 /**
- * Helper class to manage registering and deregistering Event Receive Handlers with the MessagePassingFacade so that the
- * caller doesn't have to manually manage the registration number.
+ * Helper class to manage registering and deregistering Event Receive Handlers with the MessagePassingServiceInstance so
+ * that the caller doesn't have to manually manage the registration number.
  *
  * Since only one Event Receive Handler can be registered at once, Register() will first Unregister any existing Event
  * Receive Handlers. Unregister() will unregister the most recently registered Event Receive Handler (registered with

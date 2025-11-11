@@ -43,7 +43,7 @@ ApplicationIdPidMappingEntry::key_type ApplicationIdPidMappingEntry::CreateKey(M
 {
     ApplicationIdPidMappingEntry::key_type result = static_cast<std::uint16_t>(status);
     result = result << 32U;
-    result |= application_id;
+    result |= static_cast<std::uint64_t>(application_id);
     return result;
 }
 

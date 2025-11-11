@@ -32,10 +32,10 @@ class ReceiverFactoryImpl final
 {
   public:
     static score::cpp::pmr::unique_ptr<IReceiver> Create(const std::string_view identifier,
-                                                  concurrency::Executor& executor,
-                                                  const score::cpp::span<const uid_t> allowed_uids,
-                                                  const ReceiverConfig& receiver_config,
-                                                  score::cpp::pmr::memory_resource* const memory_resource);
+                                                         concurrency::Executor& executor,
+                                                         const score::cpp::span<const uid_t> allowed_uids,
+                                                         const ReceiverConfig& receiver_config,
+                                                         score::cpp::pmr::memory_resource* const memory_resource);
 };
 
 }  // namespace score::mw::com::message_passing

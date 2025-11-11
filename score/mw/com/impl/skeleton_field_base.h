@@ -16,8 +16,8 @@
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <functional>
 #include <memory>

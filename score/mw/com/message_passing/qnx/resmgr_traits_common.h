@@ -18,13 +18,7 @@
 #include <array>
 #include <string_view>
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace message_passing
+namespace score::mw::com::message_passing
 {
 
 inline constexpr std::string_view GetQnxPrefix() noexcept
@@ -49,9 +43,6 @@ class QnxResourcePath
     score::cpp::static_vector<char, GetQnxPrefix().size() + kMaxIdentifierLen + 1U> buffer_;
 };
 
-}  // namespace message_passing
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::message_passing
 
 #endif  // SCORE_MW_COM_MESSAGE_PASSING_RESMGR_TRAITS_COMMON_H

@@ -30,32 +30,40 @@
 
 namespace score::mw::com::runtime
 {
-
 /**
- * @brief Resolves given InstanceSpecifier (port name in the model) to a collection of InstanceIdentifiers via
+ * \api
+ * \brief Resolves given InstanceSpecifier (port name in the model) to a collection of InstanceIdentifiers via
  * manifest lookup.
  *
- * @param modelName (name of the SWC port)
- * @return container with InstanceIdentifiers
- *
+ * \param modelName (name of the SWC port)
+ * \return container with InstanceIdentifiers
  * \requirement SWS_CM_00118
+ * \public
  */
 score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(const InstanceSpecifier model_name);
 
-/// \brief Initializes mw::com subsystem with the given configuration referenced in the command-line options.
-/// \detail This call is optional for a mw::com user. Only if the mw::com configuration (json) is not located in the
-///         default manifest path, this function shall be called with the commandline option
-///         "-service_instance_manifest" pointing to the json config file to be used.
-/// \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
-///            effect after an internal runtime singleton has been already created/is in use!
+/**
+ * \api
+ * \brief Initializes mw::com subsystem with the given configuration referenced in the command-line options.
+ * \details This call is optional for a mw::com user. Only if the mw::com configuration (json) is not located in the
+ *         default manifest path, this function shall be called with the commandline option
+ *         "-service_instance_manifest" pointing to the json config file to be used.
+ * \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
+ *            effect after an internal runtime singleton has been already created/is in use!
+ * \public
+ */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
 void InitializeRuntime(const std::int32_t argc, score::StringLiteral argv[]);
 
-/// \brief Initializes mw::com subsystem with the given configuration.
-/// \detail This call is optional for a mw::com user. Only if the mw::com configuration (json) is not located in the
-///         default manifest path, this function shall be called when the caller already has the configuration path.
-/// \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
-///            effect after an internal runtime singleton has been already created/is in use!
+/**
+ * \api
+ * \brief Initializes mw::com subsystem with the given configuration.
+ * \details This call is optional for a mw::com user. Only if the mw::com configuration (json) is not located in the
+ *         default manifest path, this function shall be called when the caller already has the configuration path.
+ * \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
+ *            effect after an internal runtime singleton has been already created/is in use!
+ * \public
+ */
 void InitializeRuntime(const RuntimeConfiguration& runtime_configuration);
 
 }  // namespace score::mw::com::runtime

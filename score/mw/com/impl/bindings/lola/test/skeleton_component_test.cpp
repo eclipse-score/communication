@@ -13,14 +13,14 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 
 #include "score/filesystem/factory/filesystem_factory_fake.h"
-#include "score/os/mman.h"
-#include "score/os/mocklib/acl_mock.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/os/mman.h"
+#include "score/os/mocklib/acl_mock.h"
 
 #include <gtest/gtest.h>
 

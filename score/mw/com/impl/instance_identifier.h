@@ -21,6 +21,8 @@
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/configuration/service_version_type.h"
 
+#include "score/result/result.h"
+
 #include <functional>
 #include <string>
 #include <string_view>
@@ -30,18 +32,23 @@ namespace score::mw::com::impl
 {
 
 /**
+ * \api
  * \brief Represents a specific instance of a given service
- *
  * \requirement SWS_CM_00302
+ * \public
  */
 class InstanceIdentifier final
 {
   public:
     /**
+     * \api
      * \brief Exception-less constructor to create InstanceIdentifier from a serialized InstanceIdentifier created with
      * InstanceIdentifier::ToString()
+     * \param serialized_format The serialized format to create the InstanceIdentifier from
+     * \return The created InstanceIdentifier or an error
+     * \public
      */
-    static score::Result<InstanceIdentifier> Create(std::string_view serialized_format) noexcept;
+    static score::Result<InstanceIdentifier> Create(std::string&& serialized_format) noexcept;
 
     InstanceIdentifier() = delete;
     ~InstanceIdentifier() noexcept = default;
@@ -55,39 +62,72 @@ class InstanceIdentifier final
      */
 
     /**
+     * \api
      * \brief CopyAssignment for InstanceIdentifier
+     * \post *this == other
+     * \param other The InstanceIdentifier *this shall be constructed from
+     * \return The InstanceIdentifier that was constructed
+     * \public
+     */
+    InstanceIdentifier& operator=(const InstanceIdentifier& other) = default;
+    /**
+     * \api
+     * \brief Copy constructor for InstanceIdentifier
+     *
+     * \param other The InstanceIdentifier to copy from
+     * \return The InstanceIdentifier that was constructed
+     * \public
+     */
+    InstanceIdentifier(const InstanceIdentifier&) = default;
+    /**
+     * \api
+     * \brief Move constructor for InstanceIdentifier
+     *
+     * \post *this == other
+     * \param other The InstanceIdentifier to move from
+     * \return The moved InstanceIdentifier
+     * \public
+     */
+    InstanceIdentifier(InstanceIdentifier&&) noexcept = default;
+    /**
+     * \api
+     * \brief MoveAssignment for InstanceIdentifier
      *
      * \post *this == other
      * \param other The InstanceIdentifier *this shall be constructed from
      * \return The InstanceIdentifier that was constructed
+     * \public
      */
-    InstanceIdentifier& operator=(const InstanceIdentifier& other) = default;
-    InstanceIdentifier(const InstanceIdentifier&) = default;
-    InstanceIdentifier(InstanceIdentifier&&) noexcept = default;
     InstanceIdentifier& operator=(InstanceIdentifier&& other) = default;
 
     /**
+     * \api
      * \brief Returns the serialized form of the unknown internals of this class as a meaningful string
      *
      * \return A non-owning string representation of the internals of this class
+     * \public
      */
     std::string_view ToString() const noexcept;
 
     /**
+     * \api
      * \brief Compares two instances for equality
      *
      * \param lhs The first instance to check for equality
      * \param rhs The second instance to check for equality
      * \return true if other and *this equal, false otherwise
+     * \public
      */
     friend bool operator==(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) noexcept;
 
     /**
+     * \api
      * \brief LessThanComparable operator
      *
      * \param lhs The first InstanceIdentifier instance to compare
      * \param rhs The second InstanceIdentifier instance to compare
      * \return true if *this is less then other, false otherwise
+     * \public
      */
     friend bool operator<(const InstanceIdentifier& lhs, const InstanceIdentifier& rhs) noexcept;
 
@@ -101,7 +141,7 @@ class InstanceIdentifier final
      * @param json_object Used to construct the InstanceIdentifier (no copies of json_object are made internally).
      * @param serialized_string Serialized string which the json_object is derived from. Used to set serialized_string_.
      */
-    explicit InstanceIdentifier(const json::Object& json_object, std::string serialized_string) noexcept;
+    explicit InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string) noexcept;
 
     /**
      * @brief internal impl. specific ctor.

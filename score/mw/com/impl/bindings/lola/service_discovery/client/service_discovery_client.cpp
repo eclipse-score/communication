@@ -15,9 +15,9 @@
 #include "score/mw/com/impl/bindings/lola/service_discovery/flag_file_crawler.h"
 
 #include "score/filesystem/filesystem.h"
-#include "score/result/result.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 #include <score/expected.hpp>
@@ -118,8 +118,8 @@ ServiceDiscoveryClient::ServiceDiscoveryClient(concurrency::Executor& long_runni
         // coverity[autosar_cpp14_m0_1_9_violation : FALSE]
         // coverity[autosar_cpp14_m0_1_3_violation : FALSE]
         score::cpp::stop_callback i_notify_close_guard{stop_token, [this]() noexcept {
-                                                    i_notify_->Close();
-                                                }};
+                                                           i_notify_->Close();
+                                                       }};
         while (!stop_token.stop_requested())
         {
             // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function
@@ -150,9 +150,10 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
         enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value(),
         "Instance identifier must have instance id for service offer");
     auto offer_disambiguator = offer_disambiguator_.fetch_add(1);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_disambiguator != std::numeric_limits<decltype(offer_disambiguator)>::max(),
-                           "ServiceDiscoveryClient::OfferService failed: offer_disambiguator reached the maximum "
-                           "value, an overflow dangerous");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        offer_disambiguator != std::numeric_limits<decltype(offer_disambiguator)>::max(),
+        "ServiceDiscoveryClient::OfferService failed: offer_disambiguator reached the maximum "
+        "value, an overflow dangerous");
     offer_disambiguator++;
 
     {
@@ -216,7 +217,8 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
         // This is a false positive, we don't use auto here.
         // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
         std::lock_guard lock{flag_files_mutex_};
-        score::cpp::ignore = flag_files_.emplace(enriched_instance_identifier.GetInstanceIdentifier(), std::move(flag_files));
+        score::cpp::ignore =
+            flag_files_.emplace(enriched_instance_identifier.GetInstanceIdentifier(), std::move(flag_files));
     }
 
     return {};
@@ -304,8 +306,8 @@ auto ServiceDiscoveryClient::TransferNewSearchRequest(NewSearchRequest search_re
                                                                              std::move(on_service_found_callback),
                                                                              instance_identifier,
                                                                              previous_handles});
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(added_search_request.second,
-                                 "The FindServiceHandle should be unique for every call to StartFindService");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        added_search_request.second, "The FindServiceHandle should be unique for every call to StartFindService");
 
     for (const auto& watch_descriptor : watch_descriptors)
     {
@@ -623,7 +625,7 @@ auto ServiceDiscoveryClient::StoreWatch(const os::InotifyWatchDescriptor& watch_
 auto ServiceDiscoveryClient::EraseWatch(const WatchesContainer::iterator& watch_iterator) noexcept -> void
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(watch_iterator->second.find_service_handles.empty(),
-                                 "Watch must not be associated to any searches");
+                                                      "Watch must not be associated to any searches");
     const auto identifier = LolaServiceInstanceIdentifier(watch_iterator->second.enriched_instance_identifier);
     if (identifier.GetInstanceId().has_value())
     {
@@ -670,8 +672,9 @@ auto ServiceDiscoveryClient::LinkWatchWithSearchRequest(
     const WatchesContainer::iterator& watch_iterator,
     const SearchRequestsContainer::iterator& search_iterator) noexcept -> void
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(watch_iterator != watches_.end() && search_iterator != search_requests_.end(),
-                                 "LinkWatchWithSearchRequest requires valid iterators");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        watch_iterator != watches_.end() && search_iterator != search_requests_.end(),
+        "LinkWatchWithSearchRequest requires valid iterators");
 
     auto& search_key_set = watch_iterator->second.find_service_handles;
     score::cpp::ignore = search_key_set.insert(search_iterator->first);
@@ -683,17 +686,18 @@ auto ServiceDiscoveryClient::UnlinkWatchWithSearchRequest(
     const WatchesContainer::iterator& watch_iterator,
     const SearchRequestsContainer::iterator& search_iterator) noexcept -> void
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(watch_iterator != watches_.end() && search_iterator != search_requests_.end(),
-                                 "UnlinkWatchWithSearchRequest requires valid iterators");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        watch_iterator != watches_.end() && search_iterator != search_requests_.end(),
+        "UnlinkWatchWithSearchRequest requires valid iterators");
 
     auto& search_key_set = watch_iterator->second.find_service_handles;
     const auto number_of_search_keys_erased = search_key_set.erase(search_iterator->first);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_search_keys_erased == 1U,
-                           "UnlinkWatchWithSearchRequest did not erase search key correctly");
+                                                "UnlinkWatchWithSearchRequest did not erase search key correctly");
     auto& watch_key_set = search_iterator->second.watch_descriptors;
     const auto number_of_watch_keys_erased = watch_key_set.erase(watch_iterator->first);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(number_of_watch_keys_erased == 1U,
-                           "UnlinkWatchWithSearchRequest did not erase watch key correctly");
+                                                "UnlinkWatchWithSearchRequest did not erase watch key correctly");
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -727,15 +731,16 @@ ResultBlank ServiceDiscoveryClient::StartFindService(
 
         auto add_watch = [this, &watch_descriptors](const os::InotifyWatchDescriptor& watch_descriptor) {
             const auto matching_watch = watches_.find(watch_descriptor);
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(matching_watch != watches_.cend(), "Did not find matching watch");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(matching_watch != watches_.cend(),
+                                                        "Did not find matching watch");
             score::cpp::ignore =
                 watch_descriptors.emplace(watch_descriptor, matching_watch->second.enriched_instance_identifier);
         };
 
         add_watch(watched_identifier->second.watch_descriptor.value());
         score::cpp::ignore = std::for_each(watched_identifier->second.child_watches.cbegin(),
-                                    watched_identifier->second.child_watches.cend(),
-                                    add_watch);
+                                           watched_identifier->second.child_watches.cend(),
+                                           add_watch);
     }
     else
     {
@@ -798,7 +803,8 @@ auto ServiceDiscoveryClient::OnInstanceDirectoryCreated(const WatchesContainer::
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(crawler_result.has_value(), "Filesystem crawling failed");
 
     auto& [watch_descriptors, known_instances] = crawler_result.value();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(watch_descriptors.size() == 1U, "Outside tampering. Must contain one watch descriptor.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(watch_descriptors.size() == 1U,
+                                                "Outside tampering. Must contain one watch descriptor.");
 
     auto watch = StoreWatch(watch_descriptors.begin()->first, watch_descriptors.begin()->second);
     for (const auto& search_key : search_keys)

@@ -101,5 +101,17 @@ TEST(SomeIpServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithM
     EXPECT_DEATH(SomeIpServiceInstanceDeployment reconstructed_unit{serialized_unit}, ".*");
 }
 
+TEST(LolaServiceInstanceDeploymentLessThan, DeploymentsComparedBasedOnInstanceId)
+{
+    // Given 2 SomeIpServiceInstanceDeployments containing different values
+    const SomeIpServiceInstanceDeployment lhs{1U};
+    const SomeIpServiceInstanceDeployment rhs{2U};
+
+    // When comparing the two
+    // Then the result is based on the instance IDs
+    EXPECT_EQ(lhs < rhs, lhs.instance_id_ < rhs.instance_id_);
+    EXPECT_EQ(rhs < lhs, rhs.instance_id_ < lhs.instance_id_);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

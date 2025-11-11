@@ -13,9 +13,9 @@
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 
 #include "score/analysis/tracing/common/interface_types/types.h"
-#include "score/analysis/tracing/library/generic_trace_api/error_code/error_code.h"
-#include "score/analysis/tracing/library/interface/ara_com_meta_info.h"
-#include "score/analysis/tracing/library/interface/generic_trace_api.h"
+#include "score/analysis/tracing/generic_trace_library/interface_types/ara_com_meta_info.h"
+#include "score/analysis/tracing/generic_trace_library/interface_types/error_code/error_code.h"
+#include "score/analysis/tracing/generic_trace_library/interface_types/generic_trace_api.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/mw/com/impl/tracing/trace_error.h"
 
@@ -54,21 +54,21 @@ const std::unordered_map<ProxyEventTracePointType, analysis::tracing::TracePoint
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kProxyEventTracePointToTracingTracePointMap{
-        {ProxyEventTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::PROXY_EVENT_SUB},
-        {ProxyEventTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::PROXY_EVENT_UNSUB},
+        {ProxyEventTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyEventSub},
+        {ProxyEventTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyEventUnsub},
         {ProxyEventTracePointType::SUBSCRIBE_STATE_CHANGE,
-         analysis::tracing::TracePointType::PROXY_EVENT_SUBSTATE_CHANGE},
+         analysis::tracing::TracePointType::kProxyEventSubstateChange},
         {ProxyEventTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_EVENT_SET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyEventSetChghdl},
         {ProxyEventTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_EVENT_UNSET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyEventUnsetChghdl},
         {ProxyEventTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
-         analysis::tracing::TracePointType::PROXY_EVENT_CHGHDL},
-        {ProxyEventTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_EVENT_SET_RECHDL},
-        {ProxyEventTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_EVENT_UNSET_RECHDL},
-        {ProxyEventTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::PROXY_EVENT_RECHDL},
-        {ProxyEventTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::PROXY_EVENT_GET_SAMPLES},
-        {ProxyEventTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::PROXY_EVENT_SAMPLE_CB},
+         analysis::tracing::TracePointType::kProxyEventChghdl},
+        {ProxyEventTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyEventSetRechdl},
+        {ProxyEventTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyEventUnsetRechdl},
+        {ProxyEventTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyEventRechdl},
+        {ProxyEventTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyEventGetSamples},
+        {ProxyEventTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::kProxyEventSampleCb},
     };
 
 const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePointType>
@@ -77,25 +77,25 @@ const std::unordered_map<ProxyFieldTracePointType, analysis::tracing::TracePoint
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kProxyFieldTracePointToTracingTracePointMap{
-        {ProxyFieldTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::PROXY_FIELD_SUB},
-        {ProxyFieldTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::PROXY_FIELD_UNSUB},
+        {ProxyFieldTracePointType::SUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldSub},
+        {ProxyFieldTracePointType::UNSUBSCRIBE, analysis::tracing::TracePointType::kProxyFieldUnsub},
         {ProxyFieldTracePointType::SUBSCRIBE_STATE_CHANGE,
-         analysis::tracing::TracePointType::PROXY_FIELD_SUBSTATE_CHANGE},
+         analysis::tracing::TracePointType::kProxyFieldSubstateChange},
         {ProxyFieldTracePointType::SET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_FIELD_SET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyFieldSetChghdl},
         {ProxyFieldTracePointType::UNSET_SUBSCRIPTION_STATE_CHANGE_HANDLER,
-         analysis::tracing::TracePointType::PROXY_FIELD_UNSET_CHGHDL},
+         analysis::tracing::TracePointType::kProxyFieldUnsetChghdl},
         {ProxyFieldTracePointType::SUBSCRIPTION_STATE_CHANGE_HANDLER_CALLBACK,
-         analysis::tracing::TracePointType::PROXY_FIELD_CHGHDL},
-        {ProxyFieldTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_FIELD_SET_RECHDL},
-        {ProxyFieldTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::PROXY_FIELD_UNSET_RECHDL},
-        {ProxyFieldTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::PROXY_FIELD_RECHDL},
-        {ProxyFieldTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::PROXY_FIELD_GET_SAMPLES},
-        {ProxyFieldTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::PROXY_FIELD_SAMPLE_CB},
-        {ProxyFieldTracePointType::GET, analysis::tracing::TracePointType::PROXY_FIELD_GET},
-        {ProxyFieldTracePointType::GET_RESULT, analysis::tracing::TracePointType::PROXY_FIELD_GET_RESULT},
-        {ProxyFieldTracePointType::SET, analysis::tracing::TracePointType::PROXY_FIELD_SET},
-        {ProxyFieldTracePointType::SET_RESULT, analysis::tracing::TracePointType::PROXY_FIELD_SET_RESULT},
+         analysis::tracing::TracePointType::kProxyFieldChghdl},
+        {ProxyFieldTracePointType::SET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyFieldSetRechdl},
+        {ProxyFieldTracePointType::UNSET_RECEIVE_HANDLER, analysis::tracing::TracePointType::kProxyFieldUnsetRechdl},
+        {ProxyFieldTracePointType::RECEIVE_HANDLER_CALLBACK, analysis::tracing::TracePointType::kProxyFieldRechdl},
+        {ProxyFieldTracePointType::GET_NEW_SAMPLES, analysis::tracing::TracePointType::kProxyFieldGetSamples},
+        {ProxyFieldTracePointType::GET_NEW_SAMPLES_CALLBACK, analysis::tracing::TracePointType::kProxyFieldSampleCb},
+        {ProxyFieldTracePointType::GET, analysis::tracing::TracePointType::kProxyFieldGet},
+        {ProxyFieldTracePointType::GET_RESULT, analysis::tracing::TracePointType::kProxyFieldGetResult},
+        {ProxyFieldTracePointType::SET, analysis::tracing::TracePointType::kProxyFieldSet},
+        {ProxyFieldTracePointType::SET_RESULT, analysis::tracing::TracePointType::kProxyFieldSetResult},
     };
 
 const std::unordered_map<SkeletonEventTracePointType, analysis::tracing::TracePointType>
@@ -104,8 +104,8 @@ const std::unordered_map<SkeletonEventTracePointType, analysis::tracing::TracePo
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kSkeletonEventTracePointToTracingTracePointMap{
-        {SkeletonEventTracePointType::SEND, analysis::tracing::TracePointType::SKEL_EVENT_SND},
-        {SkeletonEventTracePointType::SEND_WITH_ALLOCATE, analysis::tracing::TracePointType::SKEL_EVENT_SND_A},
+        {SkeletonEventTracePointType::SEND, analysis::tracing::TracePointType::kSkelEventSnd},
+        {SkeletonEventTracePointType::SEND_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelEventSndA},
     };
 
 const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePointType>
@@ -114,12 +114,12 @@ const std::unordered_map<SkeletonFieldTracePointType, analysis::tracing::TracePo
     // std::unordered_map doesn't have a constexpr constructor.
     // coverity[autosar_cpp14_a3_3_2_violation]
     kSkeletonFieldTracePointToTracingTracePointMap{
-        {SkeletonFieldTracePointType::UPDATE, analysis::tracing::TracePointType::SKEL_FIELD_UPD},
-        {SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE, analysis::tracing::TracePointType::SKEL_FIELD_UPD_A},
-        {SkeletonFieldTracePointType::GET_CALL, analysis::tracing::TracePointType::SKEL_FIELD_GET_CALL},
-        {SkeletonFieldTracePointType::GET_CALL_RESULT, analysis::tracing::TracePointType::SKEL_FIELD_GET_CALL_RESULT},
-        {SkeletonFieldTracePointType::SET_CALL, analysis::tracing::TracePointType::SKEL_FIELD_SET_CALL},
-        {SkeletonFieldTracePointType::SET_CALL_RESULT, analysis::tracing::TracePointType::SKEL_FIELD_SET_CALL_RESULT},
+        {SkeletonFieldTracePointType::UPDATE, analysis::tracing::TracePointType::kSkelFieldUpd},
+        {SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE, analysis::tracing::TracePointType::kSkelFieldUpdA},
+        {SkeletonFieldTracePointType::GET_CALL, analysis::tracing::TracePointType::kSkelFieldGetCall},
+        {SkeletonFieldTracePointType::GET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldGetCallResult},
+        {SkeletonFieldTracePointType::SET_CALL, analysis::tracing::TracePointType::kSkelFieldSetCall},
+        {SkeletonFieldTracePointType::SET_CALL_RESULT, analysis::tracing::TracePointType::kSkelFieldSetCallResult},
     };
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
@@ -265,7 +265,7 @@ ResultBlank TracingRuntime::ProcessTraceCallResult(
     if (IsTerminalFatalError(trace_call_result.error()))
     {
         score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing because of kTerminalFatal Error: "
-                                      << trace_call_result.error();
+                                        << trace_call_result.error();
         atomic_state_.is_tracing_enabled = false;
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }
@@ -274,15 +274,16 @@ ResultBlank TracingRuntime::ProcessTraceCallResult(
     if (atomic_state_.consecutive_failure_counter >= MAX_CONSECUTIVE_ACCEPTABLE_TRACE_FAILURES)
     {
         score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing because of max number of consecutive "
-                                         "errors during call of Trace has been reached.";
+                                           "errors during call of Trace has been reached.";
         atomic_state_.is_tracing_enabled = false;
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
     }
     if (IsNonRecoverableError(trace_call_result.error()))
     {
-        score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing for " << service_element_instance_identifier
-                                      << " because of non-recoverable error during call of Trace(). Error: "
-                                      << trace_call_result.error();
+        score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing for "
+                                        << service_element_instance_identifier
+                                        << " because of non-recoverable error during call of Trace(). Error: "
+                                        << trace_call_result.error();
         return MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance);
     }
     return {};
@@ -291,7 +292,8 @@ ResultBlank TracingRuntime::ProcessTraceCallResult(
 ITracingRuntimeBinding& TracingRuntime::GetTracingRuntimeBinding(const BindingType binding_type) const noexcept
 {
     const auto& search = tracing_runtime_bindings_.find(binding_type);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != tracing_runtime_bindings_.cend(), "No tracing runtime for given BindingType!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(search != tracing_runtime_bindings_.cend(),
+                                                "No tracing runtime for given BindingType!");
     return *search->second;
 }
 
@@ -354,7 +356,7 @@ void TracingRuntime::RegisterShmObject(
             if (IsTerminalFatalError(generic_trace_api_shm_handle.error()))
             {
                 score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing because of kTerminalFatal Error: "
-                                              << generic_trace_api_shm_handle.error();
+                                                << generic_trace_api_shm_handle.error();
                 atomic_state_.is_tracing_enabled = false;
             }
             else
@@ -439,6 +441,60 @@ void TracingRuntime::UnregisterShmObject(
     }
 }
 
+// coverity[autosar_cpp14_a15_4_2_violation: FALSE] see justification of autosar_cpp14_a15_5_3_violation for Trace()
+// coverity[autosar_cpp14_a15_5_3_violation: FALSE] see justification of autosar_cpp14_a15_5_3_violation for Trace()
+Result<analysis::tracing::ShmObjectHandle> TracingRuntime::GetRegisteredShmObject(
+    ITracingRuntimeBinding& runtime_binding,
+    const ServiceElementInstanceIdentifierView service_element_instance_identifier) noexcept
+{
+    auto shm_object_handle = runtime_binding.GetShmObjectHandle(service_element_instance_identifier);
+    if (shm_object_handle.has_value())
+    {
+        return std::move(shm_object_handle.value());
+    }
+
+    auto cached_file_descriptor =
+        runtime_binding.GetCachedFileDescriptorForReregisteringShmObject(service_element_instance_identifier);
+
+    if (!cached_file_descriptor.has_value())
+    {
+        // We also have no cached file descriptor for the shm-object! This means this shm-object/the trace call
+        // related to it shall be ignored
+        return MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance);
+    }
+
+    // Try to re-register with cached_file_descriptor
+    const memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd = cached_file_descriptor.value().first;
+    void* const shm_memory_start_address = cached_file_descriptor.value().second;
+    const auto register_shm_result =
+        analysis::tracing::GenericTraceAPI::RegisterShmObject(runtime_binding.GetTraceClientId(), shm_object_fd);
+    if (!register_shm_result.has_value())
+    {
+        if (IsTerminalFatalError(register_shm_result.error()))
+        {
+            score::mw::log::LogWarn("lola")
+                << "TracingRuntime: Disabling Tracing because of kTerminalFatal Error: " << register_shm_result.error();
+            atomic_state_.is_tracing_enabled = false;
+            return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
+        }
+        // register failed, we won't try any further
+        runtime_binding.ClearCachedFileDescriptorForReregisteringShmObject(service_element_instance_identifier);
+        score::mw::log::LogError("lola")
+            << "TracingRuntime::Trace: Re-registration of ShmObject for ServiceElementInstanceIdentifier "
+            << service_element_instance_identifier
+            << " failed. Any Trace-Call related to this ShmObject will now be ignored!";
+        // we didn't get a shm-object-handle (no valid registration) and even re-registration
+        // failed, so we skip this TRACE call according to  SCR-18172392, which requires only on register-retry.
+        return MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance);
+    }
+    shm_object_handle = register_shm_result.value();
+    // we re-registered successfully at GenericTraceAPI -> now also register to the binding specific runtime.
+    runtime_binding.RegisterShmObject(
+        service_element_instance_identifier, shm_object_handle.value(), shm_memory_start_address);
+
+    return std::move(shm_object_handle.value());
+}
+
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
 // 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
@@ -460,54 +516,21 @@ ResultBlank TracingRuntime::Trace(const BindingType binding_type,
     }
     auto& runtime_binding = GetTracingRuntimeBinding(binding_type);
 
-    auto shm_object_handle = runtime_binding.GetShmObjectHandle(service_element_instance_identifier);
+    auto shm_object_handle = GetRegisteredShmObject(runtime_binding, service_element_instance_identifier);
     if (!shm_object_handle.has_value())
     {
-        auto cached_file_descriptor =
-            runtime_binding.GetCachedFileDescriptorForReregisteringShmObject(service_element_instance_identifier);
-
-        if (!cached_file_descriptor.has_value())
-        {
-            // We also have no cached file descriptor for the shm-object! This means this shm-object/the trace call
-            // related to it shall be ignored
-            return MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance);
-        }
-
-        // Try to re-register with cached_file_descriptor
-        const memory::shared::ISharedMemoryResource::FileDescriptor shm_object_fd =
-            cached_file_descriptor.value().first;
-        void* const shm_memory_start_address = cached_file_descriptor.value().second;
-        const auto register_shm_result =
-            analysis::tracing::GenericTraceAPI::RegisterShmObject(runtime_binding.GetTraceClientId(), shm_object_fd);
-        if (!register_shm_result.has_value())
-        {
-            if (IsTerminalFatalError(register_shm_result.error()))
-            {
-                score::mw::log::LogWarn("lola") << "TracingRuntime: Disabling Tracing because of kTerminalFatal Error: "
-                                              << register_shm_result.error();
-                atomic_state_.is_tracing_enabled = false;
-                return MakeUnexpected(TraceErrorCode::TraceErrorDisableAllTracePoints);
-            }
-            // register failed, we won't try any further
-            runtime_binding.ClearCachedFileDescriptorForReregisteringShmObject(service_element_instance_identifier);
-            score::mw::log::LogError("lola")
-                << "TracingRuntime::Trace: Re-registration of ShmObject for ServiceElementInstanceIdentifier "
-                << service_element_instance_identifier
-                << " failed. Any Trace-Call related to this ShmObject will now be ignored!";
-            // we didn't get a shm-object-handle (no valid registration) and even re-registration
-            // failed, so we skip this TRACE call according to  SCR-18172392, which requires only on register-retry.
-            return MakeUnexpected(TraceErrorCode::TraceErrorDisableTracePointInstance);
-        }
-        shm_object_handle = register_shm_result.value();
-        // we re-registered successfully at GenericTraceAPI -> now also register to the binding specific runtime.
-        runtime_binding.RegisterShmObject(
-            service_element_instance_identifier, shm_object_handle.value(), shm_memory_start_address);
+        // Suppress "AUTOSAR C++14 A7-2-1" rule finding. This rule states: "An expression with enum underlying type
+        // shall only have values corresponding to the enumerators of the enumeration.".
+        // The underlying error code can be only of GetRegisteredShmObject type
+        // coverity[autosar_cpp14_a7_2_1_violation]
+        return MakeUnexpected(static_cast<TraceErrorCode>(*shm_object_handle.error()));
     }
 
     const auto shm_region_start = runtime_binding.GetShmRegionStartAddress(service_element_instance_identifier);
     // a valid shm_object_handle ... a shm_region_start should also exist!
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(shm_region_start.has_value(),
-                           "No shared-memory-region start address for shm-object in tracing runtime binding!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        shm_region_start.has_value(),
+        "No shared-memory-region start address for shm-object in tracing runtime binding!");
 
     const auto meta_info =
         CreateMetaInfo(service_element_instance_identifier, trace_point_type, trace_point_data_id, runtime_binding);
@@ -523,8 +546,44 @@ ResultBlank TracingRuntime::Trace(const BindingType binding_type,
         runtime_binding.EmplaceTypeErasedSamplePtr(std::move(sample_ptr), service_element_tracing_data);
     if (!trace_context_id.has_value())
     {
+        // Handle debounced logging for no available tracing slots
+        // Log first 10 failures at LogInfo level, then switch to LogDebug to reduce DLT bandwidth.
+        ++debounce_counter_;
+        const bool debouncing_active = (debounce_counter_ >= kDebounceAfter);
+
+        if (!debouncing_active)
+        {
+            score::mw::log::LogInfo("lola")
+                << "No tracing slot available for service element " << service_element_instance_identifier
+                << ". All slots assigned to this service element are already tracing active. "
+                << "Insufficient tracing slots were configured. Service element has "
+                << service_element_tracing_data.number_of_service_element_tracing_slots << " configured slots. "
+                << "Range starts at " << service_element_tracing_data.service_element_range_start << ".";
+        }
+        else
+        {
+            if (first_debounce_)
+            {
+                score::mw::log::LogInfo("lola")
+                    << "LogLevel for consecutive 'no tracing slot available' errors changed to kDebug";
+                first_debounce_ = false;
+            }
+            score::mw::log::LogDebug("lola")
+                << "No tracing slot available for service element " << service_element_instance_identifier
+                << ". All slots assigned to this service element are already tracing active. "
+                << "Insufficient tracing slots were configured. Service element has "
+                << service_element_tracing_data.number_of_service_element_tracing_slots << " configured slots. "
+                << "Range starts at " << service_element_tracing_data.service_element_range_start << ".";
+        }
+
         runtime_binding.SetDataLossFlag(true);
         return {};
+    }
+    else
+    {
+        // Reset debouncing state when a slot becomes available
+        debounce_counter_ = 0U;
+        first_debounce_ = true;
     }
 
     const auto trace_context_id_value = trace_context_id.value();

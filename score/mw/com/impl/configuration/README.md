@@ -353,9 +353,19 @@ The properties of a field or an event object on the instance level are:
 
   $$N_{\mathrm{ss}} = 1 + \sum_{i=1}^{N_{\mathrm{cl}}} N_{i}^{\mathrm{MS}}$$
 
-  with $N_{\mathrm{ss}}$ denoting `numberOfSampleSlots`, $N_{\mathrm{cl}}$ denoting number of clients and $N_{i}^{\mathrm{MS}}$ denoting the `maxSamples` configuration of `i`-th client.
+  with $N_{\mathrm{ss}}$ denoting `numberOfSampleSlots`, $N_{\mathrm{cl}}$ denoting number of clients and
+  $N_{i}^{\mathrm{MS}}$ denoting the `maxSamples` configuration of `i`-th client.
+  **Note**: During subscription the `maxSamples` value announced by a consumer is checked against the configured
+  `numberOfSampleSlots`. I.e. The sum of all `maxSamples` values of all subscribing consumers must not exceed
+  `numberOfSampleSlots`. Otherwise, the subscribe call will be rejected. However, this check is not ASIL level
+  overarching. See explanation in the `maxSubscribers` section below.
 - `maxSubscribers`: (mandatory on provider side) - how many consumers are allowed to subscribe to this event or field.
   This number is the combined number of `QM` and `ASIL-B` consumers.
+  **Note**: The maximum number of subscribers can't currently be supervised ASIL level **overarching**. I.e. in case of
+  a service instance provided in `ASIL-B` quality, a QM proxy during subscribe can only verify, that the number of QM
+  subscribers doesn't exceed the configured `maxSubscribers`. The same applies to an `ASIL-B` proxy. It can only verify,
+  that its subscription doesn't exceed the configured number `maxSubscribers` by ASIL-B subscribers. But there is no
+  cross-check between QM and ASIL-B subscribers.
 - `enforceMaxSamples`: (optional on provider side, default is `true`) - normally &ndash; this property being set to
   `true` &ndash; it is checked in every subscribe call to an event or field, that the call with its given sample count
   will **not** exceed the number configured in `numberOfSampleSlots`.

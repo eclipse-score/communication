@@ -99,9 +99,9 @@ struct hash<score::mw::com::impl::tracing::ServiceElementInstanceIdentifierView>
         if (data_overflow_error || (input_value_size > max_buffer_size))
         {
             score::mw::log::LogFatal("lola") << "ServiceElementInstanceIdentifierView data strings (service_type_name, "
-                                              "service_element_name and instance_specifier) are too long: size"
-                                           << input_value_size << "should be less than"
-                                           << (max_buffer_size - service_element_type_size) << ". Terminating.";
+                                                "service_element_name and instance_specifier) are too long: size"
+                                             << input_value_size << "should be less than"
+                                             << (max_buffer_size - service_element_type_size) << ". Terminating.";
             std::terminate();
         }
 

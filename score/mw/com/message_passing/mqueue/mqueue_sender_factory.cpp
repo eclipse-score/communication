@@ -20,12 +20,12 @@
 // Create function is templated function and is instantiated at every call, which violates the ODR.
 // coverity[autosar_cpp14_m3_2_2_violation]
 // coverity[autosar_cpp14_m3_2_4_violation]
-score::cpp::pmr::unique_ptr<score::mw::com::message_passing::ISender> score::mw::com::message_passing::SenderFactoryImpl::Create(
-    const std::string_view identifier,
-    const score::cpp::stop_token& token,
-    const SenderConfig& sender_config,
-    LoggingCallback logging_callback,
-    score::cpp::pmr::memory_resource* const memory_resource)
+score::cpp::pmr::unique_ptr<score::mw::com::message_passing::ISender>
+score::mw::com::message_passing::SenderFactoryImpl::Create(const std::string_view identifier,
+                                                           const score::cpp::stop_token& token,
+                                                           const SenderConfig& sender_config,
+                                                           LoggingCallback logging_callback,
+                                                           score::cpp::pmr::memory_resource* const memory_resource)
 {
     return score::cpp::pmr::make_unique<Sender<MqueueSenderTraits>>(
         memory_resource, identifier, token, sender_config, std::move(logging_callback));

@@ -82,8 +82,8 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(TransactionLogR
 
 TransactionLogSet::TransactionLogIndex TransactionLogRegistrationGuard::GetTransactionLogIndex() const noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(transaction_log_index_.has_value(),
-                                 "GetTransactionLogIndex cannot be called without a transaction_log_index");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        transaction_log_index_.has_value(), "GetTransactionLogIndex cannot be called without a transaction_log_index");
     return *transaction_log_index_;
 }
 

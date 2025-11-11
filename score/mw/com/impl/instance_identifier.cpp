@@ -11,12 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/instance_identifier.h"
-
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/configuration_common_resources.h"
 
-#include "score/json/json_writer.h"
 #include "score/mw/log/logging.h"
+
+#include "score/json/json_writer.h"
+#include "score/result/result.h"
 
 #include <score/overload.hpp>
 
@@ -43,7 +44,7 @@ Configuration* InstanceIdentifier::configuration_{nullptr};
 // std::bad_optional_access which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string_view serialized_format) noexcept
+score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& serialized_format) noexcept
 {
     if (configuration_ == nullptr)
     {
@@ -58,19 +59,17 @@ score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string_view se
         return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
     }
     const auto& json_object = std::move(json_result).value().As<json::Object>().value().get();
-    std::string serialized_string{serialized_format.data(), serialized_format.size()};
-    InstanceIdentifier instance_identifier{json_object, std::move(serialized_string)};
-    return instance_identifier;
+    return InstanceIdentifier{json_object, std::move(serialized_format)};
 }
 
-InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string serialized_string) noexcept
+InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string) noexcept
     : instance_deployment_{nullptr}, type_deployment_{nullptr}, serialized_string_{std::move(serialized_string)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
     if (serialization_version != serializationVersion)
     {
         ::score::mw::log::LogFatal("lola") << "InstanceIdentifier serialization versions don't match. "
-                                         << serialization_version << "!=" << serializationVersion << ". Terminating.";
+                                           << serialization_version << "!=" << serializationVersion << ". Terminating.";
         std::terminate();
     }
 
@@ -82,14 +81,14 @@ InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::str
     const auto* const type_deployment_ptr =
         configuration_->AddServiceTypeDeployment(std::move(service_identifier_type), std::move(type_deployment));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_deployment_ptr != nullptr,
-                           "Could not insert service type deployment into configuration map");
+                                                "Could not insert service type deployment into configuration map");
     type_deployment_ = type_deployment_ptr;
 
     auto instance_specifier = instance_deployment.instance_specifier_;
     const auto* const service_instance_deployment_ptr =
         configuration_->AddServiceInstanceDeployments(std::move(instance_specifier), std::move(instance_deployment));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_instance_deployment_ptr != nullptr,
-                           "Could not insert instance deployment into configuration map");
+                                                "Could not insert instance deployment into configuration map");
     instance_deployment_ = service_instance_deployment_ptr;
 }
 

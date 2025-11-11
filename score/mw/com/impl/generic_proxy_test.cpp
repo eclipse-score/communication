@@ -504,7 +504,8 @@ TEST(GenericProxyFindServiceTest, GenericProxyUsesProxyBaseFindServiceWithInstan
     constexpr auto proxy_base_find_service =
         static_cast<score::Result<ServiceHandleContainer<HandleType>> (*)(InstanceSpecifier)>(&ProxyBase::FindService);
     constexpr auto generic_proxy_find_service =
-        static_cast<score::Result<ServiceHandleContainer<HandleType>> (*)(InstanceSpecifier)>(&GenericProxy::FindService);
+        static_cast<score::Result<ServiceHandleContainer<HandleType>> (*)(InstanceSpecifier)>(
+            &GenericProxy::FindService);
     static_assert(proxy_base_find_service == generic_proxy_find_service,
                   "GenericProxy not using ProxyBase::FindService");
 }

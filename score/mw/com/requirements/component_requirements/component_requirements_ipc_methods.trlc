@@ -1,0 +1,57 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package com
+
+import ScoreReq
+
+import Communication
+
+section "com" {
+    section "Public_API_Requirements" {
+
+        ScoreReq.CompReq AllocateInArgsAndReturnValueInMemory{
+
+            description = """Service-Methods shall provide an API to the caller to allocate memory for `InArgs` and the
+            return value, of the service-method. In case of shm-binding this pre-allocated memory would be in shared
+            memory, allowing a zero copy implementation."""
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.ZeroCopy@1, Communication.Method@1]
+            version = 1
+        }
+
+        ScoreReq.CompReq CallForServiceMethodsFromPreAllocatedMemory{
+
+            description = """ Service-Methods shall provide a call method or a call operator to the caller which takes a
+            pointer in memory, which was received from the allocate call, to `InArgs` and the return value.
+            In case of shm binding this should be a zero-copy call.
+            """
+
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.ZeroCopy@1, Communication.Method@1]
+            version = 1
+        }
+
+    }
+
+    section "Referenced_Requirements" {
+        ScoreReq.CompReq IsolatedCallQueuePerCaller{
+
+            description = "Method call interactions betwean consumer and provider processes shall not be visible for any other process."
+
+            note = "Unrelated processes, other than the communicating consumer provider pair, will not share a shared memory object, which avoids security violations through interference."
+            safety = ScoreReq.Asil.B
+            derived_from = [Communication.DataCorruption@1, Communication.DataLoss@1, Communication.DataReordering@1, Communication.DataRepetition@1]
+            version = 1
+        }
+    }
+}

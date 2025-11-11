@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "service_app_config_schema",
+  "description": "LoLa benchmarking joined configuration. This is the complete LoLa benchmark configuration, provided by the user. Specific configurations for the client apps and service apps making up the entire benchmark are generated from this joined configuration.",
+  "type": "object",
+  "required": [
+    "common",
+    "service_config",
+    "client_config"
+  ],
+
+  "properties": {
+    "common": {
+      "type": "object",
+      "description": "Common benchmark settings, which influence service AND client application parts of the benchmark",
+      "required": [
+        "number_of_clients",
+        "asil_level"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "number_of_clients": {
+          "type": "integer",
+          "description": "How many client activities shall be spawned in the benchmark. This is a common setting, as the service app needs this number during runtime, to know, when ALL clients are done with reception and it needs it in its mw_com_config.json because the <numberOfSampleSlots> are calculated based on the number. Client app needs it, as it has to spawn the given number of client threads.",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "asil_level": {
+          "description": "Configures the ASIL level of the communication. The chosen level determines the ASIL level of service and client app.",
+          "type": "string",
+          "enum": [
+            "QM",
+            "B"
+          ]
+        }
+      }
+    },
+
+    "service_config": {
+      "type": "object",
+      "description": "Service app specific benchmark settings.",
+      "required": [
+        "send_cycle_time_ms"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "send_cycle_time_ms": {
+          "description": "Time between sample sends in milliseconds.",
+          "type": "integer",
+          "enum": [
+            40,
+            80,
+            1000
+          ]
+        }
+      }
+    },
+
+    "client_config": {
+      "type": "object",
+      "description": "Client app specific benchmark settings.",
+      "required": [
+        "read_cycle_time_ms",
+        "service_finder_mode"
+      ],
+
+      "additionalProperties": false,
+      "properties": {
+        "read_cycle_time_ms": {
+          "description": "Time between sample reads (polling) in milliseconds. A value of 0 means, that the client installs a receive-handler and reads 'event-based'.",
+          "type": "integer",
+          "enum": [
+            0,
+            40,
+            80,
+            1000
+          ]
+        },
+        "service_finder_mode": {
+          "description": "Configures the client app to find the service in either POLLING or ASYNC mode. Currently ASYNC mode is not implemented.",
+          "type": "string",
+          "enum": [
+            "POLLING",
+            "ASYNC"
+          ]
+        },
+
+        "run_time_limit": {
+          "description": "(Optional) Parameter Specifieing the duration of a test run. If absent then the test will run forever untill interupted by SIGINT.",
+          "type": "object",
+          "required": [ "duration", "unit" ],
+          "properties": {
+              "duration": {
+                  "description": "Duration for a client to run. After the specified duration is over or the client receives an interrupt signal, it will unsubscribe and shut down.",
+                  "type": "integer",
+                  "minimum": 1
+              },
+              "unit": {
+                  "description": "Unit with which to interpret the meaning of the duration variable. 'ms' and 's' stand for time units milliseconds and seconds. 'sample_count' interprets the duration number as the of samples that each of the spawned clients will try to acquire via GetNewSamples().",
+                  "type": "string",
+                  "enum": [
+                      "ms",
+                      "s",
+                      "sample_count"
+                  ]
+              }
+          }
+        }
+      }
+    }
+  }
+}

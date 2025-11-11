@@ -14,7 +14,7 @@
 
 #include "score/mw/com/impl/com_error.h"
 
-#include <regex>
+#include <cctype>
 
 namespace score::mw::com::impl
 {
@@ -22,42 +22,72 @@ namespace score::mw::com::impl
 namespace
 {
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate()
-// function shall not be called implicitly". std::regex_search() will not throw exception
-// as characters passed are pre checked for invalid data.
-// coverity[autosar_cpp14_a15_5_3_violation]
+/**
+ * @brief Validates whether a shortname string adheres to the naming requirements.
+ *
+ * @details Validation Rules:
+ * - Must not be empty
+ * - First character must be: letter (a-z, A-Z), underscore (_), or forward slash (/)
+ * - Subsequent characters must be: alphanumeric (a-z, A-Z, 0-9), underscore (_), or forward slash (/)
+ * - Must not end with a forward slash (/)
+ * - Must not contain consecutive forward slashes (//)
+ *
+ * @param shortname The shortname string to validate
+ * @return true if the shortname is valid according to all rules, false otherwise
+ */
 bool IsShortNameValid(const std::string_view shortname) noexcept
 {
-    // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
-    // constant-initialized". std::regex does not have a constexpr constructor and hence cannot be constexpr.
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_characters_regex("^[A-Za-z_/][A-Za-z_/0-9]*", std::regex_constants::basic);
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_trailing_slash_regex("/$", std::regex_constants::basic);
-    // coverity[autosar_cpp14_a3_3_2_violation]
-    static std::regex check_duplicate_slashes_regex("/{2,}", std::regex_constants::extended);
+    if (shortname.empty() || (shortname.back() == '/'))
+    {
+        return false;
+    }
 
-    const bool all_characters_valid = std::regex_match(shortname.begin(), shortname.end(), check_characters_regex);
-    const bool duplicate_slashes_found =
-        std::regex_search(shortname.begin(), shortname.end(), check_duplicate_slashes_regex);
-    const bool trailing_slash_found = std::regex_search(shortname.begin(), shortname.end(), check_trailing_slash_regex);
+    auto validate_chars = [](auto it_begin, auto it_end, const bool first_char) -> bool {
+        const auto found_invalid_chars = std::find_if_not(it_begin, it_end, [first_char](const auto curent_char) {
+            const auto u_ch = static_cast<unsigned char>(curent_char);
+            // Suppress "AUTOSAR C++14 M5-0-3" and  "AUTOSAR C++14 M5-0-4" rules, which state: "A cvalue expression
+            // shall not be implicitly converted to a different underlying type." and "An implicit integral conversion
+            // shall not change the signedness of the underlying type." respectively Rationale: This is tolerated as
+            // static_cast from int to bool will not change the signedness and the type convertion is intended
+            // coverity[autosar_cpp14_m5_0_3_violation]
+            // coverity[autosar_cpp14_m5_0_4_violation]
+            const auto is_alpha_or_num = first_char ? std::isalpha(u_ch) : std::isalnum(u_ch);
+            // coverity[autosar_cpp14_a5_2_6_violation: FALSE] False positive: each operand is parenthesized
+            return ((static_cast<bool>(is_alpha_or_num)) || (curent_char == '_') || (curent_char == '/'));
+        });
+        return found_invalid_chars == it_end;
+    };
+    // Validate first character
+    if (!validate_chars(shortname.begin(), std::next(shortname.begin()), true))
+    {
+        return false;
+    }
+    // Single pass validation
+    if (!validate_chars(std::next(shortname.begin()), shortname.end(), false))
+    {
+        return false;
+    }
 
-    return (((all_characters_valid) && (!duplicate_slashes_found)) && (!trailing_slash_found));
+    constexpr auto invalid_char_seq = "//";
+    if (shortname.find(invalid_char_seq, 0U) != std::string_view::npos)
+    {
+        return false;
+    }
+    return true;
 }
 
 }  // namespace
 
-score::Result<InstanceSpecifier> InstanceSpecifier::Create(const std::string_view shortname_path) noexcept
+score::Result<InstanceSpecifier> InstanceSpecifier::Create(std::string&& shortname_path) noexcept
 {
     if (!IsShortNameValid(shortname_path))
     {
         score::mw::log::LogWarn("lola") << "Shortname" << shortname_path
-                                      << "does not adhere to shortname naming requirements.";
+                                        << "does not adhere to shortname naming requirements.";
         return MakeUnexpected(ComErrc::kInvalidMetaModelShortname);
     }
 
-    const InstanceSpecifier instance_specifier{shortname_path};
-    return instance_specifier;
+    return InstanceSpecifier{std::move(shortname_path)};
 }
 
 std::string_view InstanceSpecifier::ToString() const noexcept
@@ -65,8 +95,8 @@ std::string_view InstanceSpecifier::ToString() const noexcept
     return instance_specifier_string_;
 }
 
-InstanceSpecifier::InstanceSpecifier(const std::string_view shortname_path) noexcept
-    : instance_specifier_string_{shortname_path}
+InstanceSpecifier::InstanceSpecifier(std::string&& shortname_path) noexcept
+    : instance_specifier_string_{std::move(shortname_path)}
 {
 }
 

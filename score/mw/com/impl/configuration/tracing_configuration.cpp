@@ -109,9 +109,11 @@ bool TracingConfiguration::IsServiceElementTracingEnabled(
         return false;
     }
 
-    const auto instance_specifier_result = InstanceSpecifier::Create(instance_specifier_view);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance_specifier_result.has_value(),
-                           "an isntance specifier could not be created from the given instance_specifier_view.");
+    std::string instance_specifier_to_create{instance_specifier_view};
+    const auto instance_specifier_result = InstanceSpecifier::Create(std::move(instance_specifier_to_create));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        instance_specifier_result.has_value(),
+        "an instance specifier could not be created from the given instance_specifier_view.");
 
     const auto instance_specifier = instance_specifier_result.value();
     const auto& instance_specifier_set = find_result->second;

@@ -3,10 +3,10 @@
 ## Introduction
 
 `mw::com`/`LoLa` needs to support `IPC Tracing` by usage of the so-called `Generic Trace API` lib, which is documented
-[here](../../../analysis/tracing/library/design/README.md).
+[here](../../../analysis/tracing/generic_trace_library/design/README.md).
 
 This `IPC Tracing` allows `LoLa` to trace the majority of calls a user of `mw::com`/`LoLa` does to the public API of `mw::com`.
-The exact supported list of API calls is described [here](../../../analysis/tracing/library/design#c-api-interface).
+The exact supported list of API calls is described [here](../../../analysis/tracing/generic_trace_library/design#c-api-interface).
 The tracing is controlled by a
 [JSON based configuration](../../../analysis/tracing/config/schema/comtrace_config_schema.json),
 which describes, which API entry point shall be traced.
@@ -83,7 +83,7 @@ It defines for specific `trace points`, whether they shall be enabled or not. A 
 `mw::com`/`LoLa`. It is identified by:
 - the service type
 - the element within the service (which event/field/method)
-- the provided API of this element ([see here](broken_link_g/swh/ddad_platform/tree/master/aas/analysis/tracing/library/design#providerskeleton-side-trace-points))
+- the provided API of this element ([see here](/score/analysis/tracing/generic_trace_library/design#providerskeleton-side-trace-points))
   for an overview of the supported APIs.
 
 Note: Currently the *trace filter config* does **NOT** distinguish between service instances! I.e. if a certain

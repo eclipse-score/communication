@@ -11,14 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
-
 #include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
 
 #include "score/memory/shared/memory_resource_registry.h"
-#include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <memory>
 #include <utility>
 

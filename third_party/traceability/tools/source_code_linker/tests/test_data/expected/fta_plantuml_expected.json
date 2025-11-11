@@ -1,0 +1,58 @@
+{
+  "data": [
+    {
+      "tag": "req TopEvent_001",
+      "location": {
+        "kind": "file",
+        "file": "https://github.com/test/repo/blob/test_hash/tools/source_code_linker/tests/test_data/input/fta_sample.puml#L2",
+        "line": 1,
+        "column": 1
+      },
+      "name": "tools/source_code_linker/tests/test_data/input/fta_sample.puml",
+      "messages": [],
+      "just_up": [],
+      "just_down": [],
+      "just_global": [],
+      "framework": "TRLC",
+      "kind": "requirement",
+      "text": "TopEvent_001"
+    },
+    {
+      "tag": "req BasicEvent_001",
+      "location": {
+        "kind": "file",
+        "file": "https://github.com/test/repo/blob/test_hash/tools/source_code_linker/tests/test_data/input/fta_sample.puml#L3",
+        "line": 1,
+        "column": 1
+      },
+      "name": "tools/source_code_linker/tests/test_data/input/fta_sample.puml",
+      "messages": [],
+      "just_up": [],
+      "just_down": [],
+      "just_global": [],
+      "framework": "TRLC",
+      "kind": "requirement",
+      "text": "BasicEvent_001"
+    },
+    {
+      "tag": "req BasicEvent_002",
+      "location": {
+        "kind": "file",
+        "file": "https://github.com/test/repo/blob/test_hash/tools/source_code_linker/tests/test_data/input/fta_sample.puml#L4",
+        "line": 1,
+        "column": 1
+      },
+      "name": "tools/source_code_linker/tests/test_data/input/fta_sample.puml",
+      "messages": [],
+      "just_up": [],
+      "just_down": [],
+      "just_global": [],
+      "framework": "TRLC",
+      "kind": "requirement",
+      "text": "BasicEvent_002"
+    }
+  ],
+  "generator": "lobster-trlc",
+  "schema": "lobster-req-trace",
+  "version": 4
+}

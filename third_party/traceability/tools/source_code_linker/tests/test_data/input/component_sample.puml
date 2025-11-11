@@ -1,0 +1,4 @@
+@startuml
+component "SampleLibrary" as SL
+component "TestComponent"
+@enduml

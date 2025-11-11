@@ -21,8 +21,8 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/tracing/proxy_event_tracing.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 

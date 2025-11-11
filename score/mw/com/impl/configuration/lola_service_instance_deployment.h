@@ -22,6 +22,7 @@
 
 #include "score/mw/log/logging.h"
 
+#include <score/assert.hpp>
 #include <score/optional.hpp>
 
 #include <cstdint>
@@ -75,30 +76,42 @@ class LolaServiceInstanceDeployment
 
 bool areCompatible(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
 bool operator==(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
+bool operator<(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstanceDeployment& rhs) noexcept;
 
 template <ServiceElementType service_element_type>
 const auto& GetServiceElementInstanceDeployment(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
                                                 const std::string& event_name)
 {
+    static_assert(service_element_type != ServiceElementType::INVALID);
+
     const auto& service_element_instance_deployments = [&lola_service_instance_deployment]() -> const auto& {
         if constexpr (service_element_type == ServiceElementType::EVENT)
         {
             return lola_service_instance_deployment.events_;
         }
-        if constexpr (service_element_type == ServiceElementType::FIELD)
+        else if constexpr (service_element_type == ServiceElementType::FIELD)
         {
             return lola_service_instance_deployment.fields_;
         }
-        score::mw::log::LogFatal()
-            << "Invalid service element type. Could not get service element instance deployment. Terminating";
-        std::terminate();
+        // LCOV_EXCL_START: Defensive programming: This state will be unreachable since service_element_type must be an
+        // EVENT or FIELD (we have a static_assert at the start of this function).
+        else
+        {
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);
+        }
+        // LCOV_EXCL_STOP
     }();
 
     const auto service_element_instance_deployment_it = service_element_instance_deployments.find(event_name);
+    // LCOV_EXCL_BR_START False positive: The tool is reporting that the true decision is never taken. We have tests in
+    // lola_service_instance_deployment_test.cpp (GettingEventThatDoesNotExistInDeploymentTerminates and
+    // GettingFieldThatDoesNotExistInDeploymentTerminates) which test the true branch of this condition. This is a bug
+    // with the tool to be fixed in (Ticket-219132). This suppression should be removed when the tool is fixed.
     if (service_element_instance_deployment_it == service_element_instance_deployments.cend())
+    // LCOV_EXCL_BR_STOP
     {
         score::mw::log::LogFatal() << service_element_type << "name \"" << event_name
-                                 << "\"does not exist in LolaServiceInstanceDeployment. Terminating.";
+                                   << "\"does not exist in LolaServiceInstanceDeployment. Terminating.";
         std::terminate();
     }
     return service_element_instance_deployment_it->second;

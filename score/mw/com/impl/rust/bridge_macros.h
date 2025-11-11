@@ -81,7 +81,7 @@ inline S* CreateSkeletonWrapper(const ::score::mw::com::InstanceSpecifier& insta
                                                                                                                     \
     uid##MwComProxyType* mw_com_gen_ProxyWrapperClass_##uid##_create(const uid##MwComProxyType::HandleType& handle) \
     {                                                                                                               \
-        return ::score::mw::com::impl::rust::CreateProxyWrapper<uid##MwComProxyType>(handle);                         \
+        return ::score::mw::com::impl::rust::CreateProxyWrapper<uid##MwComProxyType>(handle);                       \
     }                                                                                                               \
                                                                                                                     \
     void mw_com_gen_ProxyWrapperClass_##uid##_delete(uid##MwComProxyType* proxy)                                    \
@@ -90,9 +90,9 @@ inline S* CreateSkeletonWrapper(const ::score::mw::com::InstanceSpecifier& insta
     }                                                                                                               \
                                                                                                                     \
     uid##MwComSkeletonType* mw_com_gen_SkeletonWrapperClass_##uid##_create(                                         \
-        const ::score::mw::com::InstanceSpecifier& instance_specifier)                                                \
+        const ::score::mw::com::InstanceSpecifier& instance_specifier)                                              \
     {                                                                                                               \
-        return ::score::mw::com::impl::rust::CreateSkeletonWrapper<uid##MwComSkeletonType>(instance_specifier);       \
+        return ::score::mw::com::impl::rust::CreateSkeletonWrapper<uid##MwComSkeletonType>(instance_specifier);     \
     }                                                                                                               \
                                                                                                                     \
     void mw_com_gen_SkeletonWrapperClass_##uid##_delete(uid##MwComSkeletonType* skeleton)                           \
@@ -110,48 +110,48 @@ inline S* CreateSkeletonWrapper(const ::score::mw::com::InstanceSpecifier& insta
         skeleton->StopOfferService();                                                                               \
     }
 
-#define EXPORT_MW_COM_EVENT(uid, event_type, event_name)                                                         \
+#define EXPORT_MW_COM_EVENT(uid, event_type, event_name)                                                           \
     ::score::mw::com::impl::ProxyEvent<event_type>* mw_com_gen_ProxyWrapperClass_##uid##_##event_name##_get(       \
-        uid##MwComProxyType* proxy) noexcept                                                                     \
-    {                                                                                                            \
-        return &proxy->event_name;                                                                               \
-    }                                                                                                            \
-                                                                                                                 \
+        uid##MwComProxyType* proxy) noexcept                                                                       \
+    {                                                                                                              \
+        return &proxy->event_name;                                                                                 \
+    }                                                                                                              \
+                                                                                                                   \
     ::score::mw::com::impl::SkeletonEvent<event_type>* mw_com_gen_SkeletonWrapperClass_##uid##_##event_name##_get( \
-        uid##MwComSkeletonType* skeleton) noexcept                                                               \
-    {                                                                                                            \
-        return &skeleton->event_name;                                                                            \
+        uid##MwComSkeletonType* skeleton) noexcept                                                                 \
+    {                                                                                                              \
+        return &skeleton->event_name;                                                                              \
     }
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // extern "C"
 
-#define EXPORT_MW_COM_TYPE(uid, type)                                                                              \
-    extern "C" {                                                                                                   \
+#define EXPORT_MW_COM_TYPE(uid, type)                                                                                \
+    extern "C" {                                                                                                     \
     bool mw_com_gen_ProxyEvent_##uid##_get_new_sample(::score::mw::com::impl::ProxyEvent<type>& proxy_event,         \
                                                       ::score::mw::com::impl::SamplePtr<type>* sample_ptr) noexcept  \
-    {                                                                                                              \
+    {                                                                                                                \
         return ::score::mw::com::impl::rust::GetSampleFromEvent(proxy_event, sample_ptr);                            \
-    }                                                                                                              \
-                                                                                                                   \
-    std::uint32_t mw_com_gen_##uid##_get_size() noexcept                                                           \
-    {                                                                                                              \
-        return sizeof(type);                                                                                       \
-    }                                                                                                              \
-                                                                                                                   \
+    }                                                                                                                \
+                                                                                                                     \
+    std::uint32_t mw_com_gen_##uid##_get_size() noexcept                                                             \
+    {                                                                                                                \
+        return sizeof(type);                                                                                         \
+    }                                                                                                                \
+                                                                                                                     \
     const type* mw_com_gen_SamplePtr_##uid##_get(const ::score::mw::com::impl::SamplePtr<type>* sample_ptr) noexcept \
-    {                                                                                                              \
-        return sample_ptr->Get();                                                                                  \
-    }                                                                                                              \
-                                                                                                                   \
+    {                                                                                                                \
+        return sample_ptr->Get();                                                                                    \
+    }                                                                                                                \
+                                                                                                                     \
     void mw_com_gen_SamplePtr_##uid##_delete(::score::mw::com::impl::SamplePtr<type>* sample_ptr)                    \
-    {                                                                                                              \
-        sample_ptr->~SamplePtr<type>();                                                                            \
-    }                                                                                                              \
-                                                                                                                   \
+    {                                                                                                                \
+        sample_ptr->~SamplePtr<type>();                                                                              \
+    }                                                                                                                \
+                                                                                                                     \
     bool mw_com_gen_SkeletonEvent_##uid##_send(::score::mw::com::impl::SkeletonEvent<type>* event, type* data)       \
-    {                                                                                                              \
-        return event->Send(std::move(*data)).has_value();                                                          \
-    }                                                                                                              \
+    {                                                                                                                \
+        return event->Send(std::move(*data)).has_value();                                                            \
+    }                                                                                                                \
     }
 
 #endif  // SCORE_MW_COM_IMPL_RUST_BRIDGE_MACROS_H

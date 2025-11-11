@@ -14,13 +14,7 @@
 
 #include "score/mw/com/message_passing/qnx/resmgr_traits_common.h"
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace message_passing
+namespace score::mw::com::message_passing
 {
 
 using file_descriptor_type = ResmgrSenderTraits::file_descriptor_type;
@@ -59,7 +53,4 @@ ResmgrSenderTraits::OsResources ResmgrSenderTraits::GetDefaultOSResources(
     return {score::os::Unistd::Default(memory_resource), score::os::Fcntl::Default(memory_resource)};
 }
 
-}  // namespace message_passing
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::message_passing

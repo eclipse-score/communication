@@ -82,6 +82,8 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                                   const std::string_view service_element_name) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
+    static_assert(element_type != ServiceElementType::INVALID);
+
     const InstanceIdentifierView identifier_view{identifier};
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
@@ -92,7 +94,7 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
             if (lola_parent == nullptr)
             {
                 score::mw::log::LogFatal("lola") << "Skeleton service element could not be created because parent "
-                                                  "skeleton binding is a nullptr.";
+                                                    "skeleton binding is a nullptr.";
                 return nullptr;
             }
 

@@ -162,7 +162,8 @@ class SamplePtr final
     }
 
   private:
-    std::variant<score::cpp::blank, lola::SamplePtr<SampleType>, mock_binding::SamplePtr<SampleType>> binding_sample_ptr_;
+    std::variant<score::cpp::blank, lola::SamplePtr<SampleType>, mock_binding::SamplePtr<SampleType>>
+        binding_sample_ptr_;
     SampleReferenceGuard reference_guard_;
 };
 

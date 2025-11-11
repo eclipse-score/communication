@@ -1,0 +1,5 @@
+@startuml
+$TopEvent("System Failure", "TopEvent_001")
+$BasicEvent("Component A Failure", "BasicEvent_001")
+$BasicEvent("Component B Failure", "BasicEvent_002")
+@enduml

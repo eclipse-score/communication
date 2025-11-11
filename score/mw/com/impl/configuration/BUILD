@@ -10,8 +10,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
@@ -36,7 +37,7 @@ cc_library(
     hdrs = ["quality_type.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola/messages:__pkg__"],
+    visibility = ["//score/mw/com/impl/bindings/lola/messaging:__pkg__"],
 )
 
 cc_library(
@@ -49,7 +50,7 @@ cc_library(
         ":quality_type",
         ":service_type_deployment",
         ":someip_service_instance_deployment",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -57,8 +58,8 @@ cc_library(
     ],
     deps = [
         ":configuration_local",
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -80,7 +81,7 @@ cc_library(
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl/tracing/configuration:service_element_identifier",
         "//score/mw/com/impl/tracing/configuration:tracing_config",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -89,7 +90,7 @@ cc_library(
     srcs = ["global_configuration.cpp"],
     hdrs = ["global_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/mw/log"],
+    implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -105,7 +106,7 @@ cc_library(
     srcs = ["tracing_configuration.cpp"],
     hdrs = ["tracing_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score-baselibs//score/mw/log"],
+    implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -115,7 +116,7 @@ cc_library(
         "//score/mw/com/impl/tracing/configuration:service_element_identifier",
         "//score/mw/com/impl/tracing/configuration:service_element_identifier_view",
         "//score/mw/com/impl/tracing/configuration:tracing_config",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -128,7 +129,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/result"],
+    deps = ["@score_baselibs//score/result"],
 )
 
 cc_library(
@@ -138,13 +139,13 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -157,7 +158,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
-    deps = ["@score-baselibs//score/json"],
+    deps = ["@score_baselibs//score/json"],
 )
 
 cc_library(
@@ -200,7 +201,7 @@ cc_library(
     hdrs = ["someip_field_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    deps = ["@score-baselibs//score/json"],
+    deps = ["@score_baselibs//score/json"],
 )
 
 cc_library(
@@ -215,10 +216,10 @@ cc_library(
         ":lola_field_instance_deployment",
         ":lola_service_instance_id",
         ":quality_type",
-        "@score-baselibs//score/json",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:service_element_type",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -244,7 +245,7 @@ cc_library(
     implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    deps = ["@score-baselibs//score/json"],
+    deps = ["@score_baselibs//score/json"],
 )
 
 cc_library(
@@ -254,7 +255,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [":configuration_common_resources"],
     tags = ["FFI"],
-    deps = ["@score-baselibs//score/json"],
+    deps = ["@score_baselibs//score/json"],
 )
 
 cc_library(
@@ -266,8 +267,8 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":service_version_type",
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -286,7 +287,7 @@ cc_library(
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:instance_specifier",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -301,8 +302,8 @@ cc_library(
         ":configuration_common_resources",
         ":lola_service_instance_id",
         ":someip_service_instance_id",
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -315,8 +316,8 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -328,8 +329,8 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -344,9 +345,9 @@ cc_library(
         ":someip_event_instance_deployment",
         ":someip_field_instance_deployment",
         ":someip_service_instance_id",
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/result",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -355,14 +356,14 @@ cc_library(
     srcs = ["binding_service_type_deployment.cpp"],
     hdrs = [
         "binding_service_type_deployment.h",
-        "binding_service_type_deployment.tpp",
+        "binding_service_type_deployment_impl.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/json",
         "//score/mw/com/impl:service_element_type",
+        "@score_baselibs//score/json",
     ],
 )
 
@@ -381,9 +382,9 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
-        "@score-baselibs//score/json",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -422,8 +423,8 @@ cc_test(
     tags = ["unit"],
     deps = [
         ":config_parser",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
         "@googletest//:gtest_main",
+        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
     ],
 )
 
@@ -438,10 +439,10 @@ cc_test(
     tags = ["unit"],
     deps = [
         ":configuration_common_resources",
-        "@score-baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score-baselibs//score/json",
         "@googletest//:gtest_main",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/json",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
     ],
 )
 
@@ -461,7 +462,7 @@ cc_gtest_unit_test(
         ":config_parser",
         ":configuration_local",
         "//score/mw/com/impl/configuration/test:configuration_store",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -472,7 +473,7 @@ cc_gtest_unit_test(
     deps = [
         ":lola_service_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

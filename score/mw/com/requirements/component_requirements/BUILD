@@ -17,11 +17,12 @@ trlc_requirements(
     name = "component_requirements_ipc",
     srcs = [
         "component_requirements_ipc.trlc",
+        "component_requirements_ipc_methods.trlc",
         "//score/mw/com/requirements/assumed_system_requirements",
         "//score/mw/com/requirements/feature_requirements:feature_requirements_ipc",
     ],
     spec = [
-        "@//third_party/score_requirement_model:requirement_metamodel",
+        "//third_party/traceability/config/trlc/score_model:requirement_metamodel",
     ],
     visibility = ["//visibility:public"],
 )

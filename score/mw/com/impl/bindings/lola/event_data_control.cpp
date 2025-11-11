@@ -33,9 +33,9 @@ constexpr auto MAX_REFERENCE_RETRIES = 100U;
 
 template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". we can't mark the constructor of 'score::containers::DynamicArray' as noexcept because this will generate
-// coverity findings in all users. The only way to throw exception by the constructor is that we run out of memory, and
-// as we assume that the user has memory so no way to throw std::terminate().
+// implicitly". we can't mark the constructor of 'score::containers::DynamicArray' as noexcept because this will
+// generate coverity findings in all users. The only way to throw exception by the constructor is that we run out of
+// memory, and as we assume that the user has memory so no way to throw std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation]
 EventDataControlImpl<AtomicIndirectorType>::EventDataControlImpl(
     const SlotIndexType max_slots,
@@ -199,8 +199,9 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceSpecificEvent(
     // not called in a context in which the status can change to in writing or invalid while this function is running.
     const auto slot_current_status =
         static_cast<EventSlotStatus>(state_slots_[slot_index].load(std::memory_order_relaxed));
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!(slot_current_status.IsInWriting() || slot_current_status.IsInvalid()),
-                                 "An event slot can only be referenced once it's ready for reading.");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        !(slot_current_status.IsInWriting() || slot_current_status.IsInvalid()),
+        "An event slot can only be referenced once it's ready for reading.");
 
     auto& transaction_log = transaction_log_set_.GetTransactionLog(transaction_log_index);
 
@@ -215,8 +216,8 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceSpecificEvent(
     // restart the provider, then it should contain an uncommitted reference transaction which will cause the restart to
     // fail.
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(EventSlotStatus{old_slot_value}.GetReferenceCount() !=
-                                     std::numeric_limits<EventSlotStatus::SubscriberCount>::max(),
-                                 "Reference count overflowed which cannot be recovered from.");
+                                                          std::numeric_limits<EventSlotStatus::SubscriberCount>::max(),
+                                                      "Reference count overflowed which cannot be recovered from.");
     transaction_log.ReferenceTransactionCommit(slot_index);
 }
 
@@ -283,9 +284,10 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
                       "ReferenceNextEvent: status_new_val overflow dangerous.");
         // As status_new_val increment will take place and in case status_new_val has the maximum limit, an error
         // message logged and terminate to avoid status_new_val overflow.
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(status_new_val != std::numeric_limits<std::size_t>::max(),
-                               "EventDataControlImpl::ReferenceNextEvent failed: status_new_val reached the maximum "
-                               "value, an overflow dangerous");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            status_new_val != std::numeric_limits<std::size_t>::max(),
+            "EventDataControlImpl::ReferenceNextEvent failed: status_new_val reached the maximum "
+            "value, an overflow dangerous");
         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
         // not lead to data loss.".
         // No way for an overflow as long as both variables have same data type, and status_new_val doesn't reach the

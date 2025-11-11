@@ -18,8 +18,8 @@
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field_base.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 
@@ -168,8 +168,9 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonField<SampleDataType>::Alloca
     // This check can be removed when Ticket-104261 is implemented
     if (!was_prepare_offer_called_)
     {
-        score::mw::log::LogWarn("lola") << "Lola currently doesn't support zero-copy Allocate() before OfferService() is "
-                                         "called as the shared memory is not setup until OfferService() is called.";
+        score::mw::log::LogWarn("lola")
+            << "Lola currently doesn't support zero-copy Allocate() before OfferService() is "
+               "called as the shared memory is not setup until OfferService() is called.";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     return GetTypedEvent()->Allocate();
@@ -182,8 +183,9 @@ template <typename SampleDataType>
 // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
 ResultBlank SkeletonField<SampleDataType>::DoDeferredUpdate() noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(initial_field_value_ != nullptr,
-                       "Initial field value containing a value is a precondition for DoDeferredUpdate.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
+        initial_field_value_ != nullptr,
+        "Initial field value containing a value is a precondition for DoDeferredUpdate.");
     const auto update_result = UpdateImpl(*initial_field_value_);
     if (!update_result.has_value())
     {

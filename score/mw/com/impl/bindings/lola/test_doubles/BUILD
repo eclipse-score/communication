@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -22,7 +23,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/plumbing:__pkg__",
     ],
-    deps = ["@score-baselibs//score/memory/shared:types"],
+    deps = ["@score_baselibs//score/memory/shared:types"],
 )
 
 cc_library(
@@ -40,10 +41,10 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":fake_memory_resource",
-        "@score-baselibs//score/memory/shared",
-        "@score-baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola:shared_data_structures",
         "//score/mw/com/impl/bindings/lola:skeleton",
+        "@score_baselibs//score/memory/shared",
+        "@score_baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )

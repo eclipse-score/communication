@@ -43,13 +43,8 @@ bool DoesLogContainIncrementOrDecrementTransactions(
 
 }  // namespace
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". The std::vector constructor we use is not marked as noexcept, in case TransactionLogNode is not
-// DefaultInsertable into std::vector<T>, the behavior is undefined. As TransactionLogNode is DefaultInsertable so no
-// way for throwing an exception which leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 TransactionLog::TransactionLog(std::size_t number_of_slots, const memory::shared::MemoryResourceProxy* proxy) noexcept
-    : reference_count_slots_(number_of_slots, proxy), subscribe_transactions_{}, subscription_max_sample_count_{}
+    : reference_count_slots_{number_of_slots, proxy}, subscribe_transactions_{}, subscription_max_sample_count_{}
 {
 }
 
@@ -97,10 +92,10 @@ void TransactionLog::UnsubscribeTransactionCommit() noexcept
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLog::ReferenceTransactionBegin(SlotIndexType slot_index) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(static_cast<std::size_t>(slot_index) < reference_count_slots_.size());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionEnd());
-    reference_count_slots_.at(static_cast<std::size_t>(slot_index)).SetTransactionBegin(true);
+    TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionBegin());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionEnd());
+    slot.SetTransactionBegin(true);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -110,10 +105,10 @@ void TransactionLog::ReferenceTransactionBegin(SlotIndexType slot_index) noexcep
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLog::ReferenceTransactionCommit(SlotIndexType slot_index) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(static_cast<std::size_t>(slot_index) < reference_count_slots_.size());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionEnd());
-    reference_count_slots_.at(static_cast<std::size_t>(slot_index)).SetTransactionEnd(true);
+    TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionEnd());
+    slot.SetTransactionEnd(true);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -123,10 +118,10 @@ void TransactionLog::ReferenceTransactionCommit(SlotIndexType slot_index) noexce
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLog::ReferenceTransactionAbort(SlotIndexType slot_index) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(static_cast<std::size_t>(slot_index) < reference_count_slots_.size());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionEnd());
-    reference_count_slots_.at(static_cast<std::size_t>(slot_index)).SetTransactionBegin(false);
+    TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionEnd());
+    slot.SetTransactionBegin(false);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -136,10 +131,10 @@ void TransactionLog::ReferenceTransactionAbort(SlotIndexType slot_index) noexcep
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLog::DereferenceTransactionBegin(SlotIndexType slot_index) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(static_cast<std::size_t>(slot_index) < reference_count_slots_.size());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionEnd());
-    reference_count_slots_.at(static_cast<std::size_t>(slot_index)).SetTransactionBegin(false);
+    TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionEnd());
+    slot.SetTransactionBegin(false);
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -149,10 +144,10 @@ void TransactionLog::DereferenceTransactionBegin(SlotIndexType slot_index) noexc
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLog::DereferenceTransactionCommit(SlotIndexType slot_index) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(static_cast<std::size_t>(slot_index) < reference_count_slots_.size());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(reference_count_slots_.at(static_cast<std::size_t>(slot_index)).GetTransactionEnd());
-    reference_count_slots_.at(static_cast<std::size_t>(slot_index)).SetTransactionEnd(false);
+    TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionBegin());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionEnd());
+    slot.SetTransactionEnd(false);
 }
 
 ResultBlank TransactionLog::RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
@@ -162,8 +157,9 @@ ResultBlank TransactionLog::RollbackProxyElementLog(const DereferenceSlotCallbac
                                          !subscribe_transactions_.GetTransactionEnd()};
     if (was_no_subscribe_recorded)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE(!DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_),
-                                 "All slot increment transactions should be reversed before calling unsubscribe");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE(
+            !DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_),
+            "All slot increment transactions should be reversed before calling unsubscribe");
     }
 
     const auto rollback_increment_transactions_result = RollbackIncrementTransactions(dereference_slot_callback);
@@ -193,7 +189,7 @@ ResultBlank TransactionLog::RollbackIncrementTransactions(
 {
     for (SlotIndexType slot_idx = 0U; slot_idx < reference_count_slots_.size(); ++slot_idx)
     {
-        auto& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_idx));
+        TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_idx));
 
         const bool was_slot_succesfully_incremented{slot.GetTransactionBegin() && slot.GetTransactionEnd()};
         const bool did_program_crash_while_incrementing_slot{slot.GetTransactionBegin() && !slot.GetTransactionEnd()};

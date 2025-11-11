@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/transaction_log_slot.h"
 
+#include "score/containers/dynamic_array.h"
 #include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 #include "score/result/result.h"
@@ -22,7 +23,6 @@
 #include <score/callback.hpp>
 
 #include <cstdint>
-#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -49,7 +49,8 @@ class TransactionLog
     using MaxSampleCountType = std::uint16_t;
 
     using TransactionLogSlots =
-        std::vector<TransactionLogSlot, memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>;
+        score::containers::DynamicArray<TransactionLogSlot,
+                                        memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>;
 
     /// \brief Callbacks called during Roll back
     ///

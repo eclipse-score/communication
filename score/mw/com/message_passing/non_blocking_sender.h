@@ -97,7 +97,8 @@ class NonBlockingSender final : public ISender
     /// \return only returns an error (score::os::Error::Code::kResourceTemporarilyUnavailable) if queue is full or for
     ///         the underlying executor already shutdown was requested!
     ///         Any Send-errors encountered async, when sending internally from the queue will not be returned back.
-    score::cpp::expected_blank<score::os::Error> SendInternal(const std::variant<ShortMessage, MediumMessage> message) noexcept;
+    score::cpp::expected_blank<score::os::Error> SendInternal(
+        const std::variant<ShortMessage, MediumMessage> message) noexcept;
 
     score::memory::PmrRingBuffer<std::variant<ShortMessage, MediumMessage>> queue_;
     std::mutex queue_mutex_;

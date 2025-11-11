@@ -91,7 +91,7 @@ auto GetOptionalValueFromJson(const score::json::Object& json_object, std::strin
 
     return ResultToOptionalOrElse(val_candidate->second.As<element_type>(), [key](auto) noexcept {
         score::mw::log::LogFatal("lola") << "provided key" << key
-                                       << "contains a value that can not be parsed. Terminating.\n";
+                                         << "contains a value that can not be parsed. Terminating.\n";
         std::terminate();
     });
 }

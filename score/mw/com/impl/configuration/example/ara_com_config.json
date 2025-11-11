@@ -80,6 +80,7 @@
     ],
     "global": {
         "asil-level": "B",
+        "applicationID": 1234,
         "queue-size": {
             "QM-receiver": 8,
             "B-receiver": 5,

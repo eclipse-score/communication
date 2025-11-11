@@ -10,3 +10,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
+load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
+
+exports_files([
+    "wait_free_stack_fix.patch",
+])
+
+format_multirun(
+    name = "format",
+    cc = "@clang_format//:executable",
+    starlark = "@buildifier_prebuilt//:buildifier",
+)
+
+format_test(
+    name = "format_test",
+    cc = "@clang_format//:executable",
+    no_sandbox = True,
+    starlark = "@buildifier_prebuilt//:buildifier",
+    workspace = "//:LICENSE",
+)

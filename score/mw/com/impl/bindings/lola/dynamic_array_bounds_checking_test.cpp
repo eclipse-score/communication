@@ -274,8 +274,8 @@ TYPED_TEST(DynamicArrayBoundsCheckingContractViolationFixture, CallingAtForEleme
 
     // When calling at() with an index that corresponds to an element outside the registered memory region
     // Then the program should terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                     this->ptr_to_dynamic_array_->at(this->GetIndexForElementOutsideMemoryBounds()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = this->ptr_to_dynamic_array_->at(this->GetIndexForElementOutsideMemoryBounds()));
 }
 
 TYPED_TEST(DynamicArrayBoundsCheckingContractViolationFixture, CallingIndexOperatorForElementOutOfMemoryRangeTerminates)
@@ -285,8 +285,8 @@ TYPED_TEST(DynamicArrayBoundsCheckingContractViolationFixture, CallingIndexOpera
 
     // When calling at() with an index that corresponds to an element outside the registered memory region
     // Then the program should terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                     (*this->ptr_to_dynamic_array_)[this->GetIndexForElementOutsideMemoryBounds()]);
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = (*this->ptr_to_dynamic_array_)[this->GetIndexForElementOutsideMemoryBounds()]);
 }
 
 TYPED_TEST(DynamicArrayBoundsCheckingContractViolationFixture,

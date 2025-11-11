@@ -24,13 +24,7 @@
 
 #include "score/os/unistd.h"
 
-namespace score
-{
-namespace mw
-{
-namespace com
-{
-namespace message_passing
+namespace score::mw::com::message_passing
 {
 namespace
 {
@@ -123,17 +117,14 @@ TEST_F(ResmgrFactoryFixture, Receivers)
     std::string identifier2{"/ResmgrFactoryTest2"};
     score::concurrency::ThreadPool thread_pool1{1};
     score::concurrency::ThreadPool thread_pool2{2};
-    auto receiver1 =
-        ReceiverFactoryImpl::Create(identifier1, thread_pool1, {}, ReceiverConfig{}, score::cpp::pmr::get_default_resource());
-    auto receiver2 =
-        ReceiverFactoryImpl::Create(identifier2, thread_pool2, {}, ReceiverConfig{}, score::cpp::pmr::get_default_resource());
+    auto receiver1 = ReceiverFactoryImpl::Create(
+        identifier1, thread_pool1, {}, ReceiverConfig{}, score::cpp::pmr::get_default_resource());
+    auto receiver2 = ReceiverFactoryImpl::Create(
+        identifier2, thread_pool2, {}, ReceiverConfig{}, score::cpp::pmr::get_default_resource());
     EXPECT_TRUE(receiver1);
     EXPECT_TRUE(receiver2);
     receiver2->StartListening();
 }
 
 }  // namespace
-}  // namespace message_passing
-}  // namespace com
-}  // namespace mw
-}  // namespace score
+}  // namespace score::mw::com::message_passing

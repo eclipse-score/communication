@@ -10,7 +10,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@score-baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(
@@ -27,7 +28,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -41,14 +42,14 @@ cc_library(
     deps = [
         ":service_element_tracing_data",
         ":type_erased_sample_ptr",
-        "@score-baselibs//score/memory/shared",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory/shared",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
-            "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
+            "@score_baselibs//score/analysis/tracing/generic_trace_library",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation"],
     }),
 )
 
@@ -104,7 +105,7 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -123,7 +124,7 @@ cc_library(
         "//score/mw/com/impl:skeleton_event_base",
         "//score/mw/com/impl:skeleton_field_base",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -145,7 +146,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -165,8 +166,8 @@ cc_library(
         "//score/mw/com/impl:proxy_event_binding",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
-        "@score-baselibs//score/mw/log",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -177,7 +178,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = ["@score-baselibs//score/result"],
+    deps = ["@score_baselibs//score/result"],
 )
 
 cc_library(
@@ -192,19 +193,19 @@ cc_library(
         ":i_tracing_runtime_binding",
         ":service_element_tracing_data",
         ":type_erased_sample_ptr",
-        "@score-baselibs//score/memory/shared:i_shared_memory_resource",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl/tracing/configuration:proxy_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:proxy_field_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
         "//score/mw/com/impl/tracing/configuration:skeleton_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:skeleton_field_trace_point_type",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
-            "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
+            "@score_baselibs//score/analysis/tracing/generic_trace_library",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation"],
     }),
 )
 
@@ -228,12 +229,12 @@ cc_library(
     hdrs = ["tracing_runtime.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score-baselibs//score/memory/shared:pointer_arithmetic_util",
+        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
     ] + select({
         "//score/mw/com/flags:tracing_library_real": [
-            "@score-baselibs//score/analysis/tracing/library/generic_trace_api",
+            "@score_baselibs//score/analysis/tracing/generic_trace_library",
         ],
-        "//score/mw/com/flags:tracing_library_stub": ["@score-baselibs//score/analysis/tracing/library/generic_trace_api_stub"],
+        "//score/mw/com/flags:tracing_library_stub": ["@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation"],
     }),
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
@@ -241,7 +242,7 @@ cc_library(
         ":i_tracing_runtime",
         ":i_tracing_runtime_binding",
         ":trace_error",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 
@@ -284,8 +285,8 @@ cc_gtest_unit_test(
     deps = [
         ":tracing_runtime",
         ":tracing_test_resources",
-        "@score-baselibs//score/analysis/tracing/library/generic_trace_api/mocks:trace_library_mock",
         "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
+        "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
     ],
 )
 
@@ -295,7 +296,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":type_erased_sample_ptr",
-        "@score-baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp",
     ],
 )
 

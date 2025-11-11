@@ -25,7 +25,7 @@
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/tracing/tracing_test_resources.h"
 
-#include "score/analysis/tracing/library/generic_trace_api/mocks/trace_library_mock.h"
+#include "score/analysis/tracing/generic_trace_library/mock/trace_library_mock.h"
 
 #include <score/optional.hpp>
 #include <score/span.hpp>

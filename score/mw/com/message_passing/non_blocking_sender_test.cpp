@@ -13,12 +13,12 @@
 #include "score/mw/com/message_passing/non_blocking_sender.h"
 
 #include "score/concurrency/executor_mock.h"
-#include "score/os/errno.h"
 #include "score/mw/com/message_passing/sender_mock.h"
+#include "score/os/errno.h"
 
-#include <score/memory.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <score/memory.hpp>
 
 #include <cstdint>
 #include <memory>
@@ -336,7 +336,9 @@ TEST_F(NonBlockingSenderFixture, SendShortMessage_MultipleFromQueue)
 
     // and expect, that Send() gets called twice on the wrapped sender for the two queued Send calls
     score::cpp::stop_source stop_source;
-    EXPECT_CALL(*sender_mock_raw_ptr_, Send(An<const ShortMessage&>())).Times(2).WillRepeatedly(Return(score::cpp::blank{}));
+    EXPECT_CALL(*sender_mock_raw_ptr_, Send(An<const ShortMessage&>()))
+        .Times(2)
+        .WillRepeatedly(Return(score::cpp::blank{}));
 
     // when the posted task gets executed.
     (*current_task_)(stop_source.get_token());
@@ -368,7 +370,9 @@ TEST_F(NonBlockingSenderFixture, SendShortMessage_EnqueueTwice)
     EXPECT_TRUE(result);
 
     // and expect, that Send() will be called on the wrapped sender for both Send calls
-    EXPECT_CALL(*sender_mock_raw_ptr_, Send(An<const ShortMessage&>())).Times(2).WillRepeatedly(Return(score::cpp::blank{}));
+    EXPECT_CALL(*sender_mock_raw_ptr_, Send(An<const ShortMessage&>()))
+        .Times(2)
+        .WillRepeatedly(Return(score::cpp::blank{}));
 
     // when the posted task gets executed.
     score::cpp::stop_source stop_source;

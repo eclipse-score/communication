@@ -82,7 +82,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     /// \brief Sends a value by _copy_ towards a consumer. It will allocate the necessary space and then copy the value
     /// into Shared Memory.
-    ResultBlank Send(const SampleType& value, score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept override;
+    ResultBlank Send(const SampleType& value,
+                     score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept override;
 
     ResultBlank Send(impl::SampleAllocateePtr<SampleType> sample,
                      score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept override;
@@ -263,8 +264,9 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     std::tie(event_data_storage_, event_data_control_composite_) =
         parent_.Register<SampleType>(event_fqn_, event_properties_);
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
-                           "Defensive programming as event_data_control_composite_ is set by Register above.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        event_data_control_composite_.has_value(),
+        "Defensive programming as event_data_control_composite_ is set by Register above.");
     current_timestamp_ = event_data_control_composite_.value().GetLatestTimestamp();
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
@@ -279,7 +281,8 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
         // LCOV_EXCL_BR_STOP
         score::cpp::ignore = transaction_log_registration_guard_.emplace(
             TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
-        score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
+        score::cpp::ignore =
+            type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
     }
     return {};
 }

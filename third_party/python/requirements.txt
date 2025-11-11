@@ -1,0 +1,17 @@
+# *******************************************************************************
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Python dependencies for traceability tools (Python 3.9 compatible)
+bigtree<1.0.0,>=0.30.0
+pydot>=1.4.0
+pyparsing>=3.0.0

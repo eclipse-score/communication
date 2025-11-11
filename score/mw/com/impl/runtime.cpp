@@ -35,7 +35,7 @@ namespace
 inline void warn_double_init()
 {
     score::mw::log::LogWarn("lola") << "score::mw::com::impl::Runtime is already initialized! Redundant call to a "
-                                     "Runtime::Initialize() overload within production code needs to be checked.";
+                                       "Runtime::Initialize() overload within production code needs to be checked.";
 }
 
 inline void error_double_init()
@@ -97,7 +97,8 @@ score::cpp::optional<TracingFilterConfig> ParseTraceConfig(const Configuration& 
     score::Result<TracingFilterConfig> tracing_config_result = tracing::Parse(trace_filter_config_path, configuration);
     if (!tracing_config_result.has_value())
     {
-        score::mw::log::LogError("lola") << "Parsing tracing config failed with error: " << tracing_config_result.error();
+        score::mw::log::LogError("lola") << "Parsing tracing config failed with error: "
+                                         << tracing_config_result.error();
         return {};
     }
     return std::move(tracing_config_result).value();
@@ -190,10 +191,11 @@ Runtime::Runtime(std::pair<Configuration&&, score::cpp::optional<TracingFilterCo
             // LCOV_EXCL_STOP
             for (auto& runtime_binding : runtime_bindings_)
             {
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(runtime_binding.second->GetTracingRuntime() != nullptr,
-                                       "Binding specific runtime has no tracing runtime although tracing is enabled!");
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                    runtime_binding.second->GetTracingRuntime() != nullptr,
+                    "Binding specific runtime has no tracing runtime although tracing is enabled!");
                 score::cpp::ignore = tracing_runtime_bindings.emplace(runtime_binding.first,
-                                                               runtime_binding.second->GetTracingRuntime());
+                                                                      runtime_binding.second->GetTracingRuntime());
             }
             tracing_runtime_ = std::make_unique<tracing::TracingRuntime>(std::move(tracing_runtime_bindings));
         }

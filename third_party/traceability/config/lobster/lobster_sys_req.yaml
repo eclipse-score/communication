@@ -1,0 +1,14 @@
+inputs:
+  - .
+
+conversion-rules:
+  - package: ScoreReq
+    record-type: AssumedSystemReq
+    namespace: req
+    description-fields: description
+  - package: ScoreReq
+    record-type: Component
+    namespace: req
+    tags:
+      - derived_from
+      - fulfilledBy

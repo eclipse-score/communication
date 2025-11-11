@@ -1,0 +1,6 @@
+@startuml
+interface "PublicAPI" as PublicAPI {
+    +GetNumber()
+    +SetNumber()
+}
+@enduml

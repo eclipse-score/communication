@@ -104,8 +104,9 @@ class SkeletonWrapperClass : public Interface<Trait>
         SkeletonWrapperClass skeleton_wrapper(instance_identifier, mode);
         if (!skeleton_wrapper.AreBindingsValid())
         {
-            ::score::mw::log::LogError("lola") << "Could not create SkeletonWrapperClass as Skeleton binding or service "
-                                                "element bindings could not be created.";
+            ::score::mw::log::LogError("lola")
+                << "Could not create SkeletonWrapperClass as Skeleton binding or service "
+                   "element bindings could not be created.";
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
         return skeleton_wrapper;

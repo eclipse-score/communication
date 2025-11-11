@@ -195,7 +195,7 @@ void TracingRuntime::RegisterShmObject(
     if (!insert_result.second)
     {
         score::mw::log::LogFatal("lola") << "Could not insert shm object handle" << shm_object_handle
-                                       << "into map. Terminating.";
+                                         << "into map. Terminating.";
         std::terminate();
     }
 }
@@ -221,7 +221,7 @@ void TracingRuntime::CacheFileDescriptorForReregisteringShmObject(
     if (!insert_result.second)
     {
         score::mw::log::LogFatal("lola") << "Could not insert file descriptor" << shm_file_descriptor
-                                       << "for shm object which failed registration into map. Terminating.";
+                                         << "for shm object which failed registration into map. Terminating.";
         std::terminate();
     }
 }
@@ -262,8 +262,8 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     const auto& service_type_deployments = configuration_.GetServiceTypes();
 
     // @todo: Replace the configuration unordered_maps with maps and use CompareId?
-    const auto instance_specifier =
-        InstanceSpecifier::Create(service_element_instance_identifier_view.instance_specifier).value();
+    std::string instance_specifier_to_create{service_element_instance_identifier_view.instance_specifier};
+    const auto instance_specifier = InstanceSpecifier::Create(std::move(instance_specifier_to_create)).value();
     // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
     // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
     // The instance specifier is loaded into the configuration during the initialization, so the container
@@ -290,21 +290,21 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     if (service_element_type == impl::ServiceElementType::EVENT)
     {
         const auto lola_event_id = lola_service_type_deployment->events_.at(std::string{service_element_name});
-        output_service_instance_element.element_id_ = static_cast<ServiceInstanceElement::EventIdType>(lola_event_id);
+        output_service_instance_element.element_id = static_cast<ServiceInstanceElement::EventIdType>(lola_event_id);
     }
     else if (service_element_type == impl::ServiceElementType::FIELD)
     {
         const auto lola_field_id = lola_service_type_deployment->fields_.at(std::string{service_element_name});
-        output_service_instance_element.element_id_ = static_cast<ServiceInstanceElement::FieldIdType>(lola_field_id);
+        output_service_instance_element.element_id = static_cast<ServiceInstanceElement::FieldIdType>(lola_field_id);
     }
     else
     {
         score::mw::log::LogFatal("lola") << "Service element type: " << service_element_type
-                                       << " is invalid. Terminating.";
+                                         << " is invalid. Terminating.";
         std::terminate();
     }
 
-    output_service_instance_element.service_id_ =
+    output_service_instance_element.service_id =
         static_cast<ServiceInstanceElement::ServiceIdType>(lola_service_type_deployment->service_id_);
 
     if (!lola_service_instance_deployment->instance_id_.has_value())
@@ -313,12 +313,12 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
             << "Tracing should not be done on service element without configured instance ID. Terminating.";
         std::terminate();
     }
-    output_service_instance_element.instance_id_ = static_cast<ServiceInstanceElement::InstanceIdType>(
+    output_service_instance_element.instance_id = static_cast<ServiceInstanceElement::InstanceIdType>(
         lola_service_instance_deployment->instance_id_.value().GetId());
 
     const auto version = ServiceIdentifierTypeView{service_identifier}.GetVersion();
-    output_service_instance_element.major_version_ = ServiceVersionTypeView{version}.getMajor();
-    output_service_instance_element.minor_version_ = ServiceVersionTypeView{version}.getMinor();
+    output_service_instance_element.major_version = ServiceVersionTypeView{version}.getMajor();
+    output_service_instance_element.minor_version = ServiceVersionTypeView{version}.getMinor();
     return output_service_instance_element;
 }
 
@@ -391,14 +391,6 @@ auto TracingRuntime::GetTraceContextId(
         }
     }
 
-    score::mw::log::LogInfo("lola")
-        << "Can not retrieve trace_context_id which is necessary to set type erased sample pointer. All slots"
-        << "assigned to this service element are already tracing active. I.e. insufficient tracing slots were "
-           "configured."
-        << "This happened to the service element with "
-        << service_element_tracing_data.number_of_service_element_tracing_slots << " configured slots. "
-        << "The range of the service element starts at " << service_element_tracing_data.service_element_range_start
-        << ".";
     return {};
 }
 

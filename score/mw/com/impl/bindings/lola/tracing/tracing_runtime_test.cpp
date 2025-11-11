@@ -17,7 +17,7 @@
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 
 #include "score/analysis/tracing/common/interface_types/types.h"
-#include "score/analysis/tracing/library/generic_trace_api/mocks/trace_library_mock.h"
+#include "score/analysis/tracing/generic_trace_library/mock/trace_library_mock.h"
 
 #include "score/mw/com/impl/tracing/service_element_tracing_data.h"
 #include <score/utility.hpp>
@@ -223,8 +223,9 @@ TEST_F(TracingRuntimeRegisterServiceElementFixtureDeathTest, RegisteringTooManyS
     }
     // Then we don't crash
     // But then when we register another service element we terminate
-    EXPECT_DEATH(score::cpp::ignore = tracing_runtime_.RegisterServiceElement(kFakeNumberOfIpcTracingSlotsPerServiceElement),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = tracing_runtime_.RegisterServiceElement(kFakeNumberOfIpcTracingSlotsPerServiceElement),
+        ".*");
 }
 
 TEST_F(TracingRuntimeRegisterServiceElementFixtureDeathTest, RegisteringServiceElementWithZeroTracingSlotsWillTerminate)
@@ -323,7 +324,7 @@ TEST_F(TracingRuntimeTypeErasedSamplePtrFixture,
     for (std::size_t i = 0; i < kFakeNumberOfIpcTracingSlotsPerServiceElement; ++i)
     {
         score::cpp::ignore = tracing_runtime_.EmplaceTypeErasedSamplePtr(std::move(kDummyTypeErasedSamplePtr),
-                                                                  service_element_tracing_data);
+                                                                         service_element_tracing_data);
     }
 
     // When emplacing another type erased sample ptr
@@ -478,7 +479,7 @@ TEST_F(TracingRuntimeTypeErasedSamplePtrDeathTest,
 
     // Then setting the type erased sample ptr will terminate
     EXPECT_DEATH(score::cpp::ignore = tracing_runtime_.EmplaceTypeErasedSamplePtr(std::move(kDummyTypeErasedSamplePtr),
-                                                                           invalid_service_element_tracing_data),
+                                                                                  invalid_service_element_tracing_data),
                  ".*");
 }
 
