@@ -10,12 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_UTIL_DATA_TYPE_SIZE_INFO_H
-#define SCORE_MW_COM_IMPL_UTIL_DATA_TYPE_SIZE_INFO_H
+#ifndef SCORE_LIB_MEMORY_DATA_TYPE_SIZE_INFO_H
+#define SCORE_LIB_MEMORY_DATA_TYPE_SIZE_INFO_H
 
 #include <cstddef>
 
-namespace score::memory::shared
+namespace score::memory
 {
 
 struct DataTypeSizeInfo
@@ -30,6 +30,6 @@ struct DataTypeSizeInfo
 
 bool operator==(const DataTypeSizeInfo& lhs, const DataTypeSizeInfo& rhs) noexcept;
 
-}  // namespace score::memory::shared
+}  // namespace score::memory
 
-#endif  // SCORE_MW_COM_IMPL_UTIL_DATA_TYPE_SIZE_INFO_H
+#endif  // SCORE_LIB_MEMORY_DATA_TYPE_SIZE_INFO_H

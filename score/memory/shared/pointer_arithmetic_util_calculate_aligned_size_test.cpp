@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/memory/shared/pointer_arithmetic_util.h"
 
-#include "score/memory/shared/data_type_size_info.h"
+#include "score/memory/data_type_size_info.h"
 
 #include <score/assert_support.hpp>
 

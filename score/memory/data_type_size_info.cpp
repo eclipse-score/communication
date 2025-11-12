@@ -10,9 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/memory/shared/data_type_size_info.h"
+#include "score/memory/data_type_size_info.h"
 
-namespace score::memory::shared
+namespace score::memory
 {
 
 bool operator==(const DataTypeSizeInfo& lhs, const DataTypeSizeInfo& rhs) noexcept
@@ -20,4 +20,4 @@ bool operator==(const DataTypeSizeInfo& lhs, const DataTypeSizeInfo& rhs) noexce
     return ((lhs.size == rhs.size) && (lhs.alignment == rhs.alignment));
 }
 
-}  // namespace score::memory::shared
+}  // namespace score::memory

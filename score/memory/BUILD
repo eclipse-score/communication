@@ -10,8 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 package(default_visibility = [
@@ -57,6 +56,15 @@ cc_library(
         ":string_literal",
         "@score_baselibs//score/language/futurecpp",
     ],
+)
+
+cc_library(
+    name = "data_type_size_info",
+    srcs = ["data_type_size_info.cpp"],
+    hdrs = ["data_type_size_info.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//visibility:public"],
 )
 
 cc_test(
@@ -163,12 +171,23 @@ cc_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "data_type_size_info_test",
+    srcs = ["data_type_size_info_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":data_type_size_info",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
         ":endianness_unit_test",
         ":pmr_ring_buffer_unit_test",
         ":split_string_view_unit_test",
+        ":data_type_size_info_test",
         ":string_comparison_adaptor_unit_test",
     ],
     test_suites_from_sub_packages = [
