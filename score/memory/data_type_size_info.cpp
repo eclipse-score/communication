@@ -17,7 +17,7 @@ namespace score::memory
 
 bool operator==(const DataTypeSizeInfo& lhs, const DataTypeSizeInfo& rhs) noexcept
 {
-    return ((lhs.size == rhs.size) && (lhs.alignment == rhs.alignment));
+    return ((lhs.Size() == rhs.Size()) && (lhs.Alignment() == rhs.Alignment()));
 }
 
 }  // namespace score::memory

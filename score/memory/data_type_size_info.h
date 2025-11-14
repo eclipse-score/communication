@@ -13,19 +13,52 @@
 #ifndef SCORE_LIB_MEMORY_DATA_TYPE_SIZE_INFO_H
 #define SCORE_LIB_MEMORY_DATA_TYPE_SIZE_INFO_H
 
+#include <score/assert.hpp>
+
 #include <cstddef>
 
 namespace score::memory
 {
 
-struct DataTypeSizeInfo
+class DataTypeSizeInfo
 {
-    // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types
-    // shall be private.". This struct is a POD class!
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::size_t size{};
-    // coverity[autosar_cpp14_m11_0_1_violation]
-    std::size_t alignment{};
+  public:
+    DataTypeSizeInfo() = default;
+
+    constexpr DataTypeSizeInfo(std::size_t size, std::size_t alignment) : DataTypeSizeInfo{}
+    {
+        SetSize(size);
+        SetAlignment(alignment);
+    }
+
+    constexpr void SetSize(std::size_t size)
+    {
+        size_ = size;
+    }
+
+    constexpr void SetAlignment(std::size_t alignment)
+    {
+        auto is_power_of_two = [](std::size_t value) {
+            return ((value & (value - 1)) == 0);
+        };
+
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(is_power_of_two(alignment), "The standard requires that alignment is a power of 2!");
+        alignment_ = alignment;
+    }
+
+    constexpr std::size_t Size() const
+    {
+        return size_;
+    }
+
+    constexpr std::size_t Alignment() const
+    {
+        return alignment_;
+    }
+
+  private:
+    std::size_t size_;
+    std::size_t alignment_;
 };
 
 bool operator==(const DataTypeSizeInfo& lhs, const DataTypeSizeInfo& rhs) noexcept;

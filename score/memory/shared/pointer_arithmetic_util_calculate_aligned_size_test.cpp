@@ -51,7 +51,7 @@ TEST_P(PointerArithmeticCalculateAlignedSizeParamaterizedFixture, ReturnsCorrect
     auto [data_type_size_info, expected_size] = GetParam();
 
     // When calling CalculateAlignedSize
-    const auto calculated_size = CalculateAlignedSize(data_type_size_info.size, data_type_size_info.alignment);
+    const auto calculated_size = CalculateAlignedSize(data_type_size_info.Size(), data_type_size_info.Alignment());
 
     // Then the result should be equal to the expected size
     EXPECT_EQ(calculated_size, expected_size);
