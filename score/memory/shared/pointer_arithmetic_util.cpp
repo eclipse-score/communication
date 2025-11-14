@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/memory/shared/pointer_arithmetic_util.h"
 
+#include "score/memory/data_type_size_info.h"
+
 #include "score/mw/log/log_types.h"
 #include "score/mw/log/logging.h"
 
@@ -22,6 +24,7 @@
 #include <cstdlib>
 #include <exception>
 #include <limits>
+#include <vector>
 
 namespace score::memory::shared
 {
@@ -54,26 +57,26 @@ std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& 
     std::size_t total_size{0U};
     for (std::size_t i = 0; i < data_type_infos.size(); ++i)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_type_infos[i].alignment != 0);
-        total_size += data_type_infos[i].size;
+        const auto& current_element = data_type_infos[i];
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(current_element.alignment != 0);
+        total_size += current_element.size;
 
         // If there is still a remaining next element, we need to calculate the padding between the current element and
         // the next element.
-        std::size_t padding_between_elements{0U};
         const auto is_last_element = i == data_type_infos.size() - 1U;
         if (!is_last_element)
         {
-            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(data_type_infos[i + 1U].alignment != 0);
+            const auto next_element = data_type_infos[i + 1U];
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(next_element.alignment != 0);
 
             // The start location (represented as a distance from the first allocation of the sequence) of the next
             // element can be calculated by calculating the aligned size of the currently allocated memory (i.e. up to
             // and including the current element) using the alignment of the next element. We then calculate the padding
             // by subtracting the total allocated memory from this start location.
-            const auto next_elements_alignment = data_type_infos[i + 1U].alignment;
-            const auto total_size_plus_padding = CalculateAlignedSize(total_size, next_elements_alignment);
-            padding_between_elements = total_size_plus_padding - total_size;
+            const auto total_size_plus_padding = CalculateAlignedSize(total_size, next_element.alignment);
+            const std::size_t padding_between_elements = total_size_plus_padding - total_size;
+            total_size += padding_between_elements;
         }
-        total_size += padding_between_elements;
     }
     return total_size;
 }
@@ -152,10 +155,5 @@ std::ptrdiff_t SubtractPointersBytes(const void* const first, const void* const 
     }
     return -1 * static_cast<std::ptrdiff_t>(absolute_value_result_as_integer);
 }
-
-// std::ptrdiff_t SubtractPointersBytes(const void* const first, const void* const second) noexcept
-// {
-//     return SubtractPointersBytes(const_cast<void*>(first), const_cast<void*>(second));
-// }
 
 }  // namespace score::memory::shared

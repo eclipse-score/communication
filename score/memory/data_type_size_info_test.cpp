@@ -16,7 +16,7 @@
 
 #include <cstddef>
 
-namespace score::memory::shared
+namespace score::memory
 {
 namespace
 {
@@ -64,4 +64,4 @@ TEST(DataTypeSizeInfoEqualityTest, ObjectsWithDifferentAlignemtCompareFalse)
 }
 
 }  // namespace
-}  // namespace score::memory::shared
+}  // namespace score::memory
