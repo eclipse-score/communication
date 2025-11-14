@@ -44,7 +44,8 @@ class SharedMemoryFactoryMock;
 class SharedMemoryFactory
 {
   public:
-    using InitializeCallback = ISharedMemoryResource::InitializeCallback;
+    using InitializeCallback = ISharedMemoryFactory::InitializeCallback;
+
     using WorldReadable = ISharedMemoryResource::WorldReadable;
     using WorldWritable = ISharedMemoryResource::WorldWritable;
     using UserPermissionsMap = ISharedMemoryResource::UserPermissionsMap;

@@ -49,7 +49,7 @@ TEST_F(SharedMemoryResourceCreateAnonymousTest, CreatingAnonymousSharedMemoryInT
     const auto resource_result = SharedMemoryResourceTestAttorney::CreateAnonymous(
         TestValues::sharedMemoryResourceIdentifier,
         TestValues::some_share_memory_size,
-        [&isInitialized](std::shared_ptr<SharedMemoryResource>) {
+        [&isInitialized](std::shared_ptr<ISharedMemoryResource>) {
             isInitialized = true;
         },
         {},
@@ -95,7 +95,7 @@ TEST_F(SharedMemoryResourceCreateAnonymousTest, CreatingAnonymousSharedMemoryInT
     const auto resource_result = SharedMemoryResourceTestAttorney::CreateAnonymous(
         TestValues::sharedMemoryResourceIdentifier,
         TestValues::some_share_memory_size,
-        [&isInitialized](std::shared_ptr<SharedMemoryResource>) {
+        [&isInitialized](std::shared_ptr<ISharedMemoryResource>) {
             isInitialized = true;
         },
         permission::WorldReadable(),
@@ -137,7 +137,7 @@ TEST_F(SharedMemoryResourceCreateAnonymousTest, CreatingAnonymousSharedMemoryInS
     const auto resource_result = SharedMemoryResourceTestAttorney::CreateAnonymous(
         TestValues::sharedMemoryResourceIdentifier,
         TestValues::some_share_memory_size,
-        [&isInitialized](std::shared_ptr<SharedMemoryResource>) {
+        [&isInitialized](std::shared_ptr<ISharedMemoryResource>) {
             isInitialized = true;
         },
         permission::WorldReadable(),
@@ -181,7 +181,7 @@ TEST_F(SharedMemoryResourceCreateAnonymousTest, CreatingAnonymousSharedMemoryInS
     const auto resource_result = SharedMemoryResourceTestAttorney::CreateAnonymous(
         TestValues::sharedMemoryResourceIdentifier,
         TestValues::some_share_memory_size,
-        [&isInitialized](std::shared_ptr<SharedMemoryResource>) {
+        [&isInitialized](std::shared_ptr<ISharedMemoryResource>) {
             isInitialized = true;
         },
         permission::WorldReadable(),

@@ -93,7 +93,11 @@ TEST_P(SharedMemoryFactoryTest, ReturnExistingResourceOnReopening)
 
     // Given a resource that has been created and opened
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // when requesting the very same resource in the same process
     std::shared_ptr<ManagedMemoryResource> opened_resource =
@@ -130,7 +134,11 @@ TEST_P(SharedMemoryFactoryTest, CallingRemoveOnNamedResourceWillUnlinkSharedMemo
     EXPECT_CALL(*unistd_mock_, close(kFileDescriptor));
 
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // When removing the resource
     SharedMemoryFactory::Remove(TestValues::sharedMemorySegmentPath);
@@ -191,7 +199,11 @@ TEST_P(SharedMemoryFactoryTest, DroppingAfterCreationWillRecreate)
 
     // When creating a resource
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // and then unlinking and destroying the resource
     SharedMemoryFactory::Remove(TestValues::sharedMemorySegmentPath);
@@ -208,7 +220,11 @@ TEST_P(SharedMemoryFactoryTest, DroppingAfterCreationWillRecreate)
 
     // and then creating it again
     std::shared_ptr<ManagedMemoryResource> recreated_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // then a new resource will be returned
     ASSERT_EQ(recreated_resource.use_count(), 1);
@@ -232,11 +248,19 @@ TEST_P(SharedMemoryFactoryTest, RecreatingWillNotReturnAnInstance)
 
     // Given a resource that has already been created
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // when creating the same resource again
     std::shared_ptr<ManagedMemoryResource> recreated_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // then we do not get a new instance since it's an already existing path
     ASSERT_EQ(recreated_resource, nullptr);
@@ -265,7 +289,11 @@ TEST_P(SharedMemoryFactoryTest, SharedMemoryResourceIsCreatedWithCorrectPath)
 
     // Given a resource that has been created and opened
     auto created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     ASSERT_NE(created_resource, nullptr);
     EXPECT_EQ(*created_resource->getPath(), TestValues::sharedMemorySegmentPath);
@@ -298,7 +326,11 @@ TEST_F(SharedMemoryFactoryTest, SharedMemoryResourceFallbackToSystemMemory)
 
     // when we create a shared memory object with preference in typed-memory
     auto created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // expect, that we have a valid resource
     ASSERT_NE(created_resource, nullptr);
@@ -343,7 +375,11 @@ TEST_P(SharedMemoryFactoryTest, FailureToCreateSharedMemoryReturnsNullPtr)
 
     // When trying to create the shared memory region via the SharedMemoryFactory
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // Then the resource returned by the SharedMemoryFactory should be a nullptr
     EXPECT_EQ(created_resource, nullptr);
@@ -391,7 +427,11 @@ TEST_P(SharedMemoryFactoryTest, FailureToCreateOrOpenSharedMemoryReturnsNullPtr)
 
     // When creating or opening a shared memory region with CreateOrOpen via the SharedMemoryFactory
     auto created_or_opened_resource = SharedMemoryFactory::CreateOrOpen(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {{}, {}}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {{}, {}},
+        typed_memory_parameter);
 
     // Then the returned resource should be a nullptr
     EXPECT_EQ(created_or_opened_resource, nullptr);
@@ -452,12 +492,19 @@ TEST_F(SharedMemoryFactoryTest, AllowsAccessToMatchingProvidersPreventsNonMatchi
         SharedMemoryFactory::Open(TestValues::sharedMemorySegmentPath, is_read_write, kMatchingProviders);
     auto non_matching_open =
         SharedMemoryFactory::Open(TestValues::sharedMemorySegmentPath, is_read_write, kNonMatchingProviders);
-    auto matching_create_or_open = SharedMemoryFactory::CreateOrOpen(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {{}, {kMatchingProviders2}});
-    auto non_matching_create_or_open = SharedMemoryFactory::CreateOrOpen(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {{}, {kNonMatchingProviders}});
-    auto null_providers_create_or_open = SharedMemoryFactory::CreateOrOpen(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {{}, std::nullopt});
+    auto matching_create_or_open = SharedMemoryFactory::CreateOrOpen(TestValues::sharedMemorySegmentPath,
+                                                                     [](std::shared_ptr<ISharedMemoryResource>) {},
+                                                                     kSharedMemorySize,
+                                                                     {{}, {kMatchingProviders2}});
+    auto non_matching_create_or_open = SharedMemoryFactory::CreateOrOpen(TestValues::sharedMemorySegmentPath,
+                                                                         [](std::shared_ptr<ISharedMemoryResource>) {},
+                                                                         kSharedMemorySize,
+                                                                         {{}, {kNonMatchingProviders}});
+    auto null_providers_create_or_open =
+        SharedMemoryFactory::CreateOrOpen(TestValues::sharedMemorySegmentPath,
+                                          [](std::shared_ptr<ISharedMemoryResource>) {},
+                                          kSharedMemorySize,
+                                          {{}, std::nullopt});
 
     // We get the same resource if its owner is in our requested providers list
     EXPECT_NE(matching_create_or_open, nullptr);
@@ -546,7 +593,11 @@ TEST_P(SharedMemoryFactoryTest, RecreatingDeletedSharedMemoryWorks)
 
     // When we create a resource
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // And then the resource is destroyed
     created_resource.reset();
@@ -561,7 +612,11 @@ TEST_P(SharedMemoryFactoryTest, RecreatingDeletedSharedMemoryWorks)
 
     // and we recreate the same resource again
     std::shared_ptr<ManagedMemoryResource> recreated_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        typed_memory_parameter);
 
     // Then we get the recreated resource
     ASSERT_NE(recreated_resource, nullptr);
@@ -588,7 +643,11 @@ TEST_P(SharedMemoryFactoryTest, ConcurrentlyCreatingSharedMemoryOnlyCreatesResou
     auto create_activity = [&mutex_, &resources, &typed_memory_parameter] {
         // When a thread tries to create a shared memory region via the SharedMemoryFactory
         std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-            TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+            TestValues::sharedMemorySegmentPath,
+            [](std::shared_ptr<ISharedMemoryResource>) {},
+            kSharedMemorySize,
+            {},
+            typed_memory_parameter);
 
         std::lock_guard<std::mutex> lock{mutex_};
         resources.push_back(created_resource);
@@ -662,7 +721,11 @@ TEST_P(SharedMemoryFactoryTest,
     auto create_or_open_activity = [&mutex_, &resources, &typed_memory_parameter] {
         // When a thread tries to create or open a shared memory region via the SharedMemoryFactory
         auto created_resource = SharedMemoryFactory::CreateOrOpen(
-            TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {{}, {}}, typed_memory_parameter);
+            TestValues::sharedMemorySegmentPath,
+            [](std::shared_ptr<ISharedMemoryResource>) {},
+            kSharedMemorySize,
+            {{}, {}},
+            typed_memory_parameter);
 
         std::lock_guard<std::mutex> lock{mutex_};
         resources.push_back(created_resource);
@@ -695,7 +758,11 @@ TEST_P(SharedMemoryFactoryTest, ConcurrentlyCreatingOrOpeningSharedMemoryOnlyOpe
     auto create_or_open_activity = [&mutex_, &resources, &typed_memory_parameter] {
         // When a thread tries to create or open a shared memory region via the SharedMemoryFactory
         auto created_resource = SharedMemoryFactory::CreateOrOpen(
-            TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {{}, {}}, typed_memory_parameter);
+            TestValues::sharedMemorySegmentPath,
+            [](std::shared_ptr<ISharedMemoryResource>) {},
+            kSharedMemorySize,
+            {{}, {}},
+            typed_memory_parameter);
 
         std::lock_guard<std::mutex> lock{mutex_};
         resources.push_back(created_resource);
@@ -720,11 +787,19 @@ TEST_F(SharedMemoryFactoryTest, CreatingOrOpeningSharedMemoryInTypedMemoryFailed
 
     // when we try to createOrOpen shared-memory object in typed memory
     auto created_or_opend_resource = SharedMemoryFactory::CreateOrOpen(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {{}, {}}, create_in_typed_memory);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {{}, {}},
+        create_in_typed_memory);
 
     // when we try to create shared-memory object in typed memory
     auto created_resource = SharedMemoryFactory::Create(
-        TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, create_in_typed_memory);
+        TestValues::sharedMemorySegmentPath,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        create_in_typed_memory);
 
     // expect, that both are NULL
     EXPECT_EQ(created_or_opend_resource, nullptr);
@@ -815,7 +890,11 @@ TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsAfterCreatingWillTerm
 
         // Given a resource that has been created and opened
         std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
-            TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
+            TestValues::sharedMemorySegmentPath,
+            [](std::shared_ptr<ISharedMemoryResource>) {},
+            kSharedMemorySize,
+            {},
+            typed_memory_parameter);
         ASSERT_NE(created_resource, nullptr);
 
         SharedMemoryFactory::RemoveStaleArtefacts(TestValues::sharedMemorySegmentPath);
@@ -863,7 +942,11 @@ TEST_F(SharedMemoryFactoryTest, CreatingAnonymousSharedMemoryInTypedMemoryFailsW
     SharedMemoryFactory::SetTypedMemoryProvider(nullptr);
 
     auto created_resource = SharedMemoryFactory::CreateAnonymous(
-        TestValues::sharedMemoryResourceIdentifier, [](auto) {}, kSharedMemorySize, {}, create_in_typed_memory);
+        TestValues::sharedMemoryResourceIdentifier,
+        [](std::shared_ptr<ISharedMemoryResource>) {},
+        kSharedMemorySize,
+        {},
+        create_in_typed_memory);
 
     EXPECT_EQ(nullptr, created_resource);
 }
@@ -894,7 +977,11 @@ TEST_P(SharedMemoryFactoryDeathTest, CreatingSharedMemoryTerminate)
         .WillRepeatedly(Return(ret_value));
 
     EXPECT_DEATH(SharedMemoryFactory::Create(
-                     TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter),
+                     TestValues::sharedMemorySegmentPath,
+                     [](std::shared_ptr<ISharedMemoryResource>) {},
+                     kSharedMemorySize,
+                     {},
+                     typed_memory_parameter),
                  ".*");
 }
 

@@ -33,7 +33,7 @@
 namespace score::memory::shared::test
 {
 
-const auto emptyInitCallback = [](std::shared_ptr<SharedMemoryResource>) {};
+const auto emptyInitCallback = [](std::shared_ptr<ISharedMemoryResource>) {};
 
 /// \brief Checks, whether given pointer/address is accordingly aligned.
 /// \param p pointer/address to be checked

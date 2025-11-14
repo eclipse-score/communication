@@ -94,7 +94,7 @@ auto GetResourceIfAlreadyOpened(
     {
         return nullptr;
     }
-    const std::shared_ptr<SharedMemoryResource> resource = iterator->second.lock();
+    const auto resource = iterator->second.lock();
     if (resource == nullptr)
     {
         score::cpp::ignore = resource_map.erase(iterator);
@@ -125,7 +125,7 @@ auto SharedMemoryFactoryImpl::Open(const std::string& path,
     -> std::shared_ptr<ISharedMemoryResource>
 {
     std::lock_guard<std::mutex> lock{mutex_};
-    std::shared_ptr<SharedMemoryResource> resource = GetResourceIfAlreadyOpened(path, resources_);
+    auto resource = GetResourceIfAlreadyOpened(path, resources_);
     if (resource == nullptr)
     {
         const auto result =
@@ -233,7 +233,7 @@ auto score::memory::shared::SharedMemoryFactoryImpl::CreateOrOpen(
     const bool prefer_typed_memory) noexcept -> std::shared_ptr<ISharedMemoryResource>
 {
     std::lock_guard<std::mutex> lock{mutex_};
-    std::shared_ptr<SharedMemoryResource> resource = GetResourceIfAlreadyOpened(path, resources_);
+    auto resource = GetResourceIfAlreadyOpened(path, resources_);
     if (resource == nullptr)
     {
         if ((prefer_typed_memory) && (typed_memory_ptr_ == nullptr))
@@ -279,7 +279,7 @@ auto score::memory::shared::SharedMemoryFactoryImpl::CreateOrOpen(
 auto SharedMemoryFactoryImpl::Remove(const std::string& path) noexcept -> void
 {
     std::lock_guard<std::mutex> lock{mutex_};
-    std::shared_ptr<SharedMemoryResource> resource = GetResourceIfAlreadyOpened(path, resources_);
+    auto resource = GetResourceIfAlreadyOpened(path, resources_);
     if (resource != nullptr)
     {
         const auto number_resources_removed = resources_.erase(path);

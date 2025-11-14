@@ -11,13 +11,16 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/memory/shared/shared_memory_factory.h"
+#include "score/memory/shared/i_shared_memory_factory.h"
 #include "score/memory/shared/shared_memory_factory_impl.h"
-#include "score/os/errno_logging.h"
-#include "score/mw/log/logging.h"
 
-#include "score/os/unistd.h"
+#include <score/span.hpp>
 
-#include <exception>
+#include <sys/types.h>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
 #include <utility>
 
 namespace score::memory::shared
@@ -40,7 +43,7 @@ auto score::memory::shared::SharedMemoryFactory::Create(std::string path,
                                                       const bool prefer_typed_memory) noexcept
     -> std::shared_ptr<ISharedMemoryResource>
 {
-    return instance().Create(path, cb, user_space_to_reserve, permissions, prefer_typed_memory);
+    return instance().Create(std::move(path), std::move(cb), user_space_to_reserve, permissions, prefer_typed_memory);
 }
 
 auto score::memory::shared::SharedMemoryFactory::CreateAnonymous(std::uint64_t shared_memory_resource_id,
@@ -51,7 +54,7 @@ auto score::memory::shared::SharedMemoryFactory::CreateAnonymous(std::uint64_t s
     -> std::shared_ptr<ISharedMemoryResource>
 {
     return instance().CreateAnonymous(
-        shared_memory_resource_id, cb, user_space_to_reserve, permissions, prefer_typed_memory);
+        shared_memory_resource_id, std::move(cb), user_space_to_reserve, permissions, prefer_typed_memory);
 }
 
 auto SharedMemoryFactory::CreateOrOpen(std::string path,
@@ -61,7 +64,8 @@ auto SharedMemoryFactory::CreateOrOpen(std::string path,
                                        const bool prefer_typed_memory) noexcept
     -> std::shared_ptr<ISharedMemoryResource>
 {
-    return instance().CreateOrOpen(path, cb, user_space_to_reserve, access_control, prefer_typed_memory);
+    return instance().CreateOrOpen(
+        std::move(path), std::move(cb), user_space_to_reserve, access_control, prefer_typed_memory);
 }
 
 auto SharedMemoryFactory::Remove(const std::string& path) noexcept -> void

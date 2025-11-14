@@ -61,7 +61,7 @@ TEST_F(SharedMemoryResourceCreateTest, CreatingSharedMemoryInitializesCorrectly)
     auto resource_result =
         SharedMemoryResourceTestAttorney::Create(TestValues::sharedMemorySegmentPath,
                                                  TestValues::some_share_memory_size,
-                                                 [&isInitialized](std::shared_ptr<SharedMemoryResource>) {
+                                                 [&isInitialized](std::shared_ptr<ISharedMemoryResource>) {
                                                      isInitialized = true;
                                                  });
     ASSERT_TRUE(resource_result.has_value());
