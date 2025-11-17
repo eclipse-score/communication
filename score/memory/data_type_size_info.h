@@ -38,11 +38,8 @@ class DataTypeSizeInfo
 
     constexpr void SetAlignment(std::size_t alignment)
     {
-        auto is_power_of_two = [](std::size_t value) {
-            return ((value & (value - 1)) == 0);
-        };
-
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(is_power_of_two(alignment), "The standard requires that alignment is a power of 2!");
+        bool is_alignment_power_of_two = ((alignment & (alignment - 1)) == 0);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(is_alignment_power_of_two, "The standard requires that alignment is a power of 2!");
         alignment_ = alignment;
     }
 
