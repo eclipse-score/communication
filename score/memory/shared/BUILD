@@ -60,6 +60,7 @@ cc_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
+        "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/mw/log:frontend",
     ],

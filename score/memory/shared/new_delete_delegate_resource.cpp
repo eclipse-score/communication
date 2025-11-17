@@ -138,6 +138,10 @@ void* NewDeleteDelegateMemoryResource::do_allocate(const std::size_t bytes, std:
     //  at the basis of how our (real) shared-mem resource allocation behavior! So the following alloc-approach exactly
     //  reflects SharedMemoryResource::do_allocate()!
 
+    // In our architecture we have a one-to-one mapping between pointers and integral values.
+    // Therefore, casting between the two is well-defined.
+    // The resulting pointer is never dereferenced and is used to track the actual amount of allocated memory.
+    // NOLINTNEXTLINE(score-banned-function) see above
     void* const start_remaining_allocatable_memory = AddOffsetToPointer(getBaseAddress(), sum_allocated_bytes_);
 
     // Since GetEndAddress() returns std::numeric_limits<std::uintptr_t>::max(), it can lead to an overflow in pointer
@@ -152,6 +156,10 @@ void* NewDeleteDelegateMemoryResource::do_allocate(const std::size_t bytes, std:
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(max_required_padding_result.has_value(), "Calculating max required padding overflowed!");
 
     void* const end_memory_buffer =
+        // In our architecture we have a one-to-one mapping between pointers and integral values.
+        // Therefore, casting between the two is well-defined.
+        // The resulting pointer is never dereferenced and is used to track the actual amount of allocated memory.
+        // NOLINTNEXTLINE(score-banned-function) see above
         AddOffsetToPointer(start_remaining_allocatable_memory, max_required_padding_result.value());
     void* const new_aligned_alloc_ptr =
         detail::do_allocation_algorithm(start_remaining_allocatable_memory, end_memory_buffer, bytes, alignment);

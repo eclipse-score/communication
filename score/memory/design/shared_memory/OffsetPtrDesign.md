@@ -19,6 +19,11 @@ stores the offset between the address of the pointed-to object and the address o
 This offset is the same in all processes, thus, a valid pointer can be calculated as the sum of the base address of the
 `OffsetPtr` and the offset that it stores.
 
+Validity of the `OffsetPtr` depends on the validity of the pointed to object.
+This means, that the absolute pointer handed to the constructor of `OffsetPtr<T>` must point to a valid object of type `T` (or derived).
+Users must make sure that the `OffsetPtr` is valid before dereferencing it.
+E.g. make sure that the `OffsetPtr` is not dereferenced after the object is destructed or moved-from.
+
 The available public member methods are taken over from the `boost::interprocess::offset_ptr` implementation.
 In order to reuse this pointer also with stl-based containers it shall implement the requirements stated by
 [std::pointer_traits](https://en.cppreference.com/w/cpp/memory/pointer_traits).

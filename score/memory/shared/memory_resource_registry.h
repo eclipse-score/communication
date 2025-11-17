@@ -78,9 +78,16 @@ class MemoryResourceRegistry final
     void clear() noexcept;
 
     /// \brief Get the memory bounds of the memory resource in which the provided pointer resides, if there is one.
+    ///        Internally converts the pointer to an integer and calls GetBoundsFromAddressAsInteger.
     /// \return Returns the memory bounds of a memory resource if the pointer resides within the bounds of a memory
     ///         resource that has been registered with the MemoryResourceRegistry. Otherwise, returns an empty optional.
     std::optional<MemoryRegionBounds> GetBoundsFromAddress(const void* const pointer) const noexcept;
+
+    /// \brief Get the memory bounds of the memory resource in which the provided pointer resides, if there is one.
+    /// \return Returns the memory bounds of a memory resource if the pointer resides within the bounds of a memory
+    ///         resource that has been registered with the MemoryResourceRegistry. Otherwise, returns an empty optional.
+    std::optional<MemoryRegionBounds> GetBoundsFromAddressAsInteger(
+        const std::uintptr_t pointer_as_integer) const noexcept;
 
     /// \brief Get the memory bounds of the memory resource corresponding to the provided identifier.
     /// \return Returns the memory bounds of a memory resource if a resource corresponding to the provided identifier

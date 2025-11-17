@@ -34,6 +34,26 @@
 #include <type_traits>
 #include <utility>
 
+// Justification for usage of banned functions:
+// An offset pointer is an alternative representation of a pointer type where a pointer is represented by a base pointer
+// and an offset.
+// The address of the OffsetPtr is the base pointer and the offset is stored within the OffsetPtr as an integral type.
+// The offset is calculated by:
+//   1. Cast the base pointer and original pointer to integers
+//   2. Subtract the base pointer (integer representation) from the original pointer (integer representation)
+// This is possible because in our architecture we have a one-to-one mapping between pointers and integral values.
+// To reconstruct the pointer back, we need to follow a three-step process:
+//   1. Cast the base pointer to an integer
+//   2. Calculate the sum of the base pointer (integer representation) and offset
+//   3. Cast the result form the previous step to a pointer type
+// In our case, this only happens in the context of a round trip (T* -> (base, offset) -> T*).
+// Because of that, the behavior is specified to be the same as original provided pointer.
+//
+// Note: Whenever a OffsetPtr is copied or moved the offset is recalculated to ensure that the
+// resulting pointer still matches the originally provided one by:
+//   1. Recalculating the original pointer (following above process)
+//   2. Calculating the offset based on the new base pointer (following above process)
+
 namespace score::memory::shared
 {
 
@@ -89,6 +109,9 @@ bool EnableOffsetPtrBoundsChecking(const bool enable);
 /// processes can map the same shared memory region to different addresses, an absolute pointer to an object in shared
 /// memory is only valid for the process which created the object. If we instead use an offset pointer, then each
 /// process can find the memory address of the pointed-to object in its own memory mapped region.
+///
+/// ATTENTION: It is up to the user to verify the validity of the pointer before dereferencing it!
+/// E.g. make sure that the object is of type T (or derived) and not yet destructed or moved-from.
 ///
 /// The full documentation of OffsetPtr is contained within
 /// score/memory/design/shared_memory/OffsetPtrDesign.md
@@ -187,6 +210,7 @@ class OffsetPtr
     template <class T = PointedType, class = detail_offset_ptr::enable_if_type_is_not_void<T, PointedType>>
     pointer get() const
     {
+        // NOLINTNEXTLINE(score-banned-function) See justification above class.
         return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     }
 
@@ -203,12 +227,14 @@ class OffsetPtr
         // is the same as the original type before casting to a void pointer.
         // coverity[autosar_cpp14_m5_2_8_violation]
         return static_cast<ExplicitPointedType*>(
+            // NOLINTNEXTLINE(score-banned-function) See justification above class.
             GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(ExplicitPointedType)));
     }
 
     template <class T = PointedType, class = detail_offset_ptr::enable_if_type_is_void<T, PointedType>>
     pointer get(const std::size_t explicit_pointed_type_size) const
     {
+        // NOLINTNEXTLINE(score-banned-function) See justification above class.
         return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, explicit_pointed_type_size);
     }
 
@@ -219,6 +245,7 @@ class OffsetPtr
     // coverity[autosar_cpp14_a13_5_2_violation]
     operator pointer() const
     {
+        // NOLINTNEXTLINE(score-banned-function) See justification above class.
         return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     }
     // NOLINTEND(google-explicit-constructor): see above
@@ -226,6 +253,7 @@ class OffsetPtr
     template <class T = PointedType, class = detail_offset_ptr::enable_if_type_is_not_void<T, PointedType>>
     pointer operator->() const
     {
+        // NOLINTNEXTLINE(score-banned-function) See justification above class.
         return GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     }
 
@@ -461,10 +489,13 @@ auto OffsetPtr<PointedType>::CalculatePointerFromOffset(const difference_type of
     // coverity[autosar_cpp14_a7_1_8_violation]
     if constexpr (std::is_const_v<PointedType>)
     {
+        // NOLINTNEXTLINE(score-banned-function) See justification above class.
         return static_cast<pointer>(AddOffsetToPointer<const void>(offset_ptr, offset));
     }
     else
     {
+
+        // NOLINTNEXTLINE(score-banned-function) See justification above class.
         return static_cast<pointer>(AddOffsetToPointer<void>(offset_ptr, offset));
     }
 }
@@ -543,6 +574,8 @@ auto OffsetPtr<PointedType>::GetPointerWithBoundsCheck(
                                                                           sizeof(OffsetPtr<PointedType>)));
         }
     }
+
+    // NOLINTNEXTLINE(score-banned-function) The current function is banned for calling this function
     return GetPointerWithoutBoundsCheck(offset_ptr_address, offset);
 }
 
@@ -551,6 +584,7 @@ auto OffsetPtr<PointedType>::GetPointerWithoutBoundsCheck(const void* const offs
                                                           const detail_offset_ptr::difference_type offset) noexcept
     -> pointer
 {
+    // NOLINTNEXTLINE(score-banned-function) The current function is banned for calling this function
     return CalculatePointerFromOffset(offset, offset_ptr_address);
 }
 
@@ -581,6 +615,7 @@ auto OffsetPtr<PointedType>::pointer_to(const void* const r) noexcept -> OffsetP
 template <typename PointedType>
 auto OffsetPtr<PointedType>::operator*() const -> reference
 {
+    // NOLINTNEXTLINE(score-banned-function) See justification above class.
     const pointer ptr = GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr != nullptr, "Cannot dereference a nullptr.");
     reference ref = *ptr;

@@ -311,6 +311,42 @@ TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsMemoryBoundsForPointersInB
     EXPECT_EQ(secondFoundMemoryBounds2.value(), secondMemoryBounds);
 }
 
+TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsMemoryBoundsForPointersAsIntegersInBounds)
+{
+    // Given 2 memory ranges are inserted into the registry
+    InsertMemoryResourcesIntoRegistry();
+
+    // When checking the memory bounds for pointers inside the memory bounds
+    const auto pointer_in_first_bounds = 75;
+    const auto pointer_in_second_bounds = 175;
+
+    const auto firstFoundMemoryBounds0 =
+        unit.GetBoundsFromAddressAsInteger(reinterpret_cast<std::uintptr_t>(firstBoundsStart_));
+    const auto firstFoundMemoryBounds1 = unit.GetBoundsFromAddressAsInteger(pointer_in_first_bounds);
+    const auto firstFoundMemoryBounds2 =
+        unit.GetBoundsFromAddressAsInteger(reinterpret_cast<std::uintptr_t>(firstBoundsEnd_));
+    const auto secondFoundMemoryBounds0 =
+        unit.GetBoundsFromAddressAsInteger(reinterpret_cast<std::uintptr_t>(secondBoundsStart_));
+    const auto secondFoundMemoryBounds1 = unit.GetBoundsFromAddressAsInteger(pointer_in_second_bounds);
+    const auto secondFoundMemoryBounds2 =
+        unit.GetBoundsFromAddressAsInteger(reinterpret_cast<std::uintptr_t>(secondBoundsEnd_));
+
+    // Then the correct bounds should be returned
+    ASSERT_TRUE(firstFoundMemoryBounds0.has_value());
+    ASSERT_TRUE(firstFoundMemoryBounds1.has_value());
+    ASSERT_TRUE(firstFoundMemoryBounds2.has_value());
+    ASSERT_TRUE(secondFoundMemoryBounds0.has_value());
+    ASSERT_TRUE(secondFoundMemoryBounds1.has_value());
+    ASSERT_TRUE(secondFoundMemoryBounds2.has_value());
+
+    EXPECT_EQ(firstFoundMemoryBounds0.value(), firstMemoryBounds);
+    EXPECT_EQ(firstFoundMemoryBounds1.value(), firstMemoryBounds);
+    EXPECT_EQ(firstFoundMemoryBounds2.value(), firstMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds0.value(), secondMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds1.value(), secondMemoryBounds);
+    EXPECT_EQ(secondFoundMemoryBounds2.value(), secondMemoryBounds);
+}
+
 TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsNullMemoryBoundsForPointersOutOfBounds)
 {
     // Given 2 memory ranges are inserted into the registry
@@ -320,6 +356,22 @@ TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsNullMemoryBoundsForPointer
     const auto outOfBoundsFoundMemoryBounds0 = unit.GetBoundsFromAddress(reinterpret_cast<void*>(10));
     const auto outOfBoundsFoundMemoryBounds1 = unit.GetBoundsFromAddress(reinterpret_cast<void*>(110));
     const auto outOfBoundsFoundMemoryBounds2 = unit.GetBoundsFromAddress(reinterpret_cast<void*>(210));
+
+    // Then no memory bounds should be returned
+    EXPECT_FALSE(outOfBoundsFoundMemoryBounds0.has_value());
+    EXPECT_FALSE(outOfBoundsFoundMemoryBounds1.has_value());
+    EXPECT_FALSE(outOfBoundsFoundMemoryBounds2.has_value());
+}
+
+TEST_F(MemoryResourceRegistryMemoryBoundsTest, ReturnsNullMemoryBoundsForPointersAsIntegersOutOfBounds)
+{
+    // Given 2 memory ranges are inserted into the registry
+    InsertMemoryResourcesIntoRegistry();
+
+    // When checking the memory bounds for pointers as integers outside the memory bounds
+    const auto outOfBoundsFoundMemoryBounds0 = unit.GetBoundsFromAddressAsInteger(10);
+    const auto outOfBoundsFoundMemoryBounds1 = unit.GetBoundsFromAddressAsInteger(110);
+    const auto outOfBoundsFoundMemoryBounds2 = unit.GetBoundsFromAddressAsInteger(210);
 
     // Then no memory bounds should be returned
     EXPECT_FALSE(outOfBoundsFoundMemoryBounds0.has_value());
@@ -423,6 +475,13 @@ TEST_F(MemoryResourceRegistryOverlappingMemoryBoundsTest, CannotGetBoundsWithPoi
 
     // Then the result should be an empty optional
     ASSERT_FALSE(region_from_pointer.has_value());
+
+    // and when get the bounds for a pointer as integer within the region
+    const auto pointer_as_integer_in_region = 15;
+    const auto region_from_pointer_as_integer = unit.GetBoundsFromAddressAsInteger(pointer_as_integer_in_region);
+
+    // Then the result should be an empty optional
+    ASSERT_FALSE(region_from_pointer_as_integer.has_value());
 }
 
 using MemoryResourceRegistryDeathTest = MemoryResourceRegistryTest;

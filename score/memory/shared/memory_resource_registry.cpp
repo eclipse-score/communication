@@ -130,3 +130,9 @@ auto score::memory::shared::MemoryResourceRegistry::GetBoundsFromAddress(const v
     const auto pointer_as_integer = CastPointerToInteger(pointer);
     return region_map_.GetBoundsFromAddress(pointer_as_integer);
 }
+
+auto score::memory::shared::MemoryResourceRegistry::GetBoundsFromAddressAsInteger(
+    const std::uintptr_t pointer_as_integer) const noexcept -> std::optional<MemoryRegionBounds>
+{
+    return region_map_.GetBoundsFromAddress(pointer_as_integer);
+}

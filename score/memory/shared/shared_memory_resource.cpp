@@ -234,6 +234,12 @@ ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescript
 
 void* CalculateUsableStartAddress(void* const base_address, const std::size_t management_space) noexcept
 {
+    // In our architecture we have a one-to-one mapping between pointers and integral values.
+    // Therefore, casting between the two is well-defined.
+    // Dereferencing the pointer returned by this function is forbidden by MISRA C++:2023 Rule 8.2.6 and AUTOSAR C++14
+    // M5-2-8.
+    // Thus, this operation does not increase the risk.
+    // NOLINTNEXTLINE(score-banned-function) see above
     return AddOffsetToPointer(base_address, management_space);
 }
 
@@ -670,19 +676,35 @@ auto SharedMemoryResource::do_allocate(const std::size_t bytes, const std::size_
      * So there is no need for any fancy logic.
      */
     void* const allocation_start_address =
+        // In our architecture we have a one-to-one mapping between pointers and integral values.
+        // Therefore, casting between the two is well-defined.
+        // The base_adress_ points to the start of the memory arena for the allocation and alreadyAllocatedBytes is
+        // ensured by this class to not exceed the size of the memory arena.
+        // Therefore, the resulting pointer will always point into the memory arena.
+        // In C++23 std::start_lifetime_as_array can be used to inform the compiler.
+        // NOLINTNEXTLINE(score-banned-function) see above
         AddOffsetToPointer(this->base_address_, this->control_block_->alreadyAllocatedBytes.load());
+    // In our architecture we have a one-to-one mapping between pointers and integral values.
+    // Therefore, casting between the two is well-defined.
+    // This pointer is not dereferenced.
+    // NOLINTNEXTLINE(score-banned-function) see above
     void* const allocation_end_address = AddOffsetToPointer(this->base_address_, virtual_address_space_to_reserve_);
     void* const new_address_aligned =
         detail::do_allocation_algorithm(allocation_start_address, allocation_end_address, bytes, alignment);
 
     if (new_address_aligned == nullptr)
     {
-        score::mw::log::LogFatal("shm") << "Cannot allocate shared memory block of size" << bytes << " at: ["
-                                      << PointerToLogValue(new_address_aligned) << ":"
-                                      << PointerToLogValue(AddOffsetToPointer(new_address_aligned, bytes))
-                                      << "]. Does not fit within shared memory segment: ["
-                                      << PointerToLogValue(this->base_address_) << ":"
-                                      << PointerToLogValue(this->getEndAddress()) << "]";
+        score::mw::log::LogFatal("shm")
+            << "Cannot allocate shared memory block of size" << bytes << " at: ["
+            << PointerToLogValue(new_address_aligned)
+            << ":"
+            // In our architecture we have a one-to-one mapping between pointers and integral values.
+            // Therefore, casting between the two is well-defined.
+            // The resulting pointer is used for logging and is not dereferenced.
+            // NOLINTNEXTLINE(score-banned-function) see above
+            << PointerToLogValue(AddOffsetToPointer(new_address_aligned, bytes))
+            << "]. Does not fit within shared memory segment: [" << PointerToLogValue(this->base_address_) << ":"
+            << PointerToLogValue(this->getEndAddress()) << "]";
         std::terminate();
     }
     const auto padding = SubtractPointersBytes(new_address_aligned, allocation_start_address);
@@ -741,6 +763,12 @@ auto SharedMemoryResource::GetUserAllocatedBytes() const noexcept -> std::size_t
 
 auto SharedMemoryResource::getEndAddress() const noexcept -> const void*
 {
+    // In our architecture we have a one-to-one mapping between pointers and integral values.
+    // Therefore, casting between the two is well-defined.
+    // Dereferencing the pointer returned by this function is forbidden by MISRA C++:2023 Rule 8.2.6 and AUTOSAR C++14
+    // M5-2-8.
+    // Thus, this operation does not increase the risk.
+    // NOLINTNEXTLINE(score-banned-function) see above
     return AddOffsetToPointer(this->base_address_, this->virtual_address_space_to_reserve_);
 }
 

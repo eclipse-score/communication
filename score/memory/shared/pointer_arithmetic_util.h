@@ -33,9 +33,6 @@ namespace score::memory::shared
 namespace detail
 {
 
-std::uintptr_t AddOffsetToPointerAsInteger(const std::uintptr_t pointer_as_integer, const std::size_t offset);
-std::uintptr_t SubtractOffsetFromPointerAsInteger(const std::uintptr_t pointer_as_integer, const std::size_t offset);
-
 template <typename T>
 constexpr bool is_signed_integer_v = std::conjunction_v<std::is_integral<T>, std::is_signed<T>>;
 
@@ -43,6 +40,10 @@ template <typename T>
 constexpr bool is_unsigned_integer_v = std::conjunction_v<std::is_integral<T>, std::is_unsigned<T>>;
 
 }  // namespace detail
+
+std::uintptr_t AddOffsetToPointerAsInteger(const std::uintptr_t pointer_as_integer, const std::size_t offset);
+std::uintptr_t AddSignedOffsetToPointerAsInteger(const std::uintptr_t ptr_as_integer, const std::ptrdiff_t offset);
+std::uintptr_t SubtractOffsetFromPointerAsInteger(const std::uintptr_t pointer_as_integer, const std::size_t offset);
 
 /// \brief Calculates the needed size to store an object of given size, so it shall end at an address with the given
 ///        alignment.
@@ -119,7 +120,8 @@ template <typename PointerType>
 auto AddOffsetToPointer(const PointerType* pointer, const std::size_t offset) -> PointerType*
 {
     const auto pointer_as_integer = CastPointerToInteger(pointer);
-    const auto result_as_integer = detail::AddOffsetToPointerAsInteger(pointer_as_integer, offset);
+    const auto result_as_integer = AddOffsetToPointerAsInteger(pointer_as_integer, offset);
+    // NOLINTNEXTLINE(score-banned-function): This function is banned for calling CastIntegerToPointer
     return CastIntegerToPointer<PointerType*>(result_as_integer);
 }
 
@@ -127,24 +129,8 @@ template <typename PointerType>
 auto AddOffsetToPointer(const PointerType* pointer, const std::ptrdiff_t offset) -> PointerType*
 {
     const auto pointer_as_integer = CastPointerToInteger(pointer);
-
-    if (offset >= 0)
-    {
-        static_assert(sizeof(decltype(offset)) <= sizeof(std::size_t),
-                      "Casting offset to size_t will only avoid data loss if the max possible value of offet fits "
-                      "within a size_t.");
-        return CastIntegerToPointer<PointerType*>(
-            detail::AddOffsetToPointerAsInteger(pointer_as_integer, static_cast<std::size_t>(offset)));
-    }
-
-    // offset is negative
-
-    // If the offset is std::numeric_limits<std::ptrdiff_t>::min(), e.g for a char, the min value is -128 so the
-    // absolute value 128 would not fit into a char.
-    const auto positive_offset = (offset == std::numeric_limits<std::ptrdiff_t>::min())
-                                     ? static_cast<std::uintptr_t>(std::numeric_limits<std::ptrdiff_t>::max()) + 1U
-                                     : static_cast<std::uintptr_t>(std::abs(offset));
-    const auto result_as_integer = detail::SubtractOffsetFromPointerAsInteger(pointer_as_integer, positive_offset);
+    const auto result_as_integer = AddSignedOffsetToPointerAsInteger(pointer_as_integer, offset);
+    // NOLINTNEXTLINE(score-banned-function): This function is banned for calling CastIntegerToPointer
     return CastIntegerToPointer<PointerType*>(result_as_integer);
 }
 

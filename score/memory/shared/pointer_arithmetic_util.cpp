@@ -17,6 +17,8 @@
 #include "score/mw/log/log_types.h"
 #include "score/mw/log/logging.h"
 
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include <score/assert.hpp>
 
 #include <cstddef>
@@ -27,9 +29,6 @@
 #include <vector>
 
 namespace score::memory::shared
-{
-
-namespace detail
 {
 
 std::uintptr_t AddOffsetToPointerAsInteger(const std::uintptr_t pointer_as_integer, const std::size_t offset)
@@ -43,14 +42,25 @@ std::uintptr_t AddOffsetToPointerAsInteger(const std::uintptr_t pointer_as_integ
     return pointer_as_integer + offset;
 }
 
+std::uintptr_t AddSignedOffsetToPointerAsInteger(const std::uintptr_t ptr_as_integer, const std::ptrdiff_t offset)
+{
+    static_assert(sizeof(decltype(offset)) <= sizeof(std::size_t),
+                  "Casting offset to size_t will only avoid data loss if the max possible value of offet fits "
+                  "within a size_t.");
+    if (offset < 0)
+    {
+        const auto abs_offset = safe_math::Abs(offset);
+        return SubtractOffsetFromPointerAsInteger(ptr_as_integer, abs_offset);
+    }
+    return AddOffsetToPointerAsInteger(ptr_as_integer, static_cast<std::size_t>(offset));
+}
+
 std::uintptr_t SubtractOffsetFromPointerAsInteger(const std::uintptr_t pointer_as_integer, const std::size_t offset)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pointer_as_integer >= offset,
                            "Could not subtract offset from pointer. Result would lead to underflow of std::size_t");
     return pointer_as_integer - offset;
 }
-
-}  // namespace detail
 
 std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& data_type_infos)
 {
@@ -120,7 +130,7 @@ std::ptrdiff_t SubtractPointersBytes(const void* const first, const void* const 
     if (first_address_as_integer > second_address_as_integer)
     {
         const auto result_as_integer =
-            detail::SubtractOffsetFromPointerAsInteger(first_address_as_integer, second_address_as_integer);
+            SubtractOffsetFromPointerAsInteger(first_address_as_integer, second_address_as_integer);
         if (result_as_integer > static_cast<std::uintptr_t>(ptr_diff_max))
         {
             score::mw::log::LogFatal("shm")
@@ -134,7 +144,7 @@ std::ptrdiff_t SubtractPointersBytes(const void* const first, const void* const 
     // Calculate the absolute value of the subtraction by reversing the order (since we know that the second value is >=
     // the first).
     const auto absolute_value_result_as_integer =
-        detail::SubtractOffsetFromPointerAsInteger(second_address_as_integer, first_address_as_integer);
+        SubtractOffsetFromPointerAsInteger(second_address_as_integer, first_address_as_integer);
 
     // Since we need to cast positive_result_as_integer to a std::ptrdiff_t, we have to handle the special case in which
     // the actual result is equal to ptr_diff_min. In such a case, the absolute value of the result will be ptr_diff_max
