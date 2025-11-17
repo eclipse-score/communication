@@ -28,13 +28,13 @@ namespace score::memory::shared::test
 namespace
 {
 
-class PointerArithmeticCalculateAlignedSizeParamaterizedFixture
+class PointerArithmeticCalculateAlignedSizeParameterizedFixture
     : public ::testing::TestWithParam<std::pair<DataTypeSizeInfo, std::size_t>>
 {
 };
 
-INSTANTIATE_TEST_SUITE_P(PointerArithmeticCalculateAlignedSizeParamaterizedFixture,
-                         PointerArithmeticCalculateAlignedSizeParamaterizedFixture,
+INSTANTIATE_TEST_SUITE_P(PointerArithmeticCalculateAlignedSizeParameterizedFixture,
+                         PointerArithmeticCalculateAlignedSizeParameterizedFixture,
                          ::testing::Values(
 
                              std::make_pair(DataTypeSizeInfo{32, 16}, 32),
@@ -46,7 +46,7 @@ INSTANTIATE_TEST_SUITE_P(PointerArithmeticCalculateAlignedSizeParamaterizedFixtu
                              std::make_pair(DataTypeSizeInfo{64, 32}, 64),
                              std::make_pair(DataTypeSizeInfo{50, 32}, 64),
                              std::make_pair(DataTypeSizeInfo{70, 32}, 96)));
-TEST_P(PointerArithmeticCalculateAlignedSizeParamaterizedFixture, ReturnsCorrectCalculatedSize)
+TEST_P(PointerArithmeticCalculateAlignedSizeParameterizedFixture, ReturnsCorrectCalculatedSize)
 {
     auto [data_type_size_info, expected_size] = GetParam();
 

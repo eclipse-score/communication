@@ -23,24 +23,10 @@ namespace score::memory
 class DataTypeSizeInfo
 {
   public:
-    DataTypeSizeInfo() = default;
-
-    constexpr DataTypeSizeInfo(std::size_t size, std::size_t alignment) : DataTypeSizeInfo{}
+    constexpr DataTypeSizeInfo(const std::size_t size, const std::size_t alignment) : size_{size}, alignment_{alignment}
     {
-        SetSize(size);
-        SetAlignment(alignment);
-    }
-
-    constexpr void SetSize(std::size_t size)
-    {
-        size_ = size;
-    }
-
-    constexpr void SetAlignment(std::size_t alignment)
-    {
-        bool is_alignment_power_of_two = ((alignment & (alignment - 1)) == 0);
+        const bool is_alignment_power_of_two = ((alignment != 0) && ((alignment & (alignment - 1)) == 0));
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(is_alignment_power_of_two, "The standard requires that alignment is a power of 2!");
-        alignment_ = alignment;
     }
 
     constexpr std::size_t Size() const

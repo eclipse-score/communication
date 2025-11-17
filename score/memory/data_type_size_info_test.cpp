@@ -28,30 +28,11 @@ constexpr std::size_t kDummyAlignment{16U};
 
 constexpr std::size_t kInvalidAlignment{17U};
 
-TEST(DataTypeSizeInfoTest, SettingSizeUpdatesInternalSize)
+TEST(DataTypeSizeInfoTest, ConstructingWithAlignmentOfZeroTerminates)
 {
-    // Given a DataTypeSizeInfo
-    DataTypeSizeInfo unit{kDummySize, kDummyAlignment};
-
-    // When updating the size with the setter
-    const auto new_size = kDummySize + 1U;
-    unit.SetSize(new_size);
-
-    // Then the stored size is updated
-    EXPECT_EQ(unit.Size(), new_size);
-}
-
-TEST(DataTypeSizeInfoTest, SettingAlignmentUpdatesInternalAlignment)
-{
-    // Given a DataTypeSizeInfo
-    DataTypeSizeInfo unit{kDummySize, kDummyAlignment};
-
-    // When updating the alignment with the setter
-    const auto new_alignment = kDummyAlignment * 2U;
-    unit.SetAlignment(new_alignment);
-
-    // Then the stored alignment is updated
-    EXPECT_EQ(unit.Alignment(), new_alignment);
+    // When constructing a DataTypeSizeInfo with invalid alignment
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(DataTypeSizeInfo(kDummySize, 0U));
 }
 
 TEST(DataTypeSizeInfoTest, ConstructingWithAlignmentNotPowerOfTwoTerminates)
@@ -59,16 +40,6 @@ TEST(DataTypeSizeInfoTest, ConstructingWithAlignmentNotPowerOfTwoTerminates)
     // When constructing a DataTypeSizeInfo with invalid alignment
     // Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(DataTypeSizeInfo(kDummySize, kInvalidAlignment));
-}
-
-TEST(DataTypeSizeInfoTest, SettingAlignmentWithAlignmentNotPowerOfTwoTerminates)
-{
-    // Given a DataTypeSizeInfo
-    DataTypeSizeInfo unit{kDummySize, kDummyAlignment};
-
-    // When updating the alignment with the setter with an invalid alignment
-    // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit.SetAlignment(kInvalidAlignment));
 }
 
 TEST(DataTypeSizeInfoEqualityTest, ObjectsWithSameSizeAndAlignmentCompareTrue)

@@ -63,7 +63,7 @@ std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& 
 
         // If there is still a remaining next element, we need to calculate the padding between the current element and
         // the next element.
-        const auto is_last_element = i == data_type_infos.size() - 1U;
+        const auto is_last_element = i == (data_type_infos.size() - 1U);
         if (!is_last_element)
         {
             const auto next_element = data_type_infos[i + 1U];
@@ -71,11 +71,8 @@ std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& 
 
             // The start location (represented as a distance from the first allocation of the sequence) of the next
             // element can be calculated by calculating the aligned size of the currently allocated memory (i.e. up to
-            // and including the current element) using the alignment of the next element. We then calculate the padding
-            // by subtracting the total allocated memory from this start location.
-            const auto total_size_plus_padding = CalculateAlignedSize(total_size, next_element.Alignment());
-            const std::size_t padding_between_elements = total_size_plus_padding - total_size;
-            total_size += padding_between_elements;
+            // and including the current element) using the alignment of the next element.
+            total_size = CalculateAlignedSize(total_size, next_element.Alignment());
         }
     }
     return total_size;
