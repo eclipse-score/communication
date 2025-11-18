@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace score::memory::shared::test
 {
@@ -57,14 +58,14 @@ TEST_P(PointerArithmeticCalculateAlignedSizeParameterizedFixture, ReturnsCorrect
     EXPECT_EQ(calculated_size, expected_size);
 }
 
-class PointerArithmeticCalculateAlignedSizeOfSequenceParamaterizedFixture
+class PointerArithmeticCalculateAlignedSizeOfSequenceParameterizedFixture
     : public ::testing::TestWithParam<std::pair<std::vector<DataTypeSizeInfo>, std::size_t>>
 {
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    PointerArithmeticCalculateAlignedSizeOfSequenceParamaterizedFixture,
-    PointerArithmeticCalculateAlignedSizeOfSequenceParamaterizedFixture,
+    PointerArithmeticCalculateAlignedSizeOfSequenceParameterizedFixture,
+    PointerArithmeticCalculateAlignedSizeOfSequenceParameterizedFixture,
     ::testing::Values(std::make_pair(std::vector<DataTypeSizeInfo>{{24, 8}, {32, 16}}, 64),
 
                       std::make_pair(std::vector<DataTypeSizeInfo>{{32, 16}, {24, 8}}, 56),
@@ -79,7 +80,7 @@ INSTANTIATE_TEST_SUITE_P(
 
                       std::make_pair(std::vector<DataTypeSizeInfo>{{24, 8}, {32, 16}, {24, 8}, {32, 16}}, 128)));
 
-TEST_P(PointerArithmeticCalculateAlignedSizeOfSequenceParamaterizedFixture, ReturnsCorrectCalculatedSize)
+TEST_P(PointerArithmeticCalculateAlignedSizeOfSequenceParameterizedFixture, ReturnsCorrectCalculatedSize)
 {
     auto [data_type_size_infos, expected_size] = GetParam();
 
