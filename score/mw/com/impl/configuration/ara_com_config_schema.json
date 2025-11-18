@@ -328,6 +328,7 @@
                                             "maxSamples": {
                                                 "type": "integer",
                                                 "title": "Maximum samples",
+                                                "deprecated": true,
                                                 "description": "DEPRECATED! Use <numberOfSampleSlots> instead. Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535!"
                                             },
                                             "numberOfSampleSlots": {
