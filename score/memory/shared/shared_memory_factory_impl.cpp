@@ -34,10 +34,10 @@ namespace
 // Need to limit this functionality to QNX only.
 // coverity[autosar_cpp14_a16_0_1_violation]
 #if defined(__QNXNTO__)
-constexpr auto kSharedMemoryPathPrefix = "/dev/shmem";
+constexpr auto kTypedSharedMemoryPathPrefix = "/dev/shmem";
 // coverity[autosar_cpp14_a16_0_1_violation]  Different implementation required for linux.
 #else
-constexpr auto kSharedMemoryPathPrefix = "/tmp";
+constexpr auto kTypedSharedMemoryPathPrefix = "/tmp";
 // coverity[autosar_cpp14_a16_0_1_violation]
 #endif
 
@@ -104,7 +104,7 @@ auto GetResourceIfAlreadyOpened(
 
 bool IsShmInTypedMemory(const std::string& path)
 {
-    const auto file_path = std::string{kSharedMemoryPathPrefix} + path;
+    const auto file_path = std::string{kTypedSharedMemoryPathPrefix} + path;
     score::os::StatBuffer stat_buffer{};
 
     const auto stat_result = score::os::Stat::instance().stat(file_path.c_str(), stat_buffer);

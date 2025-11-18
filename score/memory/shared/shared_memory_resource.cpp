@@ -655,12 +655,6 @@ auto SharedMemoryResource::GetLockFilePath(const std::string& input_path) noexce
     return std::string{kTmpPathPrefix} + input_path + "_lock";
 }
 
-// coverity[autosar_cpp14_a0_1_3_violation : FALSE] See rationale for autosar_cpp14_a0_1_3_violation above.
-auto SharedMemoryResource::GetShmFilePath(const std::string& input_path) noexcept -> std::string
-{
-    return std::string{kTmpPathPrefix} + input_path;
-}
-
 auto SharedMemoryResource::getMemoryResourceProxy() noexcept -> const MemoryResourceProxy*
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(this->control_block_ != nullptr,

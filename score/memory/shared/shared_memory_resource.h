@@ -220,7 +220,6 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     uid_t getOwnerUid() const noexcept;
 
     static std::string GetLockFilePath(const std::string& input_path) noexcept;
-    static std::string GetShmFilePath(const std::string& input_path) noexcept;
 
     /// \brief Creates shared-mem-object under the path (path_).
     /// \param input_path path of the memory region: a string that describes a regular file path name that will be

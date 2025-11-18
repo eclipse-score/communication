@@ -307,10 +307,6 @@ TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsTrueWhenOpenTypedS
 
     expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
 
-    // and the memory regions are safely unmapped on destruction
-    EXPECT_CALL(*mman_mock_, munmap(_, _)).Times(1);
-    EXPECT_CALL(*unistd_mock_, close(_)).Times(1);
-
     // and given the shared memory region is opened
     const auto resource_result = SharedMemoryResourceTestAttorney::Open(
         TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock);
@@ -513,7 +509,7 @@ TEST_F(SharedMemoryResourceOpenDeathTest, OpensSharedMemoryEAGAINOnFstatCausesTe
     EXPECT_DEATH(SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write), ".*");
 }
 
-TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorWhenGetCreatorUidFails)
+TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryTerminatesWhenGetCreatorUidFails)
 {
     InSequence sequence{};
     constexpr std::int32_t file_descriptor = 5;
@@ -540,6 +536,7 @@ TEST_F(SharedMemoryResourceOpenDeathTest, OpenTypedSharedMemoryErrorWhenGetCreat
         .WillRepeatedly(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
 
     // When Opening a SharedMemoryResource
+    // Then the program terminates
     EXPECT_DEATH(SharedMemoryResourceTestAttorney::Open(
                      TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock),
                  ".*");

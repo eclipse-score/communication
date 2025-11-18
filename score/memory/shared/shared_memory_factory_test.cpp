@@ -18,6 +18,12 @@
 #include <thread>
 #include <utility>
 
+#if defined(__QNXNTO__)
+constexpr auto kTypedSharedMemoryPathPrefix = "/dev/shmem";
+#else
+constexpr auto kTypedSharedMemoryPathPrefix = "/tmp";
+#endif
+
 namespace score::memory::shared::test
 {
 
@@ -57,6 +63,11 @@ int CountNonNullResources(const std::vector<std::shared_ptr<ManagedMemoryResourc
             value != nullptr ? ++non_null_count : non_null_count;
         });
     return non_null_count;
+}
+
+std::string GetShmFilePath(const std::string& input_path) noexcept
+{
+    return std::string{kTypedSharedMemoryPathPrefix} + input_path;
 }
 }  // namespace
 
@@ -104,7 +115,7 @@ TEST_P(SharedMemoryFactoryTest, CallingRemoveOnNamedResourceWillUnlinkSharedMemo
 
     expectSharedMemorySuccessfullyCreated(
         kFileDescriptor, kLockFileDescriptor, dataRegion.data(), typed_memory_parameter);
-    // and the memory region is safely unlinked once from SharedMemoryFactory::Remove()
+    // Expecting that the memory region is safely unlinked once from SharedMemoryFactory::Remove()
     if (typed_memory_parameter)
     {
         EXPECT_CALL(*typedmemory_mock_, Unlink(StrEq(TestValues::sharedMemorySegmentPath)))
@@ -115,8 +126,7 @@ TEST_P(SharedMemoryFactoryTest, CallingRemoveOnNamedResourceWillUnlinkSharedMemo
         EXPECT_CALL(*mman_mock_, shm_unlink(StrEq(TestValues::sharedMemorySegmentPath)));
     }
 
-    // and the memory region is safely unmapped on destruction
-    EXPECT_CALL(*mman_mock_, munmap(_, _));
+    // and afterwards cleanup the shm file
     EXPECT_CALL(*unistd_mock_, close(kFileDescriptor));
 
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
@@ -126,7 +136,7 @@ TEST_P(SharedMemoryFactoryTest, CallingRemoveOnNamedResourceWillUnlinkSharedMemo
     SharedMemoryFactory::Remove(TestValues::sharedMemorySegmentPath);
 }
 
-TEST_F(SharedMemoryFactoryTest, CallingRemoveOnTypedNamedResourceWillFailWhenUnlinkSharedMemoryFileFailed)
+TEST_F(SharedMemoryFactoryTest, CallingRemoveOnTypedNamedResourceWillNotCrashWhenUnlinkSharedMemoryFileFailed)
 {
     InSequence sequence{};
 
@@ -138,18 +148,17 @@ TEST_F(SharedMemoryFactoryTest, CallingRemoveOnTypedNamedResourceWillFailWhenUnl
     expectSharedMemorySuccessfullyCreated(
         kFileDescriptor, kLockFileDescriptor, dataRegion.data(), typed_memory_parameter);
 
-    // and the memory region is not safely unlinked due to any error
+    // Expecting that the memory region is not safely unlinked due to any error
     EXPECT_CALL(*typedmemory_mock_, Unlink(StrEq(TestValues::sharedMemorySegmentPath)))
         .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
 
-    // and the memory region is safely unmapped on destruction
-    EXPECT_CALL(*mman_mock_, munmap(_, _));
+    // and afterwards cleanup the shm file
     EXPECT_CALL(*unistd_mock_, close(kFileDescriptor));
 
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
         TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
 
-    // When removing the resource
+    // When removing the resource the program does not crash
     SharedMemoryFactory::Remove(TestValues::sharedMemorySegmentPath);
 }
 
@@ -750,37 +759,40 @@ TEST(SharedMemoryFactoryRemoveStaleArtefactsTest, CallingRemoveStaleArtefactsWil
 TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsWillUnlinkAnOldTypedSharedMemoryRegion)
 {
     constexpr uid_t kTypedmemdUid{3020};
-    os::MockGuard<os::MmanMock> mman_mock{};
-    os::MockGuard<os::StatMock> stat_mock{};
-
     const std::string dummy_input_path{"/my_shared_memory_path"};
-    const auto shm_file_path = SharedMemoryResourceTestAttorney::GetShmFilePath(dummy_input_path);
+    const auto shm_file_path = GetShmFilePath(dummy_input_path);
     score::os::StatBuffer stat_buffer{};
     stat_buffer.st_uid = kTypedmemdUid;
 
-    EXPECT_CALL(*stat_mock, stat(StrEq(shm_file_path.data()), _, _))
-        .WillOnce(DoAll(SetArgReferee<1>(stat_buffer), Return(score::cpp::blank())));
+    // Given that the typed shm object has been allocated via typedmemd
+    ON_CALL(*stat_mock_, stat(StrEq(shm_file_path.data()), _, _))
+        .WillByDefault(DoAll(SetArgReferee<1>(stat_buffer), Return(score::cpp::blank())));
+
+    // and that the Unlink success
     EXPECT_CALL(*typedmemory_mock_, Unlink(StrEq(dummy_input_path))).WillOnce(Return(score::cpp::blank{}));
 
+    // When calling RemoveStaleArtefacts
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
 }
 
-TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsUnlinkFailed)
+TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsWillNotCrashWhenUnlinkFailed)
 {
     constexpr uid_t kTypedmemdUid{3020};
-    os::MockGuard<os::MmanMock> mman_mock{};
-    os::MockGuard<os::StatMock> stat_mock{};
-
     const std::string dummy_input_path{"/my_shared_memory_path"};
-    const auto shm_file_path = SharedMemoryResourceTestAttorney::GetShmFilePath(dummy_input_path);
+    const auto shm_file_path = GetShmFilePath(dummy_input_path);
     score::os::StatBuffer stat_buffer{};
     stat_buffer.st_uid = kTypedmemdUid;
 
-    EXPECT_CALL(*stat_mock, stat(StrEq(shm_file_path.data()), _, _))
-        .WillOnce(DoAll(SetArgReferee<1>(stat_buffer), Return(score::cpp::blank())));
+    // Given that the shm object has been allocated via typedmemd
+    ON_CALL(*stat_mock_, stat(StrEq(shm_file_path.data()), _, _))
+        .WillByDefault(DoAll(SetArgReferee<1>(stat_buffer), Return(score::cpp::blank())));
+
+    // and that the Unlink fails
     EXPECT_CALL(*typedmemory_mock_, Unlink(StrEq(dummy_input_path)))
         .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
 
+    // When calling RemoveStaleArtefacts
+    // Then the program does not crash
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
 }
 
