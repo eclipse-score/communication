@@ -1,6 +1,7 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "description": "ara::com configuration",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Eclipse S-CORE - Communication: runtime configuration schema",
+    "description": "mw::com configuration",
     "type": "object",
     "required": [
         "serviceTypes",
@@ -10,9 +11,11 @@
     "properties": {
         "serviceTypes": {
             "type": "array",
+            "title": "Service Types Container",
             "description": "Overall element for service types",
             "items": {
                 "type": "object",
+                "title": "Service Types",
                 "description": "All information defining a service type and its binding specific mapping",
                 "required": [
                     "serviceTypeName",
@@ -23,10 +26,12 @@
                 "properties": {
                     "serviceTypeName": {
                         "type": "string",
+                        "title": "Service Type Name",
                         "description": "Represents FQN of the Service in the form of an AUTOSAR short-name-path of the representing ServiceInterface. This is a binding/technology independent name!"
                     },
                     "version": {
                         "type": "object",
+                        "title": "Service Type Version",
                         "description": "Service version. This info is redundant as it is generated also into C++ sources.",
                         "required": [
                             "major",
@@ -36,19 +41,23 @@
                         "properties": {
                             "major": {
                                 "type": "integer",
+                                "title": "Service Type Major Version",
                                 "description": "std::uint32_t of major of service"
                             },
                             "minor": {
                                 "type": "integer",
+                                "title": "Service Type Minor Version",
                                 "description": "std::uint32_t of minor of service"
                             }
                         }
                     },
                     "bindings": {
                         "type": "array",
+                        "title": "Service Type Bindings",
                         "description": "List of available bindings for this serviceType",
                         "items": {
                             "type": "object",
+                            "title": "Service Type Binding",
                             "description": "A binding specific config for this serviceType",
                             "required": [
                                 "binding",
@@ -57,6 +66,7 @@
                             "additionalProperties": false,
                             "properties": {
                                 "binding": {
+                                    "title": "Type of binding",
                                     "type": "string",
                                     "enum": [
                                         "SOME/IP",
@@ -66,13 +76,16 @@
                                 },
                                 "serviceId": {
                                     "type": "integer",
+                                    "title": "Service Id",
                                     "description": "Binding technology specific service id, it might be 16 or 64 bit. For LoLa/Shm and SOME/IP we have 16 bit values."
                                 },
                                 "events": {
                                     "type": "array",
+                                    "title": "Service Events",
                                     "description": "optional (serviceType may have no events) binding specific event configurations of this serviceType.",
                                     "items": {
                                         "type": "object",
+                                        "title": "Service Event",
                                         "description": "Binding specific event configuration",
                                         "required": [
                                             "eventName",
@@ -82,10 +95,12 @@
                                         "properties": {
                                             "eventName": {
                                                 "type": "string",
+                                                "title": "Service Event Name",
                                                 "description": "Short name of the event within the serviceType (not FQN)"
                                             },
                                             "eventId": {
                                                 "type": "integer",
+                                                "title": "Service Event Id",
                                                 "description": "Binding technology specific event id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
                                             }
                                         }
@@ -93,9 +108,11 @@
                                 },
                                 "fields": {
                                     "type": "array",
+                                    "title": "Service Fields",
                                     "description": "optional (serviceType may have no fields) binding specific field configurations of this serviceType.",
                                     "items": {
                                         "type": "object",
+                                        "title": "Service Field",
                                         "description": "Misc field configuration",
                                         "required": [
                                             "fieldName",
@@ -105,18 +122,22 @@
                                         "properties": {
                                             "fieldName": {
                                                 "type": "string",
+                                                "title": "Service Field Name",
                                                 "description": "Short name of the field within the serviceType."
                                             },
                                             "fieldId": {
                                                 "type": "integer",
+                                                "title": "Service Field Id",
                                                 "description": "Binding technology specific field id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
                                             },
                                             "Get": {
                                                 "type": "boolean",
+                                                "title": "Service Field Getter",
                                                 "description": "Specify if a getter function is available. Default value is false."
                                             },
                                             "Set": {
                                                 "type": "boolean",
+                                                "title": "Service Field Setter",
                                                 "description": "Specify if a setter function is available. Default value is false."
                                             }
                                         }
@@ -130,9 +151,11 @@
         },
         "serviceInstances": {
             "type": "array",
+            "title": "Service Instances",
             "description": "Overall element for service instances",
             "items": {
                 "type": "object",
+                "title": "Service Instance",
                 "description": "All information defining a service instance",
                 "required": [
                     "instanceSpecifier",
@@ -144,14 +167,17 @@
                 "properties": {
                     "instanceSpecifier": {
                         "type": "string",
+                        "title": "Service Instance Specifier",
                         "description": "Represents the InstanceSpecifier value. This is itself an AUTOSAR short-name-path (representing a port prototype of a software component instance). For comfort reasons, we allow also the usage of abbreviated short-name-paths (short-name-paths with a number of components starting from root being removed) in case they are still unique within an executable (this json/configuration is a per executable config!). From AUTOSAR concept perspective an executable contains a 'root sw-component', which itself can be a nested composition of AdaptiveApplicationSwComponentTypes). Because of this 'compositing feature' it could be the case, that the direct short-name of a port prototype isn’t unique within the composition making up the executable. In reality however the port names are 95% unique and forcing the usage of lengthy short-name-paths can be annoying! So this translates to the following rules:\n1. A config file with two “instanceSpecifiers”, where one is only a trailing substring of the other is INVALID!\n2. If user code makes a resolve/lookup providing an 'instanceSpecifier' in the form of an abbreviated short-name-path, which turns out NOT being unique with respect to the config, this is a hard programming/configuration fault, which shall lead to an abort."
                     },
                     "serviceTypeName": {
                         "type": "string",
+                        "title": "Service Instance Type Name",
                         "description": "Represents FQN of the Service in the form of an AUTOSAR short-name-path of the representing ServiceInterface. This is a binding/technology independent name!"
                     },
                     "version": {
                         "type": "object",
+                        "title": "Service Version",
                         "description": "Service version. This info is redundant as it is generated also into C++ sources.",
                         "required": [
                             "major",
@@ -161,19 +187,23 @@
                         "properties": {
                             "major": {
                                 "type": "integer",
+                                "title": "Service Major Version",
                                 "description": "std::uint32_t of major of service"
                             },
                             "minor": {
                                 "type": "integer",
+                                "title": "Service Minor Version",
                                 "description": "std::uint32_t of minor of service"
                             }
                         }
                     },
                     "instances": {
                         "type": "array",
+                        "title": "Available Service Instances",
                         "description": "List of instances available",
                         "items": {
                             "type": "object",
+                            "title": "Available Service Instance",
                             "description": "A service instance bound to a specific technology",
                             "required": [
                                 "asil-level",
@@ -183,6 +213,7 @@
                             "properties": {
                                 "instanceId": {
                                     "type": "integer",
+                                    "title": "Service Instance Id",
                                     "description": "(optional) 16 bit instance id, contains no value if any instance id is requested (only possible on subscriber/R-port side)"
                                 },
                                 "asil-level": {
@@ -191,6 +222,7 @@
                                         "QM",
                                         "B"
                                     ],
+                                    "title": "ASIL Level",
                                     "description": "ASIL level: On provider side B means, service instance provides ASIL-B quality and can therefore serve QM and ASIL-B consumers. B on consumer side means: Needs ASIL-B qualified provider. If this value is set to B, then the global asil level needs to be explicitly set to B as well, via the {\"global\": {\"asil-level\": B} key."
                                 },
                                 "binding": {
@@ -199,18 +231,22 @@
                                         "SOME/IP",
                                         "SHM"
                                     ],
+                                    "title": "Binding",
                                     "description": "Binding technology"
                                 },
                                 "shm-size": {
                                     "type": "integer",
+                                    "title": "Shared memory size",
                                     "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the data segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
                                 },
                               "control-asil-b-shm-size": {
                                 "type": "integer",
+                                "title": "Shared memory size for ASIL-B control segment",
                                 "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the ASIL-B control segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
                               },
                               "control-qm-shm-size": {
                                 "type": "integer",
+                                "title": "Shared memory size for QM control segment",
                                 "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the QM control segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
                               },
                                 "permission-checks": {
@@ -220,15 +256,18 @@
                                         "strict"
                                     ],
                                     "default": "file-permissions-on-empty",
+                                    "title": "Strategy for empty user-ids",
                                     "description": "This property controls, how empty lists (no user ids given) in allowedProviders/allowedConsumers are interpreted. In case of file-permissions-on-empty an empty list will fall back to access-check based on basic ugo file-system-rights. In case of strict an empty list of user ids really means no-one can access (allowedConsumers) or no provider is accepted (allowedProviders)"
                                 },
                                 "allowedConsumer": {
                                     "type": "object",
+                                    "title": "Granted consumer user-ids",
                                     "description": "Optional list of user-ids that are allowed to consume this service instance according to their ASIL-Level. Used by LoLa applications in the role as service instance provider to restrict access to its shared mem objects to the given user-ids and also allow those user-ids to send messages to it. Property is irrelevant for consumer/proxy side and optional for provider/skeleton side, because if not configured the access rights fall back to basic 'ugo' access rights for created shm-objects/message passing endpoints , unless <strict> is configured for <permission-checks>.",
                                     "additionalProperties": false,
                                     "properties": {
                                         "QM": {
                                             "type": "array",
+                                            "title": "Granted consumer user-ids in QM",
                                             "description": "The list of user-ids that are allowed to consume this service instance in ASIL-QM.",
                                             "items": {
                                                 "type": "integer"
@@ -236,6 +275,7 @@
                                         },
                                         "B": {
                                             "type": "array",
+                                            "title": "Granted consumer user-ids in ASIL-B",
                                             "description": "The list of user-ids that are allowed to consume this service instance in ASIL-B. This is only relevant/makes only sense, if the providing service instance provides ASIL-B quality, which in turn requires the config property global.asil-level == B",
                                             "items": {
                                                 "type": "integer"
@@ -245,11 +285,13 @@
                                 },
                                 "allowedProvider": {
                                     "type": "object",
+                                    "title": "Granted provider user-ids",
                                     "description": "Optional list of user-ids that are allowed to provide this service instance according to their ASIL-Level. Used by LoLa applications in the role as service instance consumer to allow those user-ids to send messages to it. Also, if this property is configured, the consumers opening/mapping the shared-memory objects for the given serviceInstance will check whether such an object is owned by one of the configured 'allowedProviders' and will terminate if it's not the case. If this property is not configured or the list is empty, the consumer will accept shm-objects from a provider with any user-id, but the ability to accept messages from the provider may be imparted.",
                                     "additionalProperties": false,
                                     "properties": {
                                         "QM": {
                                             "type": "array",
+                                            "title": "Granted provider user-ids in QM",
                                             "description": "The list of user-ids that are allowed to provide this service instance in ASIL-QM.",
                                             "items": {
                                                 "type": "integer"
@@ -257,6 +299,7 @@
                                         },
                                         "B": {
                                             "type": "array",
+                                            "title": "Granted provider user-ids in ASIL-B",
                                             "description": "The list of user-ids that are allowed to provide this service instance in ASIL-B.",
                                             "items": {
                                                 "type": "integer"
@@ -266,9 +309,11 @@
                                 },
                                 "events": {
                                     "type": "array",
+                                    "title": "Event Bindings",
                                     "description": "(optional) Binding technology specific configuration of events within this instance",
                                     "items": {
                                         "type": "object",
+                                        "title": "Event Binding Configuration",
                                         "description": "Binding specific event configuration",
                                         "required": [
                                             "eventName"
@@ -277,26 +322,32 @@
                                         "properties": {
                                             "eventName": {
                                                 "type": "string",
+                                                "title": "Event name",
                                                 "description": "Mandatory Short name of the event within the serviceType (not FQN)"
                                             },
                                             "maxSamples": {
                                                 "type": "integer",
+                                                "title": "Maximum samples",
                                                 "description": "DEPRECATED! Use <numberOfSampleSlots> instead. Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535!"
                                             },
                                             "numberOfSampleSlots": {
                                                 "type": "integer",
+                                                "title": "Number of sample slots",
                                                 "description": "Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535! Event subscriptions by consumers will be verified against this value, but currently not ASIL level overarching. See README for details."
                                             },
                                             "maxSubscribers": {
                                                 "type": "integer",
+                                                "title": "Maximum subscribers",
                                                 "description": "Mandatory LoLa specific provider/skeleton side setting, how many subscribers shall be supported at max."
                                             },
                                             "enforceMaxSamples": {
                                                 "type": "boolean",
+                                                "title": "Enforce maximum samples",
                                                 "description": "Optional flag, which describes, whether the value configured in <maxSamples> is enforced by the implementation during event-subscribe calls. Default value is TRUE. I.e. <maxSamples> is enforced, so that any subscribe call with its given maxSampleCount, which would overflow <maxSamples>, will be rejected. "
                                             },
                                             "numberOfIpcTracingSlots": {
                                                 "type": "integer",
+                                                "title": "IPC tracing slots",
                                                 "description": "std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands this field being traced, a WARN message will be logged. A value greater than zeroe for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the sceleton side will set the number of tracing slots.",
                                                 "default": 0
                                             }
@@ -305,9 +356,11 @@
                                 },
                                 "fields": {
                                     "type": "array",
+                                    "title": "Fields Bindings",
                                     "description": "(optional) Binding technology specific configuration of fields within this instance",
                                     "items": {
                                         "type": "object",
+                                        "title": "Field Binding",
                                         "description": "Binding specific field configuration",
                                         "required": [
                                             "fieldName"
@@ -316,22 +369,27 @@
                                         "properties": {
                                             "fieldName": {
                                                 "type": "string",
+                                                "title": "Field name",
                                                 "description": "Mandatory Short name of the field within the serviceType (not FQN)"
                                             },
                                             "numberOfSampleSlots": {
                                                 "type": "integer",
+                                                "title": "Number of sample slots",
                                                 "description": "Mandatory LoLa specific provider/skeleton side setting, how many sample slots shall be allocated. Value needs to be between 1 and 65535!"
                                             },
                                             "maxSubscribers": {
                                                 "type": "integer",
+                                                "title": "Maximum subscribers",
                                                 "description": "Mandatory LoLa specific provider/skeleton side setting, how many subscribers shall be supported at max."
                                             },
                                             "enforceMaxSamples": {
                                                 "type": "boolean",
+                                                "title": "Enforce maximum samples",
                                                 "description": "Optional flag, which describes, whether the value configured in <numberOfSampleSlots> (or deprecated <maxSamples>) is enforced by the implementation during field-subscribe calls. Default value is TRUE. I.e. <numberOfSampleSlots> is enforced, so that any subscribe call with its given maxSampleCount, which would overflow <numberOfSampleSlots>, will be rejected. "
                                             },
                                             "numberOfIpcTracingSlots": {
                                                 "type": "integer",
+                                                "title": "IPC tracing slots",
                                                 "description": "std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands this field being traced, a WARN message will be logged. A value greater than zeroe for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the sceleton side will set the number of tracing slots.",
                                                 "default": 0
                                             }
@@ -346,11 +404,13 @@
         },
         "global": {
             "type": "object",
+            "title": "Global Configuration",
             "description": "This section contains type and instance independent settings that apply to the application itself.",
             "additionalProperties": false,
             "properties": {
                 "asil-level": {
                     "type": "string",
+                    "title": "ASIL Level",
                     "description": "ASIL level the entire process/application fulfills. If this property is NOT defined, ASIL level QM is assumed. It will be crosschecked if, according to serviceInstances configuration, a service instance shall be provided with ASIL level B, but processAsilLevel is set QM. If this is the case, the configuration is invalid and will be dismissed.",
                     "enum": [
                         "QM",
@@ -360,26 +420,31 @@
                 },
                 "applicationID": {
                     "type": "integer",
+                    "title": "Application Id",
                     "description": "Optional explicit Application-ID to be used for crash-recovery. If not given, the uid of the process will be used.",
                     "minimum": 0,
                     "maximum": 4294967295
                 },
                 "queue-size": {
                     "type": "object",
+                    "title": "Incoming queue size",
                     "description": "Configures the queue size for incoming message ports. This is important for some queue technologies that have an upper size bound and will drop messages in case the queue overflows so that subscription messages or event updates may get lost. If this happens, this number must be raised for the respective receiving queue. Note, that e.g. on Linux, when increasing the message queue size, it can be necessary to increase a kernel parameter! See: /proc/sys/fs/mqueue/msg_max",
                     "additionalProperties": false,
                     "properties": {
                         "QM-receiver": {
+                            "title": "Queue size for QM clients",
                             "description": "Defines the queue size for reception incoming messages from QM clients",
                             "type": "integer",
                             "default": 10
                         },
                         "B-receiver": {
+                            "title": "Incoming queue size for ASIL-B",
                             "description": "Defines the queue size for reception incoming messages from B clients. Only relevant/processed in case the global property asil-level is set to <B>, otherwise it gets ignored.",
                             "type": "integer",
                             "default": 10
                         },
                         "B-sender": {
+                            "title": "Outgoing queue size for ASIL-B",
                             "description": "Defines the queue size for sending outgoing messages to QM clients. Max value = 100. Only relevant/processed in case the global property asil-level is set to <B>, otherwise it gets ignored. Note: A specific send-queue is used only in case an ASIL-B LoLa app sends to ASIL-QM LoLa apps, to decouple the sending app completely from misbehaving receiving QM LoLa apps.",
                             "type": "integer",
                             "default": 20
@@ -387,6 +452,7 @@
                     }
                 },
                 "shm-size-calc-mode": {
+                    "title": "Calculation mode for shared memory size",
                     "description": "How shall the sizes of the shm-objects get calculated (Currently we only support SIMULATION): Via an initial simulation run against a heap-memory resource. It has the advantage of perfect accuracy, but adds a minimal runtime overhead at startup plus some initial temporary heap allocation.",
                     "enum": [
                         "SIMULATION"
@@ -397,6 +463,7 @@
         },
         "tracing": {
             "type": "object",
+            "title": "IPC Tracing configuration",
             "description": "This section contains general settings for IPC Tracing functionality",
             "required": [
                 "applicationInstanceID"
@@ -405,15 +472,18 @@
             "properties": {
                 "enable": {
                     "type": "boolean",
+                    "title": "Enable IPC tracing",
                     "description": "enables (or disables) IPC Tracing for the current mw::com application/process.",
                     "default": true
                 },
                 "applicationInstanceID": {
                     "type": "string",
+                    "title": "Application Instance Id",
                     "description": "identification with which this mw::com application shall register itself with the IPC Tracing subsystem. Hint: Typically re-using the DLT AppID could make sense."
                 },
                 "traceFilterConfigPath": {
                     "type": "string",
+                    "title": "Trace filter config file",
                     "description": "Path, where the trace filter config json is located (adhering to the schema 'comtrace_config.json' schema)",
                     "default": "./etc/mw_com_trace_filter.json"
                 }
