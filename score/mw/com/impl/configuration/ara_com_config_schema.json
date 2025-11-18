@@ -317,7 +317,9 @@
                                                 "type": "integer",
                                                 "title": "IPC tracing slots",
                                                 "description": "std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands this field being traced, a WARN message will be logged. A value greater than zeroe for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the sceleton side will set the number of tracing slots.",
-                                                "default": 0
+                                                "default": 0,
+                                                "minimum": 0,
+                                                "maximum": 255
                                             }
                                         }
                                     }
@@ -361,7 +363,9 @@
                                                 "type": "integer",
                                                 "title": "IPC tracing slots",
                                                 "description": "std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands this field being traced, a WARN message will be logged. A value greater than zero for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the skeleton side will set the number of tracing slots.",
-                                                "default": 0
+                                                "default": 0,
+                                                "minimum": 0,
+                                                "maximum": 255
                                             }
                                         }
                                     }
