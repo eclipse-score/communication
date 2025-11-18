@@ -114,12 +114,14 @@
                                             "Get": {
                                                 "type": "boolean",
                                                 "title": "Service Field Getter",
-                                                "description": "Specify if a getter function is available. Default value is false."
+                                                "description": "Specify if a getter function is available.",
+                                                "default": false
                                             },
                                             "Set": {
                                                 "type": "boolean",
                                                 "title": "Service Field Setter",
-                                                "description": "Specify if a setter function is available. Default value is false."
+                                                "description": "Specify if a setter function is available. Default value is false.",
+                                                "default": false
                                             }
                                         }
                                     }
@@ -308,7 +310,8 @@
                                             "enforceMaxSamples": {
                                                 "type": "boolean",
                                                 "title": "Enforce maximum samples",
-                                                "description": "Optional flag, which describes, whether the value configured in <maxSamples> is enforced by the implementation during event-subscribe calls. Default value is TRUE. I.e. <maxSamples> is enforced, so that any subscribe call with its given maxSampleCount, which would overflow <maxSamples>, will be rejected. "
+                                                "description": "Optional flag, which describes, whether the value configured in <maxSamples> is enforced by the implementation during event-subscribe calls. Default value is TRUE. I.e. <maxSamples> is enforced, so that any subscribe call with its given maxSampleCount, which would overflow <maxSamples>, will be rejected.",
+                                                "default": true
                                             },
                                             "numberOfIpcTracingSlots": {
                                                 "type": "integer",
