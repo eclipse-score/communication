@@ -30,26 +30,7 @@
                         "description": "Represents FQN of the Service in the form of an AUTOSAR short-name-path of the representing ServiceInterface. This is a binding/technology independent name!"
                     },
                     "version": {
-                        "type": "object",
-                        "title": "Service Type Version",
-                        "description": "Service version. This info is redundant as it is generated also into C++ sources.",
-                        "required": [
-                            "major",
-                            "minor"
-                        ],
-                        "additionalProperties": false,
-                        "properties": {
-                            "major": {
-                                "type": "integer",
-                                "title": "Service Type Major Version",
-                                "description": "std::uint32_t of major of service"
-                            },
-                            "minor": {
-                                "type": "integer",
-                                "title": "Service Type Minor Version",
-                                "description": "std::uint32_t of minor of service"
-                            }
-                        }
+                        "$ref": "#/$defs/serviceVersion"
                     },
                     "bindings": {
                         "type": "array",
@@ -176,26 +157,7 @@
                         "description": "Represents FQN of the Service in the form of an AUTOSAR short-name-path of the representing ServiceInterface. This is a binding/technology independent name!"
                     },
                     "version": {
-                        "type": "object",
-                        "title": "Service Version",
-                        "description": "Service version. This info is redundant as it is generated also into C++ sources.",
-                        "required": [
-                            "major",
-                            "minor"
-                        ],
-                        "additionalProperties": false,
-                        "properties": {
-                            "major": {
-                                "type": "integer",
-                                "title": "Service Major Version",
-                                "description": "std::uint32_t of major of service"
-                            },
-                            "minor": {
-                                "type": "integer",
-                                "title": "Service Minor Version",
-                                "description": "std::uint32_t of minor of service"
-                            }
-                        }
+                        "$ref": "#/$defs/serviceVersion"
                     },
                     "instances": {
                         "type": "array",
@@ -239,16 +201,16 @@
                                     "title": "Shared memory size",
                                     "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the data segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
                                 },
-                              "control-asil-b-shm-size": {
-                                "type": "integer",
-                                "title": "Shared memory size for ASIL-B control segment",
-                                "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the ASIL-B control segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
-                              },
-                              "control-qm-shm-size": {
-                                "type": "integer",
-                                "title": "Shared memory size for QM control segment",
-                                "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the QM control segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
-                              },
+                                "control-asil-b-shm-size": {
+                                    "type": "integer",
+                                    "title": "Shared memory size for ASIL-B control segment",
+                                    "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the ASIL-B control segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
+                                },
+                                "control-qm-shm-size": {
+                                    "type": "integer",
+                                    "title": "Shared memory size for QM control segment",
+                                    "description": "(optional) SHM-Specific attribute that defines how big (in bytes) the underlying shared memory object for the QM control segment shall be created. Property is not validated! Too small values lead to aborts! If no value is given, the size is internally calculated based on storage needs of events (type, number of slots) with the calculation method set in global.shm-size-calc-mode"
+                                },
                                 "permission-checks": {
                                     "type": "string",
                                     "enum": [
@@ -491,6 +453,30 @@
                     "title": "Trace filter config file",
                     "description": "Path, where the trace filter config json is located (adhering to the schema 'comtrace_config.json' schema)",
                     "default": "./etc/mw_com_trace_filter.json"
+                }
+            }
+        }
+    },
+    "$defs": {
+        "serviceVersion": {
+            "type": "object",
+            "title": "Service Type Version",
+            "description": "Service version. This info is redundant as it is generated also into C++ sources.",
+            "required": [
+                "major",
+                "minor"
+            ],
+            "additionalProperties": false,
+            "properties": {
+                "major": {
+                    "type": "integer",
+                    "title": "Service Type Major Version",
+                    "description": "std::uint32_t of major of service"
+                },
+                "minor": {
+                    "type": "integer",
+                    "title": "Service Type Minor Version",
+                    "description": "std::uint32_t of minor of service"
                 }
             }
         }
