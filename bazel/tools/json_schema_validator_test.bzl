@@ -49,7 +49,7 @@ def json_schema_validator_tests(name):
         name = "valid_schema_and_valid_json_test",
         json_content = """{ "root": { "obj1": 1, "obj2": "test_string" }  }""",
         schema_content = """{
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "required": [
         "root"
@@ -76,7 +76,7 @@ def json_schema_validator_tests(name):
         name = "valid_schema_with_enabled_additional_props_and_valid_json_test",
         json_content = """{ "root": { "obj1": 1, "obj2": "test_string", "uknown_prop": 2 }  }""",
         schema_content = """{
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "required": [
         "root"
@@ -103,7 +103,7 @@ def json_schema_validator_tests(name):
         name = "valid_schema_with_disabled_additional_props_and_valid_json_with_extra_property_test",
         json_content = """{ "root": { "obj1": 1, "obj2": "test_string", "uknown_prop": 2 }  }""",
         schema_content = """{
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "required": [
         "root"
@@ -131,7 +131,7 @@ def json_schema_validator_tests(name):
         name = "invalid_schema_and_valid_json_test",
         json_content = """{ "root": { "obj1": 1, "obj2": "test_string", "uknown_prop": 2 }  }""",
         schema_content = """{
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "required": [
         "root" this string is invalid

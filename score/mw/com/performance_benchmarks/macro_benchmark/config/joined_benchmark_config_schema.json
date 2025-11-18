@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "service_app_config_schema",
   "description": "LoLa benchmarking joined configuration. This is the complete LoLa benchmark configuration, provided by the user. Specific configurations for the client apps and service apps making up the entire benchmark are generated from this joined configuration.",
   "type": "object",
