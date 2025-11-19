@@ -11,8 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/runtime_configuration.h"
-
 #include "score/memory/string_literal.h"
+
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
+#include "score/mw/log/slot_handle.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
@@ -32,7 +35,11 @@ namespace score::mw::com::runtime
 namespace
 {
 
-constexpr auto kConfigurationPathCommandLineKey = "-service_instance_manifest";
+using ::testing::_;
+using ::testing::Return;
+
+constexpr auto kDeprecatedConfigurationPathCommandLineKey = "-service_instance_manifest";
+constexpr auto kConfigurationPathCommandLineKey = "--service_instance_manifest";
 constexpr auto kDefaultConfigurationPath = "./etc/mw_com_config.json";
 
 constexpr auto kDummyConfigurationPath = "/my/configuration/path/mw_com_config.json";
@@ -78,6 +85,28 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsPa
     // Then the stored configuration path should be the same as the path provided in the command line arguments
     const auto& stored_configuration_path = runtime_configuration.GetConfigurationPath();
     EXPECT_EQ(stored_configuration_path.Native(), kDummyConfigurationPath);
+}
+
+TEST(RuntimeConfigurationCommandLineConstructorTest, DeprecatedConfigurationCommandLineArg)
+{
+    // Given command line arguments which contain the deprecated argument
+    std::vector<score::StringLiteral> arguments = {
+        kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey, kDummyConfigurationPath};
+    auto [argc, argv] = GenerateCommandLineArgs(arguments);
+
+    // Given a mocked stdout to capture logs
+    testing::internal::CaptureStdout();
+
+    // When constructing a RuntimeConfiguration
+    const RuntimeConfiguration runtime_configuration{argc, argv};
+
+    // Then the configuration path should still work for backward compatibility
+    const auto& stored_configuration_path = runtime_configuration.GetConfigurationPath();
+    EXPECT_EQ(stored_configuration_path.Native(), kDummyConfigurationPath);
+
+    // Then the output should contain the deprecation warning of the command line argument
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_THAT(output, ::testing::HasSubstr("is deprecated"));
 }
 
 TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDefaultPathIfNoPathKeyInCommandLineArgs)
