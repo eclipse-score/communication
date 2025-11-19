@@ -41,12 +41,8 @@ INSTANTIATE_TEST_SUITE_P(PointerArithmeticCalculateAlignedSizeParameterizedFixtu
                              std::make_pair(DataTypeSizeInfo{32, 16}, 32),
                              std::make_pair(DataTypeSizeInfo{32, 32}, 32),
                              std::make_pair(DataTypeSizeInfo{16, 16}, 16),
-                             std::make_pair(DataTypeSizeInfo{16, 32}, 32),
-                             std::make_pair(DataTypeSizeInfo{8, 32}, 32),
-
-                             std::make_pair(DataTypeSizeInfo{64, 32}, 64),
-                             std::make_pair(DataTypeSizeInfo{50, 32}, 64),
-                             std::make_pair(DataTypeSizeInfo{70, 32}, 96)));
+                             std::make_pair(DataTypeSizeInfo{32, 8}, 32),
+                             std::make_pair(DataTypeSizeInfo{64, 32}, 64)));
 TEST_P(PointerArithmeticCalculateAlignedSizeParameterizedFixture, ReturnsCorrectCalculatedSize)
 {
     auto [data_type_size_info, expected_size] = GetParam();
@@ -70,7 +66,9 @@ INSTANTIATE_TEST_SUITE_P(
 
                       std::make_pair(std::vector<DataTypeSizeInfo>{{32, 16}, {24, 8}}, 56),
 
-                      std::make_pair(std::vector<DataTypeSizeInfo>{{8, 8}, {24, 16}, {64, 32}}, 128),
+                      std::make_pair(std::vector<DataTypeSizeInfo>{{8, 8}, {24, 8}, {64, 32}}, 96),
+
+                      std::make_pair(std::vector<DataTypeSizeInfo>{{8, 8}, {32, 16}, {64, 32}}, 128),
 
                       std::make_pair(std::vector<DataTypeSizeInfo>{{24, 8}, {24, 8}, {24, 8}}, 72),
 

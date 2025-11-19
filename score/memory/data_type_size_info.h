@@ -27,6 +27,10 @@ class DataTypeSizeInfo
     {
         const bool is_alignment_power_of_two = ((alignment != 0) && ((alignment & (alignment - 1)) == 0));
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(is_alignment_power_of_two, "The standard requires that alignment is a power of 2!");
+
+        const bool is_size_multiple_of_alignment = (size % alignment == 0);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(is_size_multiple_of_alignment,
+                               "The standard requires that size is a multiple of alignment!");
     }
 
     constexpr std::size_t Size() const

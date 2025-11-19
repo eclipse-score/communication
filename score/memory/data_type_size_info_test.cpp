@@ -23,30 +23,35 @@ namespace score::memory
 namespace
 {
 
-constexpr std::size_t kDummySize{8U};
-constexpr std::size_t kDummyAlignment{16U};
-
-constexpr std::size_t kInvalidAlignment{17U};
+constexpr std::size_t kValidSize{32U};
+constexpr std::size_t kValidAlignment{16U};
 
 TEST(DataTypeSizeInfoTest, ConstructingWithAlignmentOfZeroTerminates)
 {
     // When constructing a DataTypeSizeInfo with invalid alignment
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(DataTypeSizeInfo(kDummySize, 0U));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(DataTypeSizeInfo(kValidSize, 0U));
 }
 
 TEST(DataTypeSizeInfoTest, ConstructingWithAlignmentNotPowerOfTwoTerminates)
 {
     // When constructing a DataTypeSizeInfo with invalid alignment
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(DataTypeSizeInfo(kDummySize, kInvalidAlignment));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(DataTypeSizeInfo(kValidSize, kValidAlignment + 1U));
+}
+
+TEST(DataTypeSizeInfoTest, ConstructingWithSizeNotMultipleOfAlignmentTerminates)
+{
+    // When constructing a DataTypeSizeInfo with invalid alignment
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(DataTypeSizeInfo(kValidAlignment + 1U, kValidAlignment));
 }
 
 TEST(DataTypeSizeInfoEqualityTest, ObjectsWithSameSizeAndAlignmentCompareTrue)
 {
     // Given two DataTypeSizeInfo objects with the same size and alignment
-    DataTypeSizeInfo unit{kDummySize, kDummyAlignment};
-    DataTypeSizeInfo unit2{kDummySize, kDummyAlignment};
+    DataTypeSizeInfo unit{kValidSize, kValidAlignment};
+    DataTypeSizeInfo unit2{kValidSize, kValidAlignment};
 
     // When comparing the two objects
     const auto compare_result = unit == unit2;
@@ -58,8 +63,8 @@ TEST(DataTypeSizeInfoEqualityTest, ObjectsWithSameSizeAndAlignmentCompareTrue)
 TEST(DataTypeSizeInfoEqualityTest, ObjectsWithDifferentSizeCompareFalse)
 {
     // Given two DataTypeSizeInfo objects with the different sizes
-    DataTypeSizeInfo unit{kDummySize, kDummyAlignment};
-    DataTypeSizeInfo unit2{kDummySize + 1U, kDummyAlignment};
+    DataTypeSizeInfo unit{kValidSize, kValidAlignment};
+    DataTypeSizeInfo unit2{kValidSize * 2U, kValidAlignment};
 
     // When comparing the two objects
     const auto compare_result = unit == unit2;
@@ -71,8 +76,8 @@ TEST(DataTypeSizeInfoEqualityTest, ObjectsWithDifferentSizeCompareFalse)
 TEST(DataTypeSizeInfoEqualityTest, ObjectsWithDifferentAlignemtCompareFalse)
 {
     // Given two DataTypeSizeInfo objects with the different alignments
-    DataTypeSizeInfo unit{kDummySize, kDummyAlignment};
-    DataTypeSizeInfo unit2{kDummySize, kDummyAlignment * 2U};
+    DataTypeSizeInfo unit{kValidSize, kValidAlignment};
+    DataTypeSizeInfo unit2{kValidSize, kValidAlignment * 2U};
 
     // When comparing the two objects
     const auto compare_result = unit == unit2;
