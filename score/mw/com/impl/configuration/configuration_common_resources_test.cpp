@@ -80,5 +80,81 @@ TEST(LolaConfigurationCommonResourcesDeathTest,
     EXPECT_DEATH(test_function(), ".*");
 }
 
+TEST(LolaConfigurationCommonResourcesDeathTest,
+     GetValueFromJsonReturnsValueIfKeyAndValueExist_NonArithmeticType)
+{
+    // Given a json with a nested object (non-arithmetic, non-string type)
+    auto j1 = R"( { "config" : { "port" : 8080 } } )"_json;
+    const auto& top_level_object = j1.As<score::json::Object>().value().get();
+
+    // When GetValueFromJson is called with matching key and parseable value
+    const auto& result = GetValueFromJson<score::json::Object>(top_level_object, "config");
+
+    // Then the value is returned successfully
+    EXPECT_TRUE(result.find("port") != result.end());
+}
+
+TEST(LolaConfigurationCommonResourcesDeathTest,
+     GetValueFromJsonTerminatesWhenValueCannotBeParsed_NonArithmeticType)
+{
+    // Given a json with a key, but value that cannot be parsed to json::Object
+    auto j1 = R"( { "config" : "not_an_object" } )"_json;
+    const auto& top_level_object = j1.As<score::json::Object>().value().get();
+
+    // When GetValueFromJson is called with a value that can't parse to json::Object
+    // Then the function terminates with LogFatal
+    EXPECT_DEATH(GetValueFromJson<score::json::Object>(top_level_object, "config"), ".*");
+}
+
+TEST(LolaConfigurationCommonResourcesDeathTest,
+     GetValueFromJsonReturnsValueIfKeyAndValueExist_ArithmeticType)
+{
+    // Given a json with a numeric value (arithmetic type)
+    auto j1 = R"( { "port" : 8080 } )"_json;
+    const auto& top_level_object = j1.As<score::json::Object>().value().get();
+
+    // When GetValueFromJson is called with matching key and parseable value
+    auto result = GetValueFromJson<std::uint32_t>(top_level_object, "port");
+
+    // Then the value is returned successfully
+    EXPECT_EQ(result, 8080U);
+}
+
+TEST(LolaConfigurationCommonResourcesDeathTest,
+     GetValueFromJsonTerminatesWhenValueCannotBeParsed_ArithmeticType)
+{
+    // Given a json with a key, but value that cannot be parsed to arithmetic type
+    auto j1 = R"( { "port" : "not_a_number" } )"_json;
+    const auto& top_level_object = j1.As<score::json::Object>().value().get();
+
+    // When GetValueFromJson is called with a value that can't parse to uint32_t
+    EXPECT_DEATH(GetValueFromJson<std::uint32_t>(top_level_object, "port"), ".*");
+}
+
+TEST(LolaConfigurationCommonResourcesDeathTest,
+     GetValueFromJsonReturnsValueIfKeyAndValueExist_StringViewType)
+{
+    // Given a json with a string value
+    auto j1 = R"( { "name" : "service_A" } )"_json;
+    const auto& top_level_object = j1.As<score::json::Object>().value().get();
+
+    // When GetValueFromJson is called with matching key and parseable value
+    auto result = GetValueFromJson<std::string_view>(top_level_object, "name");
+
+    // Then the value is returned successfully
+    EXPECT_EQ(result, "service_A");
+}
+
+TEST(LolaConfigurationCommonResourcesDeathTest,
+     GetValueFromJsonTerminatesWhenValueCannotBeParsed_StringViewType)
+{
+    // Given a json with a key, but value that cannot be parsed to string_view
+    auto j1 = R"( { "name" : 123 } )"_json;
+    const auto& top_level_object = j1.As<score::json::Object>().value().get();
+
+    // When GetValueFromJson is called with a value that can't parse to string_view
+    EXPECT_DEATH(GetValueFromJson<std::string_view>(top_level_object, "name"), ".*");
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

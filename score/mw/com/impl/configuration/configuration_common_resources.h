@@ -51,7 +51,13 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());
     const auto json_result = it->second.As<T>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(json_result.has_value());
+    if (!json_result.has_value())
+    {
+        score::mw::log::LogFatal("lola")
+            << "Failed to parse JSON configuration key '" << key
+            << "'. Configuration parsing failed. Terminating.";
+        std::terminate();
+    }
     return json_result.value();
 }
 
@@ -62,7 +68,13 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(it != json_object.end());
     const auto json_result = it->second.As<T>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(json_result.has_value());
+    if (!json_result.has_value())
+    {
+        score::mw::log::LogFatal("lola")
+            << "Failed to parse JSON configuration key '" << key
+            << "'. Configuration parsing failed. Terminating.";
+        std::terminate();
+    }
     return json_result.value();
 }
 
@@ -73,7 +85,13 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());
     const auto json_result = it->second.As<T>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(json_result.has_value());
+    if (!json_result.has_value())
+    {
+        score::mw::log::LogFatal("lola")
+            << "Failed to parse JSON configuration key '" << key
+            << "'. Configuration parsing failed. Terminating.";
+        std::terminate();
+    }
     return json_result.value();
 }
 
