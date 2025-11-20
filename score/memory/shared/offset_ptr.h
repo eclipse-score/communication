@@ -19,6 +19,7 @@
 #include "score/memory/shared/pointer_arithmetic_util.h"
 
 #include "score/language/safecpp/safe_math/safe_math.h"
+#include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/assert.hpp>
 #include <score/blank.hpp>
@@ -351,6 +352,12 @@ class OffsetPtr
     friend void swap(OffsetPtr<T>& left, OffsetPtr<T>& right);
 };
 
+// maybe-unitialized is triggered here by some compilers, because they thing that `this` in the initalizer-list
+// is maybe unitialized. Fact is, that `this`, in this case, is not derefenced and thus its fine to use it.
+// This is also described in the C++ Standard: https://eel.is/c++draft/class.init#class.base.init-15
+// NOLINTBEGIN(score-banned-preprocessor-directives) : required due to false positive compiler warning
+DISABLE_WARNING_PUSH
+DISABLE_WARNING_MAYBE_UNINITIALIZED
 template <typename PointedType>
 // Suppress "AUTOSAR C++14 M3-9-1" rule finding: "The types used for an object, a function return type, or a function
 // parameter shall be token-for-token identical in all declarations and re-declarations."
@@ -364,6 +371,8 @@ OffsetPtr<PointedType>::OffsetPtr(pointer ptr) noexcept
     : offset_{CalculateOffsetFromPointer(this, ptr)}, memory_bounds_{}
 {
 }
+DISABLE_WARNING_POP
+// NOLINTEND(score-banned-preprocessor-directives)
 
 template <typename PointedType>
 // Suppress AUTOSAR C++14 A12-8-1" rule finding. The rule states "Move and copy constructors shall move and

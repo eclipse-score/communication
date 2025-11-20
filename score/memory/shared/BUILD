@@ -352,6 +352,7 @@ cc_library(
         ":pointer_arithmetic_util",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/safe_math",
+        "@score_baselibs//score/quality/compiler_warnings",
     ],
 )
 
