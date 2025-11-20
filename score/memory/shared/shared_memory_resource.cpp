@@ -416,9 +416,8 @@ score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error> Sh
     const auto result = resource->OpenImpl(is_read_write);
     if (!result.has_value())
     {
-        score::mw::log::LogError("shm") << "Unexpected error while opening Shared Memory Resource with errno"
-                                      << result.error();
-
+        score::mw::log::LogError("shm") << __func__ << __LINE__ << "Unexpected error while opening shared-memory resource"
+                                      << resource->GetIdentifier() << "with errno" << result.error();
         return score::cpp::make_unexpected(result.error());
     }
     return resource;
@@ -604,8 +603,8 @@ auto SharedMemoryResource::waitForOtherProcessAndOpen() noexcept -> score::cpp::
     const auto result = ::score::os::Mman::instance().shm_open(path->data(), this->opening_mode_, read_only);
     if (!result.has_value())
     {
-        score::mw::log::LogError("shm") << __func__ << __LINE__ << "Unexpected error while opening Shared Memory Resource"
-                                      << *path << "with errno" << result.error();
+        // Error severity depends on whether the caller considers this to be a true error path (e.g. in Open()) or is an
+        // expected code path (e.g. in CreateOrOpen()) - logging deferred to the caller.
         return score::cpp::make_unexpected(result.error());
     }
     file_descriptor_ = result.value();
