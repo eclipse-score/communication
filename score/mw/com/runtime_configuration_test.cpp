@@ -11,24 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/runtime_configuration.h"
-#include "score/memory/string_literal.h"
-
-#include "score/mw/log/logging.h"
-#include "score/mw/log/recorder_mock.h"
-#include "score/mw/log/slot_handle.h"
-
-#include <score/assert.hpp>
-#include <score/span.hpp>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <cstdint>
-#include <limits>
-#include <string>
-#include <string_view>
-#include <utility>
-#include <vector>
 
 namespace score::mw::com::runtime
 {
@@ -157,9 +140,35 @@ TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLin
     std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kConfigurationPathCommandLineKey};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
+    // Given a mocked stdout to capture logs
+    testing::internal::CaptureStdout();
+
     // When constructing a RuntimeConfiguration
     // Then the process terminates
     EXPECT_DEATH(RuntimeConfiguration(argc, argv), ".*");
+
+    // Then the output should contain the termination reason
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_THAT(output, ::testing::HasSubstr("no corresponding value"));
+
+}
+
+TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLineArgsContainDeprecatedPathKeyButNoPath)
+{
+    // Given command line arguments which contain a configuration path key but no configuration path
+    std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey};
+    auto [argc, argv] = GenerateCommandLineArgs(arguments);
+
+    // Given a mocked stdout to capture logs
+    testing::internal::CaptureStdout();
+
+    // When constructing a RuntimeConfiguration
+    // Then the process terminates
+    EXPECT_DEATH(RuntimeConfiguration(argc, argv), ".*");
+
+    // Then the output should contain the termination reason
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_THAT(output, ::testing::HasSubstr("no corresponding value"));
 }
 
 }  // namespace
