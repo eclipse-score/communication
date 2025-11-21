@@ -32,7 +32,11 @@ namespace score::mw::com::runtime
 namespace
 {
 
-constexpr auto kConfigurationPathCommandLineKey = "-service_instance_manifest";
+using ::testing::_;
+using ::testing::Return;
+
+constexpr auto kDeprecatedConfigurationPathCommandLineKey = "-service_instance_manifest";
+constexpr auto kConfigurationPathCommandLineKey = "--service_instance_manifest";
 constexpr auto kDefaultConfigurationPath = "./etc/mw_com_config.json";
 
 constexpr auto kDummyConfigurationPath = "/my/configuration/path/mw_com_config.json";
@@ -78,6 +82,28 @@ TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsPa
     // Then the stored configuration path should be the same as the path provided in the command line arguments
     const auto& stored_configuration_path = runtime_configuration.GetConfigurationPath();
     EXPECT_EQ(stored_configuration_path.Native(), kDummyConfigurationPath);
+}
+
+TEST(RuntimeConfigurationCommandLineConstructorTest, DeprecatedConfigurationCommandLineArg)
+{
+    // Given command line arguments which contain the deprecated argument
+    std::vector<score::StringLiteral> arguments = {
+        kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey, kDummyConfigurationPath};
+    auto [argc, argv] = GenerateCommandLineArgs(arguments);
+
+    // Given a mocked stdout to capture logs
+    testing::internal::CaptureStdout();
+
+    // When constructing a RuntimeConfiguration
+    const RuntimeConfiguration runtime_configuration{argc, argv};
+
+    // Then the configuration path should still work for backward compatibility
+    const auto& stored_configuration_path = runtime_configuration.GetConfigurationPath();
+    EXPECT_EQ(stored_configuration_path.Native(), kDummyConfigurationPath);
+
+    // Then the output should contain the deprecation warning of the command line argument
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_THAT(output, ::testing::HasSubstr("is deprecated"));
 }
 
 TEST(RuntimeConfigurationCommandLineConstructorTest, ConfigurationPathContainsDefaultPathIfNoPathKeyInCommandLineArgs)
@@ -128,9 +154,35 @@ TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLin
     std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kConfigurationPathCommandLineKey};
     auto [argc, argv] = GenerateCommandLineArgs(arguments);
 
+    // Given a mocked stdout to capture logs
+    testing::internal::CaptureStdout();
+
     // When constructing a RuntimeConfiguration
     // Then the process terminates
     EXPECT_DEATH(RuntimeConfiguration(argc, argv), ".*");
+
+    // Then the output should contain the termination reason
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_THAT(output, ::testing::HasSubstr("no corresponding value"));
+
+}
+
+TEST(RuntimeConfigurationCommandLineConstructorDeathTest, TerminatesIfCommandLineArgsContainDeprecatedPathKeyButNoPath)
+{
+    // Given command line arguments which contain a configuration path key but no configuration path
+    std::vector<score::StringLiteral> arguments = {kDummyApplicationName, kDeprecatedConfigurationPathCommandLineKey};
+    auto [argc, argv] = GenerateCommandLineArgs(arguments);
+
+    // Given a mocked stdout to capture logs
+    testing::internal::CaptureStdout();
+
+    // When constructing a RuntimeConfiguration
+    // Then the process terminates
+    EXPECT_DEATH(RuntimeConfiguration(argc, argv), ".*");
+
+    // Then the output should contain the termination reason
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_THAT(output, ::testing::HasSubstr("no corresponding value"));
 }
 
 }  // namespace

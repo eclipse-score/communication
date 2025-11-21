@@ -32,7 +32,8 @@ namespace
 {
 
 constexpr auto kDefaultConfigurationPath = "./etc/mw_com_config.json";
-constexpr auto kConfigurationPathCommandLineKey = std::string_view{"-service_instance_manifest"};
+constexpr auto kDeprecatedConfigurationPathCommandLineKey = std::string_view{"-service_instance_manifest"};
+constexpr auto kConfigurationPathCommandLineKey = std::string_view{"--service_instance_manifest"};
 
 }  // namespace
 
@@ -74,6 +75,21 @@ std::optional<filesystem::Path> RuntimeConfiguration::ParseConfigurationPath(
             {
                 score::mw::log::LogFatal("lola")
                     << "Command line arguments contains key\"" << kConfigurationPathCommandLineKey
+                    << "\" but no corresponding value. Terminating.";
+                std::terminate();
+            }
+            return score::cpp::at(command_line_args, static_cast<std::ptrdiff_t>(index_of_configuration_path));
+        }
+        if (command_line_argument_key == kDeprecatedConfigurationPathCommandLineKey)
+        {
+            score::mw::log::LogWarn("lola")
+                    << "Command line argument" << kDeprecatedConfigurationPathCommandLineKey 
+                    << "is deprecated, please use" << kConfigurationPathCommandLineKey;
+            const auto index_of_configuration_path = arg_idx + 1U;
+            if (index_of_configuration_path >= num_args)
+            {
+                score::mw::log::LogFatal("lola")
+                    << "Command line arguments contains key\"" << kDeprecatedConfigurationPathCommandLineKey
                     << "\" but no corresponding value. Terminating.";
                 std::terminate();
             }
