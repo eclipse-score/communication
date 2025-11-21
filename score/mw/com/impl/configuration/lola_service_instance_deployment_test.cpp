@@ -329,5 +329,59 @@ TEST(LolaServiceInstanceDeploymentLessThan, DeploymentsComparedBasedOnInstanceId
     EXPECT_EQ(rhs < lhs, rhs.instance_id_ < lhs.instance_id_);
 }
 
+class LolaServiceInstanceDeploymentJsonParsingDeathTest : public ConfigurationStructsFixture
+{
+};
+
+TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingLolaServiceInstanceDeploymentWithUidListNotAListLogsAndTerminates)
+{
+    // Given a valid LolaServiceInstanceDeployment with UID permissions that we can serialize
+    const LolaServiceInstanceDeployment valid_unit{MakeLolaServiceInstanceDeployment()};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we replace allowedConsumer with invalid structure (string instead of uid map)
+    auto it = json_object.find("allowedConsumer");
+    if (it != json_object.end()) {
+        it->second = json::Any{"invalid_structure"};
+    }
+
+    // Then constructing from the corrupted JSON logs and terminates
+    EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
+TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingLolaServiceInstanceDeploymentWithUidElementNotIntegerLogsAndTerminates)
+{
+    // Given a valid LolaServiceInstanceDeployment that we can serialize
+    const LolaServiceInstanceDeployment valid_unit{MakeLolaServiceInstanceDeployment()};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we corrupt the allowedConsumer quality map to have non-integer UIDs
+    auto consumer_it = json_object.find("allowedConsumer");
+    if (consumer_it != json_object.end()) {
+        auto quality_map = consumer_it->second.As<score::json::Object>();
+        if (quality_map.has_value()) {
+            auto& quality_obj = quality_map.value().get();
+            for (auto& [quality_key, quality_val] : quality_obj) {
+                auto uid_list = quality_val.As<score::json::List>();
+                if (uid_list.has_value()) {
+                    // Replace first UID with an invalid string
+                    auto& list = uid_list.value().get();
+                    if (!list.empty()) {
+                        list[0] = json::Any{"invalid_uid_string"};
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // Then constructing from the corrupted JSON logs and terminates
+    EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

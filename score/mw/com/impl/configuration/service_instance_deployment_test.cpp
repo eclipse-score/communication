@@ -279,6 +279,64 @@ TEST(ServiceInstanceDeploymentTest, GetBindingTypeReturnsFakeForBlankBinding)
     EXPECT_EQ(unit.GetBindingType(), BindingType::kFake);
 }
 
+class ServiceInstanceDeploymentJsonParsingDeathTest : public ServiceInstanceDeploymentFixture
+{
+};
+
+TEST_F(ServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingServiceInstanceDeploymentFromJsonWithInvalidAsilLevelLogsAndTerminates)
+{
+    // Given a valid ServiceInstanceDeployment that we can serialize
+    ServiceInstanceDeployment valid_unit{
+        kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we replace asilLevel with a number (invalid JSON type - should be string)
+    auto it = json_object.find("asilLevel");
+    ASSERT_NE(it, json_object.end());
+    it->second = json::Any{123U};
+
+    // Then constructing from the corrupted JSON logs and terminates
+    EXPECT_DEATH(ServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
+TEST_F(ServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingServiceInstanceDeploymentFromJsonWithAsilLevelAsObjectLogsAndTerminates)
+{
+    // Given a valid ServiceInstanceDeployment that we can serialize
+    ServiceInstanceDeployment valid_unit{
+        kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_B, kInstanceSpecifier};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we replace asilLevel with a double (invalid JSON type - should be string)
+    auto it = json_object.find("asilLevel");
+    ASSERT_NE(it, json_object.end());
+    it->second = json::Any{45.67};
+
+    // Then constructing from the corrupted JSON logs and terminates
+    EXPECT_DEATH(ServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
+TEST_F(ServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingServiceInstanceDeploymentFromJsonWithAsilLevelAsArrayLogsAndTerminates)
+{
+    // Given a valid ServiceInstanceDeployment that we can serialize
+    ServiceInstanceDeployment valid_unit{
+        kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we replace asilLevel with an invalid bool (invalid JSON type - should be string)
+    auto it = json_object.find("asilLevel");
+    ASSERT_NE(it, json_object.end());
+    it->second = json::Any{true};
+
+    // Then constructing from the corrupted JSON logs and terminates
+    EXPECT_DEATH(ServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
 class ServiceInstanceDeploymentLessThanParamaterisedFixture
     : public ::testing::TestWithParam<std::tuple<ServiceInstanceDeployment, ServiceInstanceDeployment>>
 {

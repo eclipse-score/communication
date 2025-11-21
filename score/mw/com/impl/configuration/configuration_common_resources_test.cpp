@@ -128,6 +128,7 @@ TEST(LolaConfigurationCommonResourcesDeathTest,
     const auto& top_level_object = j1.As<score::json::Object>().value().get();
 
     // When GetValueFromJson is called with a value that can't parse to uint32_t
+    // Then the function terminates with LogFatal
     EXPECT_DEATH(GetValueFromJson<std::uint32_t>(top_level_object, "port"), ".*");
 }
 
@@ -153,6 +154,7 @@ TEST(LolaConfigurationCommonResourcesDeathTest,
     const auto& top_level_object = j1.As<score::json::Object>().value().get();
 
     // When GetValueFromJson is called with a value that can't parse to string_view
+    // Then the function terminates with LogFatal
     EXPECT_DEATH(GetValueFromJson<std::string_view>(top_level_object, "name"), ".*");
 }
 
