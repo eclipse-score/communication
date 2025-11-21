@@ -3,5 +3,22 @@
     "image": "ghcr.io/eclipse-score/devcontainer:latest",
     "runArgs": [
         "--privileged"
-    ]
+    ],
+    // Initialize bazel cache on host
+    "initializeCommand": "mkdir -p ${localEnv:HOME}/.cache/bazel",
+
+    // Mount ca-certificates from host
+    "mounts": [
+        {
+            "source": "/usr/local/share/ca-certificates/",
+            "target": "/usr/local/share/ca-certificates/",
+            "type": "bind"
+        }
+    ],
+    // Add your personal customizations
+    "onCreateCommand": {
+        "update certificates": "sudo apt update && sudo apt install -y --no-install-recommends ca-certificates-java openjdk-17-jre-headless && sudo update-ca-certificates",
+        "bazel use system trust store": "echo 'startup --host_jvm_args=-Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts --host_jvm_args=-Djavax.net.ssl.trustStorePassword=changeit' | sudo tee --append /etc/bazel.bazelrc",
+        "set wsl proxy": "echo 'startup --host_jvm_args=-Dhttps.proxyHost=wsl-proxy --host_jvm_args=-Dhttps.proxyPort=3129' | sudo tee --append /etc/bazel.bazelrc"
+    }
 }
