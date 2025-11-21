@@ -11,7 +11,21 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/runtime_configuration.h"
+
+#include "score/memory/string_literal.h"
+
+#include <score/assert.hpp>
+#include <score/span.hpp>
+
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <cstdint>
+#include <limits>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace score::mw::com::runtime
 {
