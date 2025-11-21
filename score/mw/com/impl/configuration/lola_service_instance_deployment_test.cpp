@@ -329,10 +329,7 @@ TEST(LolaServiceInstanceDeploymentLessThan, DeploymentsComparedBasedOnInstanceId
     EXPECT_EQ(rhs < lhs, rhs.instance_id_ < lhs.instance_id_);
 }
 
-class LolaServiceInstanceDeploymentJsonParsingDeathTest : public ConfigurationStructsFixture
-{
-};
-
+using LolaServiceInstanceDeploymentJsonParsingDeathTest = ConfigurationStructsFixture;
 TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
        ConstructingLolaServiceInstanceDeploymentWithUidListNotAListLogsAndTerminates)
 {
