@@ -106,6 +106,14 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     const std::string* getPath() const noexcept override;
 
     /**
+     * @brief Gives the identifier of the shared-memory region.
+     * @details For anonymous and named shared-memory resources the identifier differs. They are in the form of "id:
+     * <id>" or `"file: <path>", respectively.
+     * @returns A view of the identifier.
+     */
+    std::string_view GetIdentifier() const noexcept override;
+
+    /**
      * @brief Gets the file descriptor of the shared-memory region in the filesystem.
      * @return FileDescriptor file descriptor of shared-memory region
      */

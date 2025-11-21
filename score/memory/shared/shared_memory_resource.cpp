@@ -750,6 +750,11 @@ auto SharedMemoryResource::getPath() const noexcept -> const std::string*
     return std::get_if<std::string>(&shared_memory_resource_identifier_);
 }
 
+auto SharedMemoryResource::GetIdentifier() const noexcept -> std::string_view
+{
+    return log_identification_;
+}
+
 auto SharedMemoryResource::GetFileDescriptor() const noexcept -> FileDescriptor
 {
     return file_descriptor_;

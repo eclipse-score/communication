@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/memory/shared/pointer_arithmetic_util.h"
+#include "score/memory/shared/sealedshm/sealedshm_wrapper/sealed_shm.h"
 #include "score/memory/shared/shared_memory_test_resources.h"
 
 #include "fake/my_memory_resource.h"
@@ -123,6 +124,61 @@ TEST_F(SharedMemoryResourceMiscTest, GetMemoryIdentifierReturnsCorrectly)
     const std::string* path_ptr = resource->getPath();
     ASSERT_TRUE(nullptr != path_ptr);
     ASSERT_EQ(score::cpp::hash_bytes(path_ptr->data(), path_ptr->size()), resource_attorney.getMemoryIdentifier());
+}
+
+TEST_F(SharedMemoryResourceMiscTest, GetIdentifierOnNamedResourceReturnsPath)
+{
+    // Given we can successfully create a shared-memory region
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    constexpr std::int32_t lock_file_descriptor = 5;
+
+    alignas(std::alignment_of<ControlBlock>::value) std::array<std::uint8_t, 500U> data_region{};
+    expectSharedMemorySuccessfullyCreated(file_descriptor, lock_file_descriptor, data_region.data());
+
+    EXPECT_CALL(*mman_mock_, munmap(_, _));
+    EXPECT_CALL(*unistd_mock_, close(file_descriptor));
+
+    // Given we can successfully construct a named SharedMemoryResource
+    auto named_resource_result = SharedMemoryResourceTestAttorney::Create(
+        TestValues::sharedMemorySegmentPath, TestValues::some_share_memory_size, emptyInitCallback);
+    ASSERT_TRUE(named_resource_result.has_value());
+    auto named_resource = named_resource_result.value();
+    ASSERT_NE(nullptr, named_resource);
+
+    // When getting the identifier of the named shared memory resource
+    const auto named_identifier = named_resource->GetIdentifier();
+
+    // Then the identifier has the path format
+    EXPECT_EQ(named_identifier, std::string("file: ") + TestValues::sharedMemorySegmentPath);
+}
+
+TEST_F(SharedMemoryResourceMiscTest, GetIdentifierOnAnonymousResourceReturnsIdString)
+{
+    // Given we can successfully construct an anonymous SharedMemoryResource
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    score::memory::shared::SealedShm::InjectMock(&sealedshm_mock_);
+    const score::cpp::expected<std::int32_t, score::os::Error> create_anonymous_return_value{file_descriptor};
+    const score::cpp::expected_blank<score::os::Error> seal_return_value{};
+    std::array<std::uint8_t, 500U> data_region{};
+
+    ON_CALL(sealedshm_mock_, OpenAnonymous(_)).WillByDefault(Return(create_anonymous_return_value));
+    expectFstatReturns(file_descriptor);
+    ON_CALL(sealedshm_mock_, Seal(file_descriptor, _)).WillByDefault(Return(seal_return_value));
+    expectMmapReturns(data_region.data(), file_descriptor);
+
+    const auto resource_result = SharedMemoryResourceTestAttorney::CreateAnonymous(
+        TestValues::sharedMemoryResourceIdentifier, TestValues::some_share_memory_size, emptyInitCallback);
+    ASSERT_TRUE(resource_result.has_value());
+    auto anonymous_resource = resource_result.value();
+    ASSERT_NE(nullptr, anonymous_resource);
+
+    // When getting the identifier of the named shared memory resource
+    const auto anonymous_identifier = anonymous_resource->GetIdentifier();
+
+    // Then the identifier has the path format
+    ASSERT_EQ(anonymous_identifier, std::string("id: ") + std::to_string(TestValues::sharedMemoryResourceIdentifier));
 }
 
 TEST_F(SharedMemoryResourceMiscTest, GettingSharedPtrToSharedMemoryResourceDestructsResourceOnce)

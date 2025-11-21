@@ -50,6 +50,8 @@ class SharedMemoryResourceMock : public ISharedMemoryResource
     MOCK_METHOD(std::size_t, GetUserAllocatedBytes, (), (const, noexcept, override));
 
     MOCK_METHOD(bool, IsOffsetPtrBoundsCheckBypassingEnabled, (), (const, noexcept, override));
+
+    MOCK_METHOD(std::string_view, GetIdentifier, (), (const, noexcept, override));
 };
 
 }  // namespace score::memory::shared

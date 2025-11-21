@@ -37,6 +37,11 @@ class MyBoundedSharedMemoryResource final : public ISharedMemoryResource
         return nullptr;
     }
 
+    std::string_view GetIdentifier() const noexcept override
+    {
+        return "id: 123";
+    };
+
     void UnlinkFilesystemEntry() const noexcept override {}
 
     FileDescriptor GetFileDescriptor() const noexcept override

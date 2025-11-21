@@ -27,6 +27,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace score::memory::shared
 {
@@ -72,6 +73,7 @@ class ISharedMemoryResource : public ManagedMemoryResource
     virtual void UnlinkFilesystemEntry() const noexcept = 0;
     virtual FileDescriptor GetFileDescriptor() const noexcept = 0;
     virtual bool IsShmInTypedMemory() const noexcept = 0;
+    virtual std::string_view GetIdentifier() const noexcept = 0;
 
   protected:
     ISharedMemoryResource(const ISharedMemoryResource&) noexcept = default;

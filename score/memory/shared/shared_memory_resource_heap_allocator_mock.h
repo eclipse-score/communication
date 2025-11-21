@@ -44,6 +44,8 @@ class SharedMemoryResourceHeapAllocatorMock : public ISharedMemoryResource
 
     MOCK_METHOD(bool, IsOffsetPtrBoundsCheckBypassingEnabled, (), (const, noexcept, override));
 
+    MOCK_METHOD(std::string_view, GetIdentifier, (), (const, noexcept, override));
+
     const MemoryResourceProxy* getMemoryResourceProxy() noexcept override
     {
         return resource_.getMemoryResourceProxy();

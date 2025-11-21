@@ -845,6 +845,7 @@ cc_gtest_unit_test(
         ":pointer_arithmetic_util",
         ":shared_memory_test_resources",
         "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "@score_baselibs//score/memory/shared/sealedshm/sealedshm_wrapper:sealedshm_mock",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
