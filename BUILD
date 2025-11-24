@@ -12,6 +12,14 @@
 # *******************************************************************************
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+
+compile_pip_requirements(
+    name = "pip_requirements",
+    src = "requirements.in",
+    data = ["//quality/integration_testing:pip_requirements"],
+    requirements_txt = "requirements_lock.txt",
+)
 
 exports_files([
     "wait_free_stack_fix.patch",

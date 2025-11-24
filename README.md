@@ -40,7 +40,7 @@ The module consists of two main components:
 
 ### Intra-ECU communication
 
-<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/main/score/mw/com/doc/assumptions/lola_flowdiagram.puml">
+<img src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/main/lola_flowdiagram.puml">
 
 ```
 Flow Steps:

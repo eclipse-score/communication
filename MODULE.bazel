@@ -174,8 +174,8 @@ use_repo(pip, "lobster_dependencies")
 bazel_dep(name = "score_toolchains_qnx", version = "0.0.2", dev_dependency = True)
 git_override(
     module_name = "score_toolchains_qnx",
-    commit = "0c23ee8fd7e8ac1091017b7080a833fd5be5c29f",
-    remote = "git@github.com:eclipse-score/toolchains_qnx.git",
+    commit = "f9fe820390eede3d4e9b2a35651ff78bdd3cb676",
+    remote = "https://github.com/eclipse-score/toolchains_qnx.git",
 )
 
 toolchains_qnx = use_extension(
@@ -189,6 +189,30 @@ toolchains_qnx.sdp(
     url = "https://www.qnx.com/download/download/79858/installation.tgz",
 )
 use_repo(toolchains_qnx, "toolchains_qnx_sdp")
+use_repo(toolchains_qnx, "toolchains_qnx_ifs")
+
+register_toolchains("@toolchains_qnx_ifs//:ifs_x86_64")
+
 use_repo(toolchains_qnx, "toolchains_qnx_qcc")
 
 bazel_dep(name = "score_bazel_platforms", version = "0.0.2")
+bazel_dep(name = "rules_oci", version = "1.8.0")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "ubuntu_24_04",
+    digest = "sha256:2e863c44b718727c860746568e1d54afd13b2fa71b160f5cd9058fc436217b30",
+    image = "ubuntu",
+    platforms = ["linux/amd64"],
+    tag = "24.04",
+)
+use_repo(oci, "ubuntu_24_04")
+
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+
+pip.parse(
+    hub_name = "score_communication_pip",
+    python_version = "3.12",
+    requirements_lock = "//:requirements_lock.txt",
+)
+use_repo(pip, "score_communication_pip")
