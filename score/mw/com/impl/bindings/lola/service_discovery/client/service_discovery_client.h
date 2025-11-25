@@ -131,7 +131,7 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
 
     using SearchRequestsContainer = std::unordered_map<FindServiceHandle, SearchRequest>;
     using WatchesContainer = std::unordered_map<os::InotifyWatchDescriptor, Watch>;
-    using Disambiguator = std::chrono::steady_clock::time_point::rep;
+    using Disambiguator = std::uint64_t;
 
     void CallHandlers(const std::unordered_set<FindServiceHandle>& search_keys) noexcept;
 
