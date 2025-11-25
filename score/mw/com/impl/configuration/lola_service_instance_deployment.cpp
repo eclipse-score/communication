@@ -157,8 +157,8 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
       events_{ConvertJsonToServiceElementMap<EventInstanceMapping>(json_object, kEventsKeyInstDepl)},
       fields_{ConvertJsonToServiceElementMap<FieldInstanceMapping>(json_object, kFieldsKeyInstDepl)},
       strict_permissions_{GetValueFromJson<bool>(json_object, kStrictKeyInstDepl)},
-      allowed_consumer_{ConvertJsonToUidMap(json_object, kAllowedConsumerKeyInstDepl)},
-      allowed_provider_{ConvertJsonToUidMap(json_object, kAllowedProviderKeyInstDepl)}
+      allowed_consumer_{},
+      allowed_provider_{}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKeyInstDepl);
     if (serialization_version != serializationVersion)
@@ -189,6 +189,11 @@ LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(const score::json::
     {
         control_qm_memory_size_ = control_qm_memory_size_it->second.As<std::size_t>().value();
     }
+
+    // Initialize allowed_consumer_ and allowed_provider_ in constructor body to avoid issues with std::terminate()
+    // during member initialization
+    allowed_consumer_ = ConvertJsonToUidMap(json_object, kAllowedConsumerKeyInstDepl);
+    allowed_provider_ = ConvertJsonToUidMap(json_object, kAllowedProviderKeyInstDepl);
 }
 
 LolaServiceInstanceDeployment::LolaServiceInstanceDeployment(
