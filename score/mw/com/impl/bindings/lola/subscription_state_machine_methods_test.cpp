@@ -479,32 +479,30 @@ TEST_F(StateMachineMethodsSubscriptionPendingStateFixture,
 {
     StrictMock<MockFunction<void()>> receive_handler{};
 
-    // Expecting that the handler will be Registered when we succesfully subscribe i.e. enter the
-    // SubscribedState and Unregistered on destruction
-    auto event_notification_handler_future = ExpectRegisterEventNotification();
-    ExpectUnregisterEventNotification();
+    // Expecting that the handler will be Registered when subscription succeeds
+    // and Unregistered on destruction
+    auto event_notification_handler_future = ExpectRegisterEventNotification(new_event_source_pid_);
+    ExpectUnregisterEventNotification(new_event_source_pid_);
 
-    // and that the receive handler registered while in SubsriptionPending state will be called
+    // and that the receive handler will be called
     EXPECT_CALL(receive_handler, Call());
 
     // When we enter SubscriptionPending state
     EnterSubscriptionPending(max_num_slots_);
 
-    // And when we register the receive handler
+    // And when we register the receive handler while in SUBSCRIPTION_PENDING
     state_machine_.SetReceiveHandler(CreateMockScopedEventReceiveHandler(receive_handler));
 
-    // Then the registration is not yet done
+    // Then the registration is not yet done (provider unavailable)
     EXPECT_THAT(event_notification_handler_future, Not(FutureValueIsSet()));
 
-    // Then when we Unsubscribe
-    state_machine_.UnsubscribeEvent();
-    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE);
+    // When provider becomes available via ReOfferEvent with a new PID
+    state_machine_.ReOfferEvent(new_event_source_pid_);
 
-    // and then re-subscribe
-    score::cpp::ignore = state_machine_.SubscribeEvent(max_num_slots_);
-    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE);
+    // Then subscription succeeds with handler registered
+    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIBED_STATE);
 
-    // Then the registration is done
+    // and the registration future is set
     EXPECT_THAT(event_notification_handler_future, FutureValueIsSet());
 
     // and the event notification handler is called.
