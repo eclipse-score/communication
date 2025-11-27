@@ -653,6 +653,35 @@ class ConfigurationFixture : public ::testing::Test
                                GlobalConfiguration{},
                                TracingConfiguration{});
     }
+
+    void PrepareConfigurationWithMultipleFieldElements(const std::vector<std::string_view>& field_element_names)
+    {
+        const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
+        Fields fields{};
+        for (const auto& name : field_element_names)
+        {
+            fields.emplace(name, MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U));
+        }
+        PrepareMinimalConfiguration(valid_instance_specifier, service_type_, Events{}, fields);
+    }
+
+    void PrepareConfigurationWithEventsAndFields(const std::vector<std::string_view>& event_element_names,
+                                                 const std::vector<std::string_view>& field_element_names)
+    {
+        const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
+        Events events{};
+        for (const auto& name : event_element_names)
+        {
+            events.emplace(name, MakeLolaServiceInstanceDeployment<LolaEventInstanceDeployment>(1U, 1U));
+        }
+        Fields fields{};
+        for (const auto& name : field_element_names)
+        {
+            fields.emplace(name, MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U));
+        }
+        PrepareMinimalConfiguration(valid_instance_specifier, service_type_, events, fields);
+    }
+
     score::cpp::optional<Configuration> configuration_{};
     TracingFilterConfig tracing_filter_config_{};
     const std::string_view service_type_ = "/bmw/ncar/services/TirePressureService";
@@ -738,10 +767,7 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, InsertingNoTracePoints
 
     // Given a valid config with tracing required for both events and fields, and trace points that do not require
     // trace done callbacks
-    const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
-    auto events = Events{{"CurrentPressureFrontLeft", MakeLolaServiceInstanceDeployment<LolaEventInstanceDeployment>(1U, 1U)}};
-    auto fields = Fields{{"CurrentTemperatureFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)}};
-    PrepareMinimalConfiguration(valid_instance_specifier, service_type_, events, fields);
+    PrepareConfigurationWithEventsAndFields({"CurrentPressureFrontLeft"}, {"CurrentTemperatureFrontLeft"});
 
     // When adding trace points that do not require trace done callbacks
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentPressureFrontLeft", kInstanceSpecifiersv, trace_point_type_0);
@@ -764,17 +790,9 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, InsertingTracePointsWi
     const auto trace_point_type_4 = SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE;
 
     // Given a valid config with multiple service elements (events and fields), each with tracing required
-    const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
-    auto events = Events{
-        {"CurrentPressureFrontLeft", MakeLolaServiceInstanceDeployment<LolaEventInstanceDeployment>(1U, 1U)},
-        {"CurrentTemperatureFrontLeft", MakeLolaServiceInstanceDeployment<LolaEventInstanceDeployment>(1U, 1U)},
-        {"CurrentHumidityFrontLeft", MakeLolaServiceInstanceDeployment<LolaEventInstanceDeployment>(1U, 1U)}
-    };
-    auto fields = Fields{
-        {"CurrentAltitudeFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)},
-        {"CurrentVelocityFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)}
-    };
-    PrepareMinimalConfiguration(valid_instance_specifier, service_type_, events, fields);
+    PrepareConfigurationWithEventsAndFields(
+        {"CurrentPressureFrontLeft", "CurrentTemperatureFrontLeft", "CurrentHumidityFrontLeft"},
+        {"CurrentAltitudeFrontLeft", "CurrentVelocityFrontLeft"});
 
     // When adding trace point types from different service elements, some of which require tracing with a trace done
     // callback
@@ -784,7 +802,10 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, InsertingTracePointsWi
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentAltitudeFrontLeft", kInstanceSpecifiersv, trace_point_type_3);
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentVelocityFrontLeft", kInstanceSpecifiersv, trace_point_type_4);
 
-    // Then the number of required tracing slots should be 4 (2 Events + 2 Fields that require trace done callbacks)
+    // Then the number of required tracing slots should be the sum of unique service elements with callback-requiring
+    // trace points. Of the 3 configured events, 2 have callback-requiring trace points (CurrentPressureFrontLeft with
+    // SEND, CurrentTemperatureFrontLeft with SEND_WITH_ALLOCATE). Both configured fields have callback-requiring
+    // trace points (CurrentAltitudeFrontLeft with UPDATE, CurrentVelocityFrontLeft with UPDATE_WITH_ALLOCATE).
     const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
     EXPECT_EQ(number_of_tracing_slots, 4);
 }
@@ -800,10 +821,7 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture,
 
     // Given a valid config with both an event and a field sharing the same element name, and both configured to
     // require tracing
-    const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
-    auto events = Events{{"CurrentPressureFrontLeft", MakeLolaServiceInstanceDeployment<LolaEventInstanceDeployment>(1U, 1U)}};
-    auto fields = Fields{{"CurrentPressureFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)}};
-    PrepareMinimalConfiguration(valid_instance_specifier, service_type_, events, fields);
+    PrepareConfigurationWithEventsAndFields({"CurrentPressureFrontLeft"}, {"CurrentPressureFrontLeft"});
 
     // When adding multiple trace point types from both the event and field elements with the same element name, some
     // of which require trace done callbacks
@@ -813,7 +831,8 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture,
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentPressureFrontLeft", kInstanceSpecifiersv, trace_point_type_3);
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentPressureFrontLeft", kInstanceSpecifiersv, trace_point_type_4);
 
-    // Then the number of required tracing slots should be 2 (1 Event + 1 Field that require trace done callbacks)
+    // Then the number of required tracing slots should be 2. The same element name "CurrentPressureFrontLeft" is
+    // counted as both an event and field element, both requiring trace done callbacks.
     const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
     EXPECT_EQ(number_of_tracing_slots, 2);
 }
@@ -837,14 +856,8 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, SkeletonFieldTracePoin
     const auto trace_point_type_3 = SkeletonFieldTracePointType::SET_CALL;
 
     // Given a valid config with multiple field service elements, each with tracing required
-    const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
-    auto fields = Fields{
-        {"CurrentTemperatureFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)},
-        {"CurrentPressureFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)},
-        {"CurrentHumidityFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)},
-        {"CurrentAltitudeFrontLeft", MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U)}
-    };
-    PrepareMinimalConfiguration(valid_instance_specifier, service_type_, Events{}, fields);
+    PrepareConfigurationWithMultipleFieldElements(
+        {"CurrentTemperatureFrontLeft", "CurrentPressureFrontLeft", "CurrentHumidityFrontLeft", "CurrentAltitudeFrontLeft"});
 
     // When adding different skeleton field trace point types from different service elements
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentTemperatureFrontLeft", kInstanceSpecifiersv, trace_point_type_0);
@@ -852,7 +865,7 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, SkeletonFieldTracePoin
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentHumidityFrontLeft", kInstanceSpecifiersv, trace_point_type_2);
     tracing_filter_config_.AddTracePoint(service_type_, "CurrentAltitudeFrontLeft", kInstanceSpecifiersv, trace_point_type_3);
 
-    // Then the number of required tracing slots should be 2 (only UPDATE and UPDATE_WITH_ALLOCATE require callbacks)
+    // Then the number of required tracing slots should be 2 (only UPDATE and UPDATE_WITH_ALLOCATE require callbacks).
     const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
     EXPECT_EQ(number_of_tracing_slots, 2);
 }
