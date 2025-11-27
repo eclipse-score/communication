@@ -37,7 +37,7 @@ auto GetSearchPathForIdentifier(const EnrichedInstanceIdentifier& enriched_insta
 class FlagFile
 {
   public:
-    using Disambiguator = std::chrono::steady_clock::time_point::rep;
+    using Disambiguator = std::uint64_t;
 
     ~FlagFile();
 

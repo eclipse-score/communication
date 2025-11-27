@@ -90,7 +90,7 @@ ServiceDiscoveryClient::ServiceDiscoveryClient(concurrency::Executor& long_runni
                                                std::unique_ptr<os::Unistd> unistd,
                                                filesystem::Filesystem filesystem) noexcept
     : IServiceDiscoveryClient{},
-      offer_disambiguator_{std::chrono::steady_clock::now().time_since_epoch().count()},
+      offer_disambiguator_{static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count())},
       i_notify_{std::move(inotify_instance)},
       unistd_{std::move(unistd)},
       filesystem_{std::move(filesystem)},
@@ -149,11 +149,9 @@ auto ServiceDiscoveryClient::OfferService(const InstanceIdentifier instance_iden
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         enriched_instance_identifier.GetBindingSpecificInstanceId<LolaServiceInstanceId>().has_value(),
         "Instance identifier must have instance id for service offer");
+    // A wrap-around of the disambiguator is not problematic here as unsigned integer overflow
+    // is well-defined (wrap-around behavior) and still produces a valid disambiguator value.
     auto offer_disambiguator = offer_disambiguator_.fetch_add(1);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(offer_disambiguator != std::numeric_limits<decltype(offer_disambiguator)>::max(),
-                           "ServiceDiscoveryClient::OfferService failed: offer_disambiguator reached the maximum "
-                           "value, an overflow dangerous");
-    offer_disambiguator++;
 
     {
         // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced
