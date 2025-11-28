@@ -108,7 +108,7 @@ ServiceInstanceDeployment::ServiceInstanceDeployment(const score::json::Object& 
     : ServiceInstanceDeployment(
           ServiceIdentifierType{GetValueFromJson<json::Object>(json_object, kServiceKey)},
           GetBindingInfoFromJson(json_object),
-          QualityType::kASIL_QM, // Placeholder, set in body
+          GetQualityTypeFromJson(json_object, kAsilLevelKey),
           InstanceSpecifier::Create(
               std::string(GetValueFromJson<std::string>(json_object, kInstanceSpecifierKey).begin(),
                           GetValueFromJson<std::string>(json_object, kInstanceSpecifierKey).end()))
@@ -119,10 +119,6 @@ ServiceInstanceDeployment::ServiceInstanceDeployment(const score::json::Object& 
     {
         std::terminate();
     }
-
-    // Parse quality type after initialization, so that if std::terminate() is called, destructors don't cause
-    // unexpected delays
-    asilLevel_ = GetQualityTypeFromJson(json_object, kAsilLevelKey);
 }
 
 // Note 1:

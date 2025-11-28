@@ -56,7 +56,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
         score::mw::log::LogFatal("lola")
             << "Failed to parse JSON configuration key '" << key
             << "'. Configuration parsing failed. Terminating.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return json_result.value();
 }
@@ -73,7 +73,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
         score::mw::log::LogFatal("lola")
             << "Failed to parse JSON configuration key '" << key
             << "'. Configuration parsing failed. Terminating.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return json_result.value();
 }
@@ -90,7 +90,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
         score::mw::log::LogFatal("lola")
             << "Failed to parse JSON configuration key '" << key
             << "'. Configuration parsing failed. Terminating.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return json_result.value();
 }

@@ -380,5 +380,25 @@ TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
     EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
 }
 
+TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingLolaServiceInstanceDeploymentWithMissingStrictFieldLogsAndTerminates)
+{
+    // Given a valid LolaServiceInstanceDeployment that we can serialize
+    const LolaServiceInstanceDeployment valid_unit{MakeLolaServiceInstanceDeployment()};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we remove the required "strict" field from the JSON
+    auto strict_it = json_object.find("strict");
+    if (strict_it != json_object.end()) {
+        json_object.erase(strict_it);
+    }
+
+    // Then constructing from the corrupted JSON logs and terminates
+    // This verifies that GetValueFromJson detects the missing required field and terminates with appropriate logging
+    // during construction
+    EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
