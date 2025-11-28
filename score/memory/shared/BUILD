@@ -569,14 +569,14 @@ cc_unit_test(
         "-aborts_upon_exception",
     ],
     visibility = [
-        "//visibility:public",
+        "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
         ":pointer_arithmetic_util",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
