@@ -380,5 +380,27 @@ TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
     EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
 }
 
+TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingLolaServiceInstanceDeploymentWithMissingStrictFieldLogsAndTerminates)
+{
+    // Given a valid LolaServiceInstanceDeployment that we can serialize
+    const LolaServiceInstanceDeployment valid_unit{MakeLolaServiceInstanceDeployment()};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we remove the required "strict" field from the JSON
+    // This causes GetValueFromJson to terminate BEFORE allowed_consumer_ and allowed_provider_ are initialized
+    auto strict_it = json_object.find("strict");
+    if (strict_it != json_object.end()) {
+        json_object.erase(strict_it);
+    }
+
+    // Then constructing from the corrupted JSON logs and terminates
+    // The constructor will fail when trying to parse the missing "strict" field
+    // This tests the scenario where GetValueFromJson terminates in the initializer list
+    // while allowed_consumer_ and allowed_provider_ haven't been constructed yet
+    EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

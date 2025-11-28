@@ -337,6 +337,27 @@ TEST_F(ServiceInstanceDeploymentJsonParsingDeathTest,
     EXPECT_DEATH(ServiceInstanceDeployment invalid_deployment{json_object}, ".*");
 }
 
+TEST_F(ServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingServiceInstanceDeploymentFromJsonWithMissingAsilLevelLogsAndTerminates)
+{
+    // Given a valid ServiceInstanceDeployment that we can serialize
+    ServiceInstanceDeployment valid_unit{
+        kDummyService, LolaServiceInstanceDeployment{}, QualityType::kASIL_QM, kInstanceSpecifier};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we remove the required "asilLevel" field from the JSON
+    // This causes GetQualityTypeFromJson to terminate BEFORE the delegating constructor finishes
+    auto asil_it = json_object.find("asilLevel");
+    if (asil_it != json_object.end()) {
+        json_object.erase(asil_it);
+    }
+
+    // Then constructing from the corrupted JSON logs and terminates
+    // The constructor will fail when trying to parse the missing "asilLevel" field in the initializer list
+    EXPECT_DEATH(ServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
 class ServiceInstanceDeploymentLessThanParamaterisedFixture
     : public ::testing::TestWithParam<std::tuple<ServiceInstanceDeployment, ServiceInstanceDeployment>>
 {
