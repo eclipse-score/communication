@@ -569,7 +569,7 @@ cc_unit_test(
         "-aborts_upon_exception",
     ],
     visibility = [
-        "@score_baselibs//score/memory:__pkg__",
+        "//visibility:public",
     ],
     deps = [
         ":pointer_arithmetic_util",
