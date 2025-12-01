@@ -87,5 +87,5 @@ cc_unit_test_suites_for_host_and_qnx(
     ],
     test_suites_from_sub_packages = [
     ],
-    visibility = ["//score/mw/com:__pkg__"],
+    visibility = ["//score/mw/com:__subpackages__"],
 )
