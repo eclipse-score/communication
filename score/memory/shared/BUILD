@@ -576,7 +576,7 @@ cc_unit_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
 
