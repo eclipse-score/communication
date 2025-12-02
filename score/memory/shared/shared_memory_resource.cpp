@@ -90,6 +90,12 @@ constexpr auto readWriteAccessForEveryBody =
     readAccessForEveryBody | Stat::Mode::kWriteGroup | Stat::Mode::kWriteOthers;
 
 constexpr auto read_only = ::score::os::Stat::Mode::kReadUser;
+
+// Suppress "AUTOSAR C++14 A2-10-4" rule finding: The identifier name of a non-member object with static storage
+// duration or static function shall not be reused within a namespace.
+// Rationale: This identifier is in an anonymous namespace which ensures that it is not reused between translation
+// units. Within this translation unit it is only defined once.
+// coverity[autosar_cpp14_a2_10_4_violation]
 constexpr score::os::IAccessControlList::UserIdentifier kTypedmemdUid = 3020;
 
 /// \brief Class aggregating info about shm-object read out via stat/fstat from the shm-object file
