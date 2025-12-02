@@ -137,7 +137,8 @@ class MessagePassingService final : public IMessagePassingService
     /// method shared memory region and wants to subscribe. The callback registered with RegisterMethodCall will be
     /// called on the Skeleton side and a response will be returned.
     /// \details see IMessagePassingService::SubscribeServiceMethod
-    ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier) override;
+    ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                       const ProxyInstanceIdentifier& proxy_instance_identifier) override;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response

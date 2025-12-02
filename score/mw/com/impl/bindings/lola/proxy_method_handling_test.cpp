@@ -369,8 +369,8 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesCalls
               kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that SubscribeServiceMethod will be called
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_))
-        .WillOnce(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _))
+        .WillOnce(Invoke([](auto skeleton_instance_identifier, auto) -> ResultBlank {
             // Then SubscribeServiceMethod is called with a
             // SkeletonInstanceIdentifier taking values from the configuration
             EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);
@@ -392,7 +392,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwa
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_)).WillOnce(Invoke([](auto) -> ResultBlank {
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).WillOnce(Invoke([](auto, auto) -> ResultBlank {
         return MakeUnexpected(call_service_method_subscribed_error_code);
     }));
 
@@ -410,7 +410,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingZeroMethodsDoesNotNotifie
     GivenAProxy().GivenAMockedSharedMemoryResource();
 
     // Expecting that SubscribeServiceMethod will not be called
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_)).Times(0);
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).Times(0);
 
     // When calling SetupMethods with an empty enabled_method_names vector
     score::cpp::ignore = proxy_->SetupMethods({});
@@ -424,7 +424,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithoutArgsOrReturnTypesFo
 
     // Expecting that SubscribeServiceMethod will be called which returns an error
     const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_)).WillOnce(Invoke([](auto) -> ResultBlank {
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).WillOnce(Invoke([](auto, auto) -> ResultBlank {
         return MakeUnexpected(call_service_method_subscribed_error_code);
     }));
 
@@ -443,8 +443,8 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingMethodsWithoutArgsOrRetur
         {{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
 
     // Expecting that SubscribeServiceMethod will be called
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_))
-        .WillOnce(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _))
+        .WillOnce(Invoke([](auto skeleton_instance_identifier, auto) -> ResultBlank {
             // Then SubscribeServiceMethod is called with a
             // SkeletonInstanceIdentifier taking values from the configuration
             EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);

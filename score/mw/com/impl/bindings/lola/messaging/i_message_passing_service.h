@@ -243,7 +243,10 @@ class IMessagePassingService
     ///
     /// \param skeleton_instance_identifier identification of the Skeleton corresponding to the Proxy which is calling
     /// this method.
-    virtual ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier) = 0;
+    /// \param proxy_instance_identifier identification of the Proxy which is calling this method. This is passed to the
+    /// ServiceMethodSubscribedHandler which is called on skeleton side.
+    virtual ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                               const ProxyInstanceIdentifier& proxy_instance_identifier) = 0;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response

@@ -563,7 +563,7 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    return lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier);
+    return lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier_);
 }
 
 memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermissions() const

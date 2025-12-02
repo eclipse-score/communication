@@ -52,7 +52,10 @@ class MessagePassingServiceMock : public IMessagePassingService
                 (SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler),
                 (override));
     MOCK_METHOD(ResultBlank, RegisterMethodCallHandler, (ProxyInstanceIdentifier, MethodCallHandler), (override));
-    MOCK_METHOD(ResultBlank, SubscribeServiceMethod, (const SkeletonInstanceIdentifier&), (override));
+    MOCK_METHOD(ResultBlank,
+                SubscribeServiceMethod,
+                (const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&),
+                (override));
     MOCK_METHOD(ResultBlank, CallMethod, (const ProxyInstanceIdentifier&, std::size_t), (override));
 };
 

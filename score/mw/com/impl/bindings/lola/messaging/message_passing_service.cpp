@@ -175,7 +175,8 @@ void MessagePassingService::UnregisterEventNotificationExistenceChangedCallback(
 }
 
 ResultBlank MessagePassingService::SubscribeServiceMethod(
-    const SkeletonInstanceIdentifier& /* skeleton_instance_identifier */)
+    const SkeletonInstanceIdentifier& /* skeleton_instance_identifier */,
+    const ProxyInstanceIdentifier& /* proxy_instance_identifier */)
 {
     return {};
 }
