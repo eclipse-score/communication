@@ -982,7 +982,8 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
             type_erased_call_queue.GetTypeErasedElementInfo(),
             type_erased_call_queue.GetInArgValuesQueueStorage(),
             type_erased_call_queue.GetReturnValueQueueStorage(),
-            proxy_instance_identifier);
+            proxy_instance_identifier,
+            opened_shm_region);
         if (!(result.has_value()))
         {
             score::mw::log::LogError("lola") << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod:"

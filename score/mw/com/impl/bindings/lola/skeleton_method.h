@@ -21,6 +21,7 @@
 
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/memory/data_type_size_info.h"
+#include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
@@ -54,7 +55,8 @@ class SkeletonMethod : public SkeletonMethodBinding
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_values_storage,
         const std::optional<score::cpp::span<std::byte>> return_value_storage,
-        const ProxyInstanceIdentifier proxy_instance_identifier);
+        const ProxyInstanceIdentifier proxy_instance_identifier,
+        std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource);
 
     void Call(const std::optional<score::cpp::span<std::byte>> in_args, const std::optional<score::cpp::span<std::byte>> return_arg);
 
@@ -74,10 +76,14 @@ class SkeletonMethodView
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_values_storage,
         const std::optional<score::cpp::span<std::byte>> return_value_storage,
-        const ProxyInstanceIdentifier proxy_instance_identifier)
+        const ProxyInstanceIdentifier proxy_instance_identifier,
+        std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource)
     {
-        return skeleton_method_.OnProxyMethodSubscribeFinished(
-            type_erased_element_info, in_arg_values_storage, return_value_storage, proxy_instance_identifier);
+        return skeleton_method_.OnProxyMethodSubscribeFinished(type_erased_element_info,
+                                                               in_arg_values_storage,
+                                                               return_value_storage,
+                                                               proxy_instance_identifier,
+                                                               methods_shm_resource);
     }
 
     bool IsRegistered()

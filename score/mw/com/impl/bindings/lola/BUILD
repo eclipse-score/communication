@@ -288,6 +288,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
         "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/memory/shared",
+        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
         "@score_baselibs//score/memory/shared:lock_file",
         "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
         "@score_baselibs//score/memory/shared/flock:exclusive_flock_mutex",
