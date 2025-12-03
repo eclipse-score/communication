@@ -82,6 +82,28 @@ cc_library(
 )
 
 cc_library(
+    name = "method_resource_map",
+    srcs = [
+        "method_resource_map.cpp",
+    ],
+    hdrs = [
+        "method_resource_map.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_baselibs//score/language/futurecpp",
+        "@score_logging//score/mw/log",
+    ],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        ":proxy_instance_identifier",
+        "//score/mw/com/impl/configuration",
+        "@score_baselibs//score/memory/shared",
+    ],
+)
+
+cc_library(
     name = "type_erased_call_queue",
     srcs = [
         "type_erased_call_queue.cpp",
@@ -188,6 +210,22 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "method_resource_map_test",
+    srcs = [
+        "method_resource_map_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":method_resource_map",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/memory/shared:shared_memory_resource_mock",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -197,6 +235,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":type_erased_call_queue_test",
         ":method_data_test",
         ":method_error_test",
+        ":method_resource_map_test",
     ],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
