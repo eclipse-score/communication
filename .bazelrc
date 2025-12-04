@@ -60,3 +60,9 @@ coverage --cxxopt -mllvm
 coverage --cxxopt -runtime-counter-relocation
 
 import quality/sanitizer/sanitizer.bazelrc
+
+# PlantUML and S-Core Docs As Code settings
+build --java_language_version=17
+build --java_runtime_version=remotejdk_17
+build --tool_java_language_version=17
+build --tool_java_runtime_version=remotejdk_17
