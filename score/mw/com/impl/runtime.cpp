@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/mw/com/impl/configuration/config_parser.h"
+#include "score/mw/com/impl/configuration/config_loader.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/plumbing/binding_runtime_factory.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config_parser.h"
@@ -119,7 +119,7 @@ void Runtime::Initialize(const runtime::RuntimeConfiguration& runtime_configurat
         warn_double_init();
     }
 
-    auto config = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+    auto config = configuration::Load(runtime_configuration.GetConfigurationPath().Native());
     StoreConfiguration(std::move(config));
 }
 
@@ -153,7 +153,7 @@ Runtime& Runtime::getInstanceInternal() noexcept
         if (!initialization_config_.has_value())
         {
             runtime::RuntimeConfiguration runtime_configuration{};
-            auto configuration = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
+            auto configuration = configuration::Load(runtime_configuration.GetConfigurationPath().Native());
             auto tracing_config = ParseTraceConfig(configuration);
             return std::make_pair(std::move(configuration), std::move(tracing_config));
         }

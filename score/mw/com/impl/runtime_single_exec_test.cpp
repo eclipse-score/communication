@@ -44,9 +44,14 @@ namespace
 // This is required to support resets of a Meyer-Singleton.
 // This fixture should be used sparingly, since it has quite a big runtime penalty.
 // Every test must be executed within TestInSeparateProcess()!
-class SingleTestPerProcessFixture : public ::testing::Test
+class SingleTestPerProcessFixture : public ::testing::TestWithParam<std::string>
 {
   public:
+    void SetUp() override
+    {
+        config_file_extension_ = GetParam();
+    }
+
     void TearDown() override
     {
         // Safeguard against accidentially not using TestInSeparateProcess()
@@ -91,11 +96,20 @@ class SingleTestPerProcessFixture : public ::testing::Test
 
   protected:
     InstanceSpecifier tire_pressure_port_{InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value()};
-    std::string config_with_tire_pressure_port_{get_path("ara_com_config.json")};
     InstanceSpecifier tire_pressure_port_other_{
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePortOther"}).value()};
-    std::string config_with_tire_pressure_port_other_{get_path("ara_com_config_other.json")};
     bool tested_in_separate_process_{false};
+    std::string config_file_extension_;
+
+    std::string config_with_tire_pressure_port() const
+    {
+        return get_path("ara_com_config" + config_file_extension_);
+    }
+
+    std::string config_with_tire_pressure_port_other() const
+    {
+        return get_path("ara_com_config_other" + config_file_extension_);
+    }
 
   private:
     static void PrintTestPartResults()
@@ -139,13 +153,17 @@ void WithConfigAtDefaultPath(const std::string& source_path)
     filesystem::Path dir{"etc"};
     score::cpp::ignore = filesystem.RemoveAll(dir);
     ASSERT_TRUE(filesystem.CreateDirectories(dir).has_value());
-    filesystem::Path target{"etc/mw_com_config.json"};
+
+    // Determine target filename based on source file extension
+    const bool is_flatbuffer = source_path.find(".bin") != std::string::npos;
+    filesystem::Path target = is_flatbuffer ? filesystem::Path{"etc/mw_com_config.bin"}
+                                             : filesystem::Path{"etc/mw_com_config.json"};
     ASSERT_TRUE(filesystem.CopyFile(filesystem::Path{source_path}, target).has_value());
 }
 
 using RuntimeInitializationTest = SingleTestPerProcessFixture;
 
-TEST_F(RuntimeInitializationTest, InitializationLoadsCorrectConfiguration)
+TEST_P(RuntimeInitializationTest, InitializationLoadsCorrectConfiguration)
 {
     RecordProperty("Verifies", "SCR-6221480, SCR-21781439");
     RecordProperty("Description", "InstanceSpecifier resolution can not retrieve wrong InstanceIdentifier.");
@@ -155,7 +173,7 @@ TEST_F(RuntimeInitializationTest, InitializationLoadsCorrectConfiguration)
 
     TestInSeparateProcess([this]() {
         // Given a RuntimeConfiguration
-        const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
+        const auto runtime_configuration = runtime::RuntimeConfiguration{config_with_tire_pressure_port()};
 
         // When initializing the runtime with the call args
         Runtime::Initialize(runtime_configuration);
@@ -166,12 +184,12 @@ TEST_F(RuntimeInitializationTest, InitializationLoadsCorrectConfiguration)
     });
 }
 
-TEST_F(RuntimeInitializationTest, SecondInitializationUpdatesRuntimeIfRuntimeHasNotYetBeenUsed)
+TEST_P(RuntimeInitializationTest, SecondInitializationUpdatesRuntimeIfRuntimeHasNotYetBeenUsed)
 {
     TestInSeparateProcess([this]() {
         // Given two RuntimeConfigurations containing different configuration file paths
-        const auto runtime_configuration_1 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
-        const auto runtime_configuration_2 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+        const auto runtime_configuration_1 = runtime::RuntimeConfiguration{config_with_tire_pressure_port()};
+        const auto runtime_configuration_2 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other()};
 
         // and that the runtime has been initialised with the first configuration
         Runtime::Initialize(runtime_configuration_1);
@@ -187,12 +205,12 @@ TEST_F(RuntimeInitializationTest, SecondInitializationUpdatesRuntimeIfRuntimeHas
     });
 }
 
-TEST_F(RuntimeInitializationTest, SecondInitializationDoesNotUpdateRuntimeIfRuntimeHasAlreadyBeenUsed)
+TEST_P(RuntimeInitializationTest, SecondInitializationDoesNotUpdateRuntimeIfRuntimeHasAlreadyBeenUsed)
 {
     TestInSeparateProcess([this]() {
         // Given two RuntimeConfigurations containing different configuration file paths
-        const auto runtime_configuration_1 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_};
-        const auto runtime_configuration_2 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other_};
+        const auto runtime_configuration_1 = runtime::RuntimeConfiguration{config_with_tire_pressure_port()};
+        const auto runtime_configuration_2 = runtime::RuntimeConfiguration{config_with_tire_pressure_port_other()};
 
         // and that the runtime has been initialised with the first configuration
         Runtime::Initialize(runtime_configuration_1);
@@ -211,11 +229,11 @@ TEST_F(RuntimeInitializationTest, SecondInitializationDoesNotUpdateRuntimeIfRunt
     });
 }
 
-TEST_F(RuntimeInitializationTest, ImplicitInitializationLoadsCorrectConfiguration)
+TEST_P(RuntimeInitializationTest, ImplicitInitializationLoadsCorrectConfiguration)
 {
     TestInSeparateProcess([this]() {
         // Given a configuration with one instance specifier provided at default location
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
+        WithConfigAtDefaultPath(config_with_tire_pressure_port());
 
         // When implicitly default-initializing the runtime
         auto& runtime = Runtime::getInstance();
@@ -228,7 +246,7 @@ TEST_F(RuntimeInitializationTest, ImplicitInitializationLoadsCorrectConfiguratio
 
 using RuntimeTest = SingleTestPerProcessFixture;
 
-TEST_F(RuntimeTest, CannotResolveUnknownInstanceSpecifier)
+TEST_P(RuntimeTest, CannotResolveUnknownInstanceSpecifier)
 {
     RecordProperty("Verifies", "SCR-6221480, SCR-21781439");
     RecordProperty("Description", "InstanceSpecifier resolution can not retrieve wrong InstanceIdentifier.");
@@ -238,7 +256,7 @@ TEST_F(RuntimeTest, CannotResolveUnknownInstanceSpecifier)
 
     TestInSeparateProcess([this]() {
         // Given aconfiguration without the tire_pressure_port_other_ instance specifier
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
+        WithConfigAtDefaultPath(config_with_tire_pressure_port());
 
         // When resolving this instance specifier
         auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_other_);
@@ -248,11 +266,11 @@ TEST_F(RuntimeTest, CannotResolveUnknownInstanceSpecifier)
     });
 }
 
-TEST_F(RuntimeTest, CanRetrieveConfiguredBinding)
+TEST_P(RuntimeTest, CanRetrieveConfiguredBinding)
 {
     TestInSeparateProcess([this]() {
         // Given a configuration, which contains lola bindings
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
+        WithConfigAtDefaultPath(config_with_tire_pressure_port());
 
         // When retrieving the lola binding
         const auto* unit = Runtime::getInstance().GetBindingRuntime(BindingType::kLoLa);
@@ -262,11 +280,11 @@ TEST_F(RuntimeTest, CanRetrieveConfiguredBinding)
     });
 }
 
-TEST_F(RuntimeTest, CannotRetrieveUnconfiguredBinding)
+TEST_P(RuntimeTest, CannotRetrieveUnconfiguredBinding)
 {
     TestInSeparateProcess([this]() {
         // Given a configuration, which does not contain Fake bindings
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
+        WithConfigAtDefaultPath(config_with_tire_pressure_port());
 
         // When retrieving the fake binding
         const auto* unit = Runtime::getInstance().GetBindingRuntime(BindingType::kFake);
@@ -276,7 +294,7 @@ TEST_F(RuntimeTest, CannotRetrieveUnconfiguredBinding)
     });
 }
 
-TEST_F(RuntimeTest, HandleTypeContainsEventsSpecifiedInConfiguration)
+TEST_P(RuntimeTest, HandleTypeContainsEventsSpecifiedInConfiguration)
 {
     RecordProperty("Verifies", "SCR-15600146");
     RecordProperty("Description",
@@ -288,7 +306,7 @@ TEST_F(RuntimeTest, HandleTypeContainsEventsSpecifiedInConfiguration)
 
     TestInSeparateProcess([this]() {
         // Given a configuration with an instance specifier
-        WithConfigAtDefaultPath(config_with_tire_pressure_port_);
+        WithConfigAtDefaultPath(config_with_tire_pressure_port());
 
         // When creating a handle from the InstanceSpecifier
         auto identifiers = Runtime::getInstance().resolve(tire_pressure_port_);
@@ -302,7 +320,7 @@ TEST_F(RuntimeTest, HandleTypeContainsEventsSpecifiedInConfiguration)
     });
 }
 
-TEST_F(RuntimeTest, TracingIsDisabledWhenTraceFilterConfigPathIsInvalid)
+TEST_P(RuntimeTest, TracingIsDisabledWhenTraceFilterConfigPathIsInvalid)
 {
     RecordProperty("Verifies", "SCR-18159104");
     RecordProperty("Description",
@@ -312,10 +330,10 @@ TEST_F(RuntimeTest, TracingIsDisabledWhenTraceFilterConfigPathIsInvalid)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    TestInSeparateProcess([]() {
+    TestInSeparateProcess([this]() {
         // Given a configuration file which contains a TraceFilterConfigPath that does not point to a valid tracing
         // configuration
-        WithConfigAtDefaultPath(get_path("ara_com_config_invalid_trace_config_path.json"));
+        WithConfigAtDefaultPath(get_path("ara_com_config_invalid_trace_config_path" + config_file_extension_));
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();
@@ -325,11 +343,11 @@ TEST_F(RuntimeTest, TracingIsDisabledWhenTraceFilterConfigPathIsInvalid)
     });
 }
 
-TEST_F(RuntimeTest, TracingRuntimeIsDisabledWhenTracingDisabledInConfig)
+TEST_P(RuntimeTest, TracingRuntimeIsDisabledWhenTracingDisabledInConfig)
 {
-    TestInSeparateProcess([]() {
+    TestInSeparateProcess([this]() {
         // Given a configuration with valid and disabled tracing configuration
-        WithConfigAtDefaultPath(get_path("ara_com_config_disabled_trace_config.json"));
+        WithConfigAtDefaultPath(get_path("ara_com_config_disabled_trace_config" + config_file_extension_));
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();
@@ -339,15 +357,15 @@ TEST_F(RuntimeTest, TracingRuntimeIsDisabledWhenTracingDisabledInConfig)
     });
 }
 
-TEST_F(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
+TEST_P(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
 {
-    TestInSeparateProcess([]() {
+    TestInSeparateProcess([this]() {
         // Given a configuration with valid and enabled tracing configuration
-        auto default_path = get_path("ara_com_config_valid_trace_config.json");
-        auto json_path = default_path.find("external") != std::string::npos
-                             ? get_path("ara_com_config_valid_trace_config_external.json")
+        auto default_path = get_path("ara_com_config_valid_trace_config" + config_file_extension_);
+        auto config_path = default_path.find("external") != std::string::npos
+                             ? get_path("ara_com_config_valid_trace_config_external" + config_file_extension_)
                              : default_path;
-        WithConfigAtDefaultPath(json_path);
+        WithConfigAtDefaultPath(config_path);
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();
@@ -356,6 +374,22 @@ TEST_F(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
         EXPECT_NE(Runtime::getInstance().GetTracingRuntime(), nullptr);
     });
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    JsonAndFlatBuffer,
+    RuntimeInitializationTest,
+    ::testing::Values(".json", ".bin"),
+    [](const ::testing::TestParamInfo<std::string>& info) {
+        return info.param == ".json" ? "Json" : "FlatBuffer";
+    });
+
+INSTANTIATE_TEST_SUITE_P(
+    JsonAndFlatBuffer,
+    RuntimeTest,
+    ::testing::Values(".json", ".bin"),
+    [](const ::testing::TestParamInfo<std::string>& info) {
+        return info.param == ".json" ? "Json" : "FlatBuffer";
+    });
 
 }  // namespace
 }  // namespace score::mw::com::impl
