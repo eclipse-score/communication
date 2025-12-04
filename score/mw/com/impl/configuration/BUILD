@@ -12,8 +12,29 @@
 # *******************************************************************************
 
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("//bazel/tools:generate_com_config.bzl", "generate_com_config")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+exports_files(
+    [
+        "ara_com_config.fbs",
+    ],
+    visibility = [
+        "//bazel/tools:__pkg__",
+        "//score/mw/com/example/ipc_bridge:__pkg__",
+        "//score/mw/com/impl/configuration/test:__pkg__",
+    ],
+)
+
+# Generate C++ header from FlatBuffer schema
+genrule(
+    name = "generate_com_flatbuffer_headers",
+    srcs = ["ara_com_config.fbs"],
+    outs = ["ara_com_config_generated.h"],
+    cmd = "$(location @flatbuffers//:flatc) --cpp --scoped-enums -o $(@D) $(location ara_com_config.fbs)",
+    tools = ["@flatbuffers//:flatc"],
+)
 
 validate_json_schema_test(
     name = "validate_ara_com_config_schema",
@@ -60,6 +81,59 @@ cc_library(
         ":configuration_local",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "flatbuffer_config_loader",
+    srcs = [
+        "flatbuffer_config_loader.cpp",
+        # Include headers as srcs to make them available without depending on their implementations
+        "lola_event_id.h",
+        "lola_field_id.h",
+        "lola_service_id.h",
+        "lola_service_instance_deployment.h",
+        "lola_service_type_deployment.h",
+        "service_identifier_type.h",
+        "service_instance_deployment.h",
+        "service_type_deployment.h",
+        "service_version_type.h",
+        "someip_service_instance_deployment.h",
+        "binding_service_type_deployment.h",
+        "binding_service_type_deployment_impl.h",
+    ],
+    hdrs = [
+        "flatbuffer_config_loader.h",
+        ":generate_com_flatbuffer_headers",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/configuration:__subpackages__",
+    ],
+    deps = [
+        ":configuration_local",
+        ":global_configuration",
+        ":tracing_configuration",
+        "//score/mw/com/impl:instance_specifier",
+        "@flatbuffers//:runtime_cc",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
+    name = "config_loader",
+    srcs = ["config_loader.cpp"],
+    hdrs = ["config_loader.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":config_parser",
+        ":configuration_local",
+        ":flatbuffer_config_loader",
     ],
 )
 
@@ -413,6 +487,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
+        ":config_loader",
         ":config_parser",
         ":configuration_error",
         ":configuration_local",
@@ -731,5 +806,41 @@ filegroup(
         "example/ara_com_config_valid_trace_config.json",
         "example/ara_com_config_valid_trace_config_external.json",
     ],
+    visibility = ["//visibility:public"],
+)
+
+generate_com_config(
+    name = "ara_com_config.bin",
+    json = "example/ara_com_config.json",
+    visibility = ["//visibility:public"],
+)
+
+generate_com_config(
+    name = "ara_com_config_other.bin",
+    json = "example/ara_com_config_other.json",
+    visibility = ["//visibility:public"],
+)
+
+generate_com_config(
+    name = "ara_com_config_invalid_trace_config_path.bin",
+    json = "example/ara_com_config_invalid_trace_config_path.json",
+    visibility = ["//visibility:public"],
+)
+
+generate_com_config(
+    name = "ara_com_config_disabled_trace_config.bin",
+    json = "example/ara_com_config_disabled_trace_config.json",
+    visibility = ["//visibility:public"],
+)
+
+generate_com_config(
+    name = "ara_com_config_valid_trace_config.bin",
+    json = "example/ara_com_config_valid_trace_config.json",
+    visibility = ["//visibility:public"],
+)
+
+generate_com_config(
+    name = "ara_com_config_valid_trace_config_external.bin",
+    json = "example/ara_com_config_valid_trace_config_external.json",
     visibility = ["//visibility:public"],
 )
