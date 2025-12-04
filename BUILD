@@ -13,6 +13,7 @@
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@score_docs_as_code//:docs.bzl", "docs")
 load("@score_tooling//:defs.bzl", "copyright_checker")
 
 compile_pip_requirements(
@@ -20,7 +21,7 @@ compile_pip_requirements(
     src = "requirements.in",
     data = ["//quality/integration_testing:pip_requirements"],
     requirements_txt = "requirements_lock.txt",
-) 
+)
 
 copyright_checker(
     name = "copyright",
@@ -54,4 +55,11 @@ format_test(
     starlark = "@buildifier_prebuilt//:buildifier",
     tags = ["manual"],
     workspace = "//:LICENSE",
+)
+
+docs(
+    data = [
+        #"@score_baselibs//:needs_json",
+    ],
+    source_dir = "docs",
 )
