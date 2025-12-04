@@ -6,12 +6,13 @@ This rule converts existing communication JSON files to a FlatBuffer friendly fo
 - Convert keys from camelCase to snake_case (avoids warnings)
 """
 
-def generate_com_config(name, json, convert, visibility = None):
+def generate_com_config(name, json, visibility = None, **kwargs):
     """
     Generate a FlatBuffer binary configuration file from a JSON input.
 
-    This rule can optionally convert the input JSON to FlatBuffer friendly format
-    before compiling to FlatBuffer binary format.
+    This rule performs two steps:
+    1. Converts the input JSON to FlatBuffer friendly format
+    2. Compiles the converted JSON to FlatBuffer binary format
 
     The schema is hardcoded to the COM FlatBuffer schema at:
     //score/mw/com/impl/configuration:ara_com_config.fbs

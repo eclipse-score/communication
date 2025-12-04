@@ -13,7 +13,15 @@
 
 #include "score/mw/com/impl/configuration/flatbuffer_config_loader.h"
 
+#include "score/mw/com/impl/configuration/lola_event_id.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_field_id.h"
+#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_instance_id.h"
+#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
@@ -121,33 +129,6 @@ LolaServiceInstanceDeployment::FieldInstanceMapping ParseFieldDeployments(const 
     return fields;
 }
 
-// Helper to parse method deployments from FlatBuffer Instance
-LolaServiceInstanceDeployment::MethodInstanceMapping ParseMethodDeployments(const Instance* instance)
-{
-    LolaServiceInstanceDeployment::MethodInstanceMapping methods;
-
-    if (instance->methods() != nullptr)
-    {
-        for (const auto* method : *instance->methods())
-        {
-            if (method != nullptr)
-            {
-                std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size = std::nullopt;
-                if (method->queue_size() > 0)
-                {
-                    queue_size = static_cast<uint8_t>(method->queue_size());
-                }
-
-                LolaMethodInstanceDeployment method_deploy(queue_size);
-                // method_name is obliged to contain a value (marked as required)
-                methods.emplace(method->method_name()->str(), std::move(method_deploy));
-            }
-        }
-    }
-
-    return methods;
-}
-
 // Helper to parse permission mappings from FlatBuffer Permissions (AllowedConsumer or AllowedProvider)
 template <typename PermissionsType>
 std::unordered_map<QualityType, std::vector<uid_t>> ParsePermissions(const PermissionsType* permissions)
@@ -199,7 +180,6 @@ score::mw::com::impl::LolaServiceInstanceDeployment CreateLolaServiceInstanceDep
 
     auto events = ParseEventDeployments(instance);
     auto fields = ParseFieldDeployments(instance);
-    auto methods = ParseMethodDeployments(instance);
     auto allowed_consumer = ParsePermissions(instance->allowed_consumer());
     auto allowed_provider = ParsePermissions(instance->allowed_provider());
 
@@ -208,7 +188,6 @@ score::mw::com::impl::LolaServiceInstanceDeployment CreateLolaServiceInstanceDep
     LolaServiceInstanceDeployment deployment(instance_id,
                                              std::move(events),
                                              std::move(fields),
-                                             std::move(methods),
                                              strict_permission,
                                              std::move(allowed_consumer),
                                              std::move(allowed_provider));
@@ -245,7 +224,7 @@ FlatBufferConfigLoader::~FlatBufferConfigLoader()
 
 void FlatBufferConfigLoader::LoadBuffer(std::string_view path)
 {
-    fd_ = open(std::string(path).c_str(), O_RDONLY);
+    fd_ = open(path.data(), O_RDONLY);
     if (fd_ == -1)
     {
         ::score::mw::log::LogFatal("lola")
@@ -328,7 +307,6 @@ Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes
                 LolaServiceId service_id{binding->service_id()};
                 LolaServiceTypeDeployment::EventIdMapping events;
                 LolaServiceTypeDeployment::FieldIdMapping fields;
-                LolaServiceTypeDeployment::MethodIdMapping methods;
 
                 if (binding->events() != nullptr)
                 {
@@ -350,38 +328,19 @@ Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes
                     }
                 }
 
-                if (binding->methods() != nullptr)
-                {
-                    for (const auto* method : *binding->methods())
-                    {
-                        // method_name is obliged to contain a value (marked as required)
-                        methods.emplace(method->method_name()->str(),
-                                        LolaMethodId{static_cast<uint8_t>(method->method_id())});
-                    }
-                }
-
-                binding_info =
-                    LolaServiceTypeDeployment{service_id, std::move(events), std::move(fields), std::move(methods)};
+                binding_info = LolaServiceTypeDeployment{service_id, std::move(events), std::move(fields)};
                 break;  // Use first SHM binding
             }
             else if (binding->binding() == BindingType::SOME_IP)
             {
                 // Skip SOME/IP - not supported yet
-                ::score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which is not supported yet.";
-                std::terminate();
+                continue;
             }
             else
             {
                 ::score::mw::log::LogFatal("lola") << "Unknown binding type provided. Required argument.";
                 std::terminate();
             }
-        }
-
-        if (binding_info == score::cpp::blank{})
-        {
-            ::score::mw::log::LogFatal("lola")
-                << "No SHM binding found for Service Type: " << service_identifier.ToString();
-            std::terminate();
         }
 
         ServiceTypeDeployment service_deployment{binding_info};
@@ -496,12 +455,7 @@ GlobalConfiguration FlatBufferConfigLoader::CreateGlobalConfiguration() const no
             global_config.SetSenderMessageQueueSize(static_cast<int32_t>(queue_size->b_sender()));
         }
 
-        // Set SHM size calculation mode.
-        // NOTE: SHM size calculation currently only supports the simulation mode.
-        //       Therefore, we always use ShmSizeCalculationMode::kSimulation here,
-        //       regardless of any potential configuration in the FlatBuffer `global`
-        //       object. If additional modes are supported in the future, this code
-        //       should be extended to read the mode from the FlatBuffer.
+        // Set SHM size calculation mode
         ShmSizeCalculationMode shm_mode = ShmSizeCalculationMode::kSimulation;
         global_config.SetShmSizeCalcMode(shm_mode);
     }

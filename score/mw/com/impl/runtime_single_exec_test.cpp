@@ -96,21 +96,19 @@ class SingleTestPerProcessFixture : public ::testing::TestWithParam<std::string>
 
   protected:
     InstanceSpecifier tire_pressure_port_{InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value()};
-    std::string config_with_tire_pressure_port_{get_path("mw_com_config.json")};
     InstanceSpecifier tire_pressure_port_other_{
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePortOther"}).value()};
-    std::string config_with_tire_pressure_port_other_{get_path("mw_com_config_other.json")};
     bool tested_in_separate_process_{false};
     std::string config_file_extension_;
 
     std::string config_with_tire_pressure_port() const
     {
-        return get_path("ara_com_config" + config_file_extension_);
+        return get_path("mw_com_config" + config_file_extension_);
     }
 
     std::string config_with_tire_pressure_port_other() const
     {
-        return get_path("ara_com_config_other" + config_file_extension_);
+        return get_path("mw_com_config_other" + config_file_extension_);
     }
 
   private:
@@ -335,7 +333,7 @@ TEST_P(RuntimeTest, TracingIsDisabledWhenTraceFilterConfigPathIsInvalid)
     TestInSeparateProcess([this]() {
         // Given a configuration file which contains a TraceFilterConfigPath that does not point to a valid tracing
         // configuration
-        WithConfigAtDefaultPath(get_path("mw_com_config_invalid_trace_config_path.json"));
+        WithConfigAtDefaultPath(get_path("mw_com_config_invalid_trace_config_path" + config_file_extension_));
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();
@@ -349,7 +347,7 @@ TEST_P(RuntimeTest, TracingRuntimeIsDisabledWhenTracingDisabledInConfig)
 {
     TestInSeparateProcess([this]() {
         // Given a configuration with valid and disabled tracing configuration
-        WithConfigAtDefaultPath(get_path("mw_com_config_disabled_trace_config.json"));
+        WithConfigAtDefaultPath(get_path("mw_com_config_disabled_trace_config" + config_file_extension_));
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();
@@ -363,11 +361,11 @@ TEST_P(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
 {
     TestInSeparateProcess([this]() {
         // Given a configuration with valid and enabled tracing configuration
-        auto default_path = get_path("mw_com_config_valid_trace_config.json");
-        auto json_path = default_path.find("external") != std::string::npos
-                             ? get_path("mw_com_config_valid_trace_config_external.json")
-                             : default_path;
-        WithConfigAtDefaultPath(json_path);
+        auto default_path = get_path("mw_com_config_valid_trace_config" + config_file_extension_);
+        auto config_path = default_path.find("external") != std::string::npos
+                               ? get_path("mw_com_config_valid_trace_config_external" + config_file_extension_)
+                               : default_path;
+        WithConfigAtDefaultPath(config_path);
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();

@@ -14,15 +14,15 @@
 #ifndef SCORE_MW_COM_IMPL_CONFIGURATION_FLATBUFFER_CONFIG_LOADER_H
 #define SCORE_MW_COM_IMPL_CONFIGURATION_FLATBUFFER_CONFIG_LOADER_H
 
-#include "score/mw/com/impl/configuration/ara_com_config_generated.h"
 #include "score/mw/com/impl/configuration/configuration.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
+#include "score/mw/com/impl/configuration/mw_com_config_generated.h"
 
 #include <cstdint>
-#include <memory>
 #include <string_view>
 #include <vector>
+#include <memory>
 
 #include <cstddef>
 namespace score::mw::com::impl::configuration
