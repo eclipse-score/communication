@@ -27,6 +27,10 @@ namespace score::mw::com::impl::lola
 
 /// \brief Map which stores method shared memory regions which removes old regions (i.e. regions that were created by a
 ///        Proxy which crashed and has restarted) on insertion.
+///
+/// A detailed explanation of the how we handle partial restart in the context of methods and why this map is needed is
+/// in `platform/aas/docs/features/ipc/lola/method/README.md` (Specifically in the section about "Cleaning up old
+/// method shared memory resources").
 class MethodResourceMap
 {
     struct ProcessSpecificResourceMap
@@ -39,6 +43,7 @@ class MethodResourceMap
     using ResourceMap = std::unordered_map<GlobalConfiguration::ApplicationId, ProcessSpecificResourceMap>;
 
   public:
+    /// \brief Iterator of resource map pointing to the ISharedMemoryResource (whose key is ProxyInstanceCounter)
     using iterator = decltype(ProcessSpecificResourceMap::inner_resource_map)::iterator;
 
     enum class CleanUpResult
@@ -47,14 +52,20 @@ class MethodResourceMap
         NO_REGIONS_REMOVED
     };
 
+    /// \brief Checks whether an ISharedMemoryResource is stored within the map corresponding to the provided
+    ///        ProxyInstanceIdentifier AND pid.
     bool Contains(const ProxyInstanceIdentifier proxy_instance_identifier, const pid_t proxy_pid) const;
 
+    /// \brief Inserts a new ISharedMemoryResource and cleans up any resources corresponding to the provided
+    ///        ApplicationId but different pid.
+    ///
+    /// This function inserts a newly created region while cleaning up any resources corresponding to the same Skeleton
+    /// instance which previously crashed and has restarted (i.e. it has the ApplicationId as the old Skeleton instance
+    /// but different pid since the process restarted).
     auto InsertAndCleanUpOldRegions(const ProxyInstanceIdentifier proxy_instance_identifier,
                                     const pid_t proxy_pid,
                                     const std::shared_ptr<memory::shared::ISharedMemoryResource>& methods_shm_resource)
         -> std::pair<iterator, CleanUpResult>;
-
-    auto Erase(const ProxyInstanceIdentifier proxy_instance_identifier, const pid_t proxy_pid) -> iterator;
 
   private:
     auto EraseRegionsFromCrashedProcesses(const GlobalConfiguration::ApplicationId proxy_app_id, const pid_t proxy_pid)

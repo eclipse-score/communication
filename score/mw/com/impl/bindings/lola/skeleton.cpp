@@ -288,6 +288,7 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       service_instance_existence_marker_file_{std::move(service_instance_existence_marker_file)},
       service_instance_usage_marker_file_{},
       service_instance_existence_flock_mutex_and_lock_{std::move(service_instance_existence_flock_mutex_and_lock)},
+      on_service_methods_subscribed_mutex_{},
       method_resources_{},
       skeleton_methods_{},
       was_old_shm_region_reopened_{false},
@@ -945,8 +946,22 @@ void Skeleton::InitializeSharedMemoryForControl(
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
                                                  uid_t proxy_uid,
                                                  const QualityType asil_level,
-                                                 pid_t /* proxy_pid */)
+                                                 pid_t proxy_pid)
 {
+    // Note. we currently call the entirety of the funcitonality within OnServiceMethodsSubscribed within the mutex. We
+    // potentially could optimise this and call some functionality outside of the mutex. However, we haven't currenlty
+    // analysed all of the potential race conditions that could occur when all of these actions are not synchronised.
+    // So, for the moment, we leave all actions within the mutex and will optimise in future if we identify that this is
+    // a performance bottleneck.
+    std::lock_guard lock{on_service_methods_subscribed_mutex_};
+    if (method_resources_.Contains(proxy_instance_identifier, proxy_pid))
+    {
+        score::mw::log::LogDebug("lola") << "Method" << proxy_instance_identifier.process_identifier << "/"
+                                       << proxy_instance_identifier.proxy_instance_counter << "with PID:" << proxy_pid
+                                       << "already subscribed. Not re-opening shared memory region";
+        return {};
+    }
+
     const auto method_channel_shm_name =
         shm_path_builder_->GetMethodChannelShmName(lola_instance_id_, proxy_instance_identifier);
     const bool is_read_write{true};
@@ -967,8 +982,8 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    const auto [resource_it, was_created] = method_resources_.insert({proxy_instance_identifier, opened_shm_region});
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(was_created);
+    const auto [resource_it, _] =
+        method_resources_.InsertAndCleanUpOldRegions(proxy_instance_identifier, proxy_pid, opened_shm_region);
 
     auto& method_data = GetMethodData(*(resource_it->second));
     auto& method_call_queues = method_data.method_call_queues_;

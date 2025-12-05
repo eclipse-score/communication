@@ -95,7 +95,7 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
                             queue_position, return_queue_storage.value(), type_erased_element_info);
                     }
 
-                    Call(in_arg_queue_storage, return_queue_storage);
+                    Call(in_args_element_storage, return_arg_element_storage);
                 }};
         }();
 

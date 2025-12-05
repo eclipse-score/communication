@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/bindings/lola/i_partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
@@ -51,6 +52,7 @@
 #include <sys/types.h>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -138,6 +140,14 @@ class Skeleton final : public SkeletonBinding
     ///          an assert/termination.
     void DisconnectQmConsumers();
 
+    /// \brief Function allowing a SkeletonMethod to register itself with its parent skeleton.
+    ///
+    /// This registration is required so that the Skeleton can access its owned methods.
+    ///
+    /// Synchronisation: This registration must be done in the constructor of the SkeletonMethod which is guaranteed to
+    /// be called during construction of the full Skeleton created by the user. Therefore, the map of skeleton methods
+    /// will not be modified after this construction phase and so can be used in any function (except for the
+    /// constructor of Skeleton) without locking a mutex.
     void RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method);
 
     bool VerifyAllMethodsRegistered() const override;
@@ -207,7 +217,7 @@ class Skeleton final : public SkeletonBinding
     ResultBlank OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
                                            const uid_t proxy_uid,
                                            const QualityType asil_level,
-                                           pid_t proxy_pid);
+                                           const pid_t proxy_pid);
     static MethodData& GetMethodData(const memory::shared::ManagedMemoryResource& resource);
 
     /// \brief Checks whether the Proxy which sent a notification to the Skeleton that it subscribed to a method is in
@@ -238,8 +248,13 @@ class Skeleton final : public SkeletonBinding
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::ExclusiveFlockMutex>>
         service_instance_existence_flock_mutex_and_lock_;
 
-    std::unordered_map<ProxyInstanceIdentifier, std::shared_ptr<memory::shared::ManagedMemoryResource>>
-        method_resources_;
+    /// \brief Mutex to synchronise calls to OnServiceMethodsSubscribed
+    ///
+    /// OnServiceMethodsSubscribed can be called by the message passing concurrently, since different Proxies could
+    /// subscribe at the same time or a single Proxy may send the same message multiple times (See
+    /// platform/aas/docs/features/ipc/lola/method/README.md for details).
+    std::mutex on_service_methods_subscribed_mutex_;
+    MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
 
     bool was_old_shm_region_reopened_;

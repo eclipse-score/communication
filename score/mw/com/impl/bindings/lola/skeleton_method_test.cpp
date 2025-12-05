@@ -341,7 +341,7 @@ TEST_F(SkeletonMethodPartialRestartFixture, CallingCallWithValidSharedMemoryReso
 {
     GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
 
-    // Expecting that the registered type erased type erased callback is called
+    // Expecting that the registered type erased callback is called
     EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).Times(1);
 
     // Given that OnProxyMethodSubscribeFinished was called with a weak_ptr to a valid methods shared memory resource
@@ -363,7 +363,7 @@ TEST_F(SkeletonMethodPartialRestartFixture, CallingCallWithoutValidSharedMemoryR
 {
     GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
 
-    // Expecting that the registered type erased type erased callback is not called
+    // Expecting that the registered type erased callback is not called
     EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).Times(0);
 
     // Given that OnProxyMethodSubscribeFinished was called with a weak_ptr to a methods shared memory resource which
@@ -388,7 +388,7 @@ TEST_F(SkeletonMethodPartialRestartFixture,
 {
     GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
 
-    // Expecting that the registered type erased type erased callback is called
+    // Expecting that the registered type erased callback is called
     EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).WillOnce(InvokeWithoutArgs([this]() {
         // Then the lifetime of the methods shared memory region should have been extended for the duration of the
         // methods call (which is shown as the reference count of the methods shared memory region should have been
