@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_field_id.h"
 #include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
@@ -56,6 +57,11 @@ LolaFieldInstanceDeployment MakeLolaFieldInstanceDeployment(
     const bool enforce_max_samples = true,
     std::uint8_t number_of_tracing_slots = 1U) noexcept;
 
+LolaMethodInstanceDeployment MakeDefaultLolaMethodInstanceDeployment() noexcept;
+
+LolaMethodInstanceDeployment MakeLolaMethodInstanceDeployment(
+    const std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size = 10U) noexcept;
+
 LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     const score::cpp::optional<LolaServiceInstanceId> instance_id = 21U,
     const score::cpp::optional<std::size_t> shared_memory_size = 2000U,
@@ -75,6 +81,9 @@ class ConfigurationStructsFixture : public ::testing::Test
 
     void ExpectLolaFieldInstanceDeploymentObjectsEqual(const LolaFieldInstanceDeployment& lhs,
                                                        const LolaFieldInstanceDeployment& rhs) const noexcept;
+
+    void ExpectLolaMethodInstanceDeploymentObjectsEqual(const LolaMethodInstanceDeployment& lhs,
+                                                        const LolaMethodInstanceDeployment& rhs) const noexcept;
 
     void ExpectSomeIpEventInstanceDeploymentObjectsEqual(const SomeIpEventInstanceDeployment& lhs,
                                                          const SomeIpEventInstanceDeployment& rhs) const noexcept;

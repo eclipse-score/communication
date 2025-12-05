@@ -22,6 +22,8 @@ const auto kDummyEventName1 = "dummy_event_1";
 const auto kDummyEventName2 = "dummy_event_2";
 const auto kDummyFieldName1 = "dummy_field_1";
 const auto kDummyFieldName2 = "dummy_field_2";
+const auto kDummyMethodName1 = "dummy_method_1";
+const auto kDummyMethodName2 = "dummy_method_2";
 
 }  // namespace
 
@@ -54,6 +56,18 @@ LolaFieldInstanceDeployment MakeLolaFieldInstanceDeployment(
     return unit;
 }
 
+LolaMethodInstanceDeployment MakeDefaultLolaMethodInstanceDeployment() noexcept
+{
+    return LolaMethodInstanceDeployment{std::nullopt};
+}
+
+LolaMethodInstanceDeployment MakeLolaMethodInstanceDeployment(
+    const std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size) noexcept
+{
+    const LolaMethodInstanceDeployment unit{queue_size};
+    return unit;
+}
+
 LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     const score::cpp::optional<LolaServiceInstanceId> instance_id,
     const score::cpp::optional<std::size_t> shared_memory_size,
@@ -66,11 +80,17 @@ LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     const LolaFieldInstanceDeployment field_instance_deployment_1{MakeLolaFieldInstanceDeployment(16U, 17U)};
     const LolaFieldInstanceDeployment field_instance_deployment_2{MakeLolaFieldInstanceDeployment(18U, 19U)};
 
+    const LolaMethodInstanceDeployment method_instance_deployment_1{MakeLolaMethodInstanceDeployment(20U)};
+    const LolaMethodInstanceDeployment method_instance_deployment_2{MakeLolaMethodInstanceDeployment(21U)};
+
     const LolaServiceInstanceDeployment::EventInstanceMapping events{{kDummyEventName1, event_instance_deployment_1},
                                                                      {kDummyEventName2, event_instance_deployment_2}};
 
     const LolaServiceInstanceDeployment::FieldInstanceMapping fields{{kDummyFieldName1, field_instance_deployment_1},
                                                                      {kDummyFieldName2, field_instance_deployment_2}};
+
+    const LolaServiceInstanceDeployment::MethodInstanceMapping methods{
+        {kDummyMethodName1, method_instance_deployment_1}, {kDummyMethodName2, method_instance_deployment_2}};
 
     const std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer{
         {QualityType::kInvalid, {1U, 2U}}, {QualityType::kASIL_QM, {3U, 4U}}, {QualityType::kASIL_B, {5U, 6U}}};
@@ -84,6 +104,7 @@ LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     unit.control_qm_memory_size_ = control_qm_memory_size;
     unit.events_ = events;
     unit.fields_ = fields;
+    unit.methods_ = methods;
     unit.allowed_consumer_ = allowed_consumer;
     unit.allowed_provider_ = allowed_provider;
 
@@ -116,13 +137,19 @@ LolaServiceTypeDeployment MakeLolaServiceTypeDeployment(const std::uint16_t serv
     const LolaFieldId field_type_deployment_1{35U};
     const LolaFieldId field_type_deployment_2{36U};
 
+    const LolaMethodId method_type_deployment_1{37U};
+    const LolaMethodId method_type_deployment_2{38U};
+
     const LolaServiceTypeDeployment::EventIdMapping events{{kDummyEventName1, event_type_deployment_1},
                                                            {kDummyEventName2, event_type_deployment_2}};
 
     const LolaServiceTypeDeployment::FieldIdMapping fields{{kDummyFieldName1, field_type_deployment_1},
                                                            {kDummyFieldName2, field_type_deployment_2}};
 
-    LolaServiceTypeDeployment unit{service_id, events, fields};
+    const LolaServiceTypeDeployment::MethodIdMapping methods{{kDummyMethodName1, method_type_deployment_1},
+                                                             {kDummyMethodName2, method_type_deployment_2}};
+
+    LolaServiceTypeDeployment unit{service_id, events, fields, methods};
 
     return unit;
 }
@@ -145,6 +172,13 @@ void ConfigurationStructsFixture::ExpectLolaFieldInstanceDeploymentObjectsEqual(
     EXPECT_EQ(lhs.max_concurrent_allocations_, rhs.max_concurrent_allocations_);
     EXPECT_EQ(lhs.enforce_max_samples_, rhs.enforce_max_samples_);
     EXPECT_EQ(lhs.GetNumberOfSampleSlotsExcludingTracingSlot(), rhs.GetNumberOfSampleSlotsExcludingTracingSlot());
+}
+
+void ConfigurationStructsFixture::ExpectLolaMethodInstanceDeploymentObjectsEqual(
+    const LolaMethodInstanceDeployment& lhs,
+    const LolaMethodInstanceDeployment& rhs) const noexcept
+{
+    EXPECT_EQ(lhs.queue_size_, rhs.queue_size_);
 }
 
 void ConfigurationStructsFixture::ExpectSomeIpEventInstanceDeploymentObjectsEqual(
@@ -182,6 +216,14 @@ void ConfigurationStructsFixture::ExpectLolaServiceInstanceDeploymentObjectsEqua
         auto rhs_it = rhs.fields_.find(lhs_it.first);
         ASSERT_NE(rhs_it, rhs.fields_.end());
         ExpectLolaFieldInstanceDeploymentObjectsEqual(lhs_it.second, rhs_it->second);
+    }
+
+    ASSERT_EQ(lhs.methods_.size(), rhs.methods_.size());
+    for (const auto& lhs_it : lhs.methods_)
+    {
+        auto rhs_it = rhs.methods_.find(lhs_it.first);
+        ASSERT_NE(rhs_it, rhs.methods_.end());
+        ExpectLolaMethodInstanceDeploymentObjectsEqual(lhs_it.second, rhs_it->second);
     }
 
     ASSERT_EQ(lhs.allowed_consumer_.size(), rhs.allowed_consumer_.size());
@@ -280,6 +322,14 @@ void ConfigurationStructsFixture::ExpectLolaServiceTypeDeploymentObjectsEqual(
     {
         auto rhs_it = rhs.fields_.find(lhs_it.first);
         ASSERT_NE(rhs_it, rhs.fields_.end());
+        EXPECT_EQ(lhs_it.second, rhs_it->second);
+    }
+
+    ASSERT_EQ(lhs.methods_.size(), rhs.methods_.size());
+    for (auto lhs_it : lhs.methods_)
+    {
+        auto rhs_it = rhs.methods_.find(lhs_it.first);
+        ASSERT_NE(rhs_it, rhs.methods_.end());
         EXPECT_EQ(lhs_it.second, rhs_it->second);
     }
 }

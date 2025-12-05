@@ -91,7 +91,7 @@ ServiceTypeDeployment::ServiceTypeDeployment(const BindingInformation binding) n
 }
 
 ServiceTypeDeployment::ServiceTypeDeployment(const score::json::Object& json_object) noexcept
-    : binding_info_{GetBindingInfoFromJson(json_object)}, hash_string_{ToHashStringImpl(binding_info_)}
+    : ServiceTypeDeployment{GetBindingInfoFromJson(json_object)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
     if (serialization_version != serializationVersion)

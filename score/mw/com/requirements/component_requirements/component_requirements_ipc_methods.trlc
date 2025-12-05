@@ -10,11 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-package com
+package Communication
 
 import ScoreReq
-
-import Communication
 
 section "com" {
     section "Public_API_Requirements" {

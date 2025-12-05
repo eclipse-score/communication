@@ -101,8 +101,7 @@ score::ResultBlank ProxyMethod<void()>::operator()()
     {
         return Unexpected(queue_position.error());
     }
-    // \todo (Ticket-221600): Clarify stop_token usage
-    auto call_result = binding_->DoCall(queue_position.value(), score::cpp::stop_token{});
+    auto call_result = binding_->DoCall(queue_position.value());
     if (!call_result.has_value())
     {
         return Unexpected(call_result.error());

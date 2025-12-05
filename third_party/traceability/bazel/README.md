@@ -8,7 +8,7 @@ Based on //platform/bazel/rules:run_as_exec.bzl
 
 ```python
 load("@lobster//:lobster.bzl", "lobster_test", "lobster_gtest")
-load("@//platform/aas/tools/traceability/bazel:gtest_as_exec.bzl", "test_as_exec")
+load("@//third_party/traceability/bazel:gtest_as_exec.bzl", "test_as_exec")
 
 test_as_exec(
     name = "tests_as_exec",
@@ -25,7 +25,7 @@ lobster_gtest(
 ## Safety Analysis Target
 
 ```python
-load("@//platform/aas/tools/traceability/bazel:safety_analysis.bzl", "safety_analysis")
+load("@//third_party/traceability/bazel:safety_analysis.bzl", "safety_analysis")
 
 safety_analysis(
     name = "sample_safety_analysis",

@@ -55,6 +55,11 @@ class SkeletonEventAttorney
         return skeleton_event_.event_data_control_composite_;
     }
 
+    impl::tracing::SkeletonEventTracingData& GetSkeletonEventTracingData() const
+    {
+        return skeleton_event_.skeleton_event_tracing_data_;
+    }
+
   private:
     SkeletonEvent<SampleType>& skeleton_event_;
 };
@@ -449,6 +454,37 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
 }
 
 using SkeletonEventTracingPrepareOfferFixture = SkeletonEventTracingFixture;
+TEST_F(SkeletonEventTracingPrepareOfferFixture, GlobalDisablingTracingWillDisableAllTracePoints)
+{
+    const bool enforce_max_samples{true};
+
+    // Given a TracingFilterConfig, that has all trace points enabled.
+    impl::tracing::SkeletonEventTracingData expected_enabled_trace_points{};
+    expected_enabled_trace_points.enable_send = true;
+    expected_enabled_trace_points.enable_send_with_allocate = true;
+
+    // Given a skeleton event in an offered service
+    InitialiseSkeletonEvent(fake_element_fq_id_,
+                            fake_event_name_,
+                            max_samples_,
+                            max_subscribers_,
+                            enforce_max_samples,
+                            expected_enabled_trace_points);
+
+    // Expect, that IsTracingEnabled() is called on the TracingRuntime and returns false
+    EXPECT_CALL(tracing_runtime_mock_, IsTracingEnabled()).WillOnce(Return(false));
+
+    // When calling PrepareOffer
+    skeleton_event_->PrepareOffer();
+
+    // Then all trace points are disabled
+    EXPECT_FALSE(
+        SkeletonEventAttorney<test::TestSampleType>{*skeleton_event_}.GetSkeletonEventTracingData().enable_send);
+    EXPECT_FALSE(SkeletonEventAttorney<test::TestSampleType>{*skeleton_event_}
+                     .GetSkeletonEventTracingData()
+                     .enable_send_with_allocate);
+}
+
 TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillNotRegisterTransactionLog)
 {
     const bool enforce_max_samples{true};

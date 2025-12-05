@@ -35,7 +35,7 @@ class ProxyMethod : public ProxyMethodBinding
 
     MOCK_METHOD(score::Result<score::cpp::span<std::byte>>, AllocateInArgs, (std::size_t), (override));
     MOCK_METHOD(score::Result<score::cpp::span<std::byte>>, AllocateReturnType, (std::size_t), (override));
-    MOCK_METHOD(ResultBlank, DoCall, (std::size_t, score::cpp::stop_token), (override));
+    MOCK_METHOD(ResultBlank, DoCall, (std::size_t), (override));
 };
 
 class ProxyMethodFacade : public ProxyMethodBinding
@@ -54,9 +54,9 @@ class ProxyMethodFacade : public ProxyMethodBinding
         return proxy_method_.AllocateReturnType(queue_position);
     }
 
-    score::ResultBlank DoCall(std::size_t queue_position, score::cpp::stop_token stop_token) override
+    score::ResultBlank DoCall(std::size_t queue_position) override
     {
-        return proxy_method_.DoCall(queue_position, stop_token);
+        return proxy_method_.DoCall(queue_position);
     }
 
   private:

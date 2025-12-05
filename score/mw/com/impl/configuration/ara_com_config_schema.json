@@ -125,6 +125,29 @@
                                             }
                                         }
                                     }
+                                },
+                                "methods": {
+                                    "type": "array",
+                                    "description": "optional (serviceType may have no methods) binding specific method configurations of this serviceType.",
+                                    "items": {
+                                        "type": "object",
+                                        "description": "Binding specific method configuration",
+                                        "required": [
+                                            "methodName",
+                                            "methodId"
+                                        ],
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "methodName": {
+                                                "type": "string",
+                                                "description": "Short name of the method within the serviceType."
+                                            },
+                                            "methodId": {
+                                                "type": "integer",
+                                                "description": "Binding technology specific method id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -365,6 +388,30 @@
                                                 "description": "std::uint8_t optional parameter, which describes, how many slots are assigned to IPC Tracing. A value of 0 disables tracing. Default is 0. If it is set to 0 and a trace-filter-config demands this field being traced, a WARN message will be logged. A value greater than zero for a proxy will just indicate the intent for the service element to be traced. A value greater than zero on the skeleton side will set the number of tracing slots.",
                                                 "default": 0,
                                                 "minimum": 0,
+                                                "maximum": 255
+                                            }
+                                        }
+                                    }
+                                },
+                                "methods": {
+                                    "type": "array",
+                                    "description": "(optional) Binding technology specific configuration of methods within this instance",
+                                    "items": {
+                                        "type": "object",
+                                        "description": "Binding specific method configuration",
+                                        "required": [
+                                            "methodName"
+                                        ],
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "methodName": {
+                                                "type": "string",
+                                                "description": "Mandatory Short name of the method within the serviceType (not FQN)"
+                                            },
+                                            "queueSize": {
+                                                "type": "integer",
+                                                "description": "Optional Binding specific consumer/proxy side setting for maximum number of pending method requests that can be queued on the server side before new requests are rejected.",
+                                                "minimum": 1,
                                                 "maximum": 255
                                             }
                                         }

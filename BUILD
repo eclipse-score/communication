@@ -13,12 +13,28 @@
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@score_tooling//:defs.bzl", "copyright_checker")
 
 compile_pip_requirements(
     name = "pip_requirements",
     src = "requirements.in",
     data = ["//quality/integration_testing:pip_requirements"],
     requirements_txt = "requirements_lock.txt",
+) 
+
+copyright_checker(
+    name = "copyright",
+    srcs = [
+        ".github",
+        "quality",
+        "score",
+        "third_party",
+        "//:BUILD",
+        "//:MODULE.bazel",
+    ],
+    config = "//third_party/cr_checker:config",
+    template = "//third_party/cr_checker:templates",
+    visibility = ["//visibility:public"],
 )
 
 exports_files([

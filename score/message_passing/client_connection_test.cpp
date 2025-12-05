@@ -65,10 +65,11 @@ class ClientConnectionTest : public ::testing::Test
         engine_.reset();
     }
 
-    void CatchImmediateConnectCommand()
+    void CatchImmediateConnectEndpointRegistrationCommand()
     {
         EXPECT_CALL(*engine_, EnqueueCommand(_, ISharedResourceEngine::TimePoint{}, _, _))
             .WillOnce([&](auto&, auto, ISharedResourceEngine::CommandCallback callback, auto) {
+                // reusing the connect callback in case ow queued endpoint registration
                 connect_command_callback_ = std::move(callback);
             });
     }
@@ -199,17 +200,30 @@ class ClientConnectionTest : public ::testing::Test
                                   IClientConnection::StateCallback state_callback = {},
                                   IClientConnection::NotifyCallback notify_callback = {})
     {
-        CatchImmediateConnectCommand();
-        connection.Start(std::move(state_callback), std::move(notify_callback));
-        EXPECT_EQ(connection.GetState(), State::kStarting);
-
         AtTryOpenCall_Return(kValidFd);
+        CatchImmediateConnectEndpointRegistrationCommand();
+
+        connection.Start(std::move(state_callback), std::move(notify_callback));
+
         CatchPosixEndpointRegistration();
         InvokeConnectCommand();
+
         EXPECT_EQ(connection.GetState(), State::kReady);
         EXPECT_EQ(posix_endpoint_->fd, kValidFd);
         EXPECT_EQ(posix_endpoint_->owner, &connection);
         EXPECT_EQ(posix_endpoint_->max_receive_size, kMaxNotifySize);
+    }
+
+    void StopConnectionInProgress(detail::ClientConnection& connection)
+    {
+        CatchDisconnectCommand();
+        connection.Stop();
+        EXPECT_EQ(connection.GetState(), State::kStopping);
+        EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+
+        InvokeDisconnectCommand();
+        EXPECT_EQ(connection.GetState(), State::kStopped);
+        EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
     }
 
     void StopCurrentConnection(detail::ClientConnection& connection)
@@ -273,19 +287,14 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingWhileConnecting)
 {
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
 
-    CatchImmediateConnectCommand();
-    connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
-    EXPECT_EQ(connection.GetState(), State::kStarting);
-
     EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
-        .WillOnce([&connection](auto&&) {
-            connection.Stop();
+        .WillOnce([this, &connection](auto&&) {
+            StopConnectionInProgress(connection);
             return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));  // this error code would be ignored
         });
-
     ExpectCleanUpOwner(connection);
-    InvokeConnectCommand();
 
+    connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
 }
@@ -299,14 +308,10 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingOnHardError)
     {
         detail::ClientConnection connection(engine_, protocol_config_, client_config_);
 
-        CatchImmediateConnectCommand();
-        connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
-        EXPECT_EQ(connection.GetState(), State::kStarting);
-
         AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(entry.first)));
         ExpectCleanUpOwner(connection);
-        InvokeConnectCommand();
 
+        connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
         EXPECT_EQ(connection.GetState(), State::kStopped);
         EXPECT_EQ(connection.GetStopReason(), entry.second);
     }
@@ -320,15 +325,16 @@ TEST_F(ClientConnectionTest, TryingToConnectMultipleTimesStoppingOnPermissionErr
 
     for (auto entry : error_list_to_test)
     {
-        if (entry == *error_list_to_test.begin())
-        {
-            CatchImmediateConnectCommand();
-            connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
-            EXPECT_EQ(connection.GetState(), State::kStarting);
-        }
         AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(entry)));
         CatchTimedConnectCommand();
-        InvokeConnectCommand();
+        if (entry == *error_list_to_test.begin())
+        {
+            connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
+        }
+        else
+        {
+            InvokeConnectCommand();
+        }
         EXPECT_EQ(connection.GetState(), State::kStarting);
     }
 
@@ -344,7 +350,8 @@ TEST_F(ClientConnectionTest, TryingToConnectMultipleTimesFinallyConnectingAndImp
 {
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
 
-    CatchImmediateConnectCommand();
+    AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOENT)));
+    CatchTimedConnectCommand();
     connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
     EXPECT_EQ(connection.GetState(), State::kStarting);
 

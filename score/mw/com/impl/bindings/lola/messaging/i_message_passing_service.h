@@ -113,11 +113,11 @@ class IMessagePassingService
                                              const HandlerRegistrationNoType registration_no,
                                              const pid_t target_node_id) noexcept = 0;
 
-    /// \brief Register a handler on Skeleton side which will be called when CallServiceMethodSubscribed is called by a
+    /// \brief Register a handler on Skeleton side which will be called when SubscribeServiceMethod is called by a
     /// Proxy.
     ///
     /// When a Proxy is created, it will create a method shared memory region and perform some setup steps. It will then
-    /// send a notification to the connected Skeleton via CallServiceMethodSubscribed. When this message is received in
+    /// send a notification to the connected Skeleton via SubscribeServiceMethod. When this message is received in
     /// the Skeleton process, the handler registered in this function will be called.
     ///
     /// Each Skeleton containing at least one method must register a handler with this function. Since we have one
@@ -125,8 +125,8 @@ class IMessagePassingService
     /// called.
     ///
     /// \param skeleton_instance_identifier to identify which ServiceMethodSubscribedHandler to call when
-    /// CallServiceMethodSubscribed is called on the Proxy side
-    /// \param subscribed_callback callback that will be called when CallServiceMethodSubscribed is called
+    /// SubscribeServiceMethod is called on the Proxy side
+    /// \param subscribed_callback callback that will be called when SubscribeServiceMethod is called
     virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
         SkeletonInstanceIdentifier skeleton_instance_identifier,
         ServiceMethodSubscribedHandler subscribed_callback) = 0;
@@ -195,7 +195,7 @@ class IMessagePassingService
     ///
     /// \param skeleton_instance_identifier identification of the Skeleton corresponding to the Proxy which is calling
     /// this method.
-    virtual ResultBlank CallServiceMethodSubscribed(const SkeletonInstanceIdentifier& skeleton_instance_identifier) = 0;
+    virtual ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier) = 0;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response

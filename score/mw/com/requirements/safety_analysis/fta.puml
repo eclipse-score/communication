@@ -1,0 +1,30 @@
+@startuml
+
+!include fta_metamodel.puml
+
+' Top level (skeleton)
+$TopEvent("Skeleton \nnot offered", "Communication.SkeletonNotOffered")
+
+' 2nd level gates and events
+$AndGate("AGF", "Communication.SkeletonNotOffered")
+
+$IntermediateEvent("Instance Specifier is\nwrongly configured", "IEF", "AGF")
+$IntermediateEvent("Shared Memory\nsegment was not\ncreated", "IE2", "AGF")
+$IntermediateEvent("Shared Memory\nsegments are\ncreated under\nwrong name", "PEF", "AGF")
+$IntermediateEvent("Service Discovery\nMarker Files have\nbeen incorrectly\ncreated", "IE3", "AGF")
+
+' 3rd level cascades from AGF
+$AndGate("AG2", "IEF")
+$IntermediateEvent("Wrongly configured\non Skeleton / Proxy\nside", "IE4", "AG2")
+$BasicEvent("Instance Specifier\nresolution broken", "Communication.ResolutionBroken", "AG2")
+$BasicEvent("Differently configured\nbetween skeleton\nand proxy side", "Communication.DifferentConfig", "AG2")
+
+$AndGate("AG3", "IE2")
+$BasicEvent("Shared Memory\nsegment does not\ntry to create segment", "Communication.ShmNotCreated", "AG3")
+$BasicEvent("OS related\nfunctionality failed", "Communication.OSfunctionFailed", "AG3")
+
+$AndGate("AG4", "IE3")
+$BasicEvent("Wrong Directory Structure", "Communication.WrongDirStructure", "AG4")
+$BasicEvent("Not Created\nat all", "Communication.NotCreatedAtAll", "AG4")
+$BasicEvent("Wrong Marker\nfilename", "Communication.WrongFileName", "AG4")
+@enduml

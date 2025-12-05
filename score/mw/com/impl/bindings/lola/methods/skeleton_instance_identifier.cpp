@@ -15,7 +15,7 @@
 namespace score::mw::com::impl::lola
 {
 
-bool operator==(const SkeletonInstanceIdentifier& lhs, const SkeletonInstanceIdentifier& rhs)
+bool operator==(const SkeletonInstanceIdentifier& lhs, const SkeletonInstanceIdentifier& rhs) noexcept
 {
     return ((lhs.service_id == rhs.service_id) && (lhs.instance_id == rhs.instance_id));
 }

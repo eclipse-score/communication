@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGE_PASSING_SERVICE_INSTANCE_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGE_PASSING_SERVICE_INSTANCE_H
 
+#include "score/language/safecpp/scoped_function/scope.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_client_cache.h"
 
@@ -26,6 +27,7 @@
 
 // TODO: PMR
 #include "score/concurrency/thread_pool.h"
+#include <score/span.hpp>
 
 // TODO: PMR
 #include <array>
@@ -273,6 +275,11 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     /// \detail local update notification leads to a user provided receive handler callout, whose
     ///         runtime is unknown, so we decouple with worker threads.
     score::concurrency::Executor& executor_;
+
+    /// \brief Scope controlling the lifetime of message_callback_scoped_function_
+    /// \details When the scope is reset when object is destroyed, the scoped function becomes invalid
+    ///          and will not execute, preventing race conditions during destruction
+    score::safecpp::Scope<> message_callback_scope_;  // scope should always be the last attribute.
 };
 
 }  // namespace score::mw::com::impl::lola

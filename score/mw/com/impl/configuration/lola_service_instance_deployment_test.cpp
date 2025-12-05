@@ -31,10 +31,13 @@ using ::testing::UnorderedElementsAre;
 LolaServiceInstanceId kDummyInstanceId{10U};
 const std::string kDummyEventName{"my_dummy_event"};
 const std::string kDummyFieldName{"my_dummy_field"};
+const std::string kDummyMethodName{"my_dummy_method"};
 const auto kDummyLolaEventInstanceDeployment{MakeLolaEventInstanceDeployment(12U, 13U)};
 const auto kDummyLolaFieldInstanceDeployment{MakeLolaFieldInstanceDeployment(14U, 15U)};
+const auto kDummyLolaMethodInstanceDeployment{MakeLolaMethodInstanceDeployment(16U)};
 const auto kDummyLolaEventInstanceDeployment2{MakeLolaEventInstanceDeployment(22U, 23U)};
 const auto kDummyLolaFieldInstanceDeployment2{MakeLolaFieldInstanceDeployment(24U, 25U)};
+const auto kDummyLolaMethodInstanceDeployment2{MakeLolaMethodInstanceDeployment(26U)};
 
 const std::unordered_map<QualityType, std::vector<uid_t>> kAllowedConsumers{{QualityType::kASIL_QM, {1, 2}}};
 const std::unordered_map<QualityType, std::vector<uid_t>> kAllowedConsumers2{{QualityType::kASIL_QM, {11, 12}}};
@@ -132,6 +135,34 @@ TEST(LolaServiceInstanceDeployment, ContainsFieldReturnsFalseIfEventMissing)
     EXPECT_FALSE(unit.ContainsField("def"));
 }
 
+TEST(LolaServiceInstanceDeployment, ContainsMethodReturnsTrueIfMethodPresent)
+{
+    // Given a LolaServiceInstanceDeployment containing a method
+    LolaServiceInstanceDeployment unit{LolaServiceInstanceId{2U}};
+    auto temp = MakeDefaultLolaMethodInstanceDeployment();
+    unit.methods_.emplace(std::make_pair("abc", temp));
+
+    // When checking if the method exists
+    const auto contains_method = unit.ContainsMethod("abc");
+
+    // Then the result is true
+    EXPECT_TRUE(contains_method);
+}
+
+TEST(LolaServiceInstanceDeployment, ContainsMethodReturnsFalseIfMethodMissing)
+{
+    // Given a LolaServiceInstanceDeployment containing a method
+    LolaServiceInstanceDeployment unit{LolaServiceInstanceId{2U}};
+    auto temp = MakeDefaultLolaMethodInstanceDeployment();
+    unit.methods_.emplace(std::make_pair("abc", temp));
+
+    // When checking if a different method exists
+    const auto contains_method = unit.ContainsMethod("def");
+
+    // Then the result is false
+    EXPECT_FALSE(contains_method);
+}
+
 using LolaServiceInstanceDeploymentFixture = ConfigurationStructsFixture;
 TEST_F(LolaServiceInstanceDeploymentFixture, CanCreateFromSerializedObjectWithOptionals)
 {
@@ -198,6 +229,22 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementFixture, ReturnsFieldThatEx
     EXPECT_EQ(field_instance_deployment, kDummyLolaFieldInstanceDeployment);
 }
 
+TEST_F(LolaServiceInstanceDeploymentGetServiceElementFixture, ReturnsMethodThatExistsInDeployment)
+{
+    // Given a LolaServiceInstanceDeployment containing an event, field, and method
+    const LolaServiceInstanceDeployment unit{kDummyInstanceId,
+                                             {{kDummyEventName, kDummyLolaEventInstanceDeployment}},
+                                             {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}},
+                                             {{kDummyMethodName, kDummyLolaMethodInstanceDeployment}}};
+
+    // When getting an LolaMethodInstanceDeployment using the correct method name
+    const auto& method_instance_deployment =
+        GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(unit, kDummyMethodName);
+
+    // Then the returned object is the same as the one in the configuration
+    EXPECT_EQ(method_instance_deployment, kDummyLolaMethodInstanceDeployment);
+}
+
 using LolaServiceInstanceDeploymentGetServiceElementDeathTest = LolaServiceInstanceDeploymentGetServiceElementFixture;
 TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingEventThatDoesNotExistInDeploymentTerminates)
 {
@@ -225,6 +272,20 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingFieldThat
                  ".*");
 }
 
+TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingMethodThatDoesNotExistInDeploymentTerminates)
+{
+    // Given a LolaServiceInstanceDeployment containing an event, field, and method
+    const LolaServiceInstanceDeployment unit{kDummyInstanceId,
+                                             {{kDummyEventName, kDummyLolaEventInstanceDeployment}},
+                                             {{kDummyFieldName, kDummyLolaFieldInstanceDeployment}},
+                                             {{kDummyMethodName, kDummyLolaMethodInstanceDeployment}}};
+
+    // When getting a LolaMethodInstanceDeployment using an incorrect method name
+    // Then the program termintaes
+    EXPECT_DEATH(score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(unit, kDummyEventName),
+                 ".*");
+}
+
 TEST(LolaServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
 {
     const LolaServiceInstanceDeployment unit{LolaServiceInstanceId{42U}};
@@ -247,12 +308,14 @@ TEST_F(LolaServiceInstanceDeploymentEqualityFixture, ComparingSameDeploymentsRet
     const LolaServiceInstanceDeployment unit{1U,
                                              {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                              {{"same_field_name", kDummyLolaFieldInstanceDeployment}},
+                                             {},
                                              true,
                                              kAllowedConsumers,
                                              kAllowedProviders};
     const LolaServiceInstanceDeployment unit2{1U,
                                               {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                               {{"same_field_name", kDummyLolaFieldInstanceDeployment}},
+                                              {},
                                               true,
                                               kAllowedConsumers,
                                               kAllowedProviders};
@@ -308,20 +371,20 @@ INSTANTIATE_TEST_CASE_P(
                                                      {{"same_event_name", kDummyLolaEventInstanceDeployment}},
                                                      {{"same_field_name", kDummyLolaFieldInstanceDeployment2}}}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, true},
-                       LolaServiceInstanceDeployment{1U, {}, {}, false}),
+        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, {}, true},
+                       LolaServiceInstanceDeployment{1U, {}, {}, {}, false}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers2, kAllowedProviders},
-                       LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers, kAllowedProviders}),
+        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers2, kAllowedProviders},
+                       LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders}),
 
-        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers, kAllowedProviders2},
-                       LolaServiceInstanceDeployment{1U, {}, {}, true, kAllowedConsumers, kAllowedProviders})));
+        std::make_pair(LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders2},
+                       LolaServiceInstanceDeployment{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders})));
 
 TEST(LolaServiceInstanceDeploymentLessThan, DeploymentsComparedBasedOnInstanceId)
 {
     // Given 2 LolaServiceInstanceDeployments containing different values
-    const LolaServiceInstanceDeployment lhs{1U, {}, {}, true, kAllowedConsumers, kAllowedProviders};
-    const LolaServiceInstanceDeployment rhs{2U, {}, {}, true, kAllowedConsumers, kAllowedProviders};
+    const LolaServiceInstanceDeployment lhs{1U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders};
+    const LolaServiceInstanceDeployment rhs{2U, {}, {}, {}, true, kAllowedConsumers, kAllowedProviders};
 
     // When comparing the two
     // Then the result is based on the instance IDs

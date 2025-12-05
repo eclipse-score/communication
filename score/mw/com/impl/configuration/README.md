@@ -113,6 +113,12 @@ In the corresponding snippet from our example configuration:
            "fieldName": "CurrentTemperatureFrontLeft",
            "fieldId": 30
          }
+       ],
+       "methods": [
+         {
+           "methodName": "SetPressure",
+           "methodId": 40
+         }
        ]
       }
     ]
@@ -128,10 +134,10 @@ unsigned integer (16 bit), which (like the `serviceTypeName`) needs to be unique
 applications communicating via `SHM` `binding` need to agree on a unique assignment of `serviceId`s to `service-types`.
 To keep track within BMW, we currently manage the `serviceId` namespace [here](broken_link_cf/pages/viewpage.action?spaceKey=psp&title=LoLa+service+IDs+used+within+BMW)
 
-Then, for each service element (event, field), which the `service-type` (the `service-interface` in our C++
+Then, for each service element (event, field, method), which the `service-type` (the `service-interface` in our C++
 representation) contains, we need to configure a pair of name and id. So in our example the `service-type`
-"/bmw/ncar/services/TirePressureService" has an event named "CurrentPressureFrontLeft" and a field named
-"CurrentTemperatureFrontLeft".
+"/bmw/ncar/services/TirePressureService" has an event named "CurrentPressureFrontLeft", a field named
+"CurrentTemperatureFrontLeft", and a method named "SetPressure".
 
 Now it is time to have a look at the C++ representation of the `service-type`, which fits to our example:
 
@@ -144,23 +150,25 @@ Now it is time to have a look at the C++ representation of the `service-type`, w
 
         typename Trait::template Event<TirePressureDataType> current_pressure_front_left_{*this, "CurrentPressureFrontLeft"};
         typename Trait::template Field<TemperatureDataType> current_temperature_front_left_{*this, "CurrentTemperatureFrontLeft"};
+        typename Trait::template Method<SetPressureReturn(SetPressureInArgType)> set_pressure_{*this, "SetPressure"};
     };
 ```
 
-As you see in the C++ code above, the event and field members have assigned names in their `ctor`. In this case:
+As you see in the C++ code above, the event, field, and method members have assigned names in their `ctor`. In this case:
 
 - "CurrentPressureFrontLeft"
 - "CurrentTemperatureFrontLeft"
+- "SetPressure"
 
-these names have to be reflected in the event and field `binding` elements! I.e. for each event or field member in the
-C++ representation of the `service-type`, a corresponding event or field object in the `events` or `fields` arrays of
+these names have to be reflected in the event, field, and method `binding` elements! I.e. for each event, field, or method member in the
+C++ representation of the `service-type`, a corresponding event, field, or method object in the `events`, `fields`, or `methods` arrays of
 the `binding` object in the json configuration is required.
 
-While the `eventName` and `fieldName` in the event and field object is prescribed by the C++ representation, the
-`eventId` and `fieldId` property can be chosen freely in the `binding` configuration. Again &ndash; like in the case of
-`serviceId` &ndash; `eventId` and `fieldId` are `binding` specific optimized identifications used instead of the event
-and field name. In case of a `SHM` `binding` these IDs have to be unsigned integers (16 bit) and an ID has to be unique
-among the items within the enclosing array (`fields` or `events`).
+While the `eventName`, `fieldName`, and `methodName` in the event, field, and method object is prescribed by the C++ representation, the
+`eventId`, `fieldId`, and `methodId` property can be chosen freely in the `binding` configuration. Again &ndash; like in the case of
+`serviceId` &ndash; `eventId`, `fieldId`, and `methodId` are `binding` specific optimized identifications used instead of the event,
+field, and method name. In case of a `SHM` `binding` these IDs have to be unsigned integers (16 bit) and an ID has to be unique
+among all service elements (events, fields, and methods) within the service.
 
 #### Service Instances
 
@@ -420,6 +428,36 @@ The properties of a field or an event object on the instance level are:
   tracing are different and the tracing subsystem has to explicitly know, how many slots/samples it is allowed to access
   in parallel at most. Furthermore, setting the value of `numberOfIpcTracingSlots` to 0 or not configuring it all,
   explicitly means, that tracing for this event or field is disabled.
+
+###### methods within an instance
+
+Within the `service-instance` json object, there is an additional binding independent property for methods:
+
+- `methods`
+
+For each method enlisted in the `methods` array on the [service-type->bindings](#bindings) level of the `service-type`,
+a corresponding instance-specific method deployment must be provided. The method type configuration corresponds to the
+instance-specific method deployment based on the `methodName`.
+
+Example configuration:
+```json
+"methods": [
+    {
+        "methodName": "SetPressure",
+        "queueSize": 20
+    }
+]
+```
+
+The properties of a method deployment object on the instance level are:
+
+- `methodName`: (required) - The name of the method this configuration applies to. Must match a method name from the
+  `methods` array in the service-type bindings definition.
+
+- `queueSize`: (optional, default is 1) - Maximum number of pending method requests that can be queued on the server side
+  (provider/skeleton) before new requests are rejected. This is relevant for provider side only.
+
+  **Note**: Currently, only queue sizes of 1 are supported since we only provide an API for synchronous method calls.
 
 #### Global Settings
 

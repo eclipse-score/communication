@@ -75,11 +75,13 @@ constexpr void AggregateArgType(std::size_t& size, std::size_t& alignment)
 template <typename Arg>
 auto DeserializeArg(MemoryBufferAccessor& buffer) -> Arg*
 {
+    // NOLINTNEXTLINE(score-banned-function) TODO Ticket-228560
     auto src_ptr = static_cast<void*>(score::memory::shared::AddOffsetToPointer(buffer.buffer.data(), buffer.offset));
     auto src_ptr_as_int = score::memory::shared::CastPointerToInteger(src_ptr);
 
     auto padding = (src_ptr_as_int % alignof(Arg)) == 0 ? 0 : alignof(Arg) - (src_ptr_as_int % alignof(Arg));
     buffer.offset += (padding + sizeof(Arg));
+    // NOLINTNEXTLINE(score-banned-function) TODO Ticket-228560
     return static_cast<Arg*>(score::memory::shared::AddOffsetToPointer(src_ptr, padding));
 }
 
@@ -106,6 +108,11 @@ template <typename T>
 void SerializeArgs(MemoryBufferAccessor& target_buffer, T& arg)
 {
     auto* dest_ptr =
+        // In our architecture we have a one-to-one mapping between pointers and integral values.
+        // Therefore, casting between the two is well-defined.
+        // The resulting pointer is used as start of the memory arena for the allocation.
+        // In C++23 std::start_lifetime_as_array can be used to inform the compiler.
+        // NOLINTNEXTLINE(score-banned-function) see above
         static_cast<void*>(score::memory::shared::AddOffsetToPointer(target_buffer.buffer.data(), target_buffer.offset));
     const std::size_t buffer_space_before_align = target_buffer.buffer.size() - target_buffer.offset;
     std::size_t buffer_space_after_align = buffer_space_before_align;
@@ -113,12 +120,12 @@ void SerializeArgs(MemoryBufferAccessor& target_buffer, T& arg)
 
     const auto AreRegionsOverlapping = [](MemoryBufferAccessor& destination_buffer, T source_object) {
         using memory::shared::CastPointerToInteger;
-        using memory::shared::AddOffsetToPointer;
+        using memory::shared::AddOffsetToPointerAsInteger;
         const auto target_buffer_start_address = CastPointerToInteger(destination_buffer.buffer.data());
-        const auto target_buffer_end_address = CastPointerToInteger(
-            AddOffsetToPointer(destination_buffer.buffer.data(), destination_buffer.buffer.size()));
+        const auto target_buffer_end_address =
+            AddOffsetToPointerAsInteger(target_buffer_start_address, destination_buffer.buffer.size());
         const auto arg_start_address = CastPointerToInteger(&source_object);
-        const auto arg_end_address = CastPointerToInteger(AddOffsetToPointer(&source_object, sizeof(source_object)));
+        const auto arg_end_address = AddOffsetToPointerAsInteger(arg_start_address, sizeof(source_object));
 
         const bool is_arg_before_target_buffer = arg_end_address < target_buffer_start_address;
         const bool is_arg_after_target_buffer = arg_start_address > target_buffer_end_address;

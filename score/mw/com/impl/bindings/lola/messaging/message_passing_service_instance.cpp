@@ -11,12 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance.h"
-#include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
-
+#include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 #include "score/message_passing/i_client_factory.h"
 #include "score/message_passing/i_server_connection.h"
 #include "score/message_passing/i_server_factory.h"
 #include "score/message_passing/service_protocol_config.h"
+#include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 
 #include "score/language/safecpp/safe_math/safe_math.h"
 
@@ -25,14 +25,17 @@
 
 #include "score/mw/log/logging.h"
 
+#include <score/assert.hpp>
 #include <score/span.hpp>
 
+#include <sys/types.h>
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
 #include <exception>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
@@ -103,7 +106,8 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQuality
     : IMessagePassingServiceInstance(),
       cur_registration_no_{0U},
       client_cache_{asil_level, client_factory},
-      executor_{local_event_executor}
+      executor_{local_event_executor},
+      message_callback_scope_{}
 {
     // TODO: PMR
 
@@ -121,11 +125,18 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQuality
         // TODO: outdated node id?
         // TODO: update related unit test as well
     };
+
+    auto message_callback_scoped_function =
+        std::make_shared<score::safecpp::MoveOnlyScopedFunction<void(pid_t, score::cpp::span<const std::uint8_t>)>>(
+            message_callback_scope_, [this](pid_t sender_pid, score::cpp::span<const std::uint8_t> message) noexcept -> void {
+                this->MessageCallback(sender_pid, message);
+            });
     // Suppress autosar_cpp14_a15_5_3_violation: False Positive
     // Rationale: Passing an argument by reference cannot throw
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    auto received_send_message_callback = [this](score::message_passing::IServerConnection& connection,
-                                                 const score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::blank {
+    auto received_send_message_callback = [scoped_function = message_callback_scoped_function](
+                                              score::message_passing::IServerConnection& connection,
+                                              const score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::blank {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(std::holds_alternative<std::uintptr_t>(connection.GetUserData()),
                                "Message Passing: UserData does not contain a uintptr_t");
         // Suppress "AUTOSAR C++14 A15-5-3" The rule states: "Implicit call of std::terminate()"
@@ -136,7 +147,15 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQuality
         const auto client_pid = score::safe_math::Cast<pid_t>(UserDataUintPtr);
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(client_pid.has_value(),
                                      "Message Passing : Message Passing: PID is bigger than pid_t::max()");
-        this->MessageCallback(client_pid.value(), message);
+        auto executed = (*scoped_function)(client_pid.value(), message);
+
+        if (!executed.has_value())
+        {
+            score::mw::log::LogInfo("lola") << "MessagePassingServiceInstance: Message callback scope invalidated, "
+                                             "skipping message processing for client "
+                                          << client_pid.value();
+        }
+
         return {};
     };
 

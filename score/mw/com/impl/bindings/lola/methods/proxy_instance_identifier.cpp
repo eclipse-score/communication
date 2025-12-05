@@ -15,7 +15,7 @@
 namespace score::mw::com::impl::lola
 {
 
-bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs)
+bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs) noexcept
 {
     return ((lhs.process_identifier == rhs.process_identifier) &&
             (lhs.proxy_instance_counter == rhs.proxy_instance_counter));

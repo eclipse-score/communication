@@ -13,6 +13,8 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
+#include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_event.h"
@@ -40,16 +42,12 @@ namespace
 
 using namespace ::testing;
 
-const std::string kServiceInstanceUsageFilePath{"/test_service_instance_usage_file_path"};
-const std::int32_t kServiceInstanceUsageFileDescriptor{7890};
-
 const os::Fcntl::Operation kNonBlockingExclusiveLockOperation =
     os::Fcntl::Operation::kLockExclusive | score::os::Fcntl::Operation::kLockNB;
 const os::Fcntl::Operation kUnlockOperation = os::Fcntl::Operation::kUnLock;
 
 std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> kEmptyRegisterShmObjectTraceCallback{};
 
-const ElementFqId kDummyElementFqId{1U, 2U, 3U, ServiceElementType::EVENT};
 void* const kDummyShmObjectBaseAddress = reinterpret_cast<void*>(static_cast<uintptr_t>(1000));
 const memory::shared::ISharedMemoryResource::FileDescriptor kDummyShmObjectFileDescriptor{55};
 
@@ -70,14 +68,6 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
 
     SkeletonBinding::SkeletonEventBindings events_{};
     SkeletonBinding::SkeletonFieldBindings fields_{};
-
-    ServiceDataControl service_data_control_qm_{
-        CreateServiceDataControlWithEvent(kDummyElementFqId, QualityType::kASIL_QM)};
-    ServiceDataControl service_data_control_asil_b_{
-        CreateServiceDataControlWithEvent(kDummyElementFqId, QualityType::kASIL_B)};
-
-    ServiceDataStorage service_data_storage_{
-        CreateServiceDataStorageWithEvent<test::TestSampleType>(kDummyElementFqId)};
 
     mock_binding::SkeletonEvent<std::string> mock_event_binding_{};
 };
@@ -103,22 +93,13 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, StopOfferCallsUnregisterShmObjectT
     // ... and a skeleton constructed from it
     InitialiseSkeleton(GetValidASILInstanceIdentifier());
 
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
     // and that flocking the service instance usage marker file succeeds in PrepareOffer and in PrepareStopOffer
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
         .Times(2)
         .WillRepeatedly(Return(score::cpp::blank{}));
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kUnlockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kUnlockOperation))
         .Times(2)
         .WillRepeatedly(Return(score::cpp::blank{}));
-
-    // When trying to create QM control and data segments succeed
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectControlSegmentCreated(QualityType::kASIL_B);
-    ExpectDataSegmentCreated();
 
     // Then the shared memory will be cleaned up in PrepareStopOffer
     EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kControlChannelPathQm));
@@ -144,9 +125,6 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferFailsOnShmCre
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
     // But when trying to create a control qm segment fails by returning a nullptr
     EXPECT_CALL(shared_memory_factory_mock_,
                 Create(test::kControlChannelPathQm, _, _, WritablePermissionsMatcher(), false))
@@ -164,11 +142,9 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferFailsOnShmCre
     // Given a Skeleton constructed from a valid identifier referencing an ASIL B deployment
     InitialiseSkeleton(GetValidASILInstanceIdentifier());
 
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
+    // Expecting that creating QM control segment succeeds
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kControlChannelPathQm, _, _, WritablePermissionsMatcher(), false));
 
     // But when trying to create an ASIL B control segment fails by returning a nullptr
     EXPECT_CALL(shared_memory_factory_mock_,
@@ -186,11 +162,9 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferFailsOnShmCre
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
+    // Expecting that creating control section succeeds
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kControlChannelPathQm, _, _, WritablePermissionsMatcher(), false));
 
     // But when trying to create a data segment fails by returning a nullptr
     EXPECT_CALL(shared_memory_factory_mock_, Create(test::kDataChannelPath, _, _, ReadablePermissionsMatcher(), false))
@@ -218,15 +192,6 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
     InitialiseSkeleton(GetValidInstanceIdentifier());
-
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-
-    // and trying to create a data segment in typed-mem succeeds
-    ExpectDataSegmentCreated(true);
 
     EXPECT_CALL(*data_shared_memory_resource_mock_, IsShmInTypedMemory()).WillOnce(Return(true));
 
@@ -262,16 +227,7 @@ TEST_F(SkeletonTestSharedMemoryCreationFixture, PrepareServiceOfferWithTraceCall
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidInstanceIdentifier());
-
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-
-    // and trying to create a data segment in typed-mem succeeds
-    ExpectDataSegmentCreated(true);
+    InitialiseSkeleton(GetValidInstanceIdentifier()).WithNoConnectedProxy();
 
     // and that the shared memory resource cannot be created in typed memory
     EXPECT_CALL(*data_shared_memory_resource_mock_, IsShmInTypedMemory()).WillOnce(Return(false));
@@ -291,18 +247,28 @@ using SkeletonPrepareOfferFixture = SkeletonTestMockedSharedMemoryFixture;
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferCreatesSharedMemoryIfOpeningAndFLockingServiceUsageMarkerFileSucceeds)
 {
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidInstanceIdentifier());
+    InitialiseSkeleton(GetValidASILInstanceIdentifier());
 
     // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
+    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
 
     // and that flocking the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileFlockAcquired(kServiceInstanceUsageFileDescriptor);
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kNonBlockingExlusiveLockOperation))
+        .WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kUnlockOperation))
+        .WillOnce(Return(score::cpp::blank{}));
 
-    // When trying to create QM control and data segments succeed
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectDataSegmentCreated();
+    // Expecting that QM and ASIL-B control sections and a data section are successfully created
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kControlChannelPathQm, _, _, WritablePermissionsMatcher(), false));
+    EXPECT_CALL(shared_memory_factory_mock_,
+                Create(test::kControlChannelPathAsilB, _, _, WritablePermissionsMatcher(), false));
+    EXPECT_CALL(shared_memory_factory_mock_, Create(test::kDataChannelPath, _, _, ReadablePermissionsMatcher(), false))
+        .WillOnce(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                std::invoke(initialize_callback, data_shared_memory_resource_mock_);
+                return data_shared_memory_resource_mock_;
+            }));
 
     // Then PrepareOffer will succeed
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
@@ -312,22 +278,20 @@ TEST_F(SkeletonPrepareOfferFixture,
        PrepareOfferRemovesOldSharedMemoryArtefactsIfOpeningAndFLockingServiceUsageMarkerFileSucceeds)
 {
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidInstanceIdentifier());
+    InitialiseSkeleton(GetValidInstanceIdentifier()).WithNoConnectedProxy();
 
     // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
+    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
 
     // and that flocking the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileFlockAcquired(kServiceInstanceUsageFileDescriptor);
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kNonBlockingExlusiveLockOperation))
+        .WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kUnlockOperation))
+        .WillOnce(Return(score::cpp::blank{}));
 
     EXPECT_CALL(shared_memory_factory_mock_, RemoveStaleArtefacts(test::kControlChannelPathQm));
     EXPECT_CALL(shared_memory_factory_mock_, RemoveStaleArtefacts(test::kControlChannelPathAsilB));
     EXPECT_CALL(shared_memory_factory_mock_, RemoveStaleArtefacts(test::kDataChannelPath));
-
-    // When trying to create QM control and data segments succeed
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectDataSegmentCreated();
 
     // Then PrepareOffer will succeed
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
@@ -339,9 +303,9 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningServiceUsageMarker
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
     // and that opening the service instance usage marker file fails
-    EXPECT_CALL(*partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
-        .WillOnce(Return(kServiceInstanceUsageFilePath));
-    EXPECT_CALL(*fcntl_mock_, open(StrEq(kServiceInstanceUsageFilePath.data()), _, _))
+    EXPECT_CALL(partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
+        .WillOnce(Return(test::kServiceInstanceUsageFilePath));
+    EXPECT_CALL(*fcntl_mock_, open(StrEq(test::kServiceInstanceUsageFilePath.data()), _, _))
         .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EPERM))));
 
     // Then PrepareOffer will fail
@@ -351,18 +315,18 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningServiceUsageMarker
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemoryIfFLockingServiceUsageMarkerFilefails)
 {
-    auto& event_control_qm = GetEventControlFromServiceDataControl(kDummyElementFqId, service_data_control_qm_);
-    auto& event_control_asil_b = GetEventControlFromServiceDataControl(kDummyElementFqId, service_data_control_asil_b_);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(service_data_control_qm_ != nullptr);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(service_data_control_asil_b_ != nullptr);
+    auto& event_control_qm = GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_);
+    auto& event_control_asil_b =
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_asil_b_);
 
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
     InitialiseSkeleton(GetValidASILInstanceIdentifier());
 
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
     // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kNonBlockingExlusiveLockOperation))
+        .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
 
     // and given that QM and ASIL B control segments contain (previously) allocated slots that are in writing
     auto first_allocation_qm = event_control_qm.data_control.AllocateNextSlot();
@@ -371,11 +335,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
     auto first_allocation_asil_b = event_control_asil_b.data_control.AllocateNextSlot();
     ASSERT_TRUE(first_allocation_asil_b.IsValid());
 
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-    ExpectControlSegmentOpened(QualityType::kASIL_B, service_data_control_asil_b_);
-
-    // and when opening the data segment
-    ExpectDataSegmentOpened(service_data_storage_);
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _));
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathAsilB, true, _));
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _))
+        .WillOnce(Return(data_shared_memory_resource_mock_));
 
     // Then PrepareOffer will succeed and clean up the service data controls
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
@@ -393,24 +356,13 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningExistingSharedMemoryDataFails)
 {
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidInstanceIdentifier());
+    InitialiseSkeleton(GetValidInstanceIdentifier()).WithAlreadyConnectedProxy();
 
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
+    // Expecting that the QM control section is successfully opened
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _));
 
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    // When trying to open QM control segment succeeds
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-
-    // and the path builder returns a valid path for the data shared memory
-    EXPECT_CALL(*shm_path_builder_mock_, GetDataChannelShmName(test::kDefaultLolaInstanceId))
-        .WillOnce(Return("dummy_data_path"));
-
-    // But when trying to open the data segment fails by returning a nullptr
-    EXPECT_CALL(shared_memory_factory_mock_, Open("dummy_data_path", true, _)).WillOnce(Return(nullptr));
+    // But expecting that when trying to open the data segment fails by returning a nullptr
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _)).WillOnce(Return(nullptr));
 
     // Then PrepareOffer will fail
     EXPECT_FALSE(
@@ -420,21 +372,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningExistingSharedMemo
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningExistingSharedMemoryControlQmFails)
 {
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidInstanceIdentifier());
+    InitialiseSkeleton(GetValidInstanceIdentifier()).WithAlreadyConnectedProxy();
 
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    // and the path builder returns a valid path for the control qm shared memory
-    EXPECT_CALL(*shm_path_builder_mock_, GetControlChannelShmName(test::kDefaultLolaInstanceId, QualityType::kASIL_QM))
-        .WillOnce(Return("dummy_control_path_qm"));
-
-    // But when trying to create a control qm segment fails by returning a nullptr
-    EXPECT_CALL(shared_memory_factory_mock_, Open("dummy_control_path_qm", true, _)).WillOnce(Return(nullptr));
+    // Expecting that when trying to open a control qm segment fails by returning a nullptr
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _)).WillOnce(Return(nullptr));
 
     // Then PrepareOffer will fail
     EXPECT_FALSE(
@@ -444,19 +385,12 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningExistingSharedMemo
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningExistingSharedMemoryControlAsilBFails)
 {
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidASILInstanceIdentifier());
+    InitialiseSkeleton(GetValidASILInstanceIdentifier()).WithAlreadyConnectedProxy();
 
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
+    // Expecting that the QM control section is successfully opened
+    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _));
 
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    // When trying to open QM control segment succeeds
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-
-    // But when trying to create a control asil b segment fails by returning a nullptr
+    // But expecting that when trying to create a control asil b segment fails by returning a nullptr
     EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathAsilB, true, _)).WillOnce(Return(nullptr));
 
     // Then PrepareOffer will fail
@@ -469,29 +403,16 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillUpdateThePidInTheDataSegment
     const pid_t pid{7654};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidInstanceIdentifier());
-
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
+    InitialiseSkeleton(GetValidInstanceIdentifier()).WithAlreadyConnectedProxy();
 
     // and that the PID will be retrieved from the lola runtime
     EXPECT_CALL(lola_runtime_mock_, GetPid()).WillOnce(Return(pid));
-
-    // When trying to open QM control segment succeeds
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-
-    // and when opening the data segment succeeds
-    ExpectDataSegmentOpened(service_data_storage_);
 
     // Then PrepareOffer will succeed and clean up the service data controls
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // and the ServiceDataStorage contains the PID returned by the lola runtime
-    EXPECT_EQ(service_data_storage_.skeleton_pid_, pid);
+    EXPECT_EQ(service_data_storage_->skeleton_pid_, pid);
 }
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCallbackWhenOpeningSharedMemory)
@@ -504,20 +425,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCa
         register_shm_object_trace_callback{};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(GetValidASILInstanceIdentifier());
-
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-    ExpectControlSegmentOpened(QualityType::kASIL_B, service_data_control_asil_b_);
-
-    // and when opening the data segment
-    ExpectDataSegmentOpened(service_data_storage_);
+    InitialiseSkeleton(GetValidASILInstanceIdentifier()).WithAlreadyConnectedProxy();
 
     ON_CALL(*memory_resource_mock, IsShmInTypedMemory()).WillByDefault(Return(true));
     ON_CALL(*memory_resource_mock, GetFileDescriptor()).WillByDefault(Return(kDummyShmObjectFileDescriptor));
@@ -540,20 +448,7 @@ TEST_F(SkeletonPrepareOfferDeathTest, CallingPrepareOfferWhenLolaRuntimeCannotBe
 {
     auto test_function = [this] {
         // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-        InitialiseSkeleton(GetValidInstanceIdentifier());
-
-        // and that opening the service instance usage marker file succeeds
-        ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                             kServiceInstanceUsageFileDescriptor);
-
-        // and that flocking the service instance usage marker file fails
-        ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-        // and that trying to open QM control segment succeeds
-        ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-
-        // and that opening the data segment succeeds
-        ExpectDataSegmentOpened(service_data_storage_);
+        InitialiseSkeleton(GetValidInstanceIdentifier()).WithAlreadyConnectedProxy();
 
         // and that when trying to get the Lola runtime from the runtime a nullptr is returned
         ON_CALL(runtime_mock_, GetBindingRuntime(_)).WillByDefault(Return(nullptr));
@@ -573,21 +468,13 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferRemovesSharedMemoryIfUsa
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
     // and that flocking the service instance usage marker file succeeds in PrepareOffer and in PrepareStopOffer
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
         .Times(2)
         .WillRepeatedly(Return(score::cpp::blank{}));
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kUnlockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kUnlockOperation))
         .Times(2)
         .WillRepeatedly(Return(score::cpp::blank{}));
-
-    // When trying to create QM control and data segments succeed
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectDataSegmentCreated();
 
     // Then the shared memory will be cleaned up in PrepareStopOffer
     EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kControlChannelPathQm));
@@ -618,29 +505,25 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferRemovesUsageMarkerFileIf
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
     // and that opening the service instance usage marker file succeeds
-    EXPECT_CALL(*partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
-        .WillOnce(Return(kServiceInstanceUsageFilePath));
-    EXPECT_CALL(*fcntl_mock_, open(StrEq(kServiceInstanceUsageFilePath.data()), _, _))
-        .WillOnce(Return(kServiceInstanceUsageFileDescriptor));
+    EXPECT_CALL(partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
+        .WillOnce(Return(test::kServiceInstanceUsageFilePath));
+    EXPECT_CALL(*fcntl_mock_, open(StrEq(test::kServiceInstanceUsageFilePath.data()), _, _))
+        .WillOnce(Return(test::kServiceInstanceUsageFileDescriptor));
 
     // and that flocking the service instance usage marker file succeeds in PrepareOffer and in PrepareStopOffer
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
         .Times(2)
         .WillRepeatedly(Return(score::cpp::blank{}));
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kUnlockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kUnlockOperation))
         .Times(2)
         .WillRepeatedly(Return(score::cpp::blank{}));
-
-    // When trying to create QM control and data segments succeed
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectDataSegmentCreated();
 
     // Then the shared memory will be cleaned up in PrepareStopOffer
     EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kControlChannelPathQm));
     EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kDataChannelPath));
 
     // and the service usage marker file will be closed in PrepareStopOffer
-    EXPECT_CALL(*unistd_mock_, close(kServiceInstanceUsageFileDescriptor))
+    EXPECT_CALL(*unistd_mock_, close(test::kServiceInstanceUsageFileDescriptor))
         .WillOnce(InvokeWithoutArgs(
             [&was_usage_marker_file_closed]() mutable noexcept -> score::cpp::expected_blank<score::os::Error> {
                 was_usage_marker_file_closed = true;
@@ -663,25 +546,17 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDoesNotRemoveSharedMemor
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
     // and that flocking the service instance usage marker file fails in PrepareStopOffer
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
         .WillRepeatedly(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
 
     // but succeeds in PrepareOffer
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
         .WillOnce(Return(score::cpp::blank{}))
         .RetiresOnSaturation();
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kUnlockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kUnlockOperation))
         .WillOnce(Return(score::cpp::blank{}))
         .RetiresOnSaturation();
-
-    // When trying to create QM control and data segments succeed
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectDataSegmentCreated();
 
     // Then the shared memory will be not be cleaned up in PrepareStopOffer
     EXPECT_CALL(shared_memory_factory_mock_, Remove(test::kControlChannelPathQm)).Times(0);
@@ -715,32 +590,28 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDoesNotRemoveUsageMarker
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
     // and that opening the service instance usage marker file succeeds
-    EXPECT_CALL(*partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
-        .WillOnce(Return(kServiceInstanceUsageFilePath));
-    EXPECT_CALL(*fcntl_mock_, open(StrEq(kServiceInstanceUsageFilePath.data()), _, _))
-        .WillOnce(Return(kServiceInstanceUsageFileDescriptor));
+    EXPECT_CALL(partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
+        .WillOnce(Return(test::kServiceInstanceUsageFilePath));
+    EXPECT_CALL(*fcntl_mock_, open(StrEq(test::kServiceInstanceUsageFilePath.data()), _, _))
+        .WillOnce(Return(test::kServiceInstanceUsageFileDescriptor));
 
     // and that flocking the service instance usage marker file fails in PrepareStopOffer
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
         .WillRepeatedly(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
 
     // but succeeds in PrepareOffer
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kNonBlockingExclusiveLockOperation))
         .WillOnce(Return(score::cpp::blank{}))
         .RetiresOnSaturation();
-    EXPECT_CALL(*fcntl_mock_, flock(kServiceInstanceUsageFileDescriptor, kUnlockOperation))
+    EXPECT_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, kUnlockOperation))
         .WillOnce(Return(score::cpp::blank{}))
         .RetiresOnSaturation();
-
-    // When trying to create QM control and data segments succeed
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectDataSegmentCreated();
 
     // and the service usage marker file will be closed and unlinked when the Skeleton is destructed
     std::weak_ptr<bool> was_usage_marker_file_closed_weak_ptr{was_usage_marker_file_closed};
 
     // and the service usage marker file will be closed when the Skeleton is destructed
-    EXPECT_CALL(*unistd_mock_, close(kServiceInstanceUsageFileDescriptor))
+    EXPECT_CALL(*unistd_mock_, close(test::kServiceInstanceUsageFileDescriptor))
         .WillOnce(InvokeWithoutArgs(
             [was_usage_marker_file_closed_weak_ptr]() mutable noexcept -> score::cpp::expected_blank<score::os::Error> {
                 if (std::shared_ptr<bool> was_usage_marker_file_closed_shared_ptr =
@@ -842,19 +713,7 @@ class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemo
 TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmRegionWasCreated)
 {
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
-    InitialiseSkeleton(GetValidASILInstanceIdentifier());
-
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileFlockAcquired(kServiceInstanceUsageFileDescriptor);
-
-    // and that control (QM and ASIL-B) and data segments are successfully created
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectControlSegmentCreated(QualityType::kASIL_B);
-    ExpectDataSegmentCreated();
+    InitialiseSkeleton(GetValidASILInstanceIdentifier()).WithNoConnectedProxy();
 
     // when calling PrepareOffer ... expect, that it succeeds
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
@@ -893,33 +752,22 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
                                                      : GetValidASILInstanceIdentifierWithField()};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(instance_identifier);
-
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    // and that the control (QM and ASIL-B) and data segments are successfully opened
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-    ExpectControlSegmentOpened(QualityType::kASIL_B, service_data_control_asil_b_);
-    ExpectDataSegmentOpened(service_data_storage_);
+    InitialiseSkeleton(instance_identifier).WithAlreadyConnectedProxy();
 
     // when calling PrepareOffer ... expect, that it succeeds
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // when the event is registered with the skeleton
     auto [typed_event_data_storage_ptr, event_data_control_composite] =
-        skeleton_->Register<test::TestSampleType>(kDummyElementFqId, test::kDefaultEventProperties);
+        skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the Register call should return pointers to the opened control and data sections in the opened shared
     // memory region
-    auto& event_control_qm = GetEventControlFromServiceDataControl(kDummyElementFqId, service_data_control_qm_);
-    auto& event_control_asil_b = GetEventControlFromServiceDataControl(kDummyElementFqId, service_data_control_asil_b_);
+    auto& event_control_qm = GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_);
+    auto& event_control_asil_b =
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_asil_b_);
     auto& event_data_storage =
-        GetEventStorageFromServiceDataStorage<test::TestSampleType>(kDummyElementFqId, service_data_storage_);
+        GetEventStorageFromServiceDataStorage<test::TestSampleType>(test::kDummyElementFqId, *service_data_storage_);
 
     EXPECT_EQ(&event_data_control_composite.GetQmEventDataControl(), &event_control_qm.data_control);
     ASSERT_TRUE(event_data_control_composite.GetAsilBEventDataControl().has_value());
@@ -931,7 +779,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
 {
     // Given a QM ServiceDataControl which contains a TransactionLogSet with valid transactions
     auto& event_data_control_qm =
-        GetEventControlFromServiceDataControl(kDummyElementFqId, service_data_control_qm_).data_control;
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_).data_control;
     InsertSkeletonTransactionLogWithValidTransactions(event_data_control_qm);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
 
@@ -950,24 +798,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
                                                      : GetValidInstanceIdentifierWithField()};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(instance_identifier);
-
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    // and that QM control segment and data segments are successfully opened
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-    ExpectDataSegmentOpened(service_data_storage_);
+    InitialiseSkeleton(instance_identifier).WithAlreadyConnectedProxy();
 
     // when calling PrepareOffer ... expect, that it succeeds
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // when the event is registered with the skeleton
-    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(kDummyElementFqId, test::kDefaultEventProperties);
+    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the TransactionLog should be rollbacked during construction and removed
     EXPECT_FALSE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
@@ -980,7 +817,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
 
     // Given an Asil B ServiceDataControl which contains a TransactionLogSet with valid transactions
     auto& event_data_control_asil_b =
-        GetEventControlFromServiceDataControl(kDummyElementFqId, service_data_control_asil_b_).data_control;
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_asil_b_).data_control;
     InsertSkeletonTransactionLogWithValidTransactions(event_data_control_asil_b);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b));
 
@@ -999,25 +836,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
                                                      : GetValidASILInstanceIdentifierWithField()};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(instance_identifier);
-
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    // and that the control (QM and ASIL-B) and data segments are successfully opened
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-    ExpectControlSegmentOpened(QualityType::kASIL_B, service_data_control_asil_b_);
-    ExpectDataSegmentOpened(service_data_storage_);
+    InitialiseSkeleton(instance_identifier).WithAlreadyConnectedProxy();
 
     // when calling PrepareOffer ... expect, that it succeeds
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // when the event is registered with the skeleton
-    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(kDummyElementFqId, test::kDefaultEventProperties);
+    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the Asil B TransactionLog will still exist as it was not rolled back
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b));
@@ -1030,7 +855,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
 
     // Given a QM ServiceDataControl which contains a TransactionLogSet with invalid transactions
     auto& event_data_control_qm =
-        GetEventControlFromServiceDataControl(kDummyElementFqId, service_data_control_qm_).data_control;
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_).data_control;
     InsertSkeletonTransactionLogWithInvalidTransactions(event_data_control_qm);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
 
@@ -1049,18 +874,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
                                                      : GetValidInstanceIdentifierWithField()};
 
     // Given a Skeleton constructed from a valid identifier referencing a QM deployment
-    InitialiseSkeleton(instance_identifier);
-
-    // and that opening the service instance usage marker file succeeds
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                         kServiceInstanceUsageFileDescriptor);
-
-    // and that flocking the service instance usage marker file fails
-    ExpectServiceUsageMarkerFileAlreadyFlocked(kServiceInstanceUsageFileDescriptor);
-
-    // and that the QM control and data segments are successfully opened
-    ExpectControlSegmentOpened(QualityType::kASIL_QM, service_data_control_qm_);
-    ExpectDataSegmentOpened(service_data_storage_);
+    InitialiseSkeleton(instance_identifier).WithAlreadyConnectedProxy();
 
     // and that tracing will be disabled
     EXPECT_CALL(tracing_runtime_mock, DisableTracing());
@@ -1069,7 +883,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
     skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
     // when the event is registered with the skeleton
-    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(kDummyElementFqId, test::kDefaultEventProperties);
+    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the TransactionLog should still exist as it was not removed due to the rollback failing
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
@@ -1098,15 +912,6 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventDataSlotsExistAfterEventI
 
     // Given a skeleton with one event "fooEvent" registered
     InitialiseSkeleton(instance_identifier);
-
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-
-    // and trying to create a data segment succeeds
-    ExpectDataSegmentCreated();
 
     // when PrepareOffer the service
     skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
@@ -1148,15 +953,6 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CanAllocateSlotAfterEventIsRegister
     // Given a skeleton with one event "fooEvent" registered
     InitialiseSkeleton(instance_identifier);
 
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-
-    // and trying to create a data segment succeeds
-    ExpectDataSegmentCreated();
-
     // when PrepareOffer the service
     skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
@@ -1194,13 +990,6 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
 
     // Given a skeleton with one event "fooEvent" registered
     InitialiseSkeleton(instance_identifier);
-
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-
-    ExpectDataSegmentCreated();
 
     skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
@@ -1287,15 +1076,6 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     const auto instance_identifier = make_InstanceIdentifier(service_instance_deployment, service_type_depl);
     InitialiseSkeleton(instance_identifier);
 
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-
-    // and trying to create a data segment succeeds
-    ExpectDataSegmentCreated();
-
     // when the service offering is prepared
     skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
@@ -1368,15 +1148,6 @@ TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId
     // Given a skeleton with one event "fooEvent" registered
     InitialiseSkeleton(instance_identifier);
 
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // When trying to create a QM control segment succeeds
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-
-    // and trying to create a data segment succeeds
-    ExpectDataSegmentCreated();
-
     // when PrepareOffer the service
     skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
@@ -1414,15 +1185,6 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
     auto test_function = [this]() noexcept {
         // Given a Skeleton constructed from a valid identifier referencing a QM deployment
         InitialiseSkeleton(GetValidASILInstanceIdentifier());
-
-        // and that opening the service instance usage marker file succeeds
-        ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(kServiceInstanceUsageFilePath,
-                                                             kServiceInstanceUsageFileDescriptor);
-
-        // and that control (QM and ASIL-B) and data segments are successfully created
-        ExpectControlSegmentCreated(QualityType::kASIL_QM);
-        ExpectControlSegmentCreated(QualityType::kASIL_B);
-        ExpectDataSegmentCreated();
 
         EXPECT_TRUE(
             skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
@@ -1491,15 +1253,11 @@ class SkeletonCreateFixture : public Test
 
     InstanceIdentifier instance_identifier_ =
         make_InstanceIdentifier(test::kValidMinimalAsilInstanceDeployment, test::kValidMinimalTypeDeployment);
-    os::MockGuard<os::FcntlMock> fcntl_mock_{};
-    os::MockGuard<os::StatMock> stat_mock_{};
+    os::MockGuard<::testing::NiceMock<os::FcntlMock>> fcntl_mock_{};
+    os::MockGuard<::testing::NiceMock<os::StatMock>> stat_mock_{};
 
-    std::unique_ptr<ShmPathBuilderMock> shm_path_builder_mock_ptr_{std::make_unique<ShmPathBuilderMock>()};
-    std::unique_ptr<PartialRestartPathBuilderMock> partial_restart_path_builder_mock_ptr_{
-        std::make_unique<PartialRestartPathBuilderMock>()};
-
-    ShmPathBuilderMock& shm_path_builder_mock_{*shm_path_builder_mock_ptr_};
-    PartialRestartPathBuilderMock& partial_restart_path_builder_mock_{*partial_restart_path_builder_mock_ptr_};
+    ::testing::NiceMock<ShmPathBuilderMock> shm_path_builder_mock_{};
+    ::testing::NiceMock<PartialRestartPathBuilderMock> partial_restart_path_builder_mock_{};
 
     const std::int32_t existence_marker_file_descriptor_{10U};
     const std::int32_t usage_marker_file_descriptor_{11U};
@@ -1507,11 +1265,12 @@ class SkeletonCreateFixture : public Test
 
 TEST_F(SkeletonCreateFixture, CreateWorks)
 {
-    EXPECT_NE(lola::Skeleton::Create(instance_identifier_,
-                                     filesystem::FilesystemFactory{}.CreateInstance(),
-                                     std::move(shm_path_builder_mock_ptr_),
-                                     std::move(partial_restart_path_builder_mock_ptr_)),
-              nullptr);
+    EXPECT_NE(
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem::FilesystemFactory{}.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
+        nullptr);
 }
 
 TEST_F(SkeletonCreateFixture, CreatingSkeletonWillCreateExistenceMarkerFile)
@@ -1527,10 +1286,11 @@ TEST_F(SkeletonCreateFixture, CreatingSkeletonWillCreateExistenceMarkerFile)
         .WillOnce(Return(existence_marker_file_descriptor_));
 
     // When creating a Skeleton
-    score::cpp::ignore = lola::Skeleton::Create(instance_identifier_,
-                                         filesystem::FilesystemFactory{}.CreateInstance(),
-                                         std::move(shm_path_builder_mock_ptr_),
-                                         std::move(partial_restart_path_builder_mock_ptr_));
+    score::cpp::ignore =
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem::FilesystemFactory{}.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_));
 }
 
 TEST_F(SkeletonCreateFixture, CreatingSkeletonWillTryToLockExistenceMarkerFile)
@@ -1548,18 +1308,20 @@ TEST_F(SkeletonCreateFixture, CreatingSkeletonWillTryToLockExistenceMarkerFile)
         .WillOnce(Return(score::cpp::blank{}));
 
     // When creating a Skeleton
-    score::cpp::ignore = lola::Skeleton::Create(instance_identifier_,
-                                         filesystem::FilesystemFactory{}.CreateInstance(),
-                                         std::move(shm_path_builder_mock_ptr_),
-                                         std::move(partial_restart_path_builder_mock_ptr_));
+    score::cpp::ignore =
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem::FilesystemFactory{}.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_));
 }
 
 TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfAnotherInstanceOfTheSameSkeletonStillExists)
 {
-    auto skeleton_0 = lola::Skeleton::Create(instance_identifier_,
-                                             filesystem::FilesystemFactory{}.CreateInstance(),
-                                             std::move(shm_path_builder_mock_ptr_),
-                                             std::move(partial_restart_path_builder_mock_ptr_));
+    auto skeleton_0 =
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem::FilesystemFactory{}.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_));
     EXPECT_NE(skeleton_0, nullptr);
 
     std::unique_ptr<ShmPathBuilderMock> shm_path_builder_mock_ptr_1{std::make_unique<ShmPathBuilderMock>()};
@@ -1578,11 +1340,12 @@ TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfCreatePartialRestartDirFails
     EXPECT_CALL(filesystem_fake.GetUtils(), CreateDirectories(partial_restart_directory_path_, _))
         .WillOnce(Return(MakeUnexpected(score::filesystem::ErrorCode::kCouldNotCreateDirectory)));
 
-    EXPECT_EQ(lola::Skeleton::Create(instance_identifier_,
-                                     filesystem_fake.CreateInstance(),
-                                     std::move(shm_path_builder_mock_ptr_),
-                                     std::move(partial_restart_path_builder_mock_ptr_)),
-              nullptr);
+    EXPECT_EQ(
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem_fake.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
+        nullptr);
 }
 
 TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfOpeningServiceExistenceMarkerFileFails)
@@ -1590,11 +1353,12 @@ TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfOpeningServiceExistenceMarke
     EXPECT_CALL(*fcntl_mock_, open(StrEq(service_existence_marker_file_path_.data()), _, _))
         .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EPERM))));
 
-    EXPECT_EQ(lola::Skeleton::Create(instance_identifier_,
-                                     filesystem::FilesystemFactory{}.CreateInstance(),
-                                     std::move(shm_path_builder_mock_ptr_),
-                                     std::move(partial_restart_path_builder_mock_ptr_)),
-              nullptr);
+    EXPECT_EQ(
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem::FilesystemFactory{}.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
+        nullptr);
 }
 
 TEST_F(SkeletonCreateFixture, CreateReturnsSkeletonIfExistenceMarkerFileCanBeExclusivelyLocked)
@@ -1604,11 +1368,12 @@ TEST_F(SkeletonCreateFixture, CreateReturnsSkeletonIfExistenceMarkerFileCanBeExc
     ON_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor_, kUnlockOperation))
         .WillByDefault(Return(score::cpp::blank{}));
 
-    EXPECT_NE(lola::Skeleton::Create(instance_identifier_,
-                                     filesystem::FilesystemFactory{}.CreateInstance(),
-                                     std::move(shm_path_builder_mock_ptr_),
-                                     std::move(partial_restart_path_builder_mock_ptr_)),
-              nullptr);
+    EXPECT_NE(
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem::FilesystemFactory{}.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
+        nullptr);
 }
 
 TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfExistenceMarkerFileCannotBeExclusivelyLocked)
@@ -1623,11 +1388,12 @@ TEST_F(SkeletonCreateFixture, CreateReturnsNullPtrIfExistenceMarkerFileCannotBeE
     EXPECT_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor_, kNonBlockingExclusiveLockOperation))
         .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
 
-    EXPECT_EQ(lola::Skeleton::Create(instance_identifier_,
-                                     filesystem::FilesystemFactory{}.CreateInstance(),
-                                     std::move(shm_path_builder_mock_ptr_),
-                                     std::move(partial_restart_path_builder_mock_ptr_)),
-              nullptr);
+    EXPECT_EQ(
+        lola::Skeleton::Create(instance_identifier_,
+                               filesystem::FilesystemFactory{}.CreateInstance(),
+                               std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                               std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
+        nullptr);
 }
 
 using SkeletonCreateDeathTest = SkeletonCreateFixture;
@@ -1638,10 +1404,11 @@ TEST_F(SkeletonCreateDeathTest,
     // Then the program terminates
     const InstanceIdentifier instance_identifier_with_blank_service_instance_deployment = make_InstanceIdentifier(
         test::kValidMinimalQmInstanceDeploymentWithBlankBinding, test::kValidMinimalTypeDeployment);
-    EXPECT_DEATH(score::cpp::ignore = lola::Skeleton::Create(instance_identifier_with_blank_service_instance_deployment,
-                                                      filesystem::FilesystemFactory{}.CreateInstance(),
-                                                      std::move(shm_path_builder_mock_ptr_),
-                                                      std::move(partial_restart_path_builder_mock_ptr_)),
+    EXPECT_DEATH(score::cpp::ignore = lola::Skeleton::Create(
+                     instance_identifier_with_blank_service_instance_deployment,
+                     filesystem::FilesystemFactory{}.CreateInstance(),
+                     std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                     std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
                  ".*");
 }
 
@@ -1652,10 +1419,11 @@ TEST_F(SkeletonCreateDeathTest,
     // Then the program terminates
     const InstanceIdentifier instance_identifier_with_blank_service_instance_deployment = make_InstanceIdentifier(
         test::kValidMinimalQmInstanceDeployment, test::kValidMinimalTypeDeploymentWithBlankBinding);
-    EXPECT_DEATH(score::cpp::ignore = lola::Skeleton::Create(instance_identifier_with_blank_service_instance_deployment,
-                                                      filesystem::FilesystemFactory{}.CreateInstance(),
-                                                      std::move(shm_path_builder_mock_ptr_),
-                                                      std::move(partial_restart_path_builder_mock_ptr_)),
+    EXPECT_DEATH(score::cpp::ignore = lola::Skeleton::Create(
+                     instance_identifier_with_blank_service_instance_deployment,
+                     filesystem::FilesystemFactory{}.CreateInstance(),
+                     std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+                     std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
                  ".*");
 }
 

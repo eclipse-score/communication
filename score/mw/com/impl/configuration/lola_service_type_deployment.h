@@ -16,12 +16,13 @@
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_event_id.h"
 #include "score/mw/com/impl/configuration/lola_field_id.h"
+#include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_id.h"
 
 namespace score::mw::com::impl
 {
 
-using LolaServiceTypeDeployment = BindingServiceTypeDeployment<LolaEventId, LolaFieldId, LolaServiceId>;
+using LolaServiceTypeDeployment = BindingServiceTypeDeployment<LolaEventId, LolaFieldId, LolaMethodId, LolaServiceId>;
 
 }  // namespace score::mw::com::impl
 

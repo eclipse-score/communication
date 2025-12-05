@@ -73,7 +73,7 @@ class SkeletonBase
     /// invocations with kEvent as default value. See [SWS_CM_00301] for the type definition and [SWS_CM_00198] for more
     /// details on the behavior
     SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding,
-                 const InstanceIdentifier instance_id,
+                 InstanceIdentifier instance_id,
                  MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent);
 
     virtual ~SkeletonBase();

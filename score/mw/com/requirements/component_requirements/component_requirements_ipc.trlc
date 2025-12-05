@@ -10,11 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-package com
+package Communication
 
 import ScoreReq
-
-import Communication
 
 section "com" {
 
@@ -1924,7 +1922,7 @@ section "com" {
                     description = '''The {{InstanceIdentifier}}
                     class shall be copy-constructible as well as being copy-assignable.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.DataLoss@1]
                     version = 1
                 }
 
@@ -1933,7 +1931,7 @@ section "com" {
                     description = '''The {{InstanceIdentifier}}
                     class shall be move-constructible as well as being move-assignable.'''
                     safety = ScoreReq.Asil.B
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForProgrammingLanguageIdioms@1, Communication.SupportForMultipleProgrammingLanguages@1]
                     version = 1
                 }
 
@@ -2074,7 +2072,7 @@ section "com" {
 
                 Thread-safety: {{ResolveInstanceIDs}} shall be thread-safe (opposed to the general requirement Thread-safety of methods/functions of Public API)'''
                 safety = ScoreReq.Asil.B
-                derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                derived_from = [Communication.DeploymentConfigurationAtRuntime@1]
                 version = 1
             }
         }
@@ -2090,7 +2088,7 @@ section "com" {
 
             {{{static bmw::Result<MyClass::Create(/ construction arguments /) noexcept;}}}'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ErrorHandling@1, Communication.SupportForProgrammingLanguageIdioms@1]
             version = 1
         }
 
@@ -2110,7 +2108,7 @@ section "com" {
 
             *  {{Subscribe()}}different from the value for the current subscription, then  shall return {{bmw::result::ErrorCode}} containing the value {{ComErrc::kMaxSampleCountNotRealizable}} .a '''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2142,7 +2140,7 @@ section "com" {
 
             {{SetReceiveHandler}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.EventType@1]
             version = 1
         }
 
@@ -2154,7 +2152,7 @@ section "com" {
 
             {{UnsetReceiveHandler}} shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.EventType@1]
             version = 1
         }
 
@@ -2165,7 +2163,7 @@ section "com" {
 
             {{GetFreeSampleCount}} .shall adhere to the re-entrancy and thread-safety specifications described in default-cursor Re-entrancy and Thread-safety'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2175,7 +2173,7 @@ section "com" {
 
             {{GetNumNewSamplesAvailable}} .shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2201,7 +2199,7 @@ section "com" {
 
             * no new data samples available from underlying receive buffers.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2209,7 +2207,7 @@ section "com" {
         ScoreReq.CompReq BehaviourOfOfferService {
             description = '''When {{OfferService}} has returned, the service instance shall be visible to potential consumers such that they are able to find it via a call to {{FindService}} or {{StartFindService}} on any {{Proxy}} or {{GenericProxy}}.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ServiceDiscovery@1]
             version = 1
         }
 
@@ -2223,7 +2221,7 @@ section "com" {
 
             *  which are currently processing a service method call will return a failure in the method call.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ServiceDiscovery@1]
             version = 1
         }
 
@@ -2231,7 +2229,7 @@ section "com" {
         ScoreReq.CompReq ReturnValueOfSuccessfulGetNewSamples {
             description = '''On success, {{GetNewSamples}} will return the {{receiver}}{{GetNewSamples}}number of data samples that were passed to the  function (that was passed to {{GetNewSamples}}) in the context of the  call.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2241,7 +2239,7 @@ section "com" {
 
             {{{void(mw::com::SamplePtr<SampleType>)}}}'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2302,7 +2300,7 @@ section "com" {
 
             * InstanceIdentifier}} is described in InstanceIdentifier Correspondence to Service Instances'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ServiceDiscovery@1]
             version = 1
         }
 
@@ -2322,7 +2320,7 @@ section "com" {
 
             Whenever the availability of available service instances changes (i.e. new instances showing up, previous instances offering stopped), the given {{FindServiceHandler}} gets called with the current list of available service instances, until {{StopFindService}} (See Proxy StopFindService / GenericProxy StopFindService) has been called with the returned {{FindServiceHandle}}.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ServiceDiscovery@1]
             version = 1
         }
 
@@ -2338,7 +2336,7 @@ section "com" {
 
             *  Calls to SubscriptionStateChangeHandler with kNotSubscribed'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2384,7 +2382,7 @@ section "com" {
 
             {{UnsetSubscriptionStateChangeHandler}} shall fulfill the following requirement: Explicit Lifetime ending by API calls.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ProducerConsumerPattern@1]
             version = 1
         }
 
@@ -2403,7 +2401,7 @@ section "com" {
             Note. In certain cases, the error handling of {{Update}} may be deferred according to Deferring Initial Value Update Error Handling to OfferService
             '''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.EventType@1]
             version = 1
         }
 
@@ -2414,7 +2412,7 @@ section "com" {
 
             Note. In certain cases, the error handling of {{Update}} may be deferred according to Deferring Initial Value Update Error Handling to OfferService.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ZeroCopy@1]
             version = 1
         }
 
@@ -2437,7 +2435,7 @@ section "com" {
             {{OfferService}}
              is called on the  containing the  the handling of an error from the  call, and subsequently the returning of the error code, may be deferred to the  call.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ErrorHandling@1]
             version = 1
         }
     }
@@ -2448,7 +2446,7 @@ section "com" {
         ScoreReq.CompReq CheckTheUidOfTheProducer {
             description = '''A consumer consuming a provided service instance in the role of a proxy shall verify, whether the UID of the service instance provider matches its configured expectation. If the UID of the provider does not match the expectation, the consumer shall reject the communication with this provided service instance.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SafeCommunication@1]
             version = 1
         }
 
@@ -2472,7 +2470,7 @@ section "com" {
 
             In order to operate LoLa in parallel to any adaptive AUTOSAR Stack, we need to ensure, that there are no type clashes and therefore we use a distinct/separate namespace.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2483,7 +2481,7 @@ section "com" {
             Note:
             Only this way we can ensure zero-copy capabilities.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2495,7 +2493,7 @@ section "com" {
 
             This way no blocking communication needs to be implemented via Shared Memory. Easing FFI argumentation.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2503,7 +2501,7 @@ section "com" {
         ScoreReq.CompReq UserDataShallBeProvidedInASeparateReadOnlySharedMemorySegment {
             description = '''User data (see User data shall be exchanged via Shared Memory) shall be provided in a separate read-only shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2511,7 +2509,7 @@ section "com" {
         ScoreReq.CompReq OneSharedMemorySegmentPerASILLevelForControlData {
             description = '''For each communication channel a different shared memory segment shall be used per ASIL.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2524,7 +2522,7 @@ section "com" {
             Note:
             It might be necessary to add some further meta information of the shared memory segment  into it. So this does not indicate that the whole shared memory segment is split only into slots.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2532,7 +2530,7 @@ section "com" {
         ScoreReq.CompReq TheNumberOfSlotsShallBeConfigurable {
             description = '''The number of available slots (defined here: The shared memory segments shall be divided into slots) shall be configurable.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2543,7 +2541,7 @@ section "com" {
             Note:
             A maximum limit of elements needs to be given and a data structure must not reallocate during sample assembly. Otherwise we might run out of memory due to fragmentation, even with more advanced allocation schemes.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2551,7 +2549,7 @@ section "com" {
         ScoreReq.CompReq LolaSharedMemorySegmentsUsedByMwComShallStartWithPrefixLola {
             description = '''Shared Memory segments used by mw::com (aka LoLa) shall start with prefix `lola`'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2561,7 +2559,7 @@ section "com" {
 
             Underlying files shall only be finally removed from the file-system once no consumer access them anymore.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2573,7 +2571,7 @@ section "com" {
 
             This name might be subject to calculation by deployment variables. e.g. a service id or instance id'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2581,7 +2579,7 @@ section "com" {
         ScoreReq.CompReq ThereShallBeOneTripletOfSharedMemorySegmentsPerServiceInstance {
             description = '''The shared memory segments described in The shared memory segments shall be divided into slots and One shared memory segment per ASIL level for control data shall exist per service instance.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2589,7 +2587,7 @@ section "com" {
         ScoreReq.CompReq SharedMemorySegmentsShallNotBeMappedToAFixedVirtualAddress {
             description = '''Shared Memory segments shall not be mapped to a fixed virtual address.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2597,7 +2595,7 @@ section "com" {
         ScoreReq.CompReq OnlyOffsetPointerWithinSharedMemorySegments {
             description = '''There shall be no usage of any other pointer type then offset pointer (aka fancy pointer, aka relative pointer) within a shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2605,7 +2603,7 @@ section "com" {
         ScoreReq.CompReq OnlyConfiguredUidsShallHaveAccessToTheLoLaSharedMemorySegments {
             description = '''It shall be configurable which user ids have access to data and control shared memory segments.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2615,7 +2613,7 @@ section "com" {
 
             Active bound checking referes to an active check, that the calculated target pointer is within the bounds of the mapped shared memory segment.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2623,7 +2621,7 @@ section "com" {
         ScoreReq.CompReq SychronizingSharedMemoryRegionsShallEnsureWaitFreedom {
             description = '''The synchronization between data and control segments shall ensure wait-freedom.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2631,7 +2629,7 @@ section "com" {
         ScoreReq.CompReq SubscriptionHandlingShallBeImplementedViaMessagePassing {
             description = '''Subscription handling shall be implemented via Message Passing'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2639,7 +2637,7 @@ section "com" {
         ScoreReq.CompReq EventNotificationsShallBeImplementedViaMessagePassing {
             description = '''Event Notifications shall be implemented via Message Passing'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2647,7 +2645,7 @@ section "com" {
         ScoreReq.CompReq OneMessagePassingReceivePortPerASILLevelPerProcess {
             description = '''There shall exist one message passing receive port for LoLa communication per ASIL per process'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2655,7 +2653,7 @@ section "com" {
         ScoreReq.CompReq EachMessagePassingPortShallUseACustomThread {
             description = '''Each message passing port (see One message passing receive port per ASIL-Level per process) shall use a custom thread.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2663,7 +2661,7 @@ section "com" {
         ScoreReq.CompReq RegisterACallbackForAllExchangeMessages {
             description = '''It shall be possible for all notifications (exchanged via message passing) to register a callback.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2671,7 +2669,7 @@ section "com" {
         ScoreReq.CompReq RegisteredCallbacksForMessagesShallBeInvokedOfTheRespectiveWaitingThread {
             description = '''A user shall be able to register callbacks that are invoked on the reception of messages. These callbacks shall be invoked in the respective waiting thread.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2679,7 +2677,7 @@ section "com" {
         ScoreReq.CompReq AControlSlotShallContainAllNecessaryDataInformationForSynchronizingDataAccess {
             description = '''A control slot shall contain all necessary data information for synchronizing data access'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2687,7 +2685,7 @@ section "com" {
         ScoreReq.CompReq AProducerShallAlwaysBeAbleToStoreNewData {
             description = '''A producer shall always be able to store new data'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2695,7 +2693,7 @@ section "com" {
         ScoreReq.CompReq OnContractViolationQmCommunicationForTheAffectedServiceInstanceShallBeWithdrawn {
             description = '''On contract violation, QM communication for the affected service instance shall be withdrawn'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SafeCommunication@1]
             version = 1
         }
 
@@ -2703,7 +2701,7 @@ section "com" {
         ScoreReq.CompReq StopOfferingServiceDuringServiceObjectDestruction {
             description = '''If, during destruction of an object that acts as a middleware service, the service is still in an offered state, the service offering shall be stopped.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ServiceDiscovery@1]
             version = 1
         }
 
@@ -2727,7 +2725,7 @@ section "com" {
 
             This rule is designed in a way to assure, that all consumers can hold up to their used "maxSampleCount" in subscription for an arbitrary timespan in parallel!'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
 
@@ -2739,7 +2737,7 @@ section "com" {
 
             *  or, when the API is called inside an "Active Subscription" but the current subscription state is {{kSubscriptionPending}}, e.g. if the provider has gone down, and the binding is not able to support the API call in this state.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ErrorHandling@1]
             version = 1
         }
 
@@ -2747,7 +2745,7 @@ section "com" {
         ScoreReq.CompReq ReturnCodeForBindingFailures {
             description = '''Any signature in the public API that has the possiblity of returning an error code (e.g. bmw::Result, bmw::ResultBlank) is allowed to return{{bmw::result::ErrorCode}}{{mw::com::ComErrorDomain}} and the value is set to {{kBindingFailure}}, when any failure occurs in the binding. a  where the error domain is set to '''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.ErrorHandling@1]
             version = 1
         }
 
@@ -2773,7 +2771,7 @@ section "com" {
 
             Note 2: Generally an {{un-registration API}} in {{mw::com}} is a void function, since it is unexpected, that un-registering can fail. If for some reason un-registering fails, it will be rated as a severe internal error leading to a {{std::terminate()}} call.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SafeCommunication@1]
             version = 1
         }
 
@@ -2785,7 +2783,7 @@ section "com" {
 
             Note: This could mean, that the call to the {{destructor}} may block for some time or - in worst case - forever in case a user provided callback itself blocks/runs forever.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SafeCommunication@1]
             version = 1
         }
 
@@ -2793,7 +2791,7 @@ section "com" {
         ScoreReq.CompReq SampleAvailabilityAfterEventReceivedHandlerCalled {
             description = '''{{mw::com}} shall assure, that the next call to {{GetNewSamples}} (ProxyEvent GetNewSamples or GenericProxyEvent GetNewSamples or ProxyField GetNewSamples) – after an Event Receive Handler has been called for a given event or field instance – will lead to at least one call to callback F with a new sample.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+            derived_from = [Communication.SupportForTimeBasedArchitecture@1]
             version = 1
         }
     }
@@ -2940,7 +2938,7 @@ section "com" {
                 ScoreReq.CompReq IgnoreUnsupportedTracePointTypes {
                     description = '''Trace-points within the trace filter configuration, which are enabled, but are of a type, which isn't supported by {{mw::com}}/{{LoLa}}, shall be ignored.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -2948,7 +2946,7 @@ section "com" {
                 ScoreReq.CompReq TraceFilterConfigReferenceToNonExistingTracePoint {
                     description = '''If the Trace Filter Config contains a trace-point, which references an {{ara::com}}/{{mw::com}} artefact (event, field, service-method), which doesn't exist within the application, this trace-point shall be silently ignored.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -2958,7 +2956,7 @@ section "com" {
 
                     Note: The current Trace Filter Config only allows to define trace-points on a service-type level and not on a service-instance level! If within an application multiple instances of service S are deployed, it can be a perfectly valid setup, that the Trace Filter Config has an enabled trace-point for event E of service S, but the application config only enables S.E for instance 1 and 2, but disables it for instance 3!'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
             }
@@ -2969,7 +2967,7 @@ section "com" {
                 ScoreReq.CompReq GenericTraceApiReference {
                     description = '''{{mw::com}}/{{LoLa}} shall use the library/library API under {{/platform/aas/analysis/tracing/library/generic\_trace\_api}} to trace trace-point related information.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -2981,7 +2979,7 @@ section "com" {
 
                     * Error Codes of Non-Recoverable Errors end with {{Fatal}}'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -2993,7 +2991,7 @@ section "com" {
 
                     - and a valid Trace Filter Config has been successfully processed (Processing Trace Filter Config)'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3001,7 +2999,7 @@ section "com" {
                 ScoreReq.CompReq GlobalNonRecoverableErrorLeadsToDeactivationOfIpcTracing {
                     description = '''When any call to an API provided by {{IPC Tracing}} (i.e. any function of {{GenericTraceAPI}}) returns the global non recoverable error: {{kTerminalFatal}}, {{mw::com}}/{{LoLa}} shall deactivate {{IPC Tracing}} (i.e. {{IPC Tracing}} shall be disabled)'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1, Communication.ErrorHandling@1]
                     version = 1
                 }
 
@@ -3017,7 +3015,7 @@ section "com" {
 
                     If the returned {{RegisterClientResult}} contains an error, an log message with severity {{error}} shall be logged and {{IPC Tracing}} shall be disabled.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3033,7 +3031,7 @@ section "com" {
 
                     Note: We estimate an error on {{RegisterTraceDoneCB}} as a non-recoverable, unexpected error.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3043,7 +3041,7 @@ section "com" {
 
                     It shall be stored and used for any later calls to {{GenericTraceAPI}}, which require a {{TraceClientId}} parameter.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3051,7 +3049,7 @@ section "com" {
                 ScoreReq.CompReq TracePointTypeToMwComApiMapping {
                     description = '''The trace point types defined in {{bmw::analysis::tracing::TracePointType}} shall be mapped to {{mw::com}} APIs according to the detailed definitions of these trace points in `GenericTrace API design <broken_link_g/swh/ddad\_platform/tree/master/aas/analysis/tracing/library/design#providerskeleton-side-trace-points>`\_ '''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3067,7 +3065,7 @@ section "com" {
 
                     Note: Currently the Trace Filter Config (Format of Trace Filter Config) does not support the definition of service instance specific trace points! It defines trace points in the context of a service type only, which means that an {{enabled}} trace point will be hit by all service instances of a certain service type within an application using the given Trace Filter Config.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3083,7 +3081,7 @@ section "com" {
 
                     * {{SKEL\_FIELD\_UPD\_A}}'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3093,7 +3091,7 @@ section "com" {
 
                     Note: This means calls to {{SharedMemoryFactory::Create()}} shall be done with parameter {{prefer\_typed\_memory}} set to {{true}}.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3111,7 +3109,7 @@ section "com" {
 
                     {{static RegisterSharedMemoryObjectResult GenericTraceAPI::RegisterShmObject(const TraceClientId client, std::int32\_t shm\_object\_fd)}}'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3119,7 +3117,7 @@ section "com" {
                 ScoreReq.CompReq IgnoringSharedMemoryObjectOnNonRecoverableError {
                     description = '''In case the registration of a shared memory object (Register a shared-memory object) failed with a non-recoverable error (see Distinction between Recoverable and Non-Recoverable Errors) a log message with severity {{warning}} shall be done and this shared-memory object shall be permanently ignored. This means, that any call to {{GenericTraceAPI::Trace}}, which would need to reference this shared-memory object shall be suppressed.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1, Communication.ErrorHandling@1]
                     version = 1
                 }
 
@@ -3129,7 +3127,7 @@ section "com" {
 
                     If this retry still fails, the shared-memory object shall be permanently ignored. This means, that any call to {{GenericTraceAPI::Trace}}, which would need to reference this shared-memory object shall be suppressed.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1, Communication.ErrorHandling@1]
                     version = 1
                 }
 
@@ -3141,7 +3139,7 @@ section "com" {
 
                     shall be called by {{mw::com}}/{{LoLa}} in case the trace point hit belongs to a data emitting trace point (see Definition of trace point types emitting data residing in shared-memory) AND this trace point is enabled as per Trace Filter Config.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3161,7 +3159,7 @@ section "com" {
 
                     In case a further call to {{GenericTraceAPI::Trace()}} would happen according to Call Trace API with data residing in shared-memory, but there are already all configured data samples "in use" for the very same event or field instance, which the {{ShmChunkList}} argument in the call to {{GenericTraceAPI::Trace()}} would refer to, {{mw::com}} shall skip this call to {{GenericTraceAPI::Trace()}} and set a "trace-data-loss flag" (see Global Trace-Data-Loss Flag).'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3169,7 +3167,7 @@ section "com" {
                 ScoreReq.CompReq GeneratingTraceContextId {
                     description = '''{{mw::com}}/{{LoLa}} shall generate a {{TraceContextId}} for calls to the {{GenericTraceAPI::Trace()}} API for data residing in shared-memory (see Call Trace API with data residing in shared-memory) in a way, that this {{TraceContextId}} allows to identify the marked shared memory data (see Mark shared-memory data as "in use" during Trace() call).'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3191,7 +3189,7 @@ section "com" {
 
                     shall be called by {{mw::com}}/{{LoLa}} in case the general conditions to call {{GenericTraceAPI::Trace()}} are met (see When to call Trace()) for the trace point being hit AND the trace point belongs NOT to a data emitting trace point (see Definition of trace point types emitting data residing in shared-memory).'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3199,7 +3197,7 @@ section "com" {
                 ScoreReq.CompReq ParameterMetaInfoVariantUsedInTraceCalls {
                     description = '''The parameter {{meta\_info}} of type {{MetaInfoVariants::type}} in calls to {{GenericTraceAPI::Trace()}} shall be set to variant {{AraComMetaInfo}}'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3219,7 +3217,7 @@ section "com" {
 
                     * {{PROXY\_FIELD\_SAMPLE\_CB}}'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3227,7 +3225,7 @@ section "com" {
                 ScoreReq.CompReq DetermineTracePointDataId {
                     description = '''The value used for the {{TracePointDataId}}here, shall be the timestamp of the event/field accessed in the related trace points, which is stored in the corresponding {{mw::com}}/{{LoLa}} control slot of the data.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3239,7 +3237,7 @@ section "com" {
 
                     * ServiceInstanceElement:'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3357,7 +3355,7 @@ section "com" {
 
                     Note: Reference to the underlying concept in the design of the {{Generic Trace API}} is `here <broken_link_g/swh/ddad\_platform/blob/master/aas/analysis/tracing/library/design/README.md#loss-of-trace-data>`\_ .'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3365,7 +3363,7 @@ section "com" {
                 ScoreReq.CompReq InitValueOfTraceDataLossFlag {
                     description = '''The initial value of this flag (Global Trace-Data-Loss Flag) shall be {{FALSE}}.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3375,7 +3373,7 @@ section "com" {
 
                     The flag shall be set via method {{MetaInfoBase::SetDataLossBit()}}.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3383,7 +3381,7 @@ section "com" {
                 ScoreReq.CompReq ResetCurrentValueOfTraceDataLossFlagAfterEachTraceCall {
                     description = '''{{mw::com}}/{{LoLa}} shall reset the current value of its global trace-data-loss flag (Global Trace-Data-Loss Flag) to {{false}} after each successful call to {{GenericTraceAPI::Trace()}}'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
 
@@ -3397,7 +3395,7 @@ section "com" {
 
                     * increment the counter of consecutive errors (see Disable Tracing after number of consecutive Trace() errors) in {{Trace()}} calls.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1, Communication.ErrorHandling@1]
                     version = 1
                 }
 
@@ -3409,7 +3407,7 @@ section "com" {
 
                     * increment the counter of consecutive errors (see Disable Tracing after number of consecutive Trace() errors) in {{Trace()}} calls.'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1, Communication.ErrorHandling@1]
                     version = 1
                 }
 
@@ -3439,7 +3437,7 @@ section "com" {
 
                     Hence, until it is configurable via the config file, number of consequetive errors is set to UINT32\_MAX as requested by IPC tracing feature owners'''
                     safety = ScoreReq.Asil.QM
-                    derived_from = [Communication.SupportForTimeBasedArchitecture@2]
+                    derived_from = [Communication.SupportForTracing@1]
                     version = 1
                 }
             }

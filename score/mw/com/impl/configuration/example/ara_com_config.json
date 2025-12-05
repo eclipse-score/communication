@@ -21,6 +21,12 @@
                             "fieldName": "CurrentTemperatureFrontLeft",
                             "fieldId": 30
                         }
+                    ],
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "methodId": 40
+                        }
                     ]
                 }
             ]
@@ -56,6 +62,12 @@
                             "numberOfSampleSlots": 60,
                             "maxSubscribers": 6,
                             "numberOfIpcTracingSlots": 7
+                        }
+                    ],
+                    "methods": [
+                        {
+                            "methodName": "SetPressure",
+                            "queueSize": 20
                         }
                     ],
                     "allowedConsumer": {

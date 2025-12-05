@@ -47,7 +47,7 @@ class EventBindingRegistrationGuard final
                                   std::string_view event_name) noexcept
         : proxy_binding_{proxy_binding}, proxy_event_binding_base_{proxy_event_binding_base}, event_name_{event_name}
     {
-        if (proxy_binding_ != nullptr && proxy_event_binding_base_ != nullptr)
+        if ((proxy_binding_ != nullptr) && (proxy_event_binding_base_ != nullptr))
         {
             proxy_binding_->RegisterEventBinding(event_name, *proxy_event_binding_base);
         }

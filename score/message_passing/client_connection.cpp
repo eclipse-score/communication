@@ -334,13 +334,7 @@ void ClientConnection::DoRestart() noexcept
               << std::endl;
 
     connect_retry_ms_ = kConnectRetryMsStart;
-    engine_->EnqueueCommand(
-        connection_timer_,
-        ISharedResourceEngine::TimePoint{},
-        [this](auto) noexcept {
-            TryConnect();
-        },
-        this);
+    TryConnect();
 }
 
 void ClientConnection::TryConnect() noexcept
@@ -348,7 +342,6 @@ void ClientConnection::TryConnect() noexcept
     // The order of access to these atomics is important, as stop_reason_ can change in background
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(((stop_reason_ == StopReason::kNone) && (state_ == State::kStarting)) ||
                    ((state_ == State::kStopping) && (stop_reason_ == StopReason::kUserRequested)));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(IsInCallback());
 
     // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
     // function or it shall be preceded by &".
@@ -415,7 +408,20 @@ void ClientConnection::TryConnect() noexcept
     posix_endpoint_.disconnect = [this]() noexcept {
         SwitchToStopState();
     };
-    engine_->RegisterPosixEndpoint(posix_endpoint_);
+    if (IsInCallback())
+    {
+        engine_->RegisterPosixEndpoint(posix_endpoint_);
+    }
+    else
+    {
+        engine_->EnqueueCommand(
+            connection_timer_,
+            ISharedResourceEngine::TimePoint{},
+            [this](auto) noexcept {
+                engine_->RegisterPosixEndpoint(posix_endpoint_);
+            },
+            this);
+    }
 
     ProcessStateChange(State::kReady);
 }
@@ -498,8 +504,14 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
         if (!send.callback.empty())
         {
             waiting_for_reply_ = std::move(send.callback);
+            // waiting_for_reply_ is now guaranteed to be occupied. This forces other potential fully_ordered or
+            // truly_async senders to push their messages into the send_queue_. We neeed to unlock that queue
+            // temporarily, as the other side of SendProtocolMessage is not under our control and it may cause
+            // indefinite delay.
+            lock.unlock();
             const auto expected =
                 engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
+            lock.lock();
             if (expected.has_value())
             {
                 break;
@@ -515,9 +527,15 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
         }
         else
         {
-            // nowhere to return error
+            // Temporarily make waiting_for_reply_ occupied to activate send_queue_ for fully_ordered or truly_async
+            // senders and release the queue lock for the duration of SendProtocolMessage.
+            waiting_for_reply_ = ReplyCallback{};
+            lock.unlock();
+            // nowhere to return the potential error
             score::cpp::ignore =
                 engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::SEND), send.message);
+            lock.lock();
+            waiting_for_reply_.reset();
         }
     }
 }

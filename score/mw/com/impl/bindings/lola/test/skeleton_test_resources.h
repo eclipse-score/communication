@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_TEST_RESOURCES_H
 
 #include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
@@ -289,6 +290,17 @@ const auto kControlChannelPathQm{"/lola-ctl-0000000000000001-00016"};
 const auto kControlChannelPathAsilB{"/lola-ctl-0000000000000001-00016-b"};
 const auto kDataChannelPath{"/lola-data-0000000000000001-00016"};
 
+static const std::string kServiceInstanceUsageFilePath{"/test_service_instance_usage_file_path"};
+static const std::int32_t kServiceInstanceUsageFileDescriptor{7890};
+
+static const score::os::Fcntl::Open kCreateOrOpenFlags{score::os::Fcntl::Open::kCreate | score::os::Fcntl::Open::kReadOnly};
+
+static const os::Fcntl::Operation kNonBlockingExlusiveLockOperation =
+    os::Fcntl::Operation::kLockExclusive | score::os::Fcntl::Operation::kLockNB;
+static const os::Fcntl::Operation kUnlockOperation = os::Fcntl::Operation::kUnLock;
+
+static const ElementFqId kDummyElementFqId{1U, 2U, 3U, ServiceElementType::EVENT};
+
 }  // namespace test
 
 class SkeletonAttorney
@@ -296,41 +308,17 @@ class SkeletonAttorney
   public:
     SkeletonAttorney(Skeleton& skeleton) noexcept : skeleton_{skeleton} {}
 
-    void InitializeSharedMemoryForControl(const QualityType asil_level,
-                                          std::shared_ptr<score::memory::shared::ManagedMemoryResource> memory) noexcept
-    {
-        return skeleton_.InitializeSharedMemoryForControl(asil_level, memory);
-    }
-
-    void InitializeSharedMemoryForData(std::shared_ptr<score::memory::shared::ManagedMemoryResource> memory) noexcept
-    {
-        return skeleton_.InitializeSharedMemoryForData(memory);
-    }
-
-    ShmPathBuilderMock* GetIShmPathBuilder() const noexcept
-    {
-        return dynamic_cast<ShmPathBuilderMock*>(skeleton_.shm_path_builder_.get());
-    };
-
-    PartialRestartPathBuilderMock* GetIPartialRestartPathBuilder() const noexcept
-    {
-        return dynamic_cast<PartialRestartPathBuilderMock*>(skeleton_.partial_restart_path_builder_.get());
-    };
-
     ServiceDataControl* GetServiceDataControl(const QualityType quality_type) const noexcept
     {
         if (quality_type == QualityType::kASIL_QM)
         {
             return skeleton_.control_qm_;
         }
-        else if (quality_type == QualityType::kASIL_B)
+        if (quality_type == QualityType::kASIL_B)
         {
             return skeleton_.control_asil_b_;
         }
-        else
-        {
-            return nullptr;
-        }
+        return nullptr;
     }
 
   private:
@@ -340,25 +328,27 @@ class SkeletonAttorney
 class SkeletonMockedMemoryFixture : public ::testing::Test
 {
   public:
+    static constexpr GlobalConfiguration::ApplicationId kDummyApplicationId{6543};
+
     // Use constructor / destructor instead of SetUp() / TearDown() so that they will always be called when
     // instantiating fixtures deriving from this class. Using SetUp() / TearDown() requires that child classes manually
     // call this classes SetUp() / TearDown() methods if they implement their own SetUp() / TearDown().
     SkeletonMockedMemoryFixture();
     virtual ~SkeletonMockedMemoryFixture();
 
-    void InitialiseSkeleton(const InstanceIdentifier& instance_identifier);
+    SkeletonMockedMemoryFixture& InitialiseSkeleton(const InstanceIdentifier& instance_identifier);
 
-    void ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(
-        const std::string& service_existence_marker_file_path = "/test_service_existence_marker_file_path",
-        const std::int32_t lock_file_descriptor = 2345) noexcept;
-    void ExpectServiceUsageMarkerFileFlockAcquired(std::int32_t existence_marker_file_descriptor) noexcept;
-    void ExpectServiceUsageMarkerFileAlreadyFlocked(std::int32_t existence_marker_file_descriptor) noexcept;
-    void ExpectControlSegmentCreated(QualityType quality_type);
-    void ExpectDataSegmentCreated(bool in_typed_memory = false);
+    /// \brief Simulates that the instance usage marker file could be exclusively flocked meaning that no Procies are
+    /// using an old shared memory region from this service. This is the "normal" case when we aren't in a partial
+    /// restart scenario.
+    SkeletonMockedMemoryFixture& WithNoConnectedProxy();
 
-    void ExpectControlSegmentOpened(QualityType quality_type,
-                                    ServiceDataControl& existing_service_data_control) noexcept;
-    void ExpectDataSegmentOpened(ServiceDataStorage& existing_service_data_storage) noexcept;
+    /// \brief Simulates that the instance usage marker file could not be exclusively flocked meaning that a Proxy is
+    /// still using an old shared memory region from this service. This occurs when a skeleton has restarted while a
+    /// Proxy was connected to its shared memory region.
+    SkeletonMockedMemoryFixture& WithAlreadyConnectedProxy();
+
+    void ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed() noexcept;
 
     ServiceDataControl CreateServiceDataControlWithEvent(ElementFqId element_fq_id, QualityType quality_type) noexcept;
     EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
@@ -404,25 +394,38 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
 
     void CleanUpSkeleton();
 
-    impl::RuntimeMock runtime_mock_{};
-    lola::RuntimeMock lola_runtime_mock_{};
-    os::MockGuard<os::FcntlMock> fcntl_mock_{};
-    os::MockGuard<os::StatMock> stat_mock_{};
-    os::MockGuard<os::UnistdMock> unistd_mock_{};
-    filesystem::FilesystemFactoryFake filesystem_fake_{};
-    impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
-    impl::tracing::mock_binding::TracingRuntime binding_tracing_runtime_mock_{};
+    ::testing::NiceMock<impl::RuntimeMock> runtime_mock_{};
+    ::testing::NiceMock<lola::RuntimeMock> lola_runtime_mock_{};
+    os::MockGuard<::testing::NiceMock<os::FcntlMock>> fcntl_mock_{};
+    os::MockGuard<::testing::NiceMock<os::StatMock>> stat_mock_{};
+    os::MockGuard<::testing::NiceMock<os::UnistdMock>> unistd_mock_{};
+    ::testing::NiceMock<filesystem::FilesystemFactoryFake> filesystem_fake_{};
+    ::testing::NiceMock<impl::tracing::TracingRuntimeMock> tracing_runtime_mock_{};
+    ::testing::NiceMock<impl::tracing::mock_binding::TracingRuntime> binding_tracing_runtime_mock_{};
+    ::testing::NiceMock<MessagePassingServiceMock> message_passing_mock_{};
 
-    memory::shared::SharedMemoryFactoryMock shared_memory_factory_mock_{};
-    ShmPathBuilderMock* shm_path_builder_mock_{nullptr};
-    PartialRestartPathBuilderMock* partial_restart_path_builder_mock_{nullptr};
+    ::testing::NiceMock<memory::shared::SharedMemoryFactoryMock> shared_memory_factory_mock_{};
+    ::testing::NiceMock<ShmPathBuilderMock> shm_path_builder_mock_{};
+    ::testing::NiceMock<PartialRestartPathBuilderMock> partial_restart_path_builder_mock_{};
 
-    std::shared_ptr<memory::shared::SharedMemoryResourceHeapAllocatorMock> control_qm_shared_memory_resource_mock_{
-        std::make_shared<memory::shared::SharedMemoryResourceHeapAllocatorMock>(test::kControlQmMemoryResourceId)};
-    std::shared_ptr<memory::shared::SharedMemoryResourceHeapAllocatorMock> control_asil_b_shared_memory_resource_mock_{
-        std::make_shared<memory::shared::SharedMemoryResourceHeapAllocatorMock>(test::kControlAsilBMemoryResourceId)};
-    std::shared_ptr<memory::shared::SharedMemoryResourceHeapAllocatorMock> data_shared_memory_resource_mock_{
-        std::make_shared<memory::shared::SharedMemoryResourceHeapAllocatorMock>(test::kDataMemoryResourceId)};
+    std::shared_ptr<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>
+        control_qm_shared_memory_resource_mock_{
+            std::make_shared<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>(
+                test::kControlQmMemoryResourceId)};
+    std::shared_ptr<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>
+        control_asil_b_shared_memory_resource_mock_{
+            std::make_shared<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>(
+                test::kControlAsilBMemoryResourceId)};
+    std::shared_ptr<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>
+        data_shared_memory_resource_mock_{
+            std::make_shared<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>(
+                test::kDataMemoryResourceId)};
+
+    // Since these objects rely on the default behaviour of some mocks (e.g. the mocked lola Runtime), we create them
+    // after setting the default mock behaviours in the body of the constructor.
+    std::unique_ptr<ServiceDataControl> service_data_control_qm_{nullptr};
+    std::unique_ptr<ServiceDataControl> service_data_control_asil_b_{nullptr};
+    std::unique_ptr<ServiceDataStorage> service_data_storage_{nullptr};
 
     std::unique_ptr<Skeleton> skeleton_{nullptr};
 };

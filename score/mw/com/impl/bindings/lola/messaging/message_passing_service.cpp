@@ -174,7 +174,7 @@ void MessagePassingService::UnregisterEventNotificationExistenceChangedCallback(
     instance.UnregisterEventNotificationExistenceChangedCallback(event_id);
 }
 
-ResultBlank MessagePassingService::CallServiceMethodSubscribed(
+ResultBlank MessagePassingService::SubscribeServiceMethod(
     const SkeletonInstanceIdentifier& /* skeleton_instance_identifier */)
 {
     return {};

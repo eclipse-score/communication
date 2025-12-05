@@ -42,6 +42,7 @@ constexpr auto kSerializationVersionKey = "serializationVersion";
 constexpr auto kServiceIdKey = "serviceId";
 constexpr auto kEventsKey = "events";
 constexpr auto kFieldsKey = "fields";
+constexpr auto kMethodsKey = "methods";
 
 template <typename ServiceElementMappingType>
 json::Object ConvertServiceElementIdMapToJson(const ServiceElementMappingType& input_map) noexcept
@@ -99,25 +100,28 @@ std::string ToHashStringImpl(const ServiceIdType service_id, const std::size_t h
 
 }  // namespace detail
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
-BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>::BindingServiceTypeDeployment(
+template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>::BindingServiceTypeDeployment(
     const ServiceIdType service_id,
     EventIdMapping events,
-    FieldIdMapping fields) noexcept
+    FieldIdMapping fields,
+    MethodIdMapping methods) noexcept
     : service_id_{service_id},
       events_{std::move(events)},
       fields_{std::move(fields)},
+      methods_{std::move(methods)},
       hash_string_{detail::ToHashStringImpl(service_id_, hashStringSize)}
 {
 }
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
-BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>::BindingServiceTypeDeployment(
+template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>::BindingServiceTypeDeployment(
     const score::json::Object& json_object) noexcept
-    : BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>::BindingServiceTypeDeployment(
+    : BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>::BindingServiceTypeDeployment(
           GetValueFromJson<ServiceIdType>(json_object, detail::kServiceIdKey),
           detail::ConvertJsonToServiceElementIdMap<EventIdType>(json_object, detail::kEventsKey),
-          detail::ConvertJsonToServiceElementIdMap<FieldIdType>(json_object, detail::kFieldsKey))
+          detail::ConvertJsonToServiceElementIdMap<FieldIdType>(json_object, detail::kFieldsKey),
+          detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey))
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, detail::kSerializationVersionKey);
     if (serialization_version != serializationVersion)
@@ -126,8 +130,9 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>::BindingSe
     }
 }
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
-json::Object BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>::Serialize() const noexcept
+template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+json::Object BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>::Serialize()
+    const noexcept
 {
     score::json::Object json_object{};
     json_object[detail::kSerializationVersionKey] = json::Any{serializationVersion};
@@ -135,27 +140,34 @@ json::Object BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdTyp
 
     json_object[detail::kEventsKey] = detail::ConvertServiceElementIdMapToJson(events_);
     json_object[detail::kFieldsKey] = detail::ConvertServiceElementIdMapToJson(fields_);
+    json_object[detail::kMethodsKey] = detail::ConvertServiceElementIdMapToJson(methods_);
 
     return json_object;
 }
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
-std::string_view BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>::ToHashString() const noexcept
+template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+std::string_view BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>::ToHashString()
+    const noexcept
 {
     return hash_string_;
 }
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
-bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& lhs,
-                const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& rhs) noexcept
+template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& lhs,
+                const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& rhs) noexcept
 {
-    return ((lhs.service_id_ == rhs.service_id_) && (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_));
+    return ((lhs.service_id_ == rhs.service_id_) && (lhs.events_ == rhs.events_) && (lhs.fields_ == rhs.fields_) &&
+            (lhs.methods_ == rhs.methods_));
 }
 
-template <ServiceElementType service_element_type, typename EventIdType, typename FieldIdType, typename ServiceIdType>
-auto GetServiceElementId(
-    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
-    const std::string& service_element_name)
+template <ServiceElementType service_element_type,
+          typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType>
+auto GetServiceElementId(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>&
+                             binding_service_type_deployment,
+                         const std::string& service_element_name)
 {
     static_assert(service_element_type != ServiceElementType::INVALID);
 
@@ -168,8 +180,12 @@ auto GetServiceElementId(
         {
             return binding_service_type_deployment.fields_;
         }
-        // LCOV_EXCL_START: Defensive programming: This state service_element_type must be an EVENT or FIELD (we have a
-        // static_assert at the start of this function) so this branch can never be reached.
+        else if constexpr (service_element_type == ServiceElementType::METHOD)
+        {
+            return binding_service_type_deployment.methods_;
+        }
+        // LCOV_EXCL_START: Defensive programming: This state service_element_type must be an EVENT, FIELD, or METHOD
+        // (we have a static_assert at the start of this function) so this branch can never be reached.
         else
         {
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(0);

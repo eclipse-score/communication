@@ -127,7 +127,7 @@ bazel_dep(name = "rules_doxygen", version = "2.5.0")
 bazel_dep(name = "score_baselibs", version = "0.2.0")
 git_override(
     module_name = "score_baselibs",
-    commit = "8d556711421cbdd804dffee049967fa5061ca2ea",
+    commit = "826955b4d7dc2f326e3deabc06895318922cca1f",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
@@ -216,3 +216,5 @@ pip.parse(
     requirements_lock = "//:requirements_lock.txt",
 )
 use_repo(pip, "score_communication_pip")
+
+bazel_dep(name = "score_tooling", version = "1.0.2")

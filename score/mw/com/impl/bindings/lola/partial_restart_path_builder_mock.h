@@ -34,6 +34,35 @@ class PartialRestartPathBuilderMock : public IPartialRestartPathBuilder
     MOCK_METHOD(std::string, GetLolaPartialRestartDirectoryPath, (), (const, noexcept, override));
 };
 
+class PartialRestartPathBuilderFacade : public IPartialRestartPathBuilder
+{
+  public:
+    PartialRestartPathBuilderFacade(PartialRestartPathBuilderMock& partial_restart_path_builder_mock)
+        : IPartialRestartPathBuilder{}, partial_restart_path_builder_mock_{partial_restart_path_builder_mock}
+    {
+    }
+
+    std::string GetServiceInstanceExistenceMarkerFilePath(
+        const LolaServiceInstanceId::InstanceId instance_id) const noexcept override
+    {
+        return partial_restart_path_builder_mock_.GetServiceInstanceExistenceMarkerFilePath(instance_id);
+    }
+
+    std::string GetServiceInstanceUsageMarkerFilePath(
+        const LolaServiceInstanceId::InstanceId instance_id) const noexcept override
+    {
+        return partial_restart_path_builder_mock_.GetServiceInstanceUsageMarkerFilePath(instance_id);
+    }
+
+    std::string GetLolaPartialRestartDirectoryPath() const noexcept override
+    {
+        return partial_restart_path_builder_mock_.GetLolaPartialRestartDirectoryPath();
+    }
+
+  private:
+    PartialRestartPathBuilderMock& partial_restart_path_builder_mock_;
+};
+
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_PARTIAL_RESTART_PATH_BUILDER_MOCK_H

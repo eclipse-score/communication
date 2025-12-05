@@ -1,6 +1,6 @@
 # Contributing to the Communication Module
 
-- Thank you for your interest in contributing to the Communication Module of the Eclipse SCORE project! 
+- Thank you for your interest in contributing to the Communication Module of the Eclipse SCORE project!
 - This guide will walk you through the necessary steps to get started with development, adhere to our standards, and successfully submit your contributions.
 
 ## Eclipse Contributor Agreement (ECA)
@@ -46,6 +46,17 @@ bazel test //...
 
 **Prerequisites:** Install [Bazelisk](https://github.com/bazelbuild/bazelisk) to manage Bazel versions. See [Bazel tutorial](https://bazel.build/tutorials) for details.
 
+For Linting the Code following solutions are available:
+
+Copyright Checker:
+```bash
+# Check Sources
+bazel run //:copyright.check
+
+# Fix Sources
+bazel run //:copyright.fix
+```
+
 ## Testing
 
 The Communication Module includes extensive tests. Use the following commands:
@@ -71,4 +82,4 @@ bazel test //score/mw/com/message_passing:all
 
 For project details, documentation, and support resources, please refer to the main [README.md](README.md).
 
-**Thank you for contributing to the Eclipse SCORE Communication Module!** 
+**Thank you for contributing to the Eclipse SCORE Communication Module!**

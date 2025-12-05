@@ -52,6 +52,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola:shm_path_builder_mock",
         "//score/mw/com/impl/bindings/lola:skeleton",
+        "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
         "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/tracing:tracing_runtime_mock",

@@ -106,7 +106,7 @@ ServiceInstanceId::ServiceInstanceId(BindingInformation binding_info) noexcept
 }
 
 ServiceInstanceId::ServiceInstanceId(const score::json::Object& json_object) noexcept
-    : binding_info_{GetBindingInfoFromJson(json_object)}, hash_string_{ToHashStringImpl(binding_info_)}
+    : ServiceInstanceId{GetBindingInfoFromJson(json_object)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKeySerInstID);
     if (serialization_version != serializationVersion)

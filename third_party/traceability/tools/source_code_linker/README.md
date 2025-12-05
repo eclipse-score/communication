@@ -195,11 +195,11 @@ Example output for C++ source code traceability:
       "tag": "cpp SampleLibrary.SampleRequirement",
       "location": {
         "kind": "file",
-        "file": "platform/aas/tools/traceability/doc/sample_library/unit_1/foo.cpp",
+        "file": "third_party/traceability/doc/sample_library/unit_1/foo.cpp",
         "line": 1,
         "column": 1
       },
-      "name": "platform/aas/tools/traceability/doc/sample_library/unit_1/foo.cpp",
+      "name": "third_party/traceability/doc/sample_library/unit_1/foo.cpp",
       "messages": [],
       "just_up": [],
       "just_down": [],
@@ -227,7 +227,7 @@ Example output for requirement traceability:
       "tag": "req SampleLibrary.SampleRequirement",
       "location": {
         "kind": "file",
-        "file": "platform/aas/tools/traceability/doc/sample_library/requirements/component_requirements.trlc",
+        "file": "third_party/traceability/doc/sample_library/requirements/component_requirements.trlc",
         "line": 18,
         "column": 18
       },

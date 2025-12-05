@@ -34,7 +34,7 @@ struct SkeletonInstanceIdentifier
     LolaServiceInstanceId::InstanceId instance_id;
 };
 
-bool operator==(const SkeletonInstanceIdentifier& lhs, const SkeletonInstanceIdentifier& rhs);
+bool operator==(const SkeletonInstanceIdentifier& lhs, const SkeletonInstanceIdentifier& rhs) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 

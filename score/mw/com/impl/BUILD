@@ -977,6 +977,27 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "traits_test",
+    srcs = [
+        "traits_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":runtime_mock",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/plumbing:proxy_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:proxy_event_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:skeleton_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:skeleton_field_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:proxy_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -1000,7 +1021,6 @@ cc_test(
         "skeleton_event_test.cpp",
         "skeleton_field_base_test.cpp",
         "skeleton_field_test.cpp",
-        "traits_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
@@ -1050,6 +1070,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":service_discovery_test",
         ":service_element_type_test",
         ":unit_test",
+        ":traits_test",
         ":unit_test_runtime_single_exec",
     ],
     test_suites_from_sub_packages = [

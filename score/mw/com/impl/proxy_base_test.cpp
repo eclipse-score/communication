@@ -561,18 +561,18 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
   public:
     const std::string event_name_0_{"event_name_0"};
     const std::string event_name_1_{"event_name_1"};
-    std::string field_name_0_{"field_name_0"};
-    std::string field_name_1_{"field_name_1"};
-    std::string method_name_0_{"method_name_0"};
-    std::string method_name_1_{"method_name_1"};
+    const std::string field_name_0_{"field_name_0"};
+    const std::string field_name_1_{"field_name_1"};
+    const std::string method_name_0_{"method_name_0"};
+    const std::string method_name_1_{"method_name_1"};
 
-    ConfigurationStore config_store_{kInstanceSpecifier,
-                                     kServiceIdentifier,
-                                     QualityType::kASIL_QM,
-                                     kServiceId,
-                                     kLolaInstanceId};
-    InstanceIdentifier instance_identifier_{config_store_.GetInstanceIdentifier()};
-    HandleType handle_{config_store_.GetHandle()};
+    const ConfigurationStore config_store_{kInstanceSpecifier,
+                                           kServiceIdentifier,
+                                           QualityType::kASIL_QM,
+                                           kServiceId,
+                                           kLolaInstanceId};
+    const InstanceIdentifier instance_identifier_{config_store_.GetInstanceIdentifier()};
+    const HandleType handle_{config_store_.GetHandle()};
 
     mock_binding::Proxy proxy_binding_mock_{};
     MyProxy proxy_{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_), handle_};

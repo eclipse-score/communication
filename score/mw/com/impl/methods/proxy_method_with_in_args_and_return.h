@@ -161,8 +161,7 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
     auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(allocated_return_type_storage.has_value(),
                            "ProxyMethod::operator(): AllocateReturnType failed unexpectedly.");
-    // \todo (Ticket-221600): Clarify stop_token usage
-    auto call_result = binding_->DoCall(queue_position, score::cpp::stop_token{});
+    auto call_result = binding_->DoCall(queue_position);
     if (!call_result.has_value())
     {
         return Unexpected(call_result.error());

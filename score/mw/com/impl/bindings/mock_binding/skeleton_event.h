@@ -54,6 +54,55 @@ class SkeletonEvent : public SkeletonEventBinding<SampleType>
     MOCK_METHOD(void, SetSkeletonEventTracingData, (impl::tracing::SkeletonEventTracingData), (noexcept, override));
 };
 
+template <typename SampleType>
+class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
+{
+    SkeletonEvent<SampleType>& skeleton_event_;
+
+  public:
+    SkeletonEventFacade(SkeletonEvent<SampleType>& skeleton_event)
+        : SkeletonEventBinding<SampleType>{}, skeleton_event_{skeleton_event}
+    {
+    }
+
+    ~SkeletonEventFacade() override = default;
+    ResultBlank Send(
+        const SampleType& value,
+        score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> callback) noexcept override
+    {
+        return skeleton_event_.Send(value, std::move(callback));
+    };
+    ResultBlank Send(
+        SampleAllocateePtr<SampleType> sample,
+        score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> callback) noexcept override
+    {
+        return skeleton_event_.Send(std::move(sample), std::move(callback));
+    }
+    Result<SampleAllocateePtr<SampleType>> Allocate() noexcept override
+    {
+        return skeleton_event_.Allocate();
+    };
+    ResultBlank PrepareOffer() noexcept override
+    {
+        return skeleton_event_.PrepareOffer();
+    }
+    void PrepareStopOffer() noexcept override
+    {
+        return skeleton_event_.PrepareStopOffer();
+    }
+    std::size_t GetMaxSize() const noexcept override
+    {
+        return skeleton_event_.GetMaxSize();
+    }
+    BindingType GetBindingType() const noexcept override
+    {
+        return skeleton_event_.GetBindingType();
+    }
+    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
+    {
+        return skeleton_event_.SetSkeletonEventTracingData(tracing_data);
+    }
+};
 }  // namespace score::mw::com::impl::mock_binding
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_SKELETON_EVENT_H

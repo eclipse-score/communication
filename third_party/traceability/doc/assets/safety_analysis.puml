@@ -1,0 +1,44 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+object "SEooC" as SEooC
+object "Safety Analysis" as SafetyAnalysis
+object "Failure Mode and Effects Analysis\n(FMEA)" as FMEA
+object "Fault Tree Analysis\n(FTA)" as FTA
+object "Failure Mode" as FailureMode
+object "Root Cause" as RootCause
+object "Safety Goal" as SafetyGoal
+object "Measure" as Measure
+object "Assumption of Use\n(AoU)" as AoU
+
+SafetyAnalysis <|-l- FMEA
+SafetyAnalysis <|-- FTA
+
+SEooC "1" -u-> "n" SafetyGoal
+SEooC <.r. FMEA : is conducted
+FailureMode <.r. FTA : is conducted
+FailureMode "1" o-- "n" RootCause
+
+SEooC "1" o-- "n" FailureMode
+SEooC "1" o-- "n" AoU
+FMEA ..> FailureMode : determine
+FTA ..> RootCause : determine
+
+Measure <|-u- AoU
+RootCause <-l- Measure : mitigates
+
+
+
+@enduml

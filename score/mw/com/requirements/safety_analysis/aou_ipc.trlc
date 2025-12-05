@@ -1,0 +1,315 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package Communication
+
+import ScoreReq
+
+/* broken_link_c/issue/5834990 */
+ScoreReq.AoU MonotonicSemiDynamicMemoryAllocation {
+    description = "It shall be ensured that enough memory is configured for shared memory instances, in order that LoLa can perform all necessary allocations (e.g. push-back on a Vector)."
+    safety = ScoreReq.Asil.B
+    note = "LoLa implements a Monotonic Memory Resource. Once memory is claimed, there is no possibility to release it. LoLa pre-allocates a memory pool, only within this memory pool the monotonic allocations will happen."
+    version = 1
+}
+
+/* broken_link_c/issue/5835013 */
+ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfSubscriber {
+    description = "It shall be ensured that correct maximum number of subscriber is configured for each event for each service instance."
+    safety = ScoreReq.Asil.B
+    note = "The maximum number of subscriber is used to calculate necessary memory from LoLa side, ensure wait-freedom and ensure data consistency. Without the correct number, none of these guarantees can be given."
+    version = 1
+}
+
+/* broken_link_c/issue/5835045 */
+ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber {
+    description = "It shall be ensured that correct maximum number of elements per subscriber is configured for each event for each service instance."
+    safety = ScoreReq.Asil.B
+    note = "The maximum number of elements per subscriber is used to calculate necessary memory from LoLa side, ensure wait-freedom and ensure data consistency. Without the correct number, none of these guarantees can be given."
+    version = 1
+}
+
+/* broken_link_c/issue/5835084 */
+ScoreReq.AoU CorrectlyConfiguredAsilLevel {
+    description = "It shall be ensured that the ASIL Level on process level and per service instance is correctly configured."
+    safety = ScoreReq.Asil.B
+    note = "The ASIL-Level is used to ensure Freedom from Interference (e.g. by configuring access rights). Without a proper configured level, this cannot be ensured."
+    version = 1
+}
+
+/* broken_link_c/issue/5835098 */
+ScoreReq.AoU OnlyLoLaSupportedTypes {
+    description = "It shall be ensured that only types that are supported by LoLa are transmitted."
+    safety = ScoreReq.Asil.B
+    note = "Every type T transmitted via LoLa needs to fulfill all the following properties: DefaultConstructible (std::is_default_constructible(T) returns true), CopyAssignable (std::is_copy_assignable(T) == true), are not polymorphic (std::is_polymorphic(T) == false), T doesn't allocate dynamic memory."
+    version = 1
+}
+
+/* broken_link_c/issue/5835119 */
+ScoreReq.AoU NoApisFromImplementationNamespace {
+    description = "It shall be ensured that no API calls from the implementation namespace (e.g `impl`) are directly invoked or types from within are directly used."
+    safety = ScoreReq.Asil.B
+    note = "Certain measurements and maybe implemented around the implementation namespace, while it is theoretically possible to directly use these functions, this could lead to unknown and untested side-effects."
+    version = 1
+}
+
+/* broken_link_c/issue/5835135 */
+ScoreReq.AoU NoGuaranteesForNotifications {
+    description = "It shall be ensured that a miss behavior of event notification will not harm a safety goal."
+    safety = ScoreReq.Asil.B
+    note = "It is not guaranteed that notifications will arrive, neither in which latency this will happen, or if they happen too often or on a wrong event. This is caused by underlying OS/HW safety claims."
+    version = 1
+}
+
+/* broken_link_c/issue/5835150 */
+ScoreReq.AoU CheckingForPossibleMessageOverflow {
+    description = "It shall be ensured that a message overflow, which results in message loss will not harm a safety goal. If this is not possible, a check for message overflow and necessary actions need to be performed."
+    safety = ScoreReq.Asil.B
+    note = "A message overflow will take place if the event receiver checks/receives samples on a lower rate, than the event sender produces them. A message overflow/loss can be detected by checking if all reserved slots are full. If that is the case a message loss is possible and thus it needs to be handled as if a message loss has happened."
+    version = 1
+}
+
+/* broken_link_c/issue/5835175 */
+ScoreReq.AoU DifferentUserForAsilAndQmProcesses {
+    description = "It shall be ensured that processes with a different ASIL shall be executed within different user-ids."
+    safety = ScoreReq.Asil.B
+    note = "LoLa utilizes operating system ACL mechanisms to ensure Freedom From Interference. If a lower ASIL process is executed with the rights of a higher level one, the Freedom from Interference can no longer be guaranteed."
+    version = 1
+}
+
+/* broken_link_c/issue/5835192 */
+ScoreReq.AoU ConfigOnASafeFilesystem {
+    description = "It shall be ensured that any configuration item that is read at runtime by LoLa is stored on a safety certified filesystem (according to the highest supported safety level)."
+    safety = ScoreReq.Asil.B
+    note = "The configuration needs to be ensured to be valid and it needs to be ensured that no issue in the filesystem causes configuration issues."
+    version = 1
+}
+
+/* broken_link_c/issue/5835198 */
+ScoreReq.AoU NoStaticContextSupport {
+    description = "It shall be ensured that LoLa is not used within static context within C++."
+    safety = ScoreReq.Asil.B
+    note = "LoLa uses itself static context within C++. A usage within static context could possibly cause the static (De-)Initialization-Fiasco."
+    version = 1
+}
+
+/* broken_link_c/issue/5835213 */
+ScoreReq.AoU NoGuaranteeInAvailabilityOfServices {
+    description = "It shall be ensured that no safety goal is harmed, because a service instance is not found."
+    safety = ScoreReq.Asil.B
+    note = "LoLa is a Service-Discovery based middleware. In such cases it is possible that a service is not offered. Thus, LoLa cannot give any guarantee that a service will be found."
+    version = 1
+}
+
+/* broken_link_c/issue/5835249 */
+ScoreReq.AoU NoNotificationOnTerminationOfProducer {
+    description = "It shall be ensured that termination (either gracefully or due to a malfunction) of a producer will not lead to a violation of a safety goal."
+    safety = ScoreReq.Asil.B
+    note = "LoLa provides no mechanism to communicate the termination of an event data producer. It is also possible that a producer suddenly crashes and no events are any longer produced. A supervision can be implemented on application side, if events are polled in a certain interval. If no new events are present within a certain set of intervals, it can be assumed that the producer is malfunctioning."
+    version = 1
+}
+
+/* broken_link_c/issue/5835257 */
+ScoreReq.AoU SystemRestartOnLoLaProcessCrash {
+    description = "Expectation: Crash of a LoLa enabled process (producer or consumer) doesn't violate a safety goal. It shall be ensured that upon an unexpected termination of a producer or consumer, the whole system is restarted. I.e. NO selective restart of single processes, but a restart of the entire system."
+    safety = ScoreReq.Asil.B
+    note = "It cannot be distinguished on LoLa side if a user crashed and restarted or if a faulty process tries to re-offer another service. In order to avoid masquerading we thus only allow one process to open a shared memory region as read-write. If a producer crashed, he will not close the Shared-Memory region and thus, he will not be able to re-open it. A system restart will clear all Shared Memory regions and thus resolve the situation. Note_1: On the JC ADAPTIVE platform this requirement is already satisfied by design as in case of an app that crashed the [ITEM:5906108] will always first trigger the [system safe state|ISSUE:8455468] before any crash dumping operation is started. In consequence, the external safety controller then needs to perform a hard power-on-reset on the performance SoC."
+    version = 1
+}
+
+/* broken_link_c/issue/5835311 */
+ScoreReq.AoU CheckForNullptrOnAllocate {
+    description = "It shall be checked if Allocate() on an event will return a nullptr. If a nullptr is returned, the system shall transition to safe state."
+    safety = ScoreReq.Asil.B
+    note = "A nullptr indicates in this case a non-recoverable error and indicates further an issue in the memory control."
+    version = 1
+}
+
+/* broken_link_c/issue/5835317 */
+ScoreReq.AoU OneProducerOnlyOneAllocateePtr {
+    description = "It shall be ensured that at any time a producer instance per event only holds one AllocateePtr."
+    safety = ScoreReq.Asil.B
+    note = "LoLa does not support multi-producer pattern."
+    version = 1
+}
+
+/* broken_link_c/issue/5835324 */
+ScoreReq.AoU NoCopySendWhileHoldingAllocateePtr {
+    description = "It shall be ensured that Send(const& value) is not invoked while an AllocateePtr is held."
+    safety = ScoreReq.Asil.B
+    note = "Send(const& value) creates an AllocateePtr in its implementation. Thus we would harm the previously stated AoU that only one AllocateePtr is held at any point in time."
+    version = 1
+}
+
+/* broken_link_c/issue/5835328 */
+ScoreReq.AoU NoneReentrantMethodsPerEventInstance {
+    description = "It shall be ensured that any LoLa API that is bound to a specific event instance is not called in a reentrant manner."
+    safety = ScoreReq.Asil.B
+    note = "Thread-Safety is ensured for static methods and over instances."
+    version = 1
+}
+
+/* broken_link_c/issue/5835337 */
+ScoreReq.AoU SkeletonAliveWhileItsAllocateePtrBeingUsed {
+    description = "It shall be ensured that a Skeleton instance is still alive while any AllocateePtr returned by it is used."
+    safety = ScoreReq.Asil.B
+    note = "A destruction of a Skeleton will invalidate the memory that the AllocateePtr is pointing to."
+    version = 1
+}
+
+/* broken_link_c/issue/5835346 */
+ScoreReq.AoU EventSubscriptionActiveWhileHoldingSamplePtr {
+    description = "It shall be ensured that Unsubscribe() isn't called on a proxy event instance as long as any SamplePtr provided by it, is still held. Also the corresponding proxy instance shall be kept alive as on destruction it would implicitly call Unsubscribe()."
+    safety = ScoreReq.Asil.B
+    note = "Unsubscription of the proxy event will invalidate the memory that the SamplePtr is pointing to."
+    version = 1
+}
+
+/* broken_link_c/issue/5835351 */
+ScoreReq.AoU NoneTerminatingCallbacks {
+    description = "It shall be ensured that any callback passed to LoLa for invocation is not throwing."
+    safety = ScoreReq.Asil.B
+    note = "The behavior is undefined if a callback is throwing."
+    version = 1
+}
+
+/* broken_link_c/issue/5835363 */
+ScoreReq.AoU ValidCallbacksWhileProxyAlive {
+    description = "It shall be ensured that all callbacks passed towards LoLa are valid as long as the associated proxy is alive."
+    safety = ScoreReq.Asil.B
+    note = "While a proxy is alive, it is possible that mentioned callbacks are invoked. If a callback contains for example a dangling reference or pointer, the correct execution cannot be ensured."
+    version = 1
+}
+
+/* broken_link_c/issue/5835369 */
+ScoreReq.AoU UnorderedElementsOnFullQueue {
+    description = "It shall be ensured that the reception of elements in an unordered way on a full queue is not violating any safety goal."
+    safety = ScoreReq.Asil.B
+    note = "Order of elements cannot be guaranteed once the queue is full."
+    version = 1
+}
+
+/* broken_link_c/issue/5835376 */
+ScoreReq.AoU QualityOfDataIsDependentOnProducer {
+    description = "It shall be ensured that the necessary quality of data is produced by the respective skeleton process."
+    safety = ScoreReq.Asil.B
+    note = "LoLa doesn't do ANY checks on the transmitted data. LoLa provides any data ASIL transparent. Meaning, it neither degrades the ASIL-Level nor does it perform any additional checks to enhance it."
+    version = 1
+}
+
+/* broken_link_c/issue/5835388 */
+ScoreReq.AoU ValidityOfPointerOnLoLaPointer {
+    description = "It shall be ensured that no pointer, pointing to the memory of a SamplePtr or AllocateePtr is used once the SamplePtr or AllocateePtr are invalid."
+    safety = ScoreReq.Asil.B
+    note = "Issue: Once the smart-pointers are invalid their respective memory is unmanaged and any access leads to undefined behavior."
+    version = 1
+}
+
+/* broken_link_c/issue/5835398 */
+ScoreReq.AoU LoLaMemoryOnlyAccessedThroughLoLa {
+    description = "It shall be ensured that no other code accesses the mapped memory managed by LoLa."
+    safety = ScoreReq.Asil.B
+    note = "A static mapping of memory or a wild access of heap memory causes undefined behavior."
+    version = 1
+}
+
+/* broken_link_c/issue/5835403 */
+ScoreReq.AoU NoSharedMemoryAllocationInNamespaceLola {
+    description = "It shall be ensured that no other code creates shared memory segments beginning with \"lola\"."
+    safety = ScoreReq.Asil.B
+    note = "Certain contracts are based on the shared memory segment naming, these might get influenced by other code segments using this prefix."
+    version = 1
+}
+
+/* broken_link_c/issue/5835421 */
+ScoreReq.AoU OnlyQnx71Supported {
+    description = "It shall be ensured that any application containing LoLa is only executed on QNX Safe Operating System 7.1."
+    safety = ScoreReq.Asil.B
+    note = "All safety guarantees only hold as long executed on a safe operating system."
+    version = 1
+}
+
+/* broken_link_c/issue/5835427 */
+ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
+    description = "It shall be ensured that the LoLa specific QNX Message Passing end-points are only accessed through LoLa APIs."
+    safety = ScoreReq.Asil.B
+    note = "Any influence from other parts of the code might destroy expected contracts. The LoLa specific QNX Message Passing endpoints are located under: /mw_com/message_passing/LoLa_*"
+    version = 1
+}
+
+/* broken_link_c/issue/5835432 */
+ScoreReq.AoU AragenNotSafe {
+    description = "If aragen is being used to generate LoLa interfaces, any output produced by aragen shall be manually reviewed for its correctness."
+    safety = ScoreReq.Asil.B
+    note = "aragen is not safety qualified, thus its outputs are not safe also. Usage of aragen is not mandatory as the LoLa specific interfaces can be written manually in C++ using LoLa provided support templates."
+    version = 1
+}
+
+/* broken_link_c/issue/5835457 */
+ScoreReq.AoU UnsupportedDataTypes {
+    description = "It shall be ensured that neither variants nor maps are sent via LoLa."
+    safety = ScoreReq.Asil.B
+    note = "LoLa theoretically supports these data-types, but they were not subject to audit and extensive testing."
+    version = 1
+}
+
+/* broken_link_c/issue/6346567 */
+ScoreReq.AoU NoGuaranteeOnExecutionTime {
+    description = "There is no guarantee on the execution time of any function call provided by LoLa."
+    safety = ScoreReq.Asil.B
+    note = "This implies that safety-relevant code, where the safety goal is dependent on timing, needs to be supervised."
+    version = 1
+}
+
+/* broken_link_c/issue/7091801 */
+ScoreReq.AoU UsageOfConfigurationOversubscription {
+    description = "If event instance \"oversubscription\" is enabled, LoLa makes no warranty that proxies/consumers can't suffer from data loss! It is the responsibility of the user to adapt scheduling/event-data access in a way that no data-loss happens."
+    safety = ScoreReq.Asil.B
+    note = "However, we can give the guarantee that if only QM consumers misbehave, ASIL consumers are not affected by these actions. The latter statement enables that a QM application where the scheduling/event-data access is not ensured, will not interfere the ASIL communication. The only thing that could happen is that the QM application might access wrong data or receive no data at all, in an error case (e.g. if it holds more samples then expected)."
+    version = 1
+}
+
+/* broken_link_c/issue/21206172 */
+ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide {
+    description = "All compiler settings having influence on the binary representation of data exchanged via {{mw::com}}/{{LoLa}} (event, field, service-method payloads) have to be identical for compilation of code containing {{mw::com}} proxies and skeletons, which communicate."
+    safety = ScoreReq.Asil.B
+    version = 1
+}
+
+/* broken_link_c/issue/21209491 */
+ScoreReq.AoU EventOrFieldReceptionViaGenericProxyNeedsSpecificCare {
+    description = "When receiving event or field data via untyped {{GenericProxyEvent}} or {{GenericProxyField}}, care has to be taken when accessing the corresponding {{SamplePtr<void>}} delivered by calls to {{GetNewSamples()}}: When casting it to the expected type, it needs to be checked that no access behind the size returned by {{GetSampleSize()}} will happen."
+    safety = ScoreReq.Asil.B
+    version = 1
+}
+
+/* broken_link_c/issue/32388804 */
+ScoreReq.AoU CorrectlyConfiguredEventsFieldsPerServiceType {
+    description = "It shall be ensured that all safety relevant events/fields in the service type are the same in all configurations."
+    safety = ScoreReq.Asil.B
+    version = 1
+}
+
+/* broken_link_c/issue/25556819 */
+ScoreReq.AoU LoLaIpcCommunicationLostOrDelayedIpcCommunication {
+    description = "[ISSUE:4542883] peers shall detect lost or delayed [ISSUE:4542883] communication by additional design measures on their [ISSUE:4542883] usage."
+    safety = ScoreReq.Asil.B
+    note = "Platform cannot provide timing integrity by design, it only provides deadline monitoring which can be used by the [ISSUE:4542883] safe usage to detect [ISSUE:4542883] timing anomalies."
+    version = 1
+}
+
+/* broken_link_c/issue/23012160 */
+ScoreReq.AoU EnsureTheIntegrityAndReliabilityOfCommunication {
+    description = "The Safety-Related Application Software and Safety-Related Platform Software shall ensure the integrity and reliability of communication by managing the following potential failure modes in the delivery of information: • Loss or delay of periodic or aperiodic events. • Loss or delayed delivery of a method call. • Loss or delayed delivery of a method response. • Loss or delay of field updates."
+    safety = ScoreReq.Asil.B
+    version = 1
+}

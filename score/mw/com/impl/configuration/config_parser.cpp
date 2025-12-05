@@ -27,6 +27,7 @@
 
 #include <cstdlib>
 #include <exception>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -62,6 +63,10 @@ constexpr auto kEventIdKey = "eventId"sv;
 constexpr auto kFieldsKey = "fields"sv;
 constexpr auto kFieldNameKey = "fieldName"sv;
 constexpr auto kFieldIdKey = "fieldId"sv;
+constexpr auto kMethodsKey = "methods"sv;
+constexpr auto kMethodNameKey = "methodName"sv;
+constexpr auto kMethodIdKey = "methodId"sv;
+constexpr auto kMethodQueueSizeKey = "queueSize"sv;
 constexpr auto kEventNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kEventMaxSamplesKey = "maxSamples"sv;
 constexpr auto kEventMaxSubscribersKey = "maxSubscribers"sv;
@@ -470,6 +475,31 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceI
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
+auto ParseLolaMethodInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) noexcept
+    -> void
+{
+    const auto& methods = json.As<score::json::Object>().value().get().find(kMethodsKey.data());
+    if (methods == json.As<score::json::Object>().value().get().cend())
+    {
+        return;
+    }
+
+    for (const auto& method : methods->second.As<score::json::List>().value().get())
+    {
+        const auto& method_object = method.As<score::json::Object>().value().get();
+        const auto& method_name = GetValueFromJson<std::string>(method_object, kMethodNameKey);
+        const std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size =
+            GetOptionalValueFromJson<LolaMethodInstanceDeployment::QueueSize>(method_object, kMethodQueueSizeKey);
+        const LolaMethodInstanceDeployment method_deployment{queue_size};
+
+        const auto emplace_result = service.methods_.emplace(
+            std::piecewise_construct, std::forward_as_tuple(method_name), std::forward_as_tuple(method_deployment));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second, "Could not emplace element in map");
+    }
+}
+
+// See Note 1
+// coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseServiceElementTracingEnabled(const score::json::Any& json,
                                        TracingConfiguration& tracing_configuration,
                                        const std::string_view service_type_name_view,
@@ -567,6 +597,7 @@ auto ParseLolaServiceInstanceDeployment(const score::json::Any& json) -> LolaSer
 
     ParseLolaEventInstanceDeployment(json, service);
     ParseLolaFieldInstanceDeployment(json, service);
+    ParseLolaMethodInstanceDeployment(json, service);
 
     service.strict_permissions_ = ParsePermissionChecks(json) == kStrictPermission;
 
@@ -769,13 +800,56 @@ auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceType
     return true;
 }
 
-auto AreEventAndFieldIdsUnique(const LolaServiceTypeDeployment& lola_service_type_deployment) noexcept -> bool
+// See Note 1
+// coverity[autosar_cpp14_a15_5_3_violation]
+auto ParseLolaMethodTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) noexcept -> bool
+{
+    const auto& methods = json.As<score::json::Object>().value().get().find(kMethodsKey.data());
+    if (methods == json.As<score::json::Object>().value().get().cend())
+    {
+        return false;
+    }
+
+    for (const auto& method : methods->second.As<score::json::List>().value().get())
+    {
+        const auto& method_object = method.As<score::json::Object>().value().get();
+        const auto& method_name = method_object.find(kMethodNameKey.data());
+        const auto& method_id = method_object.find(kMethodIdKey.data());
+
+        if ((method_name != method_object.cend()) && (method_id != method_object.cend()))
+        {
+            const auto result =
+                service.methods_.emplace(std::piecewise_construct,
+                                         std::forward_as_tuple(method_name->second.As<std::string>().value().get()),
+                                         std::forward_as_tuple(method_id->second.As<std::uint16_t>().value()));
+
+            if (result.second != true)
+            {
+                score::mw::log::LogFatal("lola") << "A method was configured twice.";
+                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+                std::terminate();
+            }
+        }
+        else
+        {
+            score::mw::log::LogFatal("lola") << "Either no Method-Name or no Method-Id provided";
+            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            std::terminate();
+        }
+    }
+    return true;
+}
+
+auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_service_type_deployment) noexcept -> bool
 {
     const auto& events = lola_service_type_deployment.events_;
     const auto& fields = lola_service_type_deployment.fields_;
+    const auto& methods = lola_service_type_deployment.methods_;
 
     static_assert(std::is_same<LolaEventId, LolaFieldId>::value,
                   "EventId and FieldId should have the same underlying type.");
+    static_assert(std::is_same<LolaEventId, LolaMethodId>::value,
+                  "EventId and MethodId should have the same underlying type.");
     std::set<LolaEventId> ids{};
 
     for (const auto& event : events)
@@ -795,6 +869,15 @@ auto AreEventAndFieldIdsUnique(const LolaServiceTypeDeployment& lola_service_typ
             return false;
         }
     }
+
+    for (const auto& method : methods)
+    {
+        const auto result = ids.insert(method.second);
+        if (!result.second)
+        {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -808,15 +891,16 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) noexcept -> L
         LolaServiceTypeDeployment lola{service_id->second.As<std::uint16_t>().value()};
         const bool events_exist = ParseLolaEventTypeDeployments(json, lola);
         const bool fields_exist = ParseLolaFieldTypeDeployments(json, lola);
-        if (!events_exist && !fields_exist)
+        const bool methods_exist = ParseLolaMethodTypeDeployments(json, lola);
+        if (!events_exist && !fields_exist && !methods_exist)
         {
-            score::mw::log::LogFatal("lola") << "Configuration should contain at least one event or field.";
+            score::mw::log::LogFatal("lola") << "Configuration should contain at least one event, field, or method.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             std::terminate();
         }
-        if (!AreEventAndFieldIdsUnique(lola))
+        if (!AreEventFieldAndMethodIdsUnique(lola))
         {
-            score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId or fieldIds.";
+            score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             std::terminate();
         }

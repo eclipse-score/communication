@@ -1,0 +1,30 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include ../../fta_metamodel.puml
+
+$TopEvent("Stop Offer on wrong IDS", "TopEvent")
+
+$OrGate("Gate2", "TopEvent")
+$IntermediateEvent("Wrong service discovery file system elements are removed", "Event1", "Gate2")
+$OrGate("Gate3", "Event1")
+$BasicEvent("On destruction wrong service instance is selected", "Event6", "Gate3")
+$BasicEvent("Wrong instance marker file unlinked", "Event5", "Gate3")
+$IntermediateEvent("Wrong shared memory segment is unlinked", "Event2", "Gate2")
+$OrGate("Gate1", "Event2")
+$BasicEvent("On destruction wrong shared memory segment is selected", "Event4", "Gate1")
+$BasicEvent("Wrong path to unlink", "Event3", "Gate1")
+
+@enduml

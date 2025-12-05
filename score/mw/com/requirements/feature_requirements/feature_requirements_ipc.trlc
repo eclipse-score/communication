@@ -10,11 +10,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-
 package Communication
 
 import ScoreReq
-
 import AssumedSystemRequirements
 
 ScoreReq.FeatReq SupportForTimeBasedArchitecture {

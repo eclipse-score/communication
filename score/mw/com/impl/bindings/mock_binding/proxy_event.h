@@ -122,6 +122,61 @@ Result<std::size_t> ProxyEvent<SampleType>::GetNewFakeSamples(
     return {num_samples};
 }
 
+template <typename SampleType>
+class ProxyEventFacade : public ProxyEventBinding<SampleType>
+{
+  public:
+    ProxyEventFacade(ProxyEvent<SampleType>& proxy_event)
+        : ProxyEventBinding<SampleType>{}, proxy_event_{proxy_event} {};
+
+    ~ProxyEventFacade() override = default;
+
+    SubscriptionState GetSubscriptionState() const noexcept override
+    {
+        return proxy_event_.GetSubscriptionState();
+    }
+    void Unsubscribe() noexcept override
+    {
+        return proxy_event_.Unsubscribe();
+    }
+    ResultBlank Subscribe(std::size_t n) noexcept override
+    {
+        return proxy_event_.Subscribe(n);
+    }
+    Result<std::size_t> GetNumNewSamplesAvailable() const noexcept override
+    {
+        return proxy_event_.GetNumNewSamplesAvailable();
+    }
+    Result<std::size_t> GetNewSamples(typename ProxyEventBinding<SampleType>::Callback&& callback,
+                                      TrackerGuardFactory& tracker_guard_factory) noexcept override
+    {
+        return proxy_event_.GetNewSamples(std::move(callback), tracker_guard_factory);
+    }
+    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
+    {
+        return proxy_event_.SetReceiveHandler(handler);
+    }
+    ResultBlank UnsetReceiveHandler() noexcept override
+    {
+        return proxy_event_.UnsetReceiveHandler();
+    }
+    std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override
+    {
+        return proxy_event_.GetMaxSampleCount();
+    }
+    BindingType GetBindingType() const noexcept override
+    {
+        return proxy_event_.GetBindingType();
+    }
+    void NotifyServiceInstanceChangedAvailability(bool b, pid_t pid) noexcept override
+    {
+        return proxy_event_.NotifyServiceInstanceChangedAvailability(b, pid);
+    }
+
+  private:
+    ProxyEvent<SampleType>& proxy_event_;
+};
+
 }  // namespace score::mw::com::impl::mock_binding
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_PROXY_EVENT_H

@@ -213,6 +213,15 @@ cc_library(
 )
 
 cc_library(
+    name = "lola_method_instance_deployment",
+    srcs = ["lola_method_instance_deployment.cpp"],
+    hdrs = ["lola_method_instance_deployment.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = ["@score_baselibs//score/json"],
+)
+
+cc_library(
     name = "lola_service_instance_deployment",
     srcs = ["lola_service_instance_deployment.cpp"],
     hdrs = ["lola_service_instance_deployment.h"],
@@ -222,6 +231,7 @@ cc_library(
         ":configuration_common_resources",
         ":lola_event_instance_deployment",
         ":lola_field_instance_deployment",
+        ":lola_method_instance_deployment",
         ":lola_service_instance_id",
         ":quality_type",
         "//score/mw/com/impl:error",
@@ -241,6 +251,7 @@ cc_library(
         ":binding_service_type_deployment",
         ":lola_event_id",
         ":lola_field_id",
+        ":lola_method_id",
         ":lola_service_id",
     ],
 )
@@ -434,8 +445,15 @@ cc_test(
     deps = [
         ":config_parser",
         "@googletest//:gtest_main",
-        "@score_baselibs//score/language/safecpp/coverage_termination_handler",
     ],
+)
+
+cc_gtest_unit_test(
+    name = "config_parser_methods_test",
+    srcs = ["config_parser_methods_test.cpp"],
+    data = ["example/ara_com_config.json"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [":config_parser"],
 )
 
 cc_test(
@@ -504,6 +522,15 @@ cc_gtest_unit_test(
     deps = [
         ":lola_field_instance_deployment",
         "//score/mw/com/impl/configuration/test:configuration_test_resources",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "lola_method_instance_deployment_test",
+    srcs = ["lola_method_instance_deployment_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":lola_method_instance_deployment",
     ],
 )
 
@@ -648,12 +675,14 @@ cc_unit_test_suites_for_host_and_qnx(
     cc_unit_tests = [
         "shm_size_calc_mode_test",
         ":config_parser_test",
+        ":config_parser_methods_test",
         ":configuration_common_resources_test",
         ":configuration_error_test",
         ":configuration_test",
         ":global_configuration_test",
         ":lola_event_instance_deployment_test",
         ":lola_field_instance_deployment_test",
+        ":lola_method_instance_deployment_test",
         ":lola_service_instance_deployment_test",
         ":lola_service_instance_id_test",
         ":lola_service_type_deployment_test",

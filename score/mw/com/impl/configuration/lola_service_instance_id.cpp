@@ -37,8 +37,7 @@ LolaServiceInstanceId::LolaServiceInstanceId(InstanceId instance_id) noexcept
 }
 
 LolaServiceInstanceId::LolaServiceInstanceId(const score::json::Object& json_object) noexcept
-    : id_{GetValueFromJson<InstanceId>(json_object, kInstanceIdKeyLolaSerInstID)},
-      hash_string_{ToHashStringImpl(id_, hashStringSize)}
+    : LolaServiceInstanceId{GetValueFromJson<InstanceId>(json_object, kInstanceIdKeyLolaSerInstID)}
 {
     const auto serialization_version =
         GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKeyLolaSerInstID);

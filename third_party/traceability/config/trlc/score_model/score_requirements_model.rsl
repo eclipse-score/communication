@@ -23,11 +23,14 @@ enum Status {
     invalid
 }
 
+///////////////////////////////
+// Abstract Types
+///////////////////////////////
+
 abstract type Requirement {
     description				String
     version                 Integer
-	safety                  Asil
-    note optional           String
+	note optional           String
     status                  Status
     freeze status =         Status.valid
 }
@@ -38,7 +41,15 @@ tuple ReqId {
     version                  Integer
 }
 
-type AssumedSystemReq extends Requirement {
+abstract type RequirementSafety extends Requirement {
+    safety                  Asil
+}
+
+///////////////////////////////
+// S-Core Requirements Model
+///////////////////////////////
+
+type AssumedSystemReq extends RequirementSafety {
     rationale				String
 }
 
@@ -48,7 +59,7 @@ tuple AssumedSystemReqId {
     version                  Integer
 }
 
-type FeatReq extends Requirement {
+type FeatReq extends RequirementSafety {
     derived_from			AssumedSystemReqId[1 .. *]
 }
 
@@ -58,17 +69,52 @@ tuple FeatReqId {
     version                  Integer
 }
 
-type CompReq extends Requirement {
+type CompReq extends RequirementSafety {
     derived_from		    FeatReqId[1 .. *]
     fulfilledBy optional    String
 }
 
-type Component extends Requirement {
+///////////////////////////////
+// Safety Analyses
+///////////////////////////////
 
+enum GuideWord {
+    TooEarly
+    TooLate
+    Wrong
+    LossOfFunction
+    PartialFunction
+    UnintendedFunction
+    ExceedingFunction
+    DelayedFunction
 }
+
+type FailureMode extends ScoreReq.RequirementSafety {
+    guideword               GuideWord
+    failureeffect           String
+    rationale optional      String
+    potentialcause optional String
+    interface optional      String
+}
+
+type ControlMeasure extends ScoreReq.RequirementSafety {
+    mitigates optional               String
+}
+
+type AoU extends ControlMeasure {
+}
+
+///////////////////////////////
+// Standards
+///////////////////////////////
 
 abstract type StdReq extends Requirement {
 }
+
+
+///////////////////////////////
+// Checks
+///////////////////////////////
 
 checks Requirement {
 

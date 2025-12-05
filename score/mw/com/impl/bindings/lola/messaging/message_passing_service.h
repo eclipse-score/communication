@@ -103,7 +103,7 @@ class MessagePassingService final : public IMessagePassingService
                                      const HandlerRegistrationNoType registration_no,
                                      const pid_t target_node_id) noexcept override;
 
-    /// \brief Register a handler on Skeleton side which will be called when CallServiceMethodSubscribed is called by a
+    /// \brief Register a handler on Skeleton side which will be called when SubscribeServiceMethod is called by a
     /// Proxy.
     /// \details see IMessagePassingService::RegisterOnServiceMethodSubscribedHandler
     ResultBlank RegisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier skeleton_instance_identifier,
@@ -136,8 +136,8 @@ class MessagePassingService final : public IMessagePassingService
     /// \brief Blocking call which is called on Proxy side to notify the Skeleton that a Proxy has setup the
     /// method shared memory region and wants to subscribe. The callback registered with RegisterMethodCall will be
     /// called on the Skeleton side and a response will be returned.
-    /// \details see IMessagePassingService::CallServiceMethodSubscribed
-    ResultBlank CallServiceMethodSubscribed(const SkeletonInstanceIdentifier& skeleton_instance_identifier) override;
+    /// \details see IMessagePassingService::SubscribeServiceMethod
+    ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier) override;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response

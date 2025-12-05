@@ -39,7 +39,7 @@ struct ProxyInstanceIdentifier
     ProxyInstanceCounter proxy_instance_counter;
 };
 
-bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs);
+bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 

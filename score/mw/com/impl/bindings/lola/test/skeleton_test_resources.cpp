@@ -23,6 +23,8 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <functional>
+#include <memory>
 
 namespace score::mw::com::impl::lola
 {
@@ -35,8 +37,7 @@ using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
 using ::testing::ReturnRef;
 using ::testing::StrEq;
-
-const score::os::Fcntl::Open kCreateOrOpenFlags{score::os::Fcntl::Open::kCreate | score::os::Fcntl::Open::kReadOnly};
+using ::testing::WithArg;
 
 }  // namespace
 
@@ -136,6 +137,7 @@ InstanceIdentifier GetValidASILInstanceIdentifierWithField()
 
 SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
 {
+    // Default behaviour for impl and lola runtimes
     impl::Runtime::InjectMock(&runtime_mock_);
     ON_CALL(runtime_mock_, GetBindingRuntime(BindingType::kLoLa)).WillByDefault(::testing::Return(&lola_runtime_mock_));
     memory::shared::SharedMemoryFactory::InjectMock(&shared_memory_factory_mock_);
@@ -144,6 +146,72 @@ SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
     ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
     ON_CALL(tracing_runtime_mock_, GetBindingTracingRuntime(BindingType::kLoLa))
         .WillByDefault(ReturnRef(binding_tracing_runtime_mock_));
+
+    ON_CALL(lola_runtime_mock_, GetApplicationId()).WillByDefault(::testing::Return(kDummyApplicationId));
+    ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(::testing::ReturnRef(message_passing_mock_));
+
+    ON_CALL(filesystem_fake_.GetUtils(), CreateDirectories(_, _)).WillByDefault(Return(score::ResultBlank{}));
+
+    // Default behaviour for path builders
+    ON_CALL(shm_path_builder_mock_, GetControlChannelShmName(_, QualityType::kASIL_QM))
+        .WillByDefault(Return(test::kControlChannelPathQm));
+    ON_CALL(shm_path_builder_mock_, GetControlChannelShmName(_, QualityType::kASIL_B))
+        .WillByDefault(Return(test::kControlChannelPathAsilB));
+    ON_CALL(shm_path_builder_mock_, GetDataChannelShmName(_)).WillByDefault(Return(test::kDataChannelPath));
+
+    // Default behaviour for successful usage marker file creation
+    ON_CALL(partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
+        .WillByDefault(Return(test::kServiceInstanceUsageFilePath));
+    ON_CALL(*fcntl_mock_, open(StrEq(test::kServiceInstanceUsageFilePath), test::kCreateOrOpenFlags, _))
+        .WillByDefault(Return(test::kServiceInstanceUsageFileDescriptor));
+    ON_CALL(*stat_mock_, chmod(StrEq(test::kServiceInstanceUsageFilePath), _)).WillByDefault(Return(score::cpp::blank{}));
+
+    // Default behaviour for creating QM and ASIL-B shared memory resources - occurs when there is no connected proxy.
+    ON_CALL(shared_memory_factory_mock_, Create(test::kControlChannelPathQm, _, _, _, false))
+        .WillByDefault(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                std::invoke(initialize_callback, control_qm_shared_memory_resource_mock_);
+                return control_qm_shared_memory_resource_mock_;
+            }));
+    ON_CALL(shared_memory_factory_mock_, Create(test::kControlChannelPathAsilB, _, _, _, false))
+        .WillByDefault(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                std::invoke(initialize_callback, control_asil_b_shared_memory_resource_mock_);
+                return control_asil_b_shared_memory_resource_mock_;
+            }));
+
+    // Default behaviour for opening QM and ASIL-B shared memory resources - occurs when there is a connected proxy.
+    ON_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _))
+        .WillByDefault(Return(control_qm_shared_memory_resource_mock_));
+    ON_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathAsilB, true, _))
+        .WillByDefault(Return(control_asil_b_shared_memory_resource_mock_));
+
+    // Default behaviour for opening / creating data shared memory resource
+    ON_CALL(shared_memory_factory_mock_, Create(test::kDataChannelPath, _, _, _, _))
+        .WillByDefault(
+            WithArg<1>([this](auto initialize_callback) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                std::invoke(initialize_callback, data_shared_memory_resource_mock_);
+                return data_shared_memory_resource_mock_;
+            }));
+    ON_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _))
+        .WillByDefault(Return(data_shared_memory_resource_mock_));
+
+    // Construct ServiceDataControl / Storage using mocked memory resources
+    service_data_control_qm_ = std::make_unique<ServiceDataControl>(
+        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_QM));
+    service_data_control_asil_b_ = std::make_unique<ServiceDataControl>(
+        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_B));
+    service_data_storage_ = std::make_unique<ServiceDataStorage>(
+        CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId));
+
+    // Default behaviour for get the usable base addresses of the mocked memory resources using the constructed
+    // ServiceDataControl / Storage created above.
+    ON_CALL(*control_qm_shared_memory_resource_mock_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(service_data_control_qm_.get())));
+    ON_CALL(*control_asil_b_shared_memory_resource_mock_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(service_data_control_asil_b_.get())));
+    ON_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(service_data_storage_.get())));
 }
 
 SkeletonMockedMemoryFixture::~SkeletonMockedMemoryFixture()
@@ -153,130 +221,58 @@ SkeletonMockedMemoryFixture::~SkeletonMockedMemoryFixture()
     memory::shared::SharedMemoryFactory::InjectMock(nullptr);
 }
 
-void SkeletonMockedMemoryFixture::InitialiseSkeleton(const InstanceIdentifier& instance_identifier)
+SkeletonMockedMemoryFixture& SkeletonMockedMemoryFixture::InitialiseSkeleton(
+    const InstanceIdentifier& instance_identifier)
 {
     const auto& instance_depl_info = InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment();
     const auto* lola_service_instance_deployment_ptr =
         std::get_if<LolaServiceInstanceDeployment>(&instance_depl_info.bindingInfo_);
-    ASSERT_NE(lola_service_instance_deployment_ptr, nullptr);
+    EXPECT_NE(lola_service_instance_deployment_ptr, nullptr);
 
     const auto& service_type_depl_info = InstanceIdentifierView{instance_identifier}.GetServiceTypeDeployment();
     const auto* lola_service_type_deployment_ptr =
         std::get_if<LolaServiceTypeDeployment>(&service_type_depl_info.binding_info_);
-    ASSERT_NE(lola_service_type_deployment_ptr, nullptr);
+    EXPECT_NE(lola_service_type_deployment_ptr, nullptr);
 
-    skeleton_ = std::make_unique<Skeleton>(instance_identifier,
-                                           *lola_service_instance_deployment_ptr,
-                                           *lola_service_type_deployment_ptr,
-                                           filesystem_fake_.CreateInstance(),
-                                           std::make_unique<ShmPathBuilderMock>(),
-                                           std::make_unique<PartialRestartPathBuilderMock>(),
-                                           std::optional<memory::shared::LockFile>{},
-                                           nullptr);
+    skeleton_ = std::make_unique<Skeleton>(
+        instance_identifier,
+        *lola_service_instance_deployment_ptr,
+        *lola_service_type_deployment_ptr,
+        filesystem_fake_.CreateInstance(),
+        std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
+        std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_),
+        std::optional<memory::shared::LockFile>{},
+        nullptr);
 
-    SkeletonAttorney skeleton_attorney{*skeleton_};
-    shm_path_builder_mock_ = skeleton_attorney.GetIShmPathBuilder();
-    ASSERT_NE(shm_path_builder_mock_, nullptr);
-    partial_restart_path_builder_mock_ = skeleton_attorney.GetIPartialRestartPathBuilder();
-    ASSERT_NE(partial_restart_path_builder_mock_, nullptr);
-    ON_CALL(filesystem_fake_.GetUtils(), CreateDirectories(_, _)).WillByDefault(Return(score::ResultBlank{}));
-
-    ON_CALL(*shm_path_builder_mock_, GetControlChannelShmName(_, QualityType::kASIL_QM))
-        .WillByDefault(Return(test::kControlChannelPathQm));
-    ON_CALL(*shm_path_builder_mock_, GetControlChannelShmName(_, QualityType::kASIL_B))
-        .WillByDefault(Return(test::kControlChannelPathAsilB));
-    ON_CALL(*shm_path_builder_mock_, GetDataChannelShmName(_)).WillByDefault(Return(test::kDataChannelPath));
+    return *this;
 }
 
-void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed(
-    const std::string& service_existence_marker_file_path,
-    const std::int32_t lock_file_descriptor) noexcept
+SkeletonMockedMemoryFixture& SkeletonMockedMemoryFixture::WithNoConnectedProxy()
 {
-    EXPECT_CALL(*partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_))
-        .WillOnce(Return(service_existence_marker_file_path));
-    EXPECT_CALL(*fcntl_mock_, open(StrEq(service_existence_marker_file_path.data()), kCreateOrOpenFlags, _))
-        .WillOnce(Return(lock_file_descriptor));
-    EXPECT_CALL(*stat_mock_, chmod(StrEq(service_existence_marker_file_path.data()), _)).WillOnce(Return(score::cpp::blank{}));
+    ON_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kNonBlockingExlusiveLockOperation))
+        .WillByDefault(Return(score::cpp::blank{}));
+    ON_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kUnlockOperation))
+        .WillByDefault(Return(score::cpp::blank{}));
+    return *this;
+}
 
-    EXPECT_CALL(*unistd_mock_, close(lock_file_descriptor));
+SkeletonMockedMemoryFixture& SkeletonMockedMemoryFixture::WithAlreadyConnectedProxy()
+{
+    ON_CALL(*fcntl_mock_, flock(test::kServiceInstanceUsageFileDescriptor, test::kNonBlockingExlusiveLockOperation))
+        .WillByDefault(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
+    return *this;
+}
+
+void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed() noexcept
+{
+    // Note: Default behaviour for these expectations are set in the constructor.
+    EXPECT_CALL(partial_restart_path_builder_mock_, GetServiceInstanceUsageMarkerFilePath(_));
+    EXPECT_CALL(*fcntl_mock_, open(StrEq(test::kServiceInstanceUsageFilePath), test::kCreateOrOpenFlags, _));
+    EXPECT_CALL(*stat_mock_, chmod(StrEq(test::kServiceInstanceUsageFilePath), _));
+
+    EXPECT_CALL(*unistd_mock_, close(test::kServiceInstanceUsageFileDescriptor));
     // we explicitly expect NO calls to unlink! See Skeleton::CreateOrOpenServiceInstanceUsageMarkerFile!
-    EXPECT_CALL(*unistd_mock_, unlink(StrEq(service_existence_marker_file_path.data()))).Times(0);
-}
-
-void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileFlockAcquired(
-    const std::int32_t existence_marker_file_descriptor) noexcept
-{
-    const os::Fcntl::Operation non_blocking_exclusive_lock_operation =
-        os::Fcntl::Operation::kLockExclusive | score::os::Fcntl::Operation::kLockNB;
-    const os::Fcntl::Operation unlock_operation = os::Fcntl::Operation::kUnLock;
-
-    EXPECT_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor, non_blocking_exclusive_lock_operation))
-        .WillOnce(Return(score::cpp::blank{}));
-    EXPECT_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor, unlock_operation)).WillOnce(Return(score::cpp::blank{}));
-}
-
-void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileAlreadyFlocked(
-    const std::int32_t existence_marker_file_descriptor) noexcept
-{
-    const os::Fcntl::Operation non_blocking_exclusive_lock_operation =
-        os::Fcntl::Operation::kLockExclusive | score::os::Fcntl::Operation::kLockNB;
-
-    EXPECT_CALL(*fcntl_mock_, flock(existence_marker_file_descriptor, non_blocking_exclusive_lock_operation))
-        .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
-}
-
-void SkeletonMockedMemoryFixture::ExpectControlSegmentCreated(const QualityType quality_type)
-{
-    const auto control_channel_path =
-        (quality_type == QualityType::kASIL_QM) ? test::kControlChannelPathQm : test::kControlChannelPathAsilB;
-    const auto created_resource = (quality_type == QualityType::kASIL_QM) ? control_qm_shared_memory_resource_mock_
-                                                                          : control_asil_b_shared_memory_resource_mock_;
-
-    // When we attempt to create a shared memory region which returns a pointer to a resource
-    EXPECT_CALL(shared_memory_factory_mock_, Create(control_channel_path, _, _, WritablePermissionsMatcher(), false))
-        .WillOnce(InvokeWithoutArgs(
-            [created_resource, quality_type, this]() -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
-                SkeletonAttorney skeleton_attorney{*skeleton_};
-                skeleton_attorney.InitializeSharedMemoryForControl(quality_type, created_resource);
-                return created_resource;
-            }));
-}
-
-void SkeletonMockedMemoryFixture::ExpectDataSegmentCreated(const bool in_typed_memory)
-{
-    // When we attempt to create a shared memory region which returns a pointer to a resource
-    EXPECT_CALL(shared_memory_factory_mock_,
-                Create(test::kDataChannelPath, _, _, ReadablePermissionsMatcher(), in_typed_memory))
-        .WillOnce(InvokeWithoutArgs([this]() -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
-            SkeletonAttorney skeleton_attorney{*skeleton_};
-            skeleton_attorney.InitializeSharedMemoryForData(data_shared_memory_resource_mock_);
-            return data_shared_memory_resource_mock_;
-        }));
-}
-
-void SkeletonMockedMemoryFixture::ExpectControlSegmentOpened(const QualityType quality_type,
-                                                             ServiceDataControl& existing_service_data_control) noexcept
-{
-    const auto control_channel_path =
-        (quality_type == QualityType::kASIL_QM) ? test::kControlChannelPathQm : test::kControlChannelPathAsilB;
-    const auto created_resource = (quality_type == QualityType::kASIL_QM) ? control_qm_shared_memory_resource_mock_
-                                                                          : control_asil_b_shared_memory_resource_mock_;
-
-    // When we attempt to open a shared memory region which returns a pointer to a resource
-    EXPECT_CALL(shared_memory_factory_mock_, Open(control_channel_path, true, _)).WillOnce(Return(created_resource));
-
-    EXPECT_CALL(*created_resource, getUsableBaseAddress())
-        .WillOnce(Return(static_cast<void*>(&existing_service_data_control)));
-}
-
-void SkeletonMockedMemoryFixture::ExpectDataSegmentOpened(ServiceDataStorage& existing_service_data_storage) noexcept
-{
-    // When we attempt to open a shared memory region which returns a pointer to a resource
-    EXPECT_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _))
-        .WillOnce(Return(data_shared_memory_resource_mock_));
-
-    EXPECT_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
-        .WillOnce(Return(static_cast<void*>(&existing_service_data_storage)));
+    EXPECT_CALL(*unistd_mock_, unlink(StrEq(test::kServiceInstanceUsageFilePath))).Times(0);
 }
 
 ServiceDataControl SkeletonMockedMemoryFixture::CreateServiceDataControlWithEvent(ElementFqId element_fq_id,

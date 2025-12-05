@@ -56,4 +56,4 @@ If no mapping file is specified all types and attributes are exported 1:1 into t
 
 ### Sequence Diagram
 
-![Proxy Binding Model](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/platform/aas/tools/traceability/trlc/trlc_renderer/assets/trlc_renderer_seq.puml)
+![Proxy Binding Model](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/third_party/traceability/trlc/trlc_renderer/assets/trlc_renderer_seq.puml)

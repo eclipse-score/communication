@@ -24,19 +24,21 @@
 namespace score::mw::com::impl
 {
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
+template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
 class BindingServiceTypeDeployment
 {
   public:
     using EventIdMapping = std::unordered_map<std::string, EventIdType>;
     using FieldIdMapping = std::unordered_map<std::string, FieldIdType>;
+    using MethodIdMapping = std::unordered_map<std::string, MethodIdType>;
     using ServiceId = ServiceIdType;
 
     explicit BindingServiceTypeDeployment(const score::json::Object& json_object) noexcept;
 
     explicit BindingServiceTypeDeployment(const ServiceIdType service_id,
                                           EventIdMapping events = {},
-                                          FieldIdMapping fields = {}) noexcept;
+                                          FieldIdMapping fields = {},
+                                          MethodIdMapping methods = {}) noexcept;
 
     json::Object Serialize() const noexcept;
     std::string_view ToHashString() const noexcept;
@@ -50,6 +52,8 @@ class BindingServiceTypeDeployment
     EventIdMapping events_;  // key = event name
     // coverity[autosar_cpp14_m11_0_1_violation]
     FieldIdMapping fields_;  // key = field name
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    MethodIdMapping methods_;  // key = method name
 
     /**
      * \brief The size of the hash string returned by ToHashString()
@@ -69,14 +73,19 @@ class BindingServiceTypeDeployment
     std::string hash_string_;
 };
 
-template <ServiceElementType service_element_type, typename EventIdType, typename FieldIdType, typename ServiceIdType>
-auto GetServiceElementId(
-    const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& binding_service_type_deployment,
-    const std::string& service_element_name);
+template <ServiceElementType service_element_type,
+          typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType>
+auto GetServiceElementId(const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>&
+                             binding_service_type_deployment,
+                         const std::string& service_element_name);
 
-template <typename EventIdType, typename FieldIdType, typename ServiceIdType>
-bool operator==(const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& lhs,
-                const BindingServiceTypeDeployment<EventIdType, FieldIdType, ServiceIdType>& rhs) noexcept;
+template <typename EventIdType, typename FieldIdType, typename MethodIdType, typename ServiceIdType>
+bool operator==(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& lhs,
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType>& rhs) noexcept;
 
 }  // namespace score::mw::com::impl
 

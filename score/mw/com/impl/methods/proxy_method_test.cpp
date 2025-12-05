@@ -224,7 +224,7 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_WithCopy)
     this->GivenAValidProxyMethod();
 
     // Expecting that DoCall will be called on the binding
-    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U, _));
+    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U));
 
     // When call operator is called on the ProxyMethod
     auto& proxy_method = *(this->unit_);
@@ -239,7 +239,7 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_WithCopyTemporary)
     this->GivenAValidProxyMethod();
 
     // Expecting that DoCall will be called on the binding
-    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U, _));
+    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U));
 
     // When call operator is called on the ProxyMethod handing the arg over as temporaries
     auto& proxy_method = *(this->unit_);
@@ -255,7 +255,7 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_PropagatesBindingError
 
     // Expecting that DoCall will be called on the binding which returns an error
     const auto binding_error_code = ComErrc::kBindingFailure;
-    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U, _)).WillOnce(Return(MakeUnexpected(binding_error_code)));
+    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U)).WillOnce(Return(MakeUnexpected(binding_error_code)));
 
     // When call operator is called on the ProxyMethod
     auto& proxy_method = *(this->unit_);
@@ -284,7 +284,7 @@ TYPED_TEST(ProxyMethodWithoutInArgsTestFixture, CallOperator_PropagatesBindingEr
 
     // Expecting that DoCall will be called on the binding which returns an error
     const auto binding_error_code = ComErrc::kBindingFailure;
-    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U, _)).WillOnce(Return(MakeUnexpected(binding_error_code)));
+    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U)).WillOnce(Return(MakeUnexpected(binding_error_code)));
 
     // When call operator is called on the ProxyMethod
     auto& proxy_method = *(this->unit_);
@@ -304,7 +304,7 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_ZeroCopy)
     auto method_in_arg_ptr_tuple = proxy_method.Allocate();
 
     // Expecting that DoCall will be called on the binding
-    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U, _));
+    EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U));
 
     // When filling the allocated argument storage and calling the call operator with the allocated argument pointers
     auto [method_in_arg_ptr_0, method_in_arg_ptr_1, method_in_arg_ptr_2] = std::move(method_in_arg_ptr_tuple.value());

@@ -37,8 +37,7 @@ SomeIpServiceInstanceId::SomeIpServiceInstanceId(InstanceId instance_id) noexcep
 }
 
 SomeIpServiceInstanceId::SomeIpServiceInstanceId(const score::json::Object& json_object) noexcept
-    : id_{GetValueFromJson<InstanceId>(json_object, kInstanceIdKey)},
-      hash_string_{ToHashStringImpl(id_, hashStringSize)}
+    : SomeIpServiceInstanceId{GetValueFromJson<InstanceId>(json_object, kInstanceIdKey)}
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, kSerializationVersionKey);
     if (serialization_version != serializationVersion)

@@ -34,17 +34,6 @@ SkeletonEventFixture::SkeletonEventFixture() : SkeletonMockedMemoryFixture{}
 
     InitialiseSkeleton(GetValidInstanceIdentifier());
 
-    SkeletonAttorney skeleton_attorney{*skeleton_};
-    shm_path_builder_mock_ = skeleton_attorney.GetIShmPathBuilder();
-
-    // Expect that the usage marker file path is created and closed
-    ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed();
-
-    // Setup the SharedMemoryResourceHeapAllocatorMock objects when offering the parent Skeleton
-    ExpectControlSegmentCreated(QualityType::kASIL_QM);
-    ExpectControlSegmentCreated(QualityType::kASIL_B);
-    ExpectDataSegmentCreated();
-
     SkeletonBinding::SkeletonEventBindings events{};
     SkeletonBinding::SkeletonFieldBindings fields{};
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};

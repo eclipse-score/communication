@@ -36,6 +36,29 @@ const ITracingFilterConfig::InstanceSpecifierView kInstanceSpecifierView{"my_ins
 const score::cpp::optional<ITracingFilterConfig::InstanceSpecifierView> kEnableAllInstanceSpecifiers{};
 constexpr auto kDummyTracePointType = SkeletonEventTracePointType::SEND;
 
+// Trace point type constants
+constexpr auto kSkeletonEventTracePointTypeSend = SkeletonEventTracePointType::SEND;
+constexpr auto kSkeletonEventTracePointTypeSendWithAllocate = SkeletonEventTracePointType::SEND_WITH_ALLOCATE;
+constexpr auto kSkeletonFieldTracePointTypeUpdate = SkeletonFieldTracePointType::UPDATE;
+constexpr auto kSkeletonFieldTracePointTypeUpdateWithAllocate = SkeletonFieldTracePointType::UPDATE_WITH_ALLOCATE;
+constexpr auto kSkeletonFieldTracePointTypeGetCall = SkeletonFieldTracePointType::GET_CALL;
+constexpr auto kSkeletonFieldTracePointTypeSetCall = SkeletonFieldTracePointType::SET_CALL;
+constexpr auto kProxyEventTracePointTypeSubscribe = ProxyEventTracePointType::SUBSCRIBE;
+constexpr auto kProxyEventTracePointTypeUnsubscribe = ProxyEventTracePointType::UNSUBSCRIBE;
+constexpr auto kProxyEventTracePointTypeGetNewSamples = ProxyEventTracePointType::GET_NEW_SAMPLES;
+constexpr auto kProxyFieldTracePointTypeGet = ProxyFieldTracePointType::GET;
+constexpr auto kProxyFieldTracePointTypeSet = ProxyFieldTracePointType::SET;
+
+// Element name constants
+constexpr std::string_view kEventCurrentPressureFrontLeft = "CurrentPressureFrontLeft"sv;
+constexpr std::string_view kEventCurrentTemperatureFrontLeft = "CurrentTemperatureFrontLeft"sv;
+constexpr std::string_view kEventCurrentHumidityFrontLeft = "CurrentHumidityFrontLeft"sv;
+constexpr std::string_view kFieldCurrentPressureFrontLeft = "CurrentPressureFrontLeft"sv;
+constexpr std::string_view kFieldCurrentTemperatureFrontLeft = "CurrentTemperatureFrontLeft"sv;
+constexpr std::string_view kFieldCurrentHumidityFrontLeft = "CurrentHumidityFrontLeft"sv;
+constexpr std::string_view kFieldCurrentAltitudeFrontLeft = "CurrentAltitudeFrontLeft"sv;
+constexpr std::string_view kFieldCurrentVelocityFrontLeft = "CurrentVelocityFrontLeft"sv;
+
 template <typename TracePointTypeIn>
 class TracingFilterConfigFixture : public ::testing::Test
 {
@@ -653,6 +676,35 @@ class ConfigurationFixture : public ::testing::Test
                                GlobalConfiguration{},
                                TracingConfiguration{});
     }
+
+    void PrepareConfigurationWithMultipleFieldElements(const std::vector<std::string_view>& field_element_names)
+    {
+        const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
+        Fields fields{};
+        for (const auto& name : field_element_names)
+        {
+            fields.emplace(name, MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U));
+        }
+        PrepareMinimalConfiguration(valid_instance_specifier, service_type_, Events{}, fields);
+    }
+
+    void PrepareConfigurationWithEventsAndFields(const std::vector<std::string_view>& event_element_names,
+                                                 const std::vector<std::string_view>& field_element_names)
+    {
+        const auto valid_instance_specifier = MakeInstanceSpecifier(kInstanceSpecifiersv);
+        Events events{};
+        for (const auto& name : event_element_names)
+        {
+            events.emplace(name, MakeLolaServiceInstanceDeployment<LolaEventInstanceDeployment>(1U, 1U));
+        }
+        Fields fields{};
+        for (const auto& name : field_element_names)
+        {
+            fields.emplace(name, MakeLolaServiceInstanceDeployment<LolaFieldInstanceDeployment>(1U, 1U));
+        }
+        PrepareMinimalConfiguration(valid_instance_specifier, service_type_, events, fields);
+    }
+
     score::cpp::optional<Configuration> configuration_{};
     TracingFilterConfig tracing_filter_config_{};
     const std::string_view service_type_ = "/bmw/ncar/services/TirePressureService";
@@ -725,6 +777,128 @@ TEST_F(TracingFilterConfigGetNumberOfTracingSlotsDeathTest, ConfigurationContain
     // When calling GetNumberOfTracingSlots
     // Then we expect failiure
     EXPECT_DEATH(tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value()), ".*");
+}
+
+using TracingFilterConfigGetNumberOfTracingSlotsFixture = ConfigurationFixture;
+TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, InsertingNoTracePointsWithTraceDoneCBReturnsZero)
+{
+    // Given a valid config with tracing required for both events and fields, and trace points that do not require
+    // trace done callbacks
+    PrepareConfigurationWithEventsAndFields({kEventCurrentPressureFrontLeft}, {kFieldCurrentTemperatureFrontLeft});
+
+    // When adding trace points that do not require trace done callbacks
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kEventCurrentPressureFrontLeft, kInstanceSpecifiersv, kProxyEventTracePointTypeSubscribe);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kEventCurrentPressureFrontLeft, kInstanceSpecifiersv, kProxyEventTracePointTypeUnsubscribe);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kEventCurrentPressureFrontLeft, kInstanceSpecifiersv, kProxyEventTracePointTypeGetNewSamples);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kFieldCurrentTemperatureFrontLeft, kInstanceSpecifiersv, kProxyFieldTracePointTypeGet);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kFieldCurrentTemperatureFrontLeft, kInstanceSpecifiersv, kProxyFieldTracePointTypeSet);
+
+    // Then the number of required tracing slots should be 0 since no callback-requiring trace points were added
+    const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
+    EXPECT_EQ(number_of_tracing_slots, 0);
+}
+
+TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, InsertingTracePointsWithTraceDoneCBReturnsCorrectNumber)
+{
+    // Given a valid config with multiple service elements (events and fields), each with tracing required
+    PrepareConfigurationWithEventsAndFields(
+        {kEventCurrentPressureFrontLeft, kEventCurrentTemperatureFrontLeft, kEventCurrentHumidityFrontLeft},
+        {kFieldCurrentAltitudeFrontLeft, kFieldCurrentVelocityFrontLeft});
+
+    // When adding trace point types from different service elements, some of which require tracing with a trace done
+    // callback
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kEventCurrentPressureFrontLeft, kInstanceSpecifiersv, kSkeletonEventTracePointTypeSend);
+    tracing_filter_config_.AddTracePoint(service_type_,
+                                         kEventCurrentTemperatureFrontLeft,
+                                         kInstanceSpecifiersv,
+                                         kSkeletonEventTracePointTypeSendWithAllocate);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kEventCurrentHumidityFrontLeft, kInstanceSpecifiersv, kProxyEventTracePointTypeSubscribe);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kFieldCurrentAltitudeFrontLeft, kInstanceSpecifiersv, kSkeletonFieldTracePointTypeUpdate);
+    tracing_filter_config_.AddTracePoint(service_type_,
+                                         kFieldCurrentVelocityFrontLeft,
+                                         kInstanceSpecifiersv,
+                                         kSkeletonFieldTracePointTypeUpdateWithAllocate);
+
+    // Then the number of required tracing slots should be the sum of unique service elements with callback-requiring
+    // trace points. Of the 3 configured events, 2 have callback-requiring trace points (CurrentPressureFrontLeft with
+    // SEND, CurrentTemperatureFrontLeft with SEND_WITH_ALLOCATE). Both configured fields have callback-requiring
+    // trace points (CurrentAltitudeFrontLeft with UPDATE, CurrentVelocityFrontLeft with UPDATE_WITH_ALLOCATE).
+    const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
+    EXPECT_EQ(number_of_tracing_slots, 4);
+}
+
+TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture,
+       InsertingMultipleTracePointsFromSameServiceElementWithTraceDoneCBDoesNotCountMultiple)
+{
+    // Given a valid config with both an event and a field sharing the same element name, and both configured to
+    // require tracing
+    PrepareConfigurationWithEventsAndFields({kEventCurrentPressureFrontLeft}, {kFieldCurrentPressureFrontLeft});
+
+    // When adding multiple trace point types from both the event and field elements with the same element name, some
+    // of which require trace done callbacks
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kEventCurrentPressureFrontLeft, kInstanceSpecifiersv, kSkeletonEventTracePointTypeSend);
+    tracing_filter_config_.AddTracePoint(service_type_,
+                                         kEventCurrentPressureFrontLeft,
+                                         kInstanceSpecifiersv,
+                                         kSkeletonEventTracePointTypeSendWithAllocate);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kEventCurrentPressureFrontLeft, kInstanceSpecifiersv, kProxyEventTracePointTypeSubscribe);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kFieldCurrentPressureFrontLeft, kInstanceSpecifiersv, kSkeletonFieldTracePointTypeUpdate);
+    tracing_filter_config_.AddTracePoint(service_type_,
+                                         kFieldCurrentPressureFrontLeft,
+                                         kInstanceSpecifiersv,
+                                         kSkeletonFieldTracePointTypeUpdateWithAllocate);
+
+    // Then the number of required tracing slots should be 2. The same element name "CurrentPressureFrontLeft" is
+    // counted as both an event and field element, both requiring trace done callbacks.
+    const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
+    EXPECT_EQ(number_of_tracing_slots, 2);
+}
+
+TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, EmptyTracePointSetReturnsZero)
+{
+    // Given a valid config with tracing required
+    PrepareValidConfigurationWithTracingRequiredEvent();
+
+    // When no trace points are added
+    // Then the number of required tracing slots should be 0
+    const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
+    EXPECT_EQ(number_of_tracing_slots, 0);
+}
+
+TEST_F(TracingFilterConfigGetNumberOfTracingSlotsFixture, SkeletonFieldTracePointsWithTraceDoneCBAreCountedCorrectly)
+{
+    // Given a valid config with multiple field service elements, each with tracing required
+    PrepareConfigurationWithMultipleFieldElements({kFieldCurrentTemperatureFrontLeft,
+                                                   kFieldCurrentPressureFrontLeft,
+                                                   kFieldCurrentHumidityFrontLeft,
+                                                   kFieldCurrentAltitudeFrontLeft});
+
+    // When adding different skeleton field trace point types from different service elements
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kFieldCurrentTemperatureFrontLeft, kInstanceSpecifiersv, kSkeletonFieldTracePointTypeUpdate);
+    tracing_filter_config_.AddTracePoint(service_type_,
+                                         kFieldCurrentPressureFrontLeft,
+                                         kInstanceSpecifiersv,
+                                         kSkeletonFieldTracePointTypeUpdateWithAllocate);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kFieldCurrentHumidityFrontLeft, kInstanceSpecifiersv, kSkeletonFieldTracePointTypeGetCall);
+    tracing_filter_config_.AddTracePoint(
+        service_type_, kFieldCurrentAltitudeFrontLeft, kInstanceSpecifiersv, kSkeletonFieldTracePointTypeSetCall);
+
+    // Then the number of required tracing slots should be 2 (only UPDATE and UPDATE_WITH_ALLOCATE require callbacks).
+    const auto number_of_tracing_slots = tracing_filter_config_.GetNumberOfTracingSlots(configuration_.value());
+    EXPECT_EQ(number_of_tracing_slots, 2);
 }
 
 }  // namespace

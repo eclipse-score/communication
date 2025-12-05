@@ -19,6 +19,7 @@
 #include <score/span.hpp>
 #include <score/stop_token.hpp>
 
+#include <cstddef>
 #include <optional>
 
 namespace score::mw::com::impl
@@ -61,11 +62,10 @@ class ProxyMethodBinding
     /// \details The in-arguments and return type storage must have been allocated before calling this method. The
     /// in-arguments must have been filled with the correct data before calling this method.
     /// \param queue_position The call-queue position at which to perform the method call.
-    /// \param stop_token Stop token that can be used to cancel the method call.
     /// \return ResultBlank indicating success or failure of the method call.
-    virtual score::ResultBlank DoCall(std::size_t queue_position, score::cpp::stop_token stop_token) = 0;
+    virtual score::ResultBlank DoCall(std::size_t queue_position) = 0;
 
-  private:
+  protected:
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
 };

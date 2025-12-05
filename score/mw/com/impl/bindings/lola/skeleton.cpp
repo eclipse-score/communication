@@ -717,9 +717,9 @@ Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizes(Ske
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode() ==
                                ShmSizeCalculationMode::kSimulation,
                            "No other shm size calculation mode is currently suppored");
-    if (lola_service_instance_deployment_.shared_memory_size_.has_value() &&
-        lola_service_instance_deployment_.control_asil_b_memory_size_.has_value() &&
-        lola_service_instance_deployment_.control_qm_memory_size_.has_value())
+    if ((lola_service_instance_deployment_.shared_memory_size_.has_value()) &&
+        (lola_service_instance_deployment_.control_asil_b_memory_size_.has_value()) &&
+        (lola_service_instance_deployment_.control_qm_memory_size_.has_value()))
     {
         score::mw::log::LogInfo("lola") << "shm-size, control-asil-b-shm-size and control-qm-shm-size manually specified "
                                          "for service_id:instance_id "

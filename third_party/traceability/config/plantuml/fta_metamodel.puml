@@ -1,3 +1,16 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
 @startuml
 
 sprite $and <svg width="80" height="80" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg">
@@ -19,7 +32,7 @@ sprite $or <svg width="80" height="80" viewBox="0 0 60 70" xmlns="http://www.w3.
 !endprocedure
 
 !procedure $BasicEvent($name, $alias, $connection)
-  ("$name") as $alias
+  "$name" as $alias
   $alias -u-> $connection
 !endprocedure
 

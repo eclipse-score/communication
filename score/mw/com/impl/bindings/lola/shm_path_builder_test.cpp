@@ -87,6 +87,19 @@ INSTANTIATE_TEST_SUITE_P(
                                       LolaServiceInstanceId::InstanceId{std::numeric_limits<std::uint16_t>::max()},
                                       "/lola-ctl-0000000000004660-65535-b")));
 
+TEST(ShmPathBuilderControlDeathTests, GetControlChannelShmNameDiesWithInvalidQualityType)
+{
+    constexpr LolaServiceInstanceId::InstanceId instance_id{std::numeric_limits<std::uint16_t>::max()};
+    constexpr QualityType invalid_quality_type = QualityType::kInvalid;
+
+    // Given a ShmPathBuilder
+    ShmPathBuilder builder{kServiceId};
+
+    // When creating the control channel shm name with and invalid quality type
+    // Then we expect it to die
+    EXPECT_DEATH(builder.GetControlChannelShmName(instance_id, invalid_quality_type), "");
+}
+
 TEST_P(ShmPathBuilderDataParamaterizedTestFixture, TestBuildingDataChannelShmNamePath)
 {
     const auto [instance_id, expected_path] = GetParam();

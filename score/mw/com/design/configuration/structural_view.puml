@@ -34,11 +34,12 @@ package "configuration" {
   class "score::mw::com::impl::LolaServiceInstanceDeployment" {
     + events : std::unordered_map<std::string, LolaEventInstanceDeployment> const
     + fields : std::unordered_map<std::string, LolaFieldInstanceDeployment> const
+    + methods : std::unordered_map<std::string, LolaMethodInstanceDeployment> const
     + instanceId : score::cpp::optional<std::uint16_t>
     + shared_memory_size : score::cpp::optional<std::size_t>
     + allowed_consumer : std::unordered_map<QualityType, std::vector<uid_t>>
     + allowed_provider : std::unordered_map<QualityType, std::vector<uid_t>>
-    + LolaServiceInstanceDeployment(instance_id : std::uint16_t, events: EventInstanceMapping)
+    + LolaServiceInstanceDeployment(instance_id : std::uint16_t, events: EventInstanceMapping, fields: FieldInstanceMapping, methods: MethodInstanceMapping)
     + ToString() : std::string const
     + Contains(event_name : const std::string&): bool
   }
@@ -65,6 +66,19 @@ package "configuration" {
     + is_get_configured: bool
   }
 
+  class "score::mw::com::impl::LolaMethodInstanceDeployment" {
+    {static} + constexpr serializationVersion : std::uint8_t
+    + queue_size_: std::optional<QueueSize>
+    __
+    + LolaMethodInstanceDeployment(queue_size : std::optional<QueueSize>)
+    + LolaMethodInstanceDeployment(json_object : const score::json::Object&)
+    {static} + CreateFromJson(json_object : const score::json::Object&) : LolaMethodInstanceDeployment
+    + Serialize() const : score::json::Object
+    --
+    <u>Type Aliases:</u>
+    using QueueSize as std::uint8_t
+  }
+
   class "score::mw::com::impl::Configuration" {
     - service_types : const std::unordered_map<ServiceIdentifierType, ServiceTypeDeployment>
     - service_instances : const std::unordered_map<InstanceSpecifier, ServiceInstanceDeployment>
@@ -83,8 +97,9 @@ package "configuration" {
     + serviceId: std::uint16
     + events: std::unordered_map<std::string, LolaElementTypeDeployment>
     + fields: std::unordered_map<std::string, LolaElementTypeDeployment>
+    + methods: std::unordered_map<std::string, LolaElementTypeDeployment>
     __
-    LolaServiceTypeDeployment(service_id : std::uint16_t, events : EventIdMapping)
+    LolaServiceTypeDeployment(service_id : std::uint16_t, events : EventIdMapping, fields : FieldIdMapping, methods : MethodIdMapping)
     ..
     <u>Notes:</u>
     This class has no invariants.
@@ -212,6 +227,7 @@ class "score::mw::com::impl::Runtime" {
 "score::mw::com::impl::ServiceInstanceDeployment" *-- "score::mw::com::impl::SomeIpServiceInstanceDeployment"
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaEventInstanceDeployment" : 0..1
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaFieldInstanceDeployment" : 0..1
+"score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaMethodInstanceDeployment" : 0..1
 "score::mw::com::impl::Configuration" *-- "score::mw::com::ServiceIdentifierType"
 "score::mw::com::impl::Configuration" *-- "score::mw::com::impl::ServiceInstanceDeployment"
 "score::mw::com::impl::Configuration" *-- "GlobalConfiguration"

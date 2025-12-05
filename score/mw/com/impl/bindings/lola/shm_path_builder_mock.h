@@ -39,6 +39,36 @@ class ShmPathBuilderMock : public IShmPathBuilder
                 (const, noexcept, override));
 };
 
+class ShmPathBuilderFacade : public IShmPathBuilder
+{
+  public:
+    ShmPathBuilderFacade(ShmPathBuilderMock& shm_path_builder_mock)
+        : IShmPathBuilder{}, shm_path_builder_mock_{shm_path_builder_mock}
+    {
+    }
+
+    std::string GetDataChannelShmName(const LolaServiceInstanceId::InstanceId instance_id) const noexcept override
+    {
+        return shm_path_builder_mock_.GetDataChannelShmName(instance_id);
+    }
+
+    std::string GetControlChannelShmName(const LolaServiceInstanceId::InstanceId instance_id,
+                                         const QualityType channel_type) const noexcept override
+    {
+        return shm_path_builder_mock_.GetControlChannelShmName(instance_id, channel_type);
+    }
+
+    std::string GetMethodChannelShmName(
+        const LolaServiceInstanceId::InstanceId instance_id,
+        const ProxyInstanceIdentifier& proxy_instance_identifier) const noexcept override
+    {
+        return shm_path_builder_mock_.GetMethodChannelShmName(instance_id, proxy_instance_identifier);
+    }
+
+  private:
+    ShmPathBuilderMock& shm_path_builder_mock_;
+};
+
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_SHM_PATH_BUILDER_MOCK_H

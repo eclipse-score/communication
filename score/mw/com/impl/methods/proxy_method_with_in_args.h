@@ -150,8 +150,7 @@ template <typename... ArgTypes>
 score::ResultBlank ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<ArgTypes>... args)
 {
     auto queue_position = detail::GetCommonQueuePosition(args...);
-    // \todo (Ticket-221600): Clarify stop_token usage
-    auto call_result = binding_->DoCall(queue_position, score::cpp::stop_token{});
+    auto call_result = binding_->DoCall(queue_position);
     if (!call_result.has_value())
     {
         return Unexpected(call_result.error());

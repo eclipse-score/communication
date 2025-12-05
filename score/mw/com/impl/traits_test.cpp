@@ -12,13 +12,17 @@
  ********************************************************************************/
 #include "score/mw/com/impl/traits.h"
 
+#include "score/mw/com/impl/handle_type.h"
+#include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
+#include "score/mw/com/impl/skeleton_binding.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -79,6 +83,52 @@ class RuntimeMockGuard
     ServiceDiscoveryMock service_discovery_mock_{};
 };
 
+class ProxyCreationFixture : public ::testing::Test
+{
+
+  public:
+    void SetUp() override
+    {
+        auto proxy_binding_mock_ptr = std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_);
+        auto proxy_event_binding_mock_ptr =
+            std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_binding_mock_);
+        auto proxy_field_binding_mock_ptr =
+            std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_field_binding_mock_);
+
+        auto& runtime_mock = runtime_mock_guard_.runtime_mock_;
+        // By default the runtime configuration has no GetTracingFilterConfig
+        ON_CALL(runtime_mock, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+        // By default the Create call on the ProxyBindingFactory returns a valid binding.
+        ON_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
+            .WillByDefault(Return(ByMove(std::move(proxy_binding_mock_ptr))));
+
+        // By default the Create call on the ProxyEventBindingFactory returns valid bindings.
+        ON_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+            .WillByDefault(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
+
+        // By default the Create call on the ProxyFieldBindingFactory returns valid bindings.
+        ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
+            .WillByDefault(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
+
+        // By default the runtime configuration resolves instance identifiers
+        resolved_instance_identifiers_.push_back(identifier_with_valid_binding_);
+        ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
+    }
+
+    std::vector<InstanceIdentifier> resolved_instance_identifiers_{};
+    const InstanceIdentifier identifier_with_valid_binding_{
+        make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment)};
+    const HandleType handle_{make_HandleType(identifier_with_valid_binding_)};
+    RuntimeMockGuard runtime_mock_guard_{};
+    ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard_{};
+    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard_{};
+    ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard_{};
+    mock_binding::Proxy proxy_binding_mock_{};
+    mock_binding::ProxyEvent<TestSampleType> proxy_event_binding_mock_{};
+    mock_binding::ProxyEvent<TestSampleType> proxy_field_binding_mock_{};
+};
+
 TEST(GeneratedProxyTest, NotCopyable)
 {
     RecordProperty("Verifies", "SCR-21290780");
@@ -103,7 +153,8 @@ TEST(GeneratedProxyTest, IsMoveable)
     static_assert(std::is_move_assignable<MyProxy>::value, "Is not moveable");
 }
 
-TEST(GeneratedProxyCreationTest, ReturnGeneratedProxyWhenSuccessfullyCreatingProxy)
+using GeneratedProxyCreationTestFixture = ProxyCreationFixture;
+TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCreatingProxyWithValidBindings)
 {
     RecordProperty("Verifies", "SCR-14108458");
     RecordProperty("Description", "Proxy shall be created with Create function.");
@@ -111,34 +162,28 @@ TEST(GeneratedProxyCreationTest, ReturnGeneratedProxyWhenSuccessfullyCreatingPro
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    auto proxy_binding_mock_ptr = std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_);
+    auto proxy_event_binding_mock_ptr =
+        std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_binding_mock_);
+    auto proxy_field_binding_mock_ptr =
+        std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_field_binding_mock_);
 
-    // Given a handle type which contains a fake binding
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-    const auto handle = make_HandleType(identifier_with_valid_binding);
-
-    // Expecting that the Create call on the ProxyBindingFactory returns a valid binding
-    ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_binding_factory_mock_guard.factory_mock_, Create(handle))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Proxy>())));
-
-    // but that the Create call on the ProxyEventBindingFactory returns valid bindings.
-    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard{};
-    ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard.factory_mock_, Create(_, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyEvent<TestSampleType>>())));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(_, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyEvent<TestSampleType>>())));
+    // Expecting that valid bindings are created for the Proxy, ProxyEvent and ProxyField
+    EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
+        .WillRepeatedly(Return(ByMove(std::move(proxy_binding_mock_ptr))));
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
+        .WillRepeatedly(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
+        .WillRepeatedly(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
 
     // When creating a MyProxy
-    auto dummy_proxy_result = MyProxy::Create(std::move(handle));
+    auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
 
     // Then the result should be contain a valid proxy
     ASSERT_TRUE(dummy_proxy_result.has_value());
 }
 
-TEST(GeneratedProxyCreationTest, ReturnErrorWhenCreatingProxyWithNoProxyBinding)
+TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyBinding)
 {
     RecordProperty("Verifies", "SCR-14108458, SCR-31295722, SCR-32158471, SCR-32158442, SCR-33047276");
     RecordProperty(
@@ -148,34 +193,18 @@ TEST(GeneratedProxyCreationTest, ReturnErrorWhenCreatingProxyWithNoProxyBinding)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    // Given a handle type which contains a fake binding
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-    const auto handle = make_HandleType(identifier_with_valid_binding);
-
     // Expecting that the Create call on the ProxyBindingFactory returns a nullptr.
-    ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_binding_factory_mock_guard.factory_mock_, Create(handle)).WillOnce(Return(ByMove(nullptr)));
-
-    // but that the Create call on the ProxyEventBindingFactory returns valid bindings.
-    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard{};
-    ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard.factory_mock_, Create(_, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyEvent<TestSampleType>>())));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(_, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyEvent<TestSampleType>>())));
+    EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_)).WillOnce(Return(ByMove(nullptr)));
 
     // When creating a MyProxy
-    auto dummy_proxy_result = MyProxy::Create(std::move(handle));
+    auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
 
     // Then the result should contain an error
     ASSERT_FALSE(dummy_proxy_result.has_value());
     EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedProxyCreationTest, ReturnErrorWhenCreatingProxyWithNoProxyEventBinding)
+TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyEventBinding)
 {
     RecordProperty("Verifies", "SCR-14108458");
     RecordProperty("Description",
@@ -185,36 +214,19 @@ TEST(GeneratedProxyCreationTest, ReturnErrorWhenCreatingProxyWithNoProxyEventBin
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    // Given a handle type which contains a fake binding
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-    const auto handle = make_HandleType(identifier_with_valid_binding);
-
-    // Expecting that the Create call on the ProxyBindingFactory returns a valid binding.
-    ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_binding_factory_mock_guard.factory_mock_, Create(handle))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Proxy>())));
-
-    // and that the Create call on the ProxyEventBindingFactory returns a valid binding for the field but an invalid
-    // binding for the event.
-    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard{};
-    ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard.factory_mock_, Create(_, kEventName))
+    // Expecting that the Create call on the ProxyEventBindingFactory returns an invalid binding for the event.
+    EXPECT_CALL(proxy_event_binding_factory_mock_guard_.factory_mock_, Create(_, kEventName))
         .WillOnce(Return(ByMove(nullptr)));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(_, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyEvent<TestSampleType>>())));
 
     // When creating a MyProxy
-    auto dummy_proxy_result = MyProxy::Create(std::move(handle));
+    auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
 
     // Then the result should contain an error
     ASSERT_FALSE(dummy_proxy_result.has_value());
     EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedProxyCreationTest, ReturnErrorWhenCreatingProxyWithNoProxyFieldBinding)
+TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyFieldBinding)
 {
     RecordProperty("Verifies", "SCR-14108458");
     RecordProperty("Description",
@@ -224,74 +236,34 @@ TEST(GeneratedProxyCreationTest, ReturnErrorWhenCreatingProxyWithNoProxyFieldBin
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    // Given a handle type which contains a fake binding
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-    const auto handle = make_HandleType(identifier_with_valid_binding);
-
-    // Expecting that the Create call on the ProxyBindingFactory returns a valid binding.
-    ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_binding_factory_mock_guard.factory_mock_, Create(handle))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Proxy>())));
-
-    // and that the Create call on the ProxyEventBindingFactory returns a valid binding for the event but an invalid
-    // binding for the field.
-    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard{};
-    ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard.factory_mock_, Create(_, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::ProxyEvent<TestSampleType>>())));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(_, kFieldName))
+    // Expecting that the Create call on the ProxyFieldBindingFactory returns an invalid binding for the field
+    EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
         .WillOnce(Return(ByMove(nullptr)));
 
     // When creating a MyProxy
-    auto dummy_proxy_result = MyProxy::Create(std::move(handle));
+    auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
 
     // Then the result should contain an error
     ASSERT_FALSE(dummy_proxy_result.has_value());
     EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedProxyTest, CanInterpretAsProxy)
+TEST_F(GeneratedProxyCreationTestFixture, CallingSubscribeOnServiceElementsDispatchesToBindings)
 {
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
 
-    const auto identifier = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-    auto handle = make_HandleType(identifier, ServiceInstanceId{LolaServiceInstanceId{kInstanceId}});
-
-    // Expecting that the Create call on the ProxyBindingFactory returns a nullptr.
-    ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_binding_factory_mock_guard.factory_mock_, Create(handle))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Proxy>())));
-
-    // and the Create call on the ProxyEventBindingFactory returns valid bindings.
-    auto proxy_event_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent<TestSampleType>>();
-    auto& proxy_event_binding_mock = *proxy_event_binding_mock_ptr;
-
-    auto proxy_field_binding_mock_ptr = std::make_unique<mock_binding::ProxyEvent<TestSampleType>>();
-    auto& proxy_field_binding_mock = *proxy_field_binding_mock_ptr;
-
-    ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard{};
-    ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard{};
-    EXPECT_CALL(proxy_event_binding_factory_mock_guard.factory_mock_, Create(_, kEventName))
-        .WillOnce(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
-    EXPECT_CALL(proxy_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(_, kFieldName))
-        .WillOnce(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
+    ON_CALL(proxy_event_binding_mock_, GetSubscriptionState()).WillByDefault(Return(SubscriptionState::kNotSubscribed));
+    ON_CALL(proxy_field_binding_mock_, GetSubscriptionState()).WillByDefault(Return(SubscriptionState::kNotSubscribed));
 
     // Expect that Subscribe is called on each event binding
-    EXPECT_CALL(proxy_event_binding_mock, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
-    EXPECT_CALL(proxy_field_binding_mock, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
-    EXPECT_CALL(proxy_event_binding_mock, Subscribe(_));
-    EXPECT_CALL(proxy_field_binding_mock, Subscribe(_));
+    EXPECT_CALL(proxy_event_binding_mock_, Subscribe(_));
+    EXPECT_CALL(proxy_field_binding_mock_, Subscribe(_));
 
-    // When creating a proxy from a valid handle
-    auto proxy_result = MyProxy::Create(std::move(handle));
+    // Given a proxy is created from a valid handle
+    auto proxy_result = MyProxy::Create(std::move(handle_));
     ASSERT_TRUE(proxy_result.has_value());
     auto& unit = proxy_result.value();
 
-    // and calling subscribe on each event / field
+    // When calling subscribe on each event / field
     unit.some_event.Subscribe(1);
     unit.some_field.Subscribe(1);
 }
@@ -427,7 +399,56 @@ TEST(GeneratedSkeletonTest, IsMoveable)
     static_assert(std::is_move_assignable<MySkeleton>::value, "Is not move assignable");
 }
 
-TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromExistingValidSpecifierCreatesSkeleton)
+class SkeletonCreationFixture : public ::testing::Test
+{
+
+  public:
+    void SetUp() override
+    {
+        auto skeleton_binding_mock_ptr = std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_);
+        auto skeleton_event_binding_mock_ptr =
+            std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
+        auto skeleton_field_binding_mock_ptr =
+            std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
+
+        auto& runtime_mock = runtime_mock_guard_.runtime_mock_;
+        // By default the runtime configuration has no GetTracingFilterConfig
+        ON_CALL(runtime_mock, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+        // By default the Create call on the SkeletonBindingFactory returns a valid binding.
+        ON_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
+            .WillByDefault(Return(ByMove(std::move(skeleton_binding_mock_ptr))));
+
+        // By default the Create call on the SkeletonEventBindingFactory returns valid bindings.
+        ON_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kEventName))
+            .WillByDefault(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+
+        // By default the Create call on the SkeletonFieldBindingFactory returns valid bindings.
+        ON_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
+            .WillByDefault(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
+
+        // By default the runtime configuration resolves instance identifiers
+        resolved_instance_identifiers_.push_back(identifier_with_valid_binding_);
+        ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
+    }
+
+    std::vector<InstanceIdentifier> resolved_instance_identifiers_{};
+    const InstanceIdentifier identifier_with_valid_binding_{
+        make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment)};
+    RuntimeMockGuard runtime_mock_guard_{};
+    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard_{};
+    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard_{};
+    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
+    mock_binding::Skeleton skeleton_binding_mock_{};
+    mock_binding::SkeletonEvent<TestSampleType> skeleton_event_binding_mock_{};
+    mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_{};
+};
+
+using GeneratedSkeletonCreationInstanceSpecifierTestFixture = SkeletonCreationFixture;
+TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
+       ReturnGeneratedSkeletonWhenSuccessfullyCreatingSkeletonWithValidBindings)
 {
     RecordProperty("Verifies", "SCR-17434559");
     RecordProperty("Description", "Checks exception-less creation of skeleton");
@@ -435,31 +456,21 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromExistingVal
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    auto& runtime_mock = runtime_mock_guard.runtime_mock_;
-    ON_CALL(runtime_mock, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    auto skeleton_binding_mock_ptr = std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_);
+    auto skeleton_event_binding_mock_ptr =
+        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
+    auto skeleton_field_binding_mock_ptr =
+        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
 
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-
-    // Expecting that the Create call on the SkeletonBindingFactory returns a valid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Skeleton>())));
-
-    // and that the Create call on the SkeletonEventBindingFactory returns valid bindings.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-
-    // Given a runtime resolving a valid configuration
-    std::vector<InstanceIdentifier> resolved_instance_identifiers{};
-    resolved_instance_identifiers.push_back(identifier_with_valid_binding);
-    EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
+    // Expecting that valid bindings are created for the Skeleton, SkeletonEvent and SkeletonField
+    EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
+        .WillOnce(Return(ByMove(std::move(skeleton_binding_mock_ptr))));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kEventName))
+        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
+        .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // When constructing a skeleton with an InstanceSpecifier
     const auto unit = MySkeleton::Create(kInstanceSpecifier);
@@ -468,7 +479,7 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromExistingVal
     ASSERT_TRUE(unit.has_value());
 }
 
-TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkeletonReturnsError)
+TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonBinding)
 {
     RecordProperty("Verifies", "SCR-17434559");
     RecordProperty("Description",
@@ -476,35 +487,12 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkel
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    RuntimeMockGuard runtime_mock_guard{};
-    auto& runtime_mock = runtime_mock_guard.runtime_mock_;
-    ON_CALL(runtime_mock, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
 
     // Expecting that the Create call on the SkeletonBindingFactory returns an invalid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
+    EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
         .WillOnce(Return(ByMove(nullptr)));
 
-    // and that the Create call on the SkeletonEventBindingFactory returns valid bindings.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-
-    // Given a runtime resolving a valid instance identifier
-    std::vector<InstanceIdentifier> resolved_instance_identifiers{};
-    resolved_instance_identifiers.push_back(identifier_with_valid_binding);
-    EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
-
-    // When constructing a skeleton with an InstanceSpecifier that corresponds to an existing but invalid
-    // instance_identifier
+    // When constructing a skeleton with an InstanceSpecifier
     const auto unit = MySkeleton::Create(kInstanceSpecifier);
 
     // Then it is _not_ possible to construct a skeleton
@@ -512,7 +500,7 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkel
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkeletonEventReturnsError)
+TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonEventBinding)
 {
     RecordProperty("Verifies", "SCR-17434559");
     RecordProperty("Description",
@@ -521,35 +509,13 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkel
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    auto& runtime_mock = runtime_mock_guard.runtime_mock_;
-    ON_CALL(runtime_mock, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-
-    // Expecting that the Create call on the SkeletonBindingFactory returns a valid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Skeleton>())));
-
-    // and that the Create call on the SkeletonEventBindingFactory returns a valid binding for the field but an invalid
-    // binding for the event.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
+    // Expecting that the Create call on the
+    // SkeletonEventBindingFactory returns an invalid binding for the event.
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kEventName))
         .WillOnce(Return(ByMove(nullptr)));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
 
-    // Given a runtime resolving a valid instance identifier
-    std::vector<InstanceIdentifier> resolved_instance_identifiers{};
-    resolved_instance_identifiers.push_back(identifier_with_valid_binding);
-    EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
-
-    // When constructing a skeleton with an InstanceSpecifier that corresponds to an existing but invalid
-    // instance_identifier
+    // When constructing a skeleton with an InstanceSpecifier
     const auto unit = MySkeleton::Create(kInstanceSpecifier);
 
     // Then it is _not_ possible to construct a skeleton
@@ -557,7 +523,7 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkel
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkeletonFieldReturnsError)
+TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCreatingSkeletonWithNoSkeletonFieldBinding)
 {
     RecordProperty("Verifies", "SCR-17434559");
     RecordProperty("Description",
@@ -566,35 +532,12 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierTest, ConstructingFromInvalidSkel
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    auto& runtime_mock = runtime_mock_guard.runtime_mock_;
-    ON_CALL(runtime_mock, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-
-    // Expecting that the Create call on the SkeletonBindingFactory returns a valid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Skeleton>())));
-
-    // and that the Create call on the SkeletonEventBindingFactory returns a valid binding for the event but an invalid
-    // binding for the field.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
+    // Expecting that the Create call on the SkeletonFieldBindingFactory returns an invalid binding for the field.
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
         .WillOnce(Return(ByMove(nullptr)));
 
-    // Given a runtime resolving a valid instance identifier
-    std::vector<InstanceIdentifier> resolved_instance_identifiers{};
-    resolved_instance_identifiers.push_back(identifier_with_valid_binding);
-    EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
-
-    // When constructing a skeleton with an InstanceSpecifier that corresponds to an existing but invalid
-    // instance_identifier
+    // When constructing a skeleton with an InstanceSpecifier
     const auto unit = MySkeleton::Create(kInstanceSpecifier);
 
     // Then it is _not_ possible to construct a skeleton
@@ -619,7 +562,8 @@ TEST(GeneratedSkeletonCreationInstanceSpecifierDeathTest, ConstructingFromNonexi
     EXPECT_DEATH(constructing_from_non_existing_specifier(), ".*");
 }
 
-TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromExistingValidSpecifierCreatesSkeleton)
+using GeneratedSkeletonCreationInstanceIdentifierTestFixture = SkeletonCreationFixture;
+TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromExistingValidSpecifierCreatesSkeleton)
 {
     RecordProperty("Verifies", "SCR-18447605");
     RecordProperty("Description", "Checks exception-less creation of skeleton");
@@ -627,34 +571,30 @@ TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromExistingVa
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    auto skeleton_binding_mock_ptr = std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_);
+    auto skeleton_event_binding_mock_ptr =
+        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
+    auto skeleton_field_binding_mock_ptr =
+        std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
 
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
+    // Expecting that valid bindings are created for the Skeleton, SkeletonEvent and SkeletonField
+    EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
+        .WillOnce(Return(ByMove(std::move(skeleton_binding_mock_ptr))));
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kEventName))
+        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
+        .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
-    // Expecting that the Create call on the SkeletonBindingFactory returns a valid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Skeleton>())));
-
-    // and that the Create call on the SkeletonEventBindingFactory returns valid bindings.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-
-    // When constructing a skeleton with an InstanceSpecifier
-    const auto unit = MySkeleton::Create(identifier_with_valid_binding);
+    // When constructing a skeleton with an InstanceIdentifier
+    const auto unit = MySkeleton::Create(identifier_with_valid_binding_);
 
     // Then it is possible to construct a skeleton
     ASSERT_TRUE(unit.has_value());
 }
 
-TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromInvalidSkeletonReturnsError)
+TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonReturnsError)
 {
     RecordProperty("Verifies", "SCR-18447605");
     RecordProperty("Description",
@@ -662,37 +602,20 @@ TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromInvalidSke
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
 
     // Expecting that the Create call on the SkeletonBindingFactory returns an invalid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
+    EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
         .WillOnce(Return(ByMove(nullptr)));
 
-    // and that the Create call on the SkeletonEventBindingFactory returns valid bindings.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-
-    // When constructing a skeleton with an InstanceSpecifier that corresponds to an existing but invalid
-    // instance_identifier
-    const auto unit = MySkeleton::Create(identifier_with_valid_binding);
+    // When constructing a skeleton with an InstanceIdentifier
+    const auto unit = MySkeleton::Create(identifier_with_valid_binding_);
 
     // Then it is _not_ possible to construct a skeleton
     ASSERT_FALSE(unit.has_value());
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromInvalidSkeletonEventReturnsError)
+TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonEventReturnsError)
 {
     RecordProperty("Verifies", "SCR-18447605");
     RecordProperty("Description",
@@ -701,37 +624,21 @@ TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromInvalidSke
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-
-    // Expecting that the Create call on the SkeletonBindingFactory returns a valid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Skeleton>())));
-
-    // and that the Create call on the SkeletonEventBindingFactory returns a valid binding for the field but an invalid
-    // binding for the event.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
+    // Expecting that the Create call on the
+    // SkeletonEventBindingFactory returns an invalid binding for the event.
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kEventName))
         .WillOnce(Return(ByMove(nullptr)));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
 
-    // When constructing a skeleton with an InstanceSpecifier that corresponds to an existing but invalid
-    // instance_identifier
-    const auto unit = MySkeleton::Create(identifier_with_valid_binding);
+    // When constructing a skeleton with an InstanceIdentifier
+    const auto unit = MySkeleton::Create(identifier_with_valid_binding_);
 
     // Then it is _not_ possible to construct a skeleton
     ASSERT_FALSE(unit.has_value());
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromInvalidSkeletonFieldReturnsError)
+TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonFieldReturnsError)
 {
     RecordProperty("Verifies", "SCR-18447605");
     RecordProperty("Description",
@@ -740,80 +647,34 @@ TEST(GeneratedSkeletonCreationInstanceIdentifierTest, ConstructingFromInvalidSke
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-
-    // Expecting that the Create call on the SkeletonBindingFactory returns a valid binding.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::Skeleton>())));
-
-    // and that the Create call on the SkeletonEventBindingFactory returns a valid binding for the event but an invalid
-    // binding for the field.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
-        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
+    // Expecting that the Create call on the SkeletonFieldBindingFactory returns an invalid binding for the field.
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
+                CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
         .WillOnce(Return(ByMove(nullptr)));
 
-    // When constructing a skeleton with an InstanceSpecifier that corresponds to an existing but invalid
-    // instance_identifier
-    const auto unit = MySkeleton::Create(identifier_with_valid_binding);
+    // When constructing a skeleton with an InstanceIdentifier
+    const auto unit = MySkeleton::Create(identifier_with_valid_binding_);
 
     // Then it is _not_ possible to construct a skeleton
     ASSERT_FALSE(unit.has_value());
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedSkeletonTest, CanInterpretAsSkeleton)
+TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSkeleton)
 {
-    RuntimeMockGuard runtime_mock_guard{};
-    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    const auto identifier_with_valid_binding = make_InstanceIdentifier(kValidInstanceDeployment, kTestTypeDeployment);
-
     const TestSampleType field_value{10};
     const TestSampleType event_value{20};
 
-    auto skeleton_binding_mock_ptr = std::make_unique<mock_binding::Skeleton>();
-    auto& skeleton_binding_mock = *skeleton_binding_mock_ptr;
-
-    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-    auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
-
-    auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
-    auto& skeleton_field_binding_mock = *skeleton_field_binding_mock_ptr;
-
-    // Expecting that the Create call on the SkeletonBindingFactory returns a nullptr.
-    SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_binding_factory_mock_guard.factory_mock_, Create(identifier_with_valid_binding))
-        .WillOnce(Return(ByMove(std::move(skeleton_binding_mock_ptr))));
-
-    // and that the Create call on the SkeletonEventBindingFactory returns valid bindings.
-    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
-    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
-    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
-                Create(identifier_with_valid_binding, _, kEventName))
-        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
-    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
-                CreateEventBinding(identifier_with_valid_binding, _, kFieldName))
-        .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
-
     // Expect that GetBindingType is called on the event binding once for the event and once for the field
-    EXPECT_CALL(skeleton_event_binding_mock, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
-    EXPECT_CALL(skeleton_field_binding_mock, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
+    EXPECT_CALL(skeleton_event_binding_mock_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
+    EXPECT_CALL(skeleton_field_binding_mock_, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that Send is called on the event binding once for the event and once for the field
-    EXPECT_CALL(skeleton_event_binding_mock, Send(event_value, _));
-    EXPECT_CALL(skeleton_field_binding_mock, Send(field_value, _));
+    EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _));
+    EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _));
 
     // And that PrepareOffer is called on the skeleton binding and event / field
-    EXPECT_CALL(skeleton_binding_mock, PrepareOffer(_, _, _))
+    EXPECT_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _))
         .WillOnce(
             Invoke([](SkeletonBinding::SkeletonEventBindings& events,
                       SkeletonBinding::SkeletonFieldBindings& fields,
@@ -830,16 +691,16 @@ TEST(GeneratedSkeletonTest, CanInterpretAsSkeleton)
 
                 return {};
             }));
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer());
+    EXPECT_CALL(skeleton_event_binding_mock_, PrepareOffer());
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareOffer());
 
     // And that PrepareStopOffer is called on the skeleton binding and event / field on destruction
-    EXPECT_CALL(skeleton_binding_mock, PrepareStopOffer(_));
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareStopOffer());
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
+    EXPECT_CALL(skeleton_binding_mock_, PrepareStopOffer(_));
+    EXPECT_CALL(skeleton_event_binding_mock_, PrepareStopOffer());
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareStopOffer());
 
     // When creating a skeleton from a valid instance identifier
-    auto skeleton_result = MySkeleton::Create(identifier_with_valid_binding);
+    auto skeleton_result = MySkeleton::Create(identifier_with_valid_binding_);
     ASSERT_TRUE(skeleton_result.has_value());
     auto& unit = skeleton_result.value();
 

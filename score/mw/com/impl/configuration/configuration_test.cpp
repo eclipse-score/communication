@@ -11,21 +11,25 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration.h"
-
 #include "score/mw/com/impl/configuration/config_parser.h"
+#include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 
+#include "score/json/internal/model/any.h"
 #include "score/json/json_writer.h"
 
 #include <score/optional.hpp>
 #include <score/overload.hpp>
 
 #include <gtest/gtest.h>
-#include <utility>
-#include <vector>
 
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace score::mw::com::impl
 {
@@ -163,6 +167,7 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
 
     const std::string instance_event_name{"CurrentPressureFrontLeft"};
     const std::string instance_field_name{"CurrentTemperatureFrontLeft"};
+    const std::string instance_method_name{"SetPressure"};
     const LolaServiceInstanceId instance_id{1234};
     const std::size_t shared_memory_size{10000};
     const std::size_t control_asil_b_memory_size{20000};
@@ -171,6 +176,7 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
     const std::uint8_t event_max_subscribers{5};
     const std::uint16_t field_max_samples{60};
     const std::uint8_t field_max_subscribers{6};
+    const LolaMethodInstanceDeployment::QueueSize method_queue_size{20U};
     const std::vector<uid_t> allowed_consumer_ids_qm{42, 43};
     const std::vector<uid_t> allowed_consumer_ids_b{54, 55};
     const std::vector<uid_t> allowed_provider_ids_qm{15};
@@ -178,17 +184,20 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
 
     const LolaEventInstanceDeployment lola_event_instance{event_max_samples, event_max_subscribers, 1U, true, 0};
     const LolaFieldInstanceDeployment lola_field_instance{field_max_samples, field_max_subscribers, 1U, true, 7};
+    const LolaMethodInstanceDeployment lola_method_instance{method_queue_size};
 
     const LolaServiceInstanceDeployment::EventInstanceMapping instance_events{
         {instance_event_name, lola_event_instance}};
     const LolaServiceInstanceDeployment::FieldInstanceMapping instance_fields{
         {instance_field_name, lola_field_instance}};
+    const LolaServiceInstanceDeployment::MethodInstanceMapping instance_methods{
+        {instance_method_name, lola_method_instance}};
     const std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumers{
         {QualityType::kASIL_QM, allowed_consumer_ids_qm}, {QualityType::kASIL_B, allowed_consumer_ids_b}};
     const std::unordered_map<QualityType, std::vector<uid_t>> allowed_providers{
         {QualityType::kASIL_QM, allowed_provider_ids_qm}, {QualityType::kASIL_B, allowed_provider_ids_b}};
 
-    LolaServiceInstanceDeployment binding_info(instance_id, instance_events, instance_fields);
+    LolaServiceInstanceDeployment binding_info(instance_id, instance_events, instance_fields, instance_methods);
     binding_info.allowed_consumer_ = allowed_consumers;
     binding_info.allowed_provider_ = allowed_providers;
     binding_info.shared_memory_size_ = shared_memory_size;
@@ -233,6 +242,7 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
               generated_lola_service_instance_deployment->allowed_provider_);
     EXPECT_EQ(manual_lola_service_instance_deployment->events_, generated_lola_service_instance_deployment->events_);
     EXPECT_EQ(manual_lola_service_instance_deployment->fields_, generated_lola_service_instance_deployment->fields_);
+    EXPECT_EQ(manual_lola_service_instance_deployment->methods_, generated_lola_service_instance_deployment->methods_);
 }
 
 TEST_F(ConfigurationFixture,

@@ -1,0 +1,29 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include ../../fta_metamodel.puml
+
+$TopEvent("Only partially notifies user", "TopEvent")
+
+$OrGate("Gate1", "TopEvent")
+$IntermediateEvent("Users did not successfully register", "Event1", "Gate1")
+$BasicEvent("Receive error on registration", "Event4", "Event1")
+$IntermediateEvent("Notification is not send out", "Event3", "Gate1")
+$IntermediateEvent("Internal registration was lost", "Event2", "Gate1")
+$OrGate("Gate2", "Event2")
+$BasicEvent("Server process crash", "Event6", "Gate2")
+$BasicEvent("Algorithmic Bug", "Event5", "Gate2")
+
+@enduml
