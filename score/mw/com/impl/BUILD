@@ -171,6 +171,7 @@ cc_library(
         ":skeleton_base",
         ":skeleton_event",
         ":skeleton_field",
+        "//score/mw/com/impl/methods:proxy_method",
         "//score/mw/com/impl/methods:skeleton_method",
         "//score/mw/com/impl/plumbing:event",
     ],

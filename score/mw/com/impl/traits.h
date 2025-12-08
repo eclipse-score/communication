@@ -17,6 +17,12 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/methods/proxy_method.h"
+#include "score/mw/com/impl/methods/proxy_method_with_in_args.h"
+#include "score/mw/com/impl/methods/proxy_method_with_in_args_and_return.h"
+#include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
+#include "score/mw/com/impl/methods/proxy_method_without_in_args_or_return.h"
+#include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/plumbing/proxy_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -96,6 +102,9 @@ class ProxyWrapperClassTestView;
 ///     typename Trait::template Field<DataType1> struct_field_1_{*this, field_name_0};
 ///     typename Trait::template Field<DataType2> struct_field_2_{*this, field_name_1};
 ///
+///     typename Trait::template Method<DataType1> struct_method_1_{*this, method_name_0};
+///     typename Trait::template Method<DataType2> struct_method_2_{*this, method_name_1};
+///
 /// };
 ///
 /// It is then possible to interpret this interface as proxy or skeleton as `using TheProxy = AsProxy<TheInterface>`.
@@ -119,6 +128,9 @@ class ProxyTrait
 
     template <typename SampleType>
     using Field = ProxyField<SampleType>;
+
+    template <typename MethodSignature>
+    using Method = ProxyMethod<MethodSignature>;
 };
 
 /**
@@ -139,6 +151,9 @@ class SkeletonTrait
 
     template <typename SampleType>
     using Field = SkeletonField<SampleType>;
+
+    template <typename MethodSignature>
+    using Method = SkeletonMethod<MethodSignature>;
 };
 
 template <template <class> class Interface, class Trait>
