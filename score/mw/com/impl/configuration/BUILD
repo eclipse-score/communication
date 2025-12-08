@@ -71,6 +71,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
+        "//score/mw/com/impl:__pkg__",
     ],
     deps = [
         ":global_configuration",
@@ -670,6 +671,17 @@ cc_gtest_unit_test(
     deps = [":shm_size_calc_mode"],
 )
 
+
+cc_gtest_unit_test(
+    name = "lola_service_uid_map_test",
+    srcs = ["lola_service_uid_map_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":lola_service_instance_deployment",
+        ":quality_type",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -686,6 +698,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":lola_service_instance_deployment_test",
         ":lola_service_instance_id_test",
         ":lola_service_type_deployment_test",
+        ":lola_service_uid_map_test",
         ":quality_type_test",
         ":service_identifier_type_test",
         ":service_instance_deployment_test",
