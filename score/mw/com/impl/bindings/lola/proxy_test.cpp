@@ -253,7 +253,7 @@ TEST_F(ProxyCreationFixture, ProxyCreationReturnsNullPtrWhenProxyInstanceCounter
     const auto proxy_result = Proxy::Create(make_HandleType(identifier_));
 
     // Then the result will be a nullptr
-    EXPECT_EQ(proxy_, nullptr);
+    EXPECT_EQ(proxy_result, nullptr);
 }
 
 using ProxyCreationDeathTest = ProxyCreationFixture;

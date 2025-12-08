@@ -138,6 +138,16 @@ cc_library(
     deps = ["@score_baselibs//score/result"],
 )
 
+cc_library(
+    name = "offered_state_machine",
+    srcs = ["offered_state_machine.cpp"],
+    hdrs = ["offered_state_machine.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+)
+
 cc_unit_test(
     name = "type_erased_call_queue_test",
     srcs = [
@@ -227,6 +237,21 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_unit_test(
+    name = "offered_state_machine_test",
+    srcs = ["offered_state_machine_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":offered_state_machine",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -237,6 +262,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":method_data_test",
         ":method_error_test",
         ":method_resource_map_test",
+        ":offered_state_machine_test",
     ],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",

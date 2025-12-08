@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/offered_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
@@ -37,7 +38,7 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/service_element_type.h"
 
-#include "score/language/safecpp/safe_math/details/atomics/fetch_add.h"
+#include "score/language/safecpp/safe_atomics/try_atomic_add.h"
 #include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
 #include "score/memory/shared/flock/shared_flock_mutex.h"
@@ -356,13 +357,13 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType handle) noexcept
     }
 
     const auto proxy_instance_counter_result =
-        safe_math::TryFetchAdd<ProxyInstanceIdentifier::ProxyInstanceCounter>(current_proxy_instance_counter_, 1U);
+        safe_atomics::TryAtomicAdd<ProxyInstanceIdentifier::ProxyInstanceCounter>(current_proxy_instance_counter_, 1U);
     if (!(proxy_instance_counter_result.has_value()))
     {
         score::mw::log::LogError("lola")
             << "Could not create proxy: Proxy instance counter overflowed. This can occur if more than"
             << std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()
-            << "proxies were created during the process lifetime. No more proxies can be crated.";
+            << "proxies were created during the process lifetime. No more proxies can be created.";
         return nullptr;
     }
 
@@ -406,6 +407,8 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       method_data_{nullptr},
       proxy_instance_identifier_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId(),
                                  proxy_instance_counter},
+      offered_state_machine_{},
+      are_proxy_methods_setup_{false},
       filesystem_{filesystem},
       find_service_guard_{std::make_unique<FindServiceGuard>(
           [this](ServiceHandleContainer<HandleType> service_handle_container, FindServiceHandle) {
@@ -427,6 +430,56 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
     for (auto& event_binding : event_bindings_)
     {
         event_binding.second.get().NotifyServiceInstanceChangedAvailability(is_service_available, GetSourcePid());
+    }
+
+    // Update the state machine to track offered/stop-offered/re-offered transitions. This must happen before the
+    // early return check below to ensure the state machine correctly tracks skeleton restarts even if the proxy method
+    // has not yet been setup.
+    if (is_service_available)
+    {
+        offered_state_machine_.Offer();
+    }
+    else
+    {
+        offered_state_machine_.StopOffer();
+    }
+
+    // If the methods have not been setup in SetupMethods() then we can ignore this call. SetupMethods() is
+    // guaranteed to be called on construction of a Proxy which will itself call SubscribeServiceMethod so we don't
+    // need to call SubscribeServiceMethod here.
+    if (!are_proxy_methods_setup_.load())
+    {
+        return;
+    }
+
+    // We only re-call SubscribeServiceMethod in the proxy autoreconnect case, i.e. when the skeleton has crashed
+    // and restarted. This will always occur when this function has called first with is_service_available == false
+    // and then with is_service_available == true. The handling of this logic is handled by the OfferedStateMachine.
+    if (offered_state_machine_.GetCurrentState() == OfferedStateMachine::State::RE_OFFERED)
+    {
+        // When a skeleton restarts, it needs to re-open the methods shared memory region that was created by the
+        // Proxy on construction (in SetupMethods()). To open the shared memory region, it needs the UID of this
+        // Proxy (to check that it's in the allowed_consumer list in the Skeleton's configuration and to add to the
+        // allowed_provider list in SharedMemoryFactory::Create()). It also needs to be notified that the Proxy has
+        // subscribed to one or more of its methods (which would normally be done on Proxy creation). Therefore, we
+        // resend the notification to the Skeleton that this Proxy wants to subscribe to its methods.
+        auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
+        auto& lola_message_passing = lola_runtime.GetLolaMessaging();
+        const SkeletonInstanceIdentifier skeleton_instance_identifier{
+            GetLoLaServiceTypeDeployment(handle_).service_id_,
+            LolaServiceInstanceId{GetLoLaInstanceDeployment(handle_).instance_id_.value()}.GetId()};
+
+        const auto subscribe_service_method_result =
+            lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier_);
+        if (!(subscribe_service_method_result.has_value()))
+        {
+            score::mw::log::LogError("lola")
+                << __func__ << __LINE__
+                << "SubscribeServiceMethod failed with error:" << subscribe_service_method_result.error() << "";
+
+            // TODO: Decide how we want to handle this error: Ticket-233173
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
     }
 }
 
@@ -579,6 +632,7 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
+    are_proxy_methods_setup_.store(true);
     return lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier_);
 }
 

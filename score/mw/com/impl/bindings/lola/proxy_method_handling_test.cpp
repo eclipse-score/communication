@@ -29,6 +29,10 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
+#include "score/mw/com/impl/enriched_instance_identifier.h"
+#include "score/mw/com/impl/find_service_handle.h"
+#include "score/mw/com/impl/find_service_handler.h"
+#include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
 
@@ -114,6 +118,11 @@ const DataTypeSizeInfo kValidInArgsTypeErasedDataInfo2{24U, 8U};
 const DataTypeSizeInfo kValidReturnTypeTypeErasedDataInfo2{32U, 16U};
 
 const TypeErasedCallQueue::TypeErasedElementInfo kEmptyTypeErasedInfo{{}, {}, 0};
+const ServiceHandleContainer<HandleType> kEmptyServiceHandleContainer{};
+const ServiceHandleContainer<HandleType> kServiceHandleContainerWithOneHandle{
+    make_HandleType(kConfigurationStore.GetInstanceIdentifier())};
+
+const FindServiceHandle kFindServiceHandle{make_FindServiceHandle(10U)};
 
 class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
 {
@@ -123,6 +132,15 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
         // When the proxy checks if the shared memory region already exists within
         // SetupMethods(), by default, the memory region should not exist.
         ON_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodChannelPrefix))).WillByDefault(Return(false));
+
+        // Capture the find service handler that is registered in the Proxy constructor so that we can simulate proxy
+        // autoreconnect. We use an EXPECT_CALL because we need to override the default behaviour set in
+        // ProxyMockedMemoryFixture.
+        EXPECT_CALL(service_discovery_mock_, StartFindService(_, Matcher<EnrichedInstanceIdentifier>(_)))
+            .WillRepeatedly(WithArg<0>(Invoke([this](auto find_service_handler) noexcept {
+                find_service_handler_ = std::move(find_service_handler);
+                return kFindServiceHandle;
+            })));
     }
 
     ProxyMethodHandlingFixture& GivenAProxy()
@@ -163,6 +181,18 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
         return *this;
     }
 
+    void StopOfferService()
+    {
+        ASSERT_TRUE(find_service_handler_.has_value());
+        std::invoke(find_service_handler_.value(), kEmptyServiceHandleContainer, kFindServiceHandle);
+    }
+
+    void OfferService()
+    {
+        ASSERT_TRUE(find_service_handler_.has_value());
+        std::invoke(find_service_handler_.value(), kServiceHandleContainerWithOneHandle, kFindServiceHandle);
+    }
+
     const MethodData& GetMethodDataFromShm()
     {
         const auto* const base_address = fake_method_memory_resource_->getUsableBaseAddress();
@@ -182,6 +212,8 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
         std::make_unique<filesystem::StandardFilesystemMock>()};
 
     containers::NonRelocatableVector<ProxyMethod> proxy_method_storage_{5U};
+
+    std::optional<FindServiceHandler<HandleType>> find_service_handler_{};
 };
 
 TEST_F(ProxyMethodHandlingFixture, EnablingZeroMethodsDoesNotCreateSharedMemory)
@@ -329,7 +361,7 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, RemovesStaleArtefactsIfShmFileAlr
               kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
 
     // Expecting that we check if the shm file already exists in the filesystem
-    // which returns that it already exists
+    // which returns that it already exists (indicating that a previous Proxy was created which then crashed).
     EXPECT_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodChannelPrefix))).WillOnce(Return(true));
 
     // Expecting that RemoveStaleArtefacts will be called with the same shm path
@@ -357,6 +389,121 @@ TEST_F(ProxySetupMethodsPartialRestartFixture, ReturnsErrorWhenCheckingIfShmFile
     // Then an error is returned
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+using ProxySetupMethodsProxyAutoReconnectFixture = ProxyMethodHandlingFixture;
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
+       DoesNotResendSubscribeMethodIfSkeletonReOfferedButSetupMethodsNeverCalled)
+{
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that SubscribeServiceMethod will never be called
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).Times(0);
+
+    // Given that the service was initially offered
+    OfferService();
+
+    // and given that the service was stop-offered, simulating a crash of the skeleton
+    StopOfferService();
+
+    // When the service is offered again, indicating that the service has restarted and been reoffered but SetupMethods
+    // has not yet been called.
+    OfferService();
+}
+
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, ResendsSubscribeMethodEveryTimeSkeletonReOffered)
+{
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that SubscribeServiceMethod will be called three times: once in SetupMethods and once for every time
+    // the find service handler is called when the service has been reoffered
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).Times(3);
+
+    // Given that SetupMethods was called
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+
+    // Given that the service was initially offered
+    OfferService();
+
+    // When the service is stop-offered and re-offered, indicating that the service has restarted and been reoffered
+    // twice
+    StopOfferService();
+    OfferService();
+
+    StopOfferService();
+    OfferService();
+}
+
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, TerminatesWhnSubscribeMethodReturnsErrorWhenSkeletonReOffered)
+{
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that SubscribeServiceMethod will be called once in SetupMethods
+    Sequence subscribe_service_method_sequence{};
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).InSequence(subscribe_service_method_sequence);
+
+    // and expecting that it will be called a second time in the find service handler when the service has been
+    // reoffered which returns an error
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _))
+        .InSequence(subscribe_service_method_sequence)
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // Given that SetupMethods was called
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+
+    // Given that the service was initially offered
+    OfferService();
+
+    // When the service is stop-offered and re-offered, indicating that the service has restarted and been reoffered
+    // Then the program terminates
+    StopOfferService();
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(OfferService());
+}
+
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodIfSkeletonNeverCrashed)
+{
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that SubscribeServiceMethod will be called only once in SetupMethods
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).Times(1);
+
+    // Given that SetupMethods was called
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+
+    // When the service is initially offered (but never crashed)
+    OfferService();
+}
+
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodIfSkeletonNeverReOffered)
+{
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+
+    // Expecting that SubscribeServiceMethod will be called only once in SetupMethods
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _)).Times(1);
+
+    // Given that SetupMethods was called
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+
+    // Given that the service was initially offered
+    OfferService();
+
+    // When the service is stop-offered, simulating a crash of the skeleton, but is never re-offered
+    StopOfferService();
 }
 
 using ProxySetupMethodsMessagePassingFixture = ProxyMethodHandlingFixture;
