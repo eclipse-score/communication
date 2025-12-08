@@ -254,7 +254,7 @@ class FindServiceGuard final
     // std::bad_optional_access which leds to std::terminate().
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     FindServiceGuard(FindServiceHandler<HandleType> find_service_handler,
-                     EnrichedInstanceIdentifier enriched_instance_identifier) noexcept
+                     EnrichedInstanceIdentifier enriched_instance_identifier)
         : service_availability_change_handle_{nullptr}
     {
         auto& service_discovery = impl::Runtime::getInstance().GetServiceDiscovery();
@@ -408,7 +408,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
                                  proxy_instance_counter},
       filesystem_{filesystem},
       find_service_guard_{std::make_unique<FindServiceGuard>(
-          [this](ServiceHandleContainer<HandleType> service_handle_container, FindServiceHandle) noexcept {
+          [this](ServiceHandleContainer<HandleType> service_handle_container, FindServiceHandle) {
               // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced
               // initialization. This is a false positive, we don't use auto here
               // coverity[autosar_cpp14_a8_5_3_violation : FALSE]
@@ -422,7 +422,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
 
 Proxy::~Proxy() = default;
 
-void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available) noexcept
+void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 {
     for (auto& event_binding : event_bindings_)
     {

@@ -194,7 +194,7 @@ class Proxy : public ProxyBinding
   private:
     static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
 
-    void ServiceAvailabilityChangeHandler(const bool is_service_available) noexcept;
+    void ServiceAvailabilityChangeHandler(const bool is_service_available);
     void InitializeSharedMemoryForMethods(
         memory::shared::ManagedMemoryResource& memory_resource,
         const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& method_data,
