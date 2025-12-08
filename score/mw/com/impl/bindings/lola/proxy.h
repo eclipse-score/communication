@@ -226,7 +226,6 @@ class Proxy : public ProxyBinding
     /// currently registered Proxy service elements.
     std::mutex proxy_event_registration_mutex_;
     bool is_service_instance_available_;
-    std::unique_ptr<FindServiceGuard> find_service_guard_;
     std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
         service_instance_usage_flock_mutex_and_lock_;
@@ -235,6 +234,10 @@ class Proxy : public ProxyBinding
     ProxyInstanceIdentifier proxy_instance_identifier_;
 
     score::filesystem::Filesystem filesystem_;
+
+    // We make find_service_guard_ the last member variable since it registers a handler which accesses member variables
+    // of this class, so they should be initialised first.
+    std::unique_ptr<FindServiceGuard> find_service_guard_;
 };
 
 template <typename EventSampleType>

@@ -400,6 +400,13 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       event_bindings_{},
       proxy_event_registration_mutex_{},
       is_service_instance_available_{false},
+      service_instance_usage_marker_file_{std::move(service_instance_usage_marker_file)},
+      service_instance_usage_flock_mutex_and_lock_{std::move(service_instance_usage_flock_mutex_and_lock)},
+      proxy_methods_{},
+      method_data_{nullptr},
+      proxy_instance_identifier_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId(),
+                                 proxy_instance_counter},
+      filesystem_{filesystem},
       find_service_guard_{std::make_unique<FindServiceGuard>(
           [this](ServiceHandleContainer<HandleType> service_handle_container, FindServiceHandle) noexcept {
               // Suppress Autosar C++14 A8-5-3 states that auto variables shall not be initialized using braced
@@ -409,14 +416,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
               is_service_instance_available_ = !service_handle_container.empty();
               ServiceAvailabilityChangeHandler(is_service_instance_available_);
           },
-          EnrichedInstanceIdentifier{handle_})},
-      service_instance_usage_marker_file_{std::move(service_instance_usage_marker_file)},
-      service_instance_usage_flock_mutex_and_lock_{std::move(service_instance_usage_flock_mutex_and_lock)},
-      proxy_methods_{},
-      method_data_{nullptr},
-      proxy_instance_identifier_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId(),
-                                 proxy_instance_counter},
-      filesystem_{filesystem}
+          EnrichedInstanceIdentifier{handle_})}
 {
 }
 
