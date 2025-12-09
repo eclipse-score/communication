@@ -172,10 +172,12 @@ class IMessagePassingService
     /// IMessagePassingService per process, the incoming message must identify which Skeleton's handler should be
     /// called.
     ///
+    /// \param asil_level ASIL level of method.
     /// \param skeleton_instance_identifier to identify which ServiceMethodSubscribedHandler to call when
     /// SubscribeServiceMethod is called on the Proxy side
     /// \param subscribed_callback callback that will be called when SubscribeServiceMethod is called
     virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
+        const QualityType asil_level,
         SkeletonInstanceIdentifier skeleton_instance_identifier,
         ServiceMethodSubscribedHandler subscribed_callback) = 0;
 
@@ -191,8 +193,10 @@ class IMessagePassingService
     ///
     /// \param proxy_instance_identifier to identify which MethodCallHandler to call when CallMethod is called on the
     /// Proxy side
+    /// \param asil_level ASIL level of method.
     /// \param method_call_callback callback that will be called when CallMethod is called
-    virtual ResultBlank RegisterMethodCallHandler(ProxyInstanceIdentifier proxy_instance_identifier,
+    virtual ResultBlank RegisterMethodCallHandler(const QualityType asil_level,
+                                                  ProxyInstanceIdentifier proxy_instance_identifier,
                                                   MethodCallHandler method_call_callback) = 0;
 
     /// \brief Notify given target_node_id about outdated_node_id being an old/not to be used node identifier.
@@ -241,11 +245,13 @@ class IMessagePassingService
     /// The provided SkeletonInstanceIdentifier is required so that MessagePassingService can find the correct
     /// ServiceMethodSubscribed handler corresponding to the correct Skeleton.
     ///
+    /// \param asil_level ASIL level of method.
     /// \param skeleton_instance_identifier identification of the Skeleton corresponding to the Proxy which is calling
     /// this method.
     /// \param proxy_instance_identifier identification of the Proxy which is calling this method. This is passed to the
     /// ServiceMethodSubscribedHandler which is called on skeleton side.
-    virtual ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    virtual ResultBlank SubscribeServiceMethod(const QualityType asil_level,
+                                               const SkeletonInstanceIdentifier& skeleton_instance_identifier,
                                                const ProxyInstanceIdentifier& proxy_instance_identifier) = 0;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
@@ -255,8 +261,10 @@ class IMessagePassingService
     /// A Skeleton opens a shared memory region for each connected Proxy which contains a method. The provided
     /// ProxyInstanceIdentifier is required to identify which of the connected proxies has called the method.
     ///
+    /// \param asil_level ASIL level of method.
     /// \param proxy_instance_identifier identification of the specific Proxy which is calling this method.
-    virtual ResultBlank CallMethod(const ProxyInstanceIdentifier& proxy_instance_identifier,
+    virtual ResultBlank CallMethod(const QualityType asil_level,
+                                   const ProxyInstanceIdentifier& proxy_instance_identifier,
                                    std::size_t queue_position) = 0;
 };
 

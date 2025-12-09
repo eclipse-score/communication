@@ -49,14 +49,17 @@ class MessagePassingServiceMock : public IMessagePassingService
 
     MOCK_METHOD(ResultBlank,
                 RegisterOnServiceMethodSubscribedHandler,
-                (SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler),
+                (QualityType, SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler),
                 (override));
-    MOCK_METHOD(ResultBlank, RegisterMethodCallHandler, (ProxyInstanceIdentifier, MethodCallHandler), (override));
+    MOCK_METHOD(ResultBlank,
+                RegisterMethodCallHandler,
+                (QualityType, ProxyInstanceIdentifier, MethodCallHandler),
+                (override));
     MOCK_METHOD(ResultBlank,
                 SubscribeServiceMethod,
-                (const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&),
+                (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&),
                 (override));
-    MOCK_METHOD(ResultBlank, CallMethod, (const ProxyInstanceIdentifier&, std::size_t), (override));
+    MOCK_METHOD(ResultBlank, CallMethod, (QualityType, const ProxyInstanceIdentifier&, std::size_t), (override));
 };
 
 }  // namespace score::mw::com::impl::lola

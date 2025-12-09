@@ -144,13 +144,15 @@ IMessagePassingServiceInstance& MessagePassingService::GetMessagePassingServiceI
 }
 
 ResultBlank MessagePassingService::RegisterOnServiceMethodSubscribedHandler(
+    const QualityType /* asil_level */,
     SkeletonInstanceIdentifier /* skeleton_instance_identifier */,
     ServiceMethodSubscribedHandler /* subscribed_callback */)
 {
     return {};
 }
 
-ResultBlank MessagePassingService::RegisterMethodCallHandler(ProxyInstanceIdentifier /* proxy_instance_identifier */,
+ResultBlank MessagePassingService::RegisterMethodCallHandler(const QualityType /* asil_level */,
+                                                             ProxyInstanceIdentifier /* proxy_instance_identifier */,
                                                              MethodCallHandler /* method_call_callback */)
 {
     return {};
@@ -175,13 +177,15 @@ void MessagePassingService::UnregisterEventNotificationExistenceChangedCallback(
 }
 
 ResultBlank MessagePassingService::SubscribeServiceMethod(
+    const QualityType /* asil_level */,
     const SkeletonInstanceIdentifier& /* skeleton_instance_identifier */,
     const ProxyInstanceIdentifier& /* proxy_instance_identifier */)
 {
     return {};
 }
 
-ResultBlank MessagePassingService::CallMethod(const ProxyInstanceIdentifier& /* proxy_instance_identifier */,
+ResultBlank MessagePassingService::CallMethod(const QualityType /* asil_level */,
+                                              const ProxyInstanceIdentifier& /* proxy_instance_identifier */,
                                               std::size_t /* queue_position */)
 {
     return {};
