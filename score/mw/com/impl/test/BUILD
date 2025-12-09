@@ -26,6 +26,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:proxy_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:proxy_method_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_field_binding_factory_mock",
