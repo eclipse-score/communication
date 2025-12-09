@@ -1,5 +1,5 @@
 /********************************************************************************
-jk *
+ *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *

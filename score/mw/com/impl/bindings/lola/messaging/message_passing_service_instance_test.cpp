@@ -168,38 +168,6 @@ TEST_F(MessagePassingServiceInstanceTest, DisconnectCallbackSuccessfullyExecuted
     disconnect_callback_(*server_connection_mock_);
 }
 
-// received_send_message_with_reply
-TEST_F(MessagePassingServiceInstanceTest, MessageWithReplyIsSuccessfullyExecutedWhenValidPidIsPassed)
-{
-    // Given message passing instance
-    MessagePassingServiceInstance instance{
-        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
-
-    // Expect GetUserData to be called twice and return valid pid
-    EXPECT_CALL(*server_connection_mock_, GetUserData())
-        .WillOnce(::testing::ReturnRef(user_data_))
-        .WillOnce(::testing::ReturnRef(user_data_));
-
-    // When received_send_message_with_reply callback is executed
-    received_send_message_with_reply_callback_(*server_connection_mock_, {});
-}
-
-TEST_F(MessagePassingServiceInstanceDeathTest, MessageWithReplyTerminatesWhenInvalidPidIsPassed)
-{
-    // Given message passing instance
-    MessagePassingServiceInstance instance{
-        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
-
-    // Expect GetUserData to be called twice and return pid > pid_t::max()
-    // we can't set .WillOnce() twice since gtest uses fork() for death tests
-    user_data_.emplace<uintptr_t>(static_cast<uintptr_t>(std::numeric_limits<pid_t>::max()) + 1);
-    EXPECT_CALL(*server_connection_mock_, GetUserData()).WillRepeatedly(::testing::ReturnRef(user_data_));
-
-    // When received_send_message_with_reply callback is executed
-    // Expect termination
-    EXPECT_DEATH({ received_send_message_with_reply_callback_(*server_connection_mock_, {}); }, ".*");
-}
-
 // received_send_message
 TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingAnEmptyMessage)
 {

@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
@@ -181,22 +182,22 @@ class IMessagePassingService
         SkeletonInstanceIdentifier skeleton_instance_identifier,
         ServiceMethodSubscribedHandler subscribed_callback) = 0;
 
-    /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a Proxy.
+    /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a ProxyMethod.
     ///
-    /// When a user calls a method on a Proxy, it will put the InArgs in shared memory (if there are any) and then send
-    /// a notification to the Skeleton via CallMethod. The registered MethodCallCallback in the Skeleton process will
-    /// then be called which calls the actual method and puts the return value in shared memory (if there is one).
+    /// When a user calls a method on a ProxyMethod, it will put the InArgs in shared memory (if there are any) and then
+    /// send a notification to the Skeleton via CallMethod. The registered MethodCallCallback in the Skeleton process
+    /// will then be called which calls the actual method and puts the return value in shared memory (if there is one).
     ///
     /// A Skeleton opens a shared memory region for each connected Proxy which contains a method. The provided
-    /// ProxyInstanceIdentifier is required to identify which of the connected proxies the provided callback corresponds
-    /// to.
+    /// ProxyMethodInstanceIdentifier is required to identify which of the connected ProxyMethods the provided callback
+    /// corresponds to.
     ///
-    /// \param proxy_instance_identifier to identify which MethodCallHandler to call when CallMethod is called on the
-    /// Proxy side
     /// \param asil_level ASIL level of method.
+    /// \param proxy_method_instance_identifier to identify which MethodCallHandler to call when CallMethod is called on
+    /// the Proxy side
     /// \param method_call_callback callback that will be called when CallMethod is called
     virtual ResultBlank RegisterMethodCallHandler(const QualityType asil_level,
-                                                  ProxyInstanceIdentifier proxy_instance_identifier,
+                                                  ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
                                                   MethodCallHandler method_call_callback) = 0;
 
     /// \brief Notify given target_node_id about outdated_node_id being an old/not to be used node identifier.
@@ -245,27 +246,34 @@ class IMessagePassingService
     /// The provided SkeletonInstanceIdentifier is required so that MessagePassingService can find the correct
     /// ServiceMethodSubscribed handler corresponding to the correct Skeleton.
     ///
-    /// \param asil_level ASIL level of method.
+    /// \param asil_level See arguments documentation for ServiceMethodSubscribedHandler.
     /// \param skeleton_instance_identifier identification of the Skeleton corresponding to the Proxy which is calling
     /// this method.
-    /// \param proxy_instance_identifier identification of the Proxy which is calling this method. This is passed to the
-    /// ServiceMethodSubscribedHandler which is called on skeleton side.
+    /// \param proxy_instance_identifier See arguments documentation for ServiceMethodSubscribedHandler.
+    /// \param target_node_id Since this function is called by the Proxy process, target_node_id is the PID of the
+    ///        Skeleton process which the subscribe call is sent to (i.e. which contains the corresponding Skeleton)
     virtual ResultBlank SubscribeServiceMethod(const QualityType asil_level,
                                                const SkeletonInstanceIdentifier& skeleton_instance_identifier,
-                                               const ProxyInstanceIdentifier& proxy_instance_identifier) = 0;
+                                               const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                               const pid_t target_node_id) = 0;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response
     /// will be returned
     ///
     /// A Skeleton opens a shared memory region for each connected Proxy which contains a method. The provided
-    /// ProxyInstanceIdentifier is required to identify which of the connected proxies has called the method.
+    /// ProxyInstanceIdentifier is required to identify which of the connected ProxyMethods has called the method.
     ///
     /// \param asil_level ASIL level of method.
-    /// \param proxy_instance_identifier identification of the specific Proxy which is calling this method.
+    /// \param proxy_method_instance_identifier identification of the specific ProxyMethod which is calling this method.
+    /// \param queue_position The position in the queue of method calls in shared memory relating to the current method
+    ///        call. Until asynchronous method calls are supported, this will always be 0.
+    /// \param target_node_id Since this function is called by the Proxy process, target_node_id is the PID of the
+    ///        Skeleton process which the method call is sent to (i.e. which contains the corresponding Skeleton)
     virtual ResultBlank CallMethod(const QualityType asil_level,
-                                   const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                   std::size_t queue_position) = 0;
+                                   const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                                   const std::size_t queue_position,
+                                   const pid_t target_node_id) = 0;
 };
 
 }  // namespace score::mw::com::impl::lola

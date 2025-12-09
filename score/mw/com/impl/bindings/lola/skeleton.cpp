@@ -16,6 +16,7 @@
 #include "score/result/result.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
@@ -360,6 +361,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
     const SkeletonInstanceIdentifier skeleton_instance_identifier{lola_service_id_, lola_instance_id_};
     return lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+        GetInstanceQualityType(),
         skeleton_instance_identifier,
         IMessagePassingService::ServiceMethodSubscribedHandler{
             on_service_method_subscribed_handler_scope_,
@@ -993,17 +995,20 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
             skeleton_methods_.count(method_id) != 0U,
             "Each method that was stored in shared memory by the proxy must be registered with the Skeleton!");
         auto& skeleton_method = skeleton_methods_.at(method_id);
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
         const auto result = SkeletonMethodView{skeleton_method.get()}.OnProxyMethodSubscribeFinished(
             type_erased_call_queue.GetTypeErasedElementInfo(),
             type_erased_call_queue.GetInArgValuesQueueStorage(),
             type_erased_call_queue.GetReturnValueQueueStorage(),
-            proxy_instance_identifier,
+            proxy_method_instance_identifier,
             opened_shm_region);
         if (!(result.has_value()))
         {
-            score::mw::log::LogError("lola") << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod:"
-                                           << proxy_instance_identifier.proxy_instance_counter << "/"
-                                           << proxy_instance_identifier.process_identifier << "failed!";
+            score::mw::log::LogError("lola")
+                << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod: ProxyInstanceCounter["
+                << proxy_method_instance_identifier.proxy_instance_identifier.proxy_instance_counter << "] / ["
+                << proxy_method_instance_identifier.proxy_instance_identifier.process_identifier << "] / ["
+                << proxy_method_instance_identifier.method_id << "] failed!";
             return result;
         }
     }

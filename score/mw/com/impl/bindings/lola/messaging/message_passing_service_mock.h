@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
 #include <gmock/gmock.h>
@@ -53,13 +54,16 @@ class MessagePassingServiceMock : public IMessagePassingService
                 (override));
     MOCK_METHOD(ResultBlank,
                 RegisterMethodCallHandler,
-                (QualityType, ProxyInstanceIdentifier, MethodCallHandler),
+                (QualityType, ProxyMethodInstanceIdentifier, MethodCallHandler),
                 (override));
     MOCK_METHOD(ResultBlank,
                 SubscribeServiceMethod,
-                (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&),
+                (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
                 (override));
-    MOCK_METHOD(ResultBlank, CallMethod, (QualityType, const ProxyInstanceIdentifier&, std::size_t), (override));
+    MOCK_METHOD(ResultBlank,
+                CallMethod,
+                (QualityType, const ProxyMethodInstanceIdentifier&, std::size_t, pid_t),
+                (override));
 };
 
 }  // namespace score::mw::com::impl::lola

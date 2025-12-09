@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_METHOD_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
@@ -55,7 +55,7 @@ class SkeletonMethod : public SkeletonMethodBinding
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,
-        const ProxyInstanceIdentifier proxy_instance_identifier,
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
         std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource);
 
     void Call(const std::optional<score::cpp::span<std::byte>> in_args, const std::optional<score::cpp::span<std::byte>> return_arg);
@@ -76,13 +76,13 @@ class SkeletonMethodView
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,
-        const ProxyInstanceIdentifier proxy_instance_identifier,
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
         std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource)
     {
         return skeleton_method_.OnProxyMethodSubscribeFinished(type_erased_element_info,
                                                                in_arg_queue_storage,
                                                                return_queue_storage,
-                                                               proxy_instance_identifier,
+                                                               proxy_method_instance_identifier,
                                                                methods_shm_resource);
     }
 

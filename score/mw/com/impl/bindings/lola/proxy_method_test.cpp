@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
@@ -210,11 +211,12 @@ TEST_F(ProxyMethodDoCallFixture, DispatchesToMessagePassingBinding)
     GivenAProxyMethod();
 
     // Expecting that CallMethod is called on the message passing binding which returns success
-    EXPECT_CALL(*mock_service_, CallMethod(_, kDummyQueuePosition))
-        .WillOnce(WithArg<0>(Invoke([](auto proxy_instance_identifier) -> ResultBlank {
-            // Then CallMethod is called with a ProxyInstanceIdentifier containing the application id from the
+    EXPECT_CALL(*mock_service_, CallMethod(_, _, kDummyQueuePosition, _))
+        .WillOnce(WithArg<1>(Invoke([](auto proxy_method_instance_identifier) -> ResultBlank {
+            // Then CallMethod is called with a ProxyMethodInstanceIdentifier containing the application id from the
             // configuration
-            EXPECT_EQ(proxy_instance_identifier.process_identifier, kDummyApplicationId);
+            EXPECT_EQ(proxy_method_instance_identifier.proxy_instance_identifier.process_identifier,
+                      kDummyApplicationId);
             return ResultBlank{};
         })));
 
@@ -231,7 +233,7 @@ TEST_F(ProxyMethodDoCallFixture, PropagatesErrorFromMessagePassingBinding)
 
     // Expecting that CallMethod is called on the message passing binding which returns an erro
     const auto call_method_error_code = ComErrc::kBindingFailure;
-    EXPECT_CALL(*mock_service_, CallMethod(_, kDummyQueuePosition))
+    EXPECT_CALL(*mock_service_, CallMethod(_, _, kDummyQueuePosition, _))
         .WillOnce(Return(MakeUnexpected(call_method_error_code)));
 
     // When calling DoCall

@@ -69,6 +69,7 @@ SkeletonBinding::SkeletonEventBindings kEmptyEventBindings{};
 SkeletonBinding::SkeletonFieldBindings kEmptyFieldBindings{};
 
 constexpr pid_t kDummyPid{15};
+const auto kDummyQualityType = QualityType::kASIL_QM;
 
 ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{5U};
 
@@ -160,8 +161,8 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
 
     SkeletonMethodHandlingFixture& WhichCapturesRegisteredMethodSubscribedHandler()
     {
-        ON_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
-            .WillByDefault(WithArg<1>(Invoke([this](auto method_subscribed_handler) -> ResultBlank {
+        ON_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(_, skeleton_instance_identifier_, _))
+            .WillByDefault(WithArg<2>(Invoke([this](auto method_subscribed_handler) -> ResultBlank {
                 captured_method_subscribed_handler_.emplace(std::move(method_subscribed_handler));
                 return {};
             })));
@@ -203,7 +204,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscri
 
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns a valid
     // result
-    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
+    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(_, skeleton_instance_identifier_, _))
         .WillOnce(Return(score::ResultBlank{}));
 
     // When calling PrepareOffer
@@ -220,7 +221,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfRegisterServiceMet
 
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns an error
     const auto error_code = ComErrc::kCommunicationLinkError;
-    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
+    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(_, skeleton_instance_identifier_, _))
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling PrepareOffer
@@ -363,7 +364,10 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorIfRegisteri
 
     // Expecting that RegisterMethodCallHandler is called on the first method which returns an error
     const auto error_code = ComErrc::kCommunicationLinkError;
-    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(proxy_instance_identifier_, _))
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier_,
+                                                                         test::kFooMethodId};
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, proxy_method_instance_identifier, _))
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling the registered method subscribed handler
@@ -371,7 +375,7 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorIfRegisteri
     const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
                                                    proxy_instance_identifier_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
+                                                   kDummyQualityType,
                                                    kDummyPid);
 
     // Then the handler should return an error
@@ -558,13 +562,19 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
 
     // Expecting that a method call handler is registered for both methods which calls the handler directly with the
     // largest possible queue index for that method
-    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(proxy_instance_identifier_, _))
-        .Times(2)
-        .WillOnce(WithArgs<1>(Invoke([](auto method_call_handler) -> ResultBlank {
+    const ProxyMethodInstanceIdentifier foo_proxy_method_instance_identifier{proxy_instance_identifier_,
+                                                                             test::kFooMethodId};
+    const ProxyMethodInstanceIdentifier dumb_proxy_method_instance_identifier{proxy_instance_identifier_,
+                                                                              test::kDumbMethodId};
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_instance_identifier, _))
+        .WillOnce(WithArgs<2>(Invoke([](auto method_call_handler) -> ResultBlank {
             std::invoke(method_call_handler, test::kFooMethodQueueSize - 1U);
             return {};
-        })))
-        .WillOnce(WithArgs<1>(Invoke([](auto method_call_handler) -> ResultBlank {
+        })));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_instance_identifier, _))
+        .WillOnce(WithArgs<2>(Invoke([](auto method_call_handler) -> ResultBlank {
             std::invoke(method_call_handler, test::kDumbMethodQueueSize - 1U);
             return {};
         })));

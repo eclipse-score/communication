@@ -67,7 +67,7 @@ class ProxyMethod : public ProxyMethodBinding
     TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info_;
     std::optional<score::cpp::span<std::byte>> in_args_storage_;
     std::optional<score::cpp::span<std::byte>> return_storage_;
-    ProxyInstanceIdentifier proxy_instance_identifier_;
+    ProxyMethodInstanceIdentifier proxy_method_instance_identifier_;
 };
 
 }  // namespace score::mw::com::impl::lola

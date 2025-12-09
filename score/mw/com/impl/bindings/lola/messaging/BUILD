@@ -46,6 +46,7 @@ cc_library(
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola:element_fq_id",
         "//score/mw/com/impl/bindings/lola/methods:proxy_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:proxy_method_instance_identifier",
         "//score/mw/com/impl/bindings/lola/methods:skeleton_instance_identifier",
         "//score/mw/com/impl/configuration:quality_type",
         "@score_baselibs//score/language/futurecpp",
@@ -92,6 +93,9 @@ cc_library(
         ":i_message_passing_service_instance",
         ":message_passing_client_cache",
         ":thread_abstraction",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:error_serializer",
+        "//score/mw/com/impl/bindings/lola/methods:method_error",
         "@score_baselibs//score/concurrency:thread_pool",
         "@score_baselibs//score/os:errno_logging",
         "@score_communication//score/message_passing",
@@ -343,6 +347,23 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "message_passing_service_instance_methods_test",
+    srcs = ["message_passing_service_instance_methods_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":messaging",
+        "@score_baselibs//score/concurrency:executor_mock",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/os/mocklib:unistd_mock",
+        "@score_communication//score/message_passing:mock",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -350,6 +371,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":node_identifier_copier_test",
         ":message_passing_service_instance_test",
         ":message_passing_client_cache_test",
+        ":message_passing_service_instance_methods_test",
         ":message_passing_service_test",
         ":mw_log_logger_test",
     ],

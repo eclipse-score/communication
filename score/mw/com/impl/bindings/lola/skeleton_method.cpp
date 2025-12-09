@@ -56,7 +56,7 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
     const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
     const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
     const std::optional<score::cpp::span<std::byte>> return_queue_storage,
-    const ProxyInstanceIdentifier proxy_instance_identifier,
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
     std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_callback_.has_value(),
@@ -101,7 +101,8 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
 
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
-    return lola_message_passing.RegisterMethodCallHandler(proxy_instance_identifier, std::move(method_call_callback));
+    return lola_message_passing.RegisterMethodCallHandler(
+        asil_level_, proxy_method_instance_identifier, std::move(method_call_callback));
 }
 
 void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_args,

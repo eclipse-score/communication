@@ -31,6 +31,8 @@ enum class MethodErrc : score::result::ErrorCode
     kSkeletonAlreadyDestroyed,
     kUnexpectedMessage,
     kUnexpectedMessageSize,
+    kMessagePassingError,
+    kNotSubscribed,
     kNumEnumElements
 };
 
@@ -62,6 +64,12 @@ class MethodErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(MethodErrc::kUnexpectedMessageSize):
                 return "Message with an unexpected size was received.";
+            // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(MethodErrc::kMessagePassingError):
+                return "Message passing failed with an error.";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(MethodErrc::kNotSubscribed):
+                return "Method has not been succesfully subscribed.";
                 // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(MethodErrc::kInvalid):
             case static_cast<score::result::ErrorCode>(MethodErrc::kNumEnumElements):

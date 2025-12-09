@@ -469,8 +469,8 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
             GetLoLaServiceTypeDeployment(handle_).service_id_,
             LolaServiceInstanceId{GetLoLaInstanceDeployment(handle_).instance_id_.value()}.GetId()};
 
-        const auto subscribe_service_method_result =
-            lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier_);
+        const auto subscribe_service_method_result = lola_message_passing.SubscribeServiceMethod(
+            quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
         if (!(subscribe_service_method_result.has_value()))
         {
             score::mw::log::LogError("lola")
@@ -633,7 +633,8 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
     }
 
     are_proxy_methods_setup_.store(true);
-    return lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier, proxy_instance_identifier_);
+    return lola_message_passing.SubscribeServiceMethod(
+        quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
 }
 
 memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermissions() const

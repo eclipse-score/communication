@@ -41,7 +41,7 @@ ProxyMethod::ProxyMethod(Proxy& proxy,
       type_erased_element_info_{type_erased_element_info},
       in_args_storage_{},
       return_storage_{},
-      proxy_instance_identifier_{proxy.GetProxyInstanceIdentifier()}
+      proxy_method_instance_identifier_{proxy.GetProxyInstanceIdentifier(), element_fq_id.element_id_}
 {
     proxy.RegisterMethod(element_fq_id.element_id_, *this);
 }
@@ -71,7 +71,8 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateReturnType(std::
 score::ResultBlank ProxyMethod::DoCall(std::size_t queue_position)
 {
     auto& lola_message_passing = lola_runtime_.GetLolaMessaging();
-    return lola_message_passing.CallMethod(proxy_instance_identifier_, queue_position);
+    return lola_message_passing.CallMethod(
+        asil_level_, proxy_method_instance_identifier_, queue_position, skeleton_pid_);
 }
 
 TypeErasedCallQueue::TypeErasedElementInfo ProxyMethod::GetTypeErasedElementInfo() const
