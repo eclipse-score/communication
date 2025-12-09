@@ -458,6 +458,21 @@ cc_gtest_unit_test(
 )
 
 cc_test(
+    name = "config_parser_dangling_reference_fixes_test",
+    size = "small",
+    timeout = "long",
+    srcs = ["config_parser_dangling_reference_fixes_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        "aborts_upon_exception",
+    ],
+    tags = ["unit"],
+    deps = [
+        ":config_parser",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "configuration_common_resources_test",
     size = "small",
     timeout = "long",
