@@ -171,78 +171,21 @@ class ProxyBaseView final
     /// \return Pointer to the proxy binding.
     ProxyBinding* GetBinding() noexcept;
 
-    const HandleType& GetAssociatedHandleType() const noexcept
-    {
-        return proxy_base_.handle_;
-    }
+    const HandleType& GetAssociatedHandleType() const noexcept;
 
-    void MarkServiceElementBindingInvalid() noexcept
-    {
-        proxy_base_.are_service_element_bindings_valid_ = false;
-    }
+    void MarkServiceElementBindingInvalid() noexcept;
 
-    void RegisterEvent(const std::string_view event_name, ProxyEventBase& event)
-    {
-        const auto result = proxy_base_.events_.emplace(event_name, event);
-        const bool was_event_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_event_inserted, "Event cannot be registered as it already exists.");
-    }
+    void RegisterEvent(const std::string_view event_name, ProxyEventBase& event);
 
-    void RegisterField(const std::string_view field_name, ProxyFieldBase& field)
-    {
-        const auto result = proxy_base_.fields_.emplace(field_name, field);
-        const bool was_field_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
-    }
+    void RegisterField(const std::string_view field_name, ProxyFieldBase& field);
 
-    void RegisterMethod(const std::string_view method_name, ProxyMethodBase& method)
-    {
-        const auto result = proxy_base_.methods_.emplace(method_name, method);
-        const bool was_method_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted, "Method cannot be registered as it already exists.");
-    }
+    void RegisterMethod(const std::string_view method_name, ProxyMethodBase& method);
 
-    void UpdateEvent(const std::string_view event_name, ProxyEventBase& event)
-    {
-        auto event_it = proxy_base_.events_.find(event_name);
-        if (event_it == proxy_base_.events_.cend())
-        {
-            score::mw::log::LogError("lola")
-                << "ProxyBaseView::UpdateEvent failed to update, because the requested event " << event_name
-                << " doesn't exist!";
-            std::terminate();
-        }
+    void UpdateEvent(const std::string_view event_name, ProxyEventBase& event);
 
-        event_it->second = event;
-    }
+    void UpdateField(const std::string_view field_name, ProxyFieldBase& field);
 
-    void UpdateField(const std::string_view field_name, ProxyFieldBase& field)
-    {
-        auto field_it = proxy_base_.fields_.find(field_name);
-        if (field_it == proxy_base_.fields_.cend())
-        {
-            score::mw::log::LogError("lola")
-                << "ProxyBaseView::UpdateField failed to update, because the requested field " << field_name
-                << " doesn't exist";
-            std::terminate();
-        }
-
-        field_it->second = field;
-    }
-
-    void UpdateMethod(const std::string_view method_name, ProxyMethodBase& method)
-    {
-        auto method_it = proxy_base_.methods_.find(method_name);
-        if (method_it == proxy_base_.methods_.cend())
-        {
-            score::mw::log::LogError("lola")
-                << "ProxyBaseView::UpdateMethod failed to update, because the requested method " << method_name
-                << " doesn't exist";
-            std::terminate();
-        }
-
-        method_it->second = method;
-    }
+    void UpdateMethod(const std::string_view method_name, ProxyMethodBase& method);
 
     bool AreBindingsValid() const
     {
