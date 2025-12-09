@@ -50,8 +50,8 @@ use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 pub mod reloc;
+use containers::fixed_capacity::FixedCapacityQueue;
 pub use reloc::Reloc;
-use std::collections::VecDeque;
 use std::path::Path;
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
@@ -630,21 +630,15 @@ pub trait Subscriber<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
 /// # Type Parameters
 /// * `S`: The sample type stored in the container.
 pub struct SampleContainer<S> {
-    inner: VecDeque<S>,
-}
-
-impl<S> Default for SampleContainer<S> {
-    fn default() -> Self {
-        Self {
-            inner: VecDeque::new(),
-        }
-    }
+    inner: FixedCapacityQueue<S>,
 }
 
 impl<S> SampleContainer<S> {
     /// Creates a new, empty `SampleContainer`
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            inner: FixedCapacityQueue::new(capacity),
+        }
     }
 
     /// Returns an iterator over references to the samples in the container.
@@ -681,7 +675,7 @@ impl<S> SampleContainer<S> {
     /// # Errors
     /// Returns 'Error' if container is already full.
     pub fn push_back(&mut self, new: S) -> Result<()> {
-        self.inner.push_back(new);
+        self.inner.push_back(new).map_err(|_| Error::AllocateFailed)?;
         Ok(())
     }
 

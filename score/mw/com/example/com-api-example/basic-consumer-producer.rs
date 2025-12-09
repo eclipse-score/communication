@@ -63,7 +63,7 @@ impl<R: Runtime> VehicleMonitor<R> {
     ///
     /// Panics if unwrapping the sample from the buffer fails.
     pub fn read_tire_data(&self) -> Result<String> {
-        let mut sample_buf = SampleContainer::new();
+        let mut sample_buf = SampleContainer::new(3);
 
         match self.tire_subscriber.try_receive(&mut sample_buf, 1) {
             Ok(0) => Err(Error::Fail),

@@ -132,6 +132,13 @@ bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_doxygen", version = "2.5.0")
 bazel_dep(name = "score_baselibs", version = "0.2.2")
 
+bazel_dep(name = "score_baselibs_rust", version = "0.0.1")
+git_override(
+    module_name = "score_baselibs_rust",
+    commit = "9ee64ac85f2a990ef75b2858253ee44bfc1a7ab7",
+    remote = "https://github.com/eclipse-score/baselibs_rust.git",
+)
+
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension")
 use_repo(doxygen_extension, "doxygen")
