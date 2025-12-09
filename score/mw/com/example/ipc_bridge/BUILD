@@ -114,5 +114,6 @@ exports_files([
 generate_com_config(
     name = "mw_com_config.bin",
     json = "etc/mw_com_config.json",
+    convert = True,
     visibility = ["//visibility:public"],
 )

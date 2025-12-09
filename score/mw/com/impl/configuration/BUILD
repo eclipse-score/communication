@@ -809,38 +809,57 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "ara_com_config_flatbuffer_conform.json",
+    srcs = ["example/ara_com_config_flatbuffer_conform.json"],
+    visibility = ["//visibility:public"],
+)
+
 generate_com_config(
     name = "ara_com_config.bin",
     json = "example/ara_com_config.json",
+    convert = True,
     visibility = ["//visibility:public"],
 )
 
 generate_com_config(
     name = "ara_com_config_other.bin",
     json = "example/ara_com_config_other.json",
+    convert = True,
     visibility = ["//visibility:public"],
 )
 
 generate_com_config(
     name = "ara_com_config_invalid_trace_config_path.bin",
     json = "example/ara_com_config_invalid_trace_config_path.json",
+    convert = True,
     visibility = ["//visibility:public"],
 )
 
 generate_com_config(
     name = "ara_com_config_disabled_trace_config.bin",
     json = "example/ara_com_config_disabled_trace_config.json",
+    convert = True,
     visibility = ["//visibility:public"],
 )
 
 generate_com_config(
     name = "ara_com_config_valid_trace_config.bin",
     json = "example/ara_com_config_valid_trace_config.json",
+    convert = True,
     visibility = ["//visibility:public"],
 )
 
 generate_com_config(
     name = "ara_com_config_valid_trace_config_external.bin",
     json = "example/ara_com_config_valid_trace_config_external.json",
+    convert = True,
+    visibility = ["//visibility:public"],
+)
+
+generate_com_config(
+    name = "ara_com_config_flatbuffer_conform.bin",
+    json = "example/ara_com_config_flatbuffer_conform.json",
+    convert = False,
     visibility = ["//visibility:public"],
 )

@@ -46,6 +46,7 @@ table BindingElement {
     service_id:uint16;
     events:[Event];
     fields:[Field];
+    methods:[Method];
 }
 
 table Event {
@@ -60,6 +61,12 @@ table Field {
     field_id:uint16;
     get:bool = false;
     set:bool = false;
+}
+
+table Method {
+    method_name:string (required);
+    // JSON validation: methodId is 8 bit for LoLa, 15 bit for SOME/IP - using uint16 to accommodate both
+    method_id:uint16;
 }
 
 // ServiceInstances definitions
@@ -83,6 +90,7 @@ table Instance {
     allowed_provider:AllowedProvider;
     events:[InstanceEvent];
     fields:[InstanceField];
+    methods:[InstanceMethod];
 }
 
 // User IDs for access control
@@ -113,6 +121,12 @@ table InstanceField {
     max_subscribers:uint16;
     enforce_max_samples:bool = true;
     number_of_ipc_tracing_slots:uint16 = 0;
+}
+
+table InstanceMethod {
+    method_name:string (required);
+    // JSON validation: queue_size must be between 1 and 255 - not enforceable in FlatBuffers
+    queue_size:uint16 = 1;
 }
 
 // Global definitions

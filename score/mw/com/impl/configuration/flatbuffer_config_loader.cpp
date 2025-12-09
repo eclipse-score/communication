@@ -17,6 +17,8 @@
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_field_id.h"
 #include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_method_id.h"
+#include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -116,6 +118,33 @@ LolaServiceInstanceDeployment::FieldInstanceMapping ParseFieldDeployments(const 
     return fields;
 }
 
+// Helper to parse method deployments from FlatBuffer Instance
+LolaServiceInstanceDeployment::MethodInstanceMapping ParseMethodDeployments(const Instance* instance)
+{
+    LolaServiceInstanceDeployment::MethodInstanceMapping methods;
+    
+    if (instance->methods() != nullptr)
+    {
+        for (const auto* method : *instance->methods())
+        {
+            if (method != nullptr)
+            {
+                std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size = std::nullopt;
+                if (method->queue_size() > 0)
+                {
+                    queue_size = static_cast<uint8_t>(method->queue_size());
+                }
+                
+                LolaMethodInstanceDeployment method_deploy(queue_size);
+                // method_name is obliged to contain a value (marked as required)
+                methods.emplace(method->method_name()->str(), std::move(method_deploy));
+            }
+        }
+    }
+    
+    return methods;
+}
+
 // Helper to parse permission mappings from FlatBuffer Permissions (AllowedConsumer or AllowedProvider)
 template<typename PermissionsType>
 std::unordered_map<QualityType, std::vector<uid_t>> ParsePermissions(const PermissionsType* permissions)
@@ -167,14 +196,15 @@ score::mw::com::impl::LolaServiceInstanceDeployment CreateLolaServiceInstanceDep
     
     auto events = ParseEventDeployments(instance);
     auto fields = ParseFieldDeployments(instance);
+    auto methods = ParseMethodDeployments(instance);
     auto allowed_consumer = ParsePermissions(instance->allowed_consumer());
     auto allowed_provider = ParsePermissions(instance->allowed_provider());
     
     bool strict_permission = (instance->permission_checks() == PermissionCheckStrategy::STRICT);
     
     LolaServiceInstanceDeployment deployment(instance_id, std::move(events), std::move(fields),
-                                            strict_permission, std::move(allowed_consumer), 
-                                            std::move(allowed_provider));
+                                            std::move(methods), strict_permission, 
+                                            std::move(allowed_consumer), std::move(allowed_provider));
     
     SetMemorySizes(deployment, instance);
     
@@ -291,6 +321,7 @@ Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes
                 LolaServiceId service_id{binding->service_id()};
                 LolaServiceTypeDeployment::EventIdMapping events;
                 LolaServiceTypeDeployment::FieldIdMapping fields;
+                LolaServiceTypeDeployment::MethodIdMapping methods;
                 
                 if (binding->events() != nullptr)
                 {
@@ -310,7 +341,16 @@ Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes
                     }
                 }
                 
-                binding_info = LolaServiceTypeDeployment{service_id, std::move(events), std::move(fields)};
+                if (binding->methods() != nullptr)
+                {
+                    for (const auto* method : *binding->methods())
+                    {
+                        // method_name is obliged to contain a value (marked as required)
+                        methods.emplace(method->method_name()->str(), LolaMethodId{static_cast<uint8_t>(method->method_id())});
+                    }
+                }
+                
+                binding_info = LolaServiceTypeDeployment{service_id, std::move(events), std::move(fields), std::move(methods)};
                 break;  // Use first SHM binding
             }
             else if (binding->binding() == BindingType::SOME_IP)
