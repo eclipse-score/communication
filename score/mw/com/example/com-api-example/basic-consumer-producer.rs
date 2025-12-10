@@ -64,18 +64,14 @@ fn use_consumer<R: Runtime>(runtime: &R) -> VehicleConsumer<R> {
         .find(|desc| desc.get_instance_identifier().as_ref() == "/My/Funk/ServiceName")
         .unwrap();
 
-    let consumer = consumer_builder.build().unwrap();
-    //
-    consumer
+    consumer_builder.build().unwrap()
 }
 
 fn use_producer<R: Runtime>(runtime: &R) -> VehicleOfferedProducer<R> {
     let producer_builder = runtime.producer_builder::<VehicleInterface, VehicleProducer<R>>(
         InstanceSpecifier::new("/My/Funk/ServiceName").unwrap(),
     );
-    let producer = producer_builder.build().unwrap();
-    let offered_producer = producer.offer().unwrap();
-    offered_producer
+    producer_builder.build().unwrap().offer().unwrap()
 }
 
 fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {

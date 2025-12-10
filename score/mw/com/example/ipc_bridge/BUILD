@@ -82,6 +82,7 @@ rust_binary(
     data = ["etc/mw_com_config.json"],
     features = ["link_std_cpp_lib"],
     rustc_flags = ["-Clink-arg=-lstdc++"],
+    visibility = ["//visibility:public"],
     deps = [
         ":ipc_bridge_gen_rs",
         "//score/mw/com/impl/rust:mw_com",

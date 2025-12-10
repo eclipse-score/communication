@@ -59,4 +59,9 @@ coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --cxxopt -mllvm
 coverage --cxxopt -runtime-counter-relocation
 
+# Clippy linting (enabled by default)
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build --output_groups=+clippy_checks
+build --@rules_rust//rust/settings:clippy.toml=@score_rust_policies//clippy/strict:clippy.toml
+
 import quality/sanitizer/sanitizer.bazelrc

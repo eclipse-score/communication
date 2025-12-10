@@ -13,6 +13,7 @@
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_rust//rust:defs.bzl", "rust_clippy")
 load("@score_tooling//:defs.bzl", "copyright_checker")
 
 compile_pip_requirements(
@@ -54,4 +55,16 @@ format_test(
     starlark = "@buildifier_prebuilt//:buildifier",
     tags = ["manual"],
     workspace = "//:LICENSE",
+)
+
+rust_clippy(
+    name = "clippy",
+    testonly = True,
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//score/mw/com/example/com-api-example:com-api-example",
+        "//score/mw/com/example/ipc_bridge:ipc_bridge_rs",
+        "//score/mw/com/impl/rust:mw_com",
+    ],
 )
