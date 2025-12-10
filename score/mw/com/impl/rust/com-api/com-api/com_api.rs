@@ -11,9 +11,17 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+#[cfg(feature = "iceoryx")]
+pub use com_api_runtime_iceoryx::IceoryxRuntimeImpl;
+#[cfg(feature = "iceoryx")]
+pub use com_api_runtime_iceoryx::RuntimeBuilderImpl as IceoryxRuntimeBuilderImpl;
+#[cfg(not(feature = "iceoryx"))]
 pub use com_api_runtime_lola::LolaRuntimeImpl;
+#[cfg(not(feature = "iceoryx"))]
 pub use com_api_runtime_lola::RuntimeBuilderImpl as LolaRuntimeBuilderImpl;
+#[cfg(not(feature = "iceoryx"))]
 pub use com_api_runtime_mock::MockRuntimeImpl;
+#[cfg(not(feature = "iceoryx"))]
 pub use com_api_runtime_mock::RuntimeBuilderImpl as MockRuntimeBuilderImpl;
 
 pub use com_api_concept::{

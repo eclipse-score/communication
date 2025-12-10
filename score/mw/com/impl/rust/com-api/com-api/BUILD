@@ -17,12 +17,22 @@ rust_library(
     name = "com-api",
     srcs = ["com_api.rs"],
     crate_name = "com_api",
+    crate_features = select({
+        "//score/mw/com/flags:use_iceoryx": ["iceoryx"],
+        "//conditions:default": [],
+    }),
     visibility = [
         "//visibility:public",  # platform_only
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept",
-        "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
-        "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
-    ],
+    ] + select({
+        "//score/mw/com/flags:use_iceoryx": [
+            "//score/mw/com/impl/rust/com-api/com-api-runtime-iceoryx",
+        ],
+        "//conditions:default": [
+            "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
+            "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
+            ],
+        }),
 )

@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag", "bool_flag")
 
 string_flag(
     name = "tracing_library",
@@ -36,4 +36,17 @@ config_setting(
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],
+)
+
+bool_flag(
+    name = "k_use_iceoryx",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "use_iceoryx",
+    flag_values = {
+        ":k_use_iceoryx": "True",
+    },
+    visibility = ["//visibility:public"],
 )

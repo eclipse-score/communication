@@ -90,9 +90,15 @@ pub trait Builder<Output> {
 /// the implementation.
 pub trait Runtime {
     /// ServiceDiscovery<I> types for Discovers available service instances of a specific interface
+    #[cfg(feature = "iceoryx")]
+    type ServiceDiscovery<I: Interface + Debug>: ServiceDiscovery<I, Self>;
+    #[cfg(not(feature = "iceoryx"))]
     type ServiceDiscovery<I: Interface>: ServiceDiscovery<I, Self>;
 
     /// Subscriber<T> types for Manages subscriptions to event notifications
+    #[cfg(feature = "iceoryx")]
+    type Subscriber<T: Reloc + Send + Debug + 'static>: Subscriber<T, Self>;
+    #[cfg(not(feature = "iceoryx"))]
     type Subscriber<T: Reloc + Send + Debug>: Subscriber<T, Self>;
 
     /// ProducerBuilder<I, P> types for Constructs producer instances for offering services
@@ -103,6 +109,9 @@ pub trait Runtime {
     >;
 
     /// Publisher<T> types for Publishes event data to subscribers
+    #[cfg(feature = "iceoryx")]
+    type Publisher<T: Reloc + Send + Debug + 'static>: Publisher<T, Self>;
+    #[cfg(not(feature = "iceoryx"))]
     type Publisher<T: Reloc + Send + Debug>: Publisher<T, Self>;
 
     /// ProviderInfo types for Configuration data for service producers instances
@@ -123,6 +132,12 @@ pub trait Runtime {
     ///
     /// # Returns
     /// Service discovery handle for querying available instances
+    #[cfg(feature = "iceoryx")]
+    fn find_service<I: Interface + Debug>(
+        &self,
+        instance_specifier: FindServiceSpecifier,
+    ) -> Self::ServiceDiscovery<I>;
+    #[cfg(not(feature = "iceoryx"))]
     fn find_service<I: Interface>(
         &self,
         instance_specifier: FindServiceSpecifier,

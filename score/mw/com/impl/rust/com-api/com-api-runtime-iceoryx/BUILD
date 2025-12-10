@@ -13,19 +13,14 @@
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
-    name = "com-api-gen",
-    srcs = ["com_api_gen.rs"],
-    crate_name = "com_api_gen",
-    crate_features = select({
-        "//score/mw/com/flags:use_iceoryx": ["iceoryx"],
-        "//conditions:default": [],
-    }),
+    name = "com-api-runtime-iceoryx",
+    srcs = ["runtime.rs"],
     visibility = [
         "//visibility:public",  # platform_only
     ],
-    deps = ["//score/mw/com/impl/rust/com-api/com-api",] +
-        select({
-            "//score/mw/com/flags:use_iceoryx": ["@crate_index//:iceoryx2_qnx8",],
-            "//conditions:default": [],
-        }),
+    deps = [
+        "//score/mw/com/impl/rust/com-api/com-api-concept",
+        "@crate_index//:futures",
+        "@crate_index//:iceoryx2_qnx8",
+    ],
 )

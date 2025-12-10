@@ -19,10 +19,17 @@ rust_library(
         "reloc.rs",
     ],
     crate_root = "com_api_concept.rs",
+    crate_features = select({
+        "//score/mw/com/flags:use_iceoryx": ["iceoryx"],
+        "//conditions:default": [],
+    }),
     visibility = [
         "//visibility:public",  # platform_only
     ],
-    deps = [],
+    deps = select({
+        "//score/mw/com/flags:use_iceoryx": ["@crate_index//:iceoryx2_qnx8",],
+        "//conditions:default": [],
+    }),
 )
 
 rust_test(

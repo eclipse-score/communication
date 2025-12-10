@@ -92,6 +92,14 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     println!("=== {} runtime completed ===\n", name);
 }
 
+#[cfg(feature = "iceoryx")]
+fn main() {
+    let iceoryx_runtime_builder = IceoryxRuntimeBuilderImpl::new();
+    let iceoryx_runtime = Builder::<IceoryxRuntimeImpl>::build(iceoryx_runtime_builder).unwrap();
+    run_with_runtime("Iceoryx", &iceoryx_runtime);
+}
+
+#[cfg(not(feature = "iceoryx"))]
 fn main() {
     let mock_runtime_builder = MockRuntimeBuilderImpl::new();
     let mock_runtime = Builder::<MockRuntimeImpl>::build(mock_runtime_builder).unwrap();

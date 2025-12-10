@@ -98,7 +98,7 @@ bazel_dep(name = "score_crates", version = "0.0.4", repo_name = "crate_index")
 # Temporary: Use latest GitHub main with regenerated BUILD file including paste and arrayvec
 git_override(
     module_name = "score_crates",
-    commit = "636a5add5ffd53177fd0fdf70b672043ac2664c4",
+    commit = "dcbc6a4d36c9293549397893650c3a7068b0682d",
     remote = "https://github.com/eclipse-score/score-crates.git",
 )
 

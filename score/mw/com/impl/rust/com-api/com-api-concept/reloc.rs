@@ -10,7 +10,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#[cfg(feature = "iceoryx")]
+use iceoryx2_qnx8::prelude::ZeroCopySend;
 
+#[cfg(feature = "iceoryx")]
+pub unsafe trait Reloc: ZeroCopySend {}
+#[cfg(not(feature = "iceoryx"))]
 pub unsafe trait Reloc {}
 
 unsafe impl Reloc for () {}
@@ -38,8 +43,13 @@ unsafe impl<T: Reloc, const N: usize> Reloc for [T; N] {}
 unsafe impl<T: Reloc> Reloc for core::mem::MaybeUninit<T> {}
 
 // Tuples (up to 5 elements)
+#[cfg(not(feature = "iceoryx"))]
 unsafe impl<T1: Reloc> Reloc for (T1,) {}
+#[cfg(not(feature = "iceoryx"))]
 unsafe impl<T1: Reloc, T2: Reloc> Reloc for (T1, T2) {}
+#[cfg(not(feature = "iceoryx"))]
 unsafe impl<T1: Reloc, T2: Reloc, T3: Reloc> Reloc for (T1, T2, T3) {}
+#[cfg(not(feature = "iceoryx"))]
 unsafe impl<T1: Reloc, T2: Reloc, T3: Reloc, T4: Reloc> Reloc for (T1, T2, T3, T4) {}
+#[cfg(not(feature = "iceoryx"))]
 unsafe impl<T1: Reloc, T2: Reloc, T3: Reloc, T4: Reloc, T5: Reloc> Reloc for (T1, T2, T3, T4, T5) {}
