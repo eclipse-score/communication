@@ -69,16 +69,16 @@ fn run<F: std::future::Future<Output = ()> + Send>(future: F) {
     futures::executor::block_on(future);
 }
 
-fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
-    let handles = loop {
-        let handles = mw_com::proxy::find_service(instance_specifier.clone())
-            .expect("Instance specifier resolution failed");
-        if handles.len() > 0 {
-            break handles;
-        } else {
-            println!("No service found, retrying in 1 second");
-            sleep(SERVICE_DISCOVERY_SLEEP_DURATION);
-        }
+    fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
+        let handles = loop {
+            let handles = mw_com::proxy::find_service(instance_specifier.clone())
+                .expect("Instance specifier resolution failed");
+            if !handles.is_empty() {
+                break handles;
+            } else {
+                println!("No service found, retrying in 1 second");
+                sleep(SERVICE_DISCOVERY_SLEEP_DURATION);
+            }
     };
 
     let ipc_bridge_gen_rs::IpcBridge::Proxy {
