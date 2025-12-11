@@ -199,8 +199,8 @@ void ProxyBaseView::UpdateEvent(const std::string_view event_name, ProxyEventBas
     auto event_it = proxy_base_.events_.find(event_name);
     if (event_it == proxy_base_.events_.cend())
     {
-        score::mw::log::LogError("lola") << "ProxyBaseView::UpdateEvent failed to update, because the requested event "
-                                       << event_name << " doesn't exist!";
+        score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateEvent failed to update, because the requested event "
+                                       << event_name << " doesn't exist! Terminating.";
         std::terminate();
     }
 
@@ -212,8 +212,8 @@ void ProxyBaseView::UpdateField(const std::string_view field_name, ProxyFieldBas
     auto field_it = proxy_base_.fields_.find(field_name);
     if (field_it == proxy_base_.fields_.cend())
     {
-        score::mw::log::LogError("lola") << "ProxyBaseView::UpdateField failed to update, because the requested field "
-                                       << field_name << " doesn't exist";
+        score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateField failed to update, because the requested field "
+                                       << field_name << " doesn't exist. Terminating.";
         std::terminate();
     }
 
@@ -225,8 +225,8 @@ void ProxyBaseView::UpdateMethod(const std::string_view method_name, ProxyMethod
     auto method_it = proxy_base_.methods_.find(method_name);
     if (method_it == proxy_base_.methods_.cend())
     {
-        score::mw::log::LogError("lola") << "ProxyBaseView::UpdateMethod failed to update, because the requested method "
-                                       << method_name << " doesn't exist";
+        score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateMethod failed to update, because the requested method "
+                                       << method_name << " doesn't exist. Terminating.";
         std::terminate();
     }
 
