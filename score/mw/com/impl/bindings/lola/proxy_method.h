@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 
 #include "score/result/result.h"
@@ -60,6 +61,8 @@ class ProxyMethod : public ProxyMethodBinding
                                     std::optional<score::cpp::span<std::byte>> return_storage);
 
   private:
+    pid_t skeleton_pid_;
+    QualityType asil_level_;
     IRuntime& lola_runtime_;
     TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info_;
     std::optional<score::cpp::span<std::byte>> in_args_storage_;

@@ -35,6 +35,8 @@ ProxyMethod::ProxyMethod(Proxy& proxy,
                          const ElementFqId element_fq_id,
                          const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info)
     : ProxyMethodBinding{},
+      skeleton_pid_{proxy.GetSourcePid()},
+      asil_level_{proxy.GetQualityType()},
       lola_runtime_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)},
       type_erased_element_info_{type_erased_element_info},
       in_args_storage_{},
