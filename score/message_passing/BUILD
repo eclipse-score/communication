@@ -47,6 +47,7 @@ alias(
         "@platforms//os:qnx": ":message_passing_qnx_dispatch",
         "//conditions:default": ":message_passing_unix_domain",
     }),
+    deprecation = "DEPRECATED: use @communication//score/message_passing:message_passing instead",
     visibility = ["//visibility:public"],
 )
 
@@ -67,7 +68,6 @@ cc_library(
         "service_protocol_config.h",
         "timed_command_queue_entry.h",
     ],
-    deprecation = "DEPRECATED: use @communication//score/message_passing:message_passing instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",
