@@ -17,10 +17,11 @@ rust_test(
     name = "proxy_bridge_integration_test",
     srcs = ["proxy_skeleton_bridge_int_test.rs"],
     data = ["//score/mw/com/example/ipc_bridge:etc/mw_com_config.json"],
-    tags = ["manual"],
-    visibility = [
-        "//score/mw/com:__subpackages__",
+    tags = [
+        "manual",
+        "no-clippy",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/example/ipc_bridge:ipc_bridge_gen_rs",
         "//score/mw/com/impl/rust:proxy_bridge_rs",

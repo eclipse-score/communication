@@ -28,6 +28,10 @@ rust_library(
 rust_test(
     name = "com-api-concept-test",
     crate = ":com-api-concept",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "no-clippy",
+    ],
+    visibility = ["//visibility:public"],
     deps = [":com-api-concept"],
 )

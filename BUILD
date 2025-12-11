@@ -65,6 +65,13 @@ rust_clippy(
     deps = [
         "//score/mw/com/example/com-api-example:com-api-example",
         "//score/mw/com/example/ipc_bridge:ipc_bridge_rs",
+        "//score/mw/com/example/com-api-example:com-api-example-test",
         "//score/mw/com/impl/rust:mw_com",
+        "//score/mw/com/impl/rust/com-api/com-api:com-api",
+        "//score/mw/com/impl/rust/com-api/com-api-concept:com-api-concept",
+        "//score/mw/com/impl/rust/com-api/com-api-concept:com-api-concept-test",
+        "//score/mw/com/impl/rust/com-api/com-api-runtime-lola:com-api-runtime-lola",
+        "//score/mw/com/impl/rust/com-api/com-api-runtime-mock:com-api-runtime-mock",
+        "//score/mw/com/impl/rust/test:proxy_bridge_integration_test",
     ],
 )

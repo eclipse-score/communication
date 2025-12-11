@@ -11,6 +11,13 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+/// Marker trait for relocatable types used across FFI boundaries.
+///
+/// # Safety
+///
+/// Implementors must ensure the type has no self-references or other invariants that would be
+/// violated by moving the value in memory. Only types that remain valid under relocation should
+/// implement this trait.
 pub unsafe trait Reloc {}
 
 unsafe impl Reloc for () {}
