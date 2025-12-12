@@ -105,6 +105,12 @@ class "lola::EventReceiveHandlerManager" {
   +EventReceiveHandlerManager(QualityType, ElementFqId, pid_t)
   +Register(EventReceiveHandler handler) : void
   +Unregister() : void
+  +Reregister(EventReceiveHandler handler) : void
+  ---
+  <u>Registration Behavior:</u>
+  Register(): Called when provider available (immediate registration)
+  Reregister(): Called on ReOfferEvent (deferred registration)
+  Unregister(): Called on transition to NOT_SUBSCRIBED
 }
 
 class "SubscriptionData" {
