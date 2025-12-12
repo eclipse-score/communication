@@ -26,7 +26,11 @@ rust_binary(
 rust_test(
     name = "com-api-example-test",
     crate = ":com-api-example",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "no-clippy",
+    ],
+    visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",

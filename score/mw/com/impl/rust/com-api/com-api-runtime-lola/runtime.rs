@@ -82,7 +82,7 @@ where
     event: &'a LolaEvent<T>,
 }
 
-unsafe impl<'a, T> Send for LolaBinding<'a, T> where T: Send {}
+unsafe impl<T> Send for LolaBinding<'_, T> where T: Send {}
 
 #[derive(Debug)]
 enum SampleBinding<'a, T>
@@ -104,7 +104,7 @@ where
 
 static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-impl<'a, T> From<T> for Sample<'a, T>
+impl<T> From<T> for Sample<'_, T>
 where
     T: Reloc + Send + Debug,
 {
@@ -116,7 +116,7 @@ where
     }
 }
 
-impl<'a, T> Deref for Sample<'a, T>
+impl<T> Deref for Sample<'_, T>
 where
     T: Reloc + Send + Debug,
 {
@@ -130,9 +130,9 @@ where
     }
 }
 
-impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: Send + Reloc + Debug {}
+impl<T> com_api_concept::Sample<T> for Sample<'_, T> where T: Send + Reloc + Debug {}
 
-impl<'a, T> PartialEq for Sample<'a, T>
+impl<T> PartialEq for Sample<'_, T>
 where
     T: Send + Reloc + Debug,
 {
@@ -141,9 +141,9 @@ where
     }
 }
 
-impl<'a, T> Eq for Sample<'a, T> where T: Send + Reloc + Debug {}
+impl<T> Eq for Sample<'_, T> where T: Send + Reloc + Debug {}
 
-impl<'a, T> PartialOrd for Sample<'a, T>
+impl<T> PartialOrd for Sample<'_, T>
 where
     T: Send + Reloc + Debug,
 {
@@ -152,7 +152,7 @@ where
     }
 }
 
-impl<'a, T> Ord for Sample<'a, T>
+impl<T> Ord for Sample<'_, T>
 where
     T: Send + Reloc + Debug,
 {
@@ -185,7 +185,7 @@ where
     }
 }
 
-impl<'a, T> Deref for SampleMut<'a, T>
+impl<T> Deref for SampleMut<'_, T>
 where
     T: Reloc,
 {
@@ -196,7 +196,7 @@ where
     }
 }
 
-impl<'a, T> DerefMut for SampleMut<'a, T>
+impl<T> DerefMut for SampleMut<'_, T>
 where
     T: Reloc,
 {
@@ -236,7 +236,7 @@ where
 
 }
 
-impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
+impl<T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'_, T>
 where
     T: Reloc + Send + Debug,
 {
@@ -360,7 +360,7 @@ where
 {
     type SampleMaybeUninit<'a> = SampleMaybeUninit<'a, T> where Self: 'a;
 
-    fn allocate<'a>(&'a self) -> com_api_concept::Result<Self::SampleMaybeUninit<'a>> {
+    fn allocate(&self) -> com_api_concept::Result<Self::SampleMaybeUninit<'_>> {
         Ok(SampleMaybeUninit {
             data: MaybeUninit::uninit(),
             lifetime: PhantomData,
