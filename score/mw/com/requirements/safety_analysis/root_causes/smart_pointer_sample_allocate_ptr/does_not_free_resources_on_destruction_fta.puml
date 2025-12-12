@@ -1,0 +1,28 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include ../fta_metamodel.puml
+
+$TopEvent("Does not free resources on destruction", "Communication.DoesNotFreeResourcesOnDestruction")
+
+$IntermediateEvent("Does not free slot", "Event1", "TopEvent")
+$OrGate("Gate1", "Event1")
+$IntermediateEvent("Slot Status is not updated correctly", "Event2", "Gate1")
+$OrGate("Gate2", "Event2")
+$BasicEvent("Changing state fails", "Communication.ChangingStateFails", "Gate2")
+$BasicEvent("Increasing / Decreasing ref-count fails", "Communication.IncreasingDecreasingRefCountFails", "Gate2")
+$BasicEvent("Slot reference broken e.g. non-valid", "Communication.SlotReferenceBrokenEGNonValid", "Gate1")
+
+@enduml

@@ -190,9 +190,6 @@ toolchains_qnx.sdp(
 )
 use_repo(toolchains_qnx, "toolchains_qnx_sdp")
 use_repo(toolchains_qnx, "toolchains_qnx_ifs")
-
-register_toolchains("@toolchains_qnx_ifs//:ifs_x86_64")
-
 use_repo(toolchains_qnx, "toolchains_qnx_qcc")
 
 bazel_dep(name = "score_bazel_platforms", version = "0.0.2")
