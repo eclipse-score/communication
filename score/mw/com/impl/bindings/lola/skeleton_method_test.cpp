@@ -55,6 +55,10 @@ const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithReturnOnly{
     std::optional<memory::DataTypeSizeInfo>{},
     kValidReturnSizeInfo,
     10U};
+const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithNoInArgsOrReturn{
+    std::optional<memory::DataTypeSizeInfo>{},
+    std::optional<memory::DataTypeSizeInfo>{},
+    10U};
 
 const std::optional<score::cpp::span<std::byte>> kValidInArgStorage{score::cpp::span<std::byte>{}};
 const std::optional<score::cpp::span<std::byte>> kValidReturnStorage{score::cpp::span<std::byte>{}};
@@ -258,10 +262,7 @@ TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToR
 
     // Given that OnProxyMethodSubscribeFinished was called with only Return TypeErasedElementInfo and storage
     score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(
-        std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{},
-        kEmptyInArgStorage,
-        kEmptyReturnStorage,
-        proxy_instance_identifier_);
+        kTypeErasedInfoWithNoInArgsOrReturn, kEmptyInArgStorage, kEmptyReturnStorage, proxy_instance_identifier_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)

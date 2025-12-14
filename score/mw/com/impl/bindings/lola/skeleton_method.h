@@ -46,7 +46,7 @@ class SkeletonMethod : public SkeletonMethodBinding
 
   private:
     ResultBlank OnProxyMethodSubscribeFinished(
-        const std::optional<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_info,
+        const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_values_storage,
         const std::optional<score::cpp::span<std::byte>> return_value_storage,
         const ProxyInstanceIdentifier proxy_instance_identifier);
@@ -65,7 +65,7 @@ class SkeletonMethodView
     SkeletonMethodView(SkeletonMethod& skeleton_method) : skeleton_method_{skeleton_method} {}
 
     ResultBlank OnProxyMethodSubscribeFinished(
-        const std::optional<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_info,
+        const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_values_storage,
         const std::optional<score::cpp::span<std::byte>> return_value_storage,
         const ProxyInstanceIdentifier proxy_instance_identifier)

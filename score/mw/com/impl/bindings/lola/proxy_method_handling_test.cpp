@@ -113,7 +113,7 @@ const DataTypeSizeInfo kValidReturnTypeTypeErasedDataInfo{32U, 8U};
 const DataTypeSizeInfo kValidInArgsTypeErasedDataInfo2{24U, 8U};
 const DataTypeSizeInfo kValidReturnTypeTypeErasedDataInfo2{32U, 16U};
 
-const std::optional<TypeErasedCallQueue::TypeErasedElementInfo> kEmptyTypeErasedInfo{};
+const TypeErasedCallQueue::TypeErasedElementInfo kEmptyTypeErasedInfo{{}, {}, 0};
 
 class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
 {
@@ -153,8 +153,7 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
     }
 
     ProxyMethodHandlingFixture& WithRegisteredProxyMethods(
-        std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>
-            methods_to_register)
+        std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>> methods_to_register)
     {
         for (auto& [method_id, type_erased_element_info] : methods_to_register)
         {
@@ -195,22 +194,6 @@ TEST_F(ProxyMethodHandlingFixture, EnablingZeroMethodsDoesNotCreateSharedMemory)
 
     // When calling SetupMethods with an empty enabled_method_names vector
     const auto result = proxy_->SetupMethods({});
-
-    // Then no error is returned
-    EXPECT_TRUE(result.has_value());
-}
-
-TEST_F(ProxyMethodHandlingFixture, EnablingMethodsWithoutArgsOrReturnTypesDoesNotCreateSharedMemory)
-{
-    // Given that 2 ProxyMethods with no in args or return types were registered
-    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
-        {{kDummyMethodId0, kEmptyTypeErasedInfo}, {kDummyMethodId1, kEmptyTypeErasedInfo}});
-
-    // Expecting that no shared memory region will be created
-    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Create(StartsWith(kMethodChannelPrefix), _, _, _, _)).Times(0);
-
-    // When calling SetupMethods with the names of the two registered ProxyMethods
-    const auto result = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
 
     // Then no error is returned
     EXPECT_TRUE(result.has_value());
@@ -494,7 +477,7 @@ class ProxySetupMethodsShmSizeParamaterizedFixture
     : public ProxyMethodHandlingFixture,
       public ::testing::WithParamInterface<
           std::pair<std::vector<std::string_view>,
-                    std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>>>
+                    std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>>
 {
 };
 
@@ -505,25 +488,25 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Single method containing InArgs and Return Type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>>(
+                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0},
-            {std::make_pair(
-                kDummyMethodId0,
-                std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                    {std::optional<DataTypeSizeInfo>{{24, 8}}, std::optional<DataTypeSizeInfo>{{32, 16}}, 5U}})}),
+            {std::make_pair(kDummyMethodId0,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
+                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       5U})}),
 
         // Multiple methods containing InArgs and Return Type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>>(
+                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
-            {std::make_pair(
-                 kDummyMethodId0,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{32, 8}}, std::optional<DataTypeSizeInfo>{{32, 16}}, 3U}}),
-             std::make_pair(
-                 kDummyMethodId1,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{32, 16}}, std::optional<DataTypeSizeInfo>{{104, 8}}, 4U}})}),
+            {std::make_pair(kDummyMethodId0,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
+                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       3U}),
+             std::make_pair(kDummyMethodId1,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                       4U})}),
 
         // Multiple methods containing InArgs and Return Type with different padding
         // to previous test (The actual location of the padding will be determined
@@ -531,57 +514,58 @@ INSTANTIATE_TEST_SUITE_P(
         // InArgs / Return types. However, the amount of padding between Method0 and
         // Method1 will be different to the test above).
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>>(
+                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
-            {std::make_pair(
-                 kDummyMethodId0,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{24, 8}}, std::optional<DataTypeSizeInfo>{{32, 16}}, 4U}}),
-             std::make_pair(
-                 kDummyMethodId1,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{32, 16}}, std::optional<DataTypeSizeInfo>{{104, 8}}, 6U}})}),
+            {std::make_pair(kDummyMethodId0,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
+                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       4U}),
+             std::make_pair(kDummyMethodId1,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                       6U})}),
 
         // Method with empty InArgs
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>>(
+                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
-            {std::make_pair(
-                 kDummyMethodId0,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{32, 8}}, std::optional<DataTypeSizeInfo>{{32, 16}}, 3U}}),
+            {std::make_pair(kDummyMethodId0,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
+                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       3U}),
              std::make_pair(kDummyMethodId1,
-                            std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                                {kEmptyInArgsTypeErasedDataInfo, std::optional<DataTypeSizeInfo>{{104, 8}}, 5U}})}),
+                            TypeErasedCallQueue::TypeErasedElementInfo{kEmptyInArgsTypeErasedDataInfo,
+                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                       5U})}),
 
         // Method with empty Return type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>>(
+                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
-                            std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                                {std::optional<DataTypeSizeInfo>{{32, 8}},
-                                 kEmptyReturnTypeTypeErasedDataInfo,
-                                 7U}}),  // Adjust if needed based on actual structure
-             std::make_pair(
-                 kDummyMethodId1,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{32, 16}}, std::optional<DataTypeSizeInfo>{{104, 8}}, 8U}})}),
+                            TypeErasedCallQueue::TypeErasedElementInfo{
+                                std::optional<DataTypeSizeInfo>{{32, 8}},
+                                kEmptyReturnTypeTypeErasedDataInfo,
+                                7U}),  // Adjust if needed based on actual structure
+             std::make_pair(kDummyMethodId1,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                       8U})}),
 
         // Method with empty InArg and Return type (this method will be ignored in
         // size calculations)
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>>>>(
+                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1, kDummyMethodName2},
-            {std::make_pair(
-                 kDummyMethodId0,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{32, 8}}, std::optional<DataTypeSizeInfo>{{32, 16}}, 3U}}),
+            {std::make_pair(kDummyMethodId0,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
+                                                                       std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       3U}),
              std::make_pair(kDummyMethodId1, kEmptyTypeErasedInfo),
-             std::make_pair(
-                 kDummyMethodId2,
-                 std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{
-                     {std::optional<DataTypeSizeInfo>{{32, 16}}, std::optional<DataTypeSizeInfo>{{104, 8}}, 5U}})})));
+             std::make_pair(kDummyMethodId2,
+                            TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 16}},
+                                                                       std::optional<DataTypeSizeInfo>{{104, 8}},
+                                                                       5U})})));
 
 /// Note. This test assumes that the allocation behaviour of
 /// fake_method_memory_resource_ (i.e. MyBoundedSharedMemoryResource) behaves the

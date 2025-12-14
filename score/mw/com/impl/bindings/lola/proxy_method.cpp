@@ -32,7 +32,7 @@ namespace score::mw::com::impl::lola
 
 ProxyMethod::ProxyMethod(Proxy& proxy,
                          const ElementFqId element_fq_id,
-                         const std::optional<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_info)
+                         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info)
     : ProxyMethodBinding{},
       lola_runtime_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)},
       type_erased_element_info_{type_erased_element_info},
@@ -46,29 +46,23 @@ ProxyMethod::ProxyMethod(Proxy& proxy,
 score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateInArgs(std::size_t queue_position)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        type_erased_element_info_.has_value(),
-        "AllocateInArgs must only be called when TypeErasedElementInfo is provided in the constructor.");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        type_erased_element_info_->in_arg_type_info.has_value(),
+        type_erased_element_info_.in_arg_type_info.has_value(),
         "AllocateInArgs must only be called when DataTypeSizeInfo is provided for InArg types in the constructor.");
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         in_args_storage_.has_value(),
         "AllocateInArgs must only be called when storage is provided for InArg values via SetInArgsAndReturnStorages.");
-    return GetInArgValuesElementStorage(queue_position, in_args_storage_.value(), type_erased_element_info_.value());
+    return GetInArgValuesElementStorage(queue_position, in_args_storage_.value(), type_erased_element_info_);
 }
 
 score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateReturnType(std::size_t queue_position)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        type_erased_element_info_.has_value(),
-        "AllocateInArgs must only be called when TypeErasedElementInfo is provided in the constructor.");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        type_erased_element_info_->return_type_info.has_value(),
+        type_erased_element_info_.return_type_info.has_value(),
         "AllocateInArgs must only be called when DataTypeSizeInfo is provided for the Return type in the constructor.");
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(return_storage_.has_value(),
                                  "AllocateInArgs must only be called when storage is provided for the Retun value via "
                                  "SetInArgsAndReturnStorages.");
-    return GetInArgValuesElementStorage(queue_position, return_storage_.value(), type_erased_element_info_.value());
+    return GetInArgValuesElementStorage(queue_position, return_storage_.value(), type_erased_element_info_);
 }
 
 score::ResultBlank ProxyMethod::DoCall(std::size_t queue_position)
@@ -77,7 +71,7 @@ score::ResultBlank ProxyMethod::DoCall(std::size_t queue_position)
     return lola_message_passing.CallMethod(proxy_instance_identifier_, queue_position);
 }
 
-std::optional<TypeErasedCallQueue::TypeErasedElementInfo> ProxyMethod::GetTypeErasedElementInfo() const
+TypeErasedCallQueue::TypeErasedElementInfo ProxyMethod::GetTypeErasedElementInfo() const
 {
     return type_erased_element_info_;
 }

@@ -507,14 +507,6 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
         GetLoLaServiceTypeDeployment(handle_).service_id_,
         LolaServiceInstanceId{GetLoLaInstanceDeployment(handle_).instance_id_.value()}.GetId()};
 
-    const auto type_erased_element_infos = GetTypeErasedElementInfoForEnabledMethods(enabled_method_data);
-    if (type_erased_element_infos.empty())
-    {
-        // If type_erased_element_infos is empty, it means that there are no methods which contain InArgs or Return
-        // types. In that case, we don't need to create a shared memory region.
-        return lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier);
-    }
-
     const auto method_shm_path_name = GetMethodChannelShmName();
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(filesystem_.standard != nullptr);
@@ -535,6 +527,7 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
         memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(method_shm_path_name);
     }
 
+    const auto type_erased_element_infos = GetTypeErasedElementInfoForEnabledMethods(enabled_method_data);
     const auto required_shm_size = CalculateRequiredShmSize(type_erased_element_infos);
 
     const auto skeleton_shm_permissions = GetSkeletonShmPermissions();
@@ -668,10 +661,7 @@ std::vector<TypeErasedCallQueue::TypeErasedElementInfo> Proxy::GetTypeErasedElem
         auto& proxy_method = proxy_methods_.at(method_id).get();
 
         const auto type_erased_data_info = proxy_method.GetTypeErasedElementInfo();
-        if (type_erased_data_info.has_value())
-        {
-            type_erased_element_infos.push_back(type_erased_data_info.value());
-        }
+        type_erased_element_infos.push_back(type_erased_data_info);
     }
     return type_erased_element_infos;
 }

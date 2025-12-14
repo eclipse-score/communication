@@ -76,13 +76,6 @@ class ProxyMethodFixture : public ProxyMockedMemoryFixture
         return *this;
     }
 
-    ProxyMethodFixture& GivenAProxyMethodWithoutTypeErasedElementInfo()
-    {
-        unit_ = std::make_unique<ProxyMethod>(
-            *proxy_, element_fq_id_, std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{});
-        return *this;
-    }
-
     ProxyMethodFixture& GivenAProxyMethodWithoutInArgsTypeErasedElementInfo()
     {
         unit_ = std::make_unique<ProxyMethod>(*proxy_, element_fq_id_, kTypeErasedInfoWithReturnOnly);
@@ -118,21 +111,9 @@ TEST_F(ProxyMethodFixture, GetTypeErasedElementInfoReturnsValueSetOnConstruction
     const auto result = unit_->GetTypeErasedElementInfo();
 
     // Then the result is the same as the DataTypeSizeInfo that was passed to the constructor.
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().in_arg_type_info, kTypeErasedInfoWithInArgsAndReturn.in_arg_type_info);
-    EXPECT_EQ(result.value().return_type_info, kTypeErasedInfoWithInArgsAndReturn.return_type_info);
-    EXPECT_EQ(result.value().queue_size, kTypeErasedInfoWithInArgsAndReturn.queue_size);
-}
-
-TEST_F(ProxyMethodFixture, GetTypeErasedElementInfoReturnsEmptyValueWhenNotSetOnConstruction)
-{
-    GivenAProxyMethodWithoutTypeErasedElementInfo();
-
-    // When calling GetInArgTypeErasedData
-    const auto result = unit_->GetTypeErasedElementInfo();
-
-    // Then the result is empty
-    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.in_arg_type_info, kTypeErasedInfoWithInArgsAndReturn.in_arg_type_info);
+    EXPECT_EQ(result.return_type_info, kTypeErasedInfoWithInArgsAndReturn.return_type_info);
+    EXPECT_EQ(result.queue_size, kTypeErasedInfoWithInArgsAndReturn.queue_size);
 }
 
 TEST_F(ProxyMethodFixture, FailingToGetBindingRuntimeTerminates)
@@ -184,18 +165,6 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingEmptyInArgsStorageWi
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateInArgs(kDummyQueuePosition));
 }
 
-TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingValidInArgsStorageWithoutTypeInfoTerminates)
-{
-    GivenAProxyMethodWithoutTypeErasedElementInfo();
-
-    // Given that SetInArgsAndReturnStorages was called with empty InArgs storage
-    unit_->SetInArgsAndReturnStorages(kEmptyReturnStorage, kEmptyReturnStorage);
-
-    // When calling AllocateInArgs
-    // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateInArgs(kDummyQueuePosition));
-}
-
 using ProxyMethodAllocateReturnTypeFixture = ProxyMethodFixture;
 TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidStoragesWithValidTypeInfosDispatchesToBinding)
 {
@@ -226,18 +195,6 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidReturnStora
 TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStorageWithReturnTypeInfoTerminates)
 {
     GivenAProxyMethod();
-
-    // Given that SetInArgsAndReturnStorages was called with empty Return storage
-    unit_->SetInArgsAndReturnStorages(kEmptyReturnStorage, kEmptyReturnStorage);
-
-    // When calling AllocateReturnType
-    // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateReturnType(kDummyQueuePosition));
-}
-
-TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidReturnStorageWithoutTypeInfoTerminates)
-{
-    GivenAProxyMethodWithoutTypeErasedElementInfo();
 
     // Given that SetInArgsAndReturnStorages was called with empty Return storage
     unit_->SetInArgsAndReturnStorages(kEmptyReturnStorage, kEmptyReturnStorage);

@@ -935,35 +935,6 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    // If no methods contain InArgs or a Return type then no shared memory will be created. Therefore, we don't need to
-    // open it here.
-    const auto does_method_have_shm_result = filesystem_.standard->Exists(method_channel_shm_name);
-    if (!(does_method_have_shm_result.has_value()))
-    {
-        score::mw::log::LogError("lola") << "Skeleton failed to check if method shm path already exists. Exiting.";
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-
-    if (!(does_method_have_shm_result.value()))
-    {
-        for (auto& [method_id, skeleton_method] : skeleton_methods_)
-        {
-            const auto result = SkeletonMethodView{skeleton_method.get()}.OnProxyMethodSubscribeFinished(
-                std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{},
-                std::optional<score::cpp::span<std::byte>>{},
-                std::optional<score::cpp::span<std::byte>>{},
-                proxy_instance_identifier);
-            if (!(result.has_value()))
-            {
-                score::mw::log::LogError("lola") << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod:"
-                                               << proxy_instance_identifier.proxy_instance_counter << "/"
-                                               << proxy_instance_identifier.process_identifier << "failed!";
-                return result;
-            }
-        }
-        return {};
-    }
-
     const std::vector<uid_t> allowed_providers{proxy_uid};
     auto opened_shm_region =
         memory::shared::SharedMemoryFactory::Open(method_channel_shm_name, is_read_write, allowed_providers);

@@ -59,10 +59,10 @@ using namespace ::testing;
 constexpr auto kMethodChannelName{"/lola-methods-0000000000000001-00016-06543-00005"};
 
 const TypeErasedCallQueue::TypeErasedElementInfo kFooTypeErasedElementInfo{memory::DataTypeSizeInfo{32, 8},
-                                                                           std::optional<memory::DataTypeSizeInfo>{},
+                                                                           memory::DataTypeSizeInfo{64, 16},
                                                                            test::kFooMethodQueueSize};
 const TypeErasedCallQueue::TypeErasedElementInfo kDumbTypeErasedElementInfo{std::optional<memory::DataTypeSizeInfo>{},
-                                                                            memory::DataTypeSizeInfo{64, 8},
+                                                                            std::optional<memory::DataTypeSizeInfo>{},
                                                                             test::kDumbMethodQueueSize};
 
 SkeletonBinding::SkeletonEventBindings kEmptyEventBindings{};
@@ -97,12 +97,6 @@ class FakeMethodData
 
     memory::shared::test::MyBoundedMemoryResource memory_resource_;
     MethodData method_data_;
-};
-
-enum class HasInArgsOrReturnType
-{
-    TRUE,
-    FALSE
 };
 
 class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
@@ -162,24 +156,6 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         return *this;
     }
 
-    SkeletonMethodHandlingFixture& WhichHasInArgsOrReturnType()
-    {
-        // If the method contains InArgs or a Return type, then the Proxy will create a methods shared memory region.
-        // Therefore, when the skeleton checks if the shared memory region already exists within
-        // OnServiceMethodsSubscribed(), the memory region should exist.
-        ON_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodChannelName))).WillByDefault(Return(true));
-        return *this;
-    }
-
-    SkeletonMethodHandlingFixture& WhichHasNoInArgsValuesOrReturnType()
-    {
-        // If the method does not contain InArgs or a Return type, then the Proxy will not create a methods shared
-        // memory region. Therefore, when the skeleton checks if the shared memory region already exists within
-        // OnServiceMethodsSubscribed(), the memory region should not exist.
-        ON_CALL(filesystem_fake_.GetStandard(), Exists(StartsWith(kMethodChannelName))).WillByDefault(Return(false));
-        return *this;
-    }
-
     SkeletonMethodHandlingFixture& WhichCapturesRegisteredMethodSubscribedHandler()
     {
         ON_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
@@ -217,345 +193,190 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
 using SkeletonPrepareOfferFixture = SkeletonMethodHandlingFixture;
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscribedHandler)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithTwoMethods();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithTwoMethods();
 
-        // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns a valid
-        // result
-        EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
-            .WillOnce(Return(score::cpp::blank{}));
+    // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns a valid
+    // result
+    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
+        .WillOnce(Return(score::cpp::blank{}));
 
-        // When calling PrepareOffer
-        const auto result = skeleton_->PrepareOffer(
-            kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
 
-        // Then a valid result is returned
-        EXPECT_TRUE(result.has_value());
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then a valid result is returned
+    EXPECT_TRUE(result.has_value());
 }
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfRegisterServiceMethodSubscribedHandlerReturnsError)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithTwoMethods();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithTwoMethods();
 
-        // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns an error
-        const auto error_code = ComErrc::kCommunicationLinkError;
-        EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
-            .WillOnce(Return(MakeUnexpected(error_code)));
+    // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns an error
+    const auto error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
+        .WillOnce(Return(MakeUnexpected(error_code)));
 
-        // When calling PrepareOffer
-        const auto result = skeleton_->PrepareOffer(
-            kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
 
-        // Then an error is returned
-        ASSERT_FALSE(result.has_value());
-        EXPECT_EQ(result.error(), error_code);
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), error_code);
 }
 
 TEST_F(SkeletonPrepareOfferFixture, FailingToGetBindingRuntimeInPrepareOfferTerminates)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithTwoMethods();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithTwoMethods();
 
-        // Expecting that trying to get the lola binding runtime returns an nullptr
-        EXPECT_CALL(runtime_mock_, GetBindingRuntime(BindingType::kLoLa)).WillOnce(Return(nullptr));
+    // Expecting that trying to get the lola binding runtime returns an nullptr
+    EXPECT_CALL(runtime_mock_, GetBindingRuntime(BindingType::kLoLa)).WillOnce(Return(nullptr));
 
-        // When calling PrepareOffer
-        // Then the program terminates
-        SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-            score::cpp::ignore = skeleton_->PrepareOffer(
-                kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback)));
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // When calling PrepareOffer
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = skeleton_->PrepareOffer(
+            kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback)));
 }
 
 using SkeletonOnServiceMethodsSubscribedFixture = SkeletonMethodHandlingFixture;
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsValidWhenQmProxyUidIsInAllowedConsumers)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-        // When calling the registered method subscribed handler with a QM uid that is in the configuration's
-        // allowed_consumer list
-        ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-        const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                       proxy_instance_identifier_,
-                                                       test::kAllowedQmMethodConsumer,
-                                                       QualityType::kASIL_QM,
-                                                       kDummyPid);
+    // When calling the registered method subscribed handler with a QM uid that is in the configuration's
+    // allowed_consumer list
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+                                                   proxy_instance_identifier_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   QualityType::kASIL_QM,
+                                                   kDummyPid);
 
-        // Then the result should be valid
-        EXPECT_TRUE(scoped_handler_result.has_value());
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then the result should be valid
+    EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsValidWhenAsilBProxyUidIsInAllowedConsumers)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-        // When calling the registered method subscribed handler with an ASIL-B uid that is in the configuration's
-        // allowed_consumer list
-        ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-        const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                       proxy_instance_identifier_,
-                                                       test::kAllowedAsilBMethodConsumer,
-                                                       QualityType::kASIL_B,
-                                                       kDummyPid);
+    // When calling the registered method subscribed handler with an ASIL-B uid that is in the configuration's
+    // allowed_consumer list
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+                                                   proxy_instance_identifier_,
+                                                   test::kAllowedAsilBMethodConsumer,
+                                                   QualityType::kASIL_B,
+                                                   kDummyPid);
 
-        // Then the result should be valid
-        EXPECT_TRUE(scoped_handler_result.has_value());
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then the result should be valid
+    EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenNoQmAllowedConsumersAreInConfiguration)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithoutConfiguredMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithoutConfiguredMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-        // When calling the registered method subscribed handler with a QM uid when there is no QM allowed consumer list
-        // in the configuration
-        ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-        const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                       proxy_instance_identifier_,
-                                                       test::kAllowedQmMethodConsumer,
-                                                       QualityType::kASIL_QM,
-                                                       kDummyPid);
+    // When calling the registered method subscribed handler with a QM uid when there is no QM allowed consumer list
+    // in the configuration
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+                                                   proxy_instance_identifier_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   QualityType::kASIL_QM,
+                                                   kDummyPid);
 
-        // Then the result should contain an error
-        ASSERT_TRUE(scoped_handler_result.has_value());
-        ASSERT_FALSE(scoped_handler_result->has_value());
-        EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then the result should contain an error
+    ASSERT_TRUE(scoped_handler_result.has_value());
+    ASSERT_FALSE(scoped_handler_result->has_value());
+    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenNoAsilBAllowedConsumersAreInConfiguration)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithoutConfiguredMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithoutConfiguredMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-        // When calling the registered method subscribed handler with an ASIL-B uid when there is no ASIL-B allowed
-        // consumer list in the configuration
-        ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-        const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                       proxy_instance_identifier_,
-                                                       test::kAllowedQmMethodConsumer,
-                                                       QualityType::kASIL_QM,
-                                                       kDummyPid);
+    // When calling the registered method subscribed handler with an ASIL-B uid when there is no ASIL-B allowed
+    // consumer list in the configuration
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+                                                   proxy_instance_identifier_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   QualityType::kASIL_QM,
+                                                   kDummyPid);
 
-        // Then the result should contain an error
-        ASSERT_TRUE(scoped_handler_result.has_value());
-        ASSERT_FALSE(scoped_handler_result->has_value());
-        EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then the result should contain an error
+    ASSERT_TRUE(scoped_handler_result.has_value());
+    ASSERT_FALSE(scoped_handler_result->has_value());
+    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenQmProxyUidIsNotInAllowedConsumers)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-        // When calling the registered method subscribed handler with a QM uid that is not in the QM allowed consumer
-        // list in the configuration
-        ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-        const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                       proxy_instance_identifier_,
-                                                       test::kAllowedAsilBMethodConsumer,
-                                                       QualityType::kASIL_QM,
-                                                       kDummyPid);
+    // When calling the registered method subscribed handler with a QM uid that is not in the QM allowed consumer
+    // list in the configuration
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+                                                   proxy_instance_identifier_,
+                                                   test::kAllowedAsilBMethodConsumer,
+                                                   QualityType::kASIL_QM,
+                                                   kDummyPid);
 
-        // Then the result should contain an error
-        ASSERT_TRUE(scoped_handler_result.has_value());
-        ASSERT_FALSE(scoped_handler_result->has_value());
-        EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then the result should contain an error
+    ASSERT_TRUE(scoped_handler_result.has_value());
+    ASSERT_FALSE(scoped_handler_result->has_value());
+    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenAsilBProxyUidIsNotInAllowedConsumers)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-        // When calling the registered method subscribed handler with an ASIL-B uid that is not in the ASIL-B allowed
-        // consumer list in the configuration
-        ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-        const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                       proxy_instance_identifier_,
-                                                       test::kAllowedQmMethodConsumer,
-                                                       QualityType::kASIL_B,
-                                                       kDummyPid);
+    // When calling the registered method subscribed handler with an ASIL-B uid that is not in the ASIL-B allowed
+    // consumer list in the configuration
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+                                                   proxy_instance_identifier_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   QualityType::kASIL_B,
+                                                   kDummyPid);
 
-        // Then the result should contain an error
-        ASSERT_TRUE(scoped_handler_result.has_value());
-        ASSERT_FALSE(scoped_handler_result->has_value());
-        EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then the result should contain an error
+    ASSERT_TRUE(scoped_handler_result.has_value());
+    ASSERT_FALSE(scoped_handler_result->has_value());
+    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorIfRegisteringMethodCallHandlerReturnedError)
 {
-    // Note. Since SkeletonMethodHandlingFixture inherits from SkeletonMockedMemoryFixture, we cannot use a
-    // paramaterised fixture (since SkeletonMockedMemoryFixture already inherits from ::testing::Test). Therefore, we
-    // simulate a pramaterised test by running the test_function twice with both parameters.
-    auto test_function = [this](const HasInArgsOrReturnType has_in_args_or_return_type) -> void {
-        GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-        if (has_in_args_or_return_type == HasInArgsOrReturnType::TRUE)
-        {
-            WhichHasInArgsOrReturnType();
-        }
-        else
-        {
-            WhichHasNoInArgsValuesOrReturnType();
-        }
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-        // Expecting that RegisterMethodCallHandler is called on the first method which returns an error
-        const auto error_code = ComErrc::kCommunicationLinkError;
-        EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(proxy_instance_identifier_, _))
-            .WillOnce(Return(MakeUnexpected(error_code)));
+    // Expecting that RegisterMethodCallHandler is called on the first method which returns an error
+    const auto error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(proxy_instance_identifier_, _))
+        .WillOnce(Return(MakeUnexpected(error_code)));
 
-        // When calling the registered method subscribed handler
-        ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-        const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                       proxy_instance_identifier_,
-                                                       test::kAllowedQmMethodConsumer,
-                                                       QualityType::kASIL_QM,
-                                                       kDummyPid);
+    // When calling the registered method subscribed handler
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+                                                   proxy_instance_identifier_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   QualityType::kASIL_QM,
+                                                   kDummyPid);
 
-        // Then the handler should return an error
-        ASSERT_TRUE(scoped_handler_result.has_value());
-        ASSERT_FALSE(scoped_handler_result->has_value());
-        EXPECT_EQ(scoped_handler_result->error(), error_code);
-    };
-    test_function(HasInArgsOrReturnType::TRUE);
-    test_function(HasInArgsOrReturnType::FALSE);
+    // Then the handler should return an error
+    ASSERT_TRUE(scoped_handler_result.has_value());
+    ASSERT_FALSE(scoped_handler_result->has_value());
+    EXPECT_EQ(scoped_handler_result->error(), error_code);
 }
 
-using SkeletonOnServiceMethodsSubscribedWithShmFixture = SkeletonMethodHandlingFixture;
-TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture,
-       CallingRegistersAMethodCallHandlerPerMethodWithInfoFromMethodData)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHandlerPerMethodWithInfoFromMethodData)
 {
-    GivenASkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasInArgsOrReturnType();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
     // Expecting that the type erased callback will be called for each method with InArgs and ReturnArg storage
     // provided if TypeErasedElementInfo for the method in MethodData contains InArgs / a ReturnArg
@@ -592,12 +413,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture,
                               kDummyPid);
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, CallingQmOpensSharedMemoryWithProxyUidAsAllowedProvider)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingQmOpensSharedMemoryWithProxyUidAsAllowedProvider)
 {
-    GivenASkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasInArgsOrReturnType();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the allowed
     // provider list
@@ -622,12 +440,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, CallingQmOpensSharedMem
     EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, CallingAsilBOpensSharedMemoryWithProxyUidAsAllowedProvider)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBOpensSharedMemoryWithProxyUidAsAllowedProvider)
 {
-    GivenAnAsilBSkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasInArgsOrReturnType();
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the allowed
     // provider list
@@ -652,12 +467,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, CallingAsilBOpensShared
     EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, CallingStoresSharedMemoryInClassState)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingStoresSharedMemoryInClassState)
 {
-    GivenASkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasInArgsOrReturnType();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
     const auto initial_shm_resource_ref_counter = mock_method_memory_resource_.use_count();
 
@@ -674,12 +486,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, CallingStoresSharedMemo
     EXPECT_EQ(mock_method_memory_resource_.use_count(), initial_shm_resource_ref_counter + 1U);
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, FailingToOpenSharedMemoryReturnsError)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, FailingToOpenSharedMemoryReturnsError)
 {
-    GivenASkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasInArgsOrReturnType();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened which returns a nullptr
     EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).WillOnce(Return(nullptr));
@@ -698,12 +507,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, FailingToOpenSharedMemo
     EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, FailingToGetUsableBaseAddressForRetrievingMethodDataTerminates)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, FailingToGetUsableBaseAddressForRetrievingMethodDataTerminates)
 {
-    GivenASkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasInArgsOrReturnType();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
     // Expecting that getUsableBaseAddress is called on the methods shared memory resource which returns an error
     EXPECT_CALL(*mock_method_memory_resource_, getUsableBaseAddress()).WillOnce(Return(nullptr));
@@ -718,58 +524,12 @@ TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, FailingToGetUsableBaseA
                                                            kDummyPid));
 }
 
-using SkeletonOnServiceMethodsSubscribedNoShmFixture = SkeletonMethodHandlingFixture;
-TEST_F(SkeletonOnServiceMethodsSubscribedNoShmFixture,
-       CallingRegistersAMethodCallHandlerPerMethodWithInfoFromMethodData)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilQmWithoutInArgsOrReturnStillOpensSharedMemory)
 {
-    GivenASkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasNoInArgsValuesOrReturnType();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-    // Expecting that the type erased callback will be called for each method with no InArgs or ReturnArg storage
-    EXPECT_CALL(foo_mock_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_args_optional, auto result_optional) {
-            EXPECT_FALSE(in_args_optional.has_value());
-            EXPECT_FALSE(result_optional.has_value());
-        }));
-    EXPECT_CALL(dumb_mock_type_erased_callback_, Call(_, _))
-        .WillOnce(Invoke([](auto in_args_optional, auto result_optional) {
-            EXPECT_FALSE(in_args_optional.has_value());
-            EXPECT_FALSE(result_optional.has_value());
-        }));
-
-    // Expecting that a method call handler is registered for both methods which calls the handler directly with the
-    // largest possible queue index for that method
-    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(proxy_instance_identifier_, _))
-        .Times(2)
-        .WillOnce(WithArgs<1>(Invoke([](auto method_call_handler) -> ResultBlank {
-            std::invoke(method_call_handler, test::kFooMethodQueueSize - 1U);
-            return {};
-        })))
-        .WillOnce(WithArgs<1>(Invoke([](auto method_call_handler) -> ResultBlank {
-            std::invoke(method_call_handler, test::kDumbMethodQueueSize - 1U);
-            return {};
-        })));
-
-    // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
-                              test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
-                              kDummyPid);
-}
-
-TEST_F(SkeletonOnServiceMethodsSubscribedNoShmFixture, CallingQmDoesNotOpenSharedMemory)
-{
-    GivenASkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasNoInArgsValuesOrReturnType();
-
-    // Expecting that a shared memory region will not be opened
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(0);
+    // Expecting that a shared memory region will be opened
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(1);
 
     // When calling the registered method subscribed handler
     ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
@@ -783,15 +543,12 @@ TEST_F(SkeletonOnServiceMethodsSubscribedNoShmFixture, CallingQmDoesNotOpenShare
     EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedWithShmFixture, CallingAsilBDoesNotOpenSharedMemory)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWithoutInArgsOrReturnStillOpensSharedMemory)
 {
-    GivenAnAsilBSkeletonWithTwoMethods()
-        .WhichCapturesRegisteredMethodSubscribedHandler()
-        .WhichIsOffered()
-        .WhichHasNoInArgsValuesOrReturnType();
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
 
-    // Expecting that a shared memory region will not be opened
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(0);
+    // Expecting that a shared memory region will be opened
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(1);
 
     // When calling the registered method subscribed handler
     ASSERT_TRUE(captured_method_subscribed_handler_.has_value());

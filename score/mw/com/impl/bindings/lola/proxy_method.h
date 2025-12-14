@@ -37,7 +37,7 @@ class ProxyMethod : public ProxyMethodBinding
   public:
     ProxyMethod(Proxy& proxy,
                 const ElementFqId element_fq_id,
-                const std::optional<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_info);
+                const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info);
 
     /// \brief Allocates storage for the in-arguments of a method call at the given queue position.
     ///
@@ -54,14 +54,14 @@ class ProxyMethod : public ProxyMethodBinding
     /// See ProxyMethodBinding for details
     score::ResultBlank DoCall(std::size_t queue_position) override;
 
-    std::optional<TypeErasedCallQueue::TypeErasedElementInfo> GetTypeErasedElementInfo() const;
+    TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo() const;
 
     void SetInArgsAndReturnStorages(std::optional<score::cpp::span<std::byte>> in_args_storage,
                                     std::optional<score::cpp::span<std::byte>> return_storage);
 
   private:
     IRuntime& lola_runtime_;
-    std::optional<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_info_;
+    TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info_;
     std::optional<score::cpp::span<std::byte>> in_args_storage_;
     std::optional<score::cpp::span<std::byte>> return_storage_;
     ProxyInstanceIdentifier proxy_instance_identifier_;
