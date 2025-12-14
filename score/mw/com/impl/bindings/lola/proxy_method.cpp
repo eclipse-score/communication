@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
+#include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/runtime.h"
@@ -62,7 +63,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateReturnType(std::
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(return_storage_.has_value(),
                                  "AllocateInArgs must only be called when storage is provided for the Retun value via "
                                  "SetInArgsAndReturnStorages.");
-    return GetInArgValuesElementStorage(queue_position, return_storage_.value(), type_erased_element_info_);
+    return GetReturnValueElementStorage(queue_position, return_storage_.value(), type_erased_element_info_);
 }
 
 score::ResultBlank ProxyMethod::DoCall(std::size_t queue_position)
