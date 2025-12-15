@@ -47,7 +47,6 @@ alias(
         "@platforms//os:qnx": ":message_passing_qnx_dispatch",
         "//conditions:default": ":message_passing_unix_domain",
     }),
-    deprecation = "DEPRECATED: use @communication//score/message_passing:message_passing instead",
     visibility = ["//visibility:public"],
 )
 
@@ -213,7 +212,6 @@ cc_library(
         "mock/server_mock.h",
         "mock/shared_resource_engine_mock.h",
     ],
-    deprecation = "DEPRECATED: use @communication//score/message_passing:mock instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",
