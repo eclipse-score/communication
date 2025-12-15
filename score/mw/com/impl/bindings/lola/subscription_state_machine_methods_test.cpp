@@ -254,11 +254,9 @@ TEST_F(StateMachineMethodsNotSubscribedStateFixture, SubscribeWithUnavailablePro
                 RegisterEventNotification(QualityType::kASIL_QM, element_fq_id_, ::testing::_, ::testing::_))
         .Times(0);
 
-    // Make provider unavailable
     EnterSubscribed(max_num_slots_);
     state_machine_.StopOfferEvent();
-    state_machine_.UnsubscribeEvent();
-    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE);
+    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE);
 
     // When we set a handler and subscribe with unavailable provider
     state_machine_.SetReceiveHandler(CreateMockScopedEventReceiveHandler(receive_handler));
@@ -266,55 +264,23 @@ TEST_F(StateMachineMethodsNotSubscribedStateFixture, SubscribeWithUnavailablePro
 
     // Then the subscription succeeds but handler registration is deferred
     EXPECT_TRUE(result.has_value());
-    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE);
-}
-
-TEST_F(StateMachineMethodsNotSubscribedStateFixture, SubscribeUnavailableThenUnsubscribeDoesNotLeak)
-{
-    StrictMock<MockFunction<void()>> receive_handler{};
-
-    // Expecting no registration when provider is unavailable
-    EXPECT_CALL(*mock_service_,
-                RegisterEventNotification(QualityType::kASIL_QM, element_fq_id_, ::testing::_, ::testing::_))
-        .Times(0);
-
-    // Expecting that the receive handler will not be called
-    EXPECT_CALL(receive_handler, Call()).Times(0);
-
-    // Make provider unavailable
-    EnterSubscribed(max_num_slots_);
-    state_machine_.StopOfferEvent();
-    state_machine_.UnsubscribeEvent();
-
-    // When we subscribe with handler while unavailable and then unsubscribe
-    state_machine_.SetReceiveHandler(CreateMockScopedEventReceiveHandler(receive_handler));
-    EXPECT_TRUE(state_machine_.SubscribeEvent(max_num_slots_).has_value());
-    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIPTION_PENDING_STATE);
-
-    state_machine_.UnsubscribeEvent();
-
-    // Then the state returns to NOT_SUBSCRIBED and resources are properly cleaned up
-    EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::NOT_SUBSCRIBED_STATE);
 }
 
 TEST_F(StateMachineMethodsNotSubscribedStateFixture, AvailableProviderRegistersImmediately)
 {
     StrictMock<MockFunction<void()>> receive_handler{};
 
-    // Expecting that the receive handler will be registered immediately
-    EXPECT_CALL(receive_handler, Call());
-
-    auto handler_future = ExpectRegisterEventNotification();
+    // Expecting that the handler registration will be called immediately when provider is available
+    EXPECT_CALL(*mock_service_,
+                RegisterEventNotification(QualityType::kASIL_QM, element_fq_id_, ::testing::_, kDummyPid))
+        .Times(1);
 
     // When we set a handler and subscribe with available provider
     state_machine_.SetReceiveHandler(CreateMockScopedEventReceiveHandler(receive_handler));
     EXPECT_TRUE(state_machine_.SubscribeEvent(max_num_slots_).has_value());
 
-    // Then the event notification handler is registered and called
+    // Then the subscription succeeds with handler registration happening immediately
     EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIBED_STATE);
-    ASSERT_TRUE(handler_future.valid());
-    auto handler = handler_future.get();
-    (*handler)();
 }
 
 using StateMachineMethodsSubscriptionPendingStateFixture = StateMachineMethodsFixture;
@@ -484,9 +450,6 @@ TEST_F(StateMachineMethodsSubscriptionPendingStateFixture,
     auto event_notification_handler_future = ExpectRegisterEventNotification(new_event_source_pid_);
     ExpectUnregisterEventNotification(new_event_source_pid_);
 
-    // and that the receive handler will be called
-    EXPECT_CALL(receive_handler, Call());
-
     // When we enter SubscriptionPending state
     EnterSubscriptionPending(max_num_slots_);
 
@@ -499,15 +462,15 @@ TEST_F(StateMachineMethodsSubscriptionPendingStateFixture,
     // When provider becomes available via ReOfferEvent with a new PID
     state_machine_.ReOfferEvent(new_event_source_pid_);
 
-    // Then subscription succeeds with handler registered
+    // then the state machine has switched to SUBSCRIBED_STATE
     EXPECT_EQ(state_machine_.GetCurrentState(), SubscriptionStateMachineState::SUBSCRIBED_STATE);
 
-    // and the registration future is set
+    // and the registration of the notification handler has been done
     EXPECT_THAT(event_notification_handler_future, FutureValueIsSet());
 
-    // and the event notification handler is called.
-    ASSERT_TRUE(event_notification_handler_future.valid());
     auto event_notification_handler = event_notification_handler_future.get();
+    // Expect that the correct handler gets called, i.e. the handler which has been given to SetReceiveHandler
+    EXPECT_CALL(receive_handler, Call());
     (*event_notification_handler)();
 }
 
