@@ -67,7 +67,6 @@ cc_library(
         "service_protocol_config.h",
         "timed_command_queue_entry.h",
     ],
-    deprecation = "DEPRECATED: use @communication//score/message_passing:message_passing instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",
@@ -213,7 +212,6 @@ cc_library(
         "mock/server_mock.h",
         "mock/shared_resource_engine_mock.h",
     ],
-    deprecation = "DEPRECATED: use @communication//score/message_passing:mock instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",
