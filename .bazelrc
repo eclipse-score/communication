@@ -29,7 +29,7 @@ build --experimental_retain_test_configuration_across_testonly #https://github.c
 # * The credentials for this account stored in your ~/.netrc (machine qnx.com)
 # * A license stored under `/opt/score_qnx/license/licenses`
 common:qnx_x86_64 --host_platform=@score_bazel_platforms//:x86_64-linux
-common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx
+common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx8_0
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_x86_64
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_x86_64
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py

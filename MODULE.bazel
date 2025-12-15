@@ -123,7 +123,7 @@ bazel_dep(name = "rules_doxygen", version = "2.5.0")
 bazel_dep(name = "score_baselibs", version = "0.2.0")
 git_override(
     module_name = "score_baselibs",
-    commit = "c500d9a42c1af52fed78c6d38c780ade4d49a2b6",
+    commit = "3684525abb535b44d6d5176ee6a81d57743e1a3a",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
@@ -167,7 +167,7 @@ pip.parse(
 )
 use_repo(pip, "lobster_dependencies")
 
-bazel_dep(name = "score_toolchains_qnx", version = "0.0.5", dev_dependency = True)
+bazel_dep(name = "score_toolchains_qnx", version = "0.0.6", dev_dependency = True)
 
 toolchains_qnx = use_extension(
     "@score_toolchains_qnx//:extensions.bzl",
