@@ -61,7 +61,7 @@ rust_clippy(
     name = "clippy",
     testonly = True,
     tags = ["manual"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen:com-api-gen",
         "//score/mw/com/example/com-api-example:com-api-example",

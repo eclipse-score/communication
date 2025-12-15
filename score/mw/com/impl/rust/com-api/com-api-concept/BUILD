@@ -32,6 +32,6 @@ rust_test(
         "manual",
         "no-clippy",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [":com-api-concept"],
 )

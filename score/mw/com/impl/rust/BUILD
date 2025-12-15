@@ -17,7 +17,7 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 rust_library(
     name = "common",
     srcs = ["common.rs"],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 cc_library(
@@ -67,7 +67,7 @@ rust_library(
     name = "proxy_bridge_rs",
     srcs = ["proxy_bridge.rs"],
     visibility = [
-        "//visibility:public",
+        "//:__subpackages__",
     ],
     deps = [
         ":proxy_bridge_cpp",
@@ -81,7 +81,7 @@ rust_library(
     name = "skeleton_bridge_rs",
     srcs = ["skeleton_bridge.rs"],
     visibility = [
-        "//visibility:public",
+        "//:__subpackages__",
     ],
     deps = [
         ":common",
@@ -94,7 +94,7 @@ rust_library(
     proc_macro_deps = [
         "@crate_index//:paste",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":common",
         ":proxy_bridge_rs",
