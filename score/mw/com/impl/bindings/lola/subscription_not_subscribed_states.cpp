@@ -85,8 +85,7 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
         // When provider is unavailable, keep handler pending for deferred registration when provider re-appears.
         if (state_machine_.provider_service_instance_is_available_)
         {
-            state_machine_.event_receive_handler_manager_.Register(
-                std::move(state_machine_.event_receiver_handler_.value()));
+            state_machine_.event_receive_handler_manager_.Register(state_machine_.event_receiver_handler_.value());
             state_machine_.event_receiver_handler_.reset();
         }
     }
@@ -124,7 +123,7 @@ void NotSubscribedState::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandl
 
 void NotSubscribedState::UnsetReceiveHandler() noexcept
 {
-    state_machine_.event_receiver_handler_ = score::cpp::nullopt;
+    state_machine_.event_receiver_handler_ = std::nullopt;
 }
 
 std::optional<std::uint16_t> NotSubscribedState::GetMaxSampleCount() const noexcept
