@@ -686,7 +686,7 @@ rust_library(
     name = "sample_ptr_rs",
     srcs = ["sample_ptr.rs"],
     visibility = [
-        "//score/mw/com:__subpackages__",
+        "//:__subpackages__",
     ],
     deps = ["@crate_index//:libc"],
 )

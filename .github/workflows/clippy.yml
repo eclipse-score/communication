@@ -10,28 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+name: Bazel Clippy
 
-rust_library(
-    name = "com-api-concept",
-    srcs = [
-        "com_api_concept.rs",
-        "reloc.rs",
-    ],
-    crate_root = "com_api_concept.rs",
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [],
-)
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - main
+  merge_group:
+    types: [checks_requested]
 
-rust_test(
-    name = "com-api-concept-test",
-    crate = ":com-api-concept",
-    tags = [
-        "manual",
-        "no-clippy",
-    ],
-    visibility = ["//:__subpackages__"],
-    deps = [":com-api-concept"],
-)
+jobs:
+  bazel-clippy:
+    uses: eclipse-score/cicd-workflows/.github/workflows/static-analysis.yml@main
+    with:
+      bazel-target: "build //:clippy"

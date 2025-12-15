@@ -195,15 +195,13 @@ impl InstanceSpecifier {
         let service_name = service_name.strip_prefix('/').unwrap();
 
         // Check each character
-        let is_legal_char = |c| {
-            (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
-        };
+        let is_legal_char = |c: char| c.is_ascii_alphanumeric() || c == '_';
 
         //validation of each path segment
         !service_name.is_empty()
             && service_name.split('/').all(|parts| {
                 // No empty segments (reject trailing "/" and "//" in the middle)
-                !parts.is_empty() && parts.chars().all(|c| is_legal_char(c))
+                !parts.is_empty() && parts.chars().all(is_legal_char)
             })
     }
 
@@ -249,9 +247,9 @@ pub enum FindServiceSpecifier {
 }
 
 /// Convert an InstanceSpecifier into a FindServiceSpecifier
-impl Into<FindServiceSpecifier> for InstanceSpecifier {
-    fn into(self) -> FindServiceSpecifier {
-        FindServiceSpecifier::Specific(self)
+impl From<InstanceSpecifier> for FindServiceSpecifier {
+    fn from(val: InstanceSpecifier) -> Self {
+        FindServiceSpecifier::Specific(val)
     }
 }
 
@@ -269,7 +267,6 @@ impl Into<FindServiceSpecifier> for InstanceSpecifier {
 ///
 /// Since it is yet to be proven whether this trait can be implemented safely (assumption is: no) it
 /// is unsafe for now. The expectation is that very few users ever need to implement this manually.
-
 /// A `Sample` provides a reference to a memory buffer of an event with immutable value.
 ///
 /// By implementing the `Deref` trait implementations of the trait support the `.` operator for dereferencing.
@@ -437,7 +434,7 @@ where
     /// # Returns
     ///
     /// A 'Result' containing the allocated sample buffer on success and an 'Error' on failure.
-    fn allocate<'a>(&'a self) -> Result<Self::SampleMaybeUninit<'a>>;
+    fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>>;
 
     /// Allocate, initialize, and send an event sample in one step.
     ///

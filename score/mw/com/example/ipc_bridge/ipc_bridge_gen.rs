@@ -9,29 +9,25 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
-///! This is the "generated" part for the ipc_bridge proxy. Its main purpose is to provide the imports
-///! of the type- and name-dependent part of the FFI and create the respective user-facing objects.
-use std::default::Default;
+********************************************************************************/
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+//! This is the "generated" part for the ipc_bridge proxy. Its main purpose is to provide the imports
+//! of the type- and name-dependent part of the FFI and create the respective user-facing objects.
 use std::ffi::c_char;
 
 pub const MAX_SUCCESSORS: libc::size_t = 16;
 pub const MAX_LANES: libc::size_t = 16;
 
 #[repr(u32)]
+#[derive(Default)]
 pub enum StdTimestampSyncState {
     #[allow(non_camel_case_types)]
     kStdTimestampSyncState_InSync = 0,
     #[allow(non_camel_case_types)]
     kStdTimestampSyncState_NotInSync = 1,
     #[allow(non_camel_case_types)]
+    #[default]
     kStdTimestampSyncState_Invalid = 255,
-}
-
-impl Default for StdTimestampSyncState {
-    fn default() -> Self {
-        StdTimestampSyncState::kStdTimestampSyncState_Invalid
-    }
 }
 
 #[repr(C)]
@@ -43,7 +39,7 @@ pub struct StdTimestamp {
 }
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum EventDataQualifier {
     /// @brief Event data available, normal operation.
     ///
@@ -61,18 +57,13 @@ pub enum EventDataQualifier {
     /// on the reason for non-availability.
     ///
     /// The remaining information in the scope of the event (except extendedQualifier) must not be evaluated.
+    #[default]
     EventDataNotAvailable = 2,
     /// @brief There is no event data available, due to the event data being invalid (e.g. CRC error) or due to a
     /// timeout.
     ///
     /// The remaining information in the scope of the event (except extendedQualifier) must not be evaluated.
     EventDataInvalid = 255,
-}
-
-impl Default for EventDataQualifier {
-    fn default() -> Self {
-        EventDataQualifier::EventDataNotAvailable
-    }
 }
 
 #[repr(C)]
