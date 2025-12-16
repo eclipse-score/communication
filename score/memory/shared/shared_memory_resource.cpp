@@ -302,6 +302,7 @@ Stat::Mode SharedMemoryResource::calcStatModeForPermissions(const UserPermission
     }
 }
 
+// coverity[autosar_cpp14_a12_4_1_violation] only std::enable_shared_from_this has non-virtual destructor
 SharedMemoryResource::~SharedMemoryResource()
 {
     MemoryResourceRegistry::getInstance().remove_resource(memory_identifier_);
