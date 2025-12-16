@@ -31,7 +31,7 @@ namespace detail
 
 namespace
 {
-constexpr std::int32_t kConnectRetryMsStart = 50;
+constexpr std::int32_t kConnectRetryMsStart = 51;
 constexpr std::int32_t kConnectRetryT = 3;  // new_delay = prev_delay * (1 + 1/T)
 constexpr std::int32_t kConnectRetryMsMax = 5000;
 }  // namespace
