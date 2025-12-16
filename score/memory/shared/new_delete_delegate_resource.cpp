@@ -36,6 +36,7 @@ static_assert((PAGE_SIZE % alignof(std::max_align_t) == 0), "allocation_buffer_s
 
 }  // namespace
 
+// coverity[autosar_cpp14_a3_3_1_violation] false-positive: declared in header, implemented here
 NewDeleteDelegateMemoryResource::NewDeleteDelegateMemoryResource(const std::uint64_t mem_res_id,
                                                                  score::cpp::pmr::memory_resource* upstream_resource) noexcept
     : ManagedMemoryResource{},
