@@ -162,6 +162,7 @@ bool doesFileExist(const score::cpp::string_view filePath)
     return result.has_value();
 }
 
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in waitUntilInitializedByOtherProcess
 bool waitForFreeLockFile(const std::string& lock_file_path)
 {
     constexpr std::chrono::milliseconds timeout{500};
@@ -643,11 +644,13 @@ auto SharedMemoryResource::loadInternalsFromSharedMemory() noexcept -> void
     this->start_ = CalculateUsableStartAddress(this->base_address_, GetNeededManagementSpace());
 }
 
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in CreateImpl
 auto SharedMemoryResource::initializeInternalsInSharedMemory() noexcept -> void
 {
     this->initializeControlBlock();
 }
 
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in destructor
 auto SharedMemoryResource::deinitalizeInternalsInSharedMemory() noexcept -> void
 {
     // We do not de-initialize our memory part. This would cause problems
@@ -663,6 +666,7 @@ auto SharedMemoryResource::getOwnerUid() const noexcept -> uid_t
     return this->file_owner_uid_;
 }
 
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in constructor
 auto SharedMemoryResource::GetLockFilePath(const std::string& input_path) noexcept -> std::string
 {
     return std::string{kTmpPathPrefix} + input_path + "_lock";
@@ -802,6 +806,7 @@ auto SharedMemoryResource::IsShmInTypedMemory() const noexcept -> bool
     return is_shm_in_typed_memory_;
 }
 
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: part of the public API
 auto SharedMemoryResource::do_deallocate(void*, std::size_t, std::size_t) -> void
 {
     std::lock_guard<score::os::InterprocessMutex> lock(this->control_block_->mutex);

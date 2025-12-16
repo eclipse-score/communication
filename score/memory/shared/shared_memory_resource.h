@@ -225,6 +225,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     // shared_ptr<SharedMemoryResource> to create a SharedMemoryResource so this exception will never be thrown.
     // coverity[autosar_cpp14_a15_5_3_violation]
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
+    // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in CreateImpl
     std::shared_ptr<SharedMemoryResource> getSharedPtr() noexcept
     {
         return shared_from_this();
