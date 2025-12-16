@@ -147,6 +147,10 @@ score::cpp::expected<uid_t, score::os::Error> TypedMemoryImpl::GetCreatorUid(std
 
 }  // namespace internal
 
+// bad_alloc may be raised due to allocation failure.
+// and termination is the appropriate safe response as it provides no-run state, and
+// without it safe execution cannot continued
+// coverity[autosar_cpp14_a15_5_3_violation] see above
 std::shared_ptr<score::memory::shared::TypedMemory> score::memory::shared::TypedMemory::Default() noexcept
 {
     return std::make_shared<internal::TypedMemoryImpl>();
