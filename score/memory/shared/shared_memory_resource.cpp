@@ -86,9 +86,11 @@ constexpr auto kTmpPathPrefix = "/tmp";
 
 constexpr auto readWriteAccessForUser = Stat::Mode::kReadUser | Stat::Mode::kWriteUser;
 constexpr auto readAccessForEveryBody = readWriteAccessForUser | Stat::Mode::kReadGroup | Stat::Mode::kReadOthers;
+// coverity[autosar_cpp14_a0_1_1_violation] false-positive: used in mask compensation
 constexpr auto readWriteAccessForEveryBody =
     readAccessForEveryBody | Stat::Mode::kWriteGroup | Stat::Mode::kWriteOthers;
 
+// coverity[autosar_cpp14_a0_1_1_violation] false-positive: used in waitForOtherProcessAndOpen
 constexpr auto read_only = ::score::os::Stat::Mode::kReadUser;
 
 // Suppress "AUTOSAR C++14 A2-10-4" rule finding: The identifier name of a non-member object with static storage
