@@ -668,6 +668,10 @@ auto SharedMemoryResource::getOwnerUid() const noexcept -> uid_t
     return this->file_owner_uid_;
 }
 
+// bad_alloc may be raised due to allocation failure.
+// and termination is the appropriate safe response as it provides no-run state, and
+// without it safe execution cannot continued
+// coverity[autosar_cpp14_a15_5_3_violation] see above
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in constructor
 auto SharedMemoryResource::GetLockFilePath(const std::string& input_path) noexcept -> std::string
 {
