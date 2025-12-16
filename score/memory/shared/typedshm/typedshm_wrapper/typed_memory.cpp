@@ -36,6 +36,7 @@ namespace
 // maintain. It also prevents compiler errors in linux code when compiling for QNX and vice versa.
 // coverity[autosar_cpp14_a16_0_1_violation]
 #if defined(__QNX__) && defined(USE_TYPEDSHMD)
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: defined in anon namespace within a namespace
 score::tmd::UserPermissions GetUserPermissions(const permission::UserPermissions& permissions) noexcept
 {
     if (std::holds_alternative<permission::WorldWritable>(permissions))
