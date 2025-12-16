@@ -31,6 +31,7 @@ namespace score::memory::shared
 namespace  // anonymous
 {
 
+// coverity[autosar_cpp14_a0_1_1_violation] false-positive: used in alignment check
 constexpr std::uintptr_t PAGE_SIZE{4096U};
 static_assert((PAGE_SIZE % alignof(std::max_align_t) == 0), "allocation_buffer_start_address_ is not max aligned!");
 
