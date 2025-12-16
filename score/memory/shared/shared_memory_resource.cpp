@@ -187,6 +187,7 @@ bool waitForFreeLockFile(const std::string& lock_file_path)
     return !lockFileExists;  // we want to return true if lock file does no longer exist, otherwise false.
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 score::os::IAccessControlList::UserIdentifier GetCreatorUidFromTypedmemd(
     std::string_view path,
     const score::memory::shared::TypedMemory& typed_memory_ptr) noexcept
@@ -272,6 +273,7 @@ void* do_allocation_algorithm(const void* const alloc_start,
 
 }  // namespace detail
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 Stat::Mode SharedMemoryResource::calcStatModeForPermissions(const UserPermissions& permissions) noexcept
 {
     if (std::holds_alternative<WorldWritable>(permissions))
@@ -666,6 +668,7 @@ auto SharedMemoryResource::GetLockFilePath(const std::string& input_path) noexce
     return std::string{kTmpPathPrefix} + input_path + "_lock";
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 auto SharedMemoryResource::getMemoryResourceProxy() noexcept -> const MemoryResourceProxy*
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(this->control_block_ != nullptr,
@@ -788,6 +791,7 @@ auto SharedMemoryResource::GetIdentifier() const noexcept -> std::string_view
     return log_identification_;
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 auto SharedMemoryResource::GetFileDescriptor() const noexcept -> FileDescriptor
 {
     return file_descriptor_;
@@ -807,6 +811,7 @@ auto SharedMemoryResource::do_deallocate(void*, std::size_t, std::size_t) -> voi
      */
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 auto SharedMemoryResource::do_is_equal(const memory_resource& other) const noexcept -> bool
 {
     const auto* const otherCasted = dynamic_cast<const SharedMemoryResource*>(&other);
@@ -830,6 +835,7 @@ void SharedMemoryResource::CompensateUmask(const os::Stat::Mode target_rights) c
     }
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 auto SharedMemoryResource::ApplyPermissions(const UserPermissions& permissions) noexcept -> void
 {
     if (std::holds_alternative<UserPermissionsMap>(permissions))
@@ -953,6 +959,7 @@ score::cpp::expected_blank<score::os::Error> SharedMemoryResource::CreateLockFil
     return {};
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void SharedMemoryResource::AllocateInTypedMemory(const UserPermissions& permissions, Fcntl::Open& flags) noexcept
 {
     const auto* const path = std::get_if<std::string>(&shared_memory_resource_identifier_);

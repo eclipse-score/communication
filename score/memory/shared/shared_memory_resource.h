@@ -60,6 +60,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     SharedMemoryResource(SharedMemoryResource&& other) = delete;
     SharedMemoryResource& operator=(SharedMemoryResource&&) = delete;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     const MemoryResourceProxy* getMemoryResourceProxy() noexcept override;
 
     /**
@@ -117,6 +118,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
      * @brief Gets the file descriptor of the shared-memory region in the filesystem.
      * @return FileDescriptor file descriptor of shared-memory region
      */
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     FileDescriptor GetFileDescriptor() const noexcept override;
 
     /**
@@ -191,6 +193,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     const void* getEndAddress() const noexcept override;
 
     void reserveSharedMemory() const noexcept;
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void ApplyPermissions(const UserPermissions&) noexcept;
     /// \brief Compensate any access-right changes the umask may have inflicted.
     /// \details After creation of shared-mem object its access rights might have to be adapted as during creation the
@@ -208,6 +211,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     void initializeControlBlock() noexcept;
     void waitUntilInitializedByOtherProcess() const noexcept;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> waitForOtherProcessAndOpen() noexcept;
 
     void loadInternalsFromSharedMemory() noexcept;
@@ -220,6 +224,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     // std::shared_ptr. We always use static factory methods (Create, Open, etc) which return
     // shared_ptr<SharedMemoryResource> to create a SharedMemoryResource so this exception will never be thrown.
     // coverity[autosar_cpp14_a15_5_3_violation]
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     std::shared_ptr<SharedMemoryResource> getSharedPtr() noexcept
     {
         return shared_from_this();
@@ -243,6 +248,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     /// responsible of allocating the memory in the typed region, otherwise it is a nullptr by default and memory can be
     /// allocated in the system os.
     /// \return in case of error an score::os::Error is returned.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     static score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error> Create(
         std::string input_path,
         const std::size_t user_space_to_reserve,
@@ -267,6 +273,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     /// responsible of allocating the memory in the typed region, otherwise it is a nullptr by default and memory can be
     /// allocated in the system os.
     /// \return in case of error an score::os::Error is returned.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     static score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error> CreateAnonymous(
         std::uint64_t shared_memory_resource_id,
         const std::size_t user_space_to_reserve,
@@ -290,6 +297,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     /// responsible of allocating the memory in the typed region, otherwise it is a nullptr by default and memory can be
     /// allocated in the system os.
     /// \return in case of error an score::os::Error is returned.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     static score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error> CreateOrOpen(
         std::string input_path,
         const std::size_t user_space_to_reserve,
@@ -309,6 +317,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     /// responsible of allocating the memory in the typed region, otherwise it is a nullptr by default and memory can be
     /// allocated in the system os.
     /// \return in case of error an score::os::Error is returned.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     static score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error> Open(
         std::string input_path,
         const bool is_read_write,
@@ -317,18 +326,21 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
 
     /// \brief Called by SharedMemoryResource::Create() after calling the constructor.
     /// \return in case of error an score::os::Error is returned.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> CreateImpl(const std::size_t user_space_to_reserve,
                                                    const InitializeCallback initialize_callback,
                                                    const UserPermissions& permissions) noexcept;
 
     /// \brief Called by SharedMemoryResource::CreateOrOpen() after calling the constructor.
     /// \return in case of error an score::os::Error is returned.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> CreateOrOpenImpl(const std::size_t user_space_to_reserve,
                                                          InitializeCallback initialize_callback,
                                                          const UserPermissions& permissions) noexcept;
 
     /// \brief Called by SharedMemoryResource::Open() after calling the constructor.
     /// \return in case of error an score::os::Error is returned.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> OpenImpl(const bool is_read_write) noexcept;
 
     /// \brief UnlinkFilesystemEntry() should be used by the skeleton to unlink the shared memory region so that
@@ -337,6 +349,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     /// UnlinkFilesystemEntry() is not called, then the shared memory region will never be closed.
     void UnlinkFilesystemEntry() const noexcept override;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     static ::score::os::Stat::Mode calcStatModeForPermissions(const UserPermissions& permissions) noexcept;
 
     class ControlBlock
@@ -382,9 +395,12 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
 
     void* do_allocate(const std::size_t bytes, const std::size_t alignment) override;
     void do_deallocate(void*, std::size_t bytes, std::size_t alignment) override;
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     bool do_is_equal(const memory_resource& other) const noexcept override;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> CreateLockFileForNamedSharedMemory(std::optional<LockFile>& lock_file) noexcept;
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void AllocateInTypedMemory(const UserPermissions& permissions, os::Fcntl::Open& flags) noexcept;
 
     /// \brief Open shared memory from CreateImpl context
@@ -408,6 +424,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     /// \param mode Stat::Mode used for creating / opening the shared memory
     /// \todo This method needs refactoring
     /// \return Empty result in case of success, score::os::Error in case of error.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> OpenSharedMemory(const os::Fcntl::Open& flags, os::Stat::Mode mode) noexcept;
     void SealAnonymousOrReserveNamedSharedMemory() noexcept;
 };
