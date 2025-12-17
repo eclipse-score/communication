@@ -68,7 +68,10 @@ std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& 
     for (std::size_t i = 0U; i < data_type_infos.size(); ++i)
     {
         const auto& current_element = data_type_infos[i];
+
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(current_element.Alignment() != 0U);
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(total_size <= SIZE_MAX - current_element.Size());
+
         total_size += current_element.Size();
 
         // If there is still a remaining next element, we need to calculate the padding between the current element and
