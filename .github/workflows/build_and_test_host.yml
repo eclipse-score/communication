@@ -23,6 +23,7 @@ on:
 jobs:
     build_and_test_host:
       strategy:
+        fail-fast: false
         matrix:
           toolchain: ["@llvm_toolchain//:cc-toolchain-x86_64-linux", "@gcc_toolchain//:host_gcc_12"]
           include:
