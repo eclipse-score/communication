@@ -27,7 +27,19 @@ jobs:
       strategy:
         fail-fast: false
         matrix:
-          bazel-config: ["qnx_x86_64"]
+          bazel-config: ["qnx_x86_64", "qnx_arm64"]
+          include:
+            - bazel-config: "qnx_x86_64"
+              incompatible_targets:
+                - "-//score/mw/com/requirements/..." # Uninvestigated problem
+                - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
+                - "-//score/mw/com/example/..." # Missing Rust toolchain support for QNX8 on x86_64
+                - "-//score/mw/com/impl/plumbing:sample_ptr_rs" # Missing Rust toolchain support for QNX8 on x86_64
+                - "-//score/mw/com/impl/rust/..." # Missing Rust toolchain support for QNX8 on x86_64
+            - bazel-config: "qnx_arm64"
+              incompatible_targets:
+                - "-//score/mw/com/requirements/..." # Uninvestigated problem
+                - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
       # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
       runs-on: ubuntu-22.04
       permissions:
@@ -56,7 +68,7 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: |
-            bazel build --config ${{ matrix.bazel-config }} -- //score/... -//score/mw/com/requirements/... -//score/mw/com/example/... -//score/mw/com/performance_benchmarks/... -//score/mw/com/impl/plumbing:sample_ptr_rs -//score/mw/com/impl/rust/...
+            bazel build --config ${{ matrix.bazel-config }} -- //score/... ${{ join(matrix.incompatible_targets, ' ') }}
         - name: Cleanup QNX License
           if: ${{ contains(matrix.bazel-config, 'qnx') && !cancelled() }}
           run: sudo rm -rf ${{ env.LICENSE_DIR }}
