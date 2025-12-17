@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #ifndef SCORE_LIB_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
+// coverity[autosar_cpp14_m16_0_2_violation] false-positive: global namespace
 #define SCORE_LIB_MEMORY_SHARED_POINTER_ARITHMETIC_UTIL_H
 
 #include "score/memory/data_type_size_info.h"
