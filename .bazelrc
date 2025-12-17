@@ -39,7 +39,6 @@ common:qnx_arm64 --host_platform=@score_bazel_platforms//:x86_64-linux
 common:qnx_arm64 --platforms=@score_bazel_platforms//:arm64-qnx8_0
 common:qnx_arm64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_aarch64
 common:qnx_arm64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_aarch64
-common:qnx_arm64 --extra_toolchains=@score_toolchains_rust//toolchains/aarch64-unknown-qnx8_0:toolchain_aarch64_qnx8_0
 common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_arm64 --sandbox_writable_path=/var/tmp
 
