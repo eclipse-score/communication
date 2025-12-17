@@ -26,18 +26,9 @@ jobs:
         fail-fast: false
         matrix:
           toolchain: ["@llvm_toolchain//:cc-toolchain-x86_64-linux", "@gcc_toolchain//:host_gcc_12"]
-          include:
-            - toolchain: "@llvm_toolchain//:cc-toolchain-x86_64-linux"
-              non_hermetic_dependencies:
-                - "libtinfo5" # Fixes https://github.com/bazel-contrib/toolchains_llvm/issues/403
       # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
       runs-on: ubuntu-22.04
       steps:
-        - name: Install non-hermetic dependencies
-          if: ${{ matrix.non_hermetic_dependencies }}
-          run: |
-            sudo apt-get update && true
-            sudo apt install -y ${{ join(matrix.non_hermetic_dependencies, ' ') }}
         - uses: bazel-contrib/setup-bazel@0.15.0
           with:
             bazelisk-cache: true

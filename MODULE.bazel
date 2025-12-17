@@ -75,7 +75,7 @@ llvm.toolchain(
     link_libs = {"": [
         "-lrt",
     ]},
-    llvm_version = "16.0.0",
+    llvm_version = "19.1.0",
     stdlib = {"": "dynamic-stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")

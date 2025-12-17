@@ -25,9 +25,6 @@ jobs:
       # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
       runs-on: ubuntu-22.04
       steps:
-        - name: Install non-hermetic dependencies # Fixes https://github.com/bazel-contrib/toolchains_llvm/issues/403
-          run: |
-            sudo apt-get install -y libtinfo5
         - uses: bazel-contrib/setup-bazel@0.15.0
           with:
             bazelisk-cache: true
