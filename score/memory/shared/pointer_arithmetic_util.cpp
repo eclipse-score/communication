@@ -65,10 +65,10 @@ std::uintptr_t SubtractOffsetFromPointerAsInteger(const std::uintptr_t pointer_a
 std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& data_type_infos)
 {
     std::size_t total_size{0U};
-    for (std::size_t i = 0; i < data_type_infos.size(); ++i)
+    for (std::size_t i = 0U; i < data_type_infos.size(); ++i)
     {
         const auto& current_element = data_type_infos[i];
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(current_element.Alignment() != 0);
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(current_element.Alignment() != 0U);
         total_size += current_element.Size();
 
         // If there is still a remaining next element, we need to calculate the padding between the current element and
@@ -77,7 +77,7 @@ std::size_t CalculateAlignedSizeOfSequence(const std::vector<DataTypeSizeInfo>& 
         if (!is_last_element)
         {
             const auto next_element = data_type_infos[i + 1U];
-            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(next_element.Alignment() != 0);
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(next_element.Alignment() != 0U);
 
             // The start location (represented as a distance from the first allocation of the sequence) of the next
             // element can be calculated by calculating the aligned size of the currently allocated memory (i.e. up to
