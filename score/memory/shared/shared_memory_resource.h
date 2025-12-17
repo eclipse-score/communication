@@ -156,6 +156,10 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
                          AccessControlListFactory acl_factory,
                          std::shared_ptr<score::memory::shared::TypedMemory> typed_memory_ptr) noexcept;
 
+    SharedMemoryResource(std::variant<std::string, std::uint64_t> identifier,
+                         AccessControlListFactory acl_factory,
+                         std::shared_ptr<TypedMemory> typed_memory_ptr) noexcept;
+
   private:
     // Suppress "AUTOSAR C++14 A11-3-1" rule finding: "Friend declarations shall not be used.".
     // The 'friend' class is employed to encapsulate non-public members.

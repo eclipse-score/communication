@@ -444,38 +444,33 @@ score::cpp::expected<std::shared_ptr<SharedMemoryResource>, score::os::Error> Sh
 SharedMemoryResource::SharedMemoryResource(std::string input_path,
                                            AccessControlListFactory acl_factory,
                                            std::shared_ptr<TypedMemory> typed_memory_ptr) noexcept
-    : ISharedMemoryResource{},
-      std::enable_shared_from_this<SharedMemoryResource>{},
-      file_descriptor_{-1},
-      file_owner_uid_{static_cast<uid_t>(-1)},
-      lock_file_path_{GetLockFilePath(input_path)},
-      virtual_address_space_to_reserve_{},
-      typed_memory_ptr_{typed_memory_ptr},
-      opening_mode_{::score::os::Fcntl::Open::kReadOnly},
-      map_mode_{::score::os::Mman::Protection::kRead},
-      base_address_{nullptr},
-      control_block_{nullptr},
-      acl_factory_{std::move(acl_factory)},
-      is_shm_in_typed_memory_{false},
-      log_identification_{"file: " + input_path},
-      memory_identifier_{score::cpp::hash_bytes(input_path.data(), input_path.size())},
-      shared_memory_resource_identifier_{input_path},
-      start_{nullptr}
+    : SharedMemoryResource(std::variant<std::string, std::uint64_t>{std::move(input_path)},
+                           std::move(acl_factory),
+                           std::move(typed_memory_ptr))
 {
-    // We use memory_identifier_ == 0 as a sentinel value in OffsetPtr to indicate that the OffsetPtr doesn't belong to
-    // a MemoryResource. Therefore, memory_identifier_ can never be 0U. With the current implementation of
-    // score::cpp::hash_bytes, can not be 0 as long as input_path.size() is not 0.
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(memory_identifier_ != 0U, "");
 }
 
 SharedMemoryResource::SharedMemoryResource(std::uint64_t shared_memory_resource_id,
+                                           AccessControlListFactory acl_factory,
+                                           std::shared_ptr<TypedMemory> typed_memory_ptr) noexcept
+    : SharedMemoryResource(std::variant<std::string, std::uint64_t>{shared_memory_resource_id},
+                           std::move(acl_factory),
+                           std::move(typed_memory_ptr))
+{
+}
+// SCORE_LANGUAGE_FUTURECPP_ASSERT_PROD intentionally calls std::abort() on assertion failure, which is
+// not marked noexcept by design to allow proper termination handling
+// coverity[autosar_cpp14_a15_5_3_violation]
+SharedMemoryResource::SharedMemoryResource(std::variant<std::string, std::uint64_t> identifier,
                                            AccessControlListFactory acl_factory,
                                            std::shared_ptr<TypedMemory> typed_memory_ptr) noexcept
     : ISharedMemoryResource{},
       std::enable_shared_from_this<SharedMemoryResource>{},
       file_descriptor_{-1},
       file_owner_uid_{static_cast<uid_t>(-1)},
-      lock_file_path_{std::nullopt},
+      lock_file_path_{std::holds_alternative<std::string>(identifier)
+                          ? std::optional{GetLockFilePath(std::get<std::string>(identifier))}
+                          : std::nullopt},
       virtual_address_space_to_reserve_{},
       typed_memory_ptr_{typed_memory_ptr},
       opening_mode_{::score::os::Fcntl::Open::kReadOnly},
@@ -484,11 +479,19 @@ SharedMemoryResource::SharedMemoryResource(std::uint64_t shared_memory_resource_
       control_block_{nullptr},
       acl_factory_{std::move(acl_factory)},
       is_shm_in_typed_memory_{false},
-      log_identification_{"id: " + std::to_string(shared_memory_resource_id)},
-      memory_identifier_{shared_memory_resource_id},
-      shared_memory_resource_identifier_{shared_memory_resource_id},
+      log_identification_{std::holds_alternative<std::string>(identifier)
+                              ? "file: " + std::get<std::string>(identifier)
+                              : "id: " + std::to_string(std::get<std::uint64_t>(identifier))},
+      memory_identifier_{
+          std::holds_alternative<std::string>(identifier)
+              ? score::cpp::hash_bytes(std::get<std::string>(identifier).data(), std::get<std::string>(identifier).size())
+              : std::get<std::uint64_t>(identifier)},
+      shared_memory_resource_identifier_{identifier},
       start_{nullptr}
 {
+    // We use memory_identifier_ == 0 as a sentinel value in OffsetPtr to indicate that the OffsetPtr doesn't belong to
+    // a MemoryResource. Therefore, memory_identifier_ can never be 0U. With the current implementation of
+    // score::cpp::hash_bytes, can not be 0 as long as input_path.size() is not 0.
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(memory_identifier_ != 0U, "");
 }
 
