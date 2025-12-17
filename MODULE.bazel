@@ -80,6 +80,23 @@ llvm.toolchain(
 )
 use_repo(llvm, "llvm_toolchain")
 
+# Toolchain for Rust on QNX8
+bazel_dep(name = "rust_qnx8_toolchain", version = "1.0.0", dev_dependency = True)
+archive_override(
+    module_name = "rust_qnx8_toolchain",
+    strip_prefix = "qnx8",
+    urls = [
+        "https://github.com/qorix-group/rust-lang-qnx8/releases/download/1.0.0/qnx8_rust_toolchain.tar.gz",
+    ],
+)
+
+bazel_dep(name = "score_toolchains_rust", version = "0.1", dev_dependency = True)
+git_override(
+    module_name = "score_toolchains_rust",
+    commit = "bcf8e5364f72cf136ec81960350a82e2b5c45449",
+    remote = "https://github.com/eclipse-score/toolchains_rust.git",
+)
+
 # We use here a pre-compiled fully static and hermetic clang_format binary
 # and not the one provided by llvm_toolchain, because the one from llvm_toolchain is not fully hermetic (and different version for now)
 download_file = use_repo_rule("@download_utils//download/file:defs.bzl", "download_file")
