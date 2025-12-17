@@ -1,0 +1,134 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+name: Release Verification
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  archive-report:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write # required to upload release assets
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Install lcov and libtinfo5
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov libtinfo5
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          disk-cache: true
+          repository-cache: true
+          bazelisk-cache: true
+
+      - name: Bazel info (discover paths)
+        id: bazel-info
+        run: |
+          echo "BAZEL_OUTPUT_BASE=$(bazel info output_base)" >> $GITHUB_ENV
+          echo "BAZEL_USER_ROOT=$(bazel info output_user_root)" >> $GITHUB_ENV
+          echo "BAZEL_REPO_CACHE=$(bazel info repository_cache)" >> $GITHUB_ENV
+          bazel info
+
+      - name: Cache Bazel output base
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.BAZEL_OUTPUT_BASE }}/action_cache
+            ${{ env.BAZEL_OUTPUT_BASE }}/bazel-out
+            ${{ env.BAZEL_OUTPUT_BASE }}/external
+            ${{ env.BAZEL_OUTPUT_BASE }}/execroot
+          key: bazel-ob-v2-${{ runner.os }}-${{ hashFiles('.bazelversion', 'MODULE.bazel', 'MODULE.bazel.lock', '**/*.bzl', 'Cargo.lock') }}
+          restore-keys: |
+            bazel-ob-v2-${{ runner.os }}-
+
+      - name: Aggressive cleanup
+        run: |
+          echo "Before cleanup:"
+          df -h
+
+          # Remove .NET SDKs
+          sudo rm -rf /usr/share/dotnet
+
+          # Remove Swift toolchain
+          sudo rm -rf /usr/share/swift
+
+          # Remove Haskell (GHC)
+          sudo rm -rf /usr/local/.ghcup
+
+          # Remove Julia
+          sudo rm -rf /usr/local/julia*
+
+          # Remove Android SDKs
+          sudo rm -rf /usr/local/lib/android
+
+          # Remove Chromium (optional if not using for browser tests)
+          sudo rm -rf /usr/local/share/chromium
+
+          echo "After cleanup:"
+          df -h
+
+      - name: Build via Bazel
+        run: |
+          echo "Running: bazel build //src/..."
+          bazel build //...
+
+      - name: Run Unit Tests via Bazel
+        run: |
+          echo "Running: bazel test //:unit_tests"
+          bazel test //... --build_tests_only
+
+      - name: Run Unit Test with Coverage for C++
+        run: |
+          # Run tests
+          bazel coverage //... \
+            --build_tests_only \
+            --collect_code_coverage \
+            --combined_report=lcov \
+            --experimental_generate_llvm_lcov \
+            --nocache_test_results \
+            --nostamp
+          # Generate HTML report
+          genhtml "$(bazel info output_path)/_coverage/_coverage_report.dat" \
+            -o=cpp_coverage \
+            --show-details \
+            --legend \
+            --function-coverage \
+            --branch-coverage
+
+      - name: Create archive of test report
+        run: |
+          mkdir -p artifacts
+          find bazel-testlogs/score/ -name 'test.xml' -print0 | xargs -0 -I{} cp --parents {} artifacts/
+          cp -r cpp_coverage artifacts/
+          zip -r ${{ github.event.repository.name }}_coverage_report.zip artifacts/
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_coverage_report.zip
+          path: ${{ github.event.repository.name }}_coverage_report.zip
+
+      - name: Upload release asset (attach ZIP to GitHub Release)
+        uses: softprops/action-gh-release@v2.5.0
+        with:
+          files: ${{ github.event.repository.name }}_coverage_report.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
