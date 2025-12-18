@@ -104,6 +104,7 @@ class Receiver final : public IReceiver
     score::cpp::expected_blank<score::os::Error> StartListening() noexcept override;
 
   private:
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class constructor (Ticket-234468)
     void RunListeningThread(score::cpp::stop_token token,
                             const std::size_t thread,
                             const std::size_t max_threads) const noexcept;
@@ -200,6 +201,7 @@ void Receiver<ChannelTraits>::Register(const MessageId id, MediumMessageReceived
 }
 
 template <typename ChannelTraits>
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void Receiver<ChannelTraits>::RunListeningThread(score::cpp::stop_token token,
                                                  const std::size_t thread,
                                                  const std::size_t max_threads) const noexcept

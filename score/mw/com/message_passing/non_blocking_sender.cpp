@@ -127,7 +127,7 @@ bool NonBlockingSender::HasNonBlockingGuarantee() const noexcept
     return true;
 }
 
-NonBlockingSender::~NonBlockingSender()
+NonBlockingSender::~NonBlockingSender() noexcept
 {
     if (current_send_task_result_.Valid())
     {

@@ -348,6 +348,19 @@ where
     ///
     /// A `SampleMut` instance providing mutable access to the initialized data.
     fn write(self, value: T) -> Self::SampleMut;
+
+    /// Writes in place (skipping intermediate moves) the default value directly into the buffer and renders it initialized.
+    /// This requires that T implements `PlacementDefault`.
+    fn write_default(mut self) -> Self::SampleMut
+    where
+        Self: Sized,
+        T: PlacementDefault,
+    {
+        T::placement_default(self.as_mut().as_mut_ptr());
+
+        // Safety: `placement_default` initialized the data
+        unsafe { self.assume_init() }
+    }
 }
 
 /// Service interface contract definition.
@@ -742,6 +755,23 @@ pub trait Subscription<T: Reloc + Send + Debug, R: Runtime + ?Sized> {
         new_samples: usize,
         max_samples: usize,
     ) -> impl Future<Output = Result<usize>> + Send;
+}
+
+/// A trait for types that can be default-constructed in place, skipping intermediate moves.
+///
+/// # Safety
+/// The implementer must ensure that the `placement_default` method correctly initializes the
+/// memory at the given pointer to a valid instance of the type, without creating temporary
+/// references that would lead to undefined behavior. The `value` under pointer after call to
+/// `placement_default` is considered initialized.
+pub unsafe trait PlacementDefault: Default {
+    /// Writes in place (skipping intermediate moves) the default value directly into the buffer.
+    ///
+    /// # Safety
+    ///  - `ptr` shall be assumed the pointer to uninitialized memory
+    ///  - implementer shall use `&raw FIELD` access to write data into fields and not producing
+    ///    temporary references that would cause undefined behavior
+    fn placement_default(ptr: *mut Self);
 }
 
 ///Test module for InstanceSpecifier validation

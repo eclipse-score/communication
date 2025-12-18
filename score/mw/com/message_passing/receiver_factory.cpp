@@ -27,6 +27,9 @@ namespace
 class ReceiverMockWrapper final : public score::mw::com::message_passing::IReceiver
 {
   public:
+    // coverity[autosar_cpp14_m0_1_9_violation] false-positive: constructor; not dead code
+    // coverity[autosar_cpp14_m0_1_3_violation] false-positive: constructor; not a variable
+    // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in tests
     explicit ReceiverMockWrapper(score::mw::com::message_passing::IReceiver* const mock)
         : IReceiver{}, wrapped_mock_{mock}
     {
@@ -57,9 +60,10 @@ class ReceiverMockWrapper final : public score::mw::com::message_passing::IRecei
 
 namespace score::mw::com::message_passing
 {
-
+// coverity[autosar_cpp14_a0_1_1_violation] false-positive: is used in tests
 IReceiver* ReceiverFactory::receiver_mock_{nullptr};
 
+// coverity[autosar_cpp14_a2_10_4_violation] false-positive: name is not reused; system-specific implementation
 score::cpp::pmr::unique_ptr<IReceiver> ReceiverFactory::Create(const std::string_view identifier,
                                                         concurrency::Executor& executor,
                                                         const score::cpp::span<const uid_t> allowed_user_ids,
