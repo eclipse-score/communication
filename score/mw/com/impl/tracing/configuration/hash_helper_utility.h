@@ -29,12 +29,7 @@ auto Accumulate(InputIt first, InputIt last, const T init_value) noexcept -> std
         "InputIt must be an input iterator");
     T result{init_value};
     bool overflow_error{false};
-    // Suppress "AUTOSAR C++14 M5-0-15" rule finding.
-    // This rule states:"indexing shall be the only form of pointer arithmetic.".
-    // Rationale: Tolerated due to containers providing pointer-like iterators.
-    // The Coverity tool considers these iterators as raw pointers.
-    // coverity[autosar_cpp14_m5_0_15_violation]
-    for (; first != last; ++first)
+    for (; first != last; first = std::next(first))
     {
         overflow_error = (std::numeric_limits<T>::max() - result) < (*first);
         if (overflow_error)
