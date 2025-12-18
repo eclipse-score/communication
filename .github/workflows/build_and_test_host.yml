@@ -29,13 +29,15 @@ jobs:
       # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
       runs-on: ubuntu-22.04
       steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4.2.2
+        - name: Free Disk Space (Ubuntu)
+          uses: ./actions/free_disk_space
         - uses: bazel-contrib/setup-bazel@0.15.0
           with:
             bazelisk-cache: true
             disk-cache: ${{ github.workflow }}-${{ matrix.toolchain }}
             repository-cache: true
-        - name: Checkout repository
-          uses: actions/checkout@v4.2.2
         - name: Bazel build communication targets
           run: |
             bazel build --extra_toolchains=${{ matrix.toolchain }} //...
