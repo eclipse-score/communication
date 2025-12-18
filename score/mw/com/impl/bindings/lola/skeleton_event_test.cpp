@@ -318,5 +318,39 @@ TEST_F(SkeletonEventPrepareStopOfferFixture, StopOfferSkeletonEvent)
     skeleton_event_->PrepareStopOffer();
 }
 
+using SkeletonEventTimestampFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
+{
+    // Given a skeleton event
+    const bool enforce_max_samples{true};
+    impl::tracing::SkeletonEventTracingData tracing_data{};
+    InitialiseSkeletonEvent(
+        fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples, tracing_data);
+
+    // and the event has been offered, which sets up the internal control structures in mocked memory
+    skeleton_event_->PrepareOffer();
+
+    // and we have allocated a sample slot from the mocked memory
+    auto allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(allocated_slot_result.has_value());
+    auto allocated_slot = std::move(allocated_slot_result).value();
+
+    // and we can see the initial timestamp of the slot is "in writing"
+    const impl::SampleAllocateePtrView<test::TestSampleType> view{allocated_slot};
+    auto* lola_ptr = view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
+    auto slot_indicator = lola_ptr->GetReferencedSlot();
+    auto initial_slot_status = EventSlotStatus(slot_indicator.GetSlotQM().load());
+    ASSERT_TRUE(initial_slot_status.IsInWriting());
+
+    // When we send the sample
+    auto send_result = skeleton_event_->Send(std::move(allocated_slot), score::cpp::nullopt);
+    ASSERT_TRUE(send_result.has_value());
+
+    // Then the timestamp for that slot should be updated to a valid, non-zero value
+    auto final_slot_status = EventSlotStatus(slot_indicator.GetSlotQM().load());
+    EXPECT_FALSE(final_slot_status.IsInWriting());
+    EXPECT_NE(final_slot_status.GetTimeStamp(), 0U);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola
