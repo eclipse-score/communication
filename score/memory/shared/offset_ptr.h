@@ -615,8 +615,7 @@ auto OffsetPtr<PointedType>::pointer_to(const void* const r) noexcept -> OffsetP
 template <typename PointedType>
 auto OffsetPtr<PointedType>::operator*() const -> reference
 {
-    // NOLINTNEXTLINE(score-banned-function) See justification above class.
-    const pointer ptr = GetPointerWithBoundsCheck(this, offset_, memory_bounds_, sizeof(PointedType));
+    const pointer ptr = get();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr != nullptr, "Cannot dereference a nullptr.");
     reference ref = *ptr;
     return ref;
@@ -627,10 +626,7 @@ auto OffsetPtr<PointedType>::operator[](difference_type idx) const -> reference
 {
     const pointer ptr = get();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr != nullptr, "Cannot dereference a nullptr.");
-    // Suppress "AUTOSAR C++14 M5-0-15" rule finding: Array indexing shall be the only form of pointer arithmetic.
-    // Rationale : Rule does not consider shared memory
-    // coverity[autosar_cpp14_m5_0_15_violation]
-    return get()[idx];
+    return *std::next(ptr, idx);  // bounds checks for `idx` will get added here as part of Ticket-238363
 }
 
 template <typename PointedType>

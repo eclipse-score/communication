@@ -20,25 +20,19 @@
 namespace
 {
 
-score::cpp::string_view::size_type FindNextSeperator(const score::cpp::string_view view,
+score::cpp::string_view::size_type FindNextSeperator(score::cpp::string_view view,
                                               const score::cpp::string_view::size_type start_index,
                                               const score::cpp::string_view::value_type seperator) noexcept
 {
-    // Suppress "AUTOSAR C++14 M5-0-15" rule finding: "Array indexing shall be the only form of pointer arithmetic.".
-    // False positive, no pointer arithmetic.
-    // coverity[autosar_cpp14_m5_0_15_violation : FALSE]
-    const auto signed_index = std::distance(view.begin(), std::find(view.begin() + start_index, view.end(), seperator));
-
-    // std::distance() returns a std::ptrdiff_t which is a signed integer type.
-    static_assert(std::numeric_limits<score::cpp::string_view::size_type>::max() >=
-                      static_cast<score::cpp::string_view::size_type>(std::numeric_limits<decltype(signed_index)>::max()),
-                  "Maximum of distance type shall be contained in string_view size type.");
-
-    // The signed_index shall be greater than or equal zero, because from begin() of the container there exists no valid
-    // iterator to which the number of hops could be negative.
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(signed_index >= 0, "Signed_index shall be non-negative.");
-
-    return static_cast<score::cpp::string_view::size_type>(signed_index);
+    view.remove_prefix(start_index);
+    if (const auto pos = view.find(seperator); pos != score::cpp::string_view::npos)
+    {
+        return start_index + pos;
+    }
+    else
+    {
+        return start_index + view.size();
+    }
 }
 
 }  // namespace
@@ -86,11 +80,10 @@ score::cpp::string_view LazySplitStringView::Iterator::operator*() const noexcep
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(seperator_index_ >= start_index_,
                        "Class invariant shall ensure seperator index shall be greater or equal than start index.");
-    const score::cpp::string_view::size_type substring_size = seperator_index_ - start_index_;
-    // Suppress "AUTOSAR C++14 M5-0-15" rule finding: "Array indexing shall be the only form of pointer arithmetic.".
-    // False positive, no pointer arithmetic.
-    // coverity[autosar_cpp14_m5_0_15_violation : FALSE]
-    return score::cpp::string_view{split_view_.source_.begin() + start_index_, substring_size};
+    score::cpp::string_view result{split_view_.source_};
+    result.remove_suffix(result.size() - seperator_index_);
+    result.remove_prefix(start_index_);
+    return result;
 }
 
 bool operator==(const LazySplitStringView::Iterator& lhs, const LazySplitStringView::Iterator& rhs) noexcept
