@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/memory/shared/shared_memory_resource.h"
 #include "score/language/safecpp/safe_math/details/addition_subtraction/addition_subtraction.h"
+#include "score/language/safecpp/string_view/zstring_view.h"
 #include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
@@ -139,7 +140,7 @@ static std::shared_ptr<SharedMemoryResource> CreateInstance(Args&&... args)
     return std::make_shared<MakeSharedEnabler>(std::forward<Args>(args)...);
 }
 
-bool doesFileExist(const score::cpp::string_view filePath)
+bool doesFileExist(const safecpp::zstring_view filePath)
 {
     ::score::os::StatBuffer buffer{};
     // NOTE: Below uses of `safecpp::GetPtrToNullTerminatedUnderlyingBufferOf()` will emit a deprecation warning here
@@ -175,14 +176,14 @@ bool waitForFreeLockFile(const std::string& lock_file_path)
     static_assert(maxRetryCount <= std::numeric_limits<decltype(retryCount)>::max(),
                   "Counter `retryCount` cannot hold maxRetryCount.");
 
-    bool lockFileExists = doesFileExist(lock_file_path.c_str());
+    bool lockFileExists = doesFileExist(lock_file_path);
     // LCOV_EXCL_BR_START (Tool false positive: We check check all decisions i.e. that lock file does not exist, lock
     // file exists and retry count is less than max retry count and lock file exists and retry count is equal to max
     // retry count. It's impossible that the retry count check will fail when entering the loop which may be what the
     // tool wants us to check.)
     while (lockFileExists && (retryCount < maxRetryCount))
     {
-        lockFileExists = doesFileExist(lock_file_path.c_str());
+        lockFileExists = doesFileExist(lock_file_path);
         retryCount++;
         std::this_thread::sleep_for(retryAfter);
     }
