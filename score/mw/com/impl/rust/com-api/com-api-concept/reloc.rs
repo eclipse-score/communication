@@ -27,6 +27,8 @@
 /// is unsafe for now. The expectation is that very few users ever need to implement this manually.
 pub unsafe trait Reloc {}
 
+pub use com_api_concept_macros::Reloc;
+
 unsafe impl Reloc for () {}
 unsafe impl Reloc for u8 {}
 unsafe impl Reloc for u16 {}

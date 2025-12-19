@@ -10,27 +10,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_proc_macro")
 
-rust_library(
-    name = "com-api-concept",
-    srcs = [
-        "com_api_concept.rs",
-        "reloc.rs",
-    ],
-    crate_root = "com_api_concept.rs",
-    proc_macro_deps = [
-        "//score/mw/com/impl/rust/com-api/com-api-concept-macros",
-    ],
+rust_proc_macro(
+    name = "com-api-concept-macros",
+    srcs = ["lib.rs"],
+    crate_name = "com_api_concept_macros",
     visibility = [
-        "//visibility:public",  # platform_only
+        "//visibility:public",
     ],
-    deps = [],
+    deps = [
+        "@crate_index//:quote",
+        "@crate_index//:syn",
+    ],
 )
 
-rust_test(
-    name = "com-api-concept-test",
-    crate = ":com-api-concept",
-    tags = ["manual"],
-    deps = [":com-api-concept"],
+rust_doc_test(
+    name = "com-api-concept-macros-tests",
+    crate = ":com-api-concept-macros",
 )

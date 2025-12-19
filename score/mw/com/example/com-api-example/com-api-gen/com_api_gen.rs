@@ -15,14 +15,16 @@ use com_api::{
     Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber, TypeInfo,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Reloc)]
+#[repr(C)]
 pub struct Tire {}
 unsafe impl Reloc for Tire {}
 impl TypeInfo for Tire {
     const ID: &'static str = "Tire";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Reloc)]
+#[repr(C)]
 pub struct Exhaust {}
 unsafe impl Reloc for Exhaust {}
 impl TypeInfo for Exhaust {
