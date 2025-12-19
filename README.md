@@ -2,7 +2,7 @@
 
 [![Eclipse Score](https://img.shields.io/badge/Eclipse-Score-orange.svg)](https://eclipse-score.github.io/score/main/modules/communication/index.html)
 
-- A high-performance, safety-critical communication middleware implementation based on the Adaptive AUTOSAR Communication Management specification. 
+- A high-performance, safety-critical communication middleware implementation based on the Adaptive AUTOSAR Communication Management specification. THESE ARE SOME RANDOM CHANGES
 - This module provides zero-copy, shared-memory based inter-process communication (IPC) in embedded systems.
 
 ## Overview
@@ -45,7 +45,7 @@ The module consists of two main components:
 ```
 Flow Steps:
 1. Publisher registers service with unique identifier
-2. Subscriber searches for services by identifier  
+2. Subscriber searches for services by identifier
 3. Service discovery matches publisher and subscriber
 4. Publisher sends data to shared memory (zero-copy)
 5. Subscriber receives notification of new data
@@ -63,11 +63,11 @@ Sensor App ──► [Temperature Data] ──► Dashboard App
                 (30ms intervals)      (Real-time display)
 ```
 
-### Pattern 2: Multi-Subscriber Broadcasting  
+### Pattern 2: Multi-Subscriber Broadcasting
 ```
 For example:
 Camera App ──► [Video Frame] ──┬──► Display App
-                               ├──► Recording App  
+                               ├──► Recording App
                                └──► AI Processing App
 ```
 
