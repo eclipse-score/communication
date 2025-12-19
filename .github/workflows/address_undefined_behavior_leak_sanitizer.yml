@@ -21,8 +21,7 @@ on:
     types: [opened, reopened, synchronize]
   merge_group:
     types: [checks_requested]
-  release:
-    types: [created]
+  workflow_call:
 jobs:
     build_and_test_asan_ubsan_lsan:
       # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081

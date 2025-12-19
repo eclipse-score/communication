@@ -20,8 +20,14 @@ on:
     types: [opened, reopened, synchronize]
   merge_group:
     types: [checks_requested]
-  release:
-    types: [created]
+  workflow_call:
+    secrets:
+      SCORE_QNX_LICENSE:
+        required: true
+      SCORE_QNX_USER:
+        required: true
+      SCORE_QNX_PASSWORD:
+        required: true
 env:
   LICENSE_DIR: "/opt/score_qnx/license"
 jobs:

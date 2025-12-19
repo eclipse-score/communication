@@ -13,8 +13,12 @@
 name: Coverage Report
 
 on:
-  release:
-    types: [ created ]
+  workflow_call:
+    inputs:
+      release_tag:
+        description: 'Release tag to upload artifacts to'
+        required: true
+        type: string
 
 jobs:
   coverage-report:
@@ -68,9 +72,9 @@ jobs:
           name: ${{ github.event.repository.name }}_coverage_report.zip
           path: ${{ github.event.repository.name }}_coverage_report.zip
 
-      - name: Upload release asset (attach ZIP to GitHub Release)
-        uses: softprops/action-gh-release@v2.5.0
-        with:
-          files: ${{ github.event.repository.name }}_coverage_report.zip
+      - name: Upload coverage report to existing draft release
+        run: |
+          # Upload the file to the existing release
+          gh release upload "${{ inputs.release_tag }}" "${{ github.event.repository.name }}_coverage_report.zip"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
