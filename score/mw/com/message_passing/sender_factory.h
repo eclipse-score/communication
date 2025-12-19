@@ -16,6 +16,8 @@
 #include "score/mw/com/message_passing/i_sender.h"
 #include "score/mw/com/message_passing/sender_config.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include <score/memory.hpp>
 #include <score/stop_token.hpp>
 
@@ -47,7 +49,7 @@ class SenderFactory final
     /// \param memory_resource memory resource for allocating the Sender object
     /// \return a platform specific implementation of a ISender or a mock.
     static score::cpp::pmr::unique_ptr<ISender> Create(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         const score::cpp::stop_token& token,
         const SenderConfig& sender_config = {},
         LoggingCallback logging_callback = &DefaultLoggingCallback,

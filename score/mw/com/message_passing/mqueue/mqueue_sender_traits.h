@@ -17,6 +17,8 @@
 #include "score/mw/com/message_passing/serializer.h"
 #include "score/mw/com/message_passing/shared_properties.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include "score/os/errno.h"
 #include "score/os/mqueue.h"
 
@@ -53,7 +55,7 @@ class MqueueSenderTraits
     static OsResources GetDefaultOSResources(score::cpp::pmr::memory_resource* memory_resource) noexcept;
 
     static score::cpp::expected<file_descriptor_type, score::os::Error> try_open(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         const FileDescriptorResourcesType& os_resources) noexcept;
 
     static void close_sender(const file_descriptor_type file_descriptor,

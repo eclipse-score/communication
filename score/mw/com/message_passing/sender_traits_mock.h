@@ -17,6 +17,8 @@
 #include "score/mw/com/message_passing/sender.h"
 #include "score/mw/com/message_passing/serializer.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include <score/expected.hpp>
 #include <score/memory.hpp>
 
@@ -42,7 +44,7 @@ class IForwardingSenderChannelTraits
     using FileDescriptorResourcesType = int;
 
     virtual score::cpp::expected<file_descriptor_type, score::os::Error> try_open(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         const FileDescriptorResourcesType& os_resources) noexcept = 0;
 
     virtual void close_sender(const file_descriptor_type file_descriptor,
@@ -78,7 +80,7 @@ class ForwardingSenderChannelTraits
     }
 
     static score::cpp::expected<file_descriptor_type, score::os::Error> try_open(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         const FileDescriptorResourcesType& os_resources) noexcept
     {
         return Impl()->try_open(identifier, os_resources);
@@ -132,7 +134,7 @@ class SenderChannelTraitsMock : public IForwardingSenderChannelTraits
 
     MOCK_METHOD((score::cpp::expected<file_descriptor_type, score::os::Error>),
                 try_open,
-                (const std::string_view identifier, const FileDescriptorResourcesType&),
+                (const safecpp::zstring_view identifier, const FileDescriptorResourcesType&),
                 (noexcept, override));
 
     MOCK_METHOD(void,
@@ -157,7 +159,7 @@ class SenderFactoryImplMock final
 {
   public:
     static score::cpp::pmr::unique_ptr<score::mw::com::message_passing::ISender> Create(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         const score::cpp::stop_token& token,
         const SenderConfig& sender_config = {},
         LoggingCallback logging_callback = &DefaultLoggingCallback,

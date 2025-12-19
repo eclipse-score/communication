@@ -18,6 +18,8 @@
 #include "score/mw/com/message_passing/sender_config.h"
 #include "score/mw/com/message_passing/shared_properties.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include "score/concurrency/interruptible_wait.h"
 #include "score/os/errno.h"
 
@@ -70,7 +72,7 @@ class Sender final : public ISender
     ///        requested
     /// \param sender_config additional sender configuration parameters
     /// \param logging_callback provides an output for error messages since we cannot use regular logging
-    explicit Sender(const std::string_view identifier,
+    explicit Sender(const safecpp::zstring_view identifier,
                     const score::cpp::stop_token& token,
                     const SenderConfig& sender_config,
                     LoggingCallback logging_callback,
@@ -88,7 +90,7 @@ class Sender final : public ISender
 
   private:
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-    void OpenOrWaitForChannel(const std::string_view, const score::cpp::stop_token&) noexcept;
+    void OpenOrWaitForChannel(const safecpp::zstring_view, const score::cpp::stop_token&) noexcept;
     template <typename Payload>
     score::cpp::expected_blank<score::os::Error> SendPrepared(const Payload&) const noexcept;
 
@@ -104,7 +106,7 @@ class Sender final : public ISender
 
 template <typename ChannelTraits>
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class constructor (Ticket-234468)
-Sender<ChannelTraits>::Sender(const std::string_view identifier,
+Sender<ChannelTraits>::Sender(const safecpp::zstring_view identifier,
                               const score::cpp::stop_token& token,
                               const SenderConfig& sender_config,
                               LoggingCallback logging_callback,
@@ -132,7 +134,7 @@ Sender<ChannelTraits>::Sender(const std::string_view identifier,
 
 template <typename ChannelTraits>
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-void Sender<ChannelTraits>::OpenOrWaitForChannel(const std::string_view identifier,
+void Sender<ChannelTraits>::OpenOrWaitForChannel(const safecpp::zstring_view identifier,
                                                  const score::cpp::stop_token& token) noexcept
 {
     const auto ret = ChannelTraits::try_open(identifier, fd_resources_);

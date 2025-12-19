@@ -14,6 +14,8 @@
 
 #include "score/mw/com/message_passing/sender_mock.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include <gtest/gtest.h>
 
 namespace score::mw::com::message_passing
@@ -24,7 +26,8 @@ namespace
 using ::testing::An;
 using ::testing::Return;
 
-constexpr auto SOME_VALID_PATH = "foo";
+using safecpp::literals::operator""_zsv;
+constexpr safecpp::zstring_view SOME_VALID_PATH = "foo"_zsv;
 
 class SenderFactoryFixture : public ::testing::Test
 {

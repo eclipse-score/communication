@@ -67,7 +67,7 @@ namespace score::mw::com::message_passing
 ISender* SenderFactory::sender_mock_{nullptr};
 
 // coverity[autosar_cpp14_a2_10_4_violation] false-positive: name is not reused; system-specific implementation
-score::cpp::pmr::unique_ptr<ISender> SenderFactory::Create(const std::string_view identifier,
+score::cpp::pmr::unique_ptr<ISender> SenderFactory::Create(const safecpp::zstring_view identifier,
                                                     const score::cpp::stop_token& token,
                                                     const SenderConfig& sender_config,
                                                     LoggingCallback logging_callback,

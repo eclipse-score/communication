@@ -25,7 +25,7 @@ namespace score::mw::com::message_passing
 constexpr std::size_t MqueueReceiverTraits::kConcurrency;
 
 score::cpp::expected<MqueueReceiverTraits::file_descriptor_type, score::os::Error> MqueueReceiverTraits::open_receiver(
-    const std::string_view identifier,
+    const safecpp::zstring_view identifier,
     const score::cpp::pmr::vector<uid_t>& allowed_uids,
     const std::int32_t max_number_message_in_queue,
     const FileDescriptorResourcesType& os_resources) noexcept
@@ -58,7 +58,7 @@ score::cpp::expected<MqueueReceiverTraits::file_descriptor_type, score::os::Erro
 }
 
 void MqueueReceiverTraits::close_receiver(const MqueueReceiverTraits::file_descriptor_type file_descriptor,
-                                          const std::string_view identifier,
+                                          const safecpp::zstring_view identifier,
                                           const FileDescriptorResourcesType& os_resources) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");

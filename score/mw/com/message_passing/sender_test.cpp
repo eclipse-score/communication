@@ -13,6 +13,8 @@
 #include "score/mw/com/message_passing/sender.h"
 #include "score/mw/com/message_passing/sender_traits_mock.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include <gtest/gtest.h>
 
 #include <score/memory.hpp>
@@ -29,11 +31,13 @@ namespace
 using namespace ::std::chrono_literals;
 
 using ::testing::_;
+using ::testing::An;
 using ::testing::AnyNumber;
 using ::testing::Invoke;
 using ::testing::Return;
 
-const std::string_view kSomeValidPath = "foo";
+using safecpp::literals::operator""_zsv;
+constexpr safecpp::zstring_view kSomeValidPath = "foo"_zsv;
 constexpr auto kSomeValidFileDescriptor = 1;
 constexpr auto kMaxNumberOfRetries = 5;
 constexpr auto kRetryDelay = 0ms;
@@ -89,7 +93,7 @@ class SenderFixture : public ::testing::Test
 
     /// \brief Instructs channel mock to succeed on any "try_open" and expect any number of (final) "close_sender"
     ///        calls.
-    void PrepareChannel(const std::string_view identifier = kSomeValidPath)
+    void PrepareChannel(const safecpp::zstring_view identifier = kSomeValidPath)
     {
         EXPECT_CALL(mock_, try_open(identifier, _)).WillRepeatedly(Return(kSomeValidFileDescriptor));
         EXPECT_CALL(mock_, close_sender(kSomeValidFileDescriptor, _)).Times(AnyNumber());

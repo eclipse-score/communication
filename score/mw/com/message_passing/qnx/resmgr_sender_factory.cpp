@@ -18,7 +18,7 @@
 // coverity[autosar_cpp14_a2_10_4_violation] false-positive: name is not reused; system-specific implementation
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
 score::cpp::pmr::unique_ptr<score::mw::com::message_passing::ISender> score::mw::com::message_passing::SenderFactoryImpl::Create(
-    const std::string_view identifier,
+    const safecpp::zstring_view identifier,
     const score::cpp::stop_token& token,
     const SenderConfig& sender_config,
     LoggingCallback logging_callback,

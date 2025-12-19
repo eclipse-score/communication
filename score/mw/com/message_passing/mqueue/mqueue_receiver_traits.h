@@ -17,6 +17,8 @@
 #include "score/mw/com/message_passing/serializer.h"
 #include "score/mw/com/message_passing/shared_properties.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include "score/os/errno.h"
 #include "score/os/mqueue.h"
 #include "score/os/stat.h"
@@ -66,13 +68,13 @@ class MqueueReceiverTraits
     using FileDescriptorResourcesType = OsResources;
 
     static score::cpp::expected<file_descriptor_type, score::os::Error> open_receiver(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         const score::cpp::pmr::vector<uid_t>& allowed_uids,
         const std::int32_t max_number_message_in_queue,
         const FileDescriptorResourcesType& os_resources) noexcept;
 
     static void close_receiver(const file_descriptor_type file_descriptor,
-                               const std::string_view identifier,
+                               const safecpp::zstring_view identifier,
                                const FileDescriptorResourcesType& os_resources) noexcept;
 
     static void stop_receive(const file_descriptor_type file_descriptor,
