@@ -36,7 +36,7 @@ void EventReceiveHandlerManager::Register(std::weak_ptr<ScopedEventReceiveHandle
 }
 
 void EventReceiveHandlerManager::Reregister(
-    score::cpp::optional<std::weak_ptr<ScopedEventReceiveHandler>> new_event_receiver_handler)
+    std::optional<std::weak_ptr<ScopedEventReceiveHandler>> new_event_receiver_handler)
 {
     if (new_event_receiver_handler.has_value())
     {

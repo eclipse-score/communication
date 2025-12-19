@@ -137,7 +137,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
 
     // Data used by states
     SubscriptionData subscription_data_;
-    score::cpp::optional<std::weak_ptr<ScopedEventReceiveHandler>> event_receiver_handler_;
+    std::optional<std::weak_ptr<ScopedEventReceiveHandler>> event_receiver_handler_;
     EventReceiveHandlerManager event_receive_handler_manager_;
     EventControl& event_control_;
     bool provider_service_instance_is_available_;

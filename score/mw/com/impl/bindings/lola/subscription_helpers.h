@@ -49,7 +49,7 @@ class EventReceiveHandlerManager
     }
 
     void Register(std::weak_ptr<ScopedEventReceiveHandler> handler);
-    void Reregister(score::cpp::optional<std::weak_ptr<ScopedEventReceiveHandler>> new_event_receiver_handler);
+    void Reregister(std::optional<std::weak_ptr<ScopedEventReceiveHandler>> new_event_receiver_handler);
     void Unregister() noexcept;
 
     void UpdatePid(pid_t new_event_source_pid) noexcept

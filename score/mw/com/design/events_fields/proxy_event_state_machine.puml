@@ -18,9 +18,9 @@ not_subscribed -[#green]-> not_subscribed : ReOfferEvent()/provider_service_inst
 
 not_subscribed -[#orange]-> not_subscribed : StopOfferEvent()/\nprovider_service_instance_is_available_=false
 
-not_subscribed -[#blue]-> subscription_pending : SubscribeEvent(max_samples)/TransactionLog::RegisterProxyElement,max_sample_count=max_samples\n[provider_service_instance_is_available_==false] EventReceiveHandlerManager::Register()
+not_subscribed -[#blue]-> subscription_pending : SubscribeEvent(max_samples)/TransactionLog::RegisterProxyElement,max_sample_count=max_samples\n[provider_service_instance_is_available_==false]\n[Handler Deferred - NOT Registered]
 
-not_subscribed -[#blue]-> subscribed : SubscribeEvent(max_samples)/MaxSamples=max_samples\n[provider_service_instance_is_available_==true]
+not_subscribed -[#blue]-> subscribed : SubscribeEvent(max_samples)/MaxSamples=max_samples,\nEventReceiveHandlerManager::Register()\n[provider_service_instance_is_available_==true]
 
 subscription_pending -[#blue]-> subscription_pending : SubscribeEvent(max_samples)/PrintError()[NextMaxSamples != max_samples]
 
