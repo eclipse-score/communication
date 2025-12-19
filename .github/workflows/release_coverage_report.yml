@@ -10,14 +10,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-name: Release Verification
+name: Coverage Report
 
 on:
   release:
     types: [ created ]
 
 jobs:
-  archive-report:
+  coverage-report:
     runs-on: ubuntu-22.04
     permissions:
       contents: write # required to upload release assets
@@ -40,10 +40,6 @@ jobs:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
           repository-cache: true
-
-      - name: Build via Bazel
-        run: |
-          bazel build //...
 
       - name: Run Unit Test with Coverage for C++
         run: |
