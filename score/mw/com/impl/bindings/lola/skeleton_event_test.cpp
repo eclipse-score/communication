@@ -321,35 +321,54 @@ TEST_F(SkeletonEventPrepareStopOfferFixture, StopOfferSkeletonEvent)
 using SkeletonEventTimestampFixture = SkeletonEventFixture;
 TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 {
-    // Given a skeleton event
+    // GIVEN a skeleton event that is offered
     const bool enforce_max_samples{true};
     impl::tracing::SkeletonEventTracingData tracing_data{};
     InitialiseSkeletonEvent(
         fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples, tracing_data);
 
-    // and the event has been offered, which sets up the internal control structures in mocked memory
     skeleton_event_->PrepareOffer();
 
-    // and we have allocated a sample slot from the mocked memory
-    auto allocated_slot_result = skeleton_event_->Allocate();
-    ASSERT_TRUE(allocated_slot_result.has_value());
-    auto allocated_slot = std::move(allocated_slot_result).value();
+    // WHEN we allocate and send a first sample
+    auto first_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(first_allocated_slot_result.has_value());
+    auto first_allocated_slot = std::move(first_allocated_slot_result).value();
 
-    // and we can see the initial timestamp of the slot is "in writing"
-    const impl::SampleAllocateePtrView<test::TestSampleType> view{allocated_slot};
-    auto* lola_ptr = view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
-    auto slot_indicator = lola_ptr->GetReferencedSlot();
-    auto initial_slot_status = EventSlotStatus(slot_indicator.GetSlotQM().load());
-    ASSERT_TRUE(initial_slot_status.IsInWriting());
+    const impl::SampleAllocateePtrView<test::TestSampleType> first_view{first_allocated_slot};
+    auto* first_lola_ptr = first_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
+    auto first_slot_indicator = first_lola_ptr->GetReferencedSlot();
+    auto first_initial_status = EventSlotStatus(first_slot_indicator.GetSlotQM().load());
+    ASSERT_TRUE(first_initial_status.IsInWriting());
 
-    // When we send the sample
-    auto send_result = skeleton_event_->Send(std::move(allocated_slot), score::cpp::nullopt);
-    ASSERT_TRUE(send_result.has_value());
+    auto first_send_result = skeleton_event_->Send(std::move(first_allocated_slot), score::cpp::nullopt);
+    ASSERT_TRUE(first_send_result.has_value());
 
-    // Then the timestamp for that slot should be updated to a valid, non-zero value
-    auto final_slot_status = EventSlotStatus(slot_indicator.GetSlotQM().load());
-    EXPECT_FALSE(final_slot_status.IsInWriting());
-    EXPECT_NE(final_slot_status.GetTimeStamp(), 0U);
+    // THEN its timestamp should be a valid, non-zero value
+    auto first_final_slot_status = EventSlotStatus(first_slot_indicator.GetSlotQM().load());
+    EXPECT_FALSE(first_final_slot_status.IsInWriting());
+    // AND the first timestamp should be 2, as it's the first one after initialization.
+    const auto first_timestamp = first_final_slot_status.GetTimeStamp();
+    EXPECT_EQ(first_timestamp, 2U);
+
+    // AND WHEN we allocate and send a second sample
+    auto second_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(second_allocated_slot_result.has_value());
+    auto second_allocated_slot = std::move(second_allocated_slot_result).value();
+
+    const impl::SampleAllocateePtrView<test::TestSampleType> second_view{second_allocated_slot};
+    auto* second_lola_ptr = second_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
+    auto second_slot_indicator = second_lola_ptr->GetReferencedSlot();
+    auto second_initial_status = EventSlotStatus(second_slot_indicator.GetSlotQM().load());
+    ASSERT_TRUE(second_initial_status.IsInWriting());
+
+    auto second_send_result = skeleton_event_->Send(std::move(second_allocated_slot), score::cpp::nullopt);
+    ASSERT_TRUE(second_send_result.has_value());
+
+    // THEN its timestamp should be exactly one greater than the first one
+    auto second_final_slot_status = EventSlotStatus(second_slot_indicator.GetSlotQM().load());
+    EXPECT_FALSE(second_final_slot_status.IsInWriting());
+    const auto second_timestamp = second_final_slot_status.GetTimeStamp();
+    EXPECT_EQ(second_timestamp, first_timestamp + 1U) << "The second timestamp should be exactly one greater than the first.";
 }
 
 }  // namespace

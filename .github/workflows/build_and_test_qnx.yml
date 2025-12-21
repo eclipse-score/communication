@@ -1,0 +1,88 @@
+# *******************************************************************************
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow configuration for S-CORE CI - Bazel Build & Test communication module for target platforms
+# This workflow runs Bazel build and test for QNX when triggered by specific pull request events.
+
+name: Bazel Build & Test communication module (target-platforms)
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  workflow_call:
+    secrets:
+      SCORE_QNX_LICENSE:
+        required: true
+      SCORE_QNX_USER:
+        required: true
+      SCORE_QNX_PASSWORD:
+        required: true
+env:
+  LICENSE_DIR: "/opt/score_qnx/license"
+jobs:
+    build_and_test_qnx:
+      strategy:
+        fail-fast: false
+        matrix:
+          bazel-config: ["qnx_x86_64", "qnx_arm64"]
+          include:
+            - bazel-config: "qnx_x86_64"
+              incompatible_targets:
+                - "-//score/mw/com/requirements/..." # Uninvestigated problem
+                - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
+                - "-//score/mw/com/example/..." # Missing Rust toolchain support for QNX8 on x86_64
+                - "-//score/mw/com/impl/plumbing:sample_ptr_rs" # Missing Rust toolchain support for QNX8 on x86_64
+                - "-//score/mw/com/impl/rust/..." # Missing Rust toolchain support for QNX8 on x86_64
+            - bazel-config: "qnx_arm64"
+              incompatible_targets:
+                - "-//score/mw/com/requirements/..." # Uninvestigated problem
+                - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
+                - "-//score/mw/com/example/..." # Broken Rust toolchain for QNX8 on arm64
+                - "-//score/mw/com/impl/plumbing:sample_ptr_rs" # Broken Rust toolchain for QNX8 on arm64
+                - "-//score/mw/com/impl/rust/..." # Broken Rust toolchain for QNX8 on arm64
+      # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
+      runs-on: ubuntu-22.04
+      permissions:
+        contents: read
+        pull-requests: read
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4.2.2
+        - name: Free Disk Space (Ubuntu)
+          uses: ./actions/free_disk_space
+        - name: Setup Bazel
+          uses: bazel-contrib/setup-bazel@0.15.0
+          with:
+            bazelisk-cache: true
+            disk-cache: ${{ github.workflow }}-${{ matrix.bazel-config }}
+            repository-cache: true
+        - name: Setup QNX License
+          if: ${{ contains(matrix.bazel-config, 'qnx') }}
+          env:
+            SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
+          run: |
+            set -euo pipefail
+
+            sudo mkdir -p "${{ env.LICENSE_DIR }}"
+            echo "${SCORE_QNX_LICENSE}" | base64 --decode | sudo tee "${{ env.LICENSE_DIR }}/licenses" >/dev/null
+        - name: Build targets
+          env:
+            SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
+            SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
+          run: |
+            bazel build --config ${{ matrix.bazel-config }} -- //score/... ${{ join(matrix.incompatible_targets, ' ') }}
+        - name: Cleanup QNX License
+          if: ${{ contains(matrix.bazel-config, 'qnx') && !cancelled() }}
+          run: sudo rm -rf ${{ env.LICENSE_DIR }}
+          # TODO Run tests on QNX QEMU
