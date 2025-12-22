@@ -17,6 +17,8 @@
 
 #include "score/memory/pmr_ring_buffer.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include "score/os/qnx/channel.h"
 #include "score/os/qnx/dispatch.h"
 #include "score/os/qnx/iofunc.h"
@@ -80,13 +82,13 @@ class ResmgrReceiverTraits
 
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
     static score::cpp::expected<file_descriptor_type, score::os::Error> open_receiver(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         const score::cpp::pmr::vector<uid_t>& allowed_uids,
         const std::int32_t max_number_message_in_queue,
         const FileDescriptorResourcesType& os_resources) noexcept;
 
     static void close_receiver(const file_descriptor_type file_descriptor,
-                               const std::string_view /*identifier*/,
+                               const safecpp::zstring_view /*identifier*/,
                                const FileDescriptorResourcesType& os_resources) noexcept;
 
     static void stop_receive(const file_descriptor_type file_descriptor,
@@ -368,7 +370,7 @@ class ResmgrReceiverTraits
 
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
     static score::cpp::expected<dispatch_t*, score::os::Error> CreateAndAttachChannel(
-        const std::string_view identifier,
+        const safecpp::zstring_view identifier,
         ResmgrSetup& setup,
         const FileDescriptorResourcesType& os_resources) noexcept;
 

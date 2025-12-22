@@ -247,6 +247,7 @@ cc_library(
     deps = [
         ":message",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/safecpp/string_view:zstring_view",
         "@score_baselibs//score/memory:pmr_ring_buffer",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:unistd",

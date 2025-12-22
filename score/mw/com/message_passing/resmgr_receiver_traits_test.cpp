@@ -19,6 +19,8 @@
 #include "score/os/mocklib/qnx/mock_iofunc.h"
 #include "score/os/mocklib/unistdmock.h"
 
+#include "score/language/safecpp/string_view/zstring_view.h"
+
 #include "score/os/unistd.h"
 
 #include <gtest/gtest.h>
@@ -29,6 +31,7 @@ namespace
 {
 
 using namespace ::testing;
+using safecpp::literals::operator""_zsv;
 
 class ResmgrReceiverFixtureBase : public ::testing::Test
 {
@@ -298,7 +301,7 @@ class ResmgrReceiverFixtureBase : public ::testing::Test
     score::os::UnistdMock* raw_unistd_mock_ = nullptr;
 
     // consts
-    const std::string_view kIdentifier{"/whatever"};
+    static constexpr safecpp::zstring_view kIdentifier{"/whatever"_zsv};
     const QnxResourcePath kQnxPath{kIdentifier};
     static constexpr dispatch_t* kDispatchPointer = nullptr;  // incomplete class by design, cannot instantiate
     static constexpr std::uint32_t kDispatchId = 1;

@@ -20,7 +20,7 @@ namespace score::mw::com::message_passing
 using file_descriptor_type = ResmgrSenderTraits::file_descriptor_type;
 
 score::cpp::expected<file_descriptor_type, score::os::Error> ResmgrSenderTraits::try_open(
-    const std::string_view identifier,
+    const safecpp::zstring_view identifier,
     const FileDescriptorResourcesType& os_resources) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(IsOsResourcesValid(os_resources), "OS resources are not valid!");
