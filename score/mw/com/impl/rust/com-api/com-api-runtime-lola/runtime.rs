@@ -15,7 +15,6 @@
 //! It is meant to be used in conjunction with the `com-api` crate.
 
 #![allow(dead_code)]
-
 //lifetime warning for all the Sample struct impl block . it is required for the Sample struct event lifetime parameter
 // and mentaining lifetime of instances and data reference
 // As of supressing clippy::needless_lifetimes
@@ -31,23 +30,46 @@ use core::ops::{Deref, DerefMut};
 use core::sync::atomic::AtomicUsize;
 use std::collections::VecDeque;
 use std::path::Path;
+use std::sync::Arc;
 
 use com_api_concept::{
-    Builder, Consumer,ConsumerBuilder, ConsumerDescriptor, InstanceSpecifier, Interface, FindServiceSpecifier, Reloc, Runtime,
-    SampleContainer, ServiceDiscovery, Subscriber, Subscription, Producer, ProducerBuilder, Result,
+    Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, Reloc, Result, Runtime,
+    SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
+
+use generic_bridge_ffi_rs::*;
 
 pub struct LolaRuntimeImpl {}
 
 #[derive(Clone, Debug)]
 pub struct LolaProviderInfo {
     instance_specifier: InstanceSpecifier,
+    interface_id: &'static str,
 }
 
 #[derive(Clone, Debug)]
 pub struct LolaConsumerInfo {
     instance_specifier: InstanceSpecifier,
+    handle_container: Option<Arc<proxy_bridge_rs::HandleContainer>>,
+    handle_index: usize,
+    interface_id: &'static str,
 }
+
+impl LolaConsumerInfo {
+    /// Get a reference to the handle, guaranteed valid as long as this struct exists
+    pub fn get_handle(&self) -> Option<&HandleType> {
+        self.handle_container
+            .as_ref()
+            .map(|c| &c[self.handle_index])
+    }
+}
+
+unsafe impl Send for LolaConsumerInfo {}
+unsafe impl Sync for LolaConsumerInfo {}
+
+unsafe impl Send for LolaProviderInfo {}
+unsafe impl Sync for LolaProviderInfo {}
 
 impl Runtime for LolaRuntimeImpl {
     type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
@@ -59,9 +81,18 @@ impl Runtime for LolaRuntimeImpl {
 
     fn find_service<I: Interface>(
         &self,
-        _instance_specifier: FindServiceSpecifier,
+        instance_specifier: FindServiceSpecifier,
     ) -> Self::ServiceDiscovery<I> {
         SampleConsumerDiscovery {
+            instance_info: LolaConsumerInfo {
+                instance_specifier: match instance_specifier {
+                    FindServiceSpecifier::Any => InstanceSpecifier::new("/").unwrap(),
+                    FindServiceSpecifier::Specific(spec) => spec,
+                },
+                handle_container: None,
+                handle_index: 0,
+                interface_id: I::TYPE_ID,
+            },
             _interface: PhantomData,
         }
     }
@@ -80,37 +111,49 @@ struct LolaEvent<T> {
 }
 
 #[derive(Debug)]
-struct LolaBinding<'a, T>
+struct LolaBinding<T>
 where
     T: Send,
 {
-    data: *mut T,
-    event: &'a LolaEvent<T>,
+    // Pointer to the managed object rather than &T to avoid lifetime issues
+    // Lifetime manage by C++ Lola side so we use raw pointer here
+    // zero-copy consumer pattern
+    //
+    // DESIGN RATIONALE:
+    // - Uses *const T instead of &'a T to avoid artificial Rust lifetime constraints
+    // - C++ LoLa framework owns the data lifecycle, Rust cannot enforce lifetimes
+    // - Raw pointer signals "external memory management" to maintainers
+    //
+    // SAFETY:
+    // - Pointer validity guaranteed by C++ LoLa while Sample exists
+    // - Dereferenced safely via Deref trait (unsafe { data.as_ref().unwrap() })
+    // - Only 8 bytes stored per sample (pointer address, zero data copy)
+    data: *const T,
 }
 
-unsafe impl<'a, T> Send for LolaBinding<'a, T> where T: Send {}
+unsafe impl<T> Send for LolaBinding<T> where T: Send {}
 
 #[derive(Debug)]
-enum SampleBinding<'a, T>
+enum SampleBinding<T>
 where
     T: Send,
 {
-    Lola(LolaBinding<'a, T>),
+    Lola(LolaBinding<T>),
     Test(Box<T>),
 }
 
 #[derive(Debug)]
-pub struct Sample<'a, T>
+pub struct Sample<T>
 where
     T: Reloc + Send + Debug,
 {
     id: usize,
-    inner: SampleBinding<'a, T>,
+    inner: SampleBinding<T>,
 }
 
 static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-impl<'a, T> From<T> for Sample<'a, T>
+impl<T> From<T> for Sample<T>
 where
     T: Reloc + Send + Debug,
 {
@@ -122,7 +165,7 @@ where
     }
 }
 
-impl<'a, T> Deref for Sample<'a, T>
+impl<T> Deref for Sample<T>
 where
     T: Reloc + Send + Debug,
 {
@@ -130,16 +173,15 @@ where
 
     fn deref(&self) -> &Self::Target {
         match &self.inner {
-            SampleBinding::Lola(_lola) => unimplemented!(),
+            SampleBinding::Lola(lola) => unsafe { lola.data.as_ref().unwrap() },
             SampleBinding::Test(test) => test.as_ref(),
         }
     }
 }
 
+impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug {}
 
-impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: Send + Reloc + Debug {}
-
-impl<'a, T> PartialEq for Sample<'a, T>
+impl<T> PartialEq for Sample<T>
 where
     T: Send + Reloc + Debug,
 {
@@ -148,9 +190,9 @@ where
     }
 }
 
-impl<'a, T> Eq for Sample<'a, T> where T: Send + Reloc + Debug {}
+impl<T> Eq for Sample<T> where T: Send + Reloc + Debug {}
 
-impl<'a, T> PartialOrd for Sample<'a, T>
+impl<T> PartialOrd for Sample<T>
 where
     T: Send + Reloc + Debug,
 {
@@ -159,7 +201,7 @@ where
     }
 }
 
-impl<'a, T> Ord for Sample<'a, T>
+impl<T> Ord for Sample<T>
 where
     T: Send + Reloc + Debug,
 {
@@ -181,7 +223,7 @@ impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
     T: Reloc + Send + Debug,
 {
-    type Sample = Sample<'a, T>;
+    type Sample = Sample<T>;
 
     fn into_sample(self) -> Self::Sample {
         todo!()
@@ -240,7 +282,6 @@ where
             lifetime: PhantomData,
         }
     }
-
 }
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
@@ -254,8 +295,12 @@ where
 
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
+    //if we need to make this as &'static str, then we need to
+    // add lifetime parameter to SubscriberImpl and everywhere it is used
+    // but for simplicity we keep it as String and avoid lifetimes as this is just ID string
     identifier: String,
     instance_info: Option<LolaConsumerInfo>,
+    proxy_instance: Option<*mut ProxyBase>, // Stores the proxy instance
     data: PhantomData<T>,
 }
 
@@ -264,30 +309,63 @@ impl<T> Default for SubscribableImpl<T> {
         Self {
             identifier: String::new(),
             instance_info: None,
+            proxy_instance: None,
             data: PhantomData,
         }
     }
 }
 
-impl<T: Reloc + Send + Debug> Subscriber<T,LolaRuntimeImpl> for SubscribableImpl<T> {
+impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &str, instance_info: LolaConsumerInfo) -> com_api_concept::Result<Self> {
+        let handle = instance_info.get_handle().ok_or(Error::Fail)?;
+        let proxy =
+            unsafe { generic_bridge_ffi_rs::create_proxy(instance_info.interface_id, handle) };
+
         Ok(Self {
             identifier: identifier.to_string(),
             instance_info: Some(instance_info),
+            proxy_instance: Some(proxy),
             data: PhantomData,
         })
     }
-    fn subscribe(&self, _max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
-        Ok(SubscriberImpl::new())
+    fn subscribe(&self, max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
+        let instance_info = self.instance_info.as_ref().ok_or(Error::Fail)?;
+        let event_instance = unsafe {
+            generic_bridge_ffi_rs::get_event_from_proxy(
+                self.proxy_instance.unwrap(),
+                instance_info.interface_id,
+                &self.identifier,
+            )
+        };
+
+        let _status = unsafe {
+            generic_bridge_ffi_rs::subscribe_to_event(
+                event_instance,
+                max_num_samples.try_into().unwrap(),
+            )
+        };
+        // Store in SubscriberImpl with event, max_num_samples
+        Ok(SubscriberImpl {
+            event: Some(event_instance),
+            event_type: self.identifier.clone(),
+            max_num_samples,
+            data: VecDeque::new(),
+        })
     }
 }
 
-#[derive(Default,Debug)]
+#[derive(Default, Debug)]
 pub struct SubscriberImpl<T>
 where
     T: Reloc + Send + Debug,
 {
+    event: Option<*mut ProxyEventBase>,
+    //if we need to make this as &'static str, then we need to
+    // add lifetime parameter to SubscriberImpl and everywhere it is used
+    // but for simplicity we keep it as String and avoid lifetimes as this is just ID string
+    event_type: String,
+    max_num_samples: usize,
     data: VecDeque<T>,
 }
 
@@ -298,12 +376,19 @@ where
     #[must_use = "creating a SubscriberImpl without using it is likely a mistake; the subscriber must be assigned or used in some way"]
     pub fn new() -> Self {
         Self {
-            data: VecDeque::default(),
+            event: None,
+            event_type: String::new(),
+            max_num_samples: 0,
+            data: VecDeque::new(),
         }
     }
 
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
+    }
+
+    fn type_name_short() -> &'static str {
+        std::any::type_name::<T>().split("::").last().unwrap_or("")
     }
 }
 
@@ -313,7 +398,7 @@ where
 {
     type Subscriber = SubscribableImpl<T>;
     type Sample<'a>
-        = Sample<'a, T>
+        = Sample<T>
     where
         T: 'a;
 
@@ -323,10 +408,49 @@ where
 
     fn try_receive<'a>(
         &'a self,
-        _scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
+        scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
         _max_samples: usize,
     ) -> com_api_concept::Result<usize> {
-        todo!()
+        if let Some(event) = self.event {
+            let mut callback = |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
+                if !raw_sample.is_null() {
+                    // Read the sample pointer from the raw pointer
+                    let sample_ptr = unsafe { std::ptr::read(raw_sample) };
+
+                    let wrapped_sample = Sample {
+                        id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+                        inner: SampleBinding::Lola(LolaBinding {
+                            // Get reference to the managed object
+                            data: unsafe { sample_ptr.get_managed_object() },
+                        }),
+                    };
+                    // Note: We can't propagate errors from the callback, so we silently drop on error
+                    let _ = scratch.push_back(wrapped_sample);
+                }
+            };
+
+            // Convert closure to FatPtr for C++ callback
+            let dyn_callback: &mut dyn FnMut(*mut sample_ptr_rs::SamplePtr<T>) = &mut callback;
+
+            // SAFETY: Transmute trait object to FatPtr (both are two-pointer fat pointers)
+            let fat_ptr: FatPtr = unsafe { std::mem::transmute(dyn_callback) };
+
+            // Get samples from event using FFI
+            let count = unsafe {
+                generic_bridge_ffi_rs::get_samples_from_event(
+                    event,
+                    Self::type_name_short(),
+                    &fat_ptr,
+                    self.max_num_samples as u32,
+                )
+            };
+            if count > self.max_num_samples as u32 {
+                return Err(Error::Fail);
+            }
+            Ok(count as usize)
+        } else {
+            Err(Error::Fail)
+        }
     }
 
     #[allow(clippy::manual_async_fn)]
@@ -367,7 +491,10 @@ impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
 where
     T: Reloc + Send + Debug,
 {
-    type SampleMaybeUninit<'a> = SampleMaybeUninit<'a, T> where Self: 'a;
+    type SampleMaybeUninit<'a>
+        = SampleMaybeUninit<'a, T>
+    where
+        Self: 'a;
 
     fn allocate(&self) -> com_api_concept::Result<Self::SampleMaybeUninit<'_>> {
         Ok(SampleMaybeUninit {
@@ -382,12 +509,19 @@ where
 }
 
 pub struct SampleConsumerDiscovery<I> {
+    instance_info: LolaConsumerInfo,
     _interface: PhantomData<I>,
 }
 
-impl<I> SampleConsumerDiscovery<I> {
-    fn new(_runtime: &LolaRuntimeImpl, _instance_specifier: InstanceSpecifier) -> Self {
+impl<I: Interface> SampleConsumerDiscovery<I> {
+    fn new(_runtime: &LolaRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
         Self {
+            instance_info: LolaConsumerInfo {
+                instance_specifier: instance_specifier,
+                handle_container: None,
+                handle_index: 0,
+                interface_id: I::TYPE_ID,
+            },
             _interface: PhantomData,
         }
     }
@@ -401,7 +535,34 @@ where
     type ServiceEnumerator = Vec<SampleConsumerBuilder<I>>;
 
     fn get_available_instances(&self) -> com_api_concept::Result<Self::ServiceEnumerator> {
-        Ok(Vec::new())
+        //If ANY Support is added in Lola, then we need to return all available instances
+        let mut available_instances = Vec::new();
+        let instance_specifier_ = proxy_bridge_rs::InstanceSpecifier::try_from(
+            self.instance_info.instance_specifier.as_ref(),
+        )
+        .map_err(|_| Error::Fail)?;
+
+        let service_handle =
+            proxy_bridge_rs::find_service(instance_specifier_).map_err(|_| Error::Fail)?;
+
+        if service_handle.is_empty() {
+            eprintln!("Runtime #No service instances found."); // TODO: Enable logging
+            return Ok(available_instances);
+        }
+        let service_handle_arc = Arc::new(service_handle); // Wrap container in Arc
+
+        let instance_info = LolaConsumerInfo {
+            instance_specifier: self.instance_info.instance_specifier.clone(),
+            handle_container: Some(service_handle_arc.clone()), // Store Arc
+            handle_index: 0, // Assuming single handle for simplicity
+            interface_id: I::TYPE_ID,
+        };
+
+        available_instances.push(SampleConsumerBuilder {
+            instance_info,
+            _interface: PhantomData,
+        });
+        Ok(available_instances)
     }
 
     #[allow(clippy::manual_async_fn)]
@@ -416,10 +577,7 @@ impl<I: Interface> ConsumerBuilder<I, LolaRuntimeImpl> for SampleConsumerBuilder
 
 impl<I: Interface> Builder<I::Consumer<LolaRuntimeImpl>> for SampleConsumerBuilder<I> {
     fn build(self) -> com_api_concept::Result<I::Consumer<LolaRuntimeImpl>> {
-        let instance_info = LolaConsumerInfo {
-            instance_specifier: self.instance_specifier.clone(),
-        };
-        Ok(Consumer::new(instance_info))
+        Ok(Consumer::new(self.instance_info))
     }
 }
 
@@ -443,11 +601,11 @@ impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuild
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
         let instance_info = LolaProviderInfo {
             instance_specifier: self.instance_specifier.clone(),
+            interface_id: I::TYPE_ID,
         };
         I::Producer::new(instance_info)
     }
 }
-
 
 pub struct SampleConsumerDescriptor<I: Interface> {
     _interface: PhantomData<I>,
@@ -462,7 +620,7 @@ impl<I: Interface> Clone for SampleConsumerDescriptor<I> {
 }
 
 pub struct SampleConsumerBuilder<I: Interface> {
-    instance_specifier: InstanceSpecifier,
+    instance_info: LolaConsumerInfo,
     _interface: PhantomData<I>,
 }
 

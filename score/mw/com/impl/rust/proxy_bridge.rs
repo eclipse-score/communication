@@ -696,6 +696,7 @@ impl Drop for InstanceSpecifier {
 ///
 /// If needed, this struct could implement `Iterator`. However, since we only use the first handle
 /// in the current sample code, we do not need that yet.
+#[derive(Debug)]
 pub struct HandleContainer {
     inner: *mut ffi::NativeHandleContainer,
 }
@@ -717,6 +718,11 @@ impl HandleContainer {
         } else {
             None
         }
+    }
+
+    // Returns true if the container is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

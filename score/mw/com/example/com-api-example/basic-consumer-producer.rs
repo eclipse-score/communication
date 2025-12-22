@@ -11,11 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use com_api::{Runtime, Subscriber, Result, SampleContainer, Producer, Publisher, Subscription, Error,
-    SampleMaybeUninit, SampleMut, FindServiceSpecifier, ServiceDiscovery, ConsumerDescriptor, Builder,
-    InstanceSpecifier, MockRuntimeBuilderImpl, MockRuntimeImpl, LolaRuntimeBuilderImpl, LolaRuntimeImpl};
+use com_api::{
+    Builder, ConsumerDescriptor, Error, FindServiceSpecifier, InstanceSpecifier,
+    LolaRuntimeBuilderImpl, LolaRuntimeImpl, MockRuntimeBuilderImpl, MockRuntimeImpl, Producer,
+    Publisher, Result, Runtime, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery,
+    Subscriber, Subscription,
+};
 
-use com_api_gen::{VehicleConsumer, VehicleOfferedProducer, Tire, VehicleInterface};
+use com_api_gen::{Tire, VehicleConsumer, VehicleInterface, VehicleOfferedProducer};
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
@@ -91,20 +94,21 @@ impl<R: Runtime> VehicleMonitor<R> {
 
 fn use_consumer<R: Runtime>(runtime: &R) -> VehicleConsumer<R> {
     // Find all the avaiable service instances using ANY specifier
-    let consumer_discovery = runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Any);
+    // let consumer_discovery = runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Any);
+    // Lola don't have support for ANY specifier, so we use specific one
+    let consumer_discovery = runtime.find_service::<VehicleInterface>(
+        FindServiceSpecifier::Specific(InstanceSpecifier::new("Vehicle/Service/Instance").unwrap()),
+    );
     let available_service_instances = consumer_discovery.get_available_instances().unwrap();
-
-    let consumer_builder = available_service_instances
-        .into_iter()
-        .find(|desc| desc.get_instance_identifier().as_ref() == "/My/Funk/ServiceName")
-        .unwrap();
+    // if we use to ANY specifier, then we need to use find with instaceSpecifier
+    let consumer_builder = available_service_instances.into_iter().next().unwrap();
 
     consumer_builder.build().unwrap()
 }
 
 fn use_producer<R: Runtime>(runtime: &R) -> VehicleOfferedProducer<R> {
     let producer_builder = runtime.producer_builder::<VehicleInterface>(
-        InstanceSpecifier::new("/My/Funk/ServiceName").unwrap(),
+        InstanceSpecifier::new("Vehicle/Service/Instance").unwrap(),
     );
     let producer = producer_builder.build().unwrap();
     producer.offer().unwrap()
@@ -126,11 +130,11 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
 
 fn main() {
     let mock_runtime_builder = MockRuntimeBuilderImpl::new();
-    let mock_runtime = Builder::<MockRuntimeImpl>::build(mock_runtime_builder).unwrap();
+    let mock_runtime = mock_runtime_builder.build().unwrap();
     run_with_runtime("Mock", &mock_runtime);
 
     let lola_runtime_builder = LolaRuntimeBuilderImpl::new();
-    let lola_runtime = Builder::<LolaRuntimeImpl>::build(lola_runtime_builder).unwrap();
+    let lola_runtime = lola_runtime_builder.build().unwrap();
     run_with_runtime("Lola", &lola_runtime);
 }
 

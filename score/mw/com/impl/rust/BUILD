@@ -125,11 +125,6 @@ cc_library(
     ],
     deps = [
         ":proxy_bridge_cpp",
-        "//score/mw/com:runtime",
-        "//score/mw/com:runtime_configuration",
-        "//score/mw/com:types",
-        "//score/mw/com/impl:proxy_event_base",
-        "//score/mw/com/impl/plumbing:sample_ptr",
     ],
 )
 

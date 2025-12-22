@@ -18,7 +18,7 @@ rust_library(
     srcs = ["com_api_gen.rs"],
     crate_name = "com_api_gen",
     visibility = [
-        "//visibility:public",  # platform_only
+        "//score/mw/com:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api",
@@ -32,8 +32,5 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl/rust:registry_bridge_macro_cpp",
-    ],
-    visibility = [
-        "//visibility:public",  # platform_only
     ],
 )

@@ -148,3 +148,16 @@ pub struct SamplePtr<T> {
 // SAFETY: There is no connection of any data to a particular thread, also not on C++ side.
 // Therefore, it is safe to send this struct to another thread.
 unsafe impl<T> Send for SamplePtr<T> {}
+
+impl<T> SamplePtr<T> {
+    // This function provide pointer to the managed object.
+    // # Safety
+    // The returned pointer is only valid as long as the SamplePtr is alive.
+    // Dereferencing the pointer must be done with care to avoid undefined behavior.
+    pub unsafe fn get_managed_object(&self) -> *const T {
+        let self_ptr = self as *const Self as *const *const T;
+        // Since _managed_object is the first field and unions align to largest member,
+        // it should be at a consistent offset
+        self_ptr.read()
+    }
+}
