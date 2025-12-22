@@ -22,7 +22,9 @@ rust_library(
     visibility = [
         "//visibility:public",  # platform_only
     ],
-    deps = [],
+    deps = [
+        "@score_baselibs_rust//src/containers:containers",
+    ],
 )
 
 rust_test(

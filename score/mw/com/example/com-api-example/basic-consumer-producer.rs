@@ -34,7 +34,7 @@ impl<R: Runtime> VehicleMonitor<R> {
 
     /// Monitor tire data from the consumer
     pub fn read_tire_data(&self) -> Result<String> {
-        let mut sample_buf = SampleContainer::new();
+        let mut sample_buf = SampleContainer::new(3);
 
         match self.tire_subscriber.try_receive(&mut sample_buf, 1) {
             Ok(0) => Err(Error::Fail),
