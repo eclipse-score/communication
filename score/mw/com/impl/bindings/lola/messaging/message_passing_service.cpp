@@ -16,9 +16,16 @@
 
 #include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 
+#include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/message_passing/i_server_connection.h"
 #include "score/os/errno_logging.h"
 #include "score/mw/log/logging.h"
+
+#ifdef __QNX__
+#include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
+#else
+#include "score/message_passing/unix_domain/unix_domain_engine.h"
+#endif
 
 #include <memory>
 #include <optional>
@@ -29,6 +36,50 @@ namespace
 constexpr inline std::size_t kNumberOfLocalThreads = 2U;
 
 constexpr auto kLocalThreadPoolName = "mw::com MessageReceiver";
+
+score::message_passing::LoggingCallback GetLolaLogger()
+{
+    return [](score::message_passing::LogSeverity severity, score::message_passing::LogItems items) -> void {
+        using LogStreamFactoryPtr = score::mw::log::LogStream (*)(std::string_view) noexcept;
+        constexpr auto kLogLevels = score::cpp::to_underlying(score::message_passing::LogSeverity::kVerbose) + 1U;
+        constexpr std::array<LogStreamFactoryPtr, kLogLevels> StreamFactories{{
+            &score::mw::log::LogFatal,
+            &score::mw::log::LogError,
+            &score::mw::log::LogWarn,
+            &score::mw::log::LogWarn,  // LogInfo
+            &score::mw::log::LogWarn,  // LogDebug
+            &score::mw::log::LogWarn   // LogVerbose
+        }};
+        auto severity_num = score::cpp::to_underlying(severity);
+        // LCOV_EXCL_START: Sanity guard condition unreachable in tests
+        if (severity_num >= kLogLevels)
+        {
+            return;
+        }
+        // LCOV_EXCL_STOP
+        score::mw::log::LogStream stream = (*StreamFactories[severity_num])("mp_2");
+        for (auto& item : items)
+        {
+            std::visit(
+                [&stream](auto&& arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    // Suppress "AUTOSAR C++14 A7-1-8", The rule states: "A non-type specifier shall be placed before
+                    // a type specifier in a declaration.".
+                    // Rationale: False positive: if constexpr is the required C++17 construct here.
+                    // coverity[autosar_cpp14_a7_1_8_violation: FALSE]
+                    if constexpr (std::is_same_v<T, const void*>)
+                    {
+                        stream << score::memory::shared::PointerToLogValue(arg);
+                    }
+                    else
+                    {
+                        stream << arg;
+                    }
+                },
+                item);
+        }
+    };
+}
 
 }  // namespace
 
@@ -44,7 +95,9 @@ MessagePassingService::MessagePassingService(
     // coverity[autosar_cpp14_a8_4_12_violation] Function only uses the object without affecting ownership
     const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory) noexcept
     : IMessagePassingService{},
-      client_factory_{},
+      client_factory_{score::cpp::pmr::make_shared<Engine>(score::cpp::pmr::get_default_resource(),
+                                                    score::cpp::pmr::get_default_resource(),
+                                                    GetLolaLogger())},
       // Suppress "AUTOSAR C++14 A15-4-2" rule findings. This rule states: "Throwing an exception in a
       // "noexcept" function." In this case it is ok, because the system anyways forces the process to
       // terminate if an exception is thrown.
@@ -53,16 +106,7 @@ MessagePassingService::MessagePassingService(
       qm_{},
       asil_b_{}
 {
-    // Suppress "AUTOSAR C++14 A16-0-1" rule findings.
-    // This is the standard way to determine if it runs on QNX or Unix
-    // coverity[autosar_cpp14_a16_0_1_violation]
-#ifdef __QNX__
-    score::message_passing::QnxDispatchServerFactory server_factory{client_factory_.GetEngine()};
-    // coverity[autosar_cpp14_a16_0_1_violation]
-#else
-    score::message_passing::UnixDomainServerFactory server_factory{client_factory_.GetEngine()};
-    // coverity[autosar_cpp14_a16_0_1_violation]
-#endif
+    ServerFactory server_factory{client_factory_.GetEngine()};
 
     const auto qm_client_quality_type =
         config_asil_b.has_value() ? ClientQualityType::kASIL_QMfromB : ClientQualityType::kASIL_QM;

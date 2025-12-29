@@ -183,9 +183,12 @@ class QnxDispatchEngine final : public ISharedResourceEngine
         virtual std::int32_t ProcessReadRequest(resmgr_context_t* const ctp) noexcept = 0;
     };
 
-    QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource, OsResources os_resources) noexcept;
-    explicit QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource) noexcept
-        : QnxDispatchEngine(memory_resource, GetDefaultOsResources(memory_resource))
+    QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource,
+                      OsResources os_resources,
+                      LoggingCallback logger = GetCerrLogger()) noexcept;
+    explicit QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource,
+                               LoggingCallback logger = GetCerrLogger()) noexcept
+        : QnxDispatchEngine(memory_resource, GetDefaultOsResources(memory_resource), std::move(logger))
     {
     }
     ~QnxDispatchEngine() noexcept override;
@@ -213,6 +216,10 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     const OsResources& GetOsResources() noexcept
     {
         return os_resources_;
+    }
+    const LoggingCallback& GetLogger() noexcept override
+    {
+        return logger_;
     }
 
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
@@ -323,6 +330,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
 
     score::cpp::pmr::memory_resource* const memory_resource_;
     OsResources os_resources_;
+    LoggingCallback logger_;
 
     bool quit_flag_;
     // NOLINTNEXTLINE(score-banned-type) TODO: wait for new clarification of CB #26380215 from QNX

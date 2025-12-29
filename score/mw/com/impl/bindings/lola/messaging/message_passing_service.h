@@ -151,12 +151,18 @@ class MessagePassingService final : public IMessagePassingService
 // This is the standard way to determine if it runs on QNX or Unix
 // coverity[autosar_cpp14_a16_0_1_violation]
 #ifdef __QNX__
-    score::message_passing::QnxDispatchClientFactory client_factory_;
+    using Engine = score::message_passing::QnxDispatchEngine;
+    using ClientFactory = score::message_passing::QnxDispatchClientFactory;
+    using ServerFactory = score::message_passing::QnxDispatchServerFactory;
     // coverity[autosar_cpp14_a16_0_1_violation]
 #else
-    score::message_passing::UnixDomainClientFactory client_factory_;
+    using Engine = score::message_passing::UnixDomainEngine;
+    using ClientFactory = score::message_passing::UnixDomainClientFactory;
+    using ServerFactory = score::message_passing::UnixDomainServerFactory;
     // coverity[autosar_cpp14_a16_0_1_violation]
 #endif
+
+    ClientFactory client_factory_;
 
     /// \brief thread pool for processing local event update notification.
     /// \detail local update notification leads to a user provided receive handler callout, whose

@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
 
+#include "score/message_passing/log/log.h"
 #include "score/message_passing/non_allocating_future/non_allocating_future.h"
 #include "score/message_passing/qnx_dispatch/qnx_resource_path.h"
 
@@ -70,10 +71,13 @@ void IfUnexpectedTerminate(const score::cpp::expected<T, score::os::Error> expec
 
 }  // namespace
 
-QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource, OsResources os_resources) noexcept
+QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource,
+                                     OsResources os_resources,
+                                     LoggingCallback logger) noexcept
     : ISharedResourceEngine{},
       memory_resource_{memory_resource},
       os_resources_{std::move(os_resources)},
+      logger_{std::move(logger)},
       quit_flag_{false},
       thread_{},
       thread_mutex_{},
@@ -132,6 +136,8 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
 
     SetupResourceManagerCallbacks();
 
+    LogDebug(logger_, "QnxDispatchEngine thread-start ", this);
+
     // Suppress "AUTOSAR C++14 A8-5-3" rule finding: "A variable of type auto shall not be initialized using {} or
     // ={} braced initialization.". (Ticket-219101)
     // coverity[autosar_cpp14_a8_5_3_violation: FALSE] False positive: the variable is not declared with 'auto'.
@@ -143,6 +149,7 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
             // coverity[autosar_cpp14_a8_5_3_violation: FALSE] False positive: the variable is not declared with 'auto'.
             std::lock_guard release{thread_mutex_};
         }
+        LogDebug(logger_, "QnxDispatchEngine thread-start-sync ", this);
         RunOnThread();
     });
 }
@@ -516,6 +523,7 @@ std::int32_t QnxDispatchEngine::io_open(resmgr_context_t* const ctp,
     ResourceManagerServer& server = ResmgrHandleToServer(handle);
     QnxDispatchEngine& self = *server.engine_;
     auto& iofunc = self.GetOsResources().iofunc;
+    LogDebug(self.logger_, "QnxDispatchEngine io-open ", &self);
 
     // the attr locks are currently not needed, but we should not forget about them in multithreaded implementation
     score::cpp::ignore = iofunc->iofunc_attr_lock(&server.attr);

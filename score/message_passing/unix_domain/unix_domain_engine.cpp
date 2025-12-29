@@ -21,9 +21,10 @@ namespace score
 namespace message_passing
 {
 
-UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource) noexcept
+UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource, LoggingCallback logger) noexcept
     : memory_resource_{memory_resource},
       os_resources_{GetDefaultOsResources(memory_resource)},
+      logger_{std::move(logger)},
       quit_flag_{false},
       poll_fds_{memory_resource},
       poll_endpoints_{memory_resource},

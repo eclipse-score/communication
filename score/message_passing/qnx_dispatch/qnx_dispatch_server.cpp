@@ -13,6 +13,7 @@
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_server.h"
 
 #include "score/message_passing/client_server_communication.h"
+#include "score/message_passing/log/log.h"
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
 
 #include "score/os/errno.h"
@@ -339,13 +340,16 @@ std::int32_t QnxDispatchServer::ProcessConnect(resmgr_context_t* const ctp, io_o
 {
     auto& os_resources = engine_->GetOsResources();
     auto& channel = os_resources.channel;
+    auto& logger = engine_->GetLogger();
 
     _client_info cinfo{};
     const auto result = channel->ConnectClientInfo(ctp->info.scoid, &cinfo, 0);
     if (!result.has_value())
     {
+        LogError(logger, "ProcessConnect ConnectClientInfo error");
         return EINVAL;
     }
+    LogInfo(logger, "Incoming connection, uid=", cinfo.cred.euid, ", pid=", ctp->info.pid);
     ClientIdentity identity{ctp->info.pid, cinfo.cred.euid, cinfo.cred.egid};
     // here, we need to provide server directly as an argument
     auto connection = score::cpp::pmr::make_unique<ServerConnection>(engine_->GetMemoryResource(), identity, *this);
@@ -353,12 +357,14 @@ std::int32_t QnxDispatchServer::ProcessConnect(resmgr_context_t* const ctp, io_o
     auto data_expected = connect_callback_(*connection);
     if (!data_expected.has_value())
     {
+        LogError(logger, "ProcessConnect connect_callback error");
         return EACCES;
     }
 
     const score::cpp::expected_blank<std::int32_t> status = engine_->AttachConnection(ctp, msg, *this, *connection);
     if (!status.has_value())
     {
+        LogError(logger, "ProcessConnect AttachConnection error");
         return status.error();
     }
 

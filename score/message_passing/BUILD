@@ -24,6 +24,7 @@ py_unittest_qnx_test(
         ":unix_domain_test",
     ],
     test_suites = [
+        "@score_communication//score/message_passing/log:unit_test_suite_qnx",
         "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_qnx",
     ],
     visibility = ["//score/message_passing:__pkg__"],
@@ -36,6 +37,7 @@ test_suite(
         ":qnx_resource_path_test",
         ":timed_command_queue_test",
         ":unix_domain_test",
+        "@score_communication//score/message_passing/log:unit_test_suite_host",
         "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_host",
     ],
     visibility = ["//score/message_passing:__pkg__"],
@@ -81,6 +83,7 @@ cc_library(
         "@score_baselibs//score/containers:intrusivelist",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/os:errno",
+        "@score_communication//score/message_passing/log",
     ],
 )
 

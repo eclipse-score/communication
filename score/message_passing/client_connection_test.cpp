@@ -50,6 +50,7 @@ class ClientConnectionTest : public ::testing::Test
         resource_ = score::cpp::pmr::get_default_resource();
         engine_ = score::cpp::pmr::make_shared<StrictMock<SharedResourceEngineMock>>(resource_);
         EXPECT_CALL(*engine_, GetMemoryResource()).WillRepeatedly(Return(resource_));
+        EXPECT_CALL(*engine_, GetLogger()).Times(AtLeast(0)).WillRepeatedly(ReturnRef(logger_));
         EXPECT_CALL(*engine_, IsOnCallbackThread()).Times(AtLeast(0)).WillRepeatedly([&]() -> bool {
             return on_callback_thread_;
         });
@@ -107,7 +108,19 @@ class ClientConnectionTest : public ::testing::Test
 
     void AtTryOpenCall_Return(score::cpp::expected<std::int32_t, score::os::Error> result)
     {
-        EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_})).WillOnce(Return(result));
+        if (connection_delay_ms_ == 0)
+        {
+            EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
+                .WillOnce(Return(result));
+        }
+        else
+        {
+            EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
+                .WillOnce([result, this](auto) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds{connection_delay_ms_});
+                    return result;
+                });
+        }
     }
 
     void ExpectCleanUpOwner(detail::ClientConnection& connection)
@@ -295,6 +308,7 @@ class ClientConnectionTest : public ::testing::Test
     constexpr static std::uint32_t kMaxNotifySize = 12U;
 
     score::cpp::pmr::memory_resource* resource_{};
+    LoggingCallback logger_{};
     std::shared_ptr<StrictMock<SharedResourceEngineMock>> engine_{};
     const std::string service_identifier_{"test_identifier"};
     const ServiceProtocolConfig protocol_config_{service_identifier_, kMaxSendSize, kMaxReplySize, kMaxNotifySize};
@@ -306,6 +320,7 @@ class ClientConnectionTest : public ::testing::Test
     ISharedResourceEngine::PosixEndpointEntry* posix_endpoint_{};
     std::atomic<bool> on_callback_thread_{false};  // only atomic for tsan and sleep synchronization
     std::thread background_thread_{};
+    std::int32_t connection_delay_ms_{0};
 };
 
 TEST_F(ClientConnectionTest, Constructed)
@@ -495,6 +510,28 @@ TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenExplicitlyS
 {
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
+
+    StopCurrentConnection(connection);
+}
+
+TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptWithDelayThenExplicitlyStopping)
+{
+    std::int32_t counter{0};
+    logger_ = [&counter](LogSeverity severity, LogItems items) -> void {
+        if ((severity == LogSeverity::kWarn) && (items.size() > 1) &&
+            std::holds_alternative<std::string_view>(items[0]) &&
+            std::get<std::string_view>(items[0]) == std::string_view{"Time exceeded by "})
+        {
+            ++counter;
+        }
+    };
+    connection_delay_ms_ = 100;
+
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    EXPECT_EQ(counter, 1);
+    logger_ = LoggingCallback{};
 
     StopCurrentConnection(connection);
 }
