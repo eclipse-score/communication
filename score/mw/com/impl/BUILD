@@ -30,6 +30,7 @@ cc_library(
         ":generic_proxy_event",
         ":proxy_event",
         ":proxy_field",
+        ":generic_skeleton",
         ":skeleton_event",
         ":skeleton_field",
         ":traits",
@@ -107,6 +108,78 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton",
+    srcs = ["generic_skeleton.cpp"],
+    hdrs = ["generic_skeleton.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":error",
+        "//score/mw/com/impl/plumbing",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":generic_skeleton_event",
+        ":instance_identifier",
+        ":instance_specifier",
+        ":runtime",
+        ":skeleton_base",
+        ":skeleton_binding",
+        ":size_info",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton_event",
+    srcs = ["generic_skeleton_event.cpp"],
+    hdrs = ["generic_skeleton_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":generic_skeleton_event_binding",
+        ":skeleton_event_base",
+        ":skeleton_event_binding",
+        ":size_info",
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton_event_binding",
+    hdrs = [
+        "generic_skeleton_event_binding.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
+        "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+    ],
+    deps = [
+        ":skeleton_event_binding",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "size_info",
+    hdrs = ["size_info.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__pkg__",
+        "//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -381,6 +454,8 @@ cc_library(
     ],
     deps = [
         ":binding_type",
+        ":generic_skeleton_event_binding",
+        ":size_info",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:i_shared_memory_resource",

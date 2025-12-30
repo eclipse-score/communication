@@ -146,6 +146,11 @@ class SkeletonBaseView
         return skeleton_base_.binding_.get();
     }
 
+    bool IsOffered() const
+    {
+        return skeleton_base_.service_offered_flag_.IsSet();
+    }
+
     void RegisterEvent(const std::string_view event_name, SkeletonEventBase& event)
     {
         const auto result = skeleton_base_.events_.emplace(event_name, event);

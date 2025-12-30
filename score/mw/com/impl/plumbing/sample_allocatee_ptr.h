@@ -19,12 +19,63 @@
 #include <score/overload.hpp>
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <variant>
 
 namespace score::mw::com::impl
 {
+
+/// @brief An RAII wrapper for a type-erased sample allocated by a GenericSkeletonEvent.
+class GenericEventSamplePtr
+{
+  public:
+    using element_type = void;
+
+    GenericEventSamplePtr(void* data,
+                          lola::ControlSlotCompositeIndicator control_slot_indicator,
+                          std::function<void(lola::ControlSlotCompositeIndicator)> deallocator)
+        : data_(data), control_slot_indicator_(control_slot_indicator), deallocator_(std::move(deallocator))
+    {
+    }
+
+    ~GenericEventSamplePtr()
+    {
+        if (data_ != nullptr)
+        {
+            deallocator_(control_slot_indicator_);
+        }
+    }
+
+    GenericEventSamplePtr(const GenericEventSamplePtr&) = delete;
+    GenericEventSamplePtr& operator=(const GenericEventSamplePtr&) = delete;
+
+    GenericEventSamplePtr(GenericEventSamplePtr&& other) noexcept
+        : data_(other.data_),
+          control_slot_indicator_(other.control_slot_indicator_),
+          deallocator_(std::move(other.deallocator_))
+    {
+        other.data_ = nullptr;
+    }
+
+    GenericEventSamplePtr& operator=(GenericEventSamplePtr&&) = default;
+
+    void* get() const
+    {
+        return data_;
+    }
+
+    lola::ControlSlotCompositeIndicator GetControlSlotIndicator() const
+    {
+        return control_slot_indicator_;
+    }
+
+  private:
+    void* data_;
+    lola::ControlSlotCompositeIndicator control_slot_indicator_;
+    std::function<void(lola::ControlSlotCompositeIndicator)> deallocator_;
+};
 
 /// \brief Pointer to a data sample allocated by the Communication Management implementation (mimics std::unique_ptr)
 ///
@@ -336,6 +387,114 @@ template <typename T>
 auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<typename T::element_type>
 {
     return SampleAllocateePtr<typename T::element_type>{std::move(ptr)};
+}
+
+/// \brief Template specialization of SampleAllocateePtr for void.
+template <>
+class SampleAllocateePtr<void>
+{
+  public:
+    using pointer = void*;
+    using element_type = void;
+
+    constexpr SampleAllocateePtr() noexcept : SampleAllocateePtr(score::cpp::blank{}) {}
+    constexpr explicit SampleAllocateePtr(std::nullptr_t) noexcept : SampleAllocateePtr() {}
+
+    SampleAllocateePtr(const SampleAllocateePtr<void>&) = delete;
+    SampleAllocateePtr& operator=(const SampleAllocateePtr<void>&) & = delete;
+
+    SampleAllocateePtr(SampleAllocateePtr<void>&& other) noexcept : SampleAllocateePtr()
+    {
+        this->Swap(other);
+    }
+
+    SampleAllocateePtr& operator=(SampleAllocateePtr<void>&& other) & noexcept
+    {
+        this->Swap(other);
+        return *this;
+    }
+
+    SampleAllocateePtr& operator=(std::nullptr_t) noexcept
+    {
+        reset();
+        return *this;
+    }
+
+    ~SampleAllocateePtr() noexcept = default;
+
+    void reset() noexcept
+    {
+        auto visitor = score::cpp::overload(
+            [](lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> void { internal_ptr.reset(); },
+            [](GenericEventSamplePtr& internal_ptr) noexcept -> void {
+                GenericEventSamplePtr temp = std::move(internal_ptr);
+            },
+            [](const score::cpp::blank&) noexcept -> void {});
+        std::visit(visitor, internal_);
+    }
+
+    void Swap(SampleAllocateePtr<void>& other) noexcept
+    {
+        using std::swap;
+        swap(internal_, other.internal_);
+    }
+
+    pointer Get() const noexcept
+    {
+        auto visitor = score::cpp::overload(
+            [](const lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> pointer { return internal_ptr.get(); },
+            [](const GenericEventSamplePtr& internal_ptr) noexcept -> pointer { return internal_ptr.get(); },
+            [](const score::cpp::blank&) noexcept -> pointer { return nullptr; });
+        return std::visit(visitor, internal_);
+    }
+
+    explicit operator bool() const noexcept
+    {
+        auto visitor = score::cpp::overload(
+            [](const lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> bool {
+                return static_cast<bool>(internal_ptr);
+            },
+            [](const GenericEventSamplePtr& internal_ptr) noexcept -> bool { return internal_ptr.get() != nullptr; },
+            [](const score::cpp::blank&) noexcept -> bool { return false; });
+        return std::visit(visitor, internal_);
+    }
+
+    // operator* is intentionally omitted for void specialization.
+
+    pointer operator->() const noexcept
+    {
+        auto visitor = score::cpp::overload(
+            [](const lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> pointer { return internal_ptr.get(); },
+            [](const GenericEventSamplePtr& internal_ptr) noexcept -> pointer { return internal_ptr.get(); },
+            [](const score::cpp::blank&) noexcept -> pointer {
+                std::terminate();
+                return nullptr;
+            });
+        return std::visit(visitor, internal_);
+    }
+
+  private:
+    template <typename T>
+    constexpr explicit SampleAllocateePtr(T ptr) : internal_{std::move(ptr)}
+    {
+    }
+
+    template <typename T>
+    friend auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<typename T::element_type>;
+
+    template <typename T>
+    friend class SampleAllocateePtrView;
+
+    template <typename T>
+    friend class SampleAllocateePtrMutableView;
+
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr<void>, GenericEventSamplePtr> internal_;
+};
+
+template <>
+inline void swap(SampleAllocateePtr<void>& lhs, SampleAllocateePtr<void>& rhs) noexcept
+{
+    lhs.Swap(rhs);
 }
 
 /// \brief SampleAllocateePtr is user facing, in order to interact with its internals we provide a view towards it

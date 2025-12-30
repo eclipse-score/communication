@@ -16,7 +16,9 @@
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/size_info.h"
 #include "score/mw/com/impl/service_element_type.h"
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 
 #include <score/callback.hpp>
 #include <score/optional.hpp>
@@ -96,6 +98,14 @@ class SkeletonBinding
 
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
+
+    /// @brief Creates a binding for a generic event.
+    /// @param event_name The name of the event.
+    /// @param size The size for the event's data.
+    /// @param alignment The alignment for the event's data.
+    /// @return A unique pointer to the created binding or an error.
+    virtual Result<std::unique_ptr<GenericSkeletonEventBinding>>
+    CreateGenericEventBinding(std::string_view event_name, size_t size, size_t alignment) noexcept = 0;
 };
 
 }  // namespace score::mw::com::impl
