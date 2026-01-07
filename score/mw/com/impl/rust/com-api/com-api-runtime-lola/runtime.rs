@@ -46,11 +46,18 @@ pub struct LolaRuntimeImpl {}
 pub struct LolaProviderInfo {
     instance_specifier: InstanceSpecifier,
     interface_id: &'static str,
+    skeleton_handle: SkeletonInstanceManager,
 }
 
 impl ProviderInfo for LolaProviderInfo {
     fn offer_service(&self) -> Result<()> {
-        todo!("FFI Call to offer service using skeleton handle will be added here")
+        //SAFETY: it is safe as we are passing valid skeleton handle to offer service
+        let status =
+            unsafe { generic_bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
+        if !status {
+            return Err(Error::Fail);
+        }
+        Ok(())
     }
 
     fn stop_offer_service(&self) -> Result<()> {
@@ -213,8 +220,8 @@ pub struct SampleMut<'a, T>
 where
     T: CommData,
 {
+    skeleton_event_ptr: &'a SkeletonEventBase,
     data: T,
-    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
@@ -228,7 +235,20 @@ where
     }
 
     fn send(self) -> com_api_concept::Result<()> {
-        todo!()
+        //SAFETY: It is safe as we are passing valid skeleton event pointer and data pointer to send event
+        //the skeleton event pointer is created during publisher creation
+        //and data pointer is valid as it is owned by this SampleMut instance
+        let status = unsafe {
+            generic_bridge_ffi_rs::skeleton_send_event(
+                self.skeleton_event_ptr as *const SkeletonEventBase as *mut SkeletonEventBase,
+                T::ID,
+                &self.data as *const T as *const core::ffi::c_void,
+            )
+        };
+        if !status {
+            return Err(Error::Fail);
+        }
+        Ok(())
     }
 }
 
@@ -257,8 +277,8 @@ pub struct SampleMaybeUninit<'a, T>
 where
     T: CommData,
 {
+    skeleton_event_ptr: &'a SkeletonEventBase,
     data: MaybeUninit<T>,
-    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
@@ -268,16 +288,19 @@ where
     type SampleMut = SampleMut<'a, T>;
 
     fn write(self, val: T) -> SampleMut<'a, T> {
+        //With allocate API here we need to write on same memory location
+        //which receive from Lola allocate call
+        //With this we will avoid one copy during send
         SampleMut {
+            skeleton_event_ptr: self.skeleton_event_ptr,
             data: val,
-            lifetime: PhantomData,
         }
     }
 
     unsafe fn assume_init(self) -> SampleMut<'a, T> {
         SampleMut {
+            skeleton_event_ptr: self.skeleton_event_ptr,
             data: unsafe { self.data.assume_init() },
-            lifetime: PhantomData,
         }
     }
 }
@@ -288,6 +311,54 @@ where
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         &mut self.data
+    }
+}
+
+struct SkeletonInstanceManager(Arc<NativeSkeletonHandle>);
+
+impl Clone for SkeletonInstanceManager {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
+impl Debug for SkeletonInstanceManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SkeletonInstanceManager").finish()
+    }
+}
+
+struct NativeSkeletonHandle {
+    handle: *mut SkeletonBase,
+}
+
+// SAFETY: NativeSkeletonHandle is safe to share between threads because:
+// The underlying FFI skeleton handle is thread-safe
+// Access is controlled through Arc which provides atomic reference counting
+// The handle lifetime is managed safely through Drop
+unsafe impl Sync for NativeSkeletonHandle {}
+unsafe impl Send for NativeSkeletonHandle {}
+
+impl NativeSkeletonHandle {
+    fn create_skeleton(
+        interface_id: &str,
+        instance_specifier: &proxy_bridge_rs::InstanceSpecifier,
+    ) -> Self {
+        //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
+        let handle = unsafe {
+            generic_bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native())
+        };
+        Self { handle }
+    }
+}
+
+impl Drop for NativeSkeletonHandle {
+    fn drop(&mut self) {
+        //SAFETY: It is safe as we are passing valid skeleton handle to destroy skeleton
+        // the handle was created using create_skeleton
+        unsafe {
+            generic_bridge_ffi_rs::destroy_skeleton(self.handle);
+        }
     }
 }
 
@@ -506,27 +577,12 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct Publisher<T> {
+    identifier: String,
+    skeleton_event_ptr: *mut SkeletonEventBase,
     _data: PhantomData<T>,
-}
-
-impl<T> Default for Publisher<T>
-where
-    T: CommData,
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T> Publisher<T>
-where
-    T: CommData,
-{
-    #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
-    pub fn new() -> Self {
-        Self { _data: PhantomData }
-    }
+    _skeleton_instance: SkeletonInstanceManager,
 }
 
 impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
@@ -538,15 +594,31 @@ where
     where
         Self: 'a;
 
-    fn allocate(&self) -> com_api_concept::Result<Self::SampleMaybeUninit<'_>> {
+    fn allocate<'a>(&'a self) -> com_api_concept::Result<Self::SampleMaybeUninit<'a>> {
+        //Once Allocate API of Lola FFI is ready , call it here
+        // for now , just create uninit sample
         Ok(SampleMaybeUninit {
+            skeleton_event_ptr: unsafe { &*self.skeleton_event_ptr },
             data: MaybeUninit::uninit(),
-            lifetime: PhantomData,
         })
     }
 
-    fn new(_identifier: &str, _instance_info: LolaProviderInfo) -> com_api_concept::Result<Self> {
-        Ok(Self { _data: PhantomData })
+    fn new(identifier: &str, instance_info: LolaProviderInfo) -> com_api_concept::Result<Self> {
+        //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
+        // skeleton handle is created during producer offer call
+        let skeleton_event_ptr = unsafe {
+            generic_bridge_ffi_rs::get_event_from_skeleton(
+                instance_info.skeleton_handle.0.handle,
+                instance_info.interface_id,
+                identifier,
+            )
+        };
+        Ok(Self {
+            identifier: identifier.to_string(),
+            skeleton_event_ptr,
+            _data: PhantomData,
+            _skeleton_instance: instance_info.skeleton_handle.clone(),
+        })
     }
 }
 
@@ -632,11 +704,20 @@ impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder
 
 impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
+        let instance_specifier_runtime =
+            proxy_bridge_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
+                .map_err(|_| Error::Fail)?;
+
+        let skeleton_handle =
+            NativeSkeletonHandle::create_skeleton(I::INTERFACE_ID, &instance_specifier_runtime);
+
         let instance_info = LolaProviderInfo {
-            instance_specifier: self.instance_specifier.clone(),
+            instance_specifier: self.instance_specifier,
             interface_id: I::INTERFACE_ID,
+            skeleton_handle: SkeletonInstanceManager(Arc::new(skeleton_handle)),
         };
-        I::Producer::new(instance_info)
+
+        I::Producer::new(instance_info).map_err(|_| Error::Fail)
     }
 }
 

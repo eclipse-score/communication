@@ -55,6 +55,7 @@
 // - It allows passing string data across FFI boundaries without requiring null termination
 // - Enables efficient zero-copy string passing for interface_id, event_id, and type_name parameters
 
+use core::fmt::{Debug, Formatter};
 use std::ffi::c_char;
 
 /// Opaque C++ void* pointer wrapper
@@ -84,6 +85,12 @@ pub struct SkeletonBase {
 #[repr(C)]
 pub struct SkeletonEventBase {
     dummy: [u8; 0],
+}
+
+impl Debug for SkeletonEventBase {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SkeletonEventBase").finish()
+    }
 }
 
 /// String view similar to C++'s std::string_view
@@ -211,7 +218,7 @@ extern "C" {
         event_ptr: *mut SkeletonEventBase,
         event_type: StringView,
         data_ptr: CVoidPtr,
-    );
+    ) -> bool;
 
     /// Create proxy by UID and handle
     ///
@@ -519,11 +526,11 @@ pub unsafe fn skeleton_send_event(
     event_ptr: *mut SkeletonEventBase,
     event_type: &str,
     data_ptr: *const std::ffi::c_void,
-) {
+) -> bool {
     // SAFETY: event_ptr and data_ptr are guaranteed to be valid per the caller's contract.
     // The C++ implementation handles type matching and data sending safely.
     let c_name = StringView::from(event_type);
-    mw_com_skeleton_send_event(event_ptr, c_name, data_ptr);
+    mw_com_skeleton_send_event(event_ptr, c_name, data_ptr)
 }
 
 /// Unsafe wrapper around mw_com_proxy_event_subscribe

@@ -84,6 +84,7 @@ impl<R: Runtime> VehicleMonitor<R> {
     ///
     /// Returns an error if allocation or sending of the sample fails.
     pub fn write_tire_data(&self, tire: Tire) -> Result<()> {
+        // Allocate API of lola is not calling at the moment
         let uninit_sample = self.producer.left_tire.allocate()?;
         let sample = uninit_sample.write(tire);
         sample.send()?;

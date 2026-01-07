@@ -94,11 +94,12 @@ SkeletonEventBase* mw_com_get_event_from_skeleton(SkeletonBase* skeleton_ptr,
 /// \param event_ptr Opaque skeleton event pointer (SkeletonEvent<T>*)
 /// \param event_type UTF-8 string view of event type name
 /// \param data_ptr Pointer to event data (T*)
-void mw_com_skeleton_send_event(SkeletonEventBase* event_ptr, StringView event_type, void* data_ptr)
+/// \return true if send successful, false otherwise
+bool mw_com_skeleton_send_event(SkeletonEventBase* event_ptr, StringView event_type, void* data_ptr)
 {
     if (event_ptr == nullptr || event_type.data == nullptr || data_ptr == nullptr)
     {
-        return;
+        return false;
     }
 
     auto name = static_cast<std::string_view>(event_type);
@@ -107,7 +108,7 @@ void mw_com_skeleton_send_event(SkeletonEventBase* event_ptr, StringView event_t
 
     if (registry == nullptr)
     {
-        return;
+        return false;
     }
     return registry->SkeletonSendEvent(event_ptr, data_ptr);
 }

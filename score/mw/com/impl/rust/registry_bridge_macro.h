@@ -149,7 +149,8 @@ class TypeOperations
     /// \details Casts the type-erased data pointer back to the actual type and sends it via SkeletonEvent.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param data_ptr Pointer to type T (erased as void*, casted back to T* in implementation)
-    virtual void SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) = 0;
+    /// \return true if send successful, false otherwise
+    virtual bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) = 0;
 
     /// \brief Get data pointer from SamplePtr of specific type
     /// \details Casts the type-erased SamplePtr back to SamplePtr<T> and retrieves the underlying data pointer.
@@ -182,21 +183,21 @@ class TypeOperationImpl : public TypeOperations
         return details::GetSamplesFromEvent<T>(*proxy_event, callBack, max_sample);
     }
 
-    void SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) override
+    bool SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) override
     {
 
         auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
         if (skeleton_event == nullptr)
         {
-            return;
+            return false;
         }
         // Cast data_ptr back to T*
         T* typed_data = static_cast<T*>(data_ptr);
         if (typed_data == nullptr)
         {
-            return;
+            return false;
         }
-        skeleton_event->Send(*typed_data);
+        return skeleton_event->Send(*typed_data).has_value();
     }
 
     const void* GetSamplePtrData(const void* sample_ptr) override

@@ -704,7 +704,9 @@ impl<S> SampleContainer<S> {
     /// # Errors
     /// Returns 'Error' if container is already full.
     pub fn push_back(&mut self, new: S) -> Result<()> {
-        self.inner.push_back(new).map_err(|_| Error::AllocateFailed)?;
+        self.inner
+            .push_back(new)
+            .map_err(|_| Error::AllocateFailed)?;
         Ok(())
     }
 
