@@ -94,13 +94,10 @@ impl<R: Runtime> VehicleMonitor<R> {
 
 fn use_consumer<R: Runtime>(runtime: &R) -> VehicleConsumer<R> {
     // Find all the avaiable service instances using ANY specifier
-    // let consumer_discovery = runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Any);
-    // Lola don't have support for ANY specifier, so we use specific one
     let consumer_discovery = runtime.find_service::<VehicleInterface>(
         FindServiceSpecifier::Specific(InstanceSpecifier::new("Vehicle/Service/Instance").unwrap()),
     );
     let available_service_instances = consumer_discovery.get_available_instances().unwrap();
-    // if we use to ANY specifier, then we need to use find with instaceSpecifier
     let consumer_builder = available_service_instances.into_iter().next().unwrap();
 
     consumer_builder.build().unwrap()

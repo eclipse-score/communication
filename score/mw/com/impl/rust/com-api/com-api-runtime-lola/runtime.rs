@@ -295,9 +295,6 @@ where
 
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
-    //if we need to make this as &'static str, then we need to
-    // add lifetime parameter to SubscriberImpl and everywhere it is used
-    // but for simplicity we keep it as String and avoid lifetimes as this is just ID string
     identifier: String,
     instance_info: Option<LolaConsumerInfo>,
     proxy_instance: Option<*mut ProxyBase>, // Stores the proxy instance
@@ -361,9 +358,6 @@ where
     T: Reloc + Send + Debug,
 {
     event: Option<*mut ProxyEventBase>,
-    //if we need to make this as &'static str, then we need to
-    // add lifetime parameter to SubscriberImpl and everywhere it is used
-    // but for simplicity we keep it as String and avoid lifetimes as this is just ID string
     event_type: String,
     max_num_samples: usize,
     data: VecDeque<T>,

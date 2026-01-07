@@ -35,8 +35,9 @@ use std::collections::VecDeque;
 use std::path::Path;
 
 use com_api_concept::{
-    Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, InstanceSpecifier, Interface, FindServiceSpecifier, Reloc, Runtime,
-    SampleContainer, ServiceDiscovery, Subscriber, Subscription, Producer, ProducerBuilder, Result,
+    Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, Reloc, Result, Runtime,
+    SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 
 pub struct MockRuntimeImpl {}
@@ -283,7 +284,7 @@ impl<T: Reloc + Send + Debug> Subscriber<T, MockRuntimeImpl> for SubscribableImp
     }
 }
 
-#[derive(Default,Debug)]
+#[derive(Default, Debug)]
 pub struct SubscriberImpl<T>
 where
     T: Reloc + Send + Debug,
@@ -367,7 +368,10 @@ impl<T> com_api_concept::Publisher<T, MockRuntimeImpl> for Publisher<T>
 where
     T: Reloc + Send + Debug,
 {
-    type SampleMaybeUninit<'a> = SampleMaybeUninit<'a, T> where Self: 'a;
+    type SampleMaybeUninit<'a>
+        = SampleMaybeUninit<'a, T>
+    where
+        Self: 'a;
 
     fn allocate(&self) -> com_api_concept::Result<SampleMaybeUninit<'_, T>> {
         Ok(SampleMaybeUninit {
