@@ -15,13 +15,13 @@ use com_api::{
     Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Reloc)]
+#[repr(C)]
 pub struct Tire {}
-unsafe impl Reloc for Tire {}
 
-#[derive(Debug)]
+#[derive(Debug, Reloc)]
+#[repr(C)]
 pub struct Exhaust {}
-unsafe impl Reloc for Exhaust {}
 
 pub struct VehicleInterface {}
 

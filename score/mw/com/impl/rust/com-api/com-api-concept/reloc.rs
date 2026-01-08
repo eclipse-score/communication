@@ -11,6 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+
+pub use com_api_concept_macros::Reloc;
+
 pub unsafe trait Reloc {}
 
 unsafe impl Reloc for () {}
