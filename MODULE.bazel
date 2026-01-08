@@ -95,6 +95,7 @@ bazel_dep(name = "aspect_rules_lint", version = "1.10.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "google_benchmark", version = "1.9.4")
 bazel_dep(name = "rules_rust", version = "0.61.0")
+bazel_dep(name = "score_toolchains_rust", version = "0.2.0", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 bazel_dep(name = "score_crates", version = "0.0.5", repo_name = "crate_index")
 
