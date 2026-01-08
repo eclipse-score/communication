@@ -21,13 +21,11 @@
 //TODO: revist this once com-api is stable - Ticket-234827
 #![allow(clippy::needless_lifetimes)]
 
-use core::cmp::Ordering;
 use core::fmt::Debug;
 use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
-use core::sync::atomic::AtomicUsize;
 use std::collections::VecDeque;
 use std::path::Path;
 use std::sync::Arc;
@@ -65,12 +63,6 @@ impl LolaConsumerInfo {
     }
 }
 
-unsafe impl Send for LolaConsumerInfo {}
-unsafe impl Sync for LolaConsumerInfo {}
-
-unsafe impl Send for LolaProviderInfo {}
-unsafe impl Sync for LolaProviderInfo {}
-
 impl Runtime for LolaRuntimeImpl {
     type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
     type Subscriber<T: Reloc + Send + Debug> = SubscribableImpl<T>;
@@ -86,7 +78,7 @@ impl Runtime for LolaRuntimeImpl {
         SampleConsumerDiscovery {
             instance_info: LolaConsumerInfo {
                 instance_specifier: match instance_specifier {
-                    FindServiceSpecifier::Any => InstanceSpecifier::new("/").unwrap(),
+                    FindServiceSpecifier::Any => todo!(), // TODO: Add error msg like "ANY not supported by Lola"
                     FindServiceSpecifier::Specific(spec) => spec,
                 },
                 handle_container: None,
@@ -115,31 +107,21 @@ struct LolaBinding<T>
 where
     T: Send,
 {
-    // Pointer to the managed object rather than &T to avoid lifetime issues
-    // Lifetime manage by C++ Lola side so we use raw pointer here
-    // zero-copy consumer pattern
-    //
-    // DESIGN RATIONALE:
-    // - Uses *const T instead of &'a T to avoid artificial Rust lifetime constraints
-    // - C++ LoLa framework owns the data lifecycle, Rust cannot enforce lifetimes
-    // - Raw pointer signals "external memory management" to maintainers
-    //
-    // SAFETY:
-    // - Pointer validity guaranteed by C++ LoLa while Sample exists
-    // - Dereferenced safely via Deref trait (unsafe { data.as_ref().unwrap() })
-    // - Only 8 bytes stored per sample (pointer address, zero data copy)
-    data: *const T,
+    data: sample_ptr_rs::SamplePtr<T>,
 }
 
-unsafe impl<T> Send for LolaBinding<T> where T: Send {}
-
-#[derive(Debug)]
-enum SampleBinding<T>
+impl<T> Drop for LolaBinding<T>
 where
     T: Send,
 {
-    Lola(LolaBinding<T>),
-    Test(Box<T>),
+    fn drop(&mut self) {
+        unsafe {
+            generic_bridge_ffi_rs::sample_ptr_delete(
+                &mut self.data as *mut _ as *mut std::ffi::c_void,
+                &std::any::type_name::<T>(),
+            );
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -147,21 +129,21 @@ pub struct Sample<T>
 where
     T: Reloc + Send + Debug,
 {
-    id: usize,
-    inner: SampleBinding<T>,
+    inner: LolaBinding<T>,
 }
 
-static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
-
-impl<T> From<T> for Sample<T>
+impl<T> Sample<T>
 where
     T: Reloc + Send + Debug,
 {
-    fn from(value: T) -> Self {
-        Self {
-            id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
-            inner: SampleBinding::Test(Box::new(value)),
-        }
+    pub fn get_data(&self) -> &T {
+        let data_ptr = unsafe {
+            generic_bridge_ffi_rs::sample_ptr_get(
+                &self.inner.data as *const _ as *const std::ffi::c_void,
+                &std::any::type_name::<T>(),
+            )
+        };
+        unsafe { &*(data_ptr as *const T) }
     }
 }
 
@@ -172,21 +154,20 @@ where
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        match &self.inner {
-            SampleBinding::Lola(lola) => unsafe { lola.data.as_ref().unwrap() },
-            SampleBinding::Test(test) => test.as_ref(),
-        }
+        self.get_data()
     }
 }
 
 impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug {}
+
+use core::cmp::Ordering;
 
 impl<T> PartialEq for Sample<T>
 where
     T: Send + Reloc + Debug,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+        (&self.inner.data as *const _) == (&other.inner.data as *const _)
     }
 }
 
@@ -206,7 +187,8 @@ where
     T: Send + Reloc + Debug,
 {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.id.cmp(&other.id)
+        (&self.inner.data as *const _ as *const ())
+            .cmp(&(&other.inner.data as *const _ as *const ()))
     }
 }
 
@@ -293,36 +275,49 @@ where
     }
 }
 
+struct ManageProxyBase {
+    proxy: *mut ProxyBase, // Stores the proxy instance
+}
+
+impl Drop for ManageProxyBase {
+    fn drop(&mut self) {
+        unsafe {
+            generic_bridge_ffi_rs::destroy_proxy(self.proxy);
+        }
+    }
+}
+
+impl Debug for ManageProxyBase {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ManageProxyBase").finish()
+    }
+}
+
+impl ManageProxyBase {
+    fn create_proxy(interface_id: &str, handle: &HandleType) -> Self {
+        let proxy = unsafe { generic_bridge_ffi_rs::create_proxy(interface_id, handle) };
+        Self { proxy }
+    }
+}
+
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
     identifier: String,
     instance_info: Option<LolaConsumerInfo>,
-    proxy_instance: Option<*mut ProxyBase>, // Stores the proxy instance
+    proxy_instance: Option<ManageProxyBase>,
     data: PhantomData<T>,
-}
-
-impl<T> Default for SubscribableImpl<T> {
-    fn default() -> Self {
-        Self {
-            identifier: String::new(),
-            instance_info: None,
-            proxy_instance: None,
-            data: PhantomData,
-        }
-    }
 }
 
 impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &str, instance_info: LolaConsumerInfo) -> com_api_concept::Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
-        let proxy =
-            unsafe { generic_bridge_ffi_rs::create_proxy(instance_info.interface_id, handle) };
+        let manage_proxy = ManageProxyBase::create_proxy(instance_info.interface_id, handle);
 
         Ok(Self {
             identifier: identifier.to_string(),
             instance_info: Some(instance_info),
-            proxy_instance: Some(proxy),
+            proxy_instance: Some(manage_proxy),
             data: PhantomData,
         })
     }
@@ -330,7 +325,7 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
         let instance_info = self.instance_info.as_ref().ok_or(Error::Fail)?;
         let event_instance = unsafe {
             generic_bridge_ffi_rs::get_event_from_proxy(
-                self.proxy_instance.unwrap(),
+                self.proxy_instance.as_ref().ok_or(Error::Fail)?.proxy,
                 instance_info.interface_id,
                 &self.identifier,
             )
@@ -352,7 +347,7 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct SubscriberImpl<T>
 where
     T: Reloc + Send + Debug,
@@ -380,10 +375,6 @@ where
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
     }
-
-    fn type_name_short() -> &'static str {
-        std::any::type_name::<T>().split("::").last().unwrap_or("")
-    }
 }
 
 impl<T> Subscription<T, LolaRuntimeImpl> for SubscriberImpl<T>
@@ -397,7 +388,12 @@ where
         T: 'a;
 
     fn unsubscribe(self) -> Self::Subscriber {
-        SubscribableImpl::default()
+        SubscribableImpl {
+            identifier: self.event_type,
+            instance_info: None,
+            proxy_instance: None,
+            data: PhantomData,
+        }
     }
 
     fn try_receive<'a>(
@@ -412,13 +408,13 @@ where
                     let sample_ptr = unsafe { std::ptr::read(raw_sample) };
 
                     let wrapped_sample = Sample {
-                        id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
-                        inner: SampleBinding::Lola(LolaBinding {
+                        inner: LolaBinding {
                             // Get reference to the managed object
-                            data: unsafe { sample_ptr.get_managed_object() },
-                        }),
+                            data: sample_ptr,
+                        },
                     };
                     // Note: We can't propagate errors from the callback, so we silently drop on error
+                    // TODO: add max samples handling
                     let _ = scratch.push_back(wrapped_sample);
                 }
             };
@@ -433,7 +429,7 @@ where
             let count = unsafe {
                 generic_bridge_ffi_rs::get_samples_from_event(
                     event,
-                    Self::type_name_short(),
+                    std::any::type_name::<T>(),
                     &fat_ptr,
                     self.max_num_samples as u32,
                 )
@@ -540,7 +536,6 @@ where
             proxy_bridge_rs::find_service(instance_specifier_).map_err(|_| Error::Fail)?;
 
         if service_handle.is_empty() {
-            eprintln!("Runtime #No service instances found."); // TODO: Enable logging
             return Ok(available_instances);
         }
         let service_handle_arc = Arc::new(service_handle); // Wrap container in Arc

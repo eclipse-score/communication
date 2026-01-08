@@ -227,6 +227,60 @@ extern "C" {
     /// # Returns
     /// None (void function)
     fn mw_com_skeleton_stop_offer_service(skeleton_ptr: *mut SkeletonBase);
+
+    /// Get sample data pointer from SamplePtr<T>
+    ///
+    /// # Arguments
+    /// * `sample_ptr` - Opaque sample pointer
+    /// * `type_name` - Type name string
+    ///
+    /// # Returns
+    /// Pointer to sample data, or nullptr if type mismatch
+    fn mw_com_get_sample_ptr(
+        sample_ptr: *const std::ffi::c_void,
+        type_name: StringView,
+    ) -> *const std::ffi::c_void;
+
+    /// Delete sample pointer of SamplePtr<T>'
+    ///
+    /// # Arguments
+    /// * `sample_ptr` - Opaque sample pointer
+    /// * `type_name` - Type name string
+    fn mw_com_delete_sample_ptr(sample_ptr: *mut std::ffi::c_void, type_name: StringView);
+}
+
+/// Get SamplePtr<T> data pointer
+///
+/// # Arguments
+/// * `sample_ptr` - Opaque sample pointer
+/// * `type_name` - Type name string
+///
+/// # Returns
+/// Pointer to sample data, or nullptr if type mismatch
+/// # Safety
+/// sample_ptr must point to a valid SamplePtr<T> of the specified type.
+pub unsafe fn sample_ptr_get(
+    sample_ptr: *const std::ffi::c_void,
+    type_name: &str,
+) -> *const std::ffi::c_void {
+    // SAFETY: sample_ptr is guaranteed to be valid per the caller's contract.
+    // The C++ implementation handles type checking and data retrieval safely.
+    let type_name = StringView::from(type_name);
+    mw_com_get_sample_ptr(sample_ptr, type_name)
+}
+
+/// Delete SamplePtr<T>
+///
+/// # Arguments
+/// * `sample_ptr` - Opaque sample pointer
+/// * `type_name` - Type name string
+/// # Safety
+/// sample_ptr must point to a valid SamplePtr<T> of the specified type.
+pub unsafe fn sample_ptr_delete(sample_ptr: *mut std::ffi::c_void, type_name: &str) {
+    // SAFETY: sample_ptr is guaranteed to be valid per the caller's contract.
+    // The C++ implementation handles type checking and deletion safely.
+    let type_name = StringView::from(type_name);
+    mw_com_delete_sample_ptr(sample_ptr, type_name);
 }
 
 /// Unsafe wrapper around mw_com_skeleton_offer_service

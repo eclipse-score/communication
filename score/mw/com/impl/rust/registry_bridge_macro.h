@@ -102,6 +102,17 @@ class TypeOperations
     /// \param data_ptr Pointer to type T (erased as void*, casted back to T* in implementation)
     virtual void SkeletonSendEvent(SkeletonEventBase* event_ptr, void* data_ptr) = 0;
 
+    /// \brief Get data pointer from SamplePtr of specific type
+    /// \details Casts the type-erased SamplePtr back to SamplePtr<T> and retrieves the underlying data pointer.
+    /// \param sample_ptr Pointer to type-erased SamplePtr
+    /// \return Pointer to the underlying data of type T
+    virtual const void* GetSamplePtrData(const void* sample_ptr) = 0;
+
+    /// \brief Delete SamplePtr of specific type
+    /// \details Casts the type-erased SamplePtr back to SamplePtr<T> and deletes it properly.
+    /// \param sample_ptr Pointer to type-erased SamplePtr
+    virtual void DeleteSamplePtr(void* sample_ptr) = 0;
+
     // TODO: Allocate API need to add - Ticket-234824
 };
 
@@ -137,6 +148,24 @@ class TypeOperationImpl : public TypeOperations
             return;
         }
         skeleton_event->Send(*typed_data);
+    }
+
+    const void* GetSamplePtrData(const void* sample_ptr) override
+    {
+        if (sample_ptr == nullptr)
+            return nullptr;
+
+        auto* typed_ptr = static_cast<const ::score::mw::com::impl::SamplePtr<T>*>(sample_ptr);
+        return typed_ptr->Get();
+    }
+
+    void DeleteSamplePtr(void* sample_ptr) override
+    {
+        if (sample_ptr == nullptr)
+            return;
+
+        auto* typed_ptr = static_cast<::score::mw::com::impl::SamplePtr<T>*>(sample_ptr);
+        typed_ptr->~SamplePtr<T>();
     }
 };
 

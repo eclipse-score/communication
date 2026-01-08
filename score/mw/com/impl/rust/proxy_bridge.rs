@@ -110,7 +110,7 @@ mod ffi {
     }
 
     impl From<*mut (dyn FnMut() + Send + 'static)> for FatPtr {
-         // Suppressing clippy::not_unsafe_ptr_arg_deref as this function performs pointer-to-FatPtr
+        // Suppressing clippy::not_unsafe_ptr_arg_deref as this function performs pointer-to-FatPtr
         // conversion via transmute without dereferencing,actual dereference occurs in caller context.
         #[allow(clippy::not_unsafe_ptr_arg_deref)]
         fn from(ptr: *mut (dyn FnMut() + Send + 'static)) -> Self {
@@ -194,8 +194,8 @@ pub use ffi::NativeInstanceSpecifier;
 pub use ffi::FatPtr;
 pub use ffi::HandleType;
 pub use ffi::ProxyEvent as NativeProxyEvent;
-pub use ffi::ProxyWrapperClass;
 pub use ffi::ProxyEventBase;
+pub use ffi::ProxyWrapperClass;
 
 /// This trait is used to create and delete proxies.
 ///
@@ -593,11 +593,10 @@ pub struct ProxyEventStream<'a, T: EventOps, P> {
 
 impl<'a, T: EventOps, P> ProxyEventStream<'a, T, P> {
     fn get_next_sample(&mut self) -> Option<SamplePtr<'a, T>> {
-        self.sample_cache.pop_front().map(|sample|
-            SamplePtr {
-                sample_ptr: ManuallyDrop::new(sample),
-                _event: PhantomData,
-            })
+        self.sample_cache.pop_front().map(|sample| SamplePtr {
+            sample_ptr: ManuallyDrop::new(sample),
+            _event: PhantomData,
+        })
     }
 }
 
@@ -696,10 +695,12 @@ impl Drop for InstanceSpecifier {
 ///
 /// If needed, this struct could implement `Iterator`. However, since we only use the first handle
 /// in the current sample code, we do not need that yet.
-#[derive(Debug)]
 pub struct HandleContainer {
     inner: *mut ffi::NativeHandleContainer,
 }
+
+unsafe impl Send for HandleContainer {}
+unsafe impl Sync for HandleContainer {}
 
 impl HandleContainer {
     /// Provides the number of handles in the container.
@@ -752,6 +753,12 @@ impl Drop for HandleContainer {
         unsafe {
             ffi::mw_com_impl_handle_container_delete(self.inner);
         }
+    }
+}
+
+impl Debug for HandleContainer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("HandleContainer").finish()
     }
 }
 

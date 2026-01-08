@@ -265,5 +265,48 @@ std::uint32_t mw_com_type_registry_get_samples_from_event(ProxyEventBase* event_
     return result.value();
 }
 
+/// @brief Get sample data pointer from SamplePtr<T>
+/// @param sample_ptr Opaque sample pointer
+/// @param type_name Type name string
+/// @return Pointer to sample data, or nullptr if type mismatch
+const void* mw_com_get_sample_ptr(const void* sample_ptr, StringView type_name)
+{
+    if (sample_ptr == nullptr || type_name.data == nullptr)
+    {
+        return nullptr;
+    }
+
+    auto name = static_cast<std::string_view>(type_name);
+
+    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
+    if (registry == nullptr)
+    {
+        return nullptr;
+    }
+
+    return registry->GetSamplePtrData(sample_ptr);
+}
+
+/// @brief Delete sample pointer of specific type
+/// @param sample_ptr Opaque sample pointer
+/// @param type_name Type name string
+void mw_com_delete_sample_ptr(void* sample_ptr, StringView type_name)
+{
+    if (sample_ptr == nullptr || type_name.data == nullptr)
+    {
+        return;
+    }
+
+    auto name = static_cast<std::string_view>(type_name);
+
+    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
+    if (registry == nullptr)
+    {
+        return;
+    }
+
+    registry->DeleteSamplePtr(sample_ptr);
+}
+
 }  // extern "C"
 }  // namespace score::mw::com::impl::rust
