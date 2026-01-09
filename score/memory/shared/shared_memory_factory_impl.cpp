@@ -197,7 +197,8 @@ auto score::memory::shared::SharedMemoryFactoryImpl::CreateAnonymous(std::uint64
 {
     std::lock_guard<std::mutex> lock{mutex_};
 
-    if (prefer_typed_memory && (typed_memory_ptr_ == nullptr))
+    const bool is_impeded_memory_option = prefer_typed_memory && (typed_memory_ptr_ == nullptr);
+    if (is_impeded_memory_option)
     {
         score::mw::log::LogError("shm")
             << "Shared memory has to be created in typed memory but no typed memory instance has "
@@ -285,6 +286,10 @@ auto SharedMemoryFactoryImpl::Remove(const std::string& path) noexcept -> void
         const auto number_resources_removed = resources_.erase(path);
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(number_resources_removed == 1U);
         resource->UnlinkFilesystemEntry();
+    }
+    else
+    {
+        score::mw::log::LogWarn("shm") << __func__ << __LINE__ << "Unexpected error while trying to remove " << path;
     }
 }
 

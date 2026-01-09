@@ -170,6 +170,18 @@ TEST_F(SharedMemoryFactoryTest, CallingRemoveOnTypedNamedResourceWillNotCrashWhe
     SharedMemoryFactory::Remove(TestValues::sharedMemorySegmentPath);
 }
 
+TEST_F(SharedMemoryFactoryTest, WhenRemoveIsCalledOnInvalidPathThenItWillNotCrash)
+{
+    testing::internal::CaptureStdout();
+    constexpr const char* const sharedMemoryInvalidPath = "/InvalidPath";
+    // When Remove() is called on invalid path
+    SharedMemoryFactory::Remove(sharedMemoryInvalidPath);
+
+    // Then it will not crash
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_THAT(output, ::testing::HasSubstr("Unexpected error while trying to remove"));
+}
+
 TEST_P(SharedMemoryFactoryTest, DroppingAfterCreationWillRecreate)
 {
     InSequence sequence{};
