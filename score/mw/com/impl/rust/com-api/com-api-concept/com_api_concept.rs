@@ -97,13 +97,13 @@ pub trait Runtime {
     type ServiceDiscovery<I: Interface>: ServiceDiscovery<I, Self>;
 
     /// `Subscriber<T>` types for Manages subscriptions to event notifications
-    type Subscriber<T: Reloc + Send + Debug>: Subscriber<T, Self>;
+    type Subscriber<T: Reloc + Send + Debug + TypeInfo>: Subscriber<T, Self>;
 
     /// `ProducerBuilder<I>` types for Constructs producer instances for offering services
     type ProducerBuilder<I: Interface>: ProducerBuilder<I, Self>;
 
     /// `Publisher<T>` types for Publishes event data to subscribers
-    type Publisher<T: Reloc + Send + Debug>: Publisher<T, Self>;
+    type Publisher<T: Reloc + Send + Debug + TypeInfo>: Publisher<T, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: Send + Clone;
@@ -365,7 +365,7 @@ where
 /// Implementations specify the consumer and producer types that implement the interface contract.
 pub trait Interface {
     /// Unique type identifier for this interface
-    const TYPE_ID: &'static str;
+    const INTERFACE_ID: &'static str;
     /// consumer type for this interface
     type Consumer<R: Runtime + ?Sized>: Consumer<R>;
     /// producer type for this interface
@@ -436,7 +436,7 @@ pub trait Producer<R: Runtime + ?Sized> {
 /// * `T` - The relocatable event data type
 pub trait Publisher<T, R: Runtime + ?Sized>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     /// Associated sample type for uninitialized event data
     type SampleMaybeUninit<'a>: SampleMaybeUninit<T> + 'a
@@ -579,6 +579,11 @@ pub trait ConsumerBuilder<I: Interface, R: Runtime + ?Sized>:
 {
 }
 
+/// Type information trait for unique identification of data types.
+pub trait TypeInfo {
+    const ID: &'static str;
+}
+
 /// Event subscription management interface.
 ///
 /// Establishes a subscription channel to receive publications from a specific event source.
@@ -587,7 +592,7 @@ pub trait ConsumerBuilder<I: Interface, R: Runtime + ?Sized>:
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscriber<T: Reloc + Send + Debug, R: Runtime + ?Sized> {
+pub trait Subscriber<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
     /// Associated subscription type for receiving event samples
     type Subscription: Subscription<T, R>;
 
@@ -596,17 +601,12 @@ pub trait Subscriber<T: Reloc + Send + Debug, R: Runtime + ?Sized> {
     /// # Parameters
     /// * `identifier` - Logical name of the event topic
     /// * `instance_info` - Runtime-specific configuration for the event source
-    /// * `type_identifier` - Unique type identifier of the event data type
     ///   Creates a new `Consumer` instance.
     ///
     /// # Errors
     ///
     /// Returns an error if the consumer cannot be created with the given identifier and instance info.
-    fn new(
-        identifier: &'static str,
-        type_identifier: &'static str,
-        instance_info: R::ConsumerInfo,
-    ) -> Result<Self>
+    fn new(identifier: &'static str, instance_info: R::ConsumerInfo) -> Result<Self>
     where
         Self: Sized;
 
@@ -697,7 +697,7 @@ impl<S> SampleContainer<S> {
     ///
     /// # Returns
     /// An `Option` containing a reference to the first sample, or `None` if the container is empty.
-    pub fn front<T: Reloc + Send + Debug>(&self) -> Option<&T>
+    pub fn front<T: Reloc + Send + Debug + TypeInfo>(&self) -> Option<&T>
     where
         S: Sample<T>,
     {
@@ -713,7 +713,7 @@ impl<S> SampleContainer<S> {
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscription<T: Reloc + Send + Debug, R: Runtime + ?Sized> {
+pub trait Subscription<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
     /// Associated subscriber type for managing the subscription lifecycle
     type Subscriber: Subscriber<T, R>;
     /// Associated sample type for received event data

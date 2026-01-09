@@ -34,7 +34,7 @@ use std::sync::Arc;
 use com_api_concept::{
     Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
     InstanceSpecifier, Interface, Producer, ProducerBuilder, Reloc, Result, Runtime,
-    SampleContainer, ServiceDiscovery, Subscriber, Subscription,
+    SampleContainer, ServiceDiscovery, Subscriber, Subscription, TypeInfo,
 };
 
 use generic_bridge_ffi_rs::*;
@@ -66,9 +66,9 @@ impl LolaConsumerInfo {
 
 impl Runtime for LolaRuntimeImpl {
     type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
-    type Subscriber<T: Reloc + Send + Debug> = SubscribableImpl<T>;
+    type Subscriber<T: Reloc + Send + Debug + TypeInfo> = SubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
-    type Publisher<T: Reloc + Send + Debug> = Publisher<T>;
+    type Publisher<T: Reloc + Send + Debug + TypeInfo> = Publisher<T>;
     type ProviderInfo = LolaProviderInfo;
     type ConsumerInfo = LolaConsumerInfo;
 
@@ -101,15 +101,14 @@ struct LolaEvent<T> {
 #[derive(Debug)]
 struct LolaBinding<T>
 where
-    T: Send,
+    T: Send + TypeInfo,
 {
     data: sample_ptr_rs::SamplePtr<T>,
-    type_identifier: &'static str,
 }
 
 impl<T> Drop for LolaBinding<T>
 where
-    T: Send,
+    T: Send + TypeInfo,
 {
     fn drop(&mut self) {
         //SAFETY: It is safe to call the delete function because data ptr is valid
@@ -117,7 +116,7 @@ where
         unsafe {
             generic_bridge_ffi_rs::sample_ptr_delete(
                 &mut self.data as *mut _ as *mut std::ffi::c_void,
-                self.type_identifier,
+                T::ID,
             );
         }
     }
@@ -126,14 +125,14 @@ where
 #[derive(Debug)]
 pub struct Sample<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     inner: LolaBinding<T>,
 }
 
 impl<T> Sample<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     pub fn get_data(&self) -> &T {
         //SAFETY: It is safe to get the data pointer because SamplePtr is valid
@@ -142,7 +141,7 @@ where
         unsafe {
             let data_ptr = generic_bridge_ffi_rs::sample_ptr_get(
                 &self.inner.data as *const _ as *const std::ffi::c_void,
-                self.inner.type_identifier,
+                T::ID,
             );
             &*(data_ptr as *const T)
         }
@@ -151,7 +150,7 @@ where
 
 impl<T> Deref for Sample<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type Target = T;
 
@@ -160,7 +159,7 @@ where
     }
 }
 
-impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug {}
+impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug + TypeInfo {}
 
 // Ordering traits for Sample<T>
 // We compare Sample instances based on their underlying FFI pointer addresses (self.inner.data).
@@ -168,18 +167,18 @@ impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug {
 // pointer address comparison.
 impl<T> PartialEq for Sample<T>
 where
-    T: Send + Reloc + Debug,
+    T: Send + Reloc + Debug + TypeInfo,
 {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(&self.inner.data, &other.inner.data)
     }
 }
 
-impl<T> Eq for Sample<T> where T: Send + Reloc + Debug {}
+impl<T> Eq for Sample<T> where T: Send + Reloc + Debug + TypeInfo {}
 
 impl<T> PartialOrd for Sample<T>
 where
-    T: Send + Reloc + Debug,
+    T: Send + Reloc + Debug + TypeInfo,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -188,7 +187,7 @@ where
 
 impl<T> Ord for Sample<T>
 where
-    T: Send + Reloc + Debug,
+    T: Send + Reloc + Debug + TypeInfo,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         (&self.inner.data as *const _ as *const ())
@@ -207,7 +206,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type Sample = Sample<T>;
 
@@ -243,7 +242,7 @@ where
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     data: MaybeUninit<T>,
     lifetime: PhantomData<&'a T>,
@@ -251,7 +250,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type SampleMut = SampleMut<'a, T>;
 
@@ -272,7 +271,7 @@ where
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         &mut self.data
@@ -280,6 +279,12 @@ where
 }
 
 struct ManageProxyBase(Arc<NativeProxyBase>);
+
+impl Clone for ManageProxyBase {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
 
 impl Debug for ManageProxyBase {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -323,17 +328,15 @@ impl NativeProxyBase {
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
     identifier: &'static str,
-    type_identifier: &'static str,
-    instance_info: Option<LolaConsumerInfo>,
-    proxy_instance: Option<ManageProxyBase>,
+    instance_info: LolaConsumerInfo,
+    proxy_instance: ManageProxyBase,
     data: PhantomData<T>,
 }
 
-impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
+impl<T: Reloc + Send + Debug + TypeInfo> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(
         identifier: &'static str,
-        type_identifier: &'static str,
         instance_info: LolaConsumerInfo,
     ) -> com_api_concept::Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
@@ -341,19 +344,18 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
         let manage_proxy = ManageProxyBase(Arc::new(native_proxy));
         Ok(Self {
             identifier,
-            type_identifier,
-            instance_info: Some(instance_info),
-            proxy_instance: Some(manage_proxy),
+            instance_info: instance_info,
+            proxy_instance: manage_proxy,
             data: PhantomData,
         })
     }
     fn subscribe(&self, max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
-        let instance_info = self.instance_info.as_ref().ok_or(Error::Fail)?;
+        let instance_info = self.instance_info.clone();
         //SAFETY: It is safe to get event from proxy because proxy_instance is valid
         // which was created during SubscribableImpl creation and instance_id is also same as proxy
         let event_instance = unsafe {
             generic_bridge_ffi_rs::get_event_from_proxy(
-                self.proxy_instance.as_ref().ok_or(Error::Fail)?.0.proxy,
+                self.proxy_instance.0.proxy,
                 instance_info.interface_id,
                 self.identifier,
             )
@@ -373,9 +375,10 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
         Ok(SubscriberImpl {
             event: Some(event_instance),
             event_id: self.identifier,
-            type_identifier: self.type_identifier,
             max_num_samples,
             data: VecDeque::new(),
+            instance_info,
+            _proxy: self.proxy_instance.clone(),
         })
     }
 }
@@ -383,19 +386,20 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
 #[derive(Debug)]
 pub struct SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     //Safety: This can be used as raw pointer because it comes under proxy instance lifetime
     event: Option<*mut ProxyEventBase>,
     event_id: &'static str,
-    type_identifier: &'static str,
     max_num_samples: usize,
     data: VecDeque<T>,
+    instance_info: LolaConsumerInfo,
+    _proxy: ManageProxyBase,
 }
 
 impl<T> SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
@@ -404,7 +408,7 @@ where
 
 impl<T> Subscription<T, LolaRuntimeImpl> for SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type Subscriber = SubscribableImpl<T>;
     type Sample<'a>
@@ -415,9 +419,8 @@ where
     fn unsubscribe(self) -> Self::Subscriber {
         SubscribableImpl {
             identifier: self.event_id,
-            type_identifier: self.type_identifier,
-            instance_info: None,
-            proxy_instance: None,
+            instance_info: self.instance_info,
+            proxy_instance: self._proxy,
             data: PhantomData,
         }
     }
@@ -442,7 +445,6 @@ where
                         inner: LolaBinding {
                             // Get reference to the managed object
                             data: sample_ptr,
-                            type_identifier: self.type_identifier,
                         },
                     };
                     while scratch.sample_count() >= max_samples {
@@ -467,7 +469,7 @@ where
             let count = unsafe {
                 generic_bridge_ffi_rs::get_samples_from_event(
                     event,
-                    self.type_identifier,
+                    T::ID,
                     &fat_ptr,
                     self.max_num_samples as u32,
                 )
@@ -498,7 +500,7 @@ pub struct Publisher<T> {
 
 impl<T> Default for Publisher<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     fn default() -> Self {
         Self::new()
@@ -507,7 +509,7 @@ where
 
 impl<T> Publisher<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
     pub fn new() -> Self {
@@ -517,7 +519,7 @@ where
 
 impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>
@@ -576,7 +578,7 @@ where
             instance_specifier: self.instance_specifier.clone(),
             handle_container: Some(service_handle_arc.clone()), // Store Arc
             handle_index: 0, // Assuming single handle for simplicity
-            interface_id: I::TYPE_ID,
+            interface_id: I::INTERFACE_ID,
         };
 
         available_instances.push(SampleConsumerBuilder {
@@ -622,7 +624,7 @@ impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuild
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
         let instance_info = LolaProviderInfo {
             instance_specifier: self.instance_specifier.clone(),
-            interface_id: I::TYPE_ID,
+            interface_id: I::INTERFACE_ID,
         };
         I::Producer::new(instance_info)
     }

@@ -36,7 +36,7 @@ use std::path::Path;
 use com_api_concept::{
     Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
     InstanceSpecifier, Interface, Producer, ProducerBuilder, Reloc, Result, Runtime,
-    SampleContainer, ServiceDiscovery, Subscriber, Subscription,
+    SampleContainer, ServiceDiscovery, Subscriber, Subscription, TypeInfo,
 };
 
 pub struct MockRuntimeImpl {}
@@ -53,9 +53,9 @@ pub struct MockConsumerInfo {
 
 impl Runtime for MockRuntimeImpl {
     type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
-    type Subscriber<T: Reloc + Send + Debug> = SubscribableImpl<T>;
+    type Subscriber<T: Reloc + Send + Debug + TypeInfo> = SubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
-    type Publisher<T: Reloc + Send + Debug> = Publisher<T>;
+    type Publisher<T: Reloc + Send + Debug + TypeInfo> = Publisher<T>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
 
@@ -104,7 +104,7 @@ where
 #[derive(Debug)]
 pub struct Sample<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     id: usize,
     inner: SampleBinding<'a, T>,
@@ -114,7 +114,7 @@ static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl<'a, T> From<T> for Sample<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     fn from(value: T) -> Self {
         Self {
@@ -126,7 +126,7 @@ where
 
 impl<'a, T> Deref for Sample<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type Target = T;
 
@@ -138,22 +138,22 @@ where
     }
 }
 
-impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: Send + Reloc + Debug {}
+impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: Send + Reloc + Debug + TypeInfo {}
 
 impl<'a, T> PartialEq for Sample<'a, T>
 where
-    T: Send + Reloc + Debug,
+    T: Send + Reloc + Debug + TypeInfo,
 {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl<'a, T> Eq for Sample<'a, T> where T: Send + Reloc + Debug {}
+impl<'a, T> Eq for Sample<'a, T> where T: Send + Reloc + Debug + TypeInfo {}
 
 impl<'a, T> PartialOrd for Sample<'a, T>
 where
-    T: Send + Reloc + Debug,
+    T: Send + Reloc + Debug + TypeInfo,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -162,7 +162,7 @@ where
 
 impl<'a, T> Ord for Sample<'a, T>
 where
-    T: Send + Reloc + Debug,
+    T: Send + Reloc + Debug + TypeInfo,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id.cmp(&other.id)
@@ -180,7 +180,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type Sample = Sample<'a, T>;
 
@@ -216,7 +216,7 @@ where
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     data: MaybeUninit<T>,
     lifetime: PhantomData<&'a T>,
@@ -224,7 +224,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type SampleMut = SampleMut<'a, T>;
 
@@ -245,7 +245,7 @@ where
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         &mut self.data
@@ -259,11 +259,10 @@ pub struct SubscribableImpl<T> {
     data: PhantomData<T>,
 }
 
-impl<T: Reloc + Send + Debug> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
+impl<T: Reloc + Send + Debug + TypeInfo> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(
         identifier: &'static str,
-        _type_identifier: &'static str,
         instance_info: MockConsumerInfo,
     ) -> com_api_concept::Result<Self> {
         Ok(Self {
@@ -280,14 +279,14 @@ impl<T: Reloc + Send + Debug> Subscriber<T, MockRuntimeImpl> for SubscribableImp
 #[derive(Default, Debug)]
 pub struct SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     data: VecDeque<T>,
 }
 
 impl<T> SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     #[must_use = "creating a SubscriberImpl without using it is likely a mistake; the subscriber must be assigned or used in some way"]
     pub fn new() -> Self {
@@ -303,7 +302,7 @@ where
 
 impl<T> Subscription<T, MockRuntimeImpl> for SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type Subscriber = SubscribableImpl<T>;
     type Sample<'a>
@@ -344,7 +343,7 @@ pub struct Publisher<T> {
 
 impl<T> Default for Publisher<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     fn default() -> Self {
         Self::new()
@@ -353,7 +352,7 @@ where
 
 impl<T> Publisher<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
     pub fn new() -> Self {
@@ -363,7 +362,7 @@ where
 
 impl<T> com_api_concept::Publisher<T, MockRuntimeImpl> for Publisher<T>
 where
-    T: Reloc + Send + Debug,
+    T: Reloc + Send + Debug + TypeInfo,
 {
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>
