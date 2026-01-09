@@ -694,6 +694,7 @@ cc_gtest_unit_test(
     deps = [
         ":lola_service_instance_deployment",
         ":quality_type",
+        "//score/mw/com/impl/configuration/test:configuration_test_resources",
     ],
 )
 

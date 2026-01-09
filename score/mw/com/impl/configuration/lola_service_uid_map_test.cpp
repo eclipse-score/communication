@@ -13,6 +13,7 @@
 
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/configuration/test/configuration_test_resources.h"
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -22,8 +23,26 @@ namespace score::mw::com::impl
 namespace
 {
 
-class LolaServiceUidMapTest : public ::testing::Test
+class LolaServiceUidMapTest : public ConfigurationStructsFixture
 {
+protected:
+    // Helper function to create base configuration object with required fields
+    score::json::Object CreateBaseConfigObject() const
+    {
+        score::json::Object config_object;
+
+        // Add required fields for LolaServiceInstanceDeployment constructor
+        config_object["serializationVersion"] = score::json::Any{1U};
+        config_object["strict"] = score::json::Any{false};
+        config_object["events"] = score::json::Any{score::json::Object{}};
+        config_object["fields"] = score::json::Any{score::json::Object{}};
+        config_object["methods"] = score::json::Any{score::json::Object{}};
+
+        // Valid empty provider map (can be overridden by tests)
+        config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
+
+        return config_object;
+    }
 };
 
 TEST_F(LolaServiceUidMapTest, HandleMalformedUidListGracefully)
@@ -31,22 +50,13 @@ TEST_F(LolaServiceUidMapTest, HandleMalformedUidListGracefully)
     // Test the fix for dangling reference in ConvertJsonToUidMap
     // This should trigger the new error handling for invalid UID lists
 
-    score::json::Object config_object;
-
-    // Add required fields for LolaServiceInstanceDeployment constructor
-    config_object["serializationVersion"] = score::json::Any{1U};
-    config_object["strict"] = score::json::Any{false};
-    config_object["events"] = score::json::Any{score::json::Object{}};
-    config_object["fields"] = score::json::Any{score::json::Object{}};
-    config_object["methods"] = score::json::Any{score::json::Object{}};
+    auto config_object = CreateBaseConfigObject();
 
     // Create JSON with invalid UID list (string instead of array)
     score::json::Object malformed_uid_map;
     malformed_uid_map["ASIL_QM"] = score::json::Any{std::string{"invalid_should_be_array"}};
     config_object["allowedConsumer"] = score::json::Any{std::move(malformed_uid_map)};
 
-    // Valid empty provider map
-    config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
 
     // This should trigger the new error path with clean termination
     EXPECT_DEATH({
@@ -57,21 +67,11 @@ TEST_F(LolaServiceUidMapTest, HandleMalformedUidListGracefully)
 TEST_F(LolaServiceUidMapTest, HandleNullUidListGracefully)
 {
     // Test case where UID list is null instead of array
-    score::json::Object config_object;
-
-    // Add required fields for LolaServiceInstanceDeployment constructor
-    config_object["serializationVersion"] = score::json::Any{1U};
-    config_object["strict"] = score::json::Any{false};
-    config_object["events"] = score::json::Any{score::json::Object{}};
-    config_object["fields"] = score::json::Any{score::json::Object{}};
-    config_object["methods"] = score::json::Any{score::json::Object{}};
+    auto config_object = CreateBaseConfigObject();
 
     score::json::Object malformed_uid_map;
     malformed_uid_map["ASIL_QM"] = score::json::Any{};  // null/empty Any
     config_object["allowedConsumer"] = score::json::Any{std::move(malformed_uid_map)};
-
-    // Valid empty provider map
-    config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
 
     EXPECT_DEATH({
         LolaServiceInstanceDeployment deployment(config_object);
@@ -81,14 +81,7 @@ TEST_F(LolaServiceUidMapTest, HandleNullUidListGracefully)
 TEST_F(LolaServiceUidMapTest, HandleObjectInsteadOfUidList)
 {
     // Test case where UID list is an object instead of array
-    score::json::Object config_object;
-
-    // Add required fields for LolaServiceInstanceDeployment constructor
-    config_object["serializationVersion"] = score::json::Any{1U};
-    config_object["strict"] = score::json::Any{false};
-    config_object["events"] = score::json::Any{score::json::Object{}};
-    config_object["fields"] = score::json::Any{score::json::Object{}};
-    config_object["methods"] = score::json::Any{score::json::Object{}};
+    auto config_object = CreateBaseConfigObject();
 
     score::json::Object malformed_uid_map;
     score::json::Object invalid_object;
@@ -96,8 +89,6 @@ TEST_F(LolaServiceUidMapTest, HandleObjectInsteadOfUidList)
     malformed_uid_map["ASIL_B"] = score::json::Any{std::move(invalid_object)};
     config_object["allowedConsumer"] = score::json::Any{std::move(malformed_uid_map)};
 
-    // Valid empty provider map
-    config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
 
     EXPECT_DEATH({
         LolaServiceInstanceDeployment deployment(config_object);
@@ -110,14 +101,9 @@ TEST_F(LolaServiceUidMapTest, HandleValidUidMapAfterFix)
     // Since creating a complete LolaServiceInstanceDeployment is complex, we test that
     // the fix enables clean termination when processing valid UID data.
 
-    score::json::Object config_object;
+    auto config_object = CreateBaseConfigObject();
 
-    // Add basic required fields
-    config_object["serializationVersion"] = score::json::Any{1U};
-    config_object["strict"] = score::json::Any{false};
-    config_object["events"] = score::json::Any{score::json::Object{}};
-    config_object["fields"] = score::json::Any{score::json::Object{}};
-    config_object["methods"] = score::json::Any{score::json::Object{}};
+    // Add instance ID for this test
     config_object["instanceId"] = score::json::Any{1U};
 
     score::json::Object valid_uid_map;
@@ -127,8 +113,6 @@ TEST_F(LolaServiceUidMapTest, HandleValidUidMapAfterFix)
     valid_uid_map["ASIL_QM"] = score::json::Any{std::move(uid_list)};
     config_object["allowedConsumer"] = score::json::Any{std::move(valid_uid_map)};
 
-    // Valid empty provider map
-    config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
 
     // The dangling reference fix should prevent undefined behavior during UID parsing
     // Even though the overall construction fails due to incomplete configuration,
@@ -141,14 +125,9 @@ TEST_F(LolaServiceUidMapTest, HandleValidUidMapAfterFix)
 TEST_F(LolaServiceUidMapTest, HandleMultipleQualityTypesWithMixedValidity)
 {
     // Test mixed valid and invalid entries
-    score::json::Object config_object;
+    auto config_object = CreateBaseConfigObject();
 
-    // Add required fields for LolaServiceInstanceDeployment constructor
-    config_object["serializationVersion"] = score::json::Any{1U};
-    config_object["strict"] = score::json::Any{false};
-    config_object["events"] = score::json::Any{score::json::Object{}};
-    config_object["fields"] = score::json::Any{score::json::Object{}};
-    config_object["methods"] = score::json::Any{score::json::Object{}};
+    // Add instance ID for this test
     config_object["instanceId"] = score::json::Any{1U};
 
     score::json::Object mixed_uid_map;
@@ -161,8 +140,6 @@ TEST_F(LolaServiceUidMapTest, HandleMultipleQualityTypesWithMixedValidity)
     mixed_uid_map["ASIL_B"] = score::json::Any{std::string{"invalid"}};
     config_object["allowedConsumer"] = score::json::Any{std::move(mixed_uid_map)};
 
-    // Valid empty provider map
-    config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
 
     // Should fail on the invalid entry after successfully processing the valid one
     EXPECT_DEATH({
@@ -175,14 +152,9 @@ TEST_F(LolaServiceUidMapTest, VerifyStableReferenceLifetime)
     // This test specifically validates that the fix properly manages
     // the lifetime of references by ensuring clean termination during processing
 
-    score::json::Object config_object;
+    auto config_object = CreateBaseConfigObject();
 
-    // Add required fields for LolaServiceInstanceDeployment constructor
-    config_object["serializationVersion"] = score::json::Any{1U};
-    config_object["strict"] = score::json::Any{false};
-    config_object["events"] = score::json::Any{score::json::Object{}};
-    config_object["fields"] = score::json::Any{score::json::Object{}};
-    config_object["methods"] = score::json::Any{score::json::Object{}};
+    // Add instance ID for this test
     config_object["instanceId"] = score::json::Any{1U};
 
     score::json::Object complex_uid_map;
@@ -201,8 +173,6 @@ TEST_F(LolaServiceUidMapTest, VerifyStableReferenceLifetime)
 
     config_object["allowedConsumer"] = score::json::Any{std::move(complex_uid_map)};
 
-    // Valid empty provider map
-    config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
 
     // This should process the valid UID data without undefined behavior
     // Even though construction fails due to incomplete configuration, the UID parsing
@@ -215,23 +185,15 @@ TEST_F(LolaServiceUidMapTest, VerifyStableReferenceLifetime)
 TEST_F(LolaServiceUidMapTest, HandleEmptyUidList)
 {
     // Test empty but valid UID list
-    score::json::Object config_object;
+    auto config_object = CreateBaseConfigObject();
 
-    // Add required fields for LolaServiceInstanceDeployment constructor
-    config_object["serializationVersion"] = score::json::Any{1U};
-    config_object["strict"] = score::json::Any{false};
-    config_object["events"] = score::json::Any{score::json::Object{}};
-    config_object["fields"] = score::json::Any{score::json::Object{}};
-    config_object["methods"] = score::json::Any{score::json::Object{}};
+    // Add instance ID for this test
     config_object["instanceId"] = score::json::Any{1U};
 
     score::json::Object uid_map_with_empty_list;
     score::json::List empty_uid_list;  // Empty but valid list
     uid_map_with_empty_list["ASIL_QM"] = score::json::Any{std::move(empty_uid_list)};
     config_object["allowedConsumer"] = score::json::Any{std::move(uid_map_with_empty_list)};
-
-    // Valid empty provider map
-    config_object["allowedProvider"] = score::json::Any{score::json::Object{}};
 
     // The dangling reference fix should prevent undefined behavior during UID parsing
     // Even though the overall construction fails due to incomplete configuration,
