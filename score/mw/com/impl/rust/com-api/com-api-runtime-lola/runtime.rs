@@ -77,7 +77,7 @@ impl Runtime for LolaRuntimeImpl {
     ) -> Self::ServiceDiscovery<I> {
         SampleConsumerDiscovery {
             instance_specifier: match instance_specifier {
-                FindServiceSpecifier::Any => todo!(), // TODO: Add error msg like "ANY not supported by Lola"
+                FindServiceSpecifier::Any => todo!(), // TODO: Add error msg or panic like "ANY not supported by Lola"
                 FindServiceSpecifier::Specific(spec) => spec,
             },
             _interface: PhantomData,
@@ -275,11 +275,19 @@ where
     }
 }
 
-struct ManageProxyBase {
+struct ManageProxyBase(Arc<NativeProxyBase>);
+
+impl Debug for ManageProxyBase {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ManageProxyBase").finish()
+    }
+}
+
+struct NativeProxyBase {
     proxy: *mut ProxyBase, // Stores the proxy instance
 }
 
-impl Drop for ManageProxyBase {
+impl Drop for NativeProxyBase {
     fn drop(&mut self) {
         //SAFETY: It is safe to destroy the proxy because it was created by FFI
         // and proxy pointer received at the time of create_proxy called
@@ -289,13 +297,13 @@ impl Drop for ManageProxyBase {
     }
 }
 
-impl Debug for ManageProxyBase {
+impl Debug for NativeProxyBase {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("ManageProxyBase").finish()
+        f.debug_struct("NativeProxyBase").finish()
     }
 }
 
-impl ManageProxyBase {
+impl NativeProxyBase {
     fn create_proxy(interface_id: &str, handle: &HandleType) -> Self {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id
@@ -316,8 +324,8 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &str, instance_info: LolaConsumerInfo) -> com_api_concept::Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
-        let manage_proxy = ManageProxyBase::create_proxy(instance_info.interface_id, handle);
-
+        let native_proxy = NativeProxyBase::create_proxy(instance_info.interface_id, handle);
+        let manage_proxy = ManageProxyBase(Arc::new(native_proxy));
         Ok(Self {
             identifier: identifier.to_string(),
             instance_info: Some(instance_info),
@@ -331,19 +339,22 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
         // which was created during SubscribableImpl creation and instance_id is also same as proxy
         let event_instance = unsafe {
             generic_bridge_ffi_rs::get_event_from_proxy(
-                self.proxy_instance.as_ref().ok_or(Error::Fail)?.proxy,
+                self.proxy_instance.as_ref().ok_or(Error::Fail)?.0.proxy,
                 instance_info.interface_id,
                 &self.identifier,
             )
         };
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
-        let _status = unsafe {
+        let status = unsafe {
             generic_bridge_ffi_rs::subscribe_to_event(
                 event_instance,
                 max_num_samples.try_into().unwrap(),
             )
         };
+        if status == false {
+            return Err(Error::Fail);
+        }
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
             event: Some(event_instance),
@@ -359,6 +370,7 @@ pub struct SubscriberImpl<T>
 where
     T: Reloc + Send + Debug,
 {
+    //Safety: This can be used as raw pointer because it comes under proxy instance lifetime
     event: Option<*mut ProxyEventBase>,
     event_type: String,
     max_num_samples: usize,
@@ -369,16 +381,6 @@ impl<T> SubscriberImpl<T>
 where
     T: Reloc + Send + Debug,
 {
-    #[must_use = "creating a SubscriberImpl without using it is likely a mistake; the subscriber must be assigned or used in some way"]
-    pub fn new() -> Self {
-        Self {
-            event: None,
-            event_type: String::new(),
-            max_num_samples: 0,
-            data: VecDeque::new(),
-        }
-    }
-
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
     }
