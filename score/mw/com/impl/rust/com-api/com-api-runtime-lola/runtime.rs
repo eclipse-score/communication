@@ -104,7 +104,7 @@ where
     T: Send,
 {
     data: sample_ptr_rs::SamplePtr<T>,
-    type_identifier: String,
+    type_identifier: &'static str,
 }
 
 impl<T> Drop for LolaBinding<T>
@@ -117,7 +117,7 @@ where
         unsafe {
             generic_bridge_ffi_rs::sample_ptr_delete(
                 &mut self.data as *mut _ as *mut std::ffi::c_void,
-                &self.type_identifier,
+                self.type_identifier,
             );
         }
     }
@@ -142,7 +142,7 @@ where
         unsafe {
             let data_ptr = generic_bridge_ffi_rs::sample_ptr_get(
                 &self.inner.data as *const _ as *const std::ffi::c_void,
-                &self.inner.type_identifier,
+                self.inner.type_identifier,
             );
             &*(data_ptr as *const T)
         }
@@ -322,8 +322,8 @@ impl NativeProxyBase {
 
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
-    identifier: String,
-    type_identifier: String,
+    identifier: &'static str,
+    type_identifier: &'static str,
     instance_info: Option<LolaConsumerInfo>,
     proxy_instance: Option<ManageProxyBase>,
     data: PhantomData<T>,
@@ -332,16 +332,16 @@ pub struct SubscribableImpl<T> {
 impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(
-        identifier: &str,
-        type_identifier: &str,
+        identifier: &'static str,
+        type_identifier: &'static str,
         instance_info: LolaConsumerInfo,
     ) -> com_api_concept::Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
         let native_proxy = NativeProxyBase::create_proxy(instance_info.interface_id, handle);
         let manage_proxy = ManageProxyBase(Arc::new(native_proxy));
         Ok(Self {
-            identifier: identifier.to_string(),
-            type_identifier: type_identifier.to_string(),
+            identifier,
+            type_identifier,
             instance_info: Some(instance_info),
             proxy_instance: Some(manage_proxy),
             data: PhantomData,
@@ -355,7 +355,7 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
             generic_bridge_ffi_rs::get_event_from_proxy(
                 self.proxy_instance.as_ref().ok_or(Error::Fail)?.0.proxy,
                 instance_info.interface_id,
-                &self.identifier,
+                self.identifier,
             )
         };
         //SAFETY: It is safe to subscribe to event because event_instance is valid
@@ -372,8 +372,8 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
             event: Some(event_instance),
-            event_id: self.identifier.clone(),
-            type_identifier: self.type_identifier.clone(),
+            event_id: self.identifier,
+            type_identifier: self.type_identifier,
             max_num_samples,
             data: VecDeque::new(),
         })
@@ -387,8 +387,8 @@ where
 {
     //Safety: This can be used as raw pointer because it comes under proxy instance lifetime
     event: Option<*mut ProxyEventBase>,
-    event_id: String,
-    type_identifier: String,
+    event_id: &'static str,
+    type_identifier: &'static str,
     max_num_samples: usize,
     data: VecDeque<T>,
 }
@@ -442,7 +442,7 @@ where
                         inner: LolaBinding {
                             // Get reference to the managed object
                             data: sample_ptr,
-                            type_identifier: self.type_identifier.clone(),
+                            type_identifier: self.type_identifier,
                         },
                     };
                     while scratch.sample_count() >= max_samples {
@@ -467,7 +467,7 @@ where
             let count = unsafe {
                 generic_bridge_ffi_rs::get_samples_from_event(
                     event,
-                    &self.type_identifier,
+                    self.type_identifier,
                     &fat_ptr,
                     self.max_num_samples as u32,
                 )

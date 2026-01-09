@@ -602,7 +602,11 @@ pub trait Subscriber<T: Reloc + Send + Debug, R: Runtime + ?Sized> {
     /// # Errors
     ///
     /// Returns an error if the consumer cannot be created with the given identifier and instance info.
-    fn new(identifier: &str, type_identifier: &str, instance_info: R::ConsumerInfo) -> Result<Self>
+    fn new(
+        identifier: &'static str,
+        type_identifier: &'static str,
+        instance_info: R::ConsumerInfo,
+    ) -> Result<Self>
     where
         Self: Sized;
 

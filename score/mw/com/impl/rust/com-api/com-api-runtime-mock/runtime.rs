@@ -254,30 +254,20 @@ where
 
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
-    identifier: String,
+    identifier: &'static str,
     instance_info: Option<MockConsumerInfo>,
     data: PhantomData<T>,
-}
-
-impl<T> Default for SubscribableImpl<T> {
-    fn default() -> Self {
-        Self {
-            identifier: String::new(),
-            instance_info: None,
-            data: PhantomData,
-        }
-    }
 }
 
 impl<T: Reloc + Send + Debug> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(
-        identifier: &str,
-        _type_identifier: &str,
+        identifier: &'static str,
+        _type_identifier: &'static str,
         instance_info: MockConsumerInfo,
     ) -> com_api_concept::Result<Self> {
         Ok(Self {
-            identifier: identifier.to_string(),
+            identifier,
             instance_info: Some(instance_info),
             data: PhantomData,
         })
@@ -322,7 +312,11 @@ where
         T: 'a;
 
     fn unsubscribe(self) -> Self::Subscriber {
-        SubscribableImpl::default()
+        SubscribableImpl {
+            identifier: "",
+            instance_info: None,
+            data: PhantomData,
+        }
     }
 
     fn try_receive<'a>(
