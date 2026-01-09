@@ -596,12 +596,13 @@ pub trait Subscriber<T: Reloc + Send + Debug, R: Runtime + ?Sized> {
     /// # Parameters
     /// * `identifier` - Logical name of the event topic
     /// * `instance_info` - Runtime-specific configuration for the event source
+    /// * `type_identifier` - Unique type identifier of the event data type
     ///   Creates a new `Consumer` instance.
     ///
     /// # Errors
     ///
     /// Returns an error if the consumer cannot be created with the given identifier and instance info.
-    fn new(identifier: &str, instance_info: R::ConsumerInfo) -> Result<Self>
+    fn new(identifier: &str, type_identifier: &str, instance_info: R::ConsumerInfo) -> Result<Self>
     where
         Self: Sized;
 

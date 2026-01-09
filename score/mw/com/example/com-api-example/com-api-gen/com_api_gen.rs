@@ -40,9 +40,12 @@ pub struct VehicleConsumer<R: Runtime + ?Sized> {
 impl<R: Runtime + ?Sized> Consumer<R> for VehicleConsumer<R> {
     fn new(instance_info: R::ConsumerInfo) -> Self {
         VehicleConsumer {
-            left_tire: R::Subscriber::new("left_tire", instance_info.clone())
+            //event_id and type_id should be same as cpp gen file
+            //As both gen file will be generated from same generator
+            //so it will not cause naming conflict
+            left_tire: R::Subscriber::new("left_tire", "Tire", instance_info.clone())
                 .expect("Failed to create subscriber"),
-            exhaust: R::Subscriber::new("exhaust", instance_info.clone())
+            exhaust: R::Subscriber::new("exhaust", "Exhaust", instance_info.clone())
                 .expect("Failed to create subscriber"),
         }
     }

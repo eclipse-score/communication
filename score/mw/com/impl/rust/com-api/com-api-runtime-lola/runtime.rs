@@ -103,6 +103,7 @@ where
     T: Send,
 {
     data: sample_ptr_rs::SamplePtr<T>,
+    type_identifier: String,
 }
 
 impl<T> Drop for LolaBinding<T>
@@ -115,7 +116,7 @@ where
         unsafe {
             generic_bridge_ffi_rs::sample_ptr_delete(
                 &mut self.data as *mut _ as *mut std::ffi::c_void,
-                &std::any::type_name::<T>(),
+                &self.type_identifier,
             );
         }
     }
@@ -140,7 +141,7 @@ where
         unsafe {
             let data_ptr = generic_bridge_ffi_rs::sample_ptr_get(
                 &self.inner.data as *const _ as *const std::ffi::c_void,
-                &std::any::type_name::<T>(),
+                &self.inner.type_identifier,
             );
             &*(data_ptr as *const T)
         }
@@ -315,6 +316,7 @@ impl NativeProxyBase {
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
     identifier: String,
+    type_identifier: String,
     instance_info: Option<LolaConsumerInfo>,
     proxy_instance: Option<ManageProxyBase>,
     data: PhantomData<T>,
@@ -322,12 +324,17 @@ pub struct SubscribableImpl<T> {
 
 impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
-    fn new(identifier: &str, instance_info: LolaConsumerInfo) -> com_api_concept::Result<Self> {
+    fn new(
+        identifier: &str,
+        type_identifier: &str,
+        instance_info: LolaConsumerInfo,
+    ) -> com_api_concept::Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
         let native_proxy = NativeProxyBase::create_proxy(instance_info.interface_id, handle);
         let manage_proxy = ManageProxyBase(Arc::new(native_proxy));
         Ok(Self {
             identifier: identifier.to_string(),
+            type_identifier: type_identifier.to_string(),
             instance_info: Some(instance_info),
             proxy_instance: Some(manage_proxy),
             data: PhantomData,
@@ -358,7 +365,8 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
             event: Some(event_instance),
-            event_type: self.identifier.clone(),
+            event_id: self.identifier.clone(),
+            type_identifier: self.type_identifier.clone(),
             max_num_samples,
             data: VecDeque::new(),
         })
@@ -372,7 +380,8 @@ where
 {
     //Safety: This can be used as raw pointer because it comes under proxy instance lifetime
     event: Option<*mut ProxyEventBase>,
-    event_type: String,
+    event_id: String,
+    type_identifier: String,
     max_num_samples: usize,
     data: VecDeque<T>,
 }
@@ -398,7 +407,8 @@ where
 
     fn unsubscribe(self) -> Self::Subscriber {
         SubscribableImpl {
-            identifier: self.event_type,
+            identifier: self.event_id,
+            type_identifier: self.type_identifier,
             instance_info: None,
             proxy_instance: None,
             data: PhantomData,
@@ -425,6 +435,7 @@ where
                         inner: LolaBinding {
                             // Get reference to the managed object
                             data: sample_ptr,
+                            type_identifier: self.type_identifier.clone(),
                         },
                     };
                     while scratch.sample_count() >= max_samples {
@@ -449,7 +460,7 @@ where
             let count = unsafe {
                 generic_bridge_ffi_rs::get_samples_from_event(
                     event,
-                    std::any::type_name::<T>(),
+                    &self.type_identifier,
                     &fat_ptr,
                     self.max_num_samples as u32,
                 )

@@ -271,7 +271,11 @@ impl<T> Default for SubscribableImpl<T> {
 
 impl<T: Reloc + Send + Debug> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
-    fn new(identifier: &str, instance_info: MockConsumerInfo) -> com_api_concept::Result<Self> {
+    fn new(
+        identifier: &str,
+        _type_identifier: &str,
+        instance_info: MockConsumerInfo,
+    ) -> com_api_concept::Result<Self> {
         Ok(Self {
             identifier: identifier.to_string(),
             instance_info: Some(instance_info),
