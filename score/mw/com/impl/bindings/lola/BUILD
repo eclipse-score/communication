@@ -241,6 +241,26 @@ cc_library(
 )
 
 cc_library(
+    name = "generic_skeleton_event",
+    srcs = ["generic_skeleton_event.cpp"],
+    hdrs = ["generic_skeleton_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":event",
+        ":skeleton",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:generic_skeleton_event_binding",
+        "//score/mw/com/impl:size_info",
+        "//score/mw/com/impl/tracing:skeleton_event_tracing",
+        ":type_erased_sample_ptrs_guard",
+    ],
+)
+
+cc_library(
     name = "skeleton",
     srcs = [
         "skeleton.cpp",

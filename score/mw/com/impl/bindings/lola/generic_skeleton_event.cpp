@@ -12,7 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -27,18 +30,15 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
-    auto [data_storage, control_composite] =
+    std::tie(data_storage_, control_) =
         parent_.RegisterGeneric(event_fqn_, event_properties_, size_info_.size, size_info_.alignment);
-
-    data_storage_ = data_storage;
-    control_.emplace(std::move(control_composite));
+    PrepareOfferImpl(*this);
 
     return {};
 }
 
 Result<score::Blank> GenericSkeletonEvent::Send(const void* /*data*/) noexcept
 {
- 
     return MakeUnexpected(ComErrc::kIllegalUseOfAllocate);
 }
 
@@ -46,32 +46,65 @@ Result<score::Blank> GenericSkeletonEvent::Send(lola::ControlSlotCompositeIndica
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());
     control_.value().EventReady(control_slot_indicator, ++current_timestamp_);
+ 
+    // Only call NotifyEvent if there are any registered receive handlers for each quality level.
+    // This avoids the expensive lock operation in the common case where no handlers are registered.
+    // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
+    // handler registration, the next Send() will pick it up.
+    if (qm_event_update_notifications_registered_.load() && !qm_disconnect_)
+    {
+        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+            .GetLolaMessaging()
+            .NotifyEvent(QualityType::kASIL_QM, event_fqn_);
+    }
+    if (asil_b_event_update_notifications_registered_.load() && parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+            .GetLolaMessaging()
+            .NotifyEvent(QualityType::kASIL_B, event_fqn_);
+    }
+
     return {};
 }
 
-Result<std::pair<void*, lola::ControlSlotCompositeIndicator>> GenericSkeletonEvent::Allocate() noexcept
+Result<lola::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());
-    auto slot = control_.value().AllocateNextSlot();
-
-    if (!slot.IsValidQM() && !slot.IsValidAsilB())
+    if (!control_.has_value())
     {
-        return MakeUnexpected<std::pair<void*, lola::ControlSlotCompositeIndicator>>(
-            ComErrc::kSampleAllocationFailure);
+        ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+    const auto slot = control_.value().AllocateNextSlot();
+
+    if (!qm_disconnect_ && control_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
+    {
+        qm_disconnect_ = true;
+        score::mw::log::LogWarn("lola")
+            << __func__ << __LINE__
+            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << event_fqn_;
+        parent_.DisconnectQmConsumers();
     }
 
-    
-    auto* data_storage = data_storage_.get<EventDataStorage<std::uint8_t>>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(data_storage != nullptr);
-    auto* data_base_ptr = data_storage->data();
-    void* data_ptr = data_base_ptr + (slot.GetIndex() * size_info_.size);
-    return std::make_pair(data_ptr, slot);
-}
-
-void GenericSkeletonEvent::Deallocate(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());
-    control_.value().Discard(control_slot_indicator);
+    if (slot.IsValidQM() || slot.IsValidAsilB())
+    {
+        auto* data_storage = data_storage_.get<EventDataStorage<std::uint8_t>>();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(data_storage != nullptr);
+        // The at() method on EventDataStorage (which is a DynamicArray) correctly handles
+        // the pointer arithmetic based on its template type (std::uint8_t).
+        // We multiply by size_info_.size here because the underlying storage is a byte array.
+        void* data_ptr = &data_storage->at(static_cast<std::uint64_t>(slot.GetIndex()) * size_info_.size);
+        return lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
+    }
+    else
+    {
+        if (!event_properties_.enforce_max_samples)
+        {
+            ::score::mw::log::LogError("lola")
+                << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
+                   "disabled by config. Might be the root cause!";
+        }
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
 }
 
 std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
@@ -81,8 +114,7 @@ std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 
 void GenericSkeletonEvent::PrepareStopOffer() noexcept
 {
-    control_.reset();
-    data_storage_ = nullptr;
+    PrepareStopOfferImpl(*this);
 }
 
 BindingType GenericSkeletonEvent::GetBindingType() const noexcept

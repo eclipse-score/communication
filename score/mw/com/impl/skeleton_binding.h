@@ -99,13 +99,6 @@ class SkeletonBinding
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
 
-    /// @brief Creates a binding for a generic event.
-    /// @param event_name The name of the event.
-    /// @param size The size for the event's data.
-    /// @param alignment The alignment for the event's data.
-    /// @return A unique pointer to the created binding or an error.
-    virtual Result<std::unique_ptr<GenericSkeletonEventBinding>>
-    CreateGenericEventBinding(std::string_view event_name, size_t size, size_t alignment) noexcept = 0;
 };
 
 }  // namespace score::mw::com::impl

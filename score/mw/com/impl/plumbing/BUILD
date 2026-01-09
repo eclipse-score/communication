@@ -444,6 +444,21 @@ cc_library(
 )
 
 cc_library(
+    name = "generic_skeleton_event_binding_factory",
+    hdrs = ["generic_skeleton_event_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:generic_skeleton_event_binding",
+        "//score/mw/com/impl:skeleton_base",
+        "//score/mw/com/impl/plumbing:skeleton_service_element_binding_factory_impl",
+    ],
+)
+
+cc_library(
     name = "runtime",
     srcs = [
         "binding_runtime_factory.cpp",

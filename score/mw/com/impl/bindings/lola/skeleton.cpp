@@ -75,6 +75,20 @@ const LolaServiceTypeDeployment& GetLolaServiceTypeDeployment(const InstanceIden
     return *lola_service_type_deployment_ptr;
 }
 
+const LolaServiceInstanceDeployment& GetLolaServiceInstanceDeployment(const InstanceIdentifier& identifier)
+{
+    const auto& instance_depl_info = InstanceIdentifierView{identifier}.GetServiceInstanceDeployment();
+    const auto* lola_service_instance_deployment_ptr =
+        std::get_if<LolaServiceInstanceDeployment>(&instance_depl_info.bindingInfo_);
+    if (lola_service_instance_deployment_ptr == nullptr)
+    {
+        score::mw::log::LogError("lola") << "GetLolaServiceInstanceDeployment: Wrong Binding! ServiceInstanceDeployment "
+                                          "doesn't contain a LoLa deployment!";
+        std::terminate();
+    }
+    return *lola_service_instance_deployment_ptr;
+}
+
 ServiceDataControl* GetServiceDataControlSkeletonSide(const memory::shared::ManagedMemoryResource& control)
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
@@ -96,6 +110,22 @@ ServiceDataStorage* GetServiceDataStorageSkeletonSide(const memory::shared::Mana
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_storage != nullptr,
                            "Could not retrieve service data storage within shared-memory.");
     return service_data_storage;
+}
+
+std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceExistenceMarkerFile(
+    const LolaServiceInstanceId::InstanceId lola_instance_id,
+    const IPartialRestartPathBuilder& partial_restart_path_builder)
+{
+    auto service_instance_existence_marker_file_path =
+        partial_restart_path_builder.GetServiceInstanceExistenceMarkerFilePath(lola_instance_id);
+
+    // The instance existence marker file can be opened in the case that another skeleton of the same service currently
+    // exists or that a skeleton of the same service previously crashed. We cannot determine which is true until we try
+    // to flock the file. Therefore, we do not take ownership on construction and take ownership later if we can
+    // exclusively flock the file.
+    bool take_ownership{false};
+    return memory::shared::LockFile::CreateOrOpen(std::move(service_instance_existence_marker_file_path),
+                                                  take_ownership);
 }
 
 enum class ShmObjectType : std::uint8_t
@@ -193,42 +223,32 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
         return nullptr;
     }
 
-    // --- FIX 1: Only declare these ONCE ---
-    const auto& instance_depl_info = InstanceIdentifierView{identifier}.GetServiceInstanceDeployment();
-    const auto* lola_service_instance_deployment_ptr =
-        std::get_if<LolaServiceInstanceDeployment>(&instance_depl_info.bindingInfo_);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_service_instance_deployment_ptr != nullptr);
-    const auto& lola_service_instance_deployment = *lola_service_instance_deployment_ptr;
-
+    const auto& lola_service_instance_deployment = GetLolaServiceInstanceDeployment(identifier);
     const auto lola_instance_id = lola_service_instance_deployment.instance_id_.value().GetId();
-    auto service_instance_existence_marker_file_path =
-        partial_restart_path_builder->GetServiceInstanceExistenceMarkerFilePath(lola_instance_id);
-
-    // --- FIX 2: Correct LockFile logic (only one declaration) ---
-    bool take_ownership{true}; 
-    auto service_instance_existence_marker_file = memory::shared::LockFile::CreateOrOpen(
-        std::move(service_instance_existence_marker_file_path),
-        take_ownership);
+    auto service_instance_existence_marker_file =
+        CreateOrOpenServiceInstanceExistenceMarkerFile(lola_instance_id, *partial_restart_path_builder);
 
     if (!service_instance_existence_marker_file.has_value())
     {
         score::mw::log::LogError("lola") << "Could not create or open service instance existence marker file.";
         return nullptr;
     }
-
+    
     auto service_instance_existence_mutex_and_lock =
         std::make_unique<memory::shared::FlockMutexAndLock<memory::shared::ExclusiveFlockMutex>>(
             *service_instance_existence_marker_file);
     if (!service_instance_existence_mutex_and_lock->TryLock())
     {
         score::mw::log::LogError("lola")
-            << "Flock try_lock failed: Another Skeleton could have already flocked the marker file.";
+            << "Flock try_lock failed: Another Skeleton could have already flocked the marker file and is "
+               "actively offering the same service instance.";
         return nullptr;
     }
-
-    // --- FIX 3: Use the helper to get the type deployment ---
+    
     const auto& lola_service_type_deployment = GetLolaServiceTypeDeployment(identifier);
-
+    // Since we were able to flock the existence marker file, it means that either we created it or the skeleton that
+    // created it previously crashed. Either way, we take ownership of the LockFile so that it's destroyed when this
+    // Skeleton is destroyed.
     service_instance_existence_marker_file.value().TakeOwnership();
     return std::make_unique<lola::Skeleton>(identifier,
                                             lola_service_instance_deployment,
@@ -830,18 +850,6 @@ score::cpp::optional<EventMetaInfo> Skeleton::GetEventMetaInfo(const ElementFqId
     }
 }
 
-bool Skeleton::IsEventControlRegistered(const ElementFqId element_fq_id) const noexcept
-{
-    if (control_qm_ == nullptr)
-    {
-        return false;
-    }
-    const bool found_qm = (control_qm_->event_controls_.count(element_fq_id) > 0);
-
-    // For ASIL-B, it must be in both. For QM, control_asil_b_ is nullptr.
-    return found_qm && (control_asil_b_ == nullptr || control_asil_b_->event_controls_.count(element_fq_id) > 0);
-}
-
 QualityType Skeleton::GetInstanceQualityType() const
 {
     return InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_;
@@ -913,92 +921,72 @@ void Skeleton::InitializeSharedMemoryForControl(
     control = memory->construct<ServiceDataControl>(memory->getMemoryResourceProxy());
 }
 
-Result<std::unique_ptr<GenericSkeletonEventBinding>>
-Skeleton::CreateGenericEventBinding(std::string_view event_name, size_t size, size_t alignment) noexcept
-{
-    const auto& event_deployment = GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(
-        lola_service_instance_deployment_, std::string(event_name));
-
-    const SkeletonEventProperties event_properties{event_deployment.GetNumberOfSampleSlots().value_or(1U),
-                                                   event_deployment.max_subscribers_.value_or(1U),
-                                                   event_deployment.enforce_max_samples_};
-
-    const ElementFqId event_fqn{
-        GetLolaServiceId(), GetLolaEventTypeId(event_name), GetLolaInstanceId(), ServiceElementType::EVENT};
-
-    return std::make_unique<lola::GenericSkeletonEvent>(*this,
-                                                        event_properties,
-                                                        event_fqn,
-                                                        SizeInfo{size, alignment});
-}
-
 EventDataControlComposite Skeleton::CreateEventControlComposite(const ElementFqId element_fq_id,
                                                                 const SkeletonEventProperties& element_properties) noexcept
 {
-    if (was_old_shm_region_reopened_) {
-        auto it_qm = control_qm_->event_controls_.find(element_fq_id);
-        if (it_qm != control_qm_->event_controls_.end()) {
-
-	    it_qm->second.data_control.RemoveAllocationsForWriting();
-
-            EventDataControl* asil_ctrl = nullptr;
-            if (control_asil_b_ != nullptr) {
-                auto it_asil = control_asil_b_->event_controls_.find(element_fq_id);
-                if (it_asil != control_asil_b_->event_controls_.end()) {
-                    it_asil->second.data_control.RemoveAllocationsForWriting();
-                    asil_ctrl = &it_asil->second.data_control;
-                }
-            }
-	    return EventDataControlComposite{&it_qm->second.data_control, asil_ctrl};
-        }
-    }
-
     auto control_qm = control_qm_->event_controls_.emplace(std::piecewise_construct,
                                                            std::forward_as_tuple(element_fq_id),
                                                            std::forward_as_tuple(element_properties.number_of_slots,
                                                                                 element_properties.max_subscribers,
                                                                                 element_properties.enforce_max_samples,
                                                                                 control_qm_resource_->getMemoryResourceProxy()));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second, "Couldn't register/emplace event-meta-info in data-section.");
 
     EventDataControl* control_asil_result{nullptr};
     if (control_asil_resource_ != nullptr)
     {
-        auto iterator = control_asil_b_->event_controls_.emplace(std::piecewise_construct,
-                                                                std::forward_as_tuple(element_fq_id),
-                                                                std::forward_as_tuple(element_properties.number_of_slots,
-                                                                                     element_properties.max_subscribers,
-                                                                                     element_properties.enforce_max_samples,
-                                                                                     control_asil_resource_->getMemoryResourceProxy()));
+        auto iterator = control_asil_b_->event_controls_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(element_fq_id),
+            std::forward_as_tuple(element_properties.number_of_slots,
+            element_properties.max_subscribers,
+            element_properties.enforce_max_samples,
+            control_asil_resource_->getMemoryResourceProxy()));
+
+        // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:
+        // A function shall not return a reference or a pointer to an automatic variable (including parameters), defined
+        // within the function.
+        // Suppress "AUTOSAR C++14 M7-5-2": The address of an object with automatic storage shall not be assigned to
+        // another object that may persist after the first object has ceased to exist.
+        // The result pointer is still valid outside this method until Skeleton object (as a holder) is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]    
         control_asil_result = &iterator.first->second.data_control;
     }
+    // clang-format off
+    // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
+    // coverity[autosar_cpp14_m7_5_1_violation]
+    // coverity[autosar_cpp14_m7_5_2_violation]
+    // coverity[autosar_cpp14_a3_8_1_violation]
     return EventDataControlComposite{&control_qm.first->second.data_control, control_asil_result};
 }
 
-std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
-Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
-                                                const SkeletonEventProperties& element_properties,
-                                                size_t sample_size,
-                                                size_t sample_alignment) noexcept
+std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> 
+Skeleton::CreateEventDataFromOpenedSharedMemory(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties,
+    size_t sample_size,
+    size_t sample_alignment) noexcept
 {
-    // 1. Check if we are REOPENING an existing region
-    if (was_old_shm_region_reopened_) {
-        // Find existing data instead of constructing
-        auto it = storage_->events_.find(element_fq_id);
-        if (it != storage_->events_.end()) {
-             return {it->second, CreateEventControlComposite(element_fq_id, element_properties)};
-        }
-    }
-
-// 2. If it's a fresh start OR the event wasn't found, ONLY THEN construct
     auto* data_storage = storage_resource_->construct<EventDataStorage<std::uint8_t>>(
         sample_size * element_properties.number_of_slots,
         memory::shared::PolymorphicOffsetPtrAllocator<std::uint8_t>(storage_resource_->getMemoryResourceProxy()));
 
-    storage_->events_.emplace(element_fq_id, data_storage);
+    auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
+                                                         std::forward_as_tuple(element_fq_id),
+                                                         std::forward_as_tuple(data_storage));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
+                                               "Couldn't register/emplace event-storage in data-section.");
 
     const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
     void* const event_data_raw_array = data_storage->data();
-    storage_->events_metainfo_.emplace(element_fq_id, EventMetaInfo{sample_meta_info, event_data_raw_array});
+    auto inserted_meta_info = storage_->events_metainfo_.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(element_fq_id),
+        std::forward_as_tuple(sample_meta_info, event_data_raw_array));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
+                                               "Couldn't register/emplace event-meta-info in data-section.");
 
     return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
 }
@@ -1006,11 +994,33 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
 std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> Skeleton::RegisterGeneric(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
-    size_t sample_size,
-    size_t sample_alignment) noexcept
+    const size_t sample_size,
+    const size_t sample_alignment) noexcept
 {
-    return CreateEventDataFromOpenedSharedMemory(
-        element_fq_id, element_properties, sample_size, sample_alignment);
+    if (was_old_shm_region_reopened_)
+    {
+        auto [data_storage, control_composite] = OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
+
+        auto& event_data_control_qm = control_composite.GetQmEventDataControl();
+        auto rollback_result = event_data_control_qm.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
+            [&event_data_control_qm](const TransactionLog::SlotIndexType slot_index) {
+                event_data_control_qm.DereferenceEventWithoutTransactionLogging(slot_index);
+            });
+        if (!rollback_result.has_value())
+        {
+            ::score::mw::log::LogWarn("lola")
+                << "SkeletonEvent: PrepareOffer failed: Could not rollback tracing consumer after "
+                   "crash. Disabling tracing.";
+            impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
+        }
+
+        return {data_storage, control_composite};
+    }
+    else
+    {
+        return CreateEventDataFromOpenedSharedMemory(
+            element_fq_id, element_properties, sample_size, sample_alignment);
+    }
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
@@ -1094,11 +1104,7 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
 
 bool Skeleton::IsProxyInAllowedConsumerList(const uid_t proxy_uid, const QualityType asil_level) const
 {
-    const auto& instance_depl_info = InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment();
-    const auto* lola_service_instance_deployment_ptr =
-        std::get_if<LolaServiceInstanceDeployment>(&instance_depl_info.bindingInfo_);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_service_instance_deployment_ptr != nullptr);
-    const auto& lola_service_instance_deployment = *lola_service_instance_deployment_ptr;
+    const auto& lola_service_instance_deployment = GetLolaServiceInstanceDeployment(identifier_);
     const auto& allowed_consumer = lola_service_instance_deployment.allowed_consumer_;
 
     // Check if there is an allowed consumer list for the specified quality (ASIL-B / QM)

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "score/mw/com/impl/skeleton_event_binding.h"
+#include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_composite_indicator.h"
 #include "score/result/result.h"
 
@@ -28,9 +29,7 @@ class GenericSkeletonEventBinding : public SkeletonEventBindingBase
 
     virtual Result<score::Blank> Send(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept = 0;
 
-    virtual Result<std::pair<void*, lola::ControlSlotCompositeIndicator>> Allocate() noexcept = 0;
-
-    virtual void Deallocate(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept = 0;
+    virtual Result<lola::SampleAllocateePtr<void>> Allocate() noexcept = 0;
 
     virtual std::pair<size_t, size_t> GetSizeInfo() const noexcept = 0;
 };

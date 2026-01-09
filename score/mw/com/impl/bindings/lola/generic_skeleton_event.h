@@ -20,11 +20,14 @@
 #include "score/memory/shared/offset_ptr.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
+#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 namespace score::mw::com::impl::lola
 {
 
+class TransactionLogRegistrationGuard;
 class Skeleton;
 
 /// @brief The LoLa binding implementation for a generic skeleton event.
@@ -40,9 +43,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
     Result<score::Blank> Send(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept override;
 
-    Result<std::pair<void*, lola::ControlSlotCompositeIndicator>> Allocate() noexcept override;
-
-    void Deallocate(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept override;
+    Result<lola::SampleAllocateePtr<void>> Allocate() noexcept override;
 
     std::pair<size_t, size_t> GetSizeInfo() const noexcept override;
 
@@ -62,10 +63,69 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     SizeInfo size_info_;
     const SkeletonEventProperties event_properties_;
     const ElementFqId event_fqn_;
-    score::cpp::optional<EventDataControlComposite> control_;
-    std::atomic<EventSlotStatus::EventTimeStamp> current_timestamp_{0U};
+    score::cpp::optional<EventDataControlComposite> control_{};
+    EventSlotStatus::EventTimeStamp current_timestamp_{0U};
     score::memory::shared::OffsetPtr<void> data_storage_{nullptr};
+    bool qm_disconnect_{false};
     impl::tracing::SkeletonEventTracingData tracing_data_{};
+    std::atomic<bool> qm_event_update_notifications_registered_{false};
+    std::atomic<bool> asil_b_event_update_notifications_registered_{false};
+    std::optional<lola::TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
+    std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
+
+  public:
+    // The following methods are public but intended for use by PrepareOfferImpl helper
+    impl::tracing::SkeletonEventTracingData& GetTracingData()
+    {
+        return tracing_data_;
+    }
+
+    void EmplaceTransactionLogRegistrationGuard()
+    {
+        score::cpp::ignore = transaction_log_registration_guard_.emplace(
+            TransactionLogRegistrationGuard::Create(control_.value().GetQmEventDataControl()));
+    }
+
+    void EmplaceTypeErasedSamplePtrsGuard()
+    {
+        score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
+    }
+
+    void UpdateCurrentTimestamp()
+    {
+        current_timestamp_ = control_.value().GetLatestTimestamp();
+    }
+
+    Skeleton& GetParent()
+    {
+        return parent_;
+    }
+
+    const ElementFqId& GetElementFQId() const
+    {
+        return event_fqn_;
+    }
+
+    void SetQmNotificationsRegistered(bool value)
+    {
+        qm_event_update_notifications_registered_.store(value);
+    }
+
+    void SetAsilBNotificationsRegistered(bool value)
+    {
+        asil_b_event_update_notifications_registered_.store(value);
+    }
+
+    void ResetGuards() noexcept
+    {
+        type_erased_sample_ptrs_guard_.reset();
+        if (control_.has_value())
+        {
+            transaction_log_registration_guard_.reset();
+        }
+        control_.reset();
+        data_storage_ = nullptr;
+    }
 };
 
 } // namespace score::mw::com::impl::lola

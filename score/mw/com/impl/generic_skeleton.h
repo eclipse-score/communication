@@ -35,12 +35,14 @@ class GenericSkeleton : public SkeletonBase
     /// @brief Creates a GenericSkeleton for a given instance specifier.
     /// @param specifier The instance specifier.
     /// @return A GenericSkeleton or an error.
-    static Result<GenericSkeleton> Create(const InstanceSpecifier& specifier) noexcept;
+    static Result<GenericSkeleton> Create(const InstanceSpecifier& specifier,
+                                          MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept;
 
     /// @brief Creates a GenericSkeleton for a given instance identifier.
     /// @param identifier The instance identifier.
     /// @return A GenericSkeleton or an error.
-    static Result<GenericSkeleton> Create(const InstanceIdentifier& identifier) noexcept;
+    static Result<GenericSkeleton> Create(const InstanceIdentifier& identifier,
+                                          MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept;
 
     /// @brief Adds a type-erased event to the skeleton.
     ///
@@ -59,9 +61,11 @@ class GenericSkeleton : public SkeletonBase
     void StopOfferService() noexcept;
 
   private:
-    GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding);
+    GenericSkeleton(const InstanceIdentifier& identifier,
+                    std::unique_ptr<SkeletonBinding> binding,
+                    MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent);
 
-    std::map<std::string_view, std::unique_ptr<GenericSkeletonEvent>> events_;
+    std::map<std::string_view, std::unique_ptr<GenericSkeletonEvent>> owned_events_;
 };
 
 } // namespace score::mw::com::impl

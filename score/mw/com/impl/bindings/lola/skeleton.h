@@ -107,14 +107,11 @@ class Skeleton final : public SkeletonBinding
         return BindingType::kLoLa;
     };
 
-    Result<std::unique_ptr<GenericSkeletonEventBinding>>
-    CreateGenericEventBinding(std::string_view event_name, size_t size, size_t alignment) noexcept override;
-
     std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> RegisterGeneric(
         const ElementFqId element_fq_id,
         const SkeletonEventProperties& element_properties,
-        size_t sample_size,
-        size_t sample_alignment) noexcept;
+        const size_t sample_size,
+        const size_t sample_alignment) noexcept;
 
     /// \brief Enables dynamic registration of Events at the Skeleton.
     /// \tparam SampleType The type of the event
@@ -134,31 +131,6 @@ class Skeleton final : public SkeletonBinding
     /// \param element_fq_id identification of the event.
     /// \return Events meta-info, if it has been registered, null else.
     score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const;
-
-    /// @brief Checks if an event's control block is registered.
-    /// @param element_fq_id The fully qualified ID of the event.
-    /// @return True if the control block is registered, false otherwise.
-    bool IsEventControlRegistered(const ElementFqId element_fq_id) const noexcept;
-
-    const LolaServiceInstanceDeployment& GetLolaServiceInstanceDeployment() const noexcept
-    {
-        return lola_service_instance_deployment_;
-    }
-
-    LolaServiceId GetLolaServiceId() const noexcept
-    {
-        return lola_service_id_;
-    }
-
-    LolaEventId GetLolaEventTypeId(std::string_view event_name) const noexcept
-    {
-        return lola_service_type_deployment_.events_.at(std::string(event_name));
-    }
-
-    LolaServiceInstanceId::InstanceId GetLolaInstanceId() const noexcept
-    {
-        return lola_instance_id_;
-    }
 
     QualityType GetInstanceQualityType() const;
 
@@ -251,7 +223,7 @@ class Skeleton final : public SkeletonBinding
                                            pid_t proxy_pid);
     static MethodData& GetMethodData(const memory::shared::ManagedMemoryResource& resource);
 
-    /// \brief Checks whether the Proxy which sent a notification to the Skeleton that it subscribed to a method is in
+        /// \brief Checks whether the Proxy which sent a notification to the Skeleton that it subscribed to a method is in
     /// the allowed_consumers list in the configuration.
     bool IsProxyInAllowedConsumerList(const uid_t proxy_uid, const QualityType asil_level) const;
 

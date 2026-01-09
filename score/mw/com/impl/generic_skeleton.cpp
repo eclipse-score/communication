@@ -4,6 +4,7 @@
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
+ *
  * This program and the accompanying materials are made available under the
  * terms of the Apache License Version 2.0 which is available at
  * https://www.apache.org/licenses/LICENSE-2.0
@@ -13,6 +14,7 @@
 #include "score/mw/com/impl/generic_skeleton.h"
 
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/size_info.h"
@@ -21,23 +23,24 @@
 namespace score::mw::com::impl
 {
 
-Result<GenericSkeleton> GenericSkeleton::Create(const InstanceSpecifier& specifier) noexcept
+Result<GenericSkeleton> GenericSkeleton::Create(
+    const InstanceSpecifier& specifier,
+    MethodCallProcessingMode mode) noexcept
 {
-    const auto identifier_result = Runtime::getInstance().resolve(specifier);
-    if (identifier_result.empty())
+    const auto instance_identifier_result = GetInstanceIdentifier(specifier);
+
+    if (!instance_identifier_result.has_value())
     {
-        return MakeUnexpected(ComErrc::kInstanceIDCouldNotBeResolved);
+        score::mw::log::LogFatal("lola") << "Failed to resolve instance identifier from instance specifier";
+        std::terminate();
     }
 
-    if (identifier_result.size() > 1)
-    {
-        score::mw::log::LogWarn("com") << "InstanceSpecifier resolved to more than one InstanceIdentifier. Using the first one.";
-    }
-
-    return Create(identifier_result[0]);
+    return Create(instance_identifier_result.value(),mode);
 }
 
-Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identifier) noexcept
+Result<GenericSkeleton> GenericSkeleton::Create(
+    const InstanceIdentifier& identifier,
+    MethodCallProcessingMode mode) noexcept
 {
     auto binding = SkeletonBindingFactory::Create(identifier);
     if (!binding)
@@ -45,33 +48,33 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    return GenericSkeleton(identifier, std::move(binding));
+    return GenericSkeleton(identifier, std::move(binding),mode);
 }
 
 Result<GenericSkeletonEvent*> GenericSkeleton::AddEvent(std::string_view name, const SizeInfo& size_info) noexcept
 {
-    if (SkeletonBaseView{*this}.IsOffered())
+    auto skeleton_view = SkeletonBaseView{*this};
+    if (skeleton_view.IsOffered())
     {
-        return MakeUnexpected(ComErrc::kNotOffered);
+        // It is not allowed to add events after the service has been offered.
+        return MakeUnexpected(ComErrc::kServiceInstanceAlreadyOffered);
     }
 
-    auto event_binding_result =
-        SkeletonBaseView{*this}.GetBinding()->CreateGenericEventBinding(name, size_info.size, size_info.alignment);
+    auto event_binding_result = GenericSkeletonEventBindingFactory::Create(*this, name, size_info);
     if (!event_binding_result.has_value())
     {
-        return MakeUnexpected(ComErrc::kNotOffered);
+        return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    auto emplace_result = events_.emplace(
+    auto emplace_result = owned_events_.emplace(
         name, std::make_unique<GenericSkeletonEvent>(*this, name, std::move(event_binding_result).value()));
     if (!emplace_result.second)
     {
-        return MakeUnexpected(ComErrc::kEventNotExisting);
+        // An event with this name has already been added.
+        return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
     }
-    auto& event = *emplace_result.first->second;
-    SkeletonBaseView{*this}.RegisterEvent(name, event);
 
-    return &event;
+    return emplace_result.first->second.get();
 }
 
 Result<score::Blank> GenericSkeleton::OfferService() noexcept
@@ -84,8 +87,10 @@ void GenericSkeleton::StopOfferService() noexcept
     SkeletonBase::StopOfferService();
 }
 
-GenericSkeleton::GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding)
-    : SkeletonBase(std::move(binding), identifier)
+GenericSkeleton::GenericSkeleton(const InstanceIdentifier& identifier,
+                                 std::unique_ptr<SkeletonBinding> binding,
+                                 MethodCallProcessingMode mode)
+    : SkeletonBase(std::move(binding), identifier,mode)
 {
 }
 

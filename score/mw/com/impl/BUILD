@@ -118,6 +118,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":error",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory",
         "//score/mw/com/impl/plumbing",
     ],
     tags = ["FFI"],
@@ -146,7 +147,9 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
         ":generic_skeleton_event_binding",
+        ":skeleton_base",
         ":skeleton_event_base",
         ":skeleton_event_binding",
         ":size_info",
@@ -165,6 +168,7 @@ cc_library(
     visibility = [
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/plumbing:__pkg__",
     ],
     deps = [
         ":skeleton_event_binding",

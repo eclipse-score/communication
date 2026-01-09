@@ -12,6 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/generic_skeleton_event.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
+#include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
+#include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
+#include "score/mw/com/impl/skeleton_base.h"
 
 #include <functional>
 
@@ -23,35 +26,62 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
                                              std::unique_ptr<GenericSkeletonEventBinding> binding)
     : SkeletonEventBase(skeleton_base, event_name, std::move(binding))
 {
+    SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
+
+    if (binding_ != nullptr)
+    {
+        const SkeletonBaseView skeleton_base_view{skeleton_base};
+        const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
+        const auto binding_type = binding_->GetBindingType();
+        auto tracing_data =
+            tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+        binding_->SetSkeletonEventTracingData(tracing_data);
+    }
 }
 
 Result<score::Blank> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcept
 {
+    if (!service_offered_flag_.IsSet())
+    {
+        score::mw::log::LogError("lola")
+            << "GenericSkeletonEvent::Send failed as Event has not yet been offered or has been stop offered";
+        return MakeUnexpected(ComErrc::kNotOffered);
+    }
+
+    auto* const lola_sample_ptr = SampleAllocateePtrView<void>{sample}.As<lola::SampleAllocateePtr<void>>();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_sample_ptr != nullptr);
+
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
     auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-    std::cout<<"auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());"<<std::endl;
-    auto* const generic_sample_ptr = SampleAllocateePtrView<void>{sample}.As<GenericEventSamplePtr>();
-    std::cout<<"auto* const generic_sample_ptr = SampleAllocateePtrView<void>{sample}.As<GenericEventSamplePtr>();"<<std::endl;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(generic_sample_ptr != nullptr);
-    auto result = binding->Send(generic_sample_ptr->GetControlSlotIndicator());
-    return result;
+    
+    const auto send_result = binding->Send(lola_sample_ptr->GetReferencedSlot());
+    if (!send_result.has_value())
+    {
+        score::mw::log::LogError("lola") << "GenericSkeletonEvent::Send failed: " << send_result.error().Message()
+                                       << ": " << send_result.error().UserMessage();
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+    return send_result;
 }
 
 Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 {
-    auto* binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-    auto result = binding->Allocate();
+    if (!service_offered_flag_.IsSet())
+    {
+        score::mw::log::LogError("lola")
+            << "GenericSkeletonEvent::Allocate failed as Event has not yet been offered or has been stop offered";
+        return MakeUnexpected(ComErrc::kNotOffered);
+    }
+    auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
+    auto result = binding->Allocate(); // This now returns a Result<lola::SampleAllocateePtr<void>>
     if (!result.has_value())
     {
+        score::mw::log::LogError("lola") << "SkeletonEvent::Allocate failed: " << result.error().Message()
+                                       << ": " << result.error().UserMessage();    
+
         return MakeUnexpected<SampleAllocateePtr<void>>(ComErrc::kSampleAllocationFailure);
     }
-
-    auto deallocator = [binding_ptr = binding_.get()](lola::ControlSlotCompositeIndicator indicator) {
-        auto* const generic_binding = static_cast<GenericSkeletonEventBinding*>(binding_ptr);
-        generic_binding->Deallocate(indicator);
-    };
-
-    return MakeSampleAllocateePtr(
-        GenericEventSamplePtr(result.value().first, result.value().second, std::move(deallocator)));
+    return MakeSampleAllocateePtr(std::move(result.value()));
 }
 
 SizeInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
