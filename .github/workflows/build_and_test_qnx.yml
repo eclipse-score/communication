@@ -45,8 +45,7 @@ jobs:
               incompatible_targets:
                 - "-//score/mw/com/requirements/..." # Uninvestigated problem
                 - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
-      # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       permissions:
         contents: read
         pull-requests: read
@@ -61,6 +60,8 @@ jobs:
             bazelisk-cache: true
             disk-cache: ${{ github.workflow }}-${{ matrix.bazel-config }}
             repository-cache: true
+        - name: Allow linux-sandbox
+          uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Setup QNX License
           if: ${{ contains(matrix.bazel-config, 'qnx') }}
           env:
