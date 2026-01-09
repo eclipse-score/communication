@@ -23,7 +23,7 @@ on:
 
 jobs:
   create-draft-release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     outputs:
@@ -88,7 +88,7 @@ jobs:
       contents: write
 
   finalize-release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - create-draft-release
       - run-build-and-test-host
