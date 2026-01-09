@@ -27,8 +27,7 @@ jobs:
         fail-fast: false
         matrix:
           toolchain: ["@llvm_toolchain//:cc-toolchain-x86_64-linux", "@gcc_toolchain//:host_gcc_12"]
-      # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
@@ -39,6 +38,23 @@ jobs:
             bazelisk-cache: true
             disk-cache: ${{ github.workflow }}-${{ matrix.toolchain }}
             repository-cache: true
+        - name: Allow linux-sandbox
+          run: |
+            INSTALL_BASE=$(bazel info install_base)
+            sudo bash -c "cat >>/etc/apparmor.d/score-linux-sandbox" <<-EOF
+            abi <abi/4.0>,
+            include <tunables/global>
+            
+            profile linux-sandbox ${INSTALL_BASE}/linux-sandbox flags=(unconfined) {
+              userns,
+            
+              # Site-specific additions and overrides. See local/README for details.
+              include if exists <local/score-linux-sandbox>
+            }
+            EOF
+            less /etc/apparmor.d/score-linux-sandbox
+            sudo apparmor_parser -r /etc/apparmor.d/score-linux-sandbox
+            ${INSTALL_BASE}/linux-sandbox "/bin/true"
         - name: Bazel build communication targets
           run: |
             bazel build --extra_toolchains=${{ matrix.toolchain }} //...
