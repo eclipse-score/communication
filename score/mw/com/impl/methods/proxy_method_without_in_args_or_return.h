@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
 
 #include "score/memory/data_type_size_info.h"
@@ -42,11 +43,34 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     friend class ProxyMethodView;
 
   public:
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
+        : ProxyMethodBase(proxy_base,
+                          ProxyMethodBindingFactory<void()>::Create(proxy_base.GetHandle(),
+                                                                    ProxyBaseView{proxy_base}.GetBinding(),
+                                                                    method_name),
+                          method_name)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
         : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name)
     {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
     }
 
     ~ProxyMethod() final = default;

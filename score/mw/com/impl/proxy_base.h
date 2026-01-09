@@ -238,6 +238,11 @@ class ProxyBaseView final
         method_it->second = method;
     }
 
+    bool AreBindingsValid() const
+    {
+        return proxy_base_.AreBindingsValid();
+    }
+
   private:
     ProxyBase& proxy_base_;
 };
