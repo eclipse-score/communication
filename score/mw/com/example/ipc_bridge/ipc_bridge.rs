@@ -73,7 +73,7 @@ fn run_recv_mode(instance_specifier: mw_com::InstanceSpecifier) {
     let handles = loop {
         let handles = mw_com::proxy::find_service(instance_specifier.clone())
             .expect("Instance specifier resolution failed");
-        if handles.len() > 0 {
+        if !handles.is_empty() {
             break handles;
         } else {
             println!("No service found, retrying in 1 second");

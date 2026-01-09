@@ -21,6 +21,7 @@
 //TODO: revist this once com-api is stable - Ticket-234827
 #![allow(clippy::needless_lifetimes)]
 
+use core::cmp::Ordering;
 use core::fmt::Debug;
 use core::future::Future;
 use core::marker::PhantomData;
@@ -161,14 +162,16 @@ where
 
 impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug {}
 
-use core::cmp::Ordering;
-
+// Ordering traits for Sample<T>
+// We compare Sample instances based on their underlying FFI pointer addresses (self.inner.data).
+// Two samples are equal if they point to the same memory location, and ordering is based on
+// pointer address comparison.
 impl<T> PartialEq for Sample<T>
 where
     T: Send + Reloc + Debug,
 {
     fn eq(&self, other: &Self) -> bool {
-        (&self.inner.data as *const _) == (&other.inner.data as *const _)
+        std::ptr::eq(&self.inner.data, &other.inner.data)
     }
 }
 
@@ -287,6 +290,10 @@ impl Debug for ManageProxyBase {
 struct NativeProxyBase {
     proxy: *mut ProxyBase, // Stores the proxy instance
 }
+// Safety: NativeProxyBase can be sent and shared across threads as this contains only a raw pointer
+unsafe impl Send for NativeProxyBase {}
+// Safety: NativeProxyBase can be shared across threads as this contains only a raw pointer
+unsafe impl Sync for NativeProxyBase {}
 
 impl Drop for NativeProxyBase {
     fn drop(&mut self) {
@@ -359,7 +366,7 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
                 max_num_samples.try_into().unwrap(),
             )
         };
-        if status == false {
+        if !status {
             return Err(Error::Fail);
         }
         // Store in SubscriberImpl with event, max_num_samples

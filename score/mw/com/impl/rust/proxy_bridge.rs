@@ -714,7 +714,7 @@ impl HandleContainer {
 
     /// Returns the first handle in the container, or 'None' if the container is empty.
     pub fn first(&self) -> Option<&HandleType> {
-        if self.len() > 0 {
+        if !self.is_empty() {
             Some(self.index(0))
         } else {
             None
