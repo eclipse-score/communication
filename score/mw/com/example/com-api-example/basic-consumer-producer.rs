@@ -12,10 +12,9 @@
  ********************************************************************************/
 
 use com_api::{
-    Builder, ConsumerDescriptor, Error, FindServiceSpecifier, InstanceSpecifier,
-    LolaRuntimeBuilderImpl, LolaRuntimeImpl, MockRuntimeBuilderImpl, MockRuntimeImpl, Producer,
-    Publisher, Result, Runtime, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery,
-    Subscriber, Subscription,
+    Builder, Error, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl,
+    MockRuntimeBuilderImpl, Producer, Publisher, Result, Runtime, SampleContainer,
+    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Tire, VehicleConsumer, VehicleInterface, VehicleOfferedProducer};

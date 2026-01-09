@@ -17,7 +17,6 @@
 //! It is only meant to be used for testing and development.
 
 #![allow(dead_code)]
-
 //lifetime warning for all the Sample struct impl block . it is required for the Sample struct event lifetime parameter
 // and mentaining lifetime of instances and data reference
 // As of supressing clippy::needless_lifetimes

@@ -76,14 +76,9 @@ impl Runtime for LolaRuntimeImpl {
         instance_specifier: FindServiceSpecifier,
     ) -> Self::ServiceDiscovery<I> {
         SampleConsumerDiscovery {
-            instance_info: LolaConsumerInfo {
-                instance_specifier: match instance_specifier {
-                    FindServiceSpecifier::Any => todo!(), // TODO: Add error msg like "ANY not supported by Lola"
-                    FindServiceSpecifier::Specific(spec) => spec,
-                },
-                handle_container: None,
-                handle_index: 0,
-                interface_id: I::TYPE_ID,
+            instance_specifier: match instance_specifier {
+                FindServiceSpecifier::Any => todo!(), // TODO: Add error msg like "ANY not supported by Lola"
+                FindServiceSpecifier::Specific(spec) => spec,
             },
             _interface: PhantomData,
         }
@@ -115,6 +110,8 @@ where
     T: Send,
 {
     fn drop(&mut self) {
+        //SAFETY: It is safe to call the delete function because data ptr is valid
+        //SamplePtr created by FFI
         unsafe {
             generic_bridge_ffi_rs::sample_ptr_delete(
                 &mut self.data as *mut _ as *mut std::ffi::c_void,
@@ -137,13 +134,16 @@ where
     T: Reloc + Send + Debug,
 {
     pub fn get_data(&self) -> &T {
-        let data_ptr = unsafe {
-            generic_bridge_ffi_rs::sample_ptr_get(
+        //SAFETY: It is safe to get the data pointer because SamplePtr is valid
+        //and data is valid as long as SamplePtr is valid
+        //Also, T is Send, so it can be safely referenced across threads
+        unsafe {
+            let data_ptr = generic_bridge_ffi_rs::sample_ptr_get(
                 &self.inner.data as *const _ as *const std::ffi::c_void,
                 &std::any::type_name::<T>(),
-            )
-        };
-        unsafe { &*(data_ptr as *const T) }
+            );
+            &*(data_ptr as *const T)
+        }
     }
 }
 
@@ -281,6 +281,8 @@ struct ManageProxyBase {
 
 impl Drop for ManageProxyBase {
     fn drop(&mut self) {
+        //SAFETY: It is safe to destroy the proxy because it was created by FFI
+        // and proxy pointer received at the time of create_proxy called
         unsafe {
             generic_bridge_ffi_rs::destroy_proxy(self.proxy);
         }
@@ -295,6 +297,8 @@ impl Debug for ManageProxyBase {
 
 impl ManageProxyBase {
     fn create_proxy(interface_id: &str, handle: &HandleType) -> Self {
+        //SAFETY: It is safe to create the proxy because interface_id and handle are valid
+        //Handle received at the time of get_avaible_instances called with correct interface_id
         let proxy = unsafe { generic_bridge_ffi_rs::create_proxy(interface_id, handle) };
         Self { proxy }
     }
@@ -323,6 +327,8 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
     }
     fn subscribe(&self, max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
         let instance_info = self.instance_info.as_ref().ok_or(Error::Fail)?;
+        //SAFETY: It is safe to get event from proxy because proxy_instance is valid
+        // which was created during SubscribableImpl creation and instance_id is also same as proxy
         let event_instance = unsafe {
             generic_bridge_ffi_rs::get_event_from_proxy(
                 self.proxy_instance.as_ref().ok_or(Error::Fail)?.proxy,
@@ -330,7 +336,8 @@ impl<T: Reloc + Send + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImp
                 &self.identifier,
             )
         };
-
+        //SAFETY: It is safe to subscribe to event because event_instance is valid
+        // which was obtained from valid proxy instance
         let _status = unsafe {
             generic_bridge_ffi_rs::subscribe_to_event(
                 event_instance,
@@ -399,12 +406,17 @@ where
     fn try_receive<'a>(
         &'a self,
         scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
-        _max_samples: usize,
+        max_samples: usize,
     ) -> com_api_concept::Result<usize> {
+        if max_samples > self.max_num_samples {
+            return Err(Error::Fail);
+        }
         if let Some(event) = self.event {
             let mut callback = |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
                 if !raw_sample.is_null() {
-                    // Read the sample pointer from the raw pointer
+                    //SAFETY: It is safe to read the sample pointer because
+                    // raw_sample is valid pointer passed from FFI callback
+                    // and raw_pointer is moved from FFI to Rust ownership here
                     let sample_ptr = unsafe { std::ptr::read(raw_sample) };
 
                     let wrapped_sample = Sample {
@@ -413,8 +425,10 @@ where
                             data: sample_ptr,
                         },
                     };
+                    while scratch.sample_count() >= max_samples {
+                        scratch.pop_front();
+                    }
                     // Note: We can't propagate errors from the callback, so we silently drop on error
-                    // TODO: add max samples handling
                     let _ = scratch.push_back(wrapped_sample);
                 }
             };
@@ -422,10 +436,14 @@ where
             // Convert closure to FatPtr for C++ callback
             let dyn_callback: &mut dyn FnMut(*mut sample_ptr_rs::SamplePtr<T>) = &mut callback;
 
-            // SAFETY: Transmute trait object to FatPtr (both are two-pointer fat pointers)
+            // SAFETY: it is safe to transmute the closure reference to a FatPtr because
+            // it has the same representation in memory like FnMut pointer
             let fat_ptr: FatPtr = unsafe { std::mem::transmute(dyn_callback) };
 
-            // Get samples from event using FFI
+            // SAFETY: this call is safe because event ptr is a valid ProxyEventBase pointer
+            // obtained during subscription
+            // The lifetime of the callback is managed by Rust, and it will not outlive
+            // the scope of this function call.
             let count = unsafe {
                 generic_bridge_ffi_rs::get_samples_from_event(
                     event,
@@ -499,19 +517,14 @@ where
 }
 
 pub struct SampleConsumerDiscovery<I> {
-    instance_info: LolaConsumerInfo,
+    instance_specifier: InstanceSpecifier,
     _interface: PhantomData<I>,
 }
 
 impl<I: Interface> SampleConsumerDiscovery<I> {
     fn new(_runtime: &LolaRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
         Self {
-            instance_info: LolaConsumerInfo {
-                instance_specifier: instance_specifier,
-                handle_container: None,
-                handle_index: 0,
-                interface_id: I::TYPE_ID,
-            },
+            instance_specifier,
             _interface: PhantomData,
         }
     }
@@ -527,10 +540,9 @@ where
     fn get_available_instances(&self) -> com_api_concept::Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
         let mut available_instances = Vec::new();
-        let instance_specifier_ = proxy_bridge_rs::InstanceSpecifier::try_from(
-            self.instance_info.instance_specifier.as_ref(),
-        )
-        .map_err(|_| Error::Fail)?;
+        let instance_specifier_ =
+            proxy_bridge_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
+                .map_err(|_| Error::Fail)?;
 
         let service_handle =
             proxy_bridge_rs::find_service(instance_specifier_).map_err(|_| Error::Fail)?;
@@ -541,7 +553,7 @@ where
         let service_handle_arc = Arc::new(service_handle); // Wrap container in Arc
 
         let instance_info = LolaConsumerInfo {
-            instance_specifier: self.instance_info.instance_specifier.clone(),
+            instance_specifier: self.instance_specifier.clone(),
             handle_container: Some(service_handle_arc.clone()), // Store Arc
             handle_index: 0, // Assuming single handle for simplicity
             interface_id: I::TYPE_ID,
