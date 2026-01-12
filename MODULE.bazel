@@ -78,7 +78,6 @@ llvm.toolchain(
         "-latomic",
     ]},
     llvm_version = "19.1.7",
-    stdlib = {"": "dynamic-stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")
 
