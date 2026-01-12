@@ -73,6 +73,7 @@ llvm.toolchain(
     ]},
     cxx_standard = {"": "c++17"},
     link_libs = {"": [
+        "-latomic",
         "-lrt",
     ]},
     llvm_version = "19.1.0",
@@ -95,10 +96,11 @@ bazel_dep(name = "aspect_rules_lint", version = "1.10.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "google_benchmark", version = "1.9.4")
 bazel_dep(name = "rules_rust", version = "0.61.0")
+
 bazel_dep(name = "score_toolchains_rust", version = "0.2.0", dev_dependency = True)
+
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 bazel_dep(name = "score_crates", version = "0.0.5", repo_name = "crate_index")
-
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "download_utils", version = "1.0.1")
 
@@ -193,5 +195,4 @@ oci.pull(
 use_repo(oci, "ubuntu_24_04")
 
 bazel_dep(name = "rules_pkg", version = "1.1.0")
-
 bazel_dep(name = "score_tooling", version = "1.0.4")
