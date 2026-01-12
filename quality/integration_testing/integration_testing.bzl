@@ -27,19 +27,40 @@ def integration_test(name, srcs, filesystem, **kwargs):
     image_tarball = "_image_{}_tarball".format(name)
     repo_tag = "{}:latest".format(name)
 
+    LINUX_TARGET_COMPATIBLE_WITH = select({
+        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
+        "@platforms//cpu:arm64": ["@platforms//cpu:arm64"],
+    }) + [
+        "@platforms//os:linux",
+    ]
+
     oci_image(
         name = image_name,
-        base = "@ubuntu_24_04",
-        tars = [filesystem],
-        target_compatible_with = ["@platforms//os:linux"],
+        architecture = select({
+            "@platforms//cpu:arm64": "arm64",
+            "@platforms//cpu:x86_64": "amd64",
+        }),
+        os = "linux",
+        tars = [
+            filesystem,
+            "@ubuntu24_04//:ubuntu24_04",
+        ],
+        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
     )
 
     oci_tarball(
         name = image_tarball,
         image = image_name,
         repo_tags = [repo_tag],
-        target_compatible_with = ["@platforms//os:linux"],
+        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
     )
+
+    QNX_TARGET_COMPATIBLE_WITH = select({
+        "@platforms//cpu:x86_64": ["@platforms//cpu:x86_64"],
+        "@platforms//cpu:arm64": ["@platforms//cpu:arm64"],
+    }) + [
+        "@platforms//os:qnx",
+    ]
 
     qemu_image = "_init_ifs_{}".format(name)
     qnx_ifs(
@@ -47,7 +68,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
         out = "init_ifs_{}".format(name),
         build_file = "//quality/integration_testing/environments/qnx8_qemu:init_build",
         tars = {"FOLDER": filesystem},
-        target_compatible_with = ["@platforms//os:qnx"],
+        target_compatible_with = QNX_TARGET_COMPATIBLE_WITH,
     )
 
     _extend_list_in_kwargs(kwargs, "data", select({
@@ -82,7 +103,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
             requirement("pytest"),
             "//quality/integration_testing/environments/ubuntu24_04_docker:docker",
         ],
-        target_compatible_with = ["@platforms//os:linux"],
+        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
         tags = ["manual"],
         **kwargs
     )
@@ -97,7 +118,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
             requirement("pytest"),
             "//quality/integration_testing/environments/qnx8_qemu:qemu",
         ],
-        target_compatible_with = ["@platforms//os:linux"],
+        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
         tags = ["manual"],
         **kwargs
     )

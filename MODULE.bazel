@@ -193,6 +193,20 @@ oci.pull(
 )
 use_repo(oci, "ubuntu_24_04")
 
+bazel_dep(name = "rules_distroless", version = "0.6.1")
+
+apt = use_extension(
+    "@rules_distroless//apt:extensions.bzl",
+    "apt",
+    dev_dependency = True,
+)
+apt.install(
+    name = "ubuntu24_04",
+    lock = "@@//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.lock.json",
+    manifest = "//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.yaml",
+)
+use_repo(apt, "ubuntu24_04")
+
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 
 bazel_dep(name = "score_tooling", version = "1.0.4")
