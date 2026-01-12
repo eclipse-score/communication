@@ -78,7 +78,7 @@ impl Runtime for LolaRuntimeImpl {
     ) -> Self::ServiceDiscovery<I> {
         SampleConsumerDiscovery {
             instance_specifier: match instance_specifier {
-                FindServiceSpecifier::Any => todo!(), // TODO: Add error msg or panic like "ANY not supported by Lola"
+                FindServiceSpecifier::Any => todo!(), // TODO:[eclipse-score/communication/issues/133]Add error msg or panic like "ANY not supported by Lola"
                 FindServiceSpecifier::Specific(spec) => spec,
             },
             _interface: PhantomData,
@@ -103,6 +103,7 @@ struct LolaBinding<T>
 where
     T: Send + TypeInfo,
 {
+    //TODO: Ticket-237218/[eclipse-score/communication/issues/134] SamplePtr should be ManuallyDrop
     data: sample_ptr_rs::SamplePtr<T>,
 }
 
@@ -115,7 +116,7 @@ where
         //SamplePtr created by FFI
         unsafe {
             generic_bridge_ffi_rs::sample_ptr_delete(
-                &mut self.data as *mut _ as *mut std::ffi::c_void,
+                std::ptr::from_mut(&mut self.data) as *mut std::ffi::c_void,
                 T::ID,
             );
         }
@@ -137,13 +138,14 @@ where
     pub fn get_data(&self) -> &T {
         //SAFETY: It is safe to get the data pointer because SamplePtr is valid
         //and data is valid as long as SamplePtr is valid
-        //Also, T is Send, so it can be safely referenced across threads
         unsafe {
             let data_ptr = generic_bridge_ffi_rs::sample_ptr_get(
-                &self.inner.data as *const _ as *const std::ffi::c_void,
+                std::ptr::from_ref(&self.inner.data) as *const std::ffi::c_void,
                 T::ID,
             );
-            &*(data_ptr as *const T)
+            (data_ptr as *const T)
+                .as_ref()
+                .expect("Data pointer is null")
         }
     }
 }
@@ -170,7 +172,9 @@ where
     T: Send + Reloc + Debug + TypeInfo,
 {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(&self.inner.data, &other.inner.data)
+        let self_data_ptr = self.get_data();
+        let other_data_ptr = other.get_data();
+        std::ptr::eq(self_data_ptr as *const T, other_data_ptr as *const T)
     }
 }
 
@@ -190,8 +194,9 @@ where
     T: Send + Reloc + Debug + TypeInfo,
 {
     fn cmp(&self, other: &Self) -> Ordering {
-        (&self.inner.data as *const _ as *const ())
-            .cmp(&(&other.inner.data as *const _ as *const ()))
+        let self_data_ptr = self.get_data() as *const T;
+        let other_data_ptr = other.get_data() as *const T;
+        self_data_ptr.cmp(&other_data_ptr)
     }
 }
 
@@ -278,27 +283,25 @@ where
     }
 }
 
-struct ManageProxyBase(Arc<NativeProxyBase>);
+// Manages the lifetime of the native proxy instance, user should clone this to share between threads
+// Always use this struct to manage the proxy instance pointer
+struct ProxyInstanceManager(Arc<NativeProxyBase>);
 
-impl Clone for ManageProxyBase {
+impl Clone for ProxyInstanceManager {
     fn clone(&self) -> Self {
         Self(Arc::clone(&self.0))
     }
 }
 
-impl Debug for ManageProxyBase {
+impl Debug for ProxyInstanceManager {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("ManageProxyBase").finish()
+        f.debug_struct("ProxyInstanceManager").finish()
     }
 }
 
 struct NativeProxyBase {
     proxy: *mut ProxyBase, // Stores the proxy instance
 }
-// Safety: NativeProxyBase can be sent and shared across threads as this contains only a raw pointer
-unsafe impl Send for NativeProxyBase {}
-// Safety: NativeProxyBase can be shared across threads as this contains only a raw pointer
-unsafe impl Sync for NativeProxyBase {}
 
 impl Drop for NativeProxyBase {
     fn drop(&mut self) {
@@ -317,7 +320,7 @@ impl Debug for NativeProxyBase {
 }
 
 impl NativeProxyBase {
-    fn create_proxy(interface_id: &str, handle: &HandleType) -> Self {
+    fn new(interface_id: &str, handle: &HandleType) -> Self {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id
         let proxy = unsafe { generic_bridge_ffi_rs::create_proxy(interface_id, handle) };
@@ -329,7 +332,7 @@ impl NativeProxyBase {
 pub struct SubscribableImpl<T> {
     identifier: &'static str,
     instance_info: LolaConsumerInfo,
-    proxy_instance: ManageProxyBase,
+    proxy_instance: ProxyInstanceManager,
     data: PhantomData<T>,
 }
 
@@ -340,12 +343,12 @@ impl<T: Reloc + Send + Debug + TypeInfo> Subscriber<T, LolaRuntimeImpl> for Subs
         instance_info: LolaConsumerInfo,
     ) -> com_api_concept::Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
-        let native_proxy = NativeProxyBase::create_proxy(instance_info.interface_id, handle);
-        let manage_proxy = ManageProxyBase(Arc::new(native_proxy));
+        let native_proxy = NativeProxyBase::new(instance_info.interface_id, handle);
+        let proxy_instance = ProxyInstanceManager(Arc::new(native_proxy));
         Ok(Self {
             identifier,
-            instance_info: instance_info,
-            proxy_instance: manage_proxy,
+            instance_info,
+            proxy_instance,
             data: PhantomData,
         })
     }
@@ -394,7 +397,7 @@ where
     max_num_samples: usize,
     data: VecDeque<T>,
     instance_info: LolaConsumerInfo,
-    _proxy: ManageProxyBase,
+    _proxy: ProxyInstanceManager,
 }
 
 impl<T> SubscriberImpl<T>
@@ -450,8 +453,11 @@ where
                     while scratch.sample_count() >= max_samples {
                         scratch.pop_front();
                     }
-                    // Note: We can't propagate errors from the callback, so we silently drop on error
-                    let _ = scratch.push_back(wrapped_sample);
+                    // After pop from SampleContainer to make room, push should always succeed, otherwise we lose the data
+                    assert!(
+                        scratch.push_back(wrapped_sample).is_ok(),
+                        "Failed to push sample after making room in buffer"
+                    );
                 }
             };
 
@@ -562,12 +568,12 @@ where
     fn get_available_instances(&self) -> com_api_concept::Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
         let mut available_instances = Vec::new();
-        let instance_specifier_ =
+        let instance_specifier_lola =
             proxy_bridge_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
                 .map_err(|_| Error::Fail)?;
 
         let service_handle =
-            proxy_bridge_rs::find_service(instance_specifier_).map_err(|_| Error::Fail)?;
+            proxy_bridge_rs::find_service(instance_specifier_lola).map_err(|_| Error::Fail)?;
 
         if service_handle.is_empty() {
             return Ok(available_instances);
@@ -576,8 +582,8 @@ where
 
         let instance_info = LolaConsumerInfo {
             instance_specifier: self.instance_specifier.clone(),
-            handle_container: Some(service_handle_arc.clone()), // Store Arc
-            handle_index: 0, // Assuming single handle for simplicity
+            handle_container: Some(service_handle_arc), // Store Arc
+            handle_index: 0,                            // Assuming single handle for simplicity
             interface_id: I::INTERFACE_ID,
         };
 

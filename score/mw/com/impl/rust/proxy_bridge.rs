@@ -699,7 +699,9 @@ pub struct HandleContainer {
     inner: *mut ffi::NativeHandleContainer,
 }
 
+//Safety: Here data owned by type so it is safe to send and share between threads.
 unsafe impl Send for HandleContainer {}
+//Safety: No internal mutability so it is safe to share between threads and synchronize access.
 unsafe impl Sync for HandleContainer {}
 
 impl HandleContainer {
