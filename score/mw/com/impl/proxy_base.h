@@ -25,6 +25,7 @@
 #include <score/span.hpp>
 
 #include <memory>
+#include <string_view>
 
 namespace score::mw::com::impl
 {
@@ -134,6 +135,11 @@ class ProxyBase
     {
         const bool is_proxy_binding_valid{proxy_binding_ != nullptr};
         return is_proxy_binding_valid && are_service_element_bindings_valid_;
+    }
+
+    ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+    {
+        return proxy_binding_->SetupMethods(enabled_method_names);
     }
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall

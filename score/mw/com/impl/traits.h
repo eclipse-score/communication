@@ -266,15 +266,15 @@ class ProxyWrapperClass : public Interface<Trait>
     friend class ProxyWrapperClassTestView<ProxyWrapperClass>;
 
   public:
-    /**
-     * \api
-     * \brief Create a proxy instance from a service handle.
-     * \details Exception-less proxy constructor that creates a proxy wrapper by creating the proxy binding
-     *          for the given service handle and validating all service element bindings.
-     * \param instance_handle The handle identifying the service instance to connect to.
-     * \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
-     */
-    static Result<ProxyWrapperClass> Create(HandleType instance_handle) noexcept
+    /// \api
+    /// \brief Create a proxy instance from a service handle.
+    /// \details Exception-less proxy constructor that creates a proxy wrapper by creating the proxy binding
+    ///          for the given service handle and validating all service element bindings.
+    /// \param instance_handle The handle identifying the service instance to connect to.
+    /// \param enabled_method_names The handle identifying the service instance to connect to.
+    /// \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
+    static Result<ProxyWrapperClass> Create(const HandleType instance_handle,
+                                            const std::vector<std::string_view>& enabled_method_names = {}) noexcept
     {
         if (creation_results_.has_value())
         {
@@ -282,7 +282,9 @@ class ProxyWrapperClass : public Interface<Trait>
         }
 
         auto proxy_binding = ProxyBindingFactory::Create(instance_handle);
+
         ProxyWrapperClass proxy_wrapper(instance_handle, std::move(proxy_binding));
+
         if (!proxy_wrapper.AreBindingsValid())
         {
             ::score::mw::log::LogError("lola")
@@ -290,6 +292,14 @@ class ProxyWrapperClass : public Interface<Trait>
                    "bindings could not be created.";
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
+
+        const auto setup_methods_result = proxy_wrapper.SetupMethods(enabled_method_names);
+        if (!(setup_methods_result.has_value()))
+        {
+            ::score::mw::log::LogError("lola") << "Could not setup methods on Proxy side";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
         return proxy_wrapper;
     }
 
