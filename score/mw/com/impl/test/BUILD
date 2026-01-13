@@ -29,6 +29,7 @@ cc_library(
         "//score/mw/com/impl/plumbing:skeleton_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_field_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:skeleton_method_binding_factory_mock",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

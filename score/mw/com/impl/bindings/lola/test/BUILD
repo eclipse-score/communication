@@ -45,7 +45,7 @@ cc_library(
     hdrs = ["skeleton_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//score/mw/com/impl/bindings/lola:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:runtime_mock",

@@ -227,6 +227,11 @@ class SkeletonBaseView
         return skeleton_base_.methods_;
     }
 
+    bool AreBindingsValid() const
+    {
+        return skeleton_base_.AreBindingsValid();
+    }
+
   private:
     SkeletonBase& skeleton_base_;
 };

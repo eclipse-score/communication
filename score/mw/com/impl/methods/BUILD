@@ -154,6 +154,7 @@ cc_library(
         ":skeleton_method_binding",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:skeleton_base",
+        "//score/mw/com/impl/plumbing:skeleton_method_binding_factory",
         "@score_baselibs//score/result",
     ],
 )
@@ -182,6 +183,7 @@ cc_gtest_unit_test(
     deps = [
         ":skeleton_method",
         "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/plumbing:skeleton_method_binding_factory_mock",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

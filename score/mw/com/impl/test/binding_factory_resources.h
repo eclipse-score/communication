@@ -30,6 +30,8 @@
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory_mock.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory_mock.h"
 
 #include <memory>
 #include <unordered_map>
@@ -146,6 +148,21 @@ class SkeletonFieldBindingFactoryMockGuard
     }
 
     ::testing::NiceMock<SkeletonFieldBindingFactoryMock<SampleType>> factory_mock_;
+};
+
+class SkeletonMethodBindingFactoryMockGuard
+{
+  public:
+    SkeletonMethodBindingFactoryMockGuard() noexcept
+    {
+        SkeletonMethodBindingFactory::InjectMockBinding(&factory_mock_);
+    }
+    ~SkeletonMethodBindingFactoryMockGuard() noexcept
+    {
+        SkeletonMethodBindingFactory::InjectMockBinding(nullptr);
+    }
+
+    ::testing::NiceMock<SkeletonMethodBindingFactoryMock> factory_mock_;
 };
 
 }  // namespace score::mw::com::impl

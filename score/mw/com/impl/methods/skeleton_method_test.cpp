@@ -17,6 +17,9 @@
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/methods/skeleton_method.h"
+#include "score/mw/com/impl/methods/skeleton_method_base.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory_mock.h"
 #include "score/mw/com/impl/skeleton_base.h"
 
 #include <gmock/gmock.h>
@@ -101,6 +104,12 @@ class SkeletonMethodTypedTest : public ::testing::Test
 {
   public:
     using Type = T;
+
+    void SetUp() override
+    {
+        ON_CALL(skeleton_method_binding_mock_, Register(_)).WillByDefault(Return(ResultBlank{}));
+    }
+    mock_binding::SkeletonMethod skeleton_method_binding_mock_;
 };
 
 struct MyDataStruct
@@ -140,6 +149,68 @@ TYPED_TEST(SkeletonMethodTypedTest, AnyCombinationOfReturnAndInputArgTypesCanBeR
     score::cpp::callback<FixtureMethodType> test_callback{};
 
     method.Register(std::move(test_callback));
+}
+
+TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorCorrectlyCallsBindingFactoryAndSkeletonMethodIsCreated)
+{
+
+    auto skeleton_method_binding_factory_mock = SkeletonMethodBindingFactoryMock();
+    SkeletonMethodBindingFactory::InjectMockBinding(&skeleton_method_binding_factory_mock);
+
+    auto skeleton_method_binding =
+        std::make_unique<mock_binding::SkeletonMethodFacade>(this->skeleton_method_binding_mock_);
+
+    // Given A skeleton Method with a mock method binding
+
+    EmptySkeleton empty_skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // And a method type that can be one of the four qualitatively different Types void()          SomeType()
+    //  void(SomeTypes) SomeType(SomeTypes)
+
+    // expecting that a binding factory cannot crete a binding
+    EXPECT_CALL(skeleton_method_binding_factory_mock, Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/))
+        .WillOnce(testing::Return(testing::ByMove(std::move(skeleton_method_binding))));
+
+    // When the 2-parameter constructor of the SkeletonMethod class is called
+    using FixtureMethodType = typename TestFixture::Type;
+    SkeletonMethod<FixtureMethodType> method{empty_skeleton, "dummy_method"};
+
+    EXPECT_CALL(this->skeleton_method_binding_mock_, Register(_));
+
+    // Then a Binding can be created which is capable of registering a callback
+    score::cpp::callback<FixtureMethodType> test_callback{};
+    method.Register(std::move(test_callback));
+}
+
+TYPED_TEST(
+    SkeletonMethodTypedTest,
+    TwoParameterConstructorCorrectlyCallsBindingFactoryButSkeletonMethodIsNotCreatedWhenTheBindingFactoryDoesNotReturnBinding)
+{
+
+    auto skeleton_method_binding_factory_mock = SkeletonMethodBindingFactoryMock();
+    SkeletonMethodBindingFactory::InjectMockBinding(&skeleton_method_binding_factory_mock);
+
+    auto skeleton_method_binding =
+        std::make_unique<mock_binding::SkeletonMethodFacade>(this->skeleton_method_binding_mock_);
+
+    // Given A skeleton Method with a mock method binding
+
+    EmptySkeleton empty_skeleton{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // And a method type that can be one of the four qualitatively different Types
+    //  void()          SomeType()
+    //  void(SomeTypes) SomeType(SomeTypes)
+
+    // expecting that a binding factory cannot crete a binding
+    EXPECT_CALL(skeleton_method_binding_factory_mock, Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/))
+        .WillOnce(testing::Return(testing::ByMove(nullptr)));
+
+    // When the 2-parameter constructor of the SkeletonMethod class is called
+    using FixtureMethodType = typename TestFixture::Type;
+    SkeletonMethod<FixtureMethodType> method{empty_skeleton, "dummy_method"};
+
+    // Then the binding cannot be created and calling AreBindingsValid returns false
+    EXPECT_FALSE(SkeletonBaseView{empty_skeleton}.AreBindingsValid());
 }
 
 TEST_F(SkeletonMethodTestFixture, ACallbackWithAPointerAsStateCanBeRegistered)

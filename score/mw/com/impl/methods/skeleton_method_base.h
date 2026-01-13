@@ -21,11 +21,15 @@
 namespace score::mw::com::impl
 {
 
+class SkeletonMethodBaseView;
+
 // forward declaration to avoid cyclical dependencies
 class SkeletonBase;
 
 class SkeletonMethodBase
 {
+    friend SkeletonMethodBaseView;
+
   public:
     SkeletonMethodBase(SkeletonBase& skeleton_base,
                        const std::string_view method_name,
@@ -50,5 +54,21 @@ class SkeletonMethodBase
     std::reference_wrapper<SkeletonBase> skeleton_base_;
 };
 
+class SkeletonMethodBaseView
+{
+  public:
+    explicit SkeletonMethodBaseView(SkeletonMethodBase& skeleton_method_base)
+        : skeleton_method_base_{skeleton_method_base}
+    {
+    }
+
+    SkeletonMethodBinding* GetMethodBinding()
+    {
+        return skeleton_method_base_.binding_.get();
+    }
+
+  private:
+    SkeletonMethodBase& skeleton_method_base_;
+};
 }  // namespace score::mw::com::impl
 #endif  // SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BASE_H

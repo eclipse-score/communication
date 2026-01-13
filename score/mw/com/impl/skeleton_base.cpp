@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/skeleton_base.h"
 
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_binding.h"
@@ -329,6 +330,15 @@ auto SkeletonBase::AreBindingsValid() const noexcept -> bool
                 are_service_element_bindings_valid = false;
             }
         });
+
+    score::cpp::ignore =
+        std::for_each(methods_.begin(), methods_.end(), [&are_service_element_bindings_valid](const auto& element) {
+            if (SkeletonMethodBaseView{element.second.get()}.GetMethodBinding() == nullptr)
+            {
+                are_service_element_bindings_valid = false;
+            }
+        });
+
     return is_skeleton_binding_valid && are_service_element_bindings_valid;
 }
 

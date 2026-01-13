@@ -15,10 +15,12 @@
 #include "score/result/result.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -50,6 +52,16 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
   public:
     using MethodType = ReturnType(ArgTypes...);
 
+    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name)
+        : SkeletonMethod(
+              skeleton_base,
+              method_name,
+              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
+                                                   method_name))
+    {
+    }
+
     /// \brief testonly constructor, which allows for direct injection of a mock binding
     SkeletonMethod(SkeletonBase& skeleton_base,
                    const std::string_view method_name,
@@ -78,6 +90,8 @@ SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonBase& skeleton_b
                                                         std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding)
     : SkeletonMethodBase(skeleton_base, method_name, std::move(skeleton_method_binding))
 {
+    std::cout << "makin skeleton methods... did it work tho? binding_==nullptr" << (binding_ == nullptr) << " \n";
+
     auto skeleton_base_view = SkeletonBaseView{skeleton_base};
     skeleton_base_view.RegisterMethod(method_name_, *this);
 }
