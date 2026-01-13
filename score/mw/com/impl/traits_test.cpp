@@ -14,6 +14,7 @@
 
 #include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
+#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -630,21 +631,21 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedSkeletonCreationInstanceSpecifierDeathTest, ConstructingFromNonexistingSpecifierTerminates)
+TEST(GeneratedSkeletonCreationInstanceSpecifierDeathTest, ConstructingFromNonexistingSpecifierReturnsError)
 {
-    const auto constructing_from_non_existing_specifier = [] {
-        RuntimeMockGuard runtime_mock_guard{};
-        auto& runtime_mock = runtime_mock_guard.runtime_mock_;
+    RuntimeMockGuard runtime_mock_guard{};
+    auto& runtime_mock = runtime_mock_guard.runtime_mock_;
 
-        // Given a runtime resolving no configuration
-        std::vector<InstanceIdentifier> resolved_instance_identifiers{};
-        EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
+    // Given a runtime resolving no configuration
+    std::vector<InstanceIdentifier> resolved_instance_identifiers{};
+    EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
 
-        // Then when constructing a skeleton with an InstanceSpecifier that doesn't correspond to an existing
-        // instance_identifier we terminate
-        score::cpp::ignore = MySkeleton::Create(kInstanceSpecifier);
-    };
-    EXPECT_DEATH(constructing_from_non_existing_specifier(), ".*");
+    // Then when constructing a skeleton with an InstanceSpecifier that doesn't correspond to an existing
+    // instance_identifier we terminate
+    auto result = MySkeleton::Create(kInstanceSpecifier);
+
+    ASSERT_FALSE(result.has_value());
+    ASSERT_EQ(result.error(), ComErrc::kInvalidInstanceIdentifierString);
 }
 
 using GeneratedSkeletonCreationInstanceIdentifierTestFixture = SkeletonCreationFixture;
