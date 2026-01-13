@@ -21,6 +21,7 @@ mod util_nto {
     // least on rustc 1.78+ with LLVM 18, see
     // https://blog.rust-lang.org/2024/03/30/i128-layout-update/) to u128. Use this instead until we
     // get native f128 support.
+    #[repr(C)]
     #[derive(Copy, Clone, Default, Debug)]
     pub struct max_align_t {
         _ll: libc::c_longlong,
@@ -78,13 +79,24 @@ struct EventDataControl {
     _dummy: [u8; 0],
 }
 
+#[repr(C)]
+struct ControlSlotType  {
+    _dummy: [u8; 0],
+}
+
 type SlotIndexType = u16;
 type TransactionLogIndex = u8;
 
 #[repr(C)]
+struct ControlSlotIndicator {
+    _slot_index: SlotIndexType,
+    _slot_pointer: *mut ControlSlotType,
+}
+
+#[repr(C)]
 struct SlotDecrementer {
     _event_data_control: *mut EventDataControl,
-    _event_slot_index: SlotIndexType,
+    _control_slot_indicator: ControlSlotIndicator,
     _transaction_log_idx: TransactionLogIndex,
 }
 
