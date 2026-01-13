@@ -33,6 +33,85 @@ cc_library(
 )
 
 cc_library(
+    name = "skeleton_method_binding_factory",
+    srcs = ["skeleton_method_binding_factory.cpp"],
+    hdrs = ["skeleton_method_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "skeleton_method_binding_factory_impl",
+        ":i_skeleton_method_binding_factory",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "i_skeleton_method_binding_factory",
+    srcs = ["i_skeleton_method_binding_factory.cpp"],
+    hdrs = ["i_skeleton_method_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:skeleton_base",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_method_binding_factory_impl",
+    srcs = ["skeleton_method_binding_factory_impl.cpp"],
+    hdrs = ["skeleton_method_binding_factory_impl.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["//score/mw/com/impl/bindings/lola"],
+    tags = ["FFI"],
+    deps = [
+        ":i_skeleton_method_binding_factory",
+        ":skeleton_service_element_binding_factory_impl",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_method_binding_factory_mock",
+    testonly = True,
+    srcs = ["skeleton_method_binding_factory_mock.cpp"],
+    hdrs = ["skeleton_method_binding_factory_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_skeleton_method_binding_factory",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "skeleton_method_binding_factory_test",
+    srcs = [
+        "skeleton_method_binding_factory_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":skeleton_method_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_library(
     name = "binding_runtime_factory",
     srcs = ["binding_runtime_factory.cpp"],
     hdrs = ["binding_runtime_factory.h"],
