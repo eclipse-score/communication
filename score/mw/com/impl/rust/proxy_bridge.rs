@@ -727,6 +727,15 @@ impl HandleContainer {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Returns a reference to the handle at the given index, or 'None' if the index is out of bounds.
+    pub fn get(&self, index: usize) -> Option<&HandleType> {
+        if index < self.len() {
+            Some(self.index(index))
+        } else {
+            None
+        }
+    }
 }
 
 impl Index<usize> for HandleContainer {

@@ -92,12 +92,17 @@ impl<R: Runtime> VehicleMonitor<R> {
 }
 
 fn use_consumer<R: Runtime>(runtime: &R) -> VehicleConsumer<R> {
-    // Find all the avaiable service instances using ANY specifier
     let consumer_discovery = runtime.find_service::<VehicleInterface>(
         FindServiceSpecifier::Specific(InstanceSpecifier::new("Vehicle/Service/Instance").unwrap()),
     );
     let available_service_instances = consumer_discovery.get_available_instances().unwrap();
-    let consumer_builder = available_service_instances.into_iter().next().unwrap();
+
+    // Select service instance at specific handle_index
+    let handle_index = 0; // or any index you need from vector of instances
+    let consumer_builder = available_service_instances
+        .into_iter()
+        .nth(handle_index)
+        .unwrap();
 
     consumer_builder.build().unwrap()
 }

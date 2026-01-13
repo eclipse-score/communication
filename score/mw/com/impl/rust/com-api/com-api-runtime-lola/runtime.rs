@@ -50,7 +50,7 @@ pub struct LolaProviderInfo {
 #[derive(Clone, Debug)]
 pub struct LolaConsumerInfo {
     instance_specifier: InstanceSpecifier,
-    handle_container: Option<Arc<proxy_bridge_rs::HandleContainer>>,
+    handle_container: Arc<proxy_bridge_rs::HandleContainer>,
     handle_index: usize,
     interface_id: &'static str,
 }
@@ -58,9 +58,7 @@ pub struct LolaConsumerInfo {
 impl LolaConsumerInfo {
     /// Get a reference to the handle, guaranteed valid as long as this struct exists
     pub fn get_handle(&self) -> Option<&HandleType> {
-        self.handle_container
-            .as_ref()
-            .map(|c| &c[self.handle_index])
+        self.handle_container.get(self.handle_index)
     }
 }
 
@@ -567,7 +565,6 @@ where
 
     fn get_available_instances(&self) -> com_api_concept::Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
-        let mut available_instances = Vec::new();
         let instance_specifier_lola =
             proxy_bridge_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
                 .map_err(|_| Error::Fail)?;
@@ -575,22 +572,21 @@ where
         let service_handle =
             proxy_bridge_rs::find_service(instance_specifier_lola).map_err(|_| Error::Fail)?;
 
-        if service_handle.is_empty() {
-            return Ok(available_instances);
-        }
-        let service_handle_arc = Arc::new(service_handle); // Wrap container in Arc
-
-        let instance_info = LolaConsumerInfo {
-            instance_specifier: self.instance_specifier.clone(),
-            handle_container: Some(service_handle_arc), // Store Arc
-            handle_index: 0,                            // Assuming single handle for simplicity
-            interface_id: I::INTERFACE_ID,
-        };
-
-        available_instances.push(SampleConsumerBuilder {
-            instance_info,
-            _interface: PhantomData,
-        });
+        let service_handle_arc = Arc::new(service_handle);
+        let available_instances = (0..service_handle_arc.len())
+            .map(|handle_index| {
+                let instance_info = LolaConsumerInfo {
+                    instance_specifier: self.instance_specifier.clone(),
+                    handle_container: Arc::clone(&service_handle_arc),
+                    handle_index,
+                    interface_id: I::INTERFACE_ID,
+                };
+                SampleConsumerBuilder {
+                    instance_info,
+                    _interface: PhantomData,
+                }
+            })
+            .collect();
         Ok(available_instances)
     }
 
@@ -655,6 +651,8 @@ pub struct SampleConsumerBuilder<I: Interface> {
 
 impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder<I> {
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
+        //if InstanceSpecifier::ANY support enable by lola
+        //then this API should get InstanceSpecifier from FFI Call
         todo!()
     }
 }

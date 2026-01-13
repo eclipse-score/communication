@@ -255,7 +255,7 @@ where
 #[derive(Debug)]
 pub struct SubscribableImpl<T> {
     identifier: &'static str,
-    instance_info: Option<MockConsumerInfo>,
+    instance_info: MockConsumerInfo,
     data: PhantomData<T>,
 }
 
@@ -267,20 +267,26 @@ impl<T: Reloc + Send + Debug + TypeInfo> Subscriber<T, MockRuntimeImpl> for Subs
     ) -> com_api_concept::Result<Self> {
         Ok(Self {
             identifier,
-            instance_info: Some(instance_info),
+            instance_info,
             data: PhantomData,
         })
     }
     fn subscribe(&self, _max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
-        Ok(SubscriberImpl::new())
+        Ok(SubscriberImpl {
+            identifier: self.identifier,
+            instance_info: self.instance_info.clone(),
+            data: VecDeque::new(),
+        })
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct SubscriberImpl<T>
 where
     T: Reloc + Send + Debug + TypeInfo,
 {
+    identifier: &'static str,
+    instance_info: MockConsumerInfo,
     data: VecDeque<T>,
 }
 
@@ -288,13 +294,6 @@ impl<T> SubscriberImpl<T>
 where
     T: Reloc + Send + Debug + TypeInfo,
 {
-    #[must_use = "creating a SubscriberImpl without using it is likely a mistake; the subscriber must be assigned or used in some way"]
-    pub fn new() -> Self {
-        Self {
-            data: VecDeque::default(),
-        }
-    }
-
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
     }
@@ -312,8 +311,8 @@ where
 
     fn unsubscribe(self) -> Self::Subscriber {
         SubscribableImpl {
-            identifier: "",
-            instance_info: None,
+            identifier: self.identifier,
+            instance_info: self.instance_info,
             data: PhantomData,
         }
     }
