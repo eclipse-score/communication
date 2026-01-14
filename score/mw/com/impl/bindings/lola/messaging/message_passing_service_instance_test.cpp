@@ -384,6 +384,12 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyCallsNoMoreThanMaxPo
 
 TEST_F(MessagePassingServiceInstanceTest, RegisterEventNotificationRemoteSendsRegisterMessageOnFirstRegistration)
 {
+    RecordProperty("Verifies", "SCR-5899276");
+    RecordProperty("Description", "Register Event notification callback.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -403,6 +409,12 @@ TEST_F(MessagePassingServiceInstanceTest, RegisterEventNotificationRemoteSendsRe
 TEST_F(MessagePassingServiceInstanceTest,
        RegisterEventNotificationRemoteDoesnTermianteWhenFailsToSendRegistrationMessage)
 {
+    RecordProperty("Verifies", "SCR-5899276");
+    RecordProperty("Description", "Register Event notification callback.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -422,6 +434,12 @@ TEST_F(MessagePassingServiceInstanceTest,
 TEST_F(MessagePassingServiceInstanceTest,
        RegisterEventNotificationRemoteSendsRegistrationMessageOnlyOnInitialRegistration)
 {
+    RecordProperty("Verifies", "SCR-5899276");
+    RecordProperty("Description", "Register Event notification callback.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -571,6 +589,12 @@ TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesn
 // notify remote
 TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClients)
 {
+    RecordProperty("Verifies", "SCR-5898962, SCR-5899250, SCR-5899276, SCR-5899282");
+    RecordProperty("Description", "Remote receiver is notified via Message Passing.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -821,6 +845,12 @@ TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdCalledWithUnregist
 // notify event message
 TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageCallsRegisteredHandler)
 {
+    RecordProperty("Verifies", "SCR-5898962, SCR-5899250, SCR-5899276, SCR-5899282");
+    RecordProperty("Description", "Registered callback for event-notification gets invoked");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -832,13 +862,21 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageCallsRegisteredHandl
             handler_called = true;
         });
 
-    // and handler being registered for event
-    instance.RegisterEventNotification(event_id_, handler, local_pid_);
+    // Expect client connection Send() to be called once upon first registration
+    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
 
-    // When notify event message is received with the same event
+    // and client factory mock to return the client connection mock
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+
+    // when handler being registered for event
+    instance.RegisterEventNotification(event_id_, handler, remote_pid_);
+
+    // and when notify event message is received with the same event
     received_send_message_callback_(*server_connection_mock_, Serialize(event_id_, MessageType::kNotifyEvent));
 
-    // Than handler should be called
+    // Then handler has been called
     EXPECT_TRUE(handler_called);
 }
 
@@ -855,8 +893,16 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageDoesntCallHandlerFor
             handler_called = true;
         });
 
-    // and handler being registered for event
-    instance.RegisterEventNotification(event_id_, handler, local_pid_);
+    // Expect client connection Send() to be called once upon first registration
+    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+        .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+
+    // and client factory mock to return the client connection mock
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+
+    // when handler being registered for event
+    instance.RegisterEventNotification(event_id_, handler, remote_pid_);
 
     // When notify event message is received for a different event
     ++event_id_.element_id_;
@@ -985,6 +1031,12 @@ TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationWithDiffere
 // NotifyOutdatedNode()
 TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeCreatesClientAndSendsMessage)
 {
+    RecordProperty("Verifies", "SCR-5898962, SCR-5899276, SCR-5899282");
+    RecordProperty("Description", "Outdated Nodie Id notification is exchanged via message-passing");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};

@@ -71,6 +71,7 @@ LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     LolaServiceInstanceId::InstanceId instance_id,
     std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_inst_depls,
     std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_inst_depls,
+    std::vector<std::pair<std::string, LolaMethodInstanceDeployment>> lola_method_inst_depls,
     std::vector<uid_t> allowed_consumers_qm,
     std::vector<uid_t> allowed_consumers_asil_b,
     score::cpp::optional<std::size_t> size = score::cpp::nullopt,
@@ -82,10 +83,12 @@ LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
 /// \param lola_service_id
 /// \param event_ids vector of pairs of event-short-name and Lola specific id for the event.
 /// \param field_ids vector of pairs of field-short-name and Lola specific id for the field.
+/// \param method_ids vector of pairs of method-short-name and Lola specific id for the method.
 /// \return
 ServiceTypeDeployment CreateTypeDeployment(uint16_t lola_service_id,
                                            const std::vector<std::pair<std::string, std::uint8_t>>& event_ids,
-                                           const std::vector<std::pair<std::string, std::uint8_t>>& field_ids = {});
+                                           const std::vector<std::pair<std::string, std::uint8_t>>& field_ids = {},
+                                           const std::vector<std::pair<std::string, std::uint8_t>>& method_ids = {});
 
 /// \brief Construct and returns a valid instance identifier from which a (Lola) skeleton instance (QM) can be
 ///        created.
@@ -109,9 +112,13 @@ InstanceIdentifier GetValidInstanceIdentifierWithEvent();
 
 InstanceIdentifier GetValidInstanceIdentifierWithField();
 
+InstanceIdentifier GetValidInstanceIdentifierWithMethods();
+
 InstanceIdentifier GetValidASILInstanceIdentifierWithEvent();
 
 InstanceIdentifier GetValidASILInstanceIdentifierWithField();
+
+InstanceIdentifier GetValidASILInstanceIdentifierWithMethods();
 
 /// @brief Function to check whether a file exists which works on linux and QNX
 bool fileExists(const std::string& filePath);
@@ -145,12 +152,22 @@ static constexpr LolaServiceInstanceId::InstanceId kDefaultLolaInstanceId{16U};
 static const auto kFooEventName{"fooEvent"};
 static const auto kDumbEventName{"dumbEvent"};
 static const auto kFooFieldName{"fooField"};
+static const auto kFooMethodName{"fooMethod"};
+static const auto kDumbMethodName{"barMethod"};
 
 static const SkeletonEventProperties kDefaultEventProperties{10, 5, true};
 
 static constexpr std::uint16_t kFooEventId{1U};
 static constexpr std::uint16_t kDumbEventId{2U};
 static constexpr std::uint16_t kFooFieldId{3U};
+static constexpr std::uint16_t kFooMethodId{4U};
+static constexpr std::uint16_t kDumbMethodId{5U};
+
+static constexpr LolaMethodInstanceDeployment::QueueSize kFooMethodQueueSize{5U};
+static constexpr LolaMethodInstanceDeployment::QueueSize kDumbMethodQueueSize{6U};
+
+static constexpr uid_t kAllowedQmMethodConsumer{20U};
+static constexpr uid_t kAllowedAsilBMethodConsumer{21U};
 
 static const auto kServiceTypeName{"foo"};
 static const ServiceIdentifierType kFooService{make_ServiceIdentifierType(kServiceTypeName)};
@@ -173,6 +190,7 @@ static const ServiceInstanceDeployment kValidMinimalQmInstanceDeployment{
                                         {},
                                         {},
                                         {},
+                                        {},
                                         kConfiguredDeploymentShmSize,
                                         kConfiguredDeploymentControlAsilBShmSize,
                                         kConfiguredDeploymentControlQmShmSize),
@@ -189,6 +207,7 @@ static const ServiceInstanceDeployment kValidMinimalAsilInstanceDeployment{
                                         {},
                                         {},
                                         {},
+                                        {},
                                         kConfiguredDeploymentShmSize,
                                         kConfiguredDeploymentControlAsilBShmSize,
                                         kConfiguredDeploymentControlQmShmSize),
@@ -198,6 +217,7 @@ static const ServiceInstanceDeployment kValidMinimalAsilInstanceDeployment{
 static const ServiceInstanceDeployment kValidMinimalAsilInstanceDeploymentWithAcl{
     kFooService,
     CreateLolaServiceInstanceDeployment(kDefaultLolaInstanceId,
+                                        {},
                                         {},
                                         {},
                                         {42U},
@@ -216,6 +236,7 @@ static const ServiceInstanceDeployment kValidInstanceDeploymentWithEvent{
         {},
         {},
         {},
+        {},
         kConfiguredDeploymentShmSize,
         kConfiguredDeploymentControlAsilBShmSize,
         kConfiguredDeploymentControlQmShmSize),
@@ -230,9 +251,25 @@ static const ServiceInstanceDeployment kValidInstanceDeploymentWithField{
         {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0}}},
         {},
         {},
+        {},
         kConfiguredDeploymentShmSize,
         kConfiguredDeploymentControlAsilBShmSize,
         kConfiguredDeploymentControlQmShmSize),
+    QualityType::kASIL_QM,
+    kFooInstanceSpecifier};
+
+static const ServiceInstanceDeployment kValidInstanceDeploymentWithMethods{
+    kFooService,
+    CreateLolaServiceInstanceDeployment(kDefaultLolaInstanceId,
+                                        {},
+                                        {},
+                                        {{test::kFooMethodName, LolaMethodInstanceDeployment{kFooMethodQueueSize}},
+                                         {test::kDumbMethodName, LolaMethodInstanceDeployment{kDumbMethodQueueSize}}},
+                                        {kAllowedQmMethodConsumer},
+                                        {},
+                                        kConfiguredDeploymentShmSize,
+                                        kConfiguredDeploymentControlAsilBShmSize,
+                                        kConfiguredDeploymentControlQmShmSize),
     QualityType::kASIL_QM,
     kFooInstanceSpecifier};
 
@@ -241,6 +278,7 @@ static const ServiceInstanceDeployment kValidAsilInstanceDeploymentWithEvent{
     CreateLolaServiceInstanceDeployment(
         kDefaultLolaInstanceId,
         {{test::kFooEventName, LolaEventInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0}}},
+        {},
         {},
         {},
         {},
@@ -258,9 +296,25 @@ static const ServiceInstanceDeployment kValidAsilInstanceDeploymentWithField{
         {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0}}},
         {},
         {},
+        {},
         kConfiguredDeploymentShmSize,
         kConfiguredDeploymentControlAsilBShmSize,
         kConfiguredDeploymentControlQmShmSize),
+    QualityType::kASIL_B,
+    kFooInstanceSpecifier};
+
+static const ServiceInstanceDeployment kValidAsilInstanceDeploymentWithMethods{
+    kFooService,
+    CreateLolaServiceInstanceDeployment(kDefaultLolaInstanceId,
+                                        {},
+                                        {},
+                                        {{test::kFooMethodName, LolaMethodInstanceDeployment{kFooMethodQueueSize}},
+                                         {test::kDumbMethodName, LolaMethodInstanceDeployment{kDumbMethodQueueSize}}},
+                                        {},
+                                        {kAllowedAsilBMethodConsumer},
+                                        kConfiguredDeploymentShmSize,
+                                        kConfiguredDeploymentControlAsilBShmSize,
+                                        kConfiguredDeploymentControlQmShmSize),
     QualityType::kASIL_B,
     kFooInstanceSpecifier};
 
@@ -281,6 +335,9 @@ static const ServiceTypeDeployment kValidTypeDeploymentWithEvent{
 
 static const ServiceTypeDeployment kValidTypeDeploymentWithField{
     CreateTypeDeployment(kLolaServiceId, {{kFooEventName, kFooEventId}})};
+
+static const ServiceTypeDeployment kValidTypeDeploymentWithMethods{
+    CreateTypeDeployment(kLolaServiceId, {}, {}, {{kFooMethodName, kFooMethodId}, {kDumbMethodName, kDumbMethodId}})};
 
 static const ServiceTypeDeployment kValidMinimalTypeDeploymentWithBlankBinding{score::cpp::blank{}};
 
@@ -337,6 +394,8 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     virtual ~SkeletonMockedMemoryFixture();
 
     SkeletonMockedMemoryFixture& InitialiseSkeleton(const InstanceIdentifier& instance_identifier);
+
+    SkeletonMockedMemoryFixture& InitialiseSkeletonWithRealPathBuilders(const InstanceIdentifier& instance_identifier);
 
     /// \brief Simulates that the instance usage marker file could be exclusively flocked meaning that no Procies are
     /// using an old shared memory region from this service. This is the "normal" case when we aren't in a partial

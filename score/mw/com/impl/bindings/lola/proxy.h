@@ -17,24 +17,44 @@
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
+#include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
+#include "score/mw/com/impl/bindings/lola/proxy_method.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
+#include "score/mw/com/impl/configuration/lola_method_id.h"
+#include "score/mw/com/impl/configuration/lola_service_instance_id.h"
+#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/proxy_binding.h"
 #include "score/mw/com/impl/proxy_event_binding_base.h"
 
+#include "score/filesystem/filesystem_struct.h"
+#include "score/filesystem/i_standard_filesystem.h"
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
 #include "score/memory/shared/flock/shared_flock_mutex.h"
 #include "score/memory/shared/lock_file.h"
 #include "score/memory/shared/managed_memory_resource.h"
+#include "score/memory/shared/shared_memory_factory.h"
+#include "score/result/result.h"
+#include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 
+#include <sched.h>
+#include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -102,7 +122,8 @@ class Proxy : public ProxyBinding
           HandleType handle,
           std::optional<memory::shared::LockFile> service_instance_usage_marker_file,
           std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
-              service_instance_usage_flock_mutex_and_lock) noexcept;
+              service_instance_usage_flock_mutex_and_lock,
+          score::filesystem::Filesystem filesystem) noexcept;
 
     /// Returns the address of the control structure, for the given event ID.
     ///
@@ -154,17 +175,45 @@ class Proxy : public ProxyBinding
     /// been destructed.
     void UnregisterEventBinding(const std::string_view service_element_name) noexcept override;
 
+    score::ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
+
     QualityType GetQualityType() const noexcept;
 
     /// \brief Returns pid of provider/skeleton side, this proxy is "connected" with.
     /// \return
     pid_t GetSourcePid() const noexcept;
 
+    ProxyInstanceIdentifier GetProxyInstanceIdentifier() const noexcept
+    {
+        return proxy_instance_identifier_;
+    }
+
+    void RegisterMethod(const ElementFqId::ElementId method_id, ProxyMethod& proxy_method) noexcept;
+
   private:
+    static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
+
     void ServiceAvailabilityChangeHandler(const bool is_service_available) noexcept;
+    void InitializeSharedMemoryForMethods(
+        memory::shared::ManagedMemoryResource& memory_resource,
+        const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& method_data,
+        const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos);
+
+    static bool DoElementInfosContainInArgsOrReturn(
+        const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos);
+    static std::size_t CalculateRequiredShmSize(
+        std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos);
+
+    memory::shared::SharedMemoryFactory::UserPermissions GetSkeletonShmPermissions() const;
+    std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>> GetMethodIdAndQueueSizeFromNames(
+        const std::vector<std::string_view>& enabled_method_names) const;
+    std::vector<TypeErasedCallQueue::TypeErasedElementInfo> GetTypeErasedElementInfoForEnabledMethods(
+        const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& enabled_method_data) const;
+    std::string GetMethodChannelShmName() const;
 
     std::shared_ptr<memory::shared::ManagedMemoryResource> control_;
     std::shared_ptr<memory::shared::ManagedMemoryResource> data_;
+    std::shared_ptr<memory::shared::ManagedMemoryResource> method_shm_resource_;
 
     QualityType quality_type_;
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter_;
@@ -180,6 +229,11 @@ class Proxy : public ProxyBinding
     std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
         service_instance_usage_flock_mutex_and_lock_;
+    std::unordered_map<LolaMethodId, std::reference_wrapper<ProxyMethod>> proxy_methods_;
+    MethodData* method_data_;
+    ProxyInstanceIdentifier proxy_instance_identifier_;
+
+    score::filesystem::Filesystem filesystem_;
 };
 
 template <typename EventSampleType>

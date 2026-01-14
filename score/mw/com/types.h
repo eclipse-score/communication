@@ -30,7 +30,6 @@
 /// \api
 /// \brief The Types header file includes the data type definitions which are specific for the
 /// mw::com API.
-/// \public
 /// \requirement SWS_CM_01018, SWS_CM_01013
 
 namespace score::mw::com
@@ -38,51 +37,43 @@ namespace score::mw::com
 /// \api
 /// \brief Represents a specific instance of a service.
 /// \requirement SWS_CM_01019
-/// \public
 using InstanceIdentifier = ::score::mw::com::impl::InstanceIdentifier;
 
 /// \api
 /// \brief Identifier for an application port. Maps design to deployment.
 /// \requirement SWS_CM_00350
-/// \public
 using InstanceSpecifier = ::score::mw::com::impl::InstanceSpecifier;
 
 /// \api
 /// \brief The container holds a list of instance identifiers and is used as
 /// a return value of the ResolveInstanceIDs method.
 /// \requirement SWS_CM_00319
-/// \public
 using InstanceIdentifierContainer = std::vector<InstanceIdentifier>;
 
 /// \api
 /// \brief Handle for service discovery operations.
 /// See StartFindService() and StopFindService() for more information.
-/// \public
 using FindServiceHandle = ::score::mw::com::impl::FindServiceHandle;
 
 /// \api
 /// \brief Container with handles representing currently available service instances.
 /// See StartFindService() for more information.
-/// \public
 template <typename T>
 using ServiceHandleContainer = ::score::mw::com::impl::ServiceHandleContainer<T>;
 
 /// \api
 /// \brief Callback that notifies the callee about service availability changes.
 /// See ProxyBase::StartFindService for more information.
-/// \public
 template <typename T>
 using FindServiceHandler = ::score::mw::com::impl::FindServiceHandler<T>;
 
 /// \api
 /// \brief Defines the processing modes for the service implementation side.
-/// \public
 using MethodCallProcessingMode = ::score::mw::com::impl::MethodCallProcessingMode;
 
 /// \api
 /// \brief Subscription state of a proxy event.
 /// See ProxyEvent::GetSubscriptionStatus for slightly more information.
-/// \public
 using SubscriptionState = ::score::mw::com::impl::SubscriptionState;
 
 /// Carries the received data on proxy side
@@ -97,24 +88,20 @@ using SampleAllocateePtr = impl::SampleAllocateePtr<SampleType>;
 /// \api
 /// \brief Callback for event notifications on proxy side.
 /// \requirement SWS_CM_00309
-/// \public
 using EventReceiveHandler = impl::EventReceiveHandler;
 
 /// \api
 /// \brief Interpret an interface that follows our traits as proxy (cf. impl/traits.h)
-/// \public
 template <template <class> class T>
 using AsProxy = impl::AsProxy<T>;
 
 /// \api
 /// \brief Interpret an interface that follows our traits as skeleton (cf. impl/traits.h)
-/// \public
 template <template <class> class T>
 using AsSkeleton = impl::AsSkeleton<T>;
 
 /// \api
 /// \brief A type erased proxy that can be used to read the raw data from a skeleton without knowing the SampleType
-/// \public
 using GenericProxy = impl::GenericProxy;
 
 }  // namespace score::mw::com

@@ -59,6 +59,7 @@ class SenderFactory final
     // Suppress "AUTOSAR C++14 M3-2-2" and "AUTOSAR C++14 M3-2-4", The rule states: "The One Definition Rule shall not
     // be violated." and "An identifier with external linkage shall have exactly one definition.", respectively.
     // Symbol_FUN is defined in every lambda instantiation, which violates the ODR.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     static void InjectSenderMock(
         ISender* const mock,
         // coverity[autosar_cpp14_m3_2_2_violation]

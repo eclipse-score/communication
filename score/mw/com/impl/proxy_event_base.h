@@ -90,71 +90,85 @@ class ProxyEventBase
         proxy_base_ = proxy_base;
     }
 
-    /// Subscribe to the event.
-    ///
-    /// This will initialize the event so that event data can be received once it arrives.
-    ///
-    /// \param max_sample_count Specify the maximum number of concurrent samples that this event shall
-    ///                         be able to offer to the using application.
-    /// \return On failure, returns an error code.
+    /**
+     * \api
+     * \brief Subscribe to the event.
+     * \details This will initialize the event so that event data can be received once it arrives.
+     * \param max_sample_count Specify the maximum number of concurrent samples that this event shall
+     *                          be able to offer to the using application.
+     * \return On failure, returns an error code.
+     */
     ResultBlank Subscribe(const std::size_t max_sample_count) noexcept;
 
-    /// \brief Get the subscription state of this event.
-    ///
-    /// This method can always be called regardless of the state of the event.
-    ///
-    /// \return Subscription state of the event.
+    /**
+     * \api
+     * \brief Get the subscription state of this event.
+     * \details This method can always be called regardless of the state of the event.
+     * \return Subscription state of the event.
+     */
     SubscriptionState GetSubscriptionState() const noexcept;
 
-    /// \brief End subscription to an event and release needed resources.
-    ///
-    /// It is illegal to call this method while data is still held by the application in the form of SamplePtr. Doing so
-    /// will result in undefined behavior.
-    /// An eventually currently registered ReceiveHandler will get removed (needs to be set again for a new
-    /// subscription) and therefore, this method will "synchronize" with a currently running ReceiveHandler
-    /// and will only finish after any running ReceiveHandler has ended.
-    ///
-    /// After a call to this method, the event behaves as if it had just been constructed.
+    /**
+     * \api
+     * \brief End subscription to an event and release needed resources.
+     * \details It is illegal to call this method while data is still held by the application in the form of SamplePtr.
+     *          Doing so will result in undefined behavior. An eventually currently registered ReceiveHandler will get
+     *          removed (needs to be set again for a new subscription) and therefore, this method will "synchronize"
+     *          with a currently running ReceiveHandler and will only finish after any running ReceiveHandler has ended.
+     *          After a call to this method, the event behaves as if it had just been constructed.
+     */
     void Unsubscribe() noexcept;
 
-    /// \brief Get the number of samples that can still be received by the user of this event.
-    ///
-    /// If this returns 0, the user first has to drop at least one SamplePtr before it is possible to receive data via
-    /// GetNewSamples again. If there is no subscription for this event, the returned value is unspecified.
-    ///
-    /// \return Number of samples that can still be received.
+    /**
+     * \api
+     * \brief Get the number of samples that can still be received by the user of this event.
+     * \details If this returns 0, the user first has to drop at least one SamplePtr before it is possible to receive
+     *          data via GetNewSamples again. If there is no subscription for this event, the returned value is
+     *          unspecified.
+     * \return Number of samples that can still be received.
+     */
     std::size_t GetFreeSampleCount() const noexcept;
 
-    /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
-    /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
-    ///
-    /// \details E.g. If there are 10 available / valid samples, but the max_sample_count set in the Subscribe() call
-    /// was 2, then GetNumNewSamplesAvailable() would return 10 while a call to GetNewSamples(2) would only receive 2
-    /// samples.
-    //  This is a proprietary extension to the official ara::com API. It is useful in resource sensitive
-    /// setups, where the user wants to work in polling mode only without registered async receive-handlers.
-    /// For further details see //score/mw/com/design/extensions/README.md.
-    ///
-    /// \return Either 0 if no new samples are available (and GetNewSamples() wouldn't return any) or N, where 1 <= N <=
-    /// actual new samples. I.e. an implementation is allowed to report a lower number than actual new samples, which
-    /// would be provided by a call to GetNewSamples().
+    /**
+     * \api
+     * \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
+     *        max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.
+     * \details E.g. If there are 10 available / valid samples, but the max_sample_count set in the Subscribe() call
+     *          was 2, then GetNumNewSamplesAvailable() would return 10 while a call to GetNewSamples(2) would only
+     *          receive 2 samples. This is a proprietary extension to the official ara::com API. It is useful in
+     *          resource sensitive setups, where the user wants to work in polling mode only without registered async
+     *          receive-handlers. For further details see //score/mw/com/design/extensions/README.md.
+     * \return Either 0 if no new samples are available (and GetNewSamples() wouldn't return any) or N, where 1 <= N <=
+     *         actual new samples. I.e. an implementation is allowed to report a lower number than actual new samples,
+     *         which would be provided by a call to GetNewSamples().
+     */
     Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
 
-    /// \brief Sets the handler to be called, whenever a new event-sample has been received.
-    /// \details Generally a ReceiveHandler has no restrictions on what mw::com API it is allowed to call.
-    ///          It is especially allowed to call all public APIs of the Event instance on which it had been
-    ///          set/registered as long as it obeys the general requirement, that API calls on a Proxy/Proxy event are
-    ///          thread safe/can't be called concurrently.
-    /// \attention This function shall MUST NOT be called from the context of a ReceiveHandler registered for this
-    ///            event!
-    ///            It makes semantically not really sense to register a "new" ReceiveHandler from the context of an
-    ///            already running ReceiveHandler. We also see no use cases for it and won't support it therefore.
-    /// \param handler user provided handler to be called
+    /**
+     * \api
+     * \brief Sets the handler to be called, whenever a new event-sample has been received.
+     * \details Generally a ReceiveHandler has no restrictions on what mw::com API it is allowed to call.
+     *          It is especially allowed to call all public APIs of the Event instance on which it had been
+     *          set/registered as long as it obeys the general requirement, that API calls on a Proxy/Proxy event are
+     *          thread safe/can't be called concurrently.
+     * \attention This function MUST NOT be called from the context of a ReceiveHandler registered for this event!
+     *            It makes semantically not really sense to register a "new" ReceiveHandler from the context of an
+     *            already running ReceiveHandler. We also see no use cases for it and won't support it therefore.
+     * \param handler user provided handler to be called
+     */
     ResultBlank SetReceiveHandler(EventReceiveHandler handler) noexcept;
 
-    /// \brief Removes any ReceiveHandler registered via #SetReceiveHandler
+    /**
+     * \api
+     * \brief Removes any ReceiveHandler registered via SetReceiveHandler.
+     */
     ResultBlank UnsetReceiveHandler() noexcept;
 
+    /**
+     * \api
+     * \brief Checks if the binding is valid.
+     * \return True if the binding is valid, false otherwise.
+     */
     bool IsBindingValid() const noexcept
     {
         return binding_base_ != nullptr;

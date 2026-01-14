@@ -50,7 +50,7 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
         test_prefix += std::to_string(::getpid()) + "_";
         service_identifier_ = test_prefix + "1";
         protocol_config_ = ServiceProtocolConfig{service_identifier_, 6U, 6U, 6U};
-        client_config_ = IClientFactory::ClientConfig{1U, 1U, false, true};
+        client_config_ = IClientFactory::ClientConfig{1U, 1U, false, true, false};
         server_config_ = IServerFactory::ServerConfig{0U, 0U, 1U};
 
         server_connections_started_ = 0U;

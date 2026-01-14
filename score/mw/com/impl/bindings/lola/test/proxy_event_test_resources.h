@@ -13,8 +13,6 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TEST_PROXY_EVENT_TEST_RESOURCES_H
 
-#include "score/os/mocklib/fcntl_mock.h"
-#include "score/os/mocklib/unistdmock.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
@@ -33,8 +31,12 @@
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/i_binding_tracing_runtime.h"
 
+#include "score/filesystem/factory/filesystem_factory_fake.h"
+#include "score/filesystem/i_standard_filesystem.h"
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/memory/shared/shared_memory_factory_mock.h"
+#include "score/os/mocklib/fcntl_mock.h"
+#include "score/os/mocklib/unistdmock.h"
 
 #include <score/optional.hpp>
 
@@ -200,6 +202,7 @@ class ProxyMockedMemoryFixture : public ::testing::Test
     os::MockGuard<::testing::NiceMock<os::FcntlMock>> fcntl_mock_{};
     os::MockGuard<::testing::NiceMock<os::UnistdMock>> unistd_mock_{};
     SharedMemoryFactoryGuard shared_memory_factory_mock_guard_{};
+    ::testing::NiceMock<filesystem::FilesystemFactoryFake> filesystem_fake_{};
 
     ::testing::NiceMock<ServiceDiscoveryMock> service_discovery_mock_{};
 

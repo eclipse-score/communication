@@ -45,6 +45,7 @@ LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     std::uint16_t instance_id,
     std::vector<std::pair<std::string, LolaEventInstanceDeployment>> lola_event_inst_depls,
     std::vector<std::pair<std::string, LolaFieldInstanceDeployment>> lola_field_inst_depls,
+    std::vector<std::pair<std::string, LolaMethodInstanceDeployment>> lola_method_inst_depls,
     std::vector<uid_t> allowed_consumers_qm,
     std::vector<uid_t> allowed_consumers_asil_b,
     score::cpp::optional<std::size_t> shm_size,
@@ -73,12 +74,18 @@ LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(
     {
         lola_service_instance_deployment_.fields_.emplace(lola_field_inst_depl);
     }
+
+    for (auto lola_method_inst_depl : lola_method_inst_depls)
+    {
+        lola_service_instance_deployment_.methods_.emplace(lola_method_inst_depl);
+    }
     return lola_service_instance_deployment_;
 }
 
 ServiceTypeDeployment CreateTypeDeployment(const uint16_t lola_service_id,
                                            const std::vector<std::pair<std::string, std::uint8_t>>& event_ids,
-                                           const std::vector<std::pair<std::string, std::uint8_t>>& field_ids)
+                                           const std::vector<std::pair<std::string, std::uint8_t>>& field_ids,
+                                           const std::vector<std::pair<std::string, std::uint8_t>>& method_ids)
 {
     LolaServiceTypeDeployment::EventIdMapping event_id_mapping{};
     for (auto& event_with_id : event_ids)
@@ -92,7 +99,14 @@ ServiceTypeDeployment CreateTypeDeployment(const uint16_t lola_service_id,
         field_id_mapping.insert(field_with_id);
     }
 
-    return ServiceTypeDeployment{LolaServiceTypeDeployment(lola_service_id, event_id_mapping, field_id_mapping)};
+    LolaServiceTypeDeployment::MethodIdMapping method_id_mapping{};
+    for (auto& method_with_id : method_ids)
+    {
+        method_id_mapping.insert(method_with_id);
+    }
+
+    return ServiceTypeDeployment{
+        LolaServiceTypeDeployment(lola_service_id, event_id_mapping, field_id_mapping, method_id_mapping)};
 }
 
 bool fileExists(const std::string& filePath)
@@ -125,6 +139,11 @@ InstanceIdentifier GetValidInstanceIdentifierWithField()
     return make_InstanceIdentifier(test::kValidInstanceDeploymentWithField, test::kValidTypeDeploymentWithField);
 }
 
+InstanceIdentifier GetValidInstanceIdentifierWithMethods()
+{
+    return make_InstanceIdentifier(test::kValidInstanceDeploymentWithMethods, test::kValidTypeDeploymentWithMethods);
+}
+
 InstanceIdentifier GetValidASILInstanceIdentifierWithEvent()
 {
     return make_InstanceIdentifier(test::kValidAsilInstanceDeploymentWithEvent, test::kValidTypeDeploymentWithEvent);
@@ -133,6 +152,12 @@ InstanceIdentifier GetValidASILInstanceIdentifierWithEvent()
 InstanceIdentifier GetValidASILInstanceIdentifierWithField()
 {
     return make_InstanceIdentifier(test::kValidAsilInstanceDeploymentWithField, test::kValidTypeDeploymentWithField);
+}
+
+InstanceIdentifier GetValidASILInstanceIdentifierWithMethods()
+{
+    return make_InstanceIdentifier(test::kValidAsilInstanceDeploymentWithMethods,
+                                   test::kValidTypeDeploymentWithMethods);
 }
 
 SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
@@ -241,6 +266,32 @@ SkeletonMockedMemoryFixture& SkeletonMockedMemoryFixture::InitialiseSkeleton(
         filesystem_fake_.CreateInstance(),
         std::make_unique<ShmPathBuilderFacade>(shm_path_builder_mock_),
         std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_),
+        std::optional<memory::shared::LockFile>{},
+        nullptr);
+
+    return *this;
+}
+
+SkeletonMockedMemoryFixture& SkeletonMockedMemoryFixture::InitialiseSkeletonWithRealPathBuilders(
+    const InstanceIdentifier& instance_identifier)
+{
+    const auto& instance_depl_info = InstanceIdentifierView{instance_identifier}.GetServiceInstanceDeployment();
+    const auto* lola_service_instance_deployment_ptr =
+        std::get_if<LolaServiceInstanceDeployment>(&instance_depl_info.bindingInfo_);
+    EXPECT_NE(lola_service_instance_deployment_ptr, nullptr);
+
+    const auto& service_type_depl_info = InstanceIdentifierView{instance_identifier}.GetServiceTypeDeployment();
+    const auto* lola_service_type_deployment_ptr =
+        std::get_if<LolaServiceTypeDeployment>(&service_type_depl_info.binding_info_);
+    EXPECT_NE(lola_service_type_deployment_ptr, nullptr);
+
+    skeleton_ = std::make_unique<Skeleton>(
+        instance_identifier,
+        *lola_service_instance_deployment_ptr,
+        *lola_service_type_deployment_ptr,
+        filesystem_fake_.CreateInstance(),
+        std::make_unique<ShmPathBuilder>(lola_service_type_deployment_ptr->service_id_),
+        std::make_unique<PartialRestartPathBuilder>(lola_service_type_deployment_ptr->service_id_),
         std::optional<memory::shared::LockFile>{},
         nullptr);
 

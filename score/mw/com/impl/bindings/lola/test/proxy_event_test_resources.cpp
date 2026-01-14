@@ -11,6 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
+#include "score/filesystem/details/standard_filesystem.h"
+#include "score/filesystem/i_standard_filesystem.h"
 #include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
 
 #include "score/memory/shared/memory_resource_registry.h"
@@ -106,7 +108,8 @@ void ProxyMockedMemoryFixture::InitialiseProxyWithConstructor(const InstanceIden
                                      std::move(event_name_to_element_fq_id_converter),
                                      make_HandleType(instance_identifier),
                                      std::optional<memory::shared::LockFile>{},
-                                     nullptr);
+                                     nullptr,
+                                     filesystem_fake_.CreateInstance());
 }
 
 void ProxyMockedMemoryFixture::InitialiseProxyWithCreate(const InstanceIdentifier& instance_identifier)

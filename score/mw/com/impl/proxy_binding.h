@@ -15,7 +15,10 @@
 
 #include "score/mw/com/impl/proxy_event_binding_base.h"
 
+#include "score/result/result.h"
+
 #include <string_view>
+#include <vector>
 
 namespace score::mw::com::impl
 {
@@ -57,6 +60,8 @@ class ProxyBinding
 
     /// Unregisters a ProxyEvent binding with its parent proxy
     virtual void UnregisterEventBinding(const std::string_view service_element_name) noexcept = 0;
+
+    virtual ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names) = 0;
 };
 
 }  // namespace score::mw::com::impl

@@ -109,5 +109,5 @@ safety_software_seooc(
 After linking all requirements to the defined levels and to code and implementation a traceability report can be generated via bazel test, e.g:
 
 ```bash
-bazel build //third_party/traceability/doc/sample_library:safety_software_unit_example  --python=3.8
+bazel build //third_party/traceability/doc/sample_library:safety_software_unit_example
 ```

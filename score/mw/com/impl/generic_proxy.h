@@ -49,7 +49,6 @@ class GenericProxyAttorney;
  * raw memory buffer. It is the generic analogue of a Proxy, which contains strongly-typed events. While the Proxy is
  * usually generated from the IDL, a GenericProxy can be manually instantiated at runtime based on deployment
  * information.
- * \public
  */
 class GenericProxy : public ProxyBase
 {
@@ -67,7 +66,6 @@ class GenericProxy : public ProxyBase
      * \brief Exception-less GenericProxy constructor
      * \param instance_handle Handle to the instance
      * \return Result containing the created GenericProxy instance or an error code.
-     * \public
      */
     static Result<GenericProxy> Create(HandleType instance_handle) noexcept;
 
@@ -75,7 +73,6 @@ class GenericProxy : public ProxyBase
      * \api
      * \brief Returns a reference to the event map.
      * \return Reference to the event map.
-     * \public
      */
     EventMap& GetEvents() noexcept;
 

@@ -1,0 +1,45 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include ../../fta_metamodel.puml
+
+$TopEvent("Callback invoked with wrong data", "Communication.CallbackInvokedWithWrongData")
+
+$OrGate("Gate1", "TopEvent")
+$IntermediateEvent("Manipulated received data", "Event1", "Gate1")
+$OrGate("Gate4", "Event1")
+$IntermediateEvent("Dangling data", "Event6", "Gate4")
+$BasicEvent("PTR dangling", "Communication.PtrDangling", "Event6")
+$BasicEvent("Callback dangling", "Communication.CallbackDangling", "Event6")
+$BasicEvent("Actively manipulate by programm parts", "Communication.ActivelyManipulateByProgrammParts", "Gate4")
+$IntermediateEvent("Data from wrong sample instance", "Event3", "Gate1")
+$OrGate("Gate2", "Event3")
+$IntermediateEvent("LookUp wrong Event in same instance", "Event12", "Gate2")
+$BasicEvent("EventFqId wrongly constructed", "Communication.EventfqidWronglyConstructed", "Event12")
+$IntermediateEvent("LookUp correct event in wrong instance", "Event11", "Gate2")
+$IntermediateEvent("Wrong Find-Service", "Event13", "Event11")
+$TransferIn("Transfer1", "Event13")
+$IntermediateEvent("Wrong order of sample data", "Event4", "Gate1")
+$OrGate("Gate3", "Event4")
+$BasicEvent("Ordering wrong", "Communication.OrderingWrong", "Gate3")
+$IntermediateEvent("Timestamps can be wrong", "Event8", "Gate3")
+$BasicEvent("Slot allocation synchronisation wrong", "Communication.SlotAllocationSynchronisationWrong", "Event8")
+$IntermediateEvent("Wrong state", "Event9", "Gate3")
+$BasicEvent("Slot allocation synchronisation wrong", "Communication.SlotAllocationSynchronisationWrong", "Event9")
+$IntermediateEvent("Repeated data", "Event2", "Gate1")
+$IntermediateEvent("Wrong order of sample", "Event5", "Event2")
+$TransferIn("Transfer2", "Event5")
+
+@enduml

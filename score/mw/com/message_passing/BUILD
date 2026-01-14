@@ -20,7 +20,7 @@ alias(
         "@platforms//os:qnx": ":message_passing_resmgr",
         "//conditions:default": ":message_passing_mqueue",
     }),
-    deprecation = "DEPRECATED: use @communication//score/message_passing:message_passing instead",
+    deprecation = "DEPRECATED: use @score_communication//score/message_passing:message_passing instead",
     tags = ["FFI"],
     visibility = ["//visibility:public"],
 )
@@ -184,7 +184,7 @@ cc_library(
         "sender_mock.h",
         "sender_traits_mock.h",
     ],
-    deprecation = "DEPRECATED: use @communication//score/message_passing:mock instead",
+    deprecation = "DEPRECATED: use @score_communication//score/message_passing:mock instead",
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
     deps = [

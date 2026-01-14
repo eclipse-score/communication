@@ -54,11 +54,12 @@ class NonBlockingSender final : public ISender
     /// \param max_queue_size queue size to be used.
     /// \param executor execution policy to be used to call wrapped sender Send() calls from queue. As only one task at
     ///                 a time will be submitted anyhow, maxConcurrencyLevel of the executor needs only to be 1!
+    // coverity[autosar_cpp14_a7_1_7_violation] false-positive: formatted this way by clang-format
     NonBlockingSender(score::cpp::pmr::unique_ptr<ISender> wrapped_sender,
                       const std::size_t max_queue_size,
                       concurrency::Executor& executor);
 
-    ~NonBlockingSender() override;
+    ~NonBlockingSender() noexcept override;
 
     // Since queue_ is based on score::memory::PmrRingBuffer, cannot be moved or copied
     NonBlockingSender(const NonBlockingSender&) = delete;
@@ -81,6 +82,7 @@ class NonBlockingSender final : public ISender
     bool HasNonBlockingGuarantee() const noexcept override;
 
   private:
+    // coverity[autosar_cpp14_a0_1_1_violation] false-positive: is used in constructor
     static constexpr std::size_t QUEUE_SIZE_UPPER_LIMIT = 100U;
 
     /// \brief Function called by callable posted to executor. Takes message from queue front and calls Send() on the
@@ -90,6 +92,7 @@ class NonBlockingSender final : public ISender
     ///          queue element is removed and if there is still a queue element left a new callable calling this very
     ///          same function is posted to the executor.
     /// \param token stop_token provided by executor.
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void SendQueueElements(const score::cpp::stop_token token) noexcept;
 
     /// \brief internal Send function taking either a short or medium message to be sent.

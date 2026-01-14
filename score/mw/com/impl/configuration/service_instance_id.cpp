@@ -100,11 +100,19 @@ std::string ToHashStringImpl(const ServiceInstanceId::BindingInformation& bindin
 
 }  // namespace
 
+// Suppress "AUTOSAR C++14 A12-1-5" rule finding.
+// This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
+// Justification: This constructor is used by other constructors for delegation.
+// coverity[autosar_cpp14_a12_1_5_violation]
 ServiceInstanceId::ServiceInstanceId(BindingInformation binding_info) noexcept
     : binding_info_{std::move(binding_info)}, hash_string_{ToHashStringImpl(binding_info_)}
 {
 }
 
+// Suppress "AUTOSAR C++14 A12-1-5" rule finding.
+// This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
+// Justification: Delegating constructor is used.
+// coverity[autosar_cpp14_a12_1_5_violation]
 ServiceInstanceId::ServiceInstanceId(const score::json::Object& json_object) noexcept
     : ServiceInstanceId{GetBindingInfoFromJson(json_object)}
 {

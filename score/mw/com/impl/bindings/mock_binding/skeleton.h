@@ -44,7 +44,7 @@ class SkeletonFacade : public SkeletonBinding
 
     ResultBlank PrepareOffer(SkeletonEventBindings& skeleton_event_binding,
                              SkeletonFieldBindings& skeleton_field_binding,
-                             std::optional<RegisterShmObjectTraceCallback> callback) noexcept override final
+                             std::optional<RegisterShmObjectTraceCallback> callback) override final
     {
         return skeleton_.PrepareOffer(skeleton_event_binding, skeleton_field_binding, std::move(callback));
     }

@@ -87,6 +87,7 @@ class Sender final : public ISender
     bool HasNonBlockingGuarantee() const noexcept override;
 
   private:
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void OpenOrWaitForChannel(const std::string_view, const score::cpp::stop_token&) noexcept;
     template <typename Payload>
     score::cpp::expected_blank<score::os::Error> SendPrepared(const Payload&) const noexcept;
@@ -102,6 +103,7 @@ class Sender final : public ISender
 };
 
 template <typename ChannelTraits>
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class constructor (Ticket-234468)
 Sender<ChannelTraits>::Sender(const std::string_view identifier,
                               const score::cpp::stop_token& token,
                               const SenderConfig& sender_config,
@@ -129,6 +131,7 @@ Sender<ChannelTraits>::Sender(const std::string_view identifier,
 }
 
 template <typename ChannelTraits>
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void Sender<ChannelTraits>::OpenOrWaitForChannel(const std::string_view identifier,
                                                  const score::cpp::stop_token& token) noexcept
 {

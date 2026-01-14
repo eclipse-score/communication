@@ -31,17 +31,6 @@ namespace score::mw::com::impl
 class ProxyMethodBinding
 {
   public:
-    /// \brief Constructor
-    /// \param in_args_type_erased_info Type-erased information about the in-arguments of the method. std::nullopt, if
-    /// there are no in-arguments.
-    /// \param return_type_type_erased_info Type-erased information about the return type of the method. std::nullopt,
-    /// if the return type is void.
-    ProxyMethodBinding(std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info,
-                       std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info)
-        : in_args_type_erased_info_(in_args_type_erased_info),
-          return_type_type_erased_info_(return_type_type_erased_info)
-    {
-    }
     virtual ~ProxyMethodBinding() = default;
 
     /// \brief Allocates storage for the in-arguments of a method call at the given queue position.
@@ -64,10 +53,6 @@ class ProxyMethodBinding
     /// \param queue_position The call-queue position at which to perform the method call.
     /// \return ResultBlank indicating success or failure of the method call.
     virtual score::ResultBlank DoCall(std::size_t queue_position) = 0;
-
-  protected:
-    std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
-    std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
 };
 
 }  // namespace score::mw::com::impl

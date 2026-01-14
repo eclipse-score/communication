@@ -11,17 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@//third_party/traceability/bazel:safety_analysis.bzl", "safety_analysis")
 load("@lobster//:lobster.bzl", "lobster_trlc")
 load("@trlc//:trlc.bzl", "trlc_requirements", "trlc_requirements_test")
-load("//third_party/traceability/tools/source_code_linker:collect_source_files.bzl", "parse_source_files_for_links")
 
-# FMEA
+# Failures Modes
 trlc_requirements(
-    name = "fmea_ipc",
+    name = "failure_modes",
     srcs = [
-        "fmea_ipc.trlc",
-        "@//score/mw/com/requirements/component_requirements:component_requirements_ipc",
+        "failure_modes.trlc",
     ],
     spec = [
         "@//third_party/traceability/config/trlc/score_model:requirement_metamodel",
@@ -30,50 +27,40 @@ trlc_requirements(
 )
 
 trlc_requirements_test(
-    name = "fmea_ipc_test",
+    name = "failure_modes_test",
     reqs = [
-        ":fmea_ipc",
+        ":failure_modes",
     ],
     visibility = ["//visibility:public"],
 )
 
 lobster_trlc(
-    name = "fmea_ipc_lobster",
+    name = "failure_modes_lobster",
     config = "@//third_party/traceability/config/lobster:safety_analysis_conf",
     requirements = [
-        ":fmea_ipc",
+        ":failure_modes",
     ],
     visibility = ["//visibility:public"],
 )
 
-#  FTA
-
+# Root Causes
 filegroup(
-    name = "fta",
+    name = "root_causes",
     srcs = [
-        "fta.puml",
+        "@//score/mw/com/requirements/safety_analysis/root_causes:general",
+        "@//score/mw/com/requirements/safety_analysis/root_causes/proxy:root_causes_proxy",
+        "@//score/mw/com/requirements/safety_analysis/root_causes/skeleton:root_causes_skeleton",
+        "@//score/mw/com/requirements/safety_analysis/root_causes/smart_pointer_sample_allocate_ptr:smart_pointer_sample_allocate_ptr",
     ],
     visibility = ["//visibility:public"],
 )
 
-parse_source_files_for_links(
-    name = "fta_tags",
-    srcs_and_deps = [":fta"],
-)
-
-safety_analysis(
-    name = "mw_com_safety_analysis",
-    controlmeasures = [":aou_ipc"],
-    failuremodes = [":fmea_ipc"],
-    fta = [":fta"],
-    public_api = ["@//third_party/traceability/doc/sample_library/design:public_api"],
-)
-
+# Control Measures
 # AoUs
 trlc_requirements(
-    name = "aou_ipc",
+    name = "control_measures",
     srcs = [
-        "aou_ipc.trlc",
+        "aou.trlc",
     ],
     spec = [
         "@//third_party/traceability/config/trlc/score_model:requirement_metamodel",
@@ -82,18 +69,18 @@ trlc_requirements(
 )
 
 trlc_requirements_test(
-    name = "aou_ipc_test",
+    name = "control_measures_test",
     reqs = [
-        ":aou_ipc",
+        ":control_measures",
     ],
     visibility = ["//visibility:public"],
 )
 
 lobster_trlc(
-    name = "aou_ipc_lobster",
+    name = "control_measures_lobster",
     config = "@//third_party/traceability/config/lobster:safety_analysis_conf",
     requirements = [
-        ":aou_ipc",
+        ":control_measures",
     ],
     visibility = ["//visibility:public"],
 )

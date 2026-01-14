@@ -95,18 +95,19 @@ class ProxyField final : public ProxyFieldBase
 
     ~ProxyField() noexcept = default;
 
-    /// \brief Receive pending data from the field.
-    ///
-    /// The user needs to provide a callable that fulfills the following signature:
-    /// void F(SamplePtr<const FieldType>) noexcept. This callback will be called for each sample
-    /// that is available at the time of the call. Notice that the number of callback calls cannot
-    /// exceed std::min(GetFreeSampleCount(), max_num_samples) times.
-    ///
-    /// \tparam F Callable with the signature void(SamplePtr<const FieldType>) noexcept
-    /// \param receiver Callable with the appropriate signature. GetNewSamples will take ownership
-    ///                 of this callable.
-    /// \param max_num_samples Maximum number of samples to return via the given callable.
-    /// \return Number of samples that were handed over to the callable or an error.
+    /**
+     * \api
+     * \brief Receive pending data from the field.
+     * \details The user needs to provide a callable that fulfills the following signature:
+     *          void F(SamplePtr<const FieldType>) noexcept. This callback will be called for each sample
+     *          that is available at the time of the call. Notice that the number of callback calls cannot
+     *          exceed std::min(GetFreeSampleCount(), max_num_samples) times.
+     * \tparam F Callable with the signature void(SamplePtr<const FieldType>) noexcept
+     * \param receiver Callable with the appropriate signature. GetNewSamples will take ownership
+     *                 of this callable.
+     * \param max_num_samples Maximum number of samples to return via the given callable.
+     * \return Number of samples that were handed over to the callable or an error.
+     */
     template <typename F>
     Result<std::size_t> GetNewSamples(F&& receiver, const std::size_t max_num_samples) noexcept
     {

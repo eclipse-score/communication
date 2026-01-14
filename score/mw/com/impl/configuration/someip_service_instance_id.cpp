@@ -31,11 +31,19 @@ constexpr auto kInstanceIdKey = "instanceId";
 
 }  // namespace
 
+// Suppress "AUTOSAR C++14 A12-1-5" rule finding.
+// This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
+// Justification: This constructor is used by other constructors for delegation.
+// coverity[autosar_cpp14_a12_1_5_violation]
 SomeIpServiceInstanceId::SomeIpServiceInstanceId(InstanceId instance_id) noexcept
     : id_{instance_id}, hash_string_{ToHashStringImpl(id_, hashStringSize)}
 {
 }
 
+// Suppress "AUTOSAR C++14 A12-1-5" rule finding.
+// This rule states: Common class initialization for non-constant members shall be done by a delegating constructor.
+// Justification: Delegating constructor is used.
+// coverity[autosar_cpp14_a12_1_5_violation]
 SomeIpServiceInstanceId::SomeIpServiceInstanceId(const score::json::Object& json_object) noexcept
     : SomeIpServiceInstanceId{GetValueFromJson<InstanceId>(json_object, kInstanceIdKey)}
 {

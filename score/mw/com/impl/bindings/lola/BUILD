@@ -246,11 +246,13 @@ cc_library(
         "skeleton.cpp",
         "skeleton_event.cpp",
         "skeleton_event_properties.cpp",
+        "skeleton_method.cpp",
     ],
     hdrs = [
         "skeleton.h",
         "skeleton_event.h",
         "skeleton_event_properties.h",
+        "skeleton_method.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -271,17 +273,26 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:skeleton_binding",
         "//score/mw/com/impl:skeleton_event_binding",
+        "//score/mw/com/impl/bindings/lola/methods:method_data",
+        "//score/mw/com/impl/bindings/lola/methods:proxy_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:skeleton_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
         "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/methods:skeleton_method_binding",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/util:arithmetic_utils",
         "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/safe_math",
+        "@score_baselibs//score/language/safecpp/scoped_function:scope",
+        "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/memory/shared",
         "@score_baselibs//score/memory/shared:lock_file",
         "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
         "@score_baselibs//score/memory/shared/flock:exclusive_flock_mutex",
         "@score_baselibs//score/memory/shared/flock:flock_mutex_and_lock",
+        "@score_baselibs//score/result",
     ],
 )
 
@@ -292,6 +303,7 @@ cc_library(
         "proxy.cpp",
         "proxy_event.cpp",
         "proxy_event_common.cpp",
+        "proxy_method.cpp",
         "slot_collector.cpp",
         "subscription_helpers.cpp",
         "subscription_not_subscribed_states.cpp",
@@ -306,6 +318,7 @@ cc_library(
         "proxy.h",
         "proxy_event.h",
         "proxy_event_common.h",
+        "proxy_method.h",
         "slot_collector.h",
         "subscription_helpers.h",
         "subscription_not_subscribed_states.h",
@@ -336,9 +349,14 @@ cc_library(
         "//score/mw/com/impl:runtime_interfaces",
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
+        "//score/mw/com/impl/bindings/lola/methods:method_data",
+        "//score/mw/com/impl/bindings/lola/methods:proxy_instance_identifier",
+        "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
         "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/methods:proxy_method_binding",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:i_tracing_runtime",
+        "//score/mw/com/impl/util:type_erased_storage",
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/memory/shared",
@@ -770,6 +788,23 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_unit_test(
+    name = "skeleton_method_test",
+    srcs = ["skeleton_method_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":skeleton",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
 cc_gtest_unit_test(
     name = "type_erased_sample_ptrs_guard_test",
     srcs = ["type_erased_sample_ptrs_guard_test.cpp"],
@@ -870,6 +905,31 @@ cc_test(
     ],
 )
 
+cc_unit_test(
+    name = "skeleton_method_handling_test",
+    srcs = [
+        "skeleton_method_handling_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":skeleton",
+        "//score/mw/com/impl:binding_type",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/memory/shared:shared_memory_resource_mock",
+        "@score_baselibs//score/memory/shared/fake:my_bounded_shared_memory_resource",
+        "@score_baselibs//score/result",
+    ],
+)
+
 cc_gtest_unit_test(
     name = "proxy_test",
     srcs = ["proxy_test.cpp"],
@@ -882,6 +942,26 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/result",
+    ],
+)
+
+cc_unit_test(
+    name = "proxy_method_handling_test",
+    srcs = ["proxy_method_handling_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":proxy",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/filesystem:mock",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/memory/shared:shared_memory_resource_mock",
+        "@score_baselibs//score/memory/shared/fake:my_bounded_shared_memory_resource",
     ],
 )
 
@@ -1192,6 +1272,31 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_unit_test(
+    name = "proxy_method_test",
+    srcs = [
+        "proxy_method_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        "i_runtime",
+        ":element_fq_id",
+        ":proxy",
+        "//score/mw/com/impl",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+        "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/result",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -1204,7 +1309,8 @@ cc_unit_test_suites_for_host_and_qnx(
         ":proxy_event_common_test",
         ":runtime_application_id_test",
         ":runtime_test",
-        "sample_allocatee_ptr_test",
+        ":sample_allocatee_ptr_test",
+        ":proxy_method_test",
         ":sample_ptr_test",
         ":service_data_storage_test",
         ":skeleton_event_test",
@@ -1223,9 +1329,12 @@ cc_unit_test_suites_for_host_and_qnx(
         ":generic_proxy_event_test",
         ":partial_restart_path_builder_test",
         ":proxy_event_test",
+        ":proxy_method_handling_test",
         ":proxy_test",
         ":shm_path_builder_test",
         ":skeleton_test",
+        ":skeleton_method_test",
+        ":skeleton_method_handling_test",
         ":slot_decrementer_test",
         ":transaction_log_rollback_executor_test",
         ":type_erased_sample_ptrs_guard_test",

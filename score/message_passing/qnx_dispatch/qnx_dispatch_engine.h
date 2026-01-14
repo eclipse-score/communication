@@ -51,19 +51,29 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     {
         // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
         // be private.". We need these data elements to be organized into a coherent organized data structure.
+        // Suppress "AUTOSAR C++14 A9-6-1" rule findings. This rule states: "Data types used for interfacing with
+        // hardware or conforming to communication protocols shall be trivial, standard-layout and only contain members
+        // of types with defined sizes." False-positive: structure is not meant to be serialized
         // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Channel> channel{};
         // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Dispatch> dispatch{};
         // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Fcntl> fcntl{};
         // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::IoFunc> iofunc{};
         // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::qnx::Timer> timer{};
         // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::SysUio> uio{};
         // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Unistd> unistd{};
     };
 
@@ -86,6 +96,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
         ResourceManagerServer& operator=(const ResourceManagerServer&) = delete;
         ResourceManagerServer& operator=(ResourceManagerServer&&) = delete;
 
+        // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
         score::cpp::expected_blank<score::os::Error> Start(const QnxResourcePath& path) noexcept
         {
             return engine_->StartServer(*this, path);
@@ -206,13 +217,17 @@ class QnxDispatchEngine final : public ISharedResourceEngine
 
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected<std::int32_t, score::os::Error> TryOpenClientConnection(std::string_view identifier) noexcept override;
 
     void CloseClientConnection(std::int32_t client_fd) noexcept override;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexcept override;
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void UnregisterPosixEndpoint(PosixEndpointEntry& endpoint) noexcept override;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void EnqueueCommand(CommandQueueEntry& entry,
                         const TimePoint until,
                         CommandCallback callback,
@@ -221,10 +236,12 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     // this call is blocking
     void CleanUpOwner(const void* const owner) noexcept override;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> SendProtocolMessage(
         const std::int32_t fd,
         std::uint8_t code,
         const score::cpp::span<const std::uint8_t> message) noexcept override;
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> ReceiveProtocolMessage(
         const std::int32_t fd,
         std::uint8_t& code) noexcept override;
@@ -255,20 +272,24 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     static int TimerPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
     static int EventPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept;
     void ProcessTimerQueue() noexcept;
 
     void SetupResourceManagerCallbacks() noexcept;
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> StartServer(ResourceManagerServer& server,
                                                     const QnxResourcePath& path) noexcept;
     void StopServer(ResourceManagerServer& server) noexcept;
 
+    // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in multiple class methods
     static ResourceManagerConnection& OcbToConnection(RESMGR_OCB_T* const ocb)
     {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast) by API design
         return static_cast<ResourceManagerConnection&>(*ocb);
     }
 
+    // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in multiple class methods
     static ResourceManagerServer& ResmgrHandleToServer(RESMGR_HANDLE_T* const handle)
     {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast) by API design

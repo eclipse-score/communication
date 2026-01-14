@@ -65,12 +65,19 @@ class ClientConnectionTest : public ::testing::Test
         engine_.reset();
     }
 
-    void CatchImmediateConnectEndpointRegistrationCommand()
+    void CatchImmediateConnectCommand()
     {
         EXPECT_CALL(*engine_, EnqueueCommand(_, ISharedResourceEngine::TimePoint{}, _, _))
             .WillOnce([&](auto&, auto, ISharedResourceEngine::CommandCallback callback, auto) {
-                // reusing the connect callback in case ow queued endpoint registration
                 connect_command_callback_ = std::move(callback);
+            });
+    }
+
+    void CatchEndpointRegistrationCommand()
+    {
+        EXPECT_CALL(*engine_, EnqueueCommand(_, ISharedResourceEngine::TimePoint{}, _, _))
+            .WillOnce([&](auto&, auto, ISharedResourceEngine::CommandCallback callback, auto) {
+                endpoint_command_callback_ = std::move(callback);
             });
     }
 
@@ -120,6 +127,17 @@ class ClientConnectionTest : public ::testing::Test
         on_callback_thread_ = true;
         {
             auto callback = std::move(connect_command_callback_);
+            callback(ISharedResourceEngine::Clock::now());
+            // the destructor for callback capture, if any, is called now
+        }
+        on_callback_thread_ = false;
+    }
+
+    void InvokeEndpointRegistrationCommand()
+    {
+        on_callback_thread_ = true;
+        {
+            auto callback = std::move(endpoint_command_callback_);
             callback(ISharedResourceEngine::Clock::now());
             // the destructor for callback capture, if any, is called now
         }
@@ -200,13 +218,26 @@ class ClientConnectionTest : public ::testing::Test
                                   IClientConnection::StateCallback state_callback = {},
                                   IClientConnection::NotifyCallback notify_callback = {})
     {
-        AtTryOpenCall_Return(kValidFd);
-        CatchImmediateConnectEndpointRegistrationCommand();
+        if (client_config_.sync_first_connect)
+        {
+            AtTryOpenCall_Return(kValidFd);
+            CatchEndpointRegistrationCommand();
 
-        connection.Start(std::move(state_callback), std::move(notify_callback));
+            connection.Start(std::move(state_callback), std::move(notify_callback));
 
-        CatchPosixEndpointRegistration();
-        InvokeConnectCommand();
+            CatchPosixEndpointRegistration();
+            InvokeEndpointRegistrationCommand();
+        }
+        else
+        {
+            CatchImmediateConnectCommand();
+            connection.Start(std::move(state_callback), std::move(notify_callback));
+            EXPECT_EQ(connection.GetState(), State::kStarting);
+
+            AtTryOpenCall_Return(kValidFd);
+            CatchPosixEndpointRegistration();
+            InvokeConnectCommand();
+        }
 
         EXPECT_EQ(connection.GetState(), State::kReady);
         EXPECT_EQ(posix_endpoint_->fd, kValidFd);
@@ -216,12 +247,20 @@ class ClientConnectionTest : public ::testing::Test
 
     void StopConnectionInProgress(detail::ClientConnection& connection)
     {
-        CatchDisconnectCommand();
-        connection.Stop();
-        EXPECT_EQ(connection.GetState(), State::kStopping);
-        EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+        if (client_config_.sync_first_connect)
+        {
+            // for the immediate stop on the user thread
+            CatchDisconnectCommand();
+            connection.Stop();
+            EXPECT_EQ(connection.GetState(), State::kStopping);
+            EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
 
-        InvokeDisconnectCommand();
+            InvokeDisconnectCommand();
+        }
+        else
+        {
+            connection.Stop();
+        }
         EXPECT_EQ(connection.GetState(), State::kStopped);
         EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
     }
@@ -259,8 +298,9 @@ class ClientConnectionTest : public ::testing::Test
     std::shared_ptr<StrictMock<SharedResourceEngineMock>> engine_{};
     const std::string service_identifier_{"test_identifier"};
     const ServiceProtocolConfig protocol_config_{service_identifier_, kMaxSendSize, kMaxReplySize, kMaxNotifySize};
-    IClientFactory::ClientConfig client_config_{0, 1, false, false};
+    IClientFactory::ClientConfig client_config_{0, 1, false, false, false};
     ISharedResourceEngine::CommandCallback connect_command_callback_{};
+    ISharedResourceEngine::CommandCallback endpoint_command_callback_{};
     ISharedResourceEngine::CommandCallback disconnect_command_callback_{};
     ISharedResourceEngine::CommandCallback send_queue_command_callback_{};
     ISharedResourceEngine::PosixEndpointEntry* posix_endpoint_{};
@@ -287,6 +327,27 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingWhileConnecting)
 {
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
 
+    CatchImmediateConnectCommand();
+    connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
+    EXPECT_EQ(connection.GetState(), State::kStarting);
+
+    EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
+        .WillOnce([this, &connection](auto&&) {
+            StopConnectionInProgress(connection);
+            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));  // this error code would be ignored
+        });
+    ExpectCleanUpOwner(connection);
+    InvokeConnectCommand();
+
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kUserRequested);
+}
+
+TEST_F(ClientConnectionTest, TryingToSyncConnectOnceStoppingWhileConnecting)
+{
+    client_config_.sync_first_connect = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+
     EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
         .WillOnce([this, &connection](auto&&) {
             StopConnectionInProgress(connection);
@@ -308,6 +369,30 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingOnHardError)
     {
         detail::ClientConnection connection(engine_, protocol_config_, client_config_);
 
+        CatchImmediateConnectCommand();
+        connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
+        EXPECT_EQ(connection.GetState(), State::kStarting);
+
+        AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(entry.first)));
+        ExpectCleanUpOwner(connection);
+        InvokeConnectCommand();
+
+        EXPECT_EQ(connection.GetState(), State::kStopped);
+        EXPECT_EQ(connection.GetStopReason(), entry.second);
+    }
+}
+
+TEST_F(ClientConnectionTest, TryingToSyncConnectOnceStoppingOnHardError)
+{
+    client_config_.sync_first_connect = true;
+
+    const auto error_list_to_test = {std::make_pair(EACCES, StopReason::kPermission),
+                                     std::make_pair(EPIPE, StopReason::kIoError)};
+
+    for (auto entry : error_list_to_test)
+    {
+        detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+
         AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(entry.first)));
         ExpectCleanUpOwner(connection);
 
@@ -319,6 +404,38 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingOnHardError)
 
 TEST_F(ClientConnectionTest, TryingToConnectMultipleTimesStoppingOnPermissionError)
 {
+    const auto error_list_to_test = {EAGAIN, ECONNREFUSED, ENOENT};
+
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+
+    for (auto entry : error_list_to_test)
+    {
+        if (entry == *error_list_to_test.begin())
+        {
+            CatchImmediateConnectCommand();
+            connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
+        }
+        else
+        {
+            AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(entry)));
+            CatchTimedConnectCommand();
+            InvokeConnectCommand();
+        }
+        EXPECT_EQ(connection.GetState(), State::kStarting);
+    }
+
+    AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EACCES)));
+    ExpectCleanUpOwner(connection);
+    InvokeConnectCommand();
+
+    EXPECT_EQ(connection.GetState(), State::kStopped);
+    EXPECT_EQ(connection.GetStopReason(), StopReason::kPermission);
+}
+
+TEST_F(ClientConnectionTest, TryingToSyncConnectMultipleTimesStoppingOnPermissionError)
+{
+    client_config_.sync_first_connect = true;
+
     const auto error_list_to_test = {EAGAIN, ECONNREFUSED, ENOENT};
 
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
@@ -350,8 +467,7 @@ TEST_F(ClientConnectionTest, TryingToConnectMultipleTimesFinallyConnectingAndImp
 {
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
 
-    AtTryOpenCall_Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOENT)));
-    CatchTimedConnectCommand();
+    CatchImmediateConnectCommand();
     connection.Start(IClientConnection::StateCallback(), IClientConnection::NotifyCallback());
     EXPECT_EQ(connection.GetState(), State::kStarting);
 
@@ -383,8 +499,26 @@ TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenExplicitlyS
     StopCurrentConnection(connection);
 }
 
+TEST_F(ClientConnectionTest, SuccessfullySyncConnectingAtFirstAttemptThenExplicitlyStopping)
+{
+    client_config_.sync_first_connect = true;
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    StopCurrentConnection(connection);
+}
+
 TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenExplicitlyStoppingAsIfFromCallback)
 {
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    StopCurrentConnectionAsIfInCallback(connection);
+}
+
+TEST_F(ClientConnectionTest, SuccessfullySyncConnectingAtFirstAttemptThenExplicitlyStoppingAsIfFromCallback)
+{
+    client_config_.sync_first_connect = true;
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
 
@@ -488,9 +622,10 @@ TEST_F(ClientConnectionTest, SendIsDirectWithFullyOrderedAndEmptyQueue)
     StopCurrentConnection(connection);
 }
 
-TEST_F(ClientConnectionTest, SendIsQueuedIfTrulyAsync)
+TEST_F(ClientConnectionTest, GivenTrulyAsyncWhenSendIsCalledItIsQueued)
 {
     client_config_.max_queued_sends = 2;
+    // Given Truly Async
     client_config_.truly_async = true;
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);
     MakeSuccessfulConnection(connection);
@@ -513,6 +648,10 @@ TEST_F(ClientConnectionTest, SendIsQueuedIfTrulyAsync)
     EXPECT_CALL(*engine_, SendProtocolMessage).Times(2);
     InvokeSendQueueCommand();
 
+    // SendProtocolMessage will not be called for this one.
+    CatchSendQueueCommand();
+    // When Send() IsCalled then it is queued
+    send_result = connection.Send(send_buffer);
     StopCurrentConnection(connection);
 }
 
@@ -656,6 +795,7 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenQueuedMessageCancels)
 
     // close connection without replying to SendWaitReply
     StopCurrentConnection(connection);
+    background_thread_.join();
 }
 
 TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenReceiveTooLong)
@@ -804,6 +944,7 @@ TEST_F(ClientConnectionTest, QueuedSendsCancelIfConnectionClosed)
     EXPECT_TRUE(send_with_callback_result);
 
     StopCurrentConnection(connection);
+    background_thread_.join();
 }
 
 TEST_F(ClientConnectionTest, ConnectedStopsIfReceivesIoError)

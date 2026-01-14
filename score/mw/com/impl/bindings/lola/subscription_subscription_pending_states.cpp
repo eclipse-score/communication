@@ -75,7 +75,7 @@ void SubscriptionPendingState::ReOfferEvent(const pid_t new_event_source_pid) no
 {
     state_machine_.provider_service_instance_is_available_ = true;
     state_machine_.event_receive_handler_manager_.UpdatePid(new_event_source_pid);
-    state_machine_.event_receive_handler_manager_.Reregister(std::move(state_machine_.event_receiver_handler_));
+    state_machine_.event_receive_handler_manager_.Reregister(state_machine_.event_receiver_handler_);
     state_machine_.event_receiver_handler_.reset();
     state_machine_.TransitionToState(SubscriptionStateMachineState::SUBSCRIBED_STATE);
 }
@@ -87,7 +87,7 @@ void SubscriptionPendingState::SetReceiveHandler(std::weak_ptr<ScopedEventReceiv
 
 void SubscriptionPendingState::UnsetReceiveHandler() noexcept
 {
-    state_machine_.event_receiver_handler_ = score::cpp::nullopt;
+    state_machine_.event_receiver_handler_ = std::nullopt;
 }
 
 std::optional<std::uint16_t> SubscriptionPendingState::GetMaxSampleCount() const noexcept

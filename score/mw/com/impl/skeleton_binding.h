@@ -84,7 +84,7 @@ class SkeletonBinding
     /// \return expects void
     virtual ResultBlank PrepareOffer(SkeletonEventBindings&,
                                      SkeletonFieldBindings&,
-                                     std::optional<RegisterShmObjectTraceCallback>) noexcept = 0;
+                                     std::optional<RegisterShmObjectTraceCallback>) = 0;
 
     /**
      * \brief In case there are any binding specifics with regards to service withdrawals, this can be implemented

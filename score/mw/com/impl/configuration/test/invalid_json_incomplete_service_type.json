@@ -1,7 +1,7 @@
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -26,7 +26,7 @@
             ]
         },
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureServiceMissingVersion",
+            "serviceTypeName": "/score/ncar/services/TirePressureServiceMissingVersion",
             "UnknownProperty" : "UnknownValue",
             "bindings": [
                 {
@@ -51,7 +51,7 @@
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34

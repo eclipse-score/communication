@@ -1,7 +1,7 @@
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "Event_1",

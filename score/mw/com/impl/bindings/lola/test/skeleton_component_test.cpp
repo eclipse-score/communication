@@ -10,6 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 
 #include "score/filesystem/factory/filesystem_factory_fake.h"
@@ -127,6 +128,7 @@ std::size_t CalculateLowerBoundDataShmSize(const std::vector<EventInfo>& events)
 using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::StrEq;
 
 /// \brief Test fixture for lola::Skeleton tests, which are generally based on "real" shared-mem access.
@@ -136,8 +138,10 @@ class SkeletonComponentTestFixture : public ::testing::Test
     void SetUp() override
     {
         impl::Runtime::InjectMock(&runtime_mock_);
-        EXPECT_CALL(runtime_mock_, GetBindingRuntime(BindingType::kLoLa))
-            .WillRepeatedly(::testing::Return(&lola_runtime_mock_));
+        ON_CALL(runtime_mock_, GetBindingRuntime(BindingType::kLoLa))
+            .WillByDefault(::testing::Return(&lola_runtime_mock_));
+
+        ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(ReturnRef(message_passing_service_mock_));
     }
 
     void TearDown() override
@@ -190,6 +194,7 @@ class SkeletonComponentTestFixture : public ::testing::Test
                                                 lola_field_instance_deployments_,
                                                 {},
                                                 {},
+                                                {},
                                                 configured_shared_memory_size,
                                                 configured_control_asil_b_shared_memory_size,
                                                 configured_control_qm_shared_memory_size),
@@ -215,6 +220,8 @@ class SkeletonComponentTestFixture : public ::testing::Test
     /// mocks used by test
     impl::RuntimeMock runtime_mock_{};
     lola::RuntimeMock lola_runtime_mock_{};
+
+    MessagePassingServiceMock message_passing_service_mock_{};
 
     mock_binding::SkeletonEvent<TestSampleType> mock_event_binding_{};
     mock_binding::SkeletonEvent<TestSampleType> mock_field_binding_{};

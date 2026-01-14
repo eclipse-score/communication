@@ -77,7 +77,7 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
 
     const bool fully_async = asil_level_ == ClientQualityType::kASIL_QMfromB;
     const score::message_passing::ServiceProtocolConfig protocol_config{service_identifier, kMaxSendSize, 0U, 0U};
-    const score::message_passing::IClientFactory::ClientConfig client_config{0U, 20U, false, fully_async};
+    const score::message_passing::IClientFactory::ClientConfig client_config{0U, 20U, false, fully_async, true};
 
     auto new_sender_unique_p = client_factory_.Create(protocol_config, client_config);
 

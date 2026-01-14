@@ -11,13 +11,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@score_communication_pip//:requirements.bzl", "requirement")
+
 py_binary(
     name = "trlc_renderer",
     srcs = ["trlc_renderer.py"],
     visibility = ["//visibility:public"],
     deps = [
-        "@communication_pip//bigtree",
-        "@communication_pip//pydot",
+        requirement("bigtree"),
+        requirement("pydot"),
         #"@//third_party/trlc:trlc_whl",
     ],
 )

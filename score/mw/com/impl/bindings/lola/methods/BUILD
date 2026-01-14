@@ -66,18 +66,6 @@ cc_library(
 )
 
 cc_library(
-    name = "i_type_erased_call_queue",
-    srcs = ["i_type_erased_call_queue.cpp"],
-    hdrs = ["i_type_erased_call_queue.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    deps = [
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
     name = "type_erased_call_queue",
     srcs = [
         "type_erased_call_queue.cpp",
@@ -92,24 +80,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
-        ":i_type_erased_call_queue",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/memory/shared:memory_resource_proxy",
         "@score_baselibs//score/memory/shared:offset_ptr",
-    ],
-)
-
-cc_library(
-    name = "type_erased_call_queue_mock",
-    testonly = True,
-    srcs = ["type_erased_call_queue_mock.cpp"],
-    hdrs = ["type_erased_call_queue_mock.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
-    deps = [
-        ":i_type_erased_call_queue",
-        "@googletest//:gtest",
     ],
 )
 

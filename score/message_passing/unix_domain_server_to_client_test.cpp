@@ -50,7 +50,7 @@ class ServerToClientTestFixtureUnix : public ::testing::Test, public testing::Wi
         test_prefix += std::to_string(::getpid()) + "_";
         service_identifier_ = test_prefix + "1";
         protocol_config_ = ServiceProtocolConfig{service_identifier_, 1024, 1024, 1024};
-        client_config_ = IClientFactory::ClientConfig{1, 1, false, true};
+        client_config_ = IClientFactory::ClientConfig{1, 1, false, true, false};
 
         server_connections_started_ = 0;
         server_connections_finished_ = 0;

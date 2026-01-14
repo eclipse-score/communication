@@ -22,6 +22,7 @@ namespace message_passing
 
 class QnxDispatchEngine;
 
+// coverity[autosar_cpp14_a2_10_4_violation] false-positive: neither static function nor static non-member object
 class QnxDispatchServerFactory final : public IServerFactory
 {
   public:
@@ -35,6 +36,7 @@ class QnxDispatchServerFactory final : public IServerFactory
     QnxDispatchServerFactory& operator=(const QnxDispatchServerFactory&) = delete;
     QnxDispatchServerFactory& operator=(QnxDispatchServerFactory&&) = delete;
 
+    // coverity[autosar_cpp14_m11_0_1_violation] false-positive: intentional public API
     score::cpp::pmr::unique_ptr<IServer> Create(const ServiceProtocolConfig& protocol_config,
                                          const ServerConfig& server_config) noexcept override;
 

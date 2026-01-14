@@ -81,7 +81,7 @@ using ::testing::StrictMock;
 using std::string_view_literals::operator""sv;
 
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
-constexpr auto kServiceTypeName = "/bmw/ncar/services/TirePressureService"sv;
+constexpr auto kServiceTypeName = "/score/ncar/services/TirePressureService"sv;
 const auto kServiceIdentifierType = make_ServiceIdentifierType(std::string{kServiceTypeName}, 13, 37);
 const LolaServiceInstanceId kInstanceId{23U};
 const std::uint16_t kServiceId{34U};

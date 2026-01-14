@@ -92,26 +92,36 @@ macro_rules! import_type {
         }
 
         impl $crate::skeleton_bridge::SkeletonOps for $ctype {
+            // SAFETY: This function must take a raw pointer parameter to satisfy the FFI interface contract.
+            // The `#[allow(clippy::not_unsafe_ptr_arg_deref)]` suppresses the lint because we intentionally
+            // defer dereferencing to the FFI function which performs proper validation and lifetime management.
+            #[allow(clippy::not_unsafe_ptr_arg_deref)]
             fn send(
                 &self,
                 event: *mut $crate::skeleton_bridge::NativeSkeletonEvent<Self>,
             ) -> $crate::common_types::Result<()> {
-                // SAFETY: calling FFI functionalities
-                if unsafe { $uid::send(event, self as *const _) } {
-                    Ok(())
-                } else {
-                    Err(())
+                // SAFETY: The pointer conversion and FFI call are safe because:
+                // 1. self is a valid reference
+                // 2. The pointer is immediately passed to the FFI function
+                // 3. The FFI function is responsible for validating the pointer
+                unsafe {
+                    if $uid::send(event, self as *const _) {
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
                 }
             }
         }
 
-        $crate::paste! {
+       $crate::paste! {
             #[no_mangle]
-            extern "C" fn [<mw_com_impl_call_dyn_ref_fnmut_sample_ $uid>](
+            unsafe extern "C" fn [<mw_com_impl_call_dyn_ref_fnmut_sample_ $uid>](
                 ptr: *const $crate::proxy_bridge::FatPtr,
                 sample_ptr: *mut $crate::proxy_bridge::SamplePtr<$ctype>) {
-                let callable: &mut dyn FnMut(_) = unsafe { std::mem::transmute(*ptr) };
-                callable(sample_ptr);
+                // SAFETY: The pointer is dereferenced and transmuted within an unsafe block
+                    let callable: &mut dyn FnMut(_) = unsafe {std::mem::transmute(*ptr)};
+                    callable(sample_ptr);
             }
         }
     };
@@ -123,9 +133,9 @@ macro_rules! per_event_module {
         $(pub(crate) mod $ev_name {
             unsafe extern "C" {
                 #[link_name=concat!("mw_com_gen_ProxyWrapperClass_", stringify!($uid), "_", stringify!($ev_name), "_get")]
-                pub fn get_proxy(proxy: *mut $crate::proxy_bridge::ProxyWrapperClass) -> *mut $crate::proxy_bridge::NativeProxyEvent<$ev_ty>;
+                pub unsafe fn get_proxy(proxy: *mut $crate::proxy_bridge::ProxyWrapperClass) -> *mut $crate::proxy_bridge::NativeProxyEvent<$ev_ty>;
                 #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_", stringify!($ev_name), "_get")]
-                pub fn get_skeleton(proxy: *mut $crate::skeleton_bridge::SkeletonWrapperClass) -> *mut $crate::skeleton_bridge::NativeSkeletonEvent<$ev_ty>;
+                pub unsafe fn get_skeleton(proxy: *mut $crate::skeleton_bridge::SkeletonWrapperClass) -> *mut $crate::skeleton_bridge::NativeSkeletonEvent<$ev_ty>;
             }
         })*
     }
@@ -161,9 +171,9 @@ macro_rules! import_interface {
                     #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_create")]
                     pub unsafe fn create_skeleton(instance_specifier: *const $crate::proxy_bridge::NativeInstanceSpecifier) -> *mut $crate::skeleton_bridge::SkeletonWrapperClass;
                     #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_offer")]
-                    pub fn offer(skeleton: *mut $crate::skeleton_bridge::SkeletonWrapperClass) -> bool;
+                    pub unsafe fn offer(skeleton: *mut $crate::skeleton_bridge::SkeletonWrapperClass) -> bool;
                     #[link_name=concat!("mw_com_gen_SkeletonWrapperClass_", stringify!($uid), "_stop_offer")]
-                    pub fn stop_offer(skeleton: *mut $crate::skeleton_bridge::SkeletonWrapperClass);
+                    pub unsafe fn stop_offer(skeleton: *mut $crate::skeleton_bridge::SkeletonWrapperClass);
                 }
                 $crate::per_event_module!($uid, $(($ev_name: $ev_ty)),*);
             }
@@ -181,7 +191,7 @@ macro_rules! import_interface {
 
             impl $crate::proxy_bridge::ProxyOps for Proxy {
                 fn create(handle: &$crate::proxy_bridge::HandleType) -> *mut $crate::proxy_bridge::ProxyWrapperClass {
-                    ffi::create(handle)
+                   unsafe { ffi::create(handle) }
                 }
 
                 unsafe fn delete(proxy: *mut $crate::proxy_bridge::ProxyWrapperClass) {

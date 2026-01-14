@@ -24,7 +24,7 @@ py_unittest_qnx_test(
         ":unix_domain_test",
     ],
     test_suites = [
-        "@communication//score/message_passing/non_allocating_future:unit_test_suite_qnx",
+        "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_qnx",
     ],
     visibility = ["//score/message_passing:__pkg__"],
 )
@@ -36,7 +36,7 @@ test_suite(
         ":qnx_resource_path_test",
         ":timed_command_queue_test",
         ":unix_domain_test",
-        "@communication//score/message_passing/non_allocating_future:unit_test_suite_host",
+        "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_host",
     ],
     visibility = ["//score/message_passing:__pkg__"],
 )
@@ -67,7 +67,7 @@ cc_library(
         "service_protocol_config.h",
         "timed_command_queue_entry.h",
     ],
-    deprecation = "DEPRECATED: use @communication//score/message_passing:message_passing instead",
+    deprecation = "DEPRECATED: use @score_communication//score/message_passing:message_passing instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",
@@ -106,7 +106,7 @@ cc_library(
     ],
     deps = [
         ":common_headers",
-        "@communication//score/message_passing/non_allocating_future",
+        "@score_communication//score/message_passing/non_allocating_future",
     ],
 )
 
@@ -213,7 +213,7 @@ cc_library(
         "mock/server_mock.h",
         "mock/shared_resource_engine_mock.h",
     ],
-    deprecation = "DEPRECATED: use @communication//score/message_passing:mock instead",
+    deprecation = "DEPRECATED: use @score_communication//score/message_passing:mock instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",

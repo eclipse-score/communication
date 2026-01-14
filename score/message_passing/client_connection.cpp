@@ -334,7 +334,20 @@ void ClientConnection::DoRestart() noexcept
               << std::endl;
 
     connect_retry_ms_ = kConnectRetryMsStart;
-    TryConnect();
+    if (client_config_.sync_first_connect)
+    {
+        TryConnect();
+    }
+    else
+    {
+        engine_->EnqueueCommand(
+            connection_timer_,
+            ISharedResourceEngine::TimePoint{},
+            [this](auto) noexcept {
+                TryConnect();
+            },
+            this);
+    }
 }
 
 void ClientConnection::TryConnect() noexcept

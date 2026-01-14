@@ -349,6 +349,7 @@ class SkeletonEventTracingGenerateTracingStructFixture : public ::testing::TestW
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig())
             .WillByDefault(Return(&tracing_filter_config_mock_));
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
+        ON_CALL(tracing_runtime_mock_, IsTracingEnabled()).WillByDefault(Return(true));
     }
 
     SkeletonEventTracingGenerateTracingStructFixture& WithSendTracePointEnabled(bool is_enabled)
@@ -442,6 +443,24 @@ TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
 }
 
 TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
+       CallingGenerateTracingStructDoesNotRegistersServiceElementIfTracingGloballyDisabled)
+{
+    // Given a valid tracing runtime and TracingFilterConfig and a trace point enabled in the TracingFilterConfig
+    WithSendTracePointEnabled(true);
+
+    // Expecting, that the tracing runtime IsTracingEnabled() is called and will return FALSE (indicating, that tracing
+    // has been globally disabled)
+    EXPECT_CALL(tracing_runtime_mock_, IsTracingEnabled()).WillRepeatedly(Return(false));
+
+    // Expecting that RegisterServiceElement is NOT called on the tracing runtime binding
+    EXPECT_CALL(tracing_runtime_mock_, RegisterServiceElement(_, _)).Times(0);
+
+    // When calling GenerateSkeletonTracingStructFromEventConfig / GenerateSkeletonTracingStructFromFieldConfig
+    score::cpp::ignore = GenerateSkeletonTracingStruct(
+        kConfigStore.GetInstanceIdentifier(), BindingType::kFake, GetServiceElementName());
+}
+
+TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
        CallingGenerateTracingStructReturnsStructWithServiceElementTracingDataFromRegisterServiceElementCall)
 {
     // Given a valid tracing runtime and TracingFilterConfig and a trace point enabled in the TracingFilterConfig
@@ -513,20 +532,6 @@ TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
     EXPECT_FALSE(tracing_data.enable_send_with_allocate);
 }
 
-TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
-       CallingGenerateTracingStructWithoutTracingFilterConfigReturnsEmptyStruct)
-{
-    // Given a valid tracing runtime but no TracingFilterConfig
-    ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
-
-    // When calling GenerateSkeletonTracingStructFromEventConfig / GenerateSkeletonTracingStructFromFieldConfig
-    const auto tracing_data = GenerateSkeletonTracingStruct(
-        kConfigStore.GetInstanceIdentifier(), BindingType::kFake, GetServiceElementName());
-
-    // Then the provided struct should be empty
-    EXPECT_EQ(tracing_data, SkeletonEventTracingData{});
-}
-
 TEST_P(SkeletonEventTracingGenerateTracingStructFixture, CallingGenerateTracingStructWithoutTracingRuntimeReturnsEmpty)
 {
     // Given a valid TracingFilterConfig but no tracing runtime
@@ -538,6 +543,33 @@ TEST_P(SkeletonEventTracingGenerateTracingStructFixture, CallingGenerateTracingS
 
     // Then the provided struct should be empty
     EXPECT_EQ(tracing_data, SkeletonEventTracingData{});
+}
+
+TEST_P(SkeletonEventTracingGenerateTracingStructFixture,
+       CallingGenerateTracingStructWithTracingGloballyDisabledReturnsEmpty)
+{
+    // Given a tracing runtime, where tracing is disabled
+    EXPECT_CALL(tracing_runtime_mock_, IsTracingEnabled()).WillRepeatedly(Return(false));
+
+    // When calling GenerateSkeletonTracingStructFromEventConfig / GenerateSkeletonTracingStructFromFieldConfig
+    const auto tracing_data = GenerateSkeletonTracingStruct(
+        kConfigStore.GetInstanceIdentifier(), BindingType::kFake, GetServiceElementName());
+
+    // Then the provided struct should be empty
+    EXPECT_EQ(tracing_data, SkeletonEventTracingData{});
+}
+
+TEST_P(SkeletonEventTracingGenerateTracingStructDeathTest,
+       CallingGenerateTracingStructWithTracingRuntimeButWithoutTracingFilterConfigTerminates)
+{
+    // Given a valid tracing runtime but no TracingFilterConfig
+    ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+    // When calling GenerateSkeletonTracingStructFromEventConfig / GenerateSkeletonTracingStructFromFieldConfig then the
+    // program terminates
+    EXPECT_DEATH(score::cpp::ignore = GenerateSkeletonTracingStruct(
+                     kConfigStore.GetInstanceIdentifier(), BindingType::kFake, GetServiceElementName()),
+                 ".*");
 }
 
 TEST_P(SkeletonEventTracingGenerateTracingStructDeathTest,

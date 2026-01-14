@@ -44,18 +44,26 @@ class ResmgrReceiverTraits
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     static constexpr std::size_t kConcurrency{2U};
     using file_descriptor_type = ResmgrReceiverState*;
+    // coverity[autosar_cpp14_a0_1_1_violation] false-positive: used in ResmgrReceiverTraits::close_receiver
     static constexpr file_descriptor_type INVALID_FILE_DESCRIPTOR{nullptr};
 
     struct OsResources
     {
         // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
         // be private.". We need these data elements to be organized into a coherent organized data structure.
+        // Suppress "AUTOSAR C++14 A9-6-1" rule findings. This rule states: "Data types used for interfacing with
+        // hardware or conforming to communication protocols shall be trivial, standard-layout and only contain members
+        // of types with defined sizes." False-positive: structure is not meant to be serialized
+        // coverity[autosar_cpp14_a9_6_1_violation]
         // coverity[autosar_cpp14_m11_0_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Dispatch> dispatch{};
+        // coverity[autosar_cpp14_a9_6_1_violation]
         // coverity[autosar_cpp14_m11_0_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Channel> channel{};
+        // coverity[autosar_cpp14_a9_6_1_violation]
         // coverity[autosar_cpp14_m11_0_1_violation]
         score::cpp::pmr::unique_ptr<score::os::IoFunc> iofunc{};
+        // coverity[autosar_cpp14_a9_6_1_violation]
         // coverity[autosar_cpp14_m11_0_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Unistd> unistd{};
     };
@@ -70,6 +78,7 @@ class ResmgrReceiverTraits
 
     using FileDescriptorResourcesType = OsResources;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
     static score::cpp::expected<file_descriptor_type, score::os::Error> open_receiver(
         const std::string_view identifier,
         const score::cpp::pmr::vector<uid_t>& allowed_uids,
@@ -91,6 +100,7 @@ class ResmgrReceiverTraits
     // Receiver<ChannelTraits>::StartListening(), hence no exception will be thrown.
     // coverity[autosar_cpp14_a8_4_10_violation]
     // coverity[autosar_cpp14_a15_5_3_violation]
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
     static score::cpp::expected<bool, score::os::Error> receive_next(const file_descriptor_type file_descriptor,
                                                             const std::size_t thread,
                                                             ShortMessageProcessor fShort,
@@ -345,6 +355,7 @@ class ResmgrReceiverTraits
         ResmgrReceiverState& receiver_state;
     };
 
+    // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in multiple methods of this class
     // coverity[autosar_cpp14_a8_4_10_violation]
     static ResmgrContextData& GetContextData(const resmgr_context_t* const ctp)
     {
@@ -355,11 +366,13 @@ class ResmgrReceiverTraits
         return *static_cast<ResmgrContextData*>(ctp->extra->data);
     }
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
     static score::cpp::expected<dispatch_t*, score::os::Error> CreateAndAttachChannel(
         const std::string_view identifier,
         ResmgrSetup& setup,
         const FileDescriptorResourcesType& os_resources) noexcept;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
     static score::cpp::expected<std::int32_t, score::os::Error> CreateTerminationMessageSideChannel(
         dispatch_t* const dispatch_pointer,
         const FileDescriptorResourcesType& os_resources) noexcept;

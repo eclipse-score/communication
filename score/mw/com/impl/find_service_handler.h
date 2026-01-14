@@ -25,7 +25,6 @@ namespace score::mw::com::impl
 /// \api
 /// \brief The container holds a list of service handles and is used as a return value of the FindService methods.
 /// \requirement SWS_CM_00304
-/// \public
 template <typename T>
 using ServiceHandleContainer = std::vector<T>;
 
@@ -38,7 +37,6 @@ using ServiceHandleContainer = std::vector<T>;
 /// FindServiceHandler.
 ///
 /// \requirement SWS_CM_00383
-/// \public
 template <typename T>
 using FindServiceHandler = score::cpp::callback<void(ServiceHandleContainer<T>, FindServiceHandle)>;
 

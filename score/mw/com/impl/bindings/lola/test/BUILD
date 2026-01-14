@@ -30,6 +30,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/test_doubles",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@googletest//:gtest_main",
+        "@score_baselibs//score/filesystem:mock",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:shared_memory_factory_mock",
         "@score_baselibs//score/os/mocklib:fcntl_mock",

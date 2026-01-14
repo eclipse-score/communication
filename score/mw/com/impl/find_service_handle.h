@@ -37,7 +37,6 @@ class FindServiceHandleView;
  * in order to cancel a respective search.
  *
  * \requirement SWS_CM_00303
- * \public
  */
 class FindServiceHandle final
 {
@@ -52,7 +51,6 @@ class FindServiceHandle final
      * \post *this == other
      * \param other The FindServiceHandle *this shall be constructed from
      * \return The FindServiceHandle that was constructed
-     * \public
      */
     FindServiceHandle& operator=(const FindServiceHandle& other) = default;
     /**
@@ -60,7 +58,6 @@ class FindServiceHandle final
      * \brief CopyConstructor for FindServiceHandle
      * \param other The FindServiceHandle to copy from
      * \return The FindServiceHandle that was constructed
-     * \public
      */
     FindServiceHandle(const FindServiceHandle& other) = default;
     /**
@@ -69,7 +66,6 @@ class FindServiceHandle final
      * \post *this == other
      * \param other The FindServiceHandle *this shall be constructed from
      * \return The FindServiceHandle that was constructed
-     * \public
      */
     FindServiceHandle(FindServiceHandle&& other) noexcept = default;
     /**
@@ -78,7 +74,6 @@ class FindServiceHandle final
      * \post *this == other
      * \param other The FindServiceHandle *this shall be constructed from
      * \return The FindServiceHandle that was constructed
-     * \public
      */
     FindServiceHandle& operator=(FindServiceHandle&& other) noexcept = default;
 
@@ -88,7 +83,6 @@ class FindServiceHandle final
      * \param lhs The first instance to check for equality
      * \param rhs The second instance to check for equality
      * \return true if lhs and rhs equal, false otherwise
-     * \public
      */
     friend bool operator==(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noexcept;
 
@@ -98,7 +92,6 @@ class FindServiceHandle final
      * \param lhs The first FindServiceHandle instance to compare
      * \param rhs The second FindServiceHandle instance to compare
      * \return true if lhs is less then rhs, false otherwise
-     * \public
      */
     friend bool operator<(const FindServiceHandle& lhs, const FindServiceHandle& rhs) noexcept;
 
@@ -108,7 +101,6 @@ class FindServiceHandle final
      * \param log_stream The log stream to write to
      * \param find_service_handle The FindServiceHandle to log
      * \return The log stream passed in as parameter
-     * \public
      */
     friend mw::log::LogStream& operator<<(mw::log::LogStream& log_stream, const FindServiceHandle& find_service_handle);
     /**
@@ -117,7 +109,6 @@ class FindServiceHandle final
      * \param ostream_out The output stream to write to
      * \param find_service_handle The FindServiceHandle to log
      * \return The output stream passed in as parameter
-     * \public
      */
     friend std::ostream& operator<<(std::ostream& ostream_out, const FindServiceHandle& find_service_handle);
 

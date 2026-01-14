@@ -29,10 +29,18 @@ build --experimental_retain_test_configuration_across_testonly #https://github.c
 # * The credentials for this account stored in your ~/.netrc (machine qnx.com)
 # * A license stored under `/opt/score_qnx/license/licenses`
 common:qnx_x86_64 --host_platform=@score_bazel_platforms//:x86_64-linux
-common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx
+common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx8_0
+common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_x86_64
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_x86_64
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_x86_64 --sandbox_writable_path=/var/tmp
+
+common:qnx_arm64 --host_platform=@score_bazel_platforms//:x86_64-linux
+common:qnx_arm64 --platforms=@score_bazel_platforms//:arm64-qnx8_0
+common:qnx_arm64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_aarch64
+common:qnx_arm64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_aarch64
+common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
+common:qnx_arm64 --sandbox_writable_path=/var/tmp
 
 # unshare /dev/shm and /tmp
 test --sandbox_tmpfs_path=/dev/shm
@@ -58,5 +66,12 @@ coverage --test_env=COVERAGE_GCOV_OPTIONS=-bcu
 coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --cxxopt -mllvm
 coverage --cxxopt -runtime-counter-relocation
+
+# Clang-tidy configuration
+# Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
+test:clang-tidy --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect
+test:clang-tidy --output_groups=+rules_lint_report
+# Use LLVM toolchain for clang-tidy so it can find system headers
+test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 
 import quality/sanitizer/sanitizer.bazelrc

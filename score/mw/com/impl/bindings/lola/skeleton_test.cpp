@@ -1067,6 +1067,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
                                             lola_field_inst_depls,
                                             {},
                                             {},
+                                            {},
                                             test::kConfiguredDeploymentShmSize,
                                             test::kConfiguredDeploymentControlAsilBShmSize,
                                             test::kConfiguredDeploymentControlQmShmSize),

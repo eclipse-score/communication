@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2024-2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2024-2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,9 +10,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-module(name = "communication")
+module(
+    name = "score_communication",
+    version = "0.1.2",
+)
 
-bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "platforms", version = "1.0.0")
 
 bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency = True)
 
@@ -71,8 +74,10 @@ llvm.toolchain(
     cxx_standard = {"": "c++17"},
     link_libs = {"": [
         "-lrt",
+        # This is the agreed way to ensure linking for targets using std::atomic operations.
+        "-latomic",
     ]},
-    llvm_version = "16.0.0",
+    llvm_version = "19.1.7",
     stdlib = {"": "dynamic-stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")
@@ -88,19 +93,12 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "aspect_rules_lint", version = "1.10.2")
-bazel_dep(name = "googletest", version = "1.15.0")
-bazel_dep(name = "google_benchmark", version = "1.9.1")
+bazel_dep(name = "aspect_rules_lint", version = "1.13.0")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "google_benchmark", version = "1.9.4")
 bazel_dep(name = "rules_rust", version = "0.61.0")
-bazel_dep(name = "buildifier_prebuilt", version = "6.3.3")
-bazel_dep(name = "score_crates", version = "0.0.4", repo_name = "crate_index")
-
-# Temporary: Use latest GitHub main with regenerated BUILD file including paste and arrayvec
-git_override(
-    module_name = "score_crates",
-    commit = "636a5add5ffd53177fd0fdf70b672043ac2664c4",
-    remote = "https://github.com/eclipse-score/score-crates.git",
-)
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
+bazel_dep(name = "score_crates", version = "0.0.5", repo_name = "crate_index")
 
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "download_utils", version = "1.0.1")
@@ -123,41 +121,36 @@ download_archive(
 
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "flatbuffers", version = "25.2.10")
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_doxygen", version = "2.5.0")
-bazel_dep(name = "score_baselibs", version = "0.2.0")
-git_override(
-    module_name = "score_baselibs",
-    commit = "826955b4d7dc2f326e3deabc06895318922cca1f",
-    remote = "https://github.com/eclipse-score/baselibs.git",
-)
+bazel_dep(name = "score_baselibs", version = "0.2.2")
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension")
 use_repo(doxygen_extension, "doxygen")
 
-# Python 3.12 toolchain for Bazel (required for LOBSTER/TRLC dependencies)
-bazel_dep(name = "rules_python", version = "0.32.0")
+# Python 3.12 toolchain for Bazel
+bazel_dep(name = "rules_python", version = "1.5.1")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     python_version = "3.12",
 )
 
-# Python pip dependencies for traceability tools
+# Python pip dependencies
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
-    hub_name = "communication_pip",
+    hub_name = "score_communication_pip",
     python_version = "3.12",
-    requirements_lock = "//third_party/python:requirements.txt",
+    requirements_lock = "//:requirements_lock.txt",
 )
-use_repo(pip, "communication_pip")
+use_repo(pip, "score_communication_pip")
 
 # TRLC dependency for requirements traceability
 bazel_dep(name = "trlc", version = "0.0.0")
 git_override(
     module_name = "trlc",
-    commit = "650b51a47264a4f232b3341f473527710fc32669",  # trlc-2.0.2 release
+    commit = "a4f7e95210d8093ba208b91cbc5b681eae8d502b",  # trlc-2.0.3 release
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 
@@ -172,12 +165,7 @@ pip.parse(
 )
 use_repo(pip, "lobster_dependencies")
 
-bazel_dep(name = "score_toolchains_qnx", version = "0.0.2", dev_dependency = True)
-git_override(
-    module_name = "score_toolchains_qnx",
-    commit = "f9fe820390eede3d4e9b2a35651ff78bdd3cb676",
-    remote = "https://github.com/eclipse-score/toolchains_qnx.git",
-)
+bazel_dep(name = "score_toolchains_qnx", version = "0.0.6", dev_dependency = True)
 
 toolchains_qnx = use_extension(
     "@score_toolchains_qnx//:extensions.bzl",
@@ -191,12 +179,9 @@ toolchains_qnx.sdp(
 )
 use_repo(toolchains_qnx, "toolchains_qnx_sdp")
 use_repo(toolchains_qnx, "toolchains_qnx_ifs")
-
-register_toolchains("@toolchains_qnx_ifs//:ifs_x86_64")
-
 use_repo(toolchains_qnx, "toolchains_qnx_qcc")
 
-bazel_dep(name = "score_bazel_platforms", version = "0.0.2")
+bazel_dep(name = "score_bazel_platforms", version = "0.0.3")
 bazel_dep(name = "rules_oci", version = "1.8.0")
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
@@ -209,13 +194,6 @@ oci.pull(
 )
 use_repo(oci, "ubuntu_24_04")
 
-bazel_dep(name = "rules_pkg", version = "1.0.1")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
 
-pip.parse(
-    hub_name = "score_communication_pip",
-    python_version = "3.12",
-    requirements_lock = "//:requirements_lock.txt",
-)
-use_repo(pip, "score_communication_pip")
-
-bazel_dep(name = "score_tooling", version = "1.0.2")
+bazel_dep(name = "score_tooling", version = "1.0.4")

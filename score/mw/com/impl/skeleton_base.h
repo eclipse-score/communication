@@ -46,7 +46,6 @@ class SkeletonMethodBase;
 /// \brief Defines the processing modes for the service implementation side.
 ///
 /// \requirement SWS_CM_00301
-/// \public
 enum class MethodCallProcessingMode : std::uint8_t
 {
     kPoll,
@@ -83,15 +82,19 @@ class SkeletonBase
     SkeletonBase(const SkeletonBase&) = delete;
     SkeletonBase& operator=(const SkeletonBase&) = delete;
 
-    /// \brief Offer the respective service to other applications
-    ///
-    /// \return On failure, returns an error code according to the SW Component Requirements SCR-17434118 and
-    /// SCR-566325.
+    /**
+     * \api
+     * \brief Offer the respective service to other applications
+     * \return On failure, returns an error code according to the SW Component Requirements SCR-17434118 and
+     *         SCR-566325.
+     */
     [[nodiscard]] ResultBlank OfferService() noexcept;
 
-    /// \brief Stops offering the respective service to other applications
-    ///
-    /// \requirement SWS_CM_00111
+    /**
+     * \api
+     * \brief Stops offering the respective service to other applications
+     * \requirement SWS_CM_00111
+     */
     void StopOfferService() noexcept;
 
     void InjectMock(ISkeletonBase& skeleton_mock)

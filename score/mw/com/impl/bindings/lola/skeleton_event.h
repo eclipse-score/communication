@@ -286,14 +286,6 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                            "Defensive programming as event_data_control_composite_ is set by Register above.");
     current_timestamp_ = event_data_control_composite_.value().GetLatestTimestamp();
-    const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
-                                           (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
-    if (!tracing_globally_enabled)
-    {
-        // in case tracing is globally disabled, this will never switch back to enable. Thus, we can directly disable
-        // all trace points for this event. This avoids any further lookups to the tracing runtime during Send() calls.
-        DisableAllTracePoints(skeleton_event_tracing_data_);
-    }
 
     const bool tracing_for_skeleton_event_enabled =
         skeleton_event_tracing_data_.enable_send || skeleton_event_tracing_data_.enable_send_with_allocate;
@@ -312,15 +304,13 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     // Register callbacks to be notified when event notification existence changes.
     // This allows us to optimise the Send() path by skipping NotifyEvent() when no handlers are registered.
     // Separate callbacks for QM and ASIL-B update their respective atomic flags for lock-free access.
-    if (parent_.GetInstanceQualityType() == QualityType::kASIL_QM)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .RegisterEventNotificationExistenceChangedCallback(
-                QualityType::kASIL_QM, event_fqn_, [this](const bool has_handlers) noexcept {
-                    qm_event_update_notifications_registered_.store(has_handlers);
-                });
-    }
+    GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+        .GetLolaMessaging()
+        .RegisterEventNotificationExistenceChangedCallback(
+            QualityType::kASIL_QM, event_fqn_, [this](const bool has_handlers) noexcept {
+                qm_event_update_notifications_registered_.store(has_handlers);
+            });
+
     if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)

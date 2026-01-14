@@ -15,12 +15,16 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
-#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/lola_method_id.h"
+#include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -30,38 +34,44 @@
 #include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/service_element_type.h"
 
-#include "score/filesystem/filesystem.h"
+#include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
 #include "score/memory/shared/flock/shared_flock_mutex.h"
 #include "score/memory/shared/lock_file.h"
 #include "score/memory/shared/shared_memory_factory.h"
+#include "score/os/acl.h"
 #include "score/os/errno_logging.h"
-#include "score/os/fcntl.h"
-#include "score/os/glob.h"
-
+#include "score/result/result.h"
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
 #include <score/utility.hpp>
 
+#include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <exception>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <utility>
-#include <variant>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
 
 namespace
 {
+
+using memory::DataTypeSizeInfo;
 
 /// \brief Tries to place a shared flock on the given service instance usage marker file
 /// \details If shared flocking fails, it does some retries.
@@ -258,6 +268,8 @@ class FindServiceGuard final
     std::unique_ptr<FindServiceHandle> service_availability_change_handle_;
 };
 
+std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> Proxy::current_proxy_instance_counter_{0U};
+
 ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_view event_name) const noexcept
 {
     const auto& events = events_.get();
@@ -324,13 +336,15 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType handle) noexcept
 
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter{lola_service_deployment,
                                                                           lola_service_instance_id.GetId()};
+    const auto filesystem = filesystem::FilesystemFactory{}.CreateInstance();
     return std::make_unique<Proxy>(shared_memory.first,
                                    shared_memory.second,
                                    quality_type,
                                    event_name_to_element_fq_id_converter,
                                    handle,
                                    std::move(service_instance_usage_marker_file),
-                                   std::move(service_instance_usage_mutex_and_lock));
+                                   std::move(service_instance_usage_mutex_and_lock),
+                                   filesystem);
 }
 
 Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
@@ -340,10 +354,12 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
              HandleType handle,
              std::optional<memory::shared::LockFile> service_instance_usage_marker_file,
              std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
-                 service_instance_usage_flock_mutex_and_lock) noexcept
+                 service_instance_usage_flock_mutex_and_lock,
+             score::filesystem::Filesystem filesystem) noexcept
     : ProxyBinding{},
       control_{std::move(control)},
       data_{std::move(data)},
+      method_shm_resource_{nullptr},
       quality_type_{quality_type},
       event_name_to_element_fq_id_converter_{std::move(event_name_to_element_fq_id_converter)},
       handle_{std::move(handle)},
@@ -361,7 +377,12 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
           },
           EnrichedInstanceIdentifier{handle_})},
       service_instance_usage_marker_file_{std::move(service_instance_usage_marker_file)},
-      service_instance_usage_flock_mutex_and_lock_{std::move(service_instance_usage_flock_mutex_and_lock)}
+      service_instance_usage_flock_mutex_and_lock_{std::move(service_instance_usage_flock_mutex_and_lock)},
+      proxy_methods_{},
+      method_data_{nullptr},
+      proxy_instance_identifier_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId(),
+                                 current_proxy_instance_counter_.fetch_add(1)},
+      filesystem_{filesystem}
 {
 }
 
@@ -376,9 +397,9 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available) no
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the
-// key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw
-// an exception.
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
+// exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 EventControl& Proxy::GetEventControl(const ElementFqId element_fq_id) noexcept
 {
@@ -405,9 +426,9 @@ EventControl& Proxy::GetEventControl(const ElementFqId element_fq_id) noexcept
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the
-// key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw
-// an exception.
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
+// exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) const noexcept
 {
@@ -432,9 +453,9 @@ const EventMetaInfo& Proxy::GetEventMetaInfo(const ElementFqId element_fq_id) co
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the
-// key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw
-// an exception.
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
+// exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
 {
@@ -472,6 +493,200 @@ void Proxy::UnregisterEventBinding(const std::string_view service_element_name) 
     }
 }
 
+score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+{
+    if (enabled_method_names.empty())
+    {
+        return {};
+    }
+    const auto enabled_method_data = GetMethodIdAndQueueSizeFromNames(enabled_method_names);
+
+    auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
+    auto& lola_message_passing = lola_runtime.GetLolaMessaging();
+    const SkeletonInstanceIdentifier skeleton_instance_identifier{
+        GetLoLaServiceTypeDeployment(handle_).service_id_,
+        LolaServiceInstanceId{GetLoLaInstanceDeployment(handle_).instance_id_.value()}.GetId()};
+
+    const auto type_erased_element_infos = GetTypeErasedElementInfoForEnabledMethods(enabled_method_data);
+    if (type_erased_element_infos.empty())
+    {
+        // If type_erased_element_infos is empty, it means that there are no methods which contain InArgs or Return
+        // types. In that case, we don't need to create a shared memory region.
+        return lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier);
+    }
+
+    const auto method_shm_path_name = GetMethodChannelShmName();
+
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(filesystem_.standard != nullptr);
+    const auto are_in_restart_context_result = filesystem_.standard->Exists(method_shm_path_name);
+    if (!(are_in_restart_context_result.has_value()))
+    {
+        score::mw::log::LogWarn("lola") << "Failed to check if method shm path already exists. Exiting.";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    if (are_in_restart_context_result.value())
+    {
+        // If the shared memory region already exists, then we are in a restart case in which the process containing
+        // a proxy crashed and restarted. Since the memory region is 1:1 between a proxy instance and a skeleton
+        // instance, the old shared memory region is only being used by a single skeleton instance. We can safely
+        // unlink the region since the skeleton still has it mapped in memory. We will then create a new memory
+        // region and notify the skeleton instance which will then close the old region and open the new one.
+        memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(method_shm_path_name);
+    }
+
+    const auto required_shm_size = CalculateRequiredShmSize(type_erased_element_infos);
+
+    const auto skeleton_shm_permissions = GetSkeletonShmPermissions();
+    method_shm_resource_ = memory::shared::SharedMemoryFactory::Create(
+        method_shm_path_name,
+        [this, &enabled_method_data, &type_erased_element_infos](
+            std::shared_ptr<score::memory::shared::ManagedMemoryResource> memory) {
+            InitializeSharedMemoryForMethods(*memory, enabled_method_data, type_erased_element_infos);
+        },
+        required_shm_size,
+        skeleton_shm_permissions);
+    if (method_shm_resource_ == nullptr)
+    {
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    return lola_message_passing.SubscribeServiceMethod(skeleton_instance_identifier);
+}
+
+memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermissions() const
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr, "Proxy::GetSourcePid: Managed memory data pointer is Null");
+    const auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
+    const auto skeleton_uid = service_data_storage.skeleton_uid_;
+
+    const memory::shared::SharedMemoryFactory::UserPermissionsMap permissions_map{
+        {os::Acl::Permission::kRead, {skeleton_uid}}, {os::Acl::Permission::kWrite, {skeleton_uid}}};
+    return {permissions_map};
+}
+
+std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>> Proxy::GetMethodIdAndQueueSizeFromNames(
+    const std::vector<std::string_view>& enabled_method_names) const
+{
+    std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>> method_data{};
+    std::transform(enabled_method_names.cbegin(),
+                   enabled_method_names.cend(),
+                   std::back_inserter(method_data),
+                   [this](const auto& method_name) -> std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize> {
+                       const std::string method_name_string{method_name};
+                       const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
+                       const auto method_id = GetServiceElementId<ServiceElementType::METHOD>(
+                           lola_service_type_deployment, method_name_string);
+
+                       const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
+                       const auto& method_instance_deployment =
+                           GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(
+                               lola_service_instance_deployment, method_name_string);
+                       SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_instance_deployment.queue_size_.has_value(),
+                                              "Method instance deployment must contain queue_size on proxy side!");
+                       const auto queue_size = method_instance_deployment.queue_size_.value();
+
+                       return {method_id, queue_size};
+                   });
+    return method_data;
+}
+
+std::size_t Proxy::CalculateRequiredShmSize(
+    std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos)
+{
+
+    std::vector<DataTypeSizeInfo> data_type_infos{};
+
+    // Size of Method data
+    DataTypeSizeInfo method_data_info{sizeof(MethodData), alignof(MethodData)};
+    data_type_infos.push_back(method_data_info);
+
+    // Size of Method data elements (since MethodData contains a NonRelocatableVector, it will allocate memory for
+    // the elements but not actually initialize them.
+    using MethodDataElement = decltype(MethodData::method_call_queues_)::value_type;
+    std::for_each(type_erased_element_infos.begin(), type_erased_element_infos.end(), [&data_type_infos](auto) {
+        DataTypeSizeInfo method_data_element_info{sizeof(MethodDataElement), alignof(MethodDataElement)};
+        data_type_infos.push_back(method_data_element_info);
+    });
+
+    // Size of memory allocated by elements of the NonRelocatableVector in MethodData when they're constructed.
+    for (auto& type_erased_element_info : type_erased_element_infos)
+    {
+        if (type_erased_element_info.in_arg_type_info.has_value())
+        {
+            const auto& in_arg_type_info = type_erased_element_info.in_arg_type_info.value();
+            const DataTypeSizeInfo in_arg_type_queue_info{in_arg_type_info.Size() * type_erased_element_info.queue_size,
+                                                          in_arg_type_info.Alignment()};
+            data_type_infos.push_back(in_arg_type_queue_info);
+        }
+
+        if (type_erased_element_info.return_type_info.has_value())
+        {
+            const auto& result_type_info = type_erased_element_info.return_type_info.value();
+            const DataTypeSizeInfo result_type_queue_info{result_type_info.Size() * type_erased_element_info.queue_size,
+                                                          result_type_info.Alignment()};
+            data_type_infos.push_back(result_type_queue_info);
+        }
+    }
+
+    return memory::shared::CalculateAlignedSizeOfSequence(data_type_infos);
+}
+
+void Proxy::InitializeSharedMemoryForMethods(
+    memory::shared::ManagedMemoryResource& memory_resource,
+    const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& method_data,
+    const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos)
+{
+    const auto number_of_method_ids = type_erased_element_infos.size();
+    method_data_ = memory_resource.construct<MethodData>(number_of_method_ids, memory_resource);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(method_data_ != nullptr);
+
+    for (std::size_t i = 0; i < number_of_method_ids; ++i)
+    {
+        const auto method_id = method_data[i].first;
+        auto& emplaced_element = method_data_->method_call_queues_.emplace_back(
+            std::piecewise_construct,
+            std::forward_as_tuple(method_id),
+            std::forward_as_tuple(*memory_resource.getMemoryResourceProxy(), type_erased_element_infos[i]));
+
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            proxy_methods_.count(method_id) != 0U,
+            "Defensive programming: This was already checked in GetTypeErasedElementInfoForEnabledMethods");
+        auto& proxy_method = proxy_methods_.at(method_id).get();
+        proxy_method.SetInArgsAndReturnStorages(emplaced_element.second.GetInArgValuesQueueStorage(),
+                                                emplaced_element.second.GetReturnValueQueueStorage());
+    }
+}
+
+std::vector<TypeErasedCallQueue::TypeErasedElementInfo> Proxy::GetTypeErasedElementInfoForEnabledMethods(
+    const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& enabled_method_data) const
+{
+    std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos{};
+    for (auto [method_id, queue_size] : enabled_method_data)
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_methods_.count(method_id) != 0U);
+        auto& proxy_method = proxy_methods_.at(method_id).get();
+
+        const auto type_erased_data_info = proxy_method.GetTypeErasedElementInfo();
+        if (type_erased_data_info.has_value())
+        {
+            type_erased_element_infos.push_back(type_erased_data_info.value());
+        }
+    }
+    return type_erased_element_infos;
+}
+
+std::string Proxy::GetMethodChannelShmName() const
+{
+    const auto& lola_instance_deployment = GetLoLaInstanceDeployment(handle_);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_instance_deployment.instance_id_.has_value());
+    const auto lola_instance_id = lola_instance_deployment.instance_id_.value();
+
+    const auto& lola_service_deployment = GetLoLaServiceTypeDeployment(handle_);
+    ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_};
+    return shm_path_builder.GetMethodChannelShmName(lola_instance_id.GetId(), proxy_instance_identifier_);
+}
+
 QualityType Proxy::GetQualityType() const noexcept
 {
     return quality_type_;
@@ -482,6 +697,12 @@ pid_t Proxy::GetSourcePid() const noexcept
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(data_ != nullptr, "Proxy::GetSourcePid: Managed memory data pointer is Null");
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
     return service_data_storage.skeleton_pid_;
+}
+
+void Proxy::RegisterMethod(const ElementFqId::ElementId method_id, ProxyMethod& proxy_method) noexcept
+{
+    const auto [_, was_inserted] = proxy_methods_.insert({method_id, proxy_method});
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
 }
 
 }  // namespace score::mw::com::impl::lola

@@ -23,12 +23,14 @@ namespace score::mw::com::message_passing
 
 namespace
 {
-
+// coverity[autosar_cpp14_a0_1_1_violation] false-positive: used in MsgSend and MsgReply
 constexpr void* kNoReply{nullptr};
+// coverity[autosar_cpp14_a0_1_1_violation] false-positive: used in MsgSend and MsgReply
 constexpr std::size_t kNoSize{0U};
 
 }  // namespace
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
 score::cpp::expected<dispatch_t*, score::os::Error> ResmgrReceiverTraits::CreateAndAttachChannel(
     const std::string_view identifier,
     ResmgrSetup& setup,
@@ -64,6 +66,7 @@ score::cpp::expected<dispatch_t*, score::os::Error> ResmgrReceiverTraits::Create
     return dpp_expected;
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
 score::cpp::expected<std::int32_t, score::os::Error> ResmgrReceiverTraits::CreateTerminationMessageSideChannel(
     dispatch_t* const dispatch_pointer,
     const FileDescriptorResourcesType& os_resources) noexcept
@@ -89,6 +92,7 @@ score::cpp::expected<std::int32_t, score::os::Error> ResmgrReceiverTraits::Creat
     return coid_expected;
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
 score::cpp::expected<ResmgrReceiverTraits::file_descriptor_type, score::os::Error> ResmgrReceiverTraits::open_receiver(
     const std::string_view identifier,
     const score::cpp::pmr::vector<uid_t>& allowed_uids,
@@ -475,7 +479,7 @@ std::int32_t ResmgrReceiverTraits::private_message_handler(message_context_t* co
     // This function in a banned list, however according to the requirement
     // broken_link_c/issue/57467 it's allowed for IPC API that is mw::com (aka LoLa)
     // NOLINTNEXTLINE(score-banned-function): See above
-    score::cpp::ignore = os_resources.channel->MsgReply(static_cast<std::int64_t>(ctp->rcvid), EOK, kNoReply, kNoSize);
+    score::cpp::ignore = os_resources.channel->MsgReply(ctp->rcvid, EOK, kNoReply, kNoSize);
 
     return EOK;
 }

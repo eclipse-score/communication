@@ -19,6 +19,7 @@ sh_test(
         "test_workspace/BUILD.tpl",
         "test_workspace/MODULE.bazel",
         "test_workspace/asan_fail_heap_out_of_bounds.cpp",
+        "test_workspace/lsan_fail_leak.cpp",
         "test_workspace/tsan_fail_data_race.cpp",
     ],
     env_inherit = [

@@ -17,6 +17,11 @@ cc_test(
 )
 
 cc_test(
+    name = "lsan_fail_leak",
+    srcs = ["lsan_fail_leak.cpp"],
+)
+
+cc_test(
     name = "tsan_fail_data_race",
     srcs = ["tsan_fail_data_race.cpp"],
 )

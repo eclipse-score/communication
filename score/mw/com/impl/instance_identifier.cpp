@@ -68,6 +68,11 @@ score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& seria
     return InstanceIdentifier{json_object, std::move(serialized_format)};
 }
 
+// Suppress "AUTOSAR C++14 A12-1-5" rule finding. This rule states:"Common class initialization for non-constant
+// members shall be done by a delegating constructor.".
+// Rationale: Delegation to a separate constructor complexifies the code significantly.
+// This adds more risk than doing the initialization of the members in each constructor.
+// coverity[autosar_cpp14_a12_1_5_violation : FALSE]
 InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::string&& serialized_string) noexcept
     : instance_deployment_{nullptr}, type_deployment_{nullptr}, serialized_string_{std::move(serialized_string)}
 {
@@ -98,6 +103,11 @@ InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::str
     instance_deployment_ = service_instance_deployment_ptr;
 }
 
+// Suppress "AUTOSAR C++14 A12-1-5" rule finding. This rule states:"Common class initialization for non-constant
+// members shall be done by a delegating constructor.".
+// Rationale: Delegation to a separate constructor complexifies the code significantly.
+// This adds more risk than doing the initialization of the members in each constructor.
+// coverity[autosar_cpp14_a12_1_5_violation : FALSE]
 InstanceIdentifier::InstanceIdentifier(const ServiceInstanceDeployment& deployment,
                                        const ServiceTypeDeployment& type_deployment) noexcept
     : instance_deployment_{&deployment},

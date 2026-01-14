@@ -31,6 +31,10 @@ class MyProxy final : public ProxyBinding
     }
     void RegisterEventBinding(std::string_view, ProxyEventBindingBase&) noexcept override {}
     void UnregisterEventBinding(std::string_view) noexcept override {}
+    ResultBlank SetupMethods(const std::vector<std::string_view>&) override
+    {
+        return {};
+    }
 };
 
 TEST(ProxyBindingTest, ProxyBindingShouldNotBeCopyable)

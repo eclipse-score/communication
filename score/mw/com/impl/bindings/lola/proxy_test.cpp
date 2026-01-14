@@ -600,9 +600,6 @@ TEST_F(ProxyUidPidRegistrationFixture, NoOutdatedPidNotificationWillBeSent)
 {
     // Given a fake Skeleton which sets up ServiceDataControl with an initial empty UidPidMapping
 
-    // Expect that GetApplicationId is called once, but we don't care about the return value for this test
-    EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(123));
-
     // we expect that IMessagePassingService::NotifyOutdatedNodeId() will NOT get called!
     EXPECT_CALL(*mock_service_, NotifyOutdatedNodeId(_, _, _)).Times(0);
 
@@ -621,9 +618,9 @@ TEST_F(ProxyUidPidRegistrationFixture, OutdatedPidNotificationWillBeSent)
     // our uid
     AddApplicationIdPidMapping(our_application_id, old_pid);
 
-    // expect, that the LoLa runtime returns our application id (simulating fallback to uid) and new pid
-    EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(our_application_id));
-    EXPECT_CALL(binding_runtime_, GetPid()).WillRepeatedly(Return(new_pid));
+    // and given that the LoLa runtime returns our application id (simulating fallback to uid) and new pid
+    ON_CALL(binding_runtime_, GetApplicationId()).WillByDefault(Return(our_application_id));
+    ON_CALL(binding_runtime_, GetPid()).WillByDefault(Return(new_pid));
 
     // we expect that IMessagePassingService::NotifyOutdatedNodeId() will get called to notify about an outdated pid!
     EXPECT_CALL(*mock_service_, NotifyOutdatedNodeId(_, old_pid, _)).Times(1);
@@ -658,7 +655,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
         *event_control_, subscription_max_sample_count_, transaction_log_id_);
     EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*event_control_, transaction_log_id_));
 
-    EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(transaction_log_id_));
+    ON_CALL(binding_runtime_, GetApplicationId()).WillByDefault(Return(transaction_log_id_));
 
     // When creating a proxy
     InitialiseProxyWithCreate(instance_identifier_);

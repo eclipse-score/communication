@@ -47,15 +47,20 @@ ln -sf "$(rlocation $TEST_WORKSPACE/quality/sanitizer/sanitizer.bazelrc)" "test_
 ln -sf "$(rlocation $TEST_WORKSPACE/quality/sanitizer/test_workspace/MODULE.bazel)" "test_workspace/MODULE.bazel"
 ln -sf "$(rlocation $TEST_WORKSPACE/quality/sanitizer/test_workspace/BUILD.tpl)" "test_workspace/BUILD"
 ln -sf "$(rlocation $TEST_WORKSPACE/quality/sanitizer/test_workspace/asan_fail_heap_out_of_bounds.cpp)" "test_workspace/asan_fail_heap_out_of_bounds.cpp"
+ln -sf "$(rlocation $TEST_WORKSPACE/quality/sanitizer/test_workspace/lsan_fail_leak.cpp)" "test_workspace/lsan_fail_leak.cpp"
 ln -sf "$(rlocation $TEST_WORKSPACE/quality/sanitizer/test_workspace/tsan_fail_data_race.cpp)" "test_workspace/tsan_fail_data_race.cpp"
 
 cd test_workspace
 
-if bazel test --config=asan //...; then
+if bazel test --config=asan //:asan_fail_heap_out_of_bounds; then
   exit 1;
 fi
 
-if bazel test --config=tsan //...; then
+if bazel test --config=lsan //:lsan_fail_leak; then
+  exit 1;
+fi
+
+if bazel test --config=tsan //:tsan_fail_data_race; then
   exit 1;
 fi
 

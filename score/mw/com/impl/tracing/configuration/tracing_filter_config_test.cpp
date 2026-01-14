@@ -291,7 +291,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, minimalTest)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -313,7 +313,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, minimalTest)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -347,7 +347,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, minimalTest)
     // Given an empty ipc tracing filter config
     TracingFilterConfig tracing_filter_config{};
 
-    constexpr auto service_type = "/bmw/ncar/services/TirePressureService"sv;
+    constexpr auto service_type = "/score/ncar/services/TirePressureService"sv;
     constexpr auto event_name = "CurrentPressureFrontLeft"sv;
     constexpr auto instance_specifier = "abc/abc/TirePressurePort"sv;
 
@@ -366,7 +366,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAlloneIsPresentAndWantsT
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -389,7 +389,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAlloneIsPresentAndWantsT
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -442,7 +442,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAlloneIsPresentAndWantsT
     // Given an empty ipc tracing filter config
     TracingFilterConfig tracing_filter_config{};
 
-    constexpr std::string_view service_type = "/bmw/ncar/services/TirePressureService";
+    constexpr std::string_view service_type = "/score/ncar/services/TirePressureService";
     constexpr std::string_view field_name = "CurrentTemperatureFrontLeft";
     constexpr std::string_view instance_specifier = "abc/abc/TirePressurePort";
     // When adding the trace points
@@ -459,7 +459,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAndAnEventArePresentAndW
     {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -487,7 +487,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAndAnEventArePresentAndW
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -549,7 +549,7 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, AFieldAndAnEventArePresentAndW
     // Given an empty ipc tracing filter config
     TracingFilterConfig tracing_filter_config{};
 
-    constexpr std::string_view service_type = "/bmw/ncar/services/TirePressureService";
+    constexpr std::string_view service_type = "/score/ncar/services/TirePressureService";
     constexpr std::string_view instance_specifier = "abc/abc/TirePressurePort";
     constexpr std::string_view field_name = "CurrentTemperatureFrontLeft";
     constexpr std::string_view event_name = "CurrentPressureFrontLeft";
@@ -707,7 +707,7 @@ class ConfigurationFixture : public ::testing::Test
 
     score::cpp::optional<Configuration> configuration_{};
     TracingFilterConfig tracing_filter_config_{};
-    const std::string_view service_type_ = "/bmw/ncar/services/TirePressureService";
+    const std::string_view service_type_ = "/score/ncar/services/TirePressureService";
     const std::string event_name_ = "CurrentPressureFrontLeft";
 };
 

@@ -904,6 +904,7 @@ cc_gtest_unit_test(
     deps = [
         ":service_element_type",
         "@score_baselibs//score/mw/log",
+        #"@score_baselibs//score/mw/log/test/fake_recorder_environment:auto_register_fake_recorder_env",
     ],
 )
 

@@ -44,7 +44,9 @@ constexpr auto kDummyApplicationName = "dummyname";
 
 std::pair<std::int32_t, score::StringLiteral*> GenerateCommandLineArgs(std::vector<score::StringLiteral>& arguments)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT(arguments.size() < std::numeric_limits<std::int32_t>::max());
+    constexpr auto kMaxArguments =
+        static_cast<std::vector<score::StringLiteral>::size_type>(std::numeric_limits<std::int32_t>::max());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(arguments.size() < kMaxArguments);
     const auto number_of_args = static_cast<std::int32_t>(arguments.size());
     return std::make_pair(number_of_args, arguments.data());
 }

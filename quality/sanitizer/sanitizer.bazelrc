@@ -11,19 +11,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-test:asan_ubsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-# todo: Extract to toolchain feature one possible
-test:asan_ubsan --cxxopt -O0
-test:asan_ubsan --cxxopt -Og
-test:asan_ubsan --cxxopt -fsanitize=undefined,address
-test:asan_ubsan --cxxopt -fno-optimize-sibling-calls
-test:asan_ubsan --linkopt -fsanitize=undefined,address
-test:asan_ubsan --linkopt -fsanitize-link-c++-runtime
-test:asan_ubsan --platform_suffix=asan_ubsan
-test:asan_ubsan --test_env=ASAN_OPTIONS="exitcode=55 allow_addr2line=1 verbosity=1 coverage=1 check_initialization_order=1 detect_stack_use_after_return=1 print_stats=1 halt_on_error=1 allocator_may_return_null=1"
-test:asan_ubsan --test_env=UBSAN_OPTIONS="exitcode=55 allow_addr2line=1 verbosity=1 coverage=1 print_stacktrace=1 halt_on_error=1"
+test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+# todo: Extract to toolchain feature once possible
+test:asan_ubsan_lsan --cxxopt -O0
+test:asan_ubsan_lsan --cxxopt -Og
+test:asan_ubsan_lsan --cxxopt -fsanitize=undefined,address,leak
+test:asan_ubsan_lsan --cxxopt -fno-optimize-sibling-calls
+test:asan_ubsan_lsan --linkopt -fsanitize=undefined,address,leak
+test:asan_ubsan_lsan --linkopt -fsanitize-link-c++-runtime
+test:asan_ubsan_lsan --platform_suffix=asan_ubsan
+test:asan_ubsan_lsan --test_env=ASAN_OPTIONS="exitcode=55 allow_addr2line=1 verbosity=1 coverage=1 check_initialization_order=1 detect_stack_use_after_return=1 print_stats=1 halt_on_error=1 allocator_may_return_null=1 detect_leaks=1"
+test:asan_ubsan_lsan --test_env=UBSAN_OPTIONS="exitcode=55 allow_addr2line=1 verbosity=1 coverage=1 print_stacktrace=1 halt_on_error=1"
 
-test:asan --config=asan_ubsan
+test:asan --config=asan_ubsan_lsan
+test:ubsan --config=asan_ubsan_lsan
+test:lsan --config=asan_ubsan_lsan
 
 test:tsan --cxxopt -O0
 test:tsan --cxxopt -Og

@@ -90,9 +90,9 @@ cc_library(
         ":i_message_passing_service_instance",
         ":message_passing_client_cache",
         ":thread_abstraction",
-        "@communication//score/message_passing",
         "@score_baselibs//score/concurrency:thread_pool",
         "@score_baselibs//score/os:errno_logging",
+        "@score_communication//score/message_passing",
     ],
 )
 
@@ -118,8 +118,8 @@ cc_library(
         ":asil_specific_cfg",
         ":client_quality_type",
         ":i_message_passing_service_instance",
-        "@communication//score/message_passing",
         "@score_baselibs//score/concurrency:executor",
+        "@score_communication//score/message_passing",
     ],
 )
 
@@ -159,7 +159,7 @@ cc_library(
         ":asil_specific_cfg",
         ":client_quality_type",
         "//score/mw/com/impl/configuration",
-        "@communication//score/message_passing",
+        "@score_communication//score/message_passing",
     ],
 )
 
@@ -203,9 +203,9 @@ cc_library(
         ":message_passing_client_cache",
         ":message_passing_service",
         ":message_passing_service_instance_factory",
-        "@communication//score/message_passing",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
+        "@score_communication//score/message_passing",
     ],
 )
 
@@ -289,8 +289,8 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":messaging",
-        "@communication//score/message_passing:mock",
         "@score_baselibs//score/language/futurecpp",
+        "@score_communication//score/message_passing:mock",
     ],
 )
 
@@ -303,10 +303,10 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":messaging",
-        "@communication//score/message_passing:mock",
         "@score_baselibs//score/concurrency:executor_mock",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/os/mocklib:unistd_mock",
+        "@score_communication//score/message_passing:mock",
     ],
 )
 

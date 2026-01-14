@@ -56,6 +56,7 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
         {},
         {},
         {},
+        {},
         test::kConfiguredDeploymentShmSize)};
 
     /// \brief A very basic (Lola) ServiceTypeDeployment, which just contains a service-id and NO events at all!

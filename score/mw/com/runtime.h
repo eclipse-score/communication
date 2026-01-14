@@ -68,7 +68,6 @@ class RuntimeMockHolder
  * \param modelName (name of the SWC port)
  * \return container with InstanceIdentifiers
  * \requirement SWS_CM_00118
- * \public
  */
 score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(const InstanceSpecifier model_name);
 
@@ -80,7 +79,6 @@ score::Result<score::mw::com::InstanceIdentifierContainer> ResolveInstanceIDs(co
  *         "-service_instance_manifest" pointing to the json config file to be used.
  * \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
  *            effect after an internal runtime singleton has been already created/is in use!
- * \public
  */
 // NOLINTNEXTLINE(modernize-avoid-c-arrays):C-style array tolerated for command line arguments
 void InitializeRuntime(const std::int32_t argc, score::StringLiteral argv[]);
@@ -92,7 +90,6 @@ void InitializeRuntime(const std::int32_t argc, score::StringLiteral argv[]);
  *         default manifest path, this function shall be called when the caller already has the configuration path.
  * \attention This function shall only be called ONCE per application/process lifetime! A second call may have no
  *            effect after an internal runtime singleton has been already created/is in use!
- * \public
  */
 void InitializeRuntime(const RuntimeConfiguration& runtime_configuration);
 

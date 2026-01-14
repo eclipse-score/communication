@@ -39,8 +39,13 @@ class ResmgrSenderTraits
     {
         // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
         // be private.". We need these data elements to be organized into a coherent organized data structure.
+        // Suppress "AUTOSAR C++14 A9-6-1" rule findings. This rule states: "Data types used for interfacing with
+        // hardware or conforming to communication protocols shall be trivial, standard-layout and only contain members
+        // of types with defined sizes." False-positive: structure is not meant to be serialized
+        // coverity[autosar_cpp14_a9_6_1_violation]
         // coverity[autosar_cpp14_m11_0_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Unistd> unistd{};
+        // coverity[autosar_cpp14_a9_6_1_violation]
         // coverity[autosar_cpp14_m11_0_1_violation]
         score::cpp::pmr::unique_ptr<score::os::Fcntl> fcntl{};
     };

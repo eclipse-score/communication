@@ -51,35 +51,68 @@ class ProxyBase
 
     virtual ~ProxyBase() = default;
 
-    /// \brief Tries to find a service that matches the given specifier synchronously.
-    /// \details Does a synchronous one-shot lookup/find, which service instance(s) matching the specifier are there.
-    ///
-    /// \requirement SWS_CM_00622
-    ///
-    /// \param specifier The instance specifier of the service.
-    /// \return A result which on success contains a list of found handles that can be used to create a proxy. On
-    /// failure, returns an error code.
+    /**
+     * \api
+     * \brief Tries to find a service that matches the given specifier synchronously.
+     * \details Does a synchronous one-shot lookup/find, which service instance(s) matching the specifier are there.
+     * \param specifier The instance specifier of the service.
+     * \return A result which on success contains a list of found handles that can be used to create a proxy. On
+     *         failure, returns an error code.
+     * \requirement SWS_CM_00622
+     */
     static Result<ServiceHandleContainer<HandleType>> FindService(InstanceSpecifier specifier) noexcept;
 
-    /// \brief Tries to find a service that matches the given instance identifier synchronously.
-    /// \details Does a synchronous one-shot lookup/find, which service instance(s) matching the specifier are there.
-    ///
-    /// \param specifier The instance_identifier of the service.
-    /// \return A result which on success contains a list of found handles that can be used to create a proxy. On
-    /// failure, returns an error code.
+    /**
+     * \api
+     * \brief Tries to find a service that matches the given instance identifier synchronously.
+     * \details Does a synchronous one-shot lookup/find, which service instance(s) matching the specifier are there.
+     * \param instance_identifier The instance_identifier of the service.
+     * \return A result which on success contains a list of found handles that can be used to create a proxy. On
+     *         failure, returns an error code.
+     */
     static Result<ServiceHandleContainer<HandleType>> FindService(InstanceIdentifier instance_identifier) noexcept;
 
+    /**
+     * \api
+     * \brief Starts asynchronous service discovery that matches the given instance identifier.
+     * \details Initiates a continuous service discovery operation. The provided handler will be called whenever
+     *          matching service instances become available or unavailable.
+     * \param handler The callback handler to be invoked when service availability changes.
+     * \param instance_identifier The instance identifier of the service to find.
+     * \return A result which on success contains a handle to control the find operation. On failure, returns an
+     *         error code.
+     */
     static Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType> handler,
                                                       InstanceIdentifier instance_identifier) noexcept;
 
+    /**
+     * \api
+     * \brief Starts asynchronous service discovery that matches the given instance specifier.
+     * \details Initiates a continuous service discovery operation. The provided handler will be called whenever
+     *          matching service instances become available or unavailable.
+     * \param handler The callback handler to be invoked when service availability changes.
+     * \param instance_specifier The instance specifier of the service to find.
+     * \return A result which on success contains a handle to control the find operation. On failure, returns an
+     *         error code.
+     */
     static Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType> handler,
                                                       InstanceSpecifier instance_specifier) noexcept;
 
+    /**
+     * \api
+     * \brief Stops an ongoing asynchronous service discovery operation.
+     * \details Terminates the service discovery initiated by StartFindService. After this call, the associated
+     *          handler will no longer be invoked.
+     * \param handle The handle returned by StartFindService identifying the find operation to stop.
+     * \return A result indicating success or failure of stopping the find operation.
+     */
     static score::ResultBlank StopFindService(const FindServiceHandle handle) noexcept;
 
-    /// Returns the handle that was used to instantiate this proxy.
-    ///
-    /// \return Handle identifying the service that this proxy is connected to.
+    /**
+     * \api
+     * \brief Returns the handle that was used to instantiate this proxy.
+     * \return Handle identifying the service that this proxy is connected to.
+     */
     const HandleType& GetHandle() const noexcept;
 
   protected:

@@ -37,6 +37,7 @@ class QnxResourcePath
         return buffer_.data();
     }
 
+    // coverity[autosar_cpp14_a0_1_1_violation] false-positive: is used to define buffer_ size
     static constexpr std::size_t kMaxIdentifierLen = 256U;
 
   private:

@@ -285,7 +285,7 @@ fn test_proxy_subscribe_with_handler_integration() {
                 println!("[Handler Thread] Successfully subscribed!");
 
                 // Create shared counter wrapped in Arc<Mutex> for thread-safe access
-                let handler_count = Arc::new(Mutex::new(0 as u32));
+                let handler_count = Arc::new(Mutex::new(0));
                 let handler_count_clone = handler_count.clone();
 
                 println!("[Handler Thread] Setting receive handler...");

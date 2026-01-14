@@ -392,5 +392,76 @@ TEST(LolaServiceInstanceDeploymentLessThan, DeploymentsComparedBasedOnInstanceId
     EXPECT_EQ(rhs < lhs, rhs.instance_id_ < lhs.instance_id_);
 }
 
+using LolaServiceInstanceDeploymentJsonParsingDeathTest = ConfigurationStructsFixture;
+TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingLolaServiceInstanceDeploymentWithUidListNotAListLogsAndTerminates)
+{
+    // Given a valid LolaServiceInstanceDeployment with UID permissions that we can serialize
+    const LolaServiceInstanceDeployment valid_unit{MakeLolaServiceInstanceDeployment()};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we replace allowedConsumer with invalid structure (string instead of uid map)
+    auto it = json_object.find("allowedConsumer");
+    if (it != json_object.end())
+    {
+        it->second = json::Any{"invalid_structure"};
+    }
+
+    // Then constructing from the corrupted JSON logs and terminates
+    EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
+TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingLolaServiceInstanceDeploymentWithUidElementNotIntegerLogsAndTerminates)
+{
+    // Given a valid LolaServiceInstanceDeployment that we can serialize
+    const LolaServiceInstanceDeployment valid_unit{MakeLolaServiceInstanceDeployment()};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we corrupt the allowedConsumer to have a UID list with a non-integer element
+    // We need to create a completely new quality map with the corrupted data
+    auto consumer_it = json_object.find("allowedConsumer");
+    ASSERT_NE(consumer_it, json_object.end());
+
+    // Create a new corrupted quality map object from scratch
+    json::Object corrupted_quality_map;
+
+    // Add one quality type entry with a corrupted UID list containing a string
+    json::List corrupted_uid_list;
+    corrupted_uid_list.push_back(json::Any{"invalid_string_not_a_uid"});
+
+    // Insert this into the quality map under "QM" key
+    corrupted_quality_map.insert(std::make_pair("QM", json::Any{std::move(corrupted_uid_list)}));
+
+    // Replace the entire allowedConsumer with our corrupted map
+    json_object["allowedConsumer"] = json::Any{std::move(corrupted_quality_map)};
+
+    // Then constructing from the corrupted JSON logs and terminates
+    EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
+TEST_F(LolaServiceInstanceDeploymentJsonParsingDeathTest,
+       ConstructingLolaServiceInstanceDeploymentWithMissingStrictFieldLogsAndTerminates)
+{
+    // Given a valid LolaServiceInstanceDeployment that we can serialize
+    const LolaServiceInstanceDeployment valid_unit{MakeLolaServiceInstanceDeployment()};
+
+    auto json_object = valid_unit.Serialize();
+
+    // When we remove the required "strict" field from the JSON
+    auto strict_it = json_object.find("strict");
+    if (strict_it != json_object.end())
+    {
+        json_object.erase(strict_it);
+    }
+
+    // Then constructing from the corrupted JSON logs and terminates
+    // This verifies that GetValueFromJson detects the missing required field and terminates with appropriate logging
+    // during construction
+    EXPECT_DEATH(LolaServiceInstanceDeployment invalid_deployment{json_object}, ".*");
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

@@ -18,11 +18,6 @@
 #include <score/assert.hpp>
 
 #include <gmock/gmock.h>
-#include <algorithm>
-#include <iterator>
-#include <memory>
-#include <utility>
-#include <vector>
 
 namespace score::mw::com::impl::mock_binding
 {
@@ -30,7 +25,6 @@ namespace score::mw::com::impl::mock_binding
 class ProxyMethod : public ProxyMethodBinding
 {
   public:
-    ProxyMethod() : ProxyMethodBinding{{}, {}} {}
     ~ProxyMethod() override = default;
 
     MOCK_METHOD(score::Result<score::cpp::span<std::byte>>, AllocateInArgs, (std::size_t), (override));
@@ -41,7 +35,7 @@ class ProxyMethod : public ProxyMethodBinding
 class ProxyMethodFacade : public ProxyMethodBinding
 {
   public:
-    ProxyMethodFacade(ProxyMethod& proxy_method) : ProxyMethodBinding{{}, {}}, proxy_method_{proxy_method} {}
+    ProxyMethodFacade(ProxyMethod& proxy_method) : ProxyMethodBinding{}, proxy_method_{proxy_method} {}
     ~ProxyMethodFacade() override = default;
 
     score::Result<score::cpp::span<std::byte>> AllocateInArgs(std::size_t queue_position) override

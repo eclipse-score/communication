@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 rust_library(
     name = "com-api-gen",
@@ -21,5 +22,18 @@ rust_library(
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api",
+    ],
+)
+
+cc_library(
+    name = "vehicle_gen_cpp",
+    srcs = ["vehicle_gen.cpp"],
+    hdrs = ["vehicle_gen.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "//score/mw/com/impl/rust:registry_bridge_macro_cpp",
+    ],
+    visibility = [
+        "//visibility:public",  # platform_only
     ],
 )

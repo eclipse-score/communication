@@ -15,6 +15,8 @@
 #include "score/mw/com/message_passing/qnx/resmgr_sender_traits.h"
 #include "score/mw/com/message_passing/sender.h"
 
+// coverity[autosar_cpp14_a2_10_4_violation] false-positive: name is not reused; system-specific implementation
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: function implementation inside a namespace (Ticket-234468)
 score::cpp::pmr::unique_ptr<score::mw::com::message_passing::ISender> score::mw::com::message_passing::SenderFactoryImpl::Create(
     const std::string_view identifier,
     const score::cpp::stop_token& token,

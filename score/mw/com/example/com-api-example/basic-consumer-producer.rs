@@ -11,8 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use com_api::*;
-use com_api_gen::*;
+use com_api::{Runtime, Subscriber, Result, SampleContainer, Producer, Publisher, Subscription, Error,
+    SampleMaybeUninit, SampleMut, FindServiceSpecifier, ServiceDiscovery, ConsumerDescriptor, Builder,
+    InstanceSpecifier, MockRuntimeBuilderImpl, MockRuntimeImpl, LolaRuntimeBuilderImpl, LolaRuntimeImpl};
+
+use com_api_gen::{VehicleConsumer, VehicleOfferedProducer, Tire, VehicleInterface};
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
@@ -22,17 +25,41 @@ pub struct VehicleMonitor<R: Runtime> {
 }
 
 impl<R: Runtime> VehicleMonitor<R> {
-    /// Create a new VehicleMonitor with a consumer
-    pub fn new(consumer: VehicleConsumer<R>, producer: VehicleOfferedProducer<R>) -> Self {
+    /// Create a new `VehicleMonitor` with a consumer
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the monitor on success or an error if subscription fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if subscribing to the tire data fails.
+    ///
+    /// # Panics
+    ///
+    /// Panics if unwrapping the subscription fails.
+    pub fn new(consumer: VehicleConsumer<R>, producer: VehicleOfferedProducer<R>) -> Result<Self> {
         let tire_subscriber = consumer.left_tire.subscribe(3).unwrap();
-        Self {
+        Ok(Self {
             _consumer: consumer,
             producer,
             tire_subscriber,
-        }
+        })
     }
 
     /// Monitor tire data from the consumer
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing tire data as a `String` on success or an error if reading fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if no data is received or if there is a failure in receiving data
+    ///
+    /// # Panics
+    ///
+    /// Panics if unwrapping the sample from the buffer fails.
     pub fn read_tire_data(&self) -> Result<String> {
         let mut sample_buf = SampleContainer::new();
 
@@ -46,6 +73,14 @@ impl<R: Runtime> VehicleMonitor<R> {
         }
     }
 
+    /// Write tire data using the producer
+    /// # Returns
+    ///
+    /// A `Result` indicating success or failure of the write operation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if allocation or sending of the sample fails.
     pub fn write_tire_data(&self, tire: Tire) -> Result<()> {
         let uninit_sample = self.producer.left_tire.allocate()?;
         let sample = uninit_sample.write(tire);
@@ -64,32 +99,29 @@ fn use_consumer<R: Runtime>(runtime: &R) -> VehicleConsumer<R> {
         .find(|desc| desc.get_instance_identifier().as_ref() == "/My/Funk/ServiceName")
         .unwrap();
 
-    let consumer = consumer_builder.build().unwrap();
-    //
-    consumer
+    consumer_builder.build().unwrap()
 }
 
 fn use_producer<R: Runtime>(runtime: &R) -> VehicleOfferedProducer<R> {
-    let producer_builder = runtime.producer_builder::<VehicleInterface, VehicleProducer<R>>(
+    let producer_builder = runtime.producer_builder::<VehicleInterface>(
         InstanceSpecifier::new("/My/Funk/ServiceName").unwrap(),
     );
     let producer = producer_builder.build().unwrap();
-    let offered_producer = producer.offer().unwrap();
-    offered_producer
+    producer.offer().unwrap()
 }
 
 fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
-    println!("\n=== Running with {} runtime ===", name);
+    println!("\n=== Running with {name} runtime ===");
     let producer = use_producer(runtime);
     let consumer = use_consumer(runtime);
-    let monitor = VehicleMonitor::new(consumer, producer);
+    let monitor = VehicleMonitor::new(consumer, producer).unwrap();
 
     for _ in 0..5 {
         monitor.write_tire_data(Tire {}).unwrap();
         let tire_data = monitor.read_tire_data().unwrap();
-        println!("{}", tire_data);
+        println!("{tire_data}");
     }
-    println!("=== {} runtime completed ===\n", name);
+    println!("=== {name} runtime completed ===\n");
 }
 
 fn main() {

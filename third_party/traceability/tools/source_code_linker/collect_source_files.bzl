@@ -68,16 +68,17 @@ def _collect_source_files_aspect_impl(_target, ctx):
         _CollectedFilesInfo(
             files = depset(
                 _extract_source_files(ctx),
-                # Follow deps to collect source files from dependencies.
-                transitive = _get_transitive_deps(ctx.rule.attr, "deps"),
+                # Follow deps and srcs to collect source files from dependencies.
+                transitive = _get_transitive_deps(ctx.rule.attr, "deps") +
+                             _get_transitive_deps(ctx.rule.attr, "srcs"),
             ),
         ),
     ]
 
 _collect_source_files_aspect = aspect(
     implementation = _collect_source_files_aspect_impl,
-    # Follow deps to collect source files from dependencies.
-    attr_aspects = ["deps"],
+    # Follow deps and srcs to collect source files from dependencies and filegroups.
+    attr_aspects = ["deps", "srcs"],
     doc = "Aspect that collects source files from a rule and its dependencies. (Internal)",
 )
 

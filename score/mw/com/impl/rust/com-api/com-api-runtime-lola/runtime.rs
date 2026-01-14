@@ -11,10 +11,16 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-//! This crate provides a LoLa implementation of the COM API for testing purposes.
+//! This crate provides a `LoLa` implementation of the COM API for testing purposes.
 //! It is meant to be used in conjunction with the `com-api` crate.
 
 #![allow(dead_code)]
+
+//lifetime warning for all the Sample struct impl block . it is required for the Sample struct event lifetime parameter
+// and mentaining lifetime of instances and data reference
+// As of supressing clippy::needless_lifetimes
+//TODO: revist this once com-api is stable - Ticket-234827
+#![allow(clippy::needless_lifetimes)]
 
 use core::cmp::Ordering;
 use core::fmt::Debug;
@@ -46,7 +52,7 @@ pub struct LolaConsumerInfo {
 impl Runtime for LolaRuntimeImpl {
     type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
     type Subscriber<T: Reloc + Send + Debug> = SubscribableImpl<T>;
-    type ProducerBuilder<I: Interface, P: Producer<Self, Interface = I>> = SampleProducerBuilder<I>;
+    type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
     type Publisher<T: Reloc + Send + Debug> = Publisher<T>;
     type ProviderInfo = LolaProviderInfo;
     type ConsumerInfo = LolaConsumerInfo;
@@ -60,10 +66,10 @@ impl Runtime for LolaRuntimeImpl {
         }
     }
 
-    fn producer_builder<I: Interface, P: Producer<Self, Interface = I>>(
+    fn producer_builder<I: Interface>(
         &self,
         instance_specifier: InstanceSpecifier,
-    ) -> Self::ProducerBuilder<I, P> {
+    ) -> Self::ProducerBuilder<I> {
         SampleProducerBuilder::new(self, instance_specifier)
     }
 }
@@ -129,6 +135,7 @@ where
         }
     }
 }
+
 
 impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: Send + Reloc + Debug {}
 
@@ -288,9 +295,10 @@ impl<T> SubscriberImpl<T>
 where
     T: Reloc + Send + Debug,
 {
+    #[must_use = "creating a SubscriberImpl without using it is likely a mistake; the subscriber must be assigned or used in some way"]
     pub fn new() -> Self {
         Self {
-            data: Default::default(),
+            data: VecDeque::default(),
         }
     }
 
@@ -310,7 +318,7 @@ where
         T: 'a;
 
     fn unsubscribe(self) -> Self::Subscriber {
-        Default::default()
+        SubscribableImpl::default()
     }
 
     fn try_receive<'a>(
@@ -349,6 +357,7 @@ impl<T> Publisher<T>
 where
     T: Reloc + Send + Debug,
 {
+    #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
     pub fn new() -> Self {
         Self { _data: PhantomData }
     }
@@ -360,7 +369,7 @@ where
 {
     type SampleMaybeUninit<'a> = SampleMaybeUninit<'a, T> where Self: 'a;
 
-    fn allocate<'a>(&'a self) -> com_api_concept::Result<Self::SampleMaybeUninit<'a>> {
+    fn allocate(&self) -> com_api_concept::Result<Self::SampleMaybeUninit<'_>> {
         Ok(SampleMaybeUninit {
             data: MaybeUninit::uninit(),
             lifetime: PhantomData,
@@ -428,11 +437,14 @@ impl<I: Interface> SampleProducerBuilder<I> {
     }
 }
 
-impl<I: Interface, P: Producer<LolaRuntimeImpl, Interface = I>> ProducerBuilder<I, P, LolaRuntimeImpl> for SampleProducerBuilder<I> {}
+impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder<I> {}
 
-impl<I: Interface, P: Producer<LolaRuntimeImpl, Interface = I>> Builder<P> for SampleProducerBuilder<I> {
-    fn build(self) -> Result<P> {
-        todo!()
+impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
+    fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
+        let instance_info = LolaProviderInfo {
+            instance_specifier: self.instance_specifier.clone(),
+        };
+        I::Producer::new(instance_info)
     }
 }
 

@@ -25,6 +25,9 @@ namespace
 class SenderMockWrapper : public score::mw::com::message_passing::ISender
 {
   public:
+    // coverity[autosar_cpp14_m0_1_9_violation] false-positive: constructor; not dead code
+    // coverity[autosar_cpp14_m0_1_3_violation] false-positive: constructor; not a variable
+    // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in tests
     explicit SenderMockWrapper(score::mw::com::message_passing::ISender* const mock) : ISender{}, wrapped_mock_{mock} {}
 
     score::cpp::expected_blank<score::os::Error> Send(
@@ -52,15 +55,18 @@ class SenderMockWrapper : public score::mw::com::message_passing::ISender
 // constant-initialized.".
 // Not safety related code; only accessible during testing when `sender_mock_` is set up.
 // coverity[autosar_cpp14_a3_3_2_violation]
+// coverity[autosar_cpp14_m0_1_9_violation] false-positive: used in SenderFactory::Create(); not dead code
+// coverity[autosar_cpp14_m0_1_3_violation] false-positive: see above
 score::cpp::callback<void(const score::cpp::stop_token&)> callback_{};
 
 }  // namespace
 
 namespace score::mw::com::message_passing
 {
-
+// coverity[autosar_cpp14_a0_1_1_violation] false-positive: is used in tests
 ISender* SenderFactory::sender_mock_{nullptr};
 
+// coverity[autosar_cpp14_a2_10_4_violation] false-positive: name is not reused; system-specific implementation
 score::cpp::pmr::unique_ptr<ISender> SenderFactory::Create(const std::string_view identifier,
                                                     const score::cpp::stop_token& token,
                                                     const SenderConfig& sender_config,
