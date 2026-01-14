@@ -98,41 +98,6 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     static constexpr std::optional<memory::DataTypeSizeInfo> type_erased_return_type_{};
 };
 
-ProxyMethod<void()>::ProxyMethod(ProxyMethod&& other) noexcept : ProxyMethodBase(std::move(other))
-{
-    // Since the address of this method has changed, we need update the address stored in the parent proxy.
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
-}
-
-auto ProxyMethod<void()>::operator=(ProxyMethod&& other) noexcept -> ProxyMethod<void()>&
-{
-    if (this != &other)
-    {
-        ProxyMethod::operator=(std::move(other));
-
-        // Since the address of this method has changed, we need update the address stored in the parent proxy.
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
-    }
-    return *this;
-}
-
-score::ResultBlank ProxyMethod<void()>::operator()()
-{
-    auto queue_position = detail::DetermineNextAvailableQueueSlot(is_return_type_ptr_active_);
-    if (!queue_position.has_value())
-    {
-        return Unexpected(queue_position.error());
-    }
-    auto call_result = binding_->DoCall(queue_position.value());
-    if (!call_result.has_value())
-    {
-        return Unexpected(call_result.error());
-    }
-
-    return {};
-}
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITHOUT_IN_ARGS_OR_RETURN_H
