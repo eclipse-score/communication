@@ -41,18 +41,11 @@ jobs:
               incompatible_targets:
                 - "-//score/mw/com/requirements/..." # Uninvestigated problem
                 - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
-                - "-//score/mw/com/example/..." # Missing Rust toolchain support for QNX8 on x86_64
-                - "-//score/mw/com/impl/plumbing:sample_ptr_rs" # Missing Rust toolchain support for QNX8 on x86_64
-                - "-//score/mw/com/impl/rust/..." # Missing Rust toolchain support for QNX8 on x86_64
             - bazel-config: "qnx_arm64"
               incompatible_targets:
                 - "-//score/mw/com/requirements/..." # Uninvestigated problem
                 - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
-                - "-//score/mw/com/example/..." # Broken Rust toolchain for QNX8 on arm64
-                - "-//score/mw/com/impl/plumbing:sample_ptr_rs" # Broken Rust toolchain for QNX8 on arm64
-                - "-//score/mw/com/impl/rust/..." # Broken Rust toolchain for QNX8 on arm64
-      # Starting with Ubuntu 24.04 apparmor breaks Bazels linux-sandbox: https://github.com/bazelbuild/bazel/issues/24081
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       permissions:
         contents: read
         pull-requests: read
@@ -67,6 +60,8 @@ jobs:
             bazelisk-cache: true
             disk-cache: ${{ github.workflow }}-${{ matrix.bazel-config }}
             repository-cache: true
+        - name: Allow linux-sandbox
+          uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Setup QNX License
           if: ${{ contains(matrix.bazel-config, 'qnx') }}
           env:
