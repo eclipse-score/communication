@@ -19,9 +19,6 @@
 #include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
-#include "score/mw/com/impl/configuration/lola_service_instance_id.h"
-#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
-#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
@@ -224,7 +221,7 @@ FlatBufferConfigLoader::~FlatBufferConfigLoader()
 
 void FlatBufferConfigLoader::LoadBuffer(std::string_view path)
 {
-    fd_ = open(path.data(), O_RDONLY);
+    fd_ = open(std::string(path).c_str(), O_RDONLY);
     if (fd_ == -1)
     {
         ::score::mw::log::LogFatal("lola")
@@ -334,7 +331,8 @@ Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes
             else if (binding->binding() == BindingType::SOME_IP)
             {
                 // Skip SOME/IP - not supported yet
-                continue;
+                ::score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which is not supported yet.";
+                std::terminate();
             }
             else
             {

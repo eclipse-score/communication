@@ -6,7 +6,7 @@ This rule converts existing communication JSON files to a FlatBuffer friendly fo
 - Convert keys from camelCase to snake_case (avoids warnings)
 """
 
-def generate_com_config(name, json, visibility = None, **kwargs):
+def generate_com_config(name, json, convert, visibility = None):
     """
     Generate a FlatBuffer binary configuration file from a JSON input.
 
