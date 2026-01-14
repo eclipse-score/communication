@@ -142,6 +142,8 @@ pub trait Runtime {
         &self,
         instance_specifier: InstanceSpecifier,
     ) -> Self::ProducerBuilder<I>;
+
+    // fn offer_service<I: Interface>(instance_info: Self::ProviderInfo) -> Result<()>;
 }
 
 /// This trait contains the APIs required for producer service instance management.

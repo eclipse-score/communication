@@ -18,7 +18,9 @@ use com_api::{
 
 #[derive(Debug, Reloc)]
 #[repr(C)]
-pub struct Tire {}
+pub struct Tire {
+    pub pressure: f32,
+}
 
 impl CommData for Tire {
     const ID: &'static str = "Tire";

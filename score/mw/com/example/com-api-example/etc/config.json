@@ -26,7 +26,7 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "Vehicle/Service/Instance",
+      "instanceSpecifier": "/Vehicle/Service/Instance",
       "serviceTypeName": "/bmw/adp/VehicleInterface",
       "version": {
         "major": 1,

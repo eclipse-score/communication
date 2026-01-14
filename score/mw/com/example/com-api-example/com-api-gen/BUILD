@@ -17,10 +17,13 @@ rust_library(
     name = "com-api-gen",
     srcs = ["com_api_gen.rs"],
     crate_name = "com_api_gen",
+    features = ["link_std_cpp_lib"],
     visibility = [
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":vehicle_gen_cpp",
+        "//score/mw/com/impl/rust:generic_bridge_ffi_rs",
         "//score/mw/com/impl/rust/com-api/com-api",
     ],
 )
@@ -33,4 +36,5 @@ cc_library(
     implementation_deps = [
         "//score/mw/com/impl/rust:registry_bridge_macro_cpp",
     ],
+    alwayslink = True,
 )

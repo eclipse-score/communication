@@ -12,9 +12,9 @@
  ********************************************************************************/
 
 use com_api::{
-    Builder, Error, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl,
-    MockRuntimeBuilderImpl, Producer, Publisher, Result, Runtime, SampleContainer,
-    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    Builder, Error, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Producer,
+    Publisher, Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut,
+    ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Tire, VehicleConsumer, VehicleInterface, VehicleOfferedProducer};
@@ -88,14 +88,15 @@ impl<R: Runtime> VehicleMonitor<R> {
         let uninit_sample = self.producer.left_tire.allocate()?;
         let sample = uninit_sample.write(tire);
         sample.send()?;
+        println!("Tire data sent");
         Ok(())
     }
 }
 
-fn use_consumer<R: Runtime>(runtime: &R) -> VehicleConsumer<R> {
-    let consumer_discovery = runtime.find_service::<VehicleInterface>(
-        FindServiceSpecifier::Specific(InstanceSpecifier::new("Vehicle/Service/Instance").unwrap()),
-    );
+fn create_consumer<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleConsumer<R> {
+    // Find all the avaiable service instances using ANY specifier
+    let consumer_discovery =
+        runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
     let available_service_instances = consumer_discovery.get_available_instances().unwrap();
 
     // Select service instance at specific handle_index
@@ -108,34 +109,52 @@ fn use_consumer<R: Runtime>(runtime: &R) -> VehicleConsumer<R> {
     consumer_builder.build().unwrap()
 }
 
-fn use_producer<R: Runtime>(runtime: &R) -> VehicleOfferedProducer<R> {
-    let producer_builder = runtime.producer_builder::<VehicleInterface>(
-        InstanceSpecifier::new("Vehicle/Service/Instance").unwrap(),
-    );
+fn create_producer<R: Runtime>(
+    runtime: &R,
+    service_id: InstanceSpecifier,
+) -> VehicleOfferedProducer<R> {
+    let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
     let producer = producer_builder.build().unwrap();
     producer.offer().unwrap()
 }
 
 fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     println!("\n=== Running with {name} runtime ===");
-    let producer = use_producer(runtime);
-    let consumer = use_consumer(runtime);
+    let producer = create_producer(
+        runtime,
+        InstanceSpecifier::new("/Vehicle/Service/Instance")
+            .expect("Failed to create InstanceSpecifier"),
+    );
+    let consumer = create_consumer(
+        runtime,
+        InstanceSpecifier::new("/Vehicle/Service/Instance")
+            .expect("Failed to create InstanceSpecifier"),
+    );
     let monitor = VehicleMonitor::new(consumer, producer).unwrap();
-
-    for _ in 0..5 {
-        monitor.write_tire_data(Tire {}).unwrap();
+    let tire_pressure = 5.0;
+    println!("Setting tire pressure to {tire_pressure}");
+    for i in 0..5 {
+        monitor
+            .write_tire_data(Tire {
+                pressure: tire_pressure + i as f32,
+            })
+            .unwrap();
         let tire_data = monitor.read_tire_data().unwrap();
         println!("{tire_data}");
     }
     println!("=== {name} runtime completed ===\n");
 }
 
-fn main() {
-    let mock_runtime_builder = MockRuntimeBuilderImpl::new();
-    let mock_runtime = mock_runtime_builder.build().unwrap();
-    run_with_runtime("Mock", &mock_runtime);
+fn init_lola_runtime_builder() -> LolaRuntimeBuilderImpl {
+    let mut lola_runtime_builder = LolaRuntimeBuilderImpl::new();
+    lola_runtime_builder.load_config(std::path::Path::new(
+        "score/mw/com/example/com-api-example/etc/config.json",
+    ));
+    lola_runtime_builder
+}
 
-    let lola_runtime_builder = LolaRuntimeBuilderImpl::new();
+fn main() {
+    let lola_runtime_builder = init_lola_runtime_builder();
     let lola_runtime = lola_runtime_builder.build().unwrap();
     run_with_runtime("Lola", &lola_runtime);
 }
@@ -145,66 +164,9 @@ mod test {
 
     use super::*;
     #[test]
-    fn create_producer() {
-        // Factory
-        let mock_runtime_builder = MockRuntimeBuilderImpl::new();
-        let runtime = Builder::<MockRuntimeImpl>::build(mock_runtime_builder).unwrap();
-        use_producer(&runtime);
-
-        let lola_runtime_builder = LolaRuntimeBuilderImpl::new();
-        let runtime = Builder::<LolaRuntimeImpl>::build(lola_runtime_builder).unwrap();
-        use_producer(&runtime);
-    }
-
-    #[test]
-    fn create_consumer() {
-        let mock_runtime_builder = MockRuntimeBuilderImpl::new();
-        let runtime = Builder::<MockRuntimeImpl>::build(mock_runtime_builder).unwrap();
-        use_consumer(&runtime);
-
-        let lola_runtime_builder = LolaRuntimeBuilderImpl::new();
-        let runtime = Builder::<LolaRuntimeImpl>::build(lola_runtime_builder).unwrap();
-        use_consumer(&runtime);
-    }
-
-    async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
-        let mut buffer = SampleContainer::new();
-        for _ in 0..10 {
-            match subscribed.receive(&mut buffer, 1, 1).await {
-                Ok(0) => panic!("No sample received"),
-                Ok(num_samples) => {
-                    println!(
-                        "{} samples received: sample[0] = {:?}",
-                        num_samples,
-                        *buffer.front().unwrap()
-                    );
-                }
-                Err(e) => panic!("{:?}", e),
-            }
-        }
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn schedule_subscription_on_mt_scheduler() {
-        let mock_runtime_builder = MockRuntimeBuilderImpl::new();
-        let runtime = Builder::<MockRuntimeImpl>::build(mock_runtime_builder).unwrap();
-
-        let consumer_discovery =
-            runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Any);
-        let available_service_instances = consumer_discovery.get_available_instances().unwrap();
-
-        // Create consumer from first discovered service
-        let consumer_builder = available_service_instances
-            .into_iter()
-            .find(|desc| desc.get_instance_identifier().as_ref() == "/My/Funk/ServiceName")
-            .unwrap();
-        let consumer = consumer_builder.build().unwrap();
-
-        // Subscribe to one event
-        let subscribed = consumer.left_tire.subscribe(3).unwrap();
-
-        tokio::spawn(async_data_processor_fn(subscribed))
-            .await
-            .expect("Error returned from task");
+    fn integration_test() {
+        let lola_runtime_builder = init_lola_runtime_builder();
+        let lola_runtime = lola_runtime_builder.build().unwrap();
+        run_with_runtime("Lola", &lola_runtime);
     }
 }

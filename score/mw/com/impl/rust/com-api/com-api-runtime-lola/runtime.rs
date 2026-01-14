@@ -756,7 +756,8 @@ impl Builder<LolaRuntimeImpl> for RuntimeBuilderImpl {
 
 /// Entry point for the default implementation for the com module of s-core
 impl com_api_concept::RuntimeBuilder<LolaRuntimeImpl> for RuntimeBuilderImpl {
-    fn load_config(&mut self, _config: &Path) -> &mut Self {
+    fn load_config(&mut self, config: &Path) -> &mut Self {
+        proxy_bridge_rs::initialize(Some(config));
         self
     }
 }
