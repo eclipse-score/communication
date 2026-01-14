@@ -6,7 +6,7 @@ This rule converts existing communication JSON files to a FlatBuffer friendly fo
 - Convert keys from camelCase to snake_case (avoids warnings)
 """
 
-def generate_com_config(name, json, convert, visibility = None, **kwargs):
+def generate_com_config(name, json, convert, visibility = None):
     """
     Generate a FlatBuffer binary configuration file from a JSON input.
 
@@ -43,25 +43,23 @@ def generate_com_config(name, json, convert, visibility = None, **kwargs):
     # Always use the COM FlatBuffer schema
     schema = "//score/mw/com/impl/configuration:ara_com_config.fbs"
 
-    # Preserve the full path of the JSON file, just change extension
+    # Extract base filepath and filename (remove .json extension if present)
     if json.endswith(".json"):
-        output_path = json[:-5] + ".bin"
+        filepath_base = json[:-5]
+        filename_base = json.split("/")[-1][:-5]
     else:
-        output_path = json + ".bin"
+        filepath_base = json
+        filename_base = json.split("/")[-1]
+
+    # Preserve the full path of the JSON file, just change extension
+    output_path = filepath_base + ".bin"
 
     if convert:
         # Intermediate converted JSON file (keep in same directory)
-        if json.endswith(".json"):
-            converted_json = json[:-5] + "_converted.json"
-        else:
-            converted_json = json + "_converted.json"
+        converted_json = filepath_base + "_converted.json"
 
-        # Extract just the filename for the flatc intermediate output
-        json_filename = json.split("/")[-1]
-        if json_filename.endswith(".json"):
-            flatc_output = json_filename[:-5] + "_converted.bin"
-        else:
-            flatc_output = json_filename + "_converted.bin"
+        # Intermediate flatc output filename
+        flatc_output = filename_base + "_converted.bin"
 
         # Step 1: Convert JSON to FlatBuffer friendly format
         native.genrule(
@@ -83,12 +81,8 @@ def generate_com_config(name, json, convert, visibility = None, **kwargs):
             visibility = visibility,
         )
     else:
-        # Extract just the filename for the flatc intermediate output
-        json_filename = json.split("/")[-1]
-        if json_filename.endswith(".json"):
-            flatc_output = json_filename[:-5] + ".bin"
-        else:
-            flatc_output = json_filename + ".bin"
+        # Intermediate flatc output filename
+        flatc_output = filename_base + ".bin"
 
         # Only move if the output paths differ
         if flatc_output == output_path.split("/")[-1]:

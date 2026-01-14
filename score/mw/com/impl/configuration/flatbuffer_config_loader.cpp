@@ -13,17 +13,7 @@
 
 #include "score/mw/com/impl/configuration/flatbuffer_config_loader.h"
 
-#include "score/mw/com/impl/configuration/lola_event_id.h"
-#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
-#include "score/mw/com/impl/configuration/lola_field_id.h"
-#include "score/mw/com/impl/configuration/lola_field_instance_deployment.h"
-#include "score/mw/com/impl/configuration/lola_method_id.h"
-#include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
-#include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
-#include "score/mw/com/impl/configuration/lola_service_instance_id.h"
-#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
-#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
@@ -34,23 +24,26 @@
 
 #include "score/mw/log/logging.h"
 
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <cerrno>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <cerrno>
-#include <cstring>
 
 namespace score::mw::com::impl::configuration
 {
 
 void FlatBufferConfigLoader::MmapDeleter::operator()(void* ptr) const noexcept
 {
-    if (ptr && size > 0) { munmap(ptr, size); }
+    if (ptr && size > 0)
+    {
+        munmap(ptr, size);
+    }
 }
 
 namespace
@@ -66,27 +59,32 @@ QualityType ConvertAsilLevel(AsilLevel asil_level) noexcept
 LolaServiceInstanceDeployment::EventInstanceMapping ParseEventDeployments(const Instance* instance)
 {
     LolaServiceInstanceDeployment::EventInstanceMapping events;
-    
+
     if (instance->events() != nullptr)
     {
         for (const auto* event : *instance->events())
         {
             if (event != nullptr)
             {
-                std::optional<uint16_t> slots = event->number_of_sample_slots() > 0 
-                    ? std::optional<uint16_t>(event->number_of_sample_slots()) : std::nullopt;
-                std::optional<uint8_t> max_subs = event->max_subscribers() > 0 
-                    ? std::optional<uint8_t>(static_cast<uint8_t>(event->max_subscribers())) : std::nullopt;
-                
-                LolaEventInstanceDeployment event_deploy(
-                    slots, max_subs, std::nullopt, event->enforce_max_samples(), 
-                    static_cast<uint8_t>(event->number_of_ipc_tracing_slots()));
+                std::optional<uint16_t> slots = event->number_of_sample_slots() > 0
+                                                    ? std::optional<uint16_t>(event->number_of_sample_slots())
+                                                    : std::nullopt;
+                std::optional<uint8_t> max_subs =
+                    event->max_subscribers() > 0
+                        ? std::optional<uint8_t>(static_cast<uint8_t>(event->max_subscribers()))
+                        : std::nullopt;
+
+                LolaEventInstanceDeployment event_deploy(slots,
+                                                         max_subs,
+                                                         std::nullopt,
+                                                         event->enforce_max_samples(),
+                                                         static_cast<uint8_t>(event->number_of_ipc_tracing_slots()));
                 // event_name is obliged to contain a value (marked as required)
                 events.emplace(event->event_name()->str(), std::move(event_deploy));
             }
         }
     }
-    
+
     return events;
 }
 
@@ -94,27 +92,32 @@ LolaServiceInstanceDeployment::EventInstanceMapping ParseEventDeployments(const 
 LolaServiceInstanceDeployment::FieldInstanceMapping ParseFieldDeployments(const Instance* instance)
 {
     LolaServiceInstanceDeployment::FieldInstanceMapping fields;
-    
+
     if (instance->fields() != nullptr)
     {
         for (const auto* field : *instance->fields())
         {
             if (field != nullptr)
             {
-                std::optional<uint16_t> slots = field->number_of_sample_slots() > 0 
-                    ? std::optional<uint16_t>(field->number_of_sample_slots()) : std::nullopt;
-                std::optional<uint8_t> max_subs = field->max_subscribers() > 0 
-                    ? std::optional<uint8_t>(static_cast<uint8_t>(field->max_subscribers())) : std::nullopt;
-                
-                LolaFieldInstanceDeployment field_deploy(
-                    slots, max_subs, std::nullopt, field->enforce_max_samples(),
-                    static_cast<uint8_t>(field->number_of_ipc_tracing_slots()));
+                std::optional<uint16_t> slots = field->number_of_sample_slots() > 0
+                                                    ? std::optional<uint16_t>(field->number_of_sample_slots())
+                                                    : std::nullopt;
+                std::optional<uint8_t> max_subs =
+                    field->max_subscribers() > 0
+                        ? std::optional<uint8_t>(static_cast<uint8_t>(field->max_subscribers()))
+                        : std::nullopt;
+
+                LolaFieldInstanceDeployment field_deploy(slots,
+                                                         max_subs,
+                                                         std::nullopt,
+                                                         field->enforce_max_samples(),
+                                                         static_cast<uint8_t>(field->number_of_ipc_tracing_slots()));
                 // field_name is obliged to contain a value (marked as required)
                 fields.emplace(field->field_name()->str(), std::move(field_deploy));
             }
         }
     }
-    
+
     return fields;
 }
 
@@ -122,7 +125,7 @@ LolaServiceInstanceDeployment::FieldInstanceMapping ParseFieldDeployments(const 
 LolaServiceInstanceDeployment::MethodInstanceMapping ParseMethodDeployments(const Instance* instance)
 {
     LolaServiceInstanceDeployment::MethodInstanceMapping methods;
-    
+
     if (instance->methods() != nullptr)
     {
         for (const auto* method : *instance->methods())
@@ -134,23 +137,23 @@ LolaServiceInstanceDeployment::MethodInstanceMapping ParseMethodDeployments(cons
                 {
                     queue_size = static_cast<uint8_t>(method->queue_size());
                 }
-                
+
                 LolaMethodInstanceDeployment method_deploy(queue_size);
                 // method_name is obliged to contain a value (marked as required)
                 methods.emplace(method->method_name()->str(), std::move(method_deploy));
             }
         }
     }
-    
+
     return methods;
 }
 
 // Helper to parse permission mappings from FlatBuffer Permissions (AllowedConsumer or AllowedProvider)
-template<typename PermissionsType>
+template <typename PermissionsType>
 std::unordered_map<QualityType, std::vector<uid_t>> ParsePermissions(const PermissionsType* permissions)
 {
     std::unordered_map<QualityType, std::vector<uid_t>> permission_map;
-    
+
     if (permissions != nullptr)
     {
         if (permissions->qm() != nullptr)
@@ -164,7 +167,7 @@ std::unordered_map<QualityType, std::vector<uid_t>> ParsePermissions(const Permi
             permission_map.emplace(QualityType::kASIL_B, std::move(b_users));
         }
     }
-    
+
     return permission_map;
 }
 
@@ -186,28 +189,32 @@ void SetMemorySizes(LolaServiceInstanceDeployment& deployment, const Instance* i
 }
 
 // Helper to create LolaServiceInstanceDeployment from FlatBuffer Instance
-score::mw::com::impl::LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(const Instance* instance) 
-{   
+score::mw::com::impl::LolaServiceInstanceDeployment CreateLolaServiceInstanceDeployment(const Instance* instance)
+{
     score::cpp::optional<LolaServiceInstanceId> instance_id;
     if (instance->instance_id() != 0)
     {
         instance_id = LolaServiceInstanceId{instance->instance_id()};
     }
-    
+
     auto events = ParseEventDeployments(instance);
     auto fields = ParseFieldDeployments(instance);
     auto methods = ParseMethodDeployments(instance);
     auto allowed_consumer = ParsePermissions(instance->allowed_consumer());
     auto allowed_provider = ParsePermissions(instance->allowed_provider());
-    
+
     bool strict_permission = (instance->permission_checks() == PermissionCheckStrategy::STRICT);
-    
-    LolaServiceInstanceDeployment deployment(instance_id, std::move(events), std::move(fields),
-                                            std::move(methods), strict_permission, 
-                                            std::move(allowed_consumer), std::move(allowed_provider));
-    
+
+    LolaServiceInstanceDeployment deployment(instance_id,
+                                             std::move(events),
+                                             std::move(fields),
+                                             std::move(methods),
+                                             strict_permission,
+                                             std::move(allowed_consumer),
+                                             std::move(allowed_provider));
+
     SetMemorySizes(deployment, instance);
-    
+
     return deployment;
 }
 
@@ -216,17 +223,14 @@ score::mw::com::impl::LolaServiceInstanceDeployment CreateLolaServiceInstanceDep
 Configuration FlatBufferConfigLoader::CreateConfiguration(std::string_view path) noexcept
 {
     FlatBufferConfigLoader loader(path);
-    
-    return score::mw::com::impl::Configuration(
-        loader.CreateServiceTypes(),
-        loader.CreateServiceInstances(),
-        loader.CreateGlobalConfiguration(),
-        loader.CreateTracingConfiguration()
-    );
+
+    return score::mw::com::impl::Configuration(loader.CreateServiceTypes(),
+                                               loader.CreateServiceInstances(),
+                                               loader.CreateGlobalConfiguration(),
+                                               loader.CreateTracingConfiguration());
 }
 
-FlatBufferConfigLoader::FlatBufferConfigLoader(std::string_view path)
-    : fd_(-1), com_config_(nullptr)
+FlatBufferConfigLoader::FlatBufferConfigLoader(std::string_view path) : fd_(-1), com_config_(nullptr)
 {
     LoadBuffer(path);
 }
@@ -241,10 +245,11 @@ FlatBufferConfigLoader::~FlatBufferConfigLoader()
 
 void FlatBufferConfigLoader::LoadBuffer(std::string_view path)
 {
-    fd_ = open(path.data(), O_RDONLY);
+    fd_ = open(std::string(path).c_str(), O_RDONLY);
     if (fd_ == -1)
     {
-        ::score::mw::log::LogFatal("lola") << "Failed to open FlatBuffer file: " << path << " (" << std::string_view(std::strerror(errno)) << ")";
+        ::score::mw::log::LogFatal("lola")
+            << "Failed to open FlatBuffer file: " << path << " (" << std::string_view(std::strerror(errno)) << ")";
         std::terminate();
     }
 
@@ -252,7 +257,8 @@ void FlatBufferConfigLoader::LoadBuffer(std::string_view path)
     struct stat st;
     if (fstat(fd_, &st) == -1)
     {
-        ::score::mw::log::LogFatal("lola") << "Failed to stat FlatBuffer file: " << path << " (" << std::string_view(std::strerror(errno)) << ")";
+        ::score::mw::log::LogFatal("lola")
+            << "Failed to stat FlatBuffer file: " << path << " (" << std::string_view(std::strerror(errno)) << ")";
         std::terminate();
     }
 
@@ -268,7 +274,8 @@ void FlatBufferConfigLoader::LoadBuffer(std::string_view path)
     void* ptr = mmap(nullptr, mapped_size, PROT_READ, MAP_PRIVATE, fd_, 0);
     if (ptr == MAP_FAILED)
     {
-        ::score::mw::log::LogFatal("lola") << "Failed to mmap FlatBuffer file: " << path << " (" << std::string_view(std::strerror(errno)) << ")";
+        ::score::mw::log::LogFatal("lola")
+            << "Failed to mmap FlatBuffer file: " << path << " (" << std::string_view(std::strerror(errno)) << ")";
         std::terminate();
     }
     mapped_ptr_ = std::unique_ptr<void, MmapDeleter>(ptr, MmapDeleter{mapped_size});
@@ -292,25 +299,25 @@ void FlatBufferConfigLoader::LoadBuffer(std::string_view path)
 }
 
 Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes() const noexcept
-{   
+{
     Configuration::ServiceTypeDeployments service_type_deployments;
-    
+
     // service_types is obliged to contain a value (marked as required)
     for (const auto* service_type : *com_config_->service_types())
-    {       
+    {
         const auto* version = service_type->version();
         if (version == nullptr)
         {
             ::score::mw::log::LogFatal("lola") << "Service type missing version. Terminating";
             std::terminate();
         }
-        
+
         // service_type_name is obliged to contain a value (marked as required)
-        auto service_identifier = make_ServiceIdentifierType(
-            service_type->service_type_name()->str(), version->major(), version->minor());
-        
+        auto service_identifier =
+            make_ServiceIdentifierType(service_type->service_type_name()->str(), version->major(), version->minor());
+
         ServiceTypeDeployment::BindingInformation binding_info = score::cpp::blank{};
-        
+
         // bindings is obliged to contain a value (marked as required)
         // Process all bindings - currently only SHM is supported, use the first SHM binding found
         for (const auto* binding : *service_type->bindings())
@@ -322,41 +329,46 @@ Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes
                 LolaServiceTypeDeployment::EventIdMapping events;
                 LolaServiceTypeDeployment::FieldIdMapping fields;
                 LolaServiceTypeDeployment::MethodIdMapping methods;
-                
+
                 if (binding->events() != nullptr)
                 {
                     for (const auto* event : *binding->events())
                     {
                         // event_name is obliged to contain a value (marked as required)
-                        events.emplace(event->event_name()->str(), LolaEventId{static_cast<uint8_t>(event->event_id())});
+                        events.emplace(event->event_name()->str(),
+                                       LolaEventId{static_cast<uint8_t>(event->event_id())});
                     }
                 }
-                
+
                 if (binding->fields() != nullptr)
                 {
                     for (const auto* field : *binding->fields())
                     {
                         // field_name is obliged to contain a value (marked as required)
-                        fields.emplace(field->field_name()->str(), LolaFieldId{static_cast<uint8_t>(field->field_id())});
+                        fields.emplace(field->field_name()->str(),
+                                       LolaFieldId{static_cast<uint8_t>(field->field_id())});
                     }
                 }
-                
+
                 if (binding->methods() != nullptr)
                 {
                     for (const auto* method : *binding->methods())
                     {
                         // method_name is obliged to contain a value (marked as required)
-                        methods.emplace(method->method_name()->str(), LolaMethodId{static_cast<uint8_t>(method->method_id())});
+                        methods.emplace(method->method_name()->str(),
+                                        LolaMethodId{static_cast<uint8_t>(method->method_id())});
                     }
                 }
-                
-                binding_info = LolaServiceTypeDeployment{service_id, std::move(events), std::move(fields), std::move(methods)};
+
+                binding_info =
+                    LolaServiceTypeDeployment{service_id, std::move(events), std::move(fields), std::move(methods)};
                 break;  // Use first SHM binding
             }
             else if (binding->binding() == BindingType::SOME_IP)
             {
                 // Skip SOME/IP - not supported yet
-                continue;
+                ::score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which is not supported yet.";
+                std::terminate();
             }
             else
             {
@@ -364,32 +376,38 @@ Configuration::ServiceTypeDeployments FlatBufferConfigLoader::CreateServiceTypes
                 std::terminate();
             }
         }
-        
+
+        if (binding_info == score::cpp::blank{})
+        {
+            ::score::mw::log::LogFatal("lola")
+                << "No SHM binding found for Service Type: " << service_identifier.ToString();
+            std::terminate();
+        }
+
         ServiceTypeDeployment service_deployment{binding_info};
-        
-        const auto inserted = service_type_deployments.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(service_identifier),
-            std::forward_as_tuple(std::move(service_deployment)));
-        
+
+        const auto inserted = service_type_deployments.emplace(std::piecewise_construct,
+                                                               std::forward_as_tuple(service_identifier),
+                                                               std::forward_as_tuple(std::move(service_deployment)));
+
         if (!inserted.second)
         {
             ::score::mw::log::LogFatal("lola") << "Service Type was deployed twice in FlatBuffer";
             std::terminate();
         }
     }
-    
+
     return service_type_deployments;
 }
 
 Configuration::ServiceInstanceDeployments FlatBufferConfigLoader::CreateServiceInstances() const noexcept
-{  
+{
     Configuration::ServiceInstanceDeployments service_instances;
-       
+
     // service_instances is obliged to contain a value (marked as required)
     for (const auto* service_instance : *com_config_->service_instances())
     {
-        // service_instance and instance_specifier are obliged to contain a value (marked as required)        
+        // service_instance and instance_specifier are obliged to contain a value (marked as required)
         auto instance_spec_result = InstanceSpecifier::Create(service_instance->instance_specifier()->str());
         if (!instance_spec_result)
         {
@@ -397,18 +415,18 @@ Configuration::ServiceInstanceDeployments FlatBufferConfigLoader::CreateServiceI
             std::terminate();
         }
         InstanceSpecifier instance_spec = std::move(instance_spec_result.value());
-        
+
         // version and service_type_name are obliged to contain a value (marked as required)
-        const auto* version = service_instance->version();        
+        const auto* version = service_instance->version();
         auto service_identifier = make_ServiceIdentifierType(
             service_instance->service_type_name()->str(), version->major(), version->minor());
-        
+
         if (service_instance->instances() == nullptr || service_instance->instances()->size() == 0)
         {
             ::score::mw::log::LogFatal("lola") << "Service instance missing deployment instances. Terminating";
             std::terminate();
         }
-        
+
         // Find the single SHM instance - multi-binding not supported
         const Instance* shm_instance = nullptr;
         for (const auto* instance : *service_instance->instances())
@@ -418,7 +436,7 @@ Configuration::ServiceInstanceDeployments FlatBufferConfigLoader::CreateServiceI
                 if (shm_instance != nullptr)
                 {
                     ::score::mw::log::LogFatal("lola") << "Multiple SHM bindings for " << service_identifier.ToString()
-                                                     << ". Multi-Binding not supported";
+                                                       << ". Multi-Binding not supported";
                     std::terminate();
                 }
                 shm_instance = instance;
@@ -434,7 +452,7 @@ Configuration::ServiceInstanceDeployments FlatBufferConfigLoader::CreateServiceI
                 std::terminate();
             }
         }
-        
+
         if (shm_instance == nullptr)
         {
             ::score::mw::log::LogFatal("lola") << "No SHM binding found for " << service_identifier.ToString();
@@ -445,60 +463,65 @@ Configuration::ServiceInstanceDeployments FlatBufferConfigLoader::CreateServiceI
         ServiceInstanceDeployment deployment(service_identifier, std::move(binding_info), asil_level, instance_spec);
         service_instances.emplace(std::move(instance_spec), std::move(deployment));
     }
-    
+
     return service_instances;
 }
 
 GlobalConfiguration FlatBufferConfigLoader::CreateGlobalConfiguration() const noexcept
-{   
+{
     GlobalConfiguration global_config;
-    
+
     if (com_config_->global() != nullptr)
     {
         const auto* global = com_config_->global();
-        
+
         // Set ASIL level
         QualityType asil_level = ConvertAsilLevel(global->asil_level());
         global_config.SetProcessAsilLevel(asil_level);
-        
+
         // Set application ID if present
         if (global->application_id() != 0)
         {
             global_config.SetApplicationId(global->application_id());
         }
-        
+
         // Set queue sizes
         if (global->queue_size() != nullptr)
         {
             const auto* queue_size = global->queue_size();
-            global_config.SetReceiverMessageQueueSize(QualityType::kASIL_QM, 
-                                                     static_cast<int32_t>(queue_size->qm_receiver()));
-            global_config.SetReceiverMessageQueueSize(QualityType::kASIL_B, 
-                                                     static_cast<int32_t>(queue_size->b_receiver()));
+            global_config.SetReceiverMessageQueueSize(QualityType::kASIL_QM,
+                                                      static_cast<int32_t>(queue_size->qm_receiver()));
+            global_config.SetReceiverMessageQueueSize(QualityType::kASIL_B,
+                                                      static_cast<int32_t>(queue_size->b_receiver()));
             global_config.SetSenderMessageQueueSize(static_cast<int32_t>(queue_size->b_sender()));
         }
-        
-        // Set SHM size calculation mode
+
+        // Set SHM size calculation mode.
+        // NOTE: SHM size calculation currently only supports the simulation mode.
+        //       Therefore, we always use ShmSizeCalculationMode::kSimulation here,
+        //       regardless of any potential configuration in the FlatBuffer `global`
+        //       object. If additional modes are supported in the future, this code
+        //       should be extended to read the mode from the FlatBuffer.
         ShmSizeCalculationMode shm_mode = ShmSizeCalculationMode::kSimulation;
         global_config.SetShmSizeCalcMode(shm_mode);
     }
-    
+
     return global_config;
 }
 
 TracingConfiguration FlatBufferConfigLoader::CreateTracingConfiguration() const noexcept
-{  
+{
     TracingConfiguration tracing_config;
-    
+
     if (com_config_->tracing() != nullptr)
     {
         const auto* tracing = com_config_->tracing();
-        
+
         tracing_config.SetTracingEnabled(tracing->enable());
 
         // application_instance_id is obliged to contain a value (marked as required)
         tracing_config.SetApplicationInstanceID(tracing->application_instance_id()->str());
-        
+
         if (tracing->trace_filter_config_path() != nullptr)
         {
             tracing_config.SetTracingTraceFilterConfigPath(tracing->trace_filter_config_path()->str());
@@ -509,7 +532,7 @@ TracingConfiguration FlatBufferConfigLoader::CreateTracingConfiguration() const 
             tracing_config.SetTracingTraceFilterConfigPath("./etc/mw_com_trace_filter.json");
         }
     }
-    
+
     return tracing_config;
 }
 

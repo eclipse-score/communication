@@ -89,24 +89,19 @@ cc_library(
     srcs = [
         "flatbuffer_config_loader.cpp",
         # Include headers as srcs to make them available without depending on their implementations
-        "lola_event_id.h",
-        "lola_field_id.h",
-        "lola_service_id.h",
-        "lola_service_instance_deployment.h",
-        "lola_service_type_deployment.h",
-        "service_identifier_type.h",
-        "service_instance_deployment.h",
-        "service_type_deployment.h",
         "service_version_type.h",
-        "someip_service_instance_deployment.h",
-        "binding_service_type_deployment.h",
-        "binding_service_type_deployment_impl.h",
     ],
     hdrs = [
         "flatbuffer_config_loader.h",
         ":generate_com_flatbuffer_headers",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":lola_service_instance_deployment",
+        ":service_type_deployment",
+        ":someip_service_instance_deployment",
+        ":binding_service_type_deployment",
+    ],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -748,7 +743,7 @@ cc_gtest_unit_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
-        "shm_size_calc_mode_test",
+        ":shm_size_calc_mode_test",
         ":config_parser_test",
         ":config_parser_methods_test",
         ":configuration_common_resources_test",

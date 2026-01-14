@@ -42,15 +42,15 @@ bool ShouldUseFlatBuffer(const std::string_view path) noexcept
 
 Configuration Load(const std::string_view path) noexcept
 {
+    // If .bin exists, use FlatBuffer loader
     if (ShouldUseFlatBuffer(path))
     {
-        // Warning is used to see usage in the default ipc bridge test setup
-        score::mw::log::LogWarn("lola") << "Loading FlatBuffer configuration from: " << path;
+        score::mw::log::LogInfo("lola") << "Loading FlatBuffer configuration from: " << path;
         return FlatBufferConfigLoader::CreateConfiguration(path);
     }
 
-    // Warning is used to see usage in the default ipc bridge test setup
-    score::mw::log::LogWarn("lola") << "Loading JSON configuration from: " << path;
+    // Otherwise, use JSON parser
+    score::mw::log::LogInfo("lola") << "Loading JSON configuration from: " << path;
     return Parse(path);
 }
 

@@ -23,9 +23,9 @@
 #include <score/overload.hpp>
 #include <score/span.hpp>
 
-#include <score/utility.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <score/utility.hpp>
 
 #include <cstdlib>
 #include <fstream>
@@ -54,7 +54,7 @@ class SingleTestPerProcessFixture : public ::testing::TestWithParam<std::string>
 
     void TearDown() override
     {
-        // Safeguard against accidentially not using TestInSeparateProcess()
+        // Safeguard against accidentally not using TestInSeparateProcess()
         ASSERT_TRUE(tested_in_separate_process_);
     }
 
@@ -117,7 +117,7 @@ class SingleTestPerProcessFixture : public ::testing::TestWithParam<std::string>
         auto* const instance = testing::UnitTest::GetInstance();
         auto* const test_result = instance->current_test_info()->result();
         auto* const listener = instance->listeners().default_result_printer();
-        for (auto i = 0; i < test_result->total_part_count(); ++i)
+        for (int i = 0; i < test_result->total_part_count(); ++i)
         {
             listener->OnTestPartResult(test_result->GetTestPartResult(i));
         }
@@ -156,8 +156,8 @@ void WithConfigAtDefaultPath(const std::string& source_path)
 
     // Determine target filename based on source file extension
     const bool is_flatbuffer = source_path.find(".bin") != std::string::npos;
-    filesystem::Path target = is_flatbuffer ? filesystem::Path{"etc/mw_com_config.bin"}
-                                             : filesystem::Path{"etc/mw_com_config.json"};
+    filesystem::Path target =
+        is_flatbuffer ? filesystem::Path{"etc/mw_com_config.bin"} : filesystem::Path{"etc/mw_com_config.json"};
     ASSERT_TRUE(filesystem.CopyFile(filesystem::Path{source_path}, target).has_value());
 }
 
@@ -255,7 +255,7 @@ TEST_P(RuntimeTest, CannotResolveUnknownInstanceSpecifier)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     TestInSeparateProcess([this]() {
-        // Given aconfiguration without the tire_pressure_port_other_ instance specifier
+        // Given a configuration without the tire_pressure_port_other_ instance specifier
         WithConfigAtDefaultPath(config_with_tire_pressure_port());
 
         // When resolving this instance specifier
@@ -363,8 +363,8 @@ TEST_P(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
         // Given a configuration with valid and enabled tracing configuration
         auto default_path = get_path("ara_com_config_valid_trace_config" + config_file_extension_);
         auto config_path = default_path.find("external") != std::string::npos
-                             ? get_path("ara_com_config_valid_trace_config_external" + config_file_extension_)
-                             : default_path;
+                               ? get_path("ara_com_config_valid_trace_config_external" + config_file_extension_)
+                               : default_path;
         WithConfigAtDefaultPath(config_path);
 
         // When implicitly default-initializing the runtime
@@ -375,21 +375,19 @@ TEST_P(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
     });
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    JsonAndFlatBuffer,
-    RuntimeInitializationTest,
-    ::testing::Values(".json", ".bin"),
-    [](const ::testing::TestParamInfo<std::string>& info) {
-        return info.param == ".json" ? "Json" : "FlatBuffer";
-    });
+INSTANTIATE_TEST_SUITE_P(JsonAndFlatBuffer,
+                         RuntimeInitializationTest,
+                         ::testing::Values(".json", ".bin"),
+                         [](const ::testing::TestParamInfo<std::string>& info) {
+                             return info.param == ".json" ? "Json" : "FlatBuffer";
+                         });
 
-INSTANTIATE_TEST_SUITE_P(
-    JsonAndFlatBuffer,
-    RuntimeTest,
-    ::testing::Values(".json", ".bin"),
-    [](const ::testing::TestParamInfo<std::string>& info) {
-        return info.param == ".json" ? "Json" : "FlatBuffer";
-    });
+INSTANTIATE_TEST_SUITE_P(JsonAndFlatBuffer,
+                         RuntimeTest,
+                         ::testing::Values(".json", ".bin"),
+                         [](const ::testing::TestParamInfo<std::string>& info) {
+                             return info.param == ".json" ? "Json" : "FlatBuffer";
+                         });
 
 }  // namespace
 }  // namespace score::mw::com::impl

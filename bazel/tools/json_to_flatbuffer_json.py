@@ -74,11 +74,11 @@ def convert_enum_value(key: str, value: Any) -> Any:
         return value
     
     # Binding type: "SOME/IP" -> "SOME_IP", "SHM" -> "SHM"
-    if key in ('binding',):
+    if key == 'binding':
         return value.replace('/', '_')
     
     # Permission checks: "file-permissions-on-empty" -> "FILE_PERMISSIONS_ON_EMPTY", "strict" -> "STRICT"
-    if key in ('permission_checks',):
+    if key == 'permission_checks':
         return value.replace('-', '_').upper()
         
     return value
@@ -101,12 +101,12 @@ def main():
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            converted_data = convert_json(data)
-            
-            with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(converted_data, f, indent=4, ensure_ascii=False)
-                f.write('\n')
-        
+
+        converted_data = convert_json(data)
+
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(converted_data, f, indent=4, ensure_ascii=False)
+            f.write('\n')
         print(f"Successfully converted {input_file} -> {output_file}")
         
     except json.JSONDecodeError as e:
