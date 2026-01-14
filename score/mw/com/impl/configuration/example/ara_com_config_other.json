@@ -83,8 +83,8 @@
     "global": {
         "asil-level": "B",
         "queue-size": {
-            "QM": 8,
-            "B": 5
+            "QM-receiver": 8,
+            "B-receiver": 5
         }
     },
     "tracing": {
