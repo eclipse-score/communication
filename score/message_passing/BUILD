@@ -130,9 +130,7 @@ cc_library(
         "strict_warnings",
         "additional_warnings",
     ],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":message_passing_common",
         "@score_baselibs//score/os:socket",
@@ -183,9 +181,7 @@ cc_library(
         "additional_warnings",
     ],
     tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":message_passing_common",
         ":qnx_resource_path",
