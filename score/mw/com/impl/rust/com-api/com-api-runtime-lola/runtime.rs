@@ -29,6 +29,7 @@ use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use std::collections::VecDeque;
 use std::path::Path;
+use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 use com_api_concept::{
@@ -126,8 +127,12 @@ pub struct Sample<T>
 where
     T: Reloc + Send + Debug + TypeInfo,
 {
+    //we need unique id for each sample to implement Ord and Eq traits for sorting in SampleContainer
+    id: usize,
     inner: LolaBinding<T>,
 }
+
+static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl<T> Sample<T>
 where
@@ -161,18 +166,13 @@ where
 
 impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug + TypeInfo {}
 
-// Ordering traits for Sample<T>
-// We compare Sample instances based on their underlying FFI pointer addresses (self.inner.data).
-// Two samples are equal if they point to the same memory location, and ordering is based on
-// pointer address comparison.
+// Ordering traits for Sample<T> are using id field to provide total ordering
 impl<T> PartialEq for Sample<T>
 where
     T: Send + Reloc + Debug + TypeInfo,
 {
     fn eq(&self, other: &Self) -> bool {
-        let self_data_ptr = self.get_data();
-        let other_data_ptr = other.get_data();
-        std::ptr::eq(self_data_ptr as *const T, other_data_ptr as *const T)
+        self.id == other.id
     }
 }
 
@@ -192,9 +192,7 @@ where
     T: Send + Reloc + Debug + TypeInfo,
 {
     fn cmp(&self, other: &Self) -> Ordering {
-        let self_data_ptr = self.get_data() as *const T;
-        let other_data_ptr = other.get_data() as *const T;
-        self_data_ptr.cmp(&other_data_ptr)
+        self.id.cmp(&other.id)
     }
 }
 
@@ -443,10 +441,9 @@ where
                     let sample_ptr = unsafe { std::ptr::read(raw_sample) };
 
                     let wrapped_sample = Sample {
-                        inner: LolaBinding {
-                            // Get reference to the managed object
-                            data: sample_ptr,
-                        },
+                        //Relaxed ordering is sufficient here as we just need a unique id for each sample
+                        id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+                        inner: LolaBinding { data: sample_ptr },
                     };
                     while scratch.sample_count() >= max_samples {
                         scratch.pop_front();
