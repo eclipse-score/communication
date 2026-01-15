@@ -12,9 +12,9 @@
  ********************************************************************************/
 
 use com_api::{
-    Builder, Error, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Producer,
-    Publisher, Result, Runtime, RuntimeBuilder, SampleContainer, SampleMaybeUninit, SampleMut,
-    ServiceDiscovery, Subscriber, Subscription,
+    Builder, Error, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl,
+    OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
+    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Tire, VehicleConsumer, VehicleInterface, VehicleOfferedProducer};
@@ -93,8 +93,8 @@ impl<R: Runtime> VehicleMonitor<R> {
     }
 }
 
+// Create a consumer for the specified service identifier
 fn create_consumer<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleConsumer<R> {
-    // Find all the avaiable service instances using ANY specifier
     let consumer_discovery =
         runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
     let available_service_instances = consumer_discovery.get_available_instances().unwrap();
@@ -109,6 +109,7 @@ fn create_consumer<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> Ve
     consumer_builder.build().unwrap()
 }
 
+// Create a producer for the specified service identifier
 fn create_producer<R: Runtime>(
     runtime: &R,
     service_id: InstanceSpecifier,
@@ -118,18 +119,14 @@ fn create_producer<R: Runtime>(
     producer.offer().unwrap()
 }
 
+// Run the example with the specified runtime
 fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     println!("\n=== Running with {name} runtime ===");
-    let producer = create_producer(
-        runtime,
-        InstanceSpecifier::new("/Vehicle/Service/Instance")
-            .expect("Failed to create InstanceSpecifier"),
-    );
-    let consumer = create_consumer(
-        runtime,
-        InstanceSpecifier::new("/Vehicle/Service/Instance")
-            .expect("Failed to create InstanceSpecifier"),
-    );
+
+    let service_id = InstanceSpecifier::new("/Vehicle/Service/Instance")
+        .expect("Failed to create InstanceSpecifier");
+    let producer = create_producer(runtime, service_id.clone());
+    let consumer = create_consumer(runtime, service_id);
     let monitor = VehicleMonitor::new(consumer, producer).unwrap();
     let tire_pressure = 5.0;
     println!("Setting tire pressure to {tire_pressure}");
@@ -142,9 +139,11 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
         let tire_data = monitor.read_tire_data().unwrap();
         println!("{tire_data}");
     }
+    monitor.producer.unoffer();
     println!("=== {name} runtime completed ===\n");
 }
 
+// Initialize Lola runtime builder with configuration
 fn init_lola_runtime_builder() -> LolaRuntimeBuilderImpl {
     let mut lola_runtime_builder = LolaRuntimeBuilderImpl::new();
     lola_runtime_builder.load_config(std::path::Path::new(
@@ -159,14 +158,87 @@ fn main() {
     run_with_runtime("Lola", &lola_runtime);
 }
 
+// test module
 #[cfg(test)]
 mod test {
-
     use super::*;
+    use std::sync::Arc;
+
     #[test]
     fn integration_test() {
+        println!("Starting integration test with Lola runtime");
         let lola_runtime_builder = init_lola_runtime_builder();
         let lola_runtime = lola_runtime_builder.build().unwrap();
         run_with_runtime("Lola", &lola_runtime);
+    }
+
+    //sender will send data in each 2 milliseconds
+    async fn async_data_sender_fn<R: Runtime>(producer: Arc<VehicleOfferedProducer<R>>) {
+        for i in 0..10 {
+            let uninit_sample = producer.left_tire.allocate().unwrap();
+            let sample = uninit_sample.write(Tire {
+                pressure: 1.0 + i as f32,
+            });
+            sample.send().unwrap();
+            println!("Sent sample with pressure: {}", 1.0 + i as f32);
+            tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
+        }
+    }
+
+    async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
+        let mut buffer = SampleContainer::new();
+        for _ in 0..10 {
+            //try_receive need to please with async receive call
+            match subscribed.try_receive(&mut buffer, 3) {
+                Ok(0) => eprintln!("No data received"),
+                Ok(num_samples) => {
+                    println!("Processing received samples...{}", num_samples);
+                    loop {
+                        if buffer.sample_count() == 0 {
+                            break;
+                        }
+                        let sample = buffer.pop_front().unwrap();
+                        println!("Processing sample: {:?}", *sample);
+                    }
+                }
+                Err(e) => panic!("{:?}", e),
+            }
+            //when async receive is available, sleep can be removed
+            tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn schedule_subscription_on_mt_scheduler() {
+        println!("Starting async subscription test with Lola runtime");
+        let service_id = InstanceSpecifier::new("/Vehicle/Service/Instance")
+            .expect("Failed to create InstanceSpecifier");
+
+        let lola_runtime_builder = LolaRuntimeBuilderImpl::new();
+        let lola_runtime = lola_runtime_builder.build().unwrap();
+        let producer = create_producer(&lola_runtime, service_id.clone());
+        let consumer = create_consumer(&lola_runtime, service_id);
+
+        // Spawn async data sender
+        let sender_handle = Arc::new(producer);
+        let sender_join_handle = tokio::spawn(async_data_sender_fn(Arc::clone(&sender_handle)));
+
+        // Subscribe to one event
+        let subscribed = consumer.left_tire.subscribe(5).unwrap();
+
+        // Spawn async data processor
+        let processor_join_handle = tokio::spawn(async_data_processor_fn(subscribed));
+
+        processor_join_handle
+            .await
+            .expect("Error returned from task");
+        sender_join_handle.await.expect("Error returned from task");
+
+        if let Ok(producer) = Arc::try_unwrap(sender_handle) {
+            producer.unoffer();
+        } else {
+            eprintln!("Warning: Arc still has multiple references");
+        }
+        println!("=== Async subscription test with Lola runtime completed ===\n");
     }
 }

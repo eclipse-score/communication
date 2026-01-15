@@ -52,6 +52,7 @@ pub struct LolaProviderInfo {
 impl ProviderInfo for LolaProviderInfo {
     fn offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to offer service
+        // the skeleton handle is created during building the provider info instance
         let status =
             unsafe { generic_bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
         if !status {
@@ -61,7 +62,12 @@ impl ProviderInfo for LolaProviderInfo {
     }
 
     fn stop_offer_service(&self) -> Result<()> {
-        todo!("FFI Call to stop offering service using skeleton handle will be added here")
+        //SAFETY: it is safe as we are passing valid skeleton handle to stop offer service
+        // the skeleton handle is created during building the provider info instance
+        unsafe {
+            generic_bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle)
+        };
+        Ok(())
     }
 }
 
@@ -109,13 +115,6 @@ impl Runtime for LolaRuntimeImpl {
     }
 }
 
-#[derive(Debug)]
-struct LolaEvent<T> {
-    event: PhantomData<T>,
-}
-
-//TODO: Ticket-238828 this type should be merge with Sample<T>
-//And sample_ptr_rs::SamplePtr<T> FFI function should be move in plumbing folder sample_ptr_rs module
 #[derive(Debug)]
 struct LolaBinding<T>
 where
@@ -220,8 +219,9 @@ pub struct SampleMut<'a, T>
 where
     T: CommData,
 {
-    skeleton_event_ptr: &'a SkeletonEventBase,
+    skeleton_event: SkeletonEventInstanceManager,
     data: T,
+    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
@@ -240,7 +240,7 @@ where
         //and data pointer is valid as it is owned by this SampleMut instance
         let status = unsafe {
             generic_bridge_ffi_rs::skeleton_send_event(
-                self.skeleton_event_ptr as *const SkeletonEventBase as *mut SkeletonEventBase,
+                self.skeleton_event.0.skeleton_event_ptr,
                 T::ID,
                 &self.data as *const T as *const core::ffi::c_void,
             )
@@ -277,8 +277,9 @@ pub struct SampleMaybeUninit<'a, T>
 where
     T: CommData,
 {
-    skeleton_event_ptr: &'a SkeletonEventBase,
+    skeleton_event: SkeletonEventInstanceManager,
     data: MaybeUninit<T>,
+    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
@@ -292,15 +293,18 @@ where
         //which receive from Lola allocate call
         //With this we will avoid one copy during send
         SampleMut {
-            skeleton_event_ptr: self.skeleton_event_ptr,
+            skeleton_event: self.skeleton_event,
             data: val,
+            lifetime: PhantomData,
         }
     }
-
+    //SAFETY: assume_init is safe to call because the data is guaranteed to be initialized before sending
     unsafe fn assume_init(self) -> SampleMut<'a, T> {
         SampleMut {
-            skeleton_event_ptr: self.skeleton_event_ptr,
+            skeleton_event: self.skeleton_event,
+            //SAFETY: assume_init is safe to call because the data is guaranteed to be initialized before sending
             data: unsafe { self.data.assume_init() },
+            lifetime: PhantomData,
         }
     }
 }
@@ -340,10 +344,7 @@ unsafe impl Sync for NativeSkeletonHandle {}
 unsafe impl Send for NativeSkeletonHandle {}
 
 impl NativeSkeletonHandle {
-    fn create_skeleton(
-        interface_id: &str,
-        instance_specifier: &proxy_bridge_rs::InstanceSpecifier,
-    ) -> Self {
+    fn new(interface_id: &str, instance_specifier: &proxy_bridge_rs::InstanceSpecifier) -> Self {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
         let handle = unsafe {
             generic_bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native())
@@ -359,6 +360,46 @@ impl Drop for NativeSkeletonHandle {
         unsafe {
             generic_bridge_ffi_rs::destroy_skeleton(self.handle);
         }
+    }
+}
+
+struct SkeletonEventInstanceManager(Arc<NativeSkeletonEventBase>);
+
+impl Clone for SkeletonEventInstanceManager {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
+impl Debug for SkeletonEventInstanceManager {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SkeletonEventInstanceManager").finish()
+    }
+}
+
+struct NativeSkeletonEventBase {
+    skeleton_event_ptr: *mut SkeletonEventBase,
+}
+
+//SAFETY: NativeSkeletonEventBase is safe to share between threads because:
+// It is created by FFI call and no mutable access is provided
+// Access is controlled through Arc which provides atomic reference counting
+// The skeleton event lifetime is managed safely through Drop of the parent skeleton handle
+unsafe impl Send for NativeSkeletonEventBase {}
+unsafe impl Sync for NativeSkeletonEventBase {}
+
+impl NativeSkeletonEventBase {
+    fn new(instance_info: &LolaProviderInfo, identifier: &str) -> Self {
+        //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
+        // skeleton handle is created during producer offer call
+        let skeleton_event_ptr = unsafe {
+            generic_bridge_ffi_rs::get_event_from_skeleton(
+                instance_info.skeleton_handle.0.handle,
+                instance_info.interface_id,
+                identifier,
+            )
+        };
+        Self { skeleton_event_ptr }
     }
 }
 
@@ -382,6 +423,13 @@ struct NativeProxyBase {
     proxy: *mut ProxyBase, // Stores the proxy instance
 }
 
+//SAFETY: NativeProxyBase is safe to share between threads because:
+// It is created by FFI call and no mutable access is provided
+// Access is controlled through Arc which provides atomic reference counting
+// The proxy lifetime is managed safely through Drop
+unsafe impl Send for NativeProxyBase {}
+unsafe impl Sync for NativeProxyBase {}
+
 impl Drop for NativeProxyBase {
     fn drop(&mut self) {
         //SAFETY: It is safe to destroy the proxy because it was created by FFI
@@ -404,6 +452,41 @@ impl NativeProxyBase {
         //Handle received at the time of get_avaible_instances called with correct interface_id
         let proxy = unsafe { generic_bridge_ffi_rs::create_proxy(interface_id, handle) };
         Self { proxy }
+    }
+}
+
+struct ProxyEventInstanceManager(Arc<NativeProxyEventBase>);
+
+impl Clone for ProxyEventInstanceManager {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
+impl Debug for ProxyEventInstanceManager {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ProxyEventInstanceManager").finish()
+    }
+}
+
+struct NativeProxyEventBase {
+    proxy_event_ptr: *mut ProxyEventBase,
+}
+
+//SAFETY: NativeProxyEventBase is safe to share between threads because:
+// It is created by FFI call and no mutable access is provided
+// Access is controlled through Arc which provides atomic reference counting
+// The proxy event lifetime is managed safely through Drop of the parent proxy instance
+unsafe impl Send for NativeProxyEventBase {}
+unsafe impl Sync for NativeProxyEventBase {}
+
+impl NativeProxyEventBase {
+    fn new(proxy: *mut ProxyBase, interface_id: &str, identifier: &str) -> Self {
+        //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
+        // proxy pointer is created during consumer creation
+        let proxy_event_ptr =
+            unsafe { generic_bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
+        Self { proxy_event_ptr }
     }
 }
 
@@ -433,20 +516,19 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     }
     fn subscribe(&self, max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
         let instance_info = self.instance_info.clone();
-        //SAFETY: It is safe to get event from proxy because proxy_instance is valid
-        // which was created during SubscribableImpl creation and instance_id is also same as proxy
-        let event_instance = unsafe {
-            generic_bridge_ffi_rs::get_event_from_proxy(
-                self.proxy_instance.0.proxy,
-                instance_info.interface_id,
-                self.identifier,
-            )
-        };
+        let event_instance = NativeProxyEventBase::new(
+            self.proxy_instance.0.proxy,
+            self.instance_info.interface_id,
+            self.identifier,
+        );
+        let event_instance = Arc::new(event_instance);
+        let proxy_event = ProxyEventInstanceManager(event_instance);
+
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
         let status = unsafe {
             generic_bridge_ffi_rs::subscribe_to_event(
-                event_instance,
+                proxy_event.0.proxy_event_ptr,
                 max_num_samples.try_into().unwrap(),
             )
         };
@@ -455,7 +537,7 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
         }
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
-            event: Some(event_instance),
+            event: Some(proxy_event),
             event_id: self.identifier,
             max_num_samples,
             data: VecDeque::new(),
@@ -470,8 +552,8 @@ pub struct SubscriberImpl<T>
 where
     T: CommData,
 {
-    //Safety: This can be used as raw pointer because it comes under proxy instance lifetime
-    event: Option<*mut ProxyEventBase>,
+    //SAFETY: This can be used as raw pointer because it comes under proxy instance lifetime
+    event: Option<ProxyEventInstanceManager>,
     event_id: &'static str,
     max_num_samples: usize,
     data: VecDeque<T>,
@@ -512,7 +594,7 @@ where
         if max_samples > self.max_num_samples {
             return Err(Error::Fail);
         }
-        if let Some(event) = self.event {
+        if let Some(event) = &self.event {
             let mut callback = |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
                 if !raw_sample.is_null() {
                     //SAFETY: It is safe to read the sample pointer because
@@ -551,7 +633,7 @@ where
             // the scope of this function call.
             let count = unsafe {
                 generic_bridge_ffi_rs::get_samples_from_event(
-                    event,
+                    event.0.proxy_event_ptr,
                     T::ID,
                     &fat_ptr,
                     self.max_num_samples as u32,
@@ -580,7 +662,7 @@ where
 #[derive(Debug)]
 pub struct Publisher<T> {
     identifier: String,
-    skeleton_event_ptr: *mut SkeletonEventBase,
+    skeleton_event: SkeletonEventInstanceManager,
     _data: PhantomData<T>,
     _skeleton_instance: SkeletonInstanceManager,
 }
@@ -598,24 +680,19 @@ where
         //Once Allocate API of Lola FFI is ready , call it here
         // for now , just create uninit sample
         Ok(SampleMaybeUninit {
-            skeleton_event_ptr: unsafe { &*self.skeleton_event_ptr },
+            skeleton_event: self.skeleton_event.clone(),
             data: MaybeUninit::uninit(),
+            lifetime: PhantomData,
         })
     }
 
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> com_api_concept::Result<Self> {
-        //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
-        // skeleton handle is created during producer offer call
-        let skeleton_event_ptr = unsafe {
-            generic_bridge_ffi_rs::get_event_from_skeleton(
-                instance_info.skeleton_handle.0.handle,
-                instance_info.interface_id,
-                identifier,
-            )
-        };
+        let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier);
+        let skeleton_event = Arc::new(skeleton_event);
+
         Ok(Self {
             identifier: identifier.to_string(),
-            skeleton_event_ptr,
+            skeleton_event: SkeletonEventInstanceManager(skeleton_event),
             _data: PhantomData,
             _skeleton_instance: instance_info.skeleton_handle.clone(),
         })
@@ -709,7 +786,7 @@ impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuild
                 .map_err(|_| Error::Fail)?;
 
         let skeleton_handle =
-            NativeSkeletonHandle::create_skeleton(I::INTERFACE_ID, &instance_specifier_runtime);
+            NativeSkeletonHandle::new(I::INTERFACE_ID, &instance_specifier_runtime);
 
         let instance_info = LolaProviderInfo {
             instance_specifier: self.instance_specifier,
