@@ -305,7 +305,14 @@ auto SharedMemoryFactoryImpl::RemoveStaleArtefacts(const std::string& path) noex
     score::cpp::ignore = ::score::os::Unistd::instance().unlink(lock_file_path.data());
 
     const bool is_shm_in_typed_memory = IsShmInTypedMemory(path);
+    // Known coverage bug: "decision couldn't be analyzed"
+    // Acceptable at a 100% line coverage
+    // The code is actually covered by
+    // CallingRemoveStaleArtefactsWillUnlinkAnOldSharedMemoryRegion
+    // and CallingRemoveStaleArtefactsWillUnlinkAnOldTypedSharedMemoryRegion
+    // LCOV_EXCL_START: see above
     if (!is_shm_in_typed_memory || (typed_memory_ptr_ == nullptr))
+    // LCOV_EXCL_STOP
     {
         // This requirement broken_link_c/issue/57467 directly excludes memory::shared (which is
         // part of mw::com) from the ban by listing it in the not relevant for field.
