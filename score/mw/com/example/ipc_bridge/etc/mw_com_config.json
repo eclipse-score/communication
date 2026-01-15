@@ -56,6 +56,40 @@
               "maxSubscribers": 5
             }
           ]
+    }
+  ]
+},
+{
+  "instanceSpecifier": "xpad/cp60/MapApiLanesStamped_B",
+  "serviceTypeName": "/bmw/adp/MapApiLanesStamped",
+  "version": {
+    "major": 1,
+    "minor": 0
+  },
+  "instances": [
+    {
+      "instanceId": 2,
+      "allowedConsumer": {
+        "QM": [
+          4002,
+          0
+        ]
+      },
+      "allowedProvider": {
+        "QM": [
+          4001,
+          0
+        ]
+      },
+      "asil-level": "QM",
+      "binding": "SHM",
+      "events": [
+        {
+          "eventName": "map_api_lanes_stamped",
+          "numberOfSampleSlots": 30,
+          "maxSubscribers": 5
+        }
+      ]
         }
       ]
     }
