@@ -37,11 +37,6 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
     return {};
 }
 
-Result<score::Blank> GenericSkeletonEvent::Send(const void* /*data*/) noexcept
-{
-    return MakeUnexpected(ComErrc::kIllegalUseOfAllocate);
-}
-
 Result<score::Blank> GenericSkeletonEvent::Send(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());

@@ -25,8 +25,6 @@ namespace score::mw::com::impl
 class GenericSkeletonEventBinding : public SkeletonEventBindingBase
 {
   public:
-    virtual Result<score::Blank> Send(const void* data) noexcept = 0;
-
     virtual Result<score::Blank> Send(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept = 0;
 
     virtual Result<lola::SampleAllocateePtr<void>> Allocate() noexcept = 0;

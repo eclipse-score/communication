@@ -39,8 +39,6 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
                          const ElementFqId& event_fqn,
                          const SizeInfo& size_info);
 
-    Result<score::Blank> Send(const void* data) noexcept override;
-
     Result<score::Blank> Send(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept override;
 
     Result<lola::SampleAllocateePtr<void>> Allocate() noexcept override;
