@@ -28,8 +28,10 @@ namespace score::memory::shared::test
 
 using ::testing::_;
 using ::testing::AtMost;
+using ::testing::DoAll;
 using ::testing::InSequence;
 using ::testing::Return;
+using ::testing::SetArgPointee;
 using ::testing::StrEq;
 
 using Mman = ::score::os::Mman;
@@ -317,6 +319,83 @@ TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsTrueWhenOpenTypedS
 
     // Then the result is true
     EXPECT_TRUE(is_in_typed_memory);
+}
+
+TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenAcquireTypedMemoryDaemonUidFail)
+{
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    constexpr bool is_read_write = false;
+    constexpr auto kTypedmemdProcessName = "typed_memory_daemon";
+    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
+    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
+    auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
+
+    // Given that the acquire typedmemd UID failed
+    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
+
+    // and that the lock file does not exist
+    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
+                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
+
+    // That the shared memory segment is opened read only if not otherwise specified.
+    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
+    expectFstatReturns(file_descriptor);
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    // and that the creator UID is not called
+    EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath))).Times(0);
+
+    // and given the shared memory region is opened
+    const auto resource_result = SharedMemoryResourceTestAttorney::Open(
+        TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock);
+    ASSERT_TRUE(resource_result.has_value());
+
+    // When checking if the shared memory region is in typed memory
+    const auto is_in_typed_memory = resource_result.value()->IsShmInTypedMemory();
+
+    // Then the result is false
+    EXPECT_FALSE(is_in_typed_memory);
+}
+
+TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenAcquireTypedMemoryDaemonUidUserDoesNotExist)
+{
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    constexpr bool is_read_write = false;
+    constexpr auto kTypedmemdProcessName = "typed_memory_daemon";
+    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
+    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
+    auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
+    passwd* pwd = nullptr;
+
+    // Given that the acquire typedmemd UID user does not exist
+    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+        .WillOnce((DoAll(SetArgPointee<4>(pwd), Return(score::cpp::blank{}))));
+
+    // and that the lock file does not exist
+    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
+                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
+
+    // That the shared memory segment is opened read only if not otherwise specified.
+    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
+    expectFstatReturns(file_descriptor);
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    // and that the creator UID is not called
+    EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath))).Times(0);
+
+    // and given the shared memory region is opened
+    const auto resource_result = SharedMemoryResourceTestAttorney::Open(
+        TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock);
+    ASSERT_TRUE(resource_result.has_value());
+
+    // When checking if the shared memory region is in typed memory
+    const auto is_in_typed_memory = resource_result.value()->IsShmInTypedMemory();
+
+    // Then the result is false
+    EXPECT_FALSE(is_in_typed_memory);
 }
 
 TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenOpenTypedSharedMemoryFail)

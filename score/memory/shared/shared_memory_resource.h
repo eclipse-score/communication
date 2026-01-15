@@ -238,6 +238,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     uid_t getOwnerUid() const noexcept;
 
     static std::string GetLockFilePath(const std::string& input_path) noexcept;
+    static std::optional<uid_t> AcquireTypedMemoryDemonUid() noexcept;
 
     /// \brief Creates shared-mem-object under the path (path_).
     /// \param input_path path of the memory region: a string that describes a regular file path name that will be
@@ -387,6 +388,7 @@ class SharedMemoryResource : public ISharedMemoryResource, public std::enable_sh
     ControlBlock* control_block_;
     AccessControlListFactory acl_factory_;
     bool is_shm_in_typed_memory_;
+    std::optional<uid_t> typedmemd_uid_;
     // Will contain `"file: " + path` in case of named shared memory resource
     // Will contain `"id: " + std::to_str(shared_memory_resource_id)` in case of anonymous shared memory resource
     std::string log_identification_;

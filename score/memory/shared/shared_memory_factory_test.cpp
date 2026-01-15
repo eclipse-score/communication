@@ -35,6 +35,8 @@ static constexpr std::int32_t kLockFileDescriptor = 5;
 static constexpr std::int32_t kFileDescriptor = 1;
 
 static constexpr uid_t kOurUid = 99;
+static constexpr uid_t kTypedmemdUid = 3020;
+static constexpr auto kTypedmemdProcessName = "typed_memory_daemon";
 static_assert(kOurUid == TestValues::our_uid, "mock/test UID values mismatch");
 static constexpr uid_t kNotOurUid = 1;
 static constexpr uid_t kMatchingProviders[] = {1, 2};
@@ -166,7 +168,8 @@ TEST_F(SharedMemoryFactoryTest, CallingRemoveOnTypedNamedResourceWillNotCrashWhe
     std::shared_ptr<ManagedMemoryResource> created_resource = SharedMemoryFactory::Create(
         TestValues::sharedMemorySegmentPath, [](auto) {}, kSharedMemorySize, {}, typed_memory_parameter);
 
-    // When removing the resource the program does not crash
+    // When removing the resource
+    // Then the program does not crash
     SharedMemoryFactory::Remove(TestValues::sharedMemorySegmentPath);
 }
 
@@ -822,10 +825,14 @@ TEST(SharedMemoryFactoryRemoveStaleArtefactsTest, CallingRemoveStaleArtefactsWil
 {
     os::MockGuard<os::UnistdMock> unistd_mock{};
     os::MockGuard<os::MmanMock> mman_mock{};
+    passwd pwd{};
+    pwd.pw_uid = kTypedmemdUid;
 
     const std::string dummy_input_path{"/my_shared_memory_path"};
     const auto lock_file_path = SharedMemoryResourceTestAttorney::GetLockFilePath(dummy_input_path);
 
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+        .WillOnce((DoAll(SetArgPointee<1>(pwd), SetArgPointee<4>(&pwd), Return(score::cpp::blank{}))));
     EXPECT_CALL(*unistd_mock, unlink(StrEq(lock_file_path.data())));
 
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
@@ -835,9 +842,43 @@ TEST(SharedMemoryFactoryRemoveStaleArtefactsTest, CallingRemoveStaleArtefactsWil
 {
     os::MockGuard<os::UnistdMock> unistd_mock{};
     os::MockGuard<os::MmanMock> mman_mock{};
+    passwd pwd{};
+    pwd.pw_uid = kTypedmemdUid;
 
     const std::string dummy_input_path{"/my_shared_memory_path"};
 
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+        .WillOnce((DoAll(SetArgPointee<1>(pwd), SetArgPointee<4>(&pwd), Return(score::cpp::blank{}))));
+    EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
+
+    SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
+}
+
+TEST(SharedMemoryFactoryRemoveStaleArtefactsTest,
+     CallingRemoveStaleArtefactsWillUnlinkAnOldSharedMemoryRegionWhenAcquireTmdUidFailed)
+{
+    os::MockGuard<os::UnistdMock> unistd_mock{};
+    os::MockGuard<os::MmanMock> mman_mock{};
+
+    const std::string dummy_input_path{"/my_shared_memory_path"};
+
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
+    EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
+
+    SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
+}
+
+TEST(SharedMemoryFactoryRemoveStaleArtefactsTest,
+     CallingRemoveStaleArtefactsWillUnlinkAnOldSharedMemoryRegionWhenAcquireTmdUidUserDoesNotExist)
+{
+    os::MockGuard<os::UnistdMock> unistd_mock{};
+    os::MockGuard<os::MmanMock> mman_mock{};
+    passwd* pwd = nullptr;
+    const std::string dummy_input_path{"/my_shared_memory_path"};
+
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+        .WillOnce((DoAll(SetArgPointee<4>(pwd), Return(score::cpp::blank{}))));
     EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
 
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
@@ -845,7 +886,6 @@ TEST(SharedMemoryFactoryRemoveStaleArtefactsTest, CallingRemoveStaleArtefactsWil
 
 TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsWillUnlinkAnOldTypedSharedMemoryRegion)
 {
-    constexpr uid_t kTypedmemdUid{3020};
     const std::string dummy_input_path{"/my_shared_memory_path"};
     const auto shm_file_path = GetShmFilePath(dummy_input_path);
     score::os::StatBuffer stat_buffer{};
@@ -864,7 +904,6 @@ TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsWillUnlinkAnOldTypedS
 
 TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsWillNotCrashWhenUnlinkFailed)
 {
-    constexpr uid_t kTypedmemdUid{3020};
     const std::string dummy_input_path{"/my_shared_memory_path"};
     const auto shm_file_path = GetShmFilePath(dummy_input_path);
     score::os::StatBuffer stat_buffer{};

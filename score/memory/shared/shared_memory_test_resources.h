@@ -233,6 +233,8 @@ class SharedMemoryResourceTest : public ::testing::TestWithParam<bool>
         std::make_shared<score::memory::shared::TypedMemoryMock>();
     score::memory::shared::SealedShmMock sealedshm_mock_{};
 
+    passwd pwd_{};
+
     MemoryResourceRegistryAttorney memory_resource_registry_attorney_;
 };
 
