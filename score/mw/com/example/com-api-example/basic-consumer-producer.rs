@@ -123,7 +123,7 @@ fn create_producer<R: Runtime>(
 fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     println!("\n=== Running with {name} runtime ===");
 
-    let service_id = InstanceSpecifier::new("/Vehicle/Service/Instance")
+    let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
         .expect("Failed to create InstanceSpecifier");
     let producer = create_producer(runtime, service_id.clone());
     let consumer = create_consumer(runtime, service_id);
@@ -173,9 +173,11 @@ mod test {
     }
 
     //sender will send data in each 2 milliseconds
-    async fn async_data_sender_fn<R: Runtime>(producer: Arc<VehicleOfferedProducer<R>>) {
+    async fn async_data_sender_fn<R: Runtime>(
+        OfferedProducer: VehicleOfferedProducer<R>,
+    ) -> VehicleOfferedProducer<R> {
         for i in 0..10 {
-            let uninit_sample = producer.left_tire.allocate().unwrap();
+            let uninit_sample = OfferedProducer.left_tire.allocate().unwrap();
             let sample = uninit_sample.write(Tire {
                 pressure: 1.0 + i as f32,
             });
@@ -183,6 +185,7 @@ mod test {
             println!("Sent sample with pressure: {}", 1.0 + i as f32);
             tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
         }
+        OfferedProducer
     }
 
     async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
@@ -211,7 +214,7 @@ mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn schedule_subscription_on_mt_scheduler() {
         println!("Starting async subscription test with Lola runtime");
-        let service_id = InstanceSpecifier::new("/Vehicle/Service/Instance")
+        let service_id = InstanceSpecifier::new("/Vehicle/Service2/Instance")
             .expect("Failed to create InstanceSpecifier");
 
         let lola_runtime_builder = LolaRuntimeBuilderImpl::new();
@@ -220,8 +223,7 @@ mod test {
         let consumer = create_consumer(&lola_runtime, service_id);
 
         // Spawn async data sender
-        let sender_handle = Arc::new(producer);
-        let sender_join_handle = tokio::spawn(async_data_sender_fn(Arc::clone(&sender_handle)));
+        let sender_join_handle = tokio::spawn(async_data_sender_fn(producer));
 
         // Subscribe to one event
         let subscribed = consumer.left_tire.subscribe(5).unwrap();
@@ -232,13 +234,9 @@ mod test {
         processor_join_handle
             .await
             .expect("Error returned from task");
-        sender_join_handle.await.expect("Error returned from task");
+        let producer = sender_join_handle.await.expect("Error returned from task");
+        producer.unoffer();
 
-        if let Ok(producer) = Arc::try_unwrap(sender_handle) {
-            producer.unoffer();
-        } else {
-            eprintln!("Warning: Arc still has multiple references");
-        }
         println!("=== Async subscription test with Lola runtime completed ===\n");
     }
 }

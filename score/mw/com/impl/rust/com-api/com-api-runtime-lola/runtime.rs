@@ -298,7 +298,7 @@ where
             lifetime: PhantomData,
         }
     }
-    //SAFETY: assume_init is safe to call because the data is guaranteed to be initialized before sending
+
     unsafe fn assume_init(self) -> SampleMut<'a, T> {
         SampleMut {
             skeleton_event: self.skeleton_event,

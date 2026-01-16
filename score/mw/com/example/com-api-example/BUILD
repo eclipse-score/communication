@@ -26,9 +26,6 @@ rust_binary(
 
 rust_test(
     name = "com-api-example-test",
-    args = [
-        "--test-threads=1",
-    ],
     crate = ":com-api-example",
     data = ["etc/config.json"],
     tags = ["manual"],
