@@ -298,7 +298,7 @@ TEST_F(SkeletonMethodThingStuffFixture, DataTransferBetweenTypedAndTypeErasedCal
     SerializeBuffers(in_arg_1, in_arg_2);
     method_->Register(typed_callback_mock_.AsStdFunction());
     // When the type erased call is executed by the binding
-    typeerased_callback_.value()(out_arg_buffer_, in_args_buffer_);
+    typeerased_callback_.value()(in_args_buffer_, out_arg_buffer_);
 
     // Then its return is deserialized to the correct return value of the typed callback
     auto res = GetTypedResultFromOutArgBuffer();
@@ -325,7 +325,7 @@ TEST_F(SkeletonMethodThingVoidFixture, DataTransferBetweenTypedAndTypeErasedCall
     method_->Register(typed_callback_mock_.AsStdFunction());
 
     // When the type erased call is executed by the binding
-    typeerased_callback_.value()(out_arg_buffer_, std::nullopt);
+    typeerased_callback_.value()(std::nullopt, out_arg_buffer_);
 
     // Then its return is deserialized to the correct return value of the typed callback
     auto res = GetTypedResultFromOutArgBuffer();
@@ -354,7 +354,7 @@ TEST_F(SkeletonMethodVoidStuffFixture, DataTransferBetweenTypedAndTypeErasedCall
     method_->Register(typed_callback_mock_.AsStdFunction());
 
     // When the type erased call is executed by the binding
-    typeerased_callback_.value()({}, in_args_buffer_);
+    typeerased_callback_.value()(in_args_buffer_, {});
 }
 
 using SkeletonMethodVoidVoidFixture = SkeletonMethodGenericTestFixture<VoidVoid>;
