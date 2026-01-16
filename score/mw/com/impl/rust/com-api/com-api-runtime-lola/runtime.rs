@@ -115,6 +115,8 @@ impl Runtime for LolaRuntimeImpl {
     }
 }
 
+//TODO: Ticket-238828 this type should be merge with Sample<T>
+//And sample_ptr_rs::SamplePtr<T> FFI function should be move in plumbing folder sample_ptr_rs module
 #[derive(Debug)]
 struct LolaBinding<T>
 where
@@ -219,7 +221,7 @@ pub struct SampleMut<'a, T>
 where
     T: CommData,
 {
-    skeleton_event: SkeletonEventInstanceManager,
+    skeleton_event: NativeSkeletonEventBase,
     data: T,
     lifetime: PhantomData<&'a T>,
 }
@@ -240,7 +242,7 @@ where
         //and data pointer is valid as it is owned by this SampleMut instance
         let status = unsafe {
             generic_bridge_ffi_rs::skeleton_send_event(
-                self.skeleton_event.0.skeleton_event_ptr,
+                self.skeleton_event.skeleton_event_ptr,
                 T::ID,
                 &self.data as *const T as *const core::ffi::c_void,
             )
@@ -277,7 +279,7 @@ pub struct SampleMaybeUninit<'a, T>
 where
     T: CommData,
 {
-    skeleton_event: SkeletonEventInstanceManager,
+    skeleton_event: NativeSkeletonEventBase,
     data: MaybeUninit<T>,
     lifetime: PhantomData<&'a T>,
 }
@@ -302,7 +304,8 @@ where
     unsafe fn assume_init(self) -> SampleMut<'a, T> {
         SampleMut {
             skeleton_event: self.skeleton_event,
-            //SAFETY: assume_init is safe to call because the data is guaranteed to be initialized before sending
+            //SAFETY: assume_init is safe to call because the documentation of
+            //the method clearly states that the data is to be initialized before calling
             data: unsafe { self.data.assume_init() },
             lifetime: PhantomData,
         }
@@ -318,6 +321,8 @@ where
     }
 }
 
+/// Manages the lifetime of the native skeleton instance, user should clone this to share between threads
+/// Always use this struct to manage the skeleton instance pointer
 struct SkeletonInstanceManager(Arc<NativeSkeletonHandle>);
 
 impl Clone for SkeletonInstanceManager {
@@ -332,14 +337,22 @@ impl Debug for SkeletonInstanceManager {
     }
 }
 
+/// This type contains the native skeleton handle for a specific service instance
+/// Manages the lifetime of the SkeletonBase pointer with new and drop implementations
+/// It does not provide any mutable access to the underlying skeleton handle
+/// And it does not provide any method to access the skeleton handle directly
+/// Or to perform any operation on it
+/// If any additional method is required to be added, ensure that the safety of the skeleton handle is maintained
+/// And the lifetime is managed correctly
+/// As it has Send and Sync unsafe impls, it must not expose any mutable access to the skeleton handle
 struct NativeSkeletonHandle {
     handle: *mut SkeletonBase,
 }
 
-// SAFETY: NativeSkeletonHandle is safe to share between threads because:
-// The underlying FFI skeleton handle is thread-safe
+//SAFETY: NativeSkeletonHandle is safe to share between threads because:
+// It is created by FFI call and no mutable access is provided to the underlying skeleton handle
 // Access is controlled through Arc which provides atomic reference counting
-// The handle lifetime is managed safely through Drop
+// The skeleton lifetime is managed safely through new and Drop
 unsafe impl Sync for NativeSkeletonHandle {}
 unsafe impl Send for NativeSkeletonHandle {}
 
@@ -363,30 +376,18 @@ impl Drop for NativeSkeletonHandle {
     }
 }
 
-struct SkeletonEventInstanceManager(Arc<NativeSkeletonEventBase>);
-
-impl Clone for SkeletonEventInstanceManager {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
-
-impl Debug for SkeletonEventInstanceManager {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("SkeletonEventInstanceManager").finish()
-    }
-}
-
+/// This type conains the skeleton event pointer for a specific event identifier
+/// Manages the lifetime of the SkeletonEventBase pointer
+/// Drop is not required as the skeleton event lifetime is managed by skeleton instance
 struct NativeSkeletonEventBase {
     skeleton_event_ptr: *mut SkeletonEventBase,
 }
 
-//SAFETY: NativeSkeletonEventBase is safe to share between threads because:
-// It is created by FFI call and no mutable access is provided
-// Access is controlled through Arc which provides atomic reference counting
-// The skeleton event lifetime is managed safely through Drop of the parent skeleton handle
+//SAFETY: NativeSkeletonEventBase is safe to send between threads because:
+// It is created by FFI call and there is no state associated with the current thread.
+// The skeleton event pointer can be safely moved to another thread without thread-local concerns.
+// And the skeleton event lifetime is managed safely through Drop of the parent skeleton instance
 unsafe impl Send for NativeSkeletonEventBase {}
-unsafe impl Sync for NativeSkeletonEventBase {}
 
 impl NativeSkeletonEventBase {
     fn new(instance_info: &LolaProviderInfo, identifier: &str) -> Self {
@@ -403,8 +404,22 @@ impl NativeSkeletonEventBase {
     }
 }
 
-// Manages the lifetime of the native proxy instance, user should clone this to share between threads
-// Always use this struct to manage the proxy instance pointer
+impl Clone for NativeSkeletonEventBase {
+    fn clone(&self) -> Self {
+        Self {
+            skeleton_event_ptr: self.skeleton_event_ptr,
+        }
+    }
+}
+
+impl Debug for NativeSkeletonEventBase {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("NativeSkeletonEventBase").finish()
+    }
+}
+
+/// Manages the lifetime of the native proxy instance, user should clone this to share between threads
+/// Always use this struct to manage the proxy instance pointer
 struct ProxyInstanceManager(Arc<NativeProxyBase>);
 
 impl Clone for ProxyInstanceManager {
@@ -419,6 +434,15 @@ impl Debug for ProxyInstanceManager {
     }
 }
 
+/// This type contains the native proxy instance for a specific service instance
+/// Manages the lifetime of the ProxyBase pointer with new and drop implementations
+/// It does not provide any mutable access to the underlying proxy instance
+/// And it does not provide any method to access the proxy instance directly
+/// Or to perform any operation on it
+/// If any additional method is required to be added, ensure that the safety of the proxy instance is maintained
+/// And the lifetime is managed correctly
+/// As it has Send and Sync unsafe impls, it must not expose any mutable access to the proxy instance
+/// Or must not provide any method to access the proxy instance directly
 struct NativeProxyBase {
     proxy: *mut ProxyBase, // Stores the proxy instance
 }
@@ -427,6 +451,7 @@ struct NativeProxyBase {
 // It is created by FFI call and no mutable access is provided
 // Access is controlled through Arc which provides atomic reference counting
 // The proxy lifetime is managed safely through Drop
+// and it does not provide any mutable access to the underlying proxy instance
 unsafe impl Send for NativeProxyBase {}
 unsafe impl Sync for NativeProxyBase {}
 
@@ -455,30 +480,21 @@ impl NativeProxyBase {
     }
 }
 
-struct ProxyEventInstanceManager(Arc<NativeProxyEventBase>);
-
-impl Clone for ProxyEventInstanceManager {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
-
-impl Debug for ProxyEventInstanceManager {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("ProxyEventInstanceManager").finish()
-    }
-}
-
+/// This type contains the native proxy event pointer for a specific event identifier
+/// Manages the lifetime of the ProxyEventBase pointer
+/// Drop is not required as the proxy event lifetime is managed by proxy instance
+/// It does not provide any mutable access to the underlying proxy event pointer
+/// And the proxy event lifetime is managed safely through Drop of the parent proxy instance
 struct NativeProxyEventBase {
     proxy_event_ptr: *mut ProxyEventBase,
 }
 
-//SAFETY: NativeProxyEventBase is safe to share between threads because:
-// It is created by FFI call and no mutable access is provided
-// Access is controlled through Arc which provides atomic reference counting
-// The proxy event lifetime is managed safely through Drop of the parent proxy instance
+//SAFETY: NativeProxyEventBase is to send between threads because:
+// It is created by FFI call and there is no state associated with the current thread.
+// The skeleton event pointer can be safely moved to another thread without thread-local concerns.
+// And the proxy event lifetime is managed safely through Drop of the parent proxy instance
+// which ensures the proxy handle remains valid as long as events are in use
 unsafe impl Send for NativeProxyEventBase {}
-unsafe impl Sync for NativeProxyEventBase {}
 
 impl NativeProxyEventBase {
     fn new(proxy: *mut ProxyBase, interface_id: &str, identifier: &str) -> Self {
@@ -487,6 +503,12 @@ impl NativeProxyEventBase {
         let proxy_event_ptr =
             unsafe { generic_bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
         Self { proxy_event_ptr }
+    }
+}
+
+impl Debug for NativeProxyEventBase {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("NativeProxyEventBase").finish()
     }
 }
 
@@ -521,14 +543,12 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
             self.instance_info.interface_id,
             self.identifier,
         );
-        let event_instance = Arc::new(event_instance);
-        let proxy_event = ProxyEventInstanceManager(event_instance);
 
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
         let status = unsafe {
             generic_bridge_ffi_rs::subscribe_to_event(
-                proxy_event.0.proxy_event_ptr,
+                event_instance.proxy_event_ptr,
                 max_num_samples.try_into().unwrap(),
             )
         };
@@ -537,7 +557,7 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
         }
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
-            event: Some(proxy_event),
+            event: Some(event_instance),
             event_id: self.identifier,
             max_num_samples,
             data: VecDeque::new(),
@@ -553,7 +573,7 @@ where
     T: CommData,
 {
     //SAFETY: This can be used as raw pointer because it comes under proxy instance lifetime
-    event: Option<ProxyEventInstanceManager>,
+    event: Option<NativeProxyEventBase>,
     event_id: &'static str,
     max_num_samples: usize,
     data: VecDeque<T>,
@@ -633,7 +653,7 @@ where
             // the scope of this function call.
             let count = unsafe {
                 generic_bridge_ffi_rs::get_samples_from_event(
-                    event.0.proxy_event_ptr,
+                    event.proxy_event_ptr,
                     T::ID,
                     &fat_ptr,
                     self.max_num_samples as u32,
@@ -662,7 +682,7 @@ where
 #[derive(Debug)]
 pub struct Publisher<T> {
     identifier: String,
-    skeleton_event: SkeletonEventInstanceManager,
+    skeleton_event: NativeSkeletonEventBase,
     _data: PhantomData<T>,
     _skeleton_instance: SkeletonInstanceManager,
 }
@@ -688,11 +708,10 @@ where
 
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> com_api_concept::Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier);
-        let skeleton_event = Arc::new(skeleton_event);
 
         Ok(Self {
             identifier: identifier.to_string(),
-            skeleton_event: SkeletonEventInstanceManager(skeleton_event),
+            skeleton_event,
             _data: PhantomData,
             _skeleton_instance: instance_info.skeleton_handle.clone(),
         })

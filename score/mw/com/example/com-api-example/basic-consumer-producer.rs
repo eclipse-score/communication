@@ -158,11 +158,9 @@ fn main() {
     run_with_runtime("Lola", &lola_runtime);
 }
 
-// test module
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::sync::Arc;
 
     #[test]
     fn integration_test() {
@@ -174,10 +172,10 @@ mod test {
 
     //sender will send data in each 2 milliseconds
     async fn async_data_sender_fn<R: Runtime>(
-        OfferedProducer: VehicleOfferedProducer<R>,
+        offered_producer: VehicleOfferedProducer<R>,
     ) -> VehicleOfferedProducer<R> {
         for i in 0..10 {
-            let uninit_sample = OfferedProducer.left_tire.allocate().unwrap();
+            let uninit_sample = offered_producer.left_tire.allocate().unwrap();
             let sample = uninit_sample.write(Tire {
                 pressure: 1.0 + i as f32,
             });
@@ -185,7 +183,7 @@ mod test {
             println!("Sent sample with pressure: {}", 1.0 + i as f32);
             tokio::time::sleep(tokio::time::Duration::from_millis(2)).await;
         }
-        OfferedProducer
+        offered_producer
     }
 
     async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
