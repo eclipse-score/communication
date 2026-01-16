@@ -25,7 +25,7 @@ use core::cmp::Ordering;
 use core::fmt::Debug;
 use core::future::Future;
 use core::marker::PhantomData;
-use core::mem::MaybeUninit;
+use core::mem::{ManuallyDrop, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use std::collections::VecDeque;
 use std::path::Path;
@@ -102,8 +102,7 @@ struct LolaBinding<T>
 where
     T: Send + TypeInfo,
 {
-    //TODO: Ticket-237218/[eclipse-score/communication/issues/134] SamplePtr should be ManuallyDrop
-    data: sample_ptr_rs::SamplePtr<T>,
+    data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
 }
 
 impl<T> Drop for LolaBinding<T>
@@ -114,8 +113,9 @@ where
         //SAFETY: It is safe to call the delete function because data ptr is valid
         //SamplePtr created by FFI
         unsafe {
+            let mut sample_ptr = ManuallyDrop::take(&mut self.data);
             generic_bridge_ffi_rs::sample_ptr_delete(
-                std::ptr::from_mut(&mut self.data) as *mut std::ffi::c_void,
+                std::ptr::from_mut(&mut sample_ptr) as *mut std::ffi::c_void,
                 T::ID,
             );
         }
@@ -143,7 +143,7 @@ where
         //and data is valid as long as SamplePtr is valid
         unsafe {
             let data_ptr = generic_bridge_ffi_rs::sample_ptr_get(
-                std::ptr::from_ref(&self.inner.data) as *const std::ffi::c_void,
+                std::ptr::from_ref(&(*self.inner.data)) as *const std::ffi::c_void,
                 T::ID,
             );
             (data_ptr as *const T)
@@ -443,7 +443,9 @@ where
                     let wrapped_sample = Sample {
                         //Relaxed ordering is sufficient here as we just need a unique id for each sample
                         id: ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
-                        inner: LolaBinding { data: sample_ptr },
+                        inner: LolaBinding {
+                            data: ManuallyDrop::new(sample_ptr),
+                        },
                     };
                     while scratch.sample_count() >= max_samples {
                         scratch.pop_front();
