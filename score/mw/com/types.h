@@ -68,10 +68,6 @@ template <typename T>
 using FindServiceHandler = ::score::mw::com::impl::FindServiceHandler<T>;
 
 /// \api
-/// \brief Defines the processing modes for the service implementation side.
-using MethodCallProcessingMode = ::score::mw::com::impl::MethodCallProcessingMode;
-
-/// \api
 /// \brief Subscription state of a proxy event.
 /// See ProxyEvent::GetSubscriptionStatus for slightly more information.
 using SubscriptionState = ::score::mw::com::impl::SubscriptionState;

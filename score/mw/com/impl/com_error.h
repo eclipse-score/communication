@@ -42,7 +42,6 @@ enum class ComErrc : score::result::ErrorCode
     kCommunicationStackError,
     kMaxSampleCountNotRealizable,
     kMaxSubscribersExceeded,
-    kWrongMethodCallProcessingMode,
     kErroneousFileHandle,
     kCouldNotExecute,
     kInvalidInstanceIdentifierString,
@@ -151,9 +150,6 @@ class ComErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kMaxSubscribersExceeded):
                 return "Subscriber count exceeded";
-            // coverity[autosar_cpp14_m6_4_5_violation]
-            case static_cast<score::result::ErrorCode>(ComErrc::kWrongMethodCallProcessingMode):
-                return "Wrong processing mode passed to constructor method call.";
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kErroneousFileHandle):
                 return "The FileHandle returned from FindServce is corrupt/service not available.";

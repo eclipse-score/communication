@@ -96,18 +96,6 @@ TEST(API, EventReceiverHandlerExists)
     score::mw::com::EventReceiveHandler unit = []() noexcept {};
 }
 
-TEST(API, MethodCallProcessingModeExists)
-{
-    RecordProperty("Verifies", "SCR-17608357");
-    RecordProperty("Description", "Checks whether the respective type exists.");
-    RecordProperty("TestType", "Requirements-based test");
-    RecordProperty("Priority", "1");
-    RecordProperty("DerivationTechnique", "Analysis of requirements");
-
-    score::mw::com::MethodCallProcessingMode unit{score::mw::com::MethodCallProcessingMode::kEvent};
-    static_cast<void>(unit);
-}
-
 TEST(API, SubscriptionStateExists)
 {
     RecordProperty("Verifies", "SCR-14034769");

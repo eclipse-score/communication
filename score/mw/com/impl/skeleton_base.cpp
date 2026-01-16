@@ -83,9 +83,7 @@ SkeletonBinding::SkeletonFieldBindings GetSkeletonFieldBindingsMap(const Skeleto
 
 }  // namespace
 
-SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding,
-                           InstanceIdentifier instance_id,
-                           MethodCallProcessingMode)
+SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, InstanceIdentifier instance_id)
     : binding_{std::move(skeleton_binding)},
       events_{},
       fields_{},

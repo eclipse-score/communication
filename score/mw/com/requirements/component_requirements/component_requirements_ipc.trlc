@@ -102,7 +102,7 @@ section "com" {
             ScoreReq.CompReq SkeletonExceptionLessCreationWithInstanceId {
                 description = '''The {{Skeleton}} class shall provide a non-throwing constructor using the Named Constructor idiom (See Creation of an object using Named Constructor approach)
 
-                {{{static bmw::Result<Skeleton> Skeleton::Create(const mw::com::InstanceIdentifier &instance\_identifier, mw::com::MethodCallProcessingMode mode = mw::com::MethodCallProcessingMode::kEvent) noexcept;
+                {{{static bmw::Result<Skeleton> Skeleton::Create(const mw::com::InstanceIdentifier &instance\_identifier) noexcept;
 
                 }}}
 
@@ -126,7 +126,7 @@ section "com" {
             ScoreReq.CompReq SkeletonExceptionLessCreationWithInstanceSpecifier {
                 description = '''The {{Skeleton}} class shall provide a non-throwing constructor using the Named Constructor idiom (See Creation of an object using Named Constructor approach).
 
-                {{{static bmw::Result<Skeleton> Skeleton::Create(const mw::com::InstanceSpecifier &instance\_specifier, mw::com::MethodCallProcessingMode mode = mw::com::MethodCallProcessingMode::kEvent) noexcept;}}}
+                {{{static bmw::Result<Skeleton> Skeleton::Create(const mw::com::InstanceSpecifier &instance\_specifier) noexcept;}}}
 
                 {{Create}} call shall fail if the service instance provided by the {{Skeleton}} is not unique (i.e., a service with the same serviceInstanceId is already created).
 
@@ -1638,26 +1638,6 @@ section "com" {
                 A std::vector for example fulfills these requirements.'''
                 safety = ScoreReq.Asil.B
                 derived_from = [Communication.ServiceDiscovery@1]
-                version = 1
-            }
-
-            /* broken_link_c/issue/17608357 */
-            ScoreReq.CompReq MethodCallProcessingMode {
-                description = '''{{mw::com}} shall provide an enumeration {{MethodCallProcessingMode}} which defines the processing modes for the {{Skeleton}} implementation side.
-
-                {{{enum class mw::com::MethodCallProcessingMode : std::uint8\_t {
-                 kPoll,
-                 kEvent,
-                 kEventSingleThread
-                };}}}
-
-                {{kPoll}} represents processing mode Polling: Instead of calling a provided service method, the {{mw::com}}/{{LoLa}} collects incoming service method invocations. The processing of each invocation is explicitly triggered by the implementation.
-
-                {{kEvent}} represents processing mode Event-driven, concurrent: The {{mw::com}}/{{LoLa}} activates the invoked service method when the invocation arrives. Consumer concurrent calls are allowed and will be processed concurrently on provider side by using different threads.
-
-                {{kEventSingleThread}} represents processing mode Event-driven, sequential: The {{mw::com}}/{{LoLa}} activates the invoked service method when the invocation arrives. Consumer concurrent calls are allowed, but will not be processed concurrently on provider side, by instead executing them one after the other to avoid the need of synchronization mechanisms in the implementation providing the service method.'''
-                safety = ScoreReq.Asil.B
-                derived_from = [Communication.Method@1]
                 version = 1
             }
 

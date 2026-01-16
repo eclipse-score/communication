@@ -377,9 +377,7 @@ TEST_F(SkeletonBaseOfferDeathTest, OfferServiceTerminatesWhenBindingIsNull)
     std::unique_ptr<SkeletonBinding> skeleton_binding_null{nullptr};
 
     // Given a constructed Skeleton with null Binding
-    SkeletonBase unit{std::move(skeleton_binding_null),
-                      this->GetInstanceIdentifierWithValidBinding(),
-                      MethodCallProcessingMode::kEvent};
+    SkeletonBase unit{std::move(skeleton_binding_null), this->GetInstanceIdentifierWithValidBinding()};
 
     // Expect to die, when offering a Service without a valid binding
     EXPECT_DEATH({ score::cpp::ignore = unit.OfferService(); }, ".*");

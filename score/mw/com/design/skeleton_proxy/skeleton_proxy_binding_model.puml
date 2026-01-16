@@ -50,7 +50,7 @@ abstract class "score::mw::com::impl::SkeletonBase" as ScoreMwComImplSkeletonBas
   #instance_id_: InstanceIdentifier
   --
   using SkeletonEvents = std::unordered_map<std::string_view, SkeletonEventBase&>
-  +SkeletonBase(std::unique_ptr<SkeletonBinding>, InstanceIdentifier, MethodCallProcessingMode)
+  +SkeletonBase(std::unique_ptr<SkeletonBinding>, InstanceIdentifier)
   +OfferService(): void
   +StopOfferService(): void
   --
@@ -60,10 +60,10 @@ abstract class "score::mw::com::impl::SkeletonBase" as ScoreMwComImplSkeletonBas
 }
 
 abstract class "DummySkeleton\n{{generated}}" as DummySkeleton {
-  +{static} Create(InstanceSpecifier, MethodCallProcessingMode) : Result<DummySkeleton>
-  +{static} Create(InstanceIdentifier, MethodCallProcessingMode) : Result<DummySkeleton>
+  +{static} Create(InstanceSpecifier) : Result<DummySkeleton>
+  +{static} Create(InstanceIdentifier) : Result<DummySkeleton>
 
-  -DummySkeleton(InstanceIdentifier&, MethodCallProcessingMode)
+  -DummySkeleton(InstanceIdentifier&)
 
   DummyEvent : events::DummyEvent // using events::DummyEvent = SkeletonEvent<SampleType>
   DummyField : fields::DummyField // using fields::DummyField = SkeletonField<SampleType>

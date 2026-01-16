@@ -35,7 +35,7 @@ abstract class "score::mw::com::impl::SkeletonBase" as SkeletonBase {
     #instance_id_ : InstanceIdentifier
     using SkeletonEvents = std::unordered_map<std::string_view, SkeletonEventBase&>
     --
-    +SkeletonBase(std::unique_ptr<SkeletonBinding>, InstanceIdentifier, MethodCallProcessingMode)
+    +SkeletonBase(std::unique_ptr<SkeletonBinding>, InstanceIdentifier)
     +OfferService() : void
     +StopOfferService(): void
     --
@@ -138,8 +138,8 @@ class "SkeletonServiceMethod" as SkeletonServiceMethod <InArgs, OutArgs>{
 }
 
 class DummySkeleton <<generated>> {
-    +Create(InstanceSpecifier, MethodCallProcessingMode) : Result<DummySkeleton>
-    +Create(InstanceIdentifier, MethodCallProcessingMode) : Result<DummySkeleton>
+    +Create(InstanceSpecifier) : Result<DummySkeleton>
+    +Create(InstanceIdentifier) : Result<DummySkeleton>
     +DummyEvent : events::DummyEvent // using events::DummyEvent = SkeletonEvent<SampleType>
     +DummyField : fields::DummyField // using fields::DummyField = SkeletonField<SampleType>
 }

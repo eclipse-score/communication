@@ -172,13 +172,9 @@ class SkeletonWrapperClass : public Interface<Trait>
      * \details Creates a skeleton wrapper by resolving the instance specifier to an instance identifier,
      *          then creating the skeleton binding and validating all service element bindings.
      * \param specifier The instance specifier identifying the service instance.
-     * \param mode legacy parameter, only kept for backwards compatibility. Default value is kEvent, which should never
-     * change.
      * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
      */
-    static Result<SkeletonWrapperClass> Create(
-        const InstanceSpecifier& specifier,
-        MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept
+    static Result<SkeletonWrapperClass> Create(const InstanceSpecifier& specifier) noexcept
     {
         if (instance_specifier_creation_results_.has_value())
         {
@@ -191,7 +187,7 @@ class SkeletonWrapperClass : public Interface<Trait>
             score::mw::log::LogFatal("lola") << "Failed to resolve instance identifier from instance specifier";
             std::terminate();
         }
-        return Create(instance_identifier_result.value(), mode);
+        return Create(instance_identifier_result.value());
     }
 
     /**
@@ -200,12 +196,9 @@ class SkeletonWrapperClass : public Interface<Trait>
      * \details Creates a skeleton wrapper by creating the skeleton binding for the given instance identifier
      *          and validating all service element bindings.
      * \param instance_identifier The instance identifier uniquely identifying the service instance.
-     * \param mode The method call processing mode for the skeleton (default: kEvent).
      * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
      */
-    static Result<SkeletonWrapperClass> Create(
-        const InstanceIdentifier& instance_identifier,
-        MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept
+    static Result<SkeletonWrapperClass> Create(const InstanceIdentifier& instance_identifier) noexcept
     {
         if (instance_specifier_creation_results_.has_value())
         {
@@ -214,7 +207,7 @@ class SkeletonWrapperClass : public Interface<Trait>
         }
 
         auto skeleton_binding = SkeletonBindingFactory::Create(instance_identifier);
-        SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding), mode);
+        SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding));
         if (!skeleton_wrapper.AreBindingsValid())
         {
             ::score::mw::log::LogError("lola") << "Could not create SkeletonWrapperClass as Skeleton binding or service "
@@ -227,9 +220,8 @@ class SkeletonWrapperClass : public Interface<Trait>
 
   private:
     explicit SkeletonWrapperClass(const InstanceIdentifier& instance_id,
-                                  std::unique_ptr<SkeletonBinding> skeleton_binding,
-                                  MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent)
-        : Interface<Trait>{std::move(skeleton_binding), instance_id, mode}
+                                  std::unique_ptr<SkeletonBinding> skeleton_binding)
+        : Interface<Trait>{std::move(skeleton_binding), instance_id}
     {
     }
 

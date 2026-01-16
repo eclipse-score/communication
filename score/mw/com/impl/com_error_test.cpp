@@ -115,12 +115,6 @@ TEST_F(ComErrorTest, MessageForMaxSubscribersExceeded)
     testErrorMessage(ComErrc::kMaxSubscribersExceeded, "Subscriber count exceeded");
 }
 
-TEST_F(ComErrorTest, MessageForWrongMethodCallProcessingMode)
-{
-    testErrorMessage(ComErrc::kWrongMethodCallProcessingMode,
-                     "Wrong processing mode passed to constructor method call.");
-}
-
 TEST_F(ComErrorTest, MessageForErroneousFileHandle)
 {
     testErrorMessage(ComErrc::kErroneousFileHandle,
