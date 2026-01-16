@@ -97,6 +97,8 @@ struct LolaEvent<T> {
     event: PhantomData<T>,
 }
 
+//TODO: Ticket-238828 this type should be merge with Sample<T>
+//And sample_ptr_rs::SamplePtr<T> FFI function should be move in plumbing folder sample_ptr_rs module
 #[derive(Debug)]
 struct LolaBinding<T>
 where

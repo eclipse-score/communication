@@ -12,6 +12,55 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+// Why registry based approach when we have static macro based approach in bridge_macro.h -->
+//
+//  DESIGN DECISION: Registry-Based Type Mapping for Runtime-Independent COM-API Binding
+//
+//  Problem with static bridge_macro.h approach:
+//  - bridge_macro.h provides static, compile-time macro based implementation
+//  - It generates static functions or APIs that are bound to specific types at compile time
+//  - This approach requires all type information to be known and generated at compile time
+//  - Static binding prevents true separation between COM-API library and runtime implementations
+//  - We cannot have different runtime implementations (Lola, Mock, etc) sharing the same FFI interface
+//
+//  Why this file exists:
+//  - This file provides registry-based implementation for skeleton and proxy classes
+//  - Registry enables runtime type binding between Rust and C++ instead of compile-time static binding
+//  - As COM-API is runtime independent, we need a mechanism that works with any runtime
+//  - We can not rely on static macros alone to achieve runtime independence
+//
+//  Key design elements:
+//  - GlobalRegistryMapping: Central registry that maps string identifiers to type/interface operations
+//    - InterfaceOperationMap: Maps interface_id (string) -> InterfaceOperations (proxy/skeleton creation)
+//    - TypeOperationMap: Maps type_name (string) -> TypeOperations (sample handling, event sending)
+//
+//  How it works:
+//  - Registry is filled at COMPILE TIME using macros (BEGIN_EXPORT_MW_COM_INTERFACE, EXPORT_MW_COM_EVENT,
+//  EXPORT_MW_COM_TYPE)
+//  - Macros create static helper structs that register operations in GlobalRegistryMapping at program startup
+//  - Operations are looked up at RUNTIME using string keys (interface_id, event_id, type_name)
+//  - Rust calls generic FFI functions with string identifiers
+//  - C++ resolves actual types via registry and invokes appropriate virtual methods
+//
+//  Example flow for event subscription:
+//  - Rust calls: get_event_from_proxy(proxy_ptr, "VehicleInterface", "TireEvent")
+//  - C++: FindMemberOperation("VehicleInterface", "TireEvent") -> returns MemberOperationImpl<VehicleProxy,
+//  VehicleSkeleton, Tire, ...>
+//  - C++: Calls GetProxyEvent() on the returned MemberOperation
+//  - C++: Returns ProxyEventBase* which is actually ProxyEvent<Tire>*
+//  - Rust receives opaque ProxyEventBase* and can use it with type-name strings in subsequent calls
+//
+//  Template specialization pattern:
+//  - EXPORT_MW_COM_TYPE macro specializes RustRefMutCallable template for each type
+//  - This allows C++ to invoke Rust FnMut closures with type-specific SamplePtr<T>
+//  - SamplePtr<T> is wrapped in placement-new storage and passed to generic mw_com_impl_call_dyn_ref_fnmut_sample()
+//  - The Rust side reconstructs the FatPtr and invokes the original closure
+//
+//  Application side usage:
+//  - Generated C++ code invokes these macros to fill registry for each interface and type
+//  - Macros are typically invoked in a dedicated registration compilation unit
+//  - Registry is thread-safe via static initialization (runs before main)
+
 #ifndef SCORE_MW_COM_IMPL_RUST_GENERIC_BRIDGE_MACROS_H
 #define SCORE_MW_COM_IMPL_RUST_GENERIC_BRIDGE_MACROS_H
 
