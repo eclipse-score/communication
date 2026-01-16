@@ -275,12 +275,12 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(handle_, _, kMethodName))
         .WillOnce(Return(ByMove(nullptr)));
 
-    // When constructing a proxy with an InstanceSpecifier
+    // When constructing a proxy with a handle
     const auto unit = MyProxy::Create(std::move(handle_));
 
-    // Then it is _not_ possible to construct aproxy
+    // Then it is _not_ possible to construct a proxy
     ASSERT_FALSE(unit.has_value());
-    ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
+    EXPECT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyProxyBindingCanNotSuccessfullySetUpMethods)
@@ -288,10 +288,10 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyProxyBindi
     // Expecting that the Create call on the ProxyMethodBindingFactory returns an invalid binding for the method.
     EXPECT_CALL(proxy_binding_mock_, SetupMethods(_)).WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
-    // When constructing a proxy with an InstanceSpecifier
+    // When constructing a proxy with a handle
     const auto unit = MyProxy::Create(std::move(handle_));
 
-    // Then it is _not_ possible to construct aproxy
+    // Then it is _not_ possible to construct a proxy
     ASSERT_FALSE(unit.has_value());
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
