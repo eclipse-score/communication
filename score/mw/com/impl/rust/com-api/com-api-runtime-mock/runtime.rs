@@ -35,8 +35,8 @@ use std::path::Path;
 
 use com_api_concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, FindServiceSpecifier,
-    InstanceSpecifier, Interface, Producer, ProducerBuilder, Result, Runtime, SampleContainer,
-    ServiceDiscovery, Subscriber, Subscription,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Result, Runtime,
+    SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 
 pub struct MockRuntimeImpl {}
@@ -44,6 +44,16 @@ pub struct MockRuntimeImpl {}
 #[derive(Clone, Debug)]
 pub struct MockProviderInfo {
     instance_specifier: InstanceSpecifier,
+}
+
+impl ProviderInfo for MockProviderInfo {
+    fn offer_service(&self) -> Result<()> {
+        todo!()
+    }
+
+    fn stop_offer_service(&self) -> Result<()> {
+        todo!()
+    }
 }
 
 #[derive(Clone, Debug)]

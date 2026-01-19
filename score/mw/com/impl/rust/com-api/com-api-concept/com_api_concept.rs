@@ -106,7 +106,7 @@ pub trait Runtime {
     type Publisher<T: CommData>: Publisher<T, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
-    type ProviderInfo: Send + Clone;
+    type ProviderInfo: ProviderInfo + Send + Clone;
 
     /// `ConsumerInfo` types for Configuration data for service consumers instances
     type ConsumerInfo: Send + Clone;
@@ -142,6 +142,32 @@ pub trait Runtime {
         &self,
         instance_specifier: InstanceSpecifier,
     ) -> Self::ProducerBuilder<I>;
+}
+
+/// This trait contains the APIs required for producer service instance management.
+/// But this APIs are not user facing APIs, it is used internally by the runtime implementations.
+/// This trait is implemented for the ProviderInfo types of the runtimes.
+pub trait ProviderInfo {
+    /// Offer a service instance to make it discoverable and accessible by consumers.
+    /// Registers the service instance with the runtime for discovery.
+    /// This API must make service instance available to consumers.
+    ///
+    /// # Parameters
+    /// * `self` - The provider information containing configuration for the service instance
+    ///
+    /// # Returns
+    /// A 'Result' indicating success or failure of the offer operation.
+    fn offer_service(&self) -> Result<()>;
+
+    /// Stop offering a service instance, making it no longer discoverable.
+    /// Withdraw the service from system availability.
+    ///
+    /// # Parameters
+    /// * `self` - The provider information containing configuration for the service instance
+    ///
+    /// # Returns
+    /// A 'Result' indicating success or failure of the unoffer operation.
+    fn stop_offer_service(&self) -> Result<()>;
 }
 
 /// Builder for Runtime instances with configuration support.

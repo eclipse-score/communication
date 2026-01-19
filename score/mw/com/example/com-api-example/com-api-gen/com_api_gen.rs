@@ -12,7 +12,8 @@
  ********************************************************************************/
 
 use com_api::{
-    CommData, Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber,
+    CommData, Consumer, Interface, OfferedProducer, Producer, ProviderInfo, Publisher, Reloc,
+    Runtime, Subscriber,
 };
 
 #[derive(Debug, Reloc)]
@@ -68,13 +69,17 @@ impl<R: Runtime + ?Sized> Producer<R> for VehicleProducer<R> {
     type OfferedProducer = VehicleOfferedProducer<R>;
 
     fn offer(self) -> com_api::Result<Self::OfferedProducer> {
-        Ok(VehicleOfferedProducer {
+        let vehicle_offered_producer = VehicleOfferedProducer {
             left_tire: R::Publisher::new("left_tire", self.instance_info.clone())
                 .expect("Failed to create publisher"),
             exhaust: R::Publisher::new("exhaust", self.instance_info.clone())
                 .expect("Failed to create publisher"),
-            instance_info: self.instance_info,
-        })
+            instance_info: self.instance_info.clone(),
+        };
+        // Offer the service instance to make it discoverable
+        // this is called after skeleton created using producer_builder API
+        self.instance_info.offer_service()?;
+        Ok(vehicle_offered_producer)
     }
 
     fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
@@ -96,9 +101,15 @@ impl<R: Runtime + ?Sized> OfferedProducer<R> for VehicleOfferedProducer<R> {
     type Producer = VehicleProducer<R>;
 
     fn unoffer(self) -> Self::Producer {
-        VehicleProducer {
+        let vehicle_producer = VehicleProducer {
             _runtime: std::marker::PhantomData,
-            instance_info: self.instance_info,
+            instance_info: self.instance_info.clone(),
+        };
+        // Stop offering the service instance to withdraw it from system availability
+        if let Err(e) = self.instance_info.stop_offer_service() {
+            //below line will be replaced with logging once logging is available
+            eprintln!("Failed to stop offering service: {:?}", e);
         }
+        vehicle_producer
     }
 }

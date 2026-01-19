@@ -34,8 +34,8 @@ use std::sync::Arc;
 
 use com_api_concept::{
     Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
-    InstanceSpecifier, Interface, Producer, ProducerBuilder, Result, Runtime, SampleContainer,
-    ServiceDiscovery, Subscriber, Subscription,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, ProviderInfo, Result, Runtime,
+    SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 
 use generic_bridge_ffi_rs::*;
@@ -46,6 +46,16 @@ pub struct LolaRuntimeImpl {}
 pub struct LolaProviderInfo {
     instance_specifier: InstanceSpecifier,
     interface_id: &'static str,
+}
+
+impl ProviderInfo for LolaProviderInfo {
+    fn offer_service(&self) -> Result<()> {
+        todo!("FFI Call to offer service using skeleton handle will be added here")
+    }
+
+    fn stop_offer_service(&self) -> Result<()> {
+        todo!("FFI Call to stop offering service using skeleton handle will be added here")
+    }
 }
 
 #[derive(Clone, Debug)]
