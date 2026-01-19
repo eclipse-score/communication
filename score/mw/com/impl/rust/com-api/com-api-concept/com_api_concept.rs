@@ -97,13 +97,13 @@ pub trait Runtime {
     type ServiceDiscovery<I: Interface>: ServiceDiscovery<I, Self>;
 
     /// `Subscriber<T>` types for Manages subscriptions to event notifications
-    type Subscriber<T: Reloc + Send + Debug + TypeInfo>: Subscriber<T, Self>;
+    type Subscriber<T: CommData>: Subscriber<T, Self>;
 
     /// `ProducerBuilder<I>` types for Constructs producer instances for offering services
     type ProducerBuilder<I: Interface>: ProducerBuilder<I, Self>;
 
     /// `Publisher<T>` types for Publishes event data to subscribers
-    type Publisher<T: Reloc + Send + Debug + TypeInfo>: Publisher<T, Self>;
+    type Publisher<T: CommData>: Publisher<T, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: Send + Clone;
@@ -167,6 +167,14 @@ where
     ///
     /// A mutable reference to self for method chaining.
     fn load_config(&mut self, config: &Path) -> &mut Self;
+}
+
+/// Communication data type requirements trait.
+/// Bounds the data type to be relocatable and sendable across threads.
+/// Also requires the data type to implement Debug for logging and debugging purposes.
+/// 'static' lifetime ensures the data type does not contain non-static references.
+pub trait CommData: Reloc + Send + Debug + 'static {
+    const ID: &'static str;
 }
 
 /// Technology independent description of a service instance "location"
@@ -270,7 +278,7 @@ impl From<InstanceSpecifier> for FindServiceSpecifier {
 // TODO: C++ doesn't yet support this. Expose API to compare SamplePtr ages.
 pub trait Sample<T>: Deref<Target = T> + Send + PartialOrd + Ord + Debug
 where
-    T: Send + Reloc + Debug,
+    T: CommData,
 {
 }
 
@@ -283,7 +291,7 @@ where
 /// * `T` - The relocatable event data type
 pub trait SampleMut<T>: DerefMut<Target = T> + Debug
 where
-    T: Send + Reloc + Debug,
+    T: CommData,
 {
     /// Sample type for immutable access
     type Sample: Sample<T>;
@@ -318,7 +326,7 @@ where
 /// TODO: with the ambiguous `assume_init()` then?
 pub trait SampleMaybeUninit<T>: Debug + AsMut<core::mem::MaybeUninit<T>>
 where
-    T: Send + Reloc + Debug,
+    T: CommData,
 {
     /// Buffer type for mutable data after initialization
     type SampleMut: SampleMut<T>;
@@ -436,7 +444,7 @@ pub trait Producer<R: Runtime + ?Sized> {
 /// * `T` - The relocatable event data type
 pub trait Publisher<T, R: Runtime + ?Sized>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     /// Associated sample type for uninitialized event data
     type SampleMaybeUninit<'a>: SampleMaybeUninit<T> + 'a
@@ -579,11 +587,6 @@ pub trait ConsumerBuilder<I: Interface, R: Runtime + ?Sized>:
 {
 }
 
-/// Type information trait for unique identification of data types.
-pub trait TypeInfo {
-    const ID: &'static str;
-}
-
 /// Event subscription management interface.
 ///
 /// Establishes a subscription channel to receive publications from a specific event source.
@@ -592,7 +595,7 @@ pub trait TypeInfo {
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscriber<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
+pub trait Subscriber<T: CommData, R: Runtime + ?Sized> {
     /// Associated subscription type for receiving event samples
     type Subscription: Subscription<T, R>;
 
@@ -648,10 +651,10 @@ impl<S> SampleContainer<S> {
     ///
     /// # Returns
     /// An iterator over references to the samples of type `T`.
-    pub fn iter<'a, T>(&'a self) -> impl Iterator<Item = &'a T>
+    pub fn iter<T>(&self) -> impl Iterator<Item = &T>
     where
         S: Sample<T>,
-        T: Reloc + Send + 'a + Debug,
+        T: CommData,
     {
         self.inner.iter().map(<S as Deref>::deref)
     }
@@ -691,7 +694,7 @@ impl<S> SampleContainer<S> {
     ///
     /// # Returns
     /// An `Option` containing a reference to the first sample, or `None` if the container is empty.
-    pub fn front<T: Reloc + Send + Debug + TypeInfo>(&self) -> Option<&T>
+    pub fn front<T: CommData>(&self) -> Option<&T>
     where
         S: Sample<T>,
     {
@@ -707,7 +710,7 @@ impl<S> SampleContainer<S> {
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscription<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
+pub trait Subscription<T: CommData, R: Runtime + ?Sized> {
     /// Associated subscriber type for managing the subscription lifecycle
     type Subscriber: Subscriber<T, R>;
     /// Associated sample type for received event data

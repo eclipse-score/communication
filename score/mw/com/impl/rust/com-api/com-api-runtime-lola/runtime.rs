@@ -33,9 +33,9 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
 use com_api_concept::{
-    Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
-    InstanceSpecifier, Interface, Producer, ProducerBuilder, Reloc, Result, Runtime,
-    SampleContainer, ServiceDiscovery, Subscriber, Subscription, TypeInfo,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
+    InstanceSpecifier, Interface, Producer, ProducerBuilder, Result, Runtime, SampleContainer,
+    ServiceDiscovery, Subscriber, Subscription,
 };
 
 use generic_bridge_ffi_rs::*;
@@ -65,9 +65,9 @@ impl LolaConsumerInfo {
 
 impl Runtime for LolaRuntimeImpl {
     type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
-    type Subscriber<T: Reloc + Send + Debug + TypeInfo> = SubscribableImpl<T>;
+    type Subscriber<T: CommData> = SubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
-    type Publisher<T: Reloc + Send + Debug + TypeInfo> = Publisher<T>;
+    type Publisher<T: CommData> = Publisher<T>;
     type ProviderInfo = LolaProviderInfo;
     type ConsumerInfo = LolaConsumerInfo;
 
@@ -102,14 +102,14 @@ struct LolaEvent<T> {
 #[derive(Debug)]
 struct LolaBinding<T>
 where
-    T: Send + TypeInfo,
+    T: CommData,
 {
     data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
 }
 
 impl<T> Drop for LolaBinding<T>
 where
-    T: Send + TypeInfo,
+    T: CommData,
 {
     fn drop(&mut self) {
         //SAFETY: It is safe to call the delete function because data ptr is valid
@@ -127,7 +127,7 @@ where
 #[derive(Debug)]
 pub struct Sample<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     //we need unique id for each sample to implement Ord and Eq traits for sorting in SampleContainer
     id: usize,
@@ -138,7 +138,7 @@ static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl<T> Sample<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     pub fn get_data(&self) -> &T {
         //SAFETY: It is safe to get the data pointer because SamplePtr is valid
@@ -157,7 +157,7 @@ where
 
 impl<T> Deref for Sample<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     type Target = T;
 
@@ -166,23 +166,23 @@ where
     }
 }
 
-impl<T> com_api_concept::Sample<T> for Sample<T> where T: Send + Reloc + Debug + TypeInfo {}
+impl<T> com_api_concept::Sample<T> for Sample<T> where T: CommData {}
 
 // Ordering traits for Sample<T> are using id field to provide total ordering
 impl<T> PartialEq for Sample<T>
 where
-    T: Send + Reloc + Debug + TypeInfo,
+    T: CommData,
 {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl<T> Eq for Sample<T> where T: Send + Reloc + Debug + TypeInfo {}
+impl<T> Eq for Sample<T> where T: CommData {}
 
 impl<T> PartialOrd for Sample<T>
 where
-    T: Send + Reloc + Debug + TypeInfo,
+    T: CommData,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -191,7 +191,7 @@ where
 
 impl<T> Ord for Sample<T>
 where
-    T: Send + Reloc + Debug + TypeInfo,
+    T: CommData,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id.cmp(&other.id)
@@ -201,7 +201,7 @@ where
 #[derive(Debug)]
 pub struct SampleMut<'a, T>
 where
-    T: Reloc,
+    T: CommData,
 {
     data: T,
     lifetime: PhantomData<&'a T>,
@@ -209,7 +209,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     type Sample = Sample<T>;
 
@@ -224,7 +224,7 @@ where
 
 impl<'a, T> Deref for SampleMut<'a, T>
 where
-    T: Reloc,
+    T: CommData,
 {
     type Target = T;
 
@@ -235,7 +235,7 @@ where
 
 impl<'a, T> DerefMut for SampleMut<'a, T>
 where
-    T: Reloc,
+    T: CommData,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data
@@ -245,7 +245,7 @@ where
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     data: MaybeUninit<T>,
     lifetime: PhantomData<&'a T>,
@@ -253,7 +253,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     type SampleMut = SampleMut<'a, T>;
 
@@ -274,7 +274,7 @@ where
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         &mut self.data
@@ -334,7 +334,7 @@ pub struct SubscribableImpl<T> {
     data: PhantomData<T>,
 }
 
-impl<T: Reloc + Send + Debug + TypeInfo> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
+impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(
         identifier: &'static str,
@@ -387,7 +387,7 @@ impl<T: Reloc + Send + Debug + TypeInfo> Subscriber<T, LolaRuntimeImpl> for Subs
 #[derive(Debug)]
 pub struct SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     //Safety: This can be used as raw pointer because it comes under proxy instance lifetime
     event: Option<*mut ProxyEventBase>,
@@ -400,7 +400,7 @@ where
 
 impl<T> SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
@@ -409,13 +409,10 @@ where
 
 impl<T> Subscription<T, LolaRuntimeImpl> for SubscriberImpl<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     type Subscriber = SubscribableImpl<T>;
-    type Sample<'a>
-        = Sample<T>
-    where
-        T: 'a;
+    type Sample<'a> = Sample<T>;
 
     fn unsubscribe(self) -> Self::Subscriber {
         SubscribableImpl {
@@ -505,7 +502,7 @@ pub struct Publisher<T> {
 
 impl<T> Default for Publisher<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     fn default() -> Self {
         Self::new()
@@ -514,7 +511,7 @@ where
 
 impl<T> Publisher<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
     pub fn new() -> Self {
@@ -524,7 +521,7 @@ where
 
 impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>

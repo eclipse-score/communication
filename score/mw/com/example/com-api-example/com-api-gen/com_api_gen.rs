@@ -12,20 +12,22 @@
  ********************************************************************************/
 
 use com_api::{
-    Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber, TypeInfo,
+    CommData, Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber,
 };
 
 #[derive(Debug, Reloc)]
 #[repr(C)]
 pub struct Tire {}
-impl TypeInfo for Tire {
+
+impl CommData for Tire {
     const ID: &'static str = "Tire";
 }
 
 #[derive(Debug, Reloc)]
 #[repr(C)]
 pub struct Exhaust {}
-impl TypeInfo for Exhaust {
+
+impl CommData for Exhaust {
     const ID: &'static str = "Exhaust";
 }
 
