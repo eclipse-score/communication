@@ -4,15 +4,15 @@ an abstraction layer is introduced.
 
 ## Use Cases / Customer Functions
 There are no direct Customer Functions associated with this part of `ara::core`.
-This is caused by the fact that the shared memory abstraction represents an implementation detail, 
-which is necessary to fulfill the [Basic Architectural thoughts](../../../../mw/com/design/README.md) of `ara::com`. 
+This is caused by the fact that the shared memory abstraction represents an implementation detail,
+which is necessary to fulfill the [Basic Architectural thoughts](../../../../mw/com/design/README.md) of `ara::com`.
 
 In fact, the usage of shared memory or its allocators shall be fully transparent for a user of the `ara`-API.
 
 ## Shared Memory based allocation
 The following section gives a textual reasoning and explanation of the class diagram that can be seen [here](memory_allocation.uxf).
 
-![Memory Allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation.uxf?ref=c8a52e508408b2f3905b833f32563264ccf4069c)
+![Memory Allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation.puml?ref=c8a52e508408b2f3905b833f32563264ccf4069c)
 
 Further also some [guidance](#guidance-for-data-types-in-shared-memory) is given, which data types can be stored
 in shared memory.
@@ -26,7 +26,7 @@ responsibility of allocating memory for a specific data type towards the middlew
 it can be necessary to allocate the memory either directly in shared memory (to enable truly zero-copy mechanisms) or
 on the heap (to serialize the data and send over network sockets). It shall be highlighted that the `AllocateePtr` in
 both cases will point to the same data type, since this is a runtime decision (based on the results of the service discovery).
- 
+
 In order to support this behaviour, polymorphic allocation needs to be introduced. The
 `std::pmr::polymorphic_allocator` (or its respective implementations of AMP) cannot be reused, because it will
 allocate raw pointers. As explained in [Offset Pointer](#offset-pointer) this is not suitable for the shared memory use case
@@ -61,11 +61,11 @@ The idea behind the `MemoryResourceProxy` is, that it builds up a non-virtual cl
 in shared memory and identifies a specific `ManagedMemoryResource` using a process-specific global instance of `MemoryResourceRegistry`.
 One can think of it as a custom shared memory safe implementation of a v-table. In order for this to work, on construction
 of a memory resource, it needs to register itself at the `MemoryResourceRegistry`. Then, when returning the `MemoryResourceProxy`
-it needs to be constructed with the same identifier. This workflow is further illustrated in [Memory Allocation Workflow](memory_allocation_workflow.uxf).
+it needs to be constructed with the same identifier. This workflow is further illustrated in [Memory Allocation Workflow](memory_allocation_workflow.puml).
 On a second process, that did not create the shared memory, the workflow would look the same, with the only difference,
 that the `MemoryResourceProxy` is not created, but rather reinterpreted from the shared memory region.
 
-![Memory Allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation_workflow.uxf?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
+![Memory Allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/memory_allocation_workflow.puml?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
 
 The key idea of this `MemoryResourceRegistry` concept is, that the keys used for registering a `ManagedMemoryResource` into
 the registry (and being the essential part of the proxy) is globally (across all processes) unique and deterministic.
@@ -99,7 +99,7 @@ we would create a specific/suitable `SubResource` within a `SharedMemoryResource
 The writer, which wants to update the known regions, 1st needs to find a version among the N versions of known regions,
 which is currently **not** used/accessed by any reader. For this each known regions version has an atomic `std::uint32_t`
 as ref-counter, which reflects how many readers are currently doing a bounds-check lookup on this known regions version.
-Therefore, the writer checks each version, starting with the oldest, and if the ref-count is 0, then tries to atomically 
+Therefore, the writer checks each version, starting with the oldest, and if the ref-count is 0, then tries to atomically
 change it to some specific marker value `INVALID_REF_COUNT_VAL_START` via atomic `compare_exchange` operation.
 If the writer succeeds with the change, he has now unique ownership of this version, copies the map/known regions from
 the current most recent version to this acquired version, does the bounds-update there, atomically sets the ref-count to
@@ -120,46 +120,46 @@ A reader, which wants to access for bounds-checking the most recent known region
 There are three outcomes in 2., i.e. the rec count **before** the atomic increment:
 1. "Good" case: *old_ref_count < `INVALID_REF_COUNT_VAL_START` - 1.*
 
-    This is the "good" case where the reader successfully acquired this version of known regions for read. Once a 
-    version has been created by a writer, its ref_count will be 0. The ref_count will then be incremented every time a 
+    This is the "good" case where the reader successfully acquired this version of known regions for read. Once a
+    version has been created by a writer, its ref_count will be 0. The ref_count will then be incremented every time a
     reader is currently accessing that version, and then decremented again when it's finished. Therefore, if the old
-    old_ref_count is less than "`INVALID_REF_COUNT_VAL_START` - 1", it is in this safe-for-reading state. 
+    old_ref_count is less than "`INVALID_REF_COUNT_VAL_START` - 1", it is in this safe-for-reading state.
 
     *Result*: Reader acquires the version. Other readers can also acquire it but a writer cannot write to it.
-    
+
 2. "Retry" case:  *`INVALID_REF_COUNT_VAL_START` <= old_ref_count < `INVALID_REF_COUNT_VAL_END`*
-  
-    A reader gets the latest version index which currently has no other readers. At this point, this thread blocks or 
+
+    A reader gets the latest version index which currently has no other readers. At this point, this thread blocks or
     runs slowly. A writer updates another version, changing the latest version index to that newly modified version, so
     the reader thread has loaded a version index which no longer corresponds to the true latest version. The writer or a
-    series of writers do this enough times that the next time that a writer acquires a version, it acquires the same 
-    version index that the reader is accessing. But since the reader has not yet incremented the ref count of that 
-    version, the writer acquires it. The writer will update the ref count to `INVALID_REF_COUNT_VAL_START` and begin 
-    modifying the version. The reader thread finally unblocks and increments the ref count, but will see that the 
-    old_ref_count is now `INVALID_REF_COUNT_VAL_START`. Therefore, it knows that a writer has acquired this version and 
+    series of writers do this enough times that the next time that a writer acquires a version, it acquires the same
+    version index that the reader is accessing. But since the reader has not yet incremented the ref count of that
+    version, the writer acquires it. The writer will update the ref count to `INVALID_REF_COUNT_VAL_START` and begin
+    modifying the version. The reader thread finally unblocks and increments the ref count, but will see that the
+    old_ref_count is now `INVALID_REF_COUNT_VAL_START`. Therefore, it knows that a writer has acquired this version and
     it should check for the new latest version index and try to acquire that version.
 
-    *Result*: In this case, the reader will retry a specified number of times until it can acquire a version for 
-    reading. If it cannot acquire a version for reading after these retries, it returns an empty value and the caller 
+    *Result*: In this case, the reader will retry a specified number of times until it can acquire a version for
+    reading. If it cannot acquire a version for reading after these retries, it returns an empty value and the caller
     can handle this case.
 
 3. "Failure" cases:
 
     * (A) *old_ref_count == `INVALID_REF_COUNT_VAL_START` - 1.*
 
-        If the old ref-counter was equal to `INVALID_REF_COUNT_VAL_START` - 1 before incrementing, the new ref_count 
+        If the old ref-counter was equal to `INVALID_REF_COUNT_VAL_START` - 1 before incrementing, the new ref_count
         after incrementing would now be `INVALID_REF_COUNT_VAL_START`. This is the value used by the writer to indicate
-        that it is currently writing to this version, which will prevent other readers from accessing this version. It 
-        is also the initial value for an unused version (i.e. that have no readers), so a writer will assume that it is 
+        that it is currently writing to this version, which will prevent other readers from accessing this version. It
+        is also the initial value for an unused version (i.e. that have no readers), so a writer will assume that it is
         free to write to this version which could lead to the version being updated *while* the reader is still reading
         it.
 
-        This case will occur if we have almost 2x10⁷ readers concurrently accessing the same version. 
+        This case will occur if we have almost 2x10⁷ readers concurrently accessing the same version.
         Alternatively, if the decrement-logic of the ref_count (when a reader is finished with the version) is broken.
-        
+
     * (B) *old_ref_count == `INVALID_REF_COUNT_VAL_END`*
 
-        If the case described in the "Retry" case occurs, then the increment operation by the reader will cause the 
+        If the case described in the "Retry" case occurs, then the increment operation by the reader will cause the
         ref_count to be (`INVALID_REF_COUNT_VAL_START` + 1). If this occurs, enough times, then eventually the ref_count
         will reach `INVALID_REF_COUNT_VAL_END`. If another reader tries to increment the ref_count of this version, then
         it will overflow to 0, despite the fact that the writer is still updating the region.
@@ -183,7 +183,7 @@ Since `ara::core` needs to implement different container types like `Vector` or 
 standard library container. This is possible by overloading the standard library container with a custom allocator,
 that follows the requirements specified in [`std::allocator_traits`](https://en.cppreference.com/w/cpp/memory/allocator_traits).
 This custom allocator is called `PolymorphicOffsetPtrAllocator` and depends on the previously defined memory resource proxy
-`MemoryResourceProxy`, which will then resolve the correct memory resource to use. In order to support multi-level 
+`MemoryResourceProxy`, which will then resolve the correct memory resource to use. In order to support multi-level
 allocations (e.g. vector in vector) the custom allocator needs to be wrapped in`std::scoped_allocator_adaptor`.
 
 All in all an example usage and implementation of `ara::core::Vector<T>` could look like this:
@@ -220,11 +220,11 @@ be avoided and move construction does not seem to be possible. This leaves us wi
 the data but not create them. They have to use a `reinterpret_cast` to get the respective data types from the raw memory
 they opened. This causes undefined behaviour since the C++-Standard states that such casts are only defined if the
 object started life already in this process. The notion of shared memory is not considered to the C++-Standard. In
-practice the cast will work, but for ASIL-B software this behaviour needs to be assured by the compiler vendor. 
+practice the cast will work, but for ASIL-B software this behaviour needs to be assured by the compiler vendor.
 
 At the end the interaction with shared memory can look like listed:
 ```c++
-// 1. Process: 
+// 1. Process:
 void* ptr = shm_open(...);
 int* value = new(ptr) int; // using placement new to store data type
 *value = 5;
@@ -259,7 +259,7 @@ For the Named Shared Memory it can be set to one of the following:
 For the Anonymous Shared Memory check the details below [Anonymous Shared Memory](#anonymous-shared-memory)
 
 ### Named Shared Memory
-Named shared memory allocated in typed memory will inherit the effective `UID/GID` of the `typed_memory_daemon`. Whereas, named shared memory allocated in OS-system memory will have the effective `UID/GID` of the user. 
+Named shared memory allocated in typed memory will inherit the effective `UID/GID` of the `typed_memory_daemon`. Whereas, named shared memory allocated in OS-system memory will have the effective `UID/GID` of the user.
 
 For named shared memory allocated in OS-system memory with `world-writable` mode, permissions will be enforced using `fchmod` to ensure `world-writable` access.
 
@@ -267,7 +267,7 @@ The underlying `shm_open()` call uses the `O_EXCL` and `O_CREAT` flags, ensuring
 
 From a safety standpoint, `ASIL-B` applications should avoid creating shared memory objects with `world-readable` or `world-writable` permissions in order to reduce security risks. For more details check [Access Control concepts](broken_link_a/ui/api/v1/download/contentBrowsing/ipnext-platform-documentation/master/html/features/dac/README.html)
 
-![Named memory allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/named_memory_allocation.uxf?ref=897553326c7c5317cd79d4ffb6323b32849e2758)
+![Named memory allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/named_memory_allocation.puml?ref=897553326c7c5317cd79d4ffb6323b32849e2758)
 
 ### Anonymous Shared Memory
 Anonymous shared memory created with `SharedMemoryFactory::CreateAnonymous(...)` does not have a representation in the file system. In fact, there is no way for a random process to identify an anonymous shared memory object. Thus, there are no corresponding implementations of `SharedMemoryFactory::Open(...)` and `SharedMemoryFactory::CreateOrOpen(...)`. To share an anonymous shared memory object with another process it must be actively shared at runtime by:
@@ -283,7 +283,7 @@ underlying `shm_open()` call is made with `mode` argument based on the`permissio
 Anonymous Shared Memory objects are created without `SHM_CREATE_HANDLE_OPT_NOFD`, such that the user is able to create further `shm_handle_t` for other processes.
 These objects are then sealed by calling `shm_ctl()` with `SHMCTL_SEAL` flag to prevents the object's layout (e.g., its size and backing memory) and attributes from being modified. So that no process (including the object's creator) can modify the layout or change any attributes.
 
-![Anonymous memory allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/anonymous_memory_allocation.uxf?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
+![Anonymous memory allocation](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/anonymous_memory_allocation.puml?ref=8bc136c4746944bee94af634a9e2b4919c0803ab)
 
 ## Memory Management Algorithm
 The allocated shared memory needs to be managed in some way. Meaning, freed memory needs to be reused before
@@ -299,21 +299,21 @@ All static objects will be destroyed at program end (after all other non-static 
 ### Lifetime of SharedMemoryResource in application code
 The MemoryResourceRegistry is a singleton which is created when MemoryResourceRegistry::getInstance() is called for the first time. This will be called during the construction of a SharedMemoryResource, so it is guaranteed to be created if a SharedMemoryResource is created. The destructor of SharedMemoryResource also calls MemoryResourceRegistry::getInstance(). This means that the MemoryResourceRegistry should be destroyed only after the last SharedMemoryResource has been destroyed.
 
-In application code, if the lifetime of a SharedMemoryResource is linked to the lifetime of a static object (e.g. it's destroyed in the destructor of the static object), then the SharedMemoryResource will be destroyed at some point during the static destruction sequence at the earliest. In this case, the user must ensure that MemoryResourceRegistry::getInstance() is called before the static object owning the shared_ptr is created. This can be solved via a singleton approach e.g. 
+In application code, if the lifetime of a SharedMemoryResource is linked to the lifetime of a static object (e.g. it's destroyed in the destructor of the static object), then the SharedMemoryResource will be destroyed at some point during the static destruction sequence at the earliest. In this case, the user must ensure that MemoryResourceRegistry::getInstance() is called before the static object owning the shared_ptr is created. This can be solved via a singleton approach e.g.
 
 ```
 // Assuming that UserSharedMemoryResourceOwner is created as a static variable
 class UserSharedMemoryResourceOwner
 {
   public:
-    UserSharedMemoryResourceOwner() 
+    UserSharedMemoryResourceOwner()
     {
         // The MemoryResourceRegistry will be created before the UserSharedMemoryResourceOwner.
         // Therefore, it will be destroyed after the UserSharedMemoryResourceOwner
         MemoryResourceRegistry::getInstance();
 
         // Create the SharedMemoryResource and assign to memory_resource_...
-    }    
+    }
 
     ~UserSharedMemoryResourceOwner() {
         // If the ref count of the memory_resource_ is greater than 1, the SharedMemoryResource will not
@@ -321,42 +321,42 @@ class UserSharedMemoryResourceOwner
         assert(memory_resource_.ref_count() == 1);
 
         // The MemoryResourceRegistry is still alive here
-    }      
+    }
 
   private:
     // Created in the constructor and destroyed in the destructor of UserSharedMemoryResourceOwner.
     std::shared_ptr<SharedMemoryResource> memory_resource_;
-} 
+}
 ```
 
 Obviously, since the SharedMemoryResource is contained within a shared_ptr, in the example above, the user must ensure that the ref count of the shared_ptr goes to 0 when the static object is destroyed so that the SharedMemoryResource itself is destroyed.
 
 ## Ownership of the SharedMemoryResource
 
-Getting the `uid` of the creator of the underlying memory managed by a `SharedMemoryResource` is essential to ensure that only memory with the expected allowed providers can be opened by a user of the library as this feature is used by some ASIL B components (for example see this [requirement](broken_link_c/issue/33047276) or this [one](broken_link_c/issue/8742625)). 
-This library only supports opening a shared memory area based on the path therefore this concept is only valid for the named memory use case, annonymous memory is not considered. 
+Getting the `uid` of the creator of the underlying memory managed by a `SharedMemoryResource` is essential to ensure that only memory with the expected allowed providers can be opened by a user of the library as this feature is used by some ASIL B components (for example see this [requirement](broken_link_c/issue/33047276) or this [one](broken_link_c/issue/8742625)).
+This library only supports opening a shared memory area based on the path therefore this concept is only valid for the named memory use case, annonymous memory is not considered.
 
 There are 2 possible use-cases :
 
-1. Memory is allocated in System RAM: 
+1. Memory is allocated in System RAM:
 
-The owner `uid` of the allocated memory will be the `euid` (effective user ID) of the allocating process. 
-Therefore, when another process opens the memory it only needs to perform a simple check by using `fstat` to get the `uid` for the memory and compare that `uid` with the passed expected provider. 
+The owner `uid` of the allocated memory will be the `euid` (effective user ID) of the allocating process.
+Therefore, when another process opens the memory it only needs to perform a simple check by using `fstat` to get the `uid` for the memory and compare that `uid` with the passed expected provider.
 
-2. Memory is allocated in [Typed Memory](../../../../intc/typedmemd/README.md): 
+2. Memory is allocated in [Typed Memory](../../../../intc/typedmemd/README.md):
 
-Due to safety considerations, typed memory cannot be directly allocated by a process using the POSIX primitives, so the allocation is delegated to an ASIL B application called [`typed_memory_daemon`](broken_link_g/swh/ddad_platform/blob/master/aas/intc/typedmemd/README.md). 
-The `typed_memory_daemon` will allocate the memory with its `euid` as the owner `uid`. 
+Due to safety considerations, typed memory cannot be directly allocated by a process using the POSIX primitives, so the allocation is delegated to an ASIL B application called [`typed_memory_daemon`](broken_link_g/swh/safe-posix-platform/blob/master/platform/aas/intc/typedmemd/README.md).
+The `typed_memory_daemon` will allocate the memory with its `euid` as the owner `uid`.
 For safety and security reasons the `typed_memory_daemon` cannot transfer ownership of the memory using `chown` to the application's `euid` from which it got the delegation, so it will use Acess Control Lists ([ACLs](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.security.system/topic/manual/access_control.html)) to give read/write permissions to the requestor's `euid` as well as any other needed `uid`. \
-In this case, to be able to identify the requestor process, the `typed_memory_daemon` will add on top of the read/write permissions also the execution permissions to the requestor's `euid` **only** as per its [ASIL B requirement](broken_link_c/issue/42033981). 
-When another process opens the `SharedMemoryResource` it will then check if the `uid` of the memory is identical to the `typed_memory_daemon`'s `euid`. 
-The `typed_memory_daemon`'s `euid` is currently a hardcoded constant in the code. 
-If the check is succesfull it means that the memory is in typed memory and the corresponding internal flag (`is_shm_in_typed_memory_`) will also be updated. 
-Then it will inspect the ACLs and compare the single `uid` with execution permissions with the passed expected provider. 
-If there are none or multiple `uids` with execution permissions the application will be terminated. 
+In this case, to be able to identify the requestor process, the `typed_memory_daemon` will add on top of the read/write permissions also the execution permissions to the requestor's `euid` **only** as per its [ASIL B requirement](broken_link_c/issue/42033981).
+When another process opens the `SharedMemoryResource` it will then check if the `uid` of the memory is identical to the `typed_memory_daemon`'s `euid`.
+The `typed_memory_daemon`'s `euid` is currently a hardcoded constant in the code.
+If the check is succesfull it means that the memory is in typed memory and the corresponding internal flag (`is_shm_in_typed_memory_`) will also be updated.
+Then it will inspect the ACLs and compare the single `uid` with execution permissions with the passed expected provider.
+If there are none or multiple `uids` with execution permissions the application will be terminated.
 
-This solution of using the execution bit to mark the owner/creator of the memory was chosen as a workaround to enable the usage of typed memory by components relying on the allowed providers check (e.g. users of `mw::com`). 
-Using the execution is a lightweight solution as it only needs one system call to get the necessary information on the ACLs. 
+This solution of using the execution bit to mark the owner/creator of the memory was chosen as a workaround to enable the usage of typed memory by components relying on the allowed providers check (e.g. users of `mw::com`).
+Using the execution is a lightweight solution as it only needs one system call to get the necessary information on the ACLs.
 It also does not have any impact on security as [PathTrust](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.security.system/topic/manual/pathtrust.html) is enabled which makes it impossible to execute anything allocated in `/dev/shmem` and even prevents other side effects like mapped and executed by the default QNX loader.
 
 The complete sequence to find the owner is:
