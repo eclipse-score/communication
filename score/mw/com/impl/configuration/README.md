@@ -45,7 +45,7 @@ The array characteristics you can see from this snippet from the example config 
     {
         "serviceTypes": [
           {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             ...
           },
           ...
@@ -124,7 +124,7 @@ In the corresponding snippet from our example configuration:
     ]
 
 you see, that for the `service-type` being identified (via property `serviceTypeName`) as
-"/bmw/ncar/services/TirePressureService", we have configured one binding of type `SHM`.
+"/score/ncar/services/TirePressureService", we have configured one binding of type `SHM`.
 
 The first essential and mandatory property to be defined for a `binding` is the `serviceId`: It is a `binding` type
 specific identification for the `service-type`. The `service-type` has a `binding` independent unique
@@ -136,7 +136,7 @@ To keep track within BMW, we currently manage the `serviceId` namespace [here](b
 
 Then, for each service element (event, field, method), which the `service-type` (the `service-interface` in our C++
 representation) contains, we need to configure a pair of name and id. So in our example the `service-type`
-"/bmw/ncar/services/TirePressureService" has an event named "CurrentPressureFrontLeft", a field named
+"/score/ncar/services/TirePressureService" has an event named "CurrentPressureFrontLeft", a field named
 "CurrentTemperatureFrontLeft", and a method named "SetPressure".
 
 Now it is time to have a look at the C++ representation of the `service-type`, which fits to our example:
@@ -185,7 +185,7 @@ The array characteristics you can see from this snippet from the example config 
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34

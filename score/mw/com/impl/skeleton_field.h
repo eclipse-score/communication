@@ -55,24 +55,36 @@ class SkeletonField : public SkeletonFieldBase
     SkeletonField(SkeletonField&& other) noexcept;
     SkeletonField& operator=(SkeletonField&& other) & noexcept;
 
-    /// \brief FieldType is allocated by the user and provided to the middleware to send. Dispatches to
-    /// SkeletonEvent::Send()
-    ///
-    /// The initial value of the field must be set before PrepareOffer() is called. However, the actual value of the
-    /// field cannot be set until the Skeleton has been set up via Skeleton::OfferService(). Therefore, we create a
-    /// callback that will update the field value with sample_value which will be called in the first call to
-    /// SkeletonFieldBase::PrepareOffer().
+    /**
+     * \api
+     * \brief FieldType is allocated by the user and provided to the middleware to send. Dispatches to
+     *        SkeletonEvent::Send()
+     * \details The initial value of the field must be set before PrepareOffer() is called. However, the actual value of
+     *          the field cannot be set until the Skeleton has been set up via Skeleton::OfferService(). Therefore, we
+     *          create a callback that will update the field value with sample_value which will be called in the first
+     *          call to SkeletonFieldBase::PrepareOffer().
+     * \param sample_value The field data to be sent to subscribers.
+     * \return On failure, returns an error code.
+     */
     ResultBlank Update(const FieldType& sample_value) noexcept;
 
-    /// \brief FieldType is previously allocated by middleware and provided by the user to indicate that he is finished
-    /// filling the provided pointer with live data. Dispatches to SkeletonEvent::Send()
+    /**
+     * \api
+     * \brief FieldType is previously allocated by middleware and provided by the user to indicate that he is finished
+     *        filling the provided pointer with live data. Dispatches to SkeletonEvent::Send()
+     * \param sample The pre-allocated sample pointer containing the field data to be sent.
+     * \return On failure, returns an error code.
+     */
     ResultBlank Update(SampleAllocateePtr<FieldType> sample) noexcept;
 
-    /// \brief Allocates memory for FieldType for the user to fill it. This is especially necessary for Zero-Copy
-    /// implementations. Dispatches to SkeletonEvent::Allocate()
-    ///
-    /// This function cannot be currently called to set the initial value of a field as the shared memory must be first
-    /// set up in the Skeleton::PrepareOffer() before the user can obtain / use a SampleAllocateePtr.
+    /**
+     * \api
+     * \brief Allocates memory for FieldType for the user to fill it. This is especially necessary for Zero-Copy
+     *        implementations. Dispatches to SkeletonEvent::Allocate()
+     * \details This function cannot be currently called to set the initial value of a field as the shared memory must
+     *          be first set up in the Skeleton::PrepareOffer() before the user can obtain / use a SampleAllocateePtr.
+     * \return On success, returns a SampleAllocateePtr that can be filled with data. On failure, returns an error code.
+     */
     Result<SampleAllocateePtr<FieldType>> Allocate() noexcept;
 
     void InjectMock(ISkeletonField<FieldType>& skeleton_field_mock)

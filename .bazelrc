@@ -18,6 +18,7 @@ common --@score_baselibs//score/json:base_library=nlohmann
 common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
 common --//score/mw/com/flags:tracing_library=stub
 common --extra_toolchains=@gcc_toolchain//:host_gcc_12
+common --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
 build --incompatible_strict_action_env
 test --test_output=errors
 build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
@@ -32,6 +33,7 @@ common:qnx_x86_64 --host_platform=@score_bazel_platforms//:x86_64-linux
 common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx8_0
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_x86_64
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_x86_64
+common:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_x86_64 --sandbox_writable_path=/var/tmp
 
@@ -39,6 +41,7 @@ common:qnx_arm64 --host_platform=@score_bazel_platforms//:x86_64-linux
 common:qnx_arm64 --platforms=@score_bazel_platforms//:arm64-qnx8_0
 common:qnx_arm64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_aarch64
 common:qnx_arm64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_aarch64
+common:qnx_arm64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_nto_qnx800
 common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_arm64 --sandbox_writable_path=/var/tmp
 
@@ -66,5 +69,12 @@ coverage --test_env=COVERAGE_GCOV_OPTIONS=-bcu
 coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --cxxopt -mllvm
 coverage --cxxopt -runtime-counter-relocation
+
+# Clang-tidy configuration
+# Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
+test:clang-tidy --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect
+test:clang-tidy --output_groups=+rules_lint_report
+# Use LLVM toolchain for clang-tidy so it can find system headers
+test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 
 import quality/sanitizer/sanitizer.bazelrc

@@ -25,7 +25,7 @@ namespace score::mw::com::test
 
 namespace
 {
-constexpr std::string_view kBenchmarkInstanceSpecifier = "/bmw/mw/com/test/TestInterface";
+constexpr std::string_view kBenchmarkInstanceSpecifier = "/score/mw/com/test/TestInterface";
 }
 
 // This fixture will be used to benchmark the LoLa runtime

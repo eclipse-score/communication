@@ -271,19 +271,23 @@ TEST_F(EventDataControlFixture, CanAllocateOldestSlotAfterOneSlotReady)
     EXPECT_EQ(slot.GetIndex(), 2);
 }
 
-// Test is timing out in the CI likely due to a race condition. Test to be investigated and re-enabled in Ticket-206121.
-TEST_F(EventDataControlFixture, DISABLED_RandomizedSlotAllocation)
+// Initially we had a 'randomized allocate or free logic'.
+// But because of our excessive retry-logic (Ticket-188373) in case of slot exhaustion,
+// this lead to huge test runtimes/timeouts.
+// So we now favor an alternating allocate/free approach, which avoids this issue
+TEST_F(EventDataControlFixture, MultithreadedSlotAllocationDeallocation)
 {
     // Given an empty EventDataControl
     EventDataControl unit{kMaxSlots, memory_.getMemoryResourceProxy(), kMaxSubscribers};
 
     std::atomic<EventSlotStatus::EventTimeStamp> time_stamp{1};
     auto fuzzer = [&unit, &time_stamp]() {
-        // Worker that randomly allocates and deallocates random slots, ensuring an increasing time stamp
+        // Worker that alternates between slot allocation and deallocation, ensuring an increasing time stamp
         std::vector<ControlSlotIndicator> allocated_events{};
+        bool allocate{false};
         for (int i = 0; i < 1000; i++)
         {
-            if (RandomTrueOrFalse())
+            if ((allocate = !allocate))
             {
                 const auto slot = unit.AllocateNextSlot();
                 if (slot.IsValid())
@@ -306,7 +310,7 @@ TEST_F(EventDataControlFixture, DISABLED_RandomizedSlotAllocation)
     std::vector<std::thread> thread_pool{};
     for (int i = 0; i < 10; i++)
     {
-        thread_pool.emplace_back(std::thread{fuzzer});
+        thread_pool.emplace_back(fuzzer);
     }
 
     for (auto& thread : thread_pool)

@@ -91,17 +91,33 @@ class SkeletonEvent : public SkeletonEventBase
     SkeletonEvent(SkeletonEvent&& other) noexcept;
     SkeletonEvent& operator=(SkeletonEvent&& other) & noexcept;
 
-    /// \brief EventType is allocated by the user and provided to the middleware to send
-    /// \return On failure, returns an error code.
+    /**
+     * \api
+     * \brief Send event data to all subscribed clients.
+     * \details EventType is allocated by the user and provided to the middleware to send. The data is copied
+     *          by the middleware.
+     * \param sample_value The event data to be sent to subscribers.
+     * \return On failure, returns an error code.
+     */
     ResultBlank Send(const EventType& sample_value) noexcept;
 
-    /// \brief EventType is previously allocated by middleware and provided by the user to indicate that he is finished
-    /// filling the provided pointer with live data.
-    /// \return On failure, returns an error code.
+    /**
+     * \api
+     * \brief Send event data using zero-copy mechanism.
+     * \details EventType is previously allocated by middleware via Allocate() and provided by the user to indicate
+     *          that filling the data is complete. This enables zero-copy transmission for better performance.
+     * \param sample The pre-allocated sample pointer containing the event data to be sent.
+     * \return On failure, returns an error code.
+     */
     ResultBlank Send(SampleAllocateePtr<EventType> sample) noexcept;
 
-    /// \brief Allocates memory for EventType for the user to fill it. This is especially necessary for Zero-Copy
-    /// implementations.
+    /**
+     * \api
+     * \brief Allocates memory for EventType for the user to fill.
+     * \details This is especially necessary for Zero-Copy implementations. The allocated memory can then be
+     *          filled with data and sent using Send(SampleAllocateePtr).
+     * \return On success, returns a SampleAllocateePtr that can be filled with data. On failure, returns an error code.
+     */
     Result<SampleAllocateePtr<EventType>> Allocate() noexcept;
 
     void InjectMock(ISkeletonEvent<EventType>& skeleton_event_mock)

@@ -11,6 +11,20 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+/// This trait shall ensure that we can safely use an instance of the implementing type across
+/// address boundaries. This property may be violated by the following circumstances:
+/// - usage of pointers to other members of the struct itself (akin to !Unpin structs)
+/// - usage of Rust pointers or references to other data
+///
+/// This can be trivially achieved by not using any sort of reference. In case a reference (either
+/// to self or to other data) is required, the following options exist:
+/// - Use indices into other data members of the same structure
+/// - Use offset pointers _to the same memory chunk_ that point to different (external) data
+///
+/// # Safety
+///
+/// Since it is yet to be proven whether this trait can be implemented safely (assumption is: no) it
+/// is unsafe for now. The expectation is that very few users ever need to implement this manually.
 pub unsafe trait Reloc {}
 
 unsafe impl Reloc for () {}

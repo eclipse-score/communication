@@ -33,14 +33,14 @@ using score::json::operator""_json;
 
 const char* const kInstanceSpecifier = "abc/abc/TirePressurePort";
 const char* const kInstanceSpecifier2 = "abc/abc/TirePressurePort2";
-const char* const kServiceTypeName = "/bmw/ncar/services/TirePressureService";
-const char* const kServiceTypeName2 = "/bmw/ncar/services/TirePressureService2";
+const char* const kServiceTypeName = "/score/ncar/services/TirePressureService";
+const char* const kServiceTypeName2 = "/score/ncar/services/TirePressureService2";
 
 const char* small_mw_com_config_ok = R"(
 {
 "serviceTypes": [
   {
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -65,7 +65,7 @@ const char* small_mw_com_config_ok = R"(
     ]
   },
   {
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService2",
+    "serviceTypeName": "/score/ncar/services/TirePressureService2",
     "version": {
       "major": 12,
       "minor": 34
@@ -94,7 +94,7 @@ const char* small_mw_com_config_ok = R"(
 "serviceInstances": [
   {
     "instanceSpecifier": "abc/abc/TirePressurePort",
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -126,7 +126,7 @@ const char* small_mw_com_config_ok = R"(
   },
   {
     "instanceSpecifier": "abc/abc/TirePressurePort2",
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService2",
+    "serviceTypeName": "/score/ncar/services/TirePressureService2",
     "version": {
       "major": 12,
       "minor": 34
@@ -289,7 +289,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigOK)
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",
@@ -374,7 +374,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigWithTwoServiceTypesOK)
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",
@@ -434,7 +434,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigWithTwoServiceTypesOK)
       ]
     },
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService2",
+      "shortname_path": "/score/ncar/services/TirePressureService2",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft2",
@@ -529,7 +529,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigOKFromFile)
 {
 "serviceTypes": [
   {
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -551,7 +551,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigOKFromFile)
 "serviceInstances": [
   {
     "instanceSpecifier": "abc/abc/TirePressurePort",
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -612,7 +612,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigJsonError)
 {
 "serviceTypes": [
   {
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -634,7 +634,7 @@ TEST_F(TraceConfigParserFixture, FilterConfigJsonError)
 "serviceInstances": [
   {
     "instanceSpecifier": "abc/abc/TirePressurePort",
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -686,14 +686,14 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointReferencingUnknownServiceType)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Given a tracing filter configuration, which enables tracing for a service /bmw/ncar/services/UNKNOWN, which
+    // Given a tracing filter configuration, which enables tracing for a service /score/ncar/services/UNKNOWN, which
     // doesn't exist in the underlying mw_com_config.json (TraceConfigParserFixture::config_)
 
     auto filter_config_json = R"(
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/UNKNOWN",
+      "shortname_path": "/score/ncar/services/UNKNOWN",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",
@@ -735,14 +735,14 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointReferencingUnknownEventField)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a tracing filter configuration, which enables tracing for an unknown event and unknown field in a known
-    // service /bmw/ncar/services/TirePressureService, which doesn't exist in the underlying mw_com_config.json
+    // service /score/ncar/services/TirePressureService, which doesn't exist in the underlying mw_com_config.json
     // (TraceConfigParserFixture::config_)
 
     auto filter_config_json = R"(
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "UnknownEvent",
@@ -796,7 +796,7 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledEventWithWarning)
 {
 "serviceTypes": [
   {
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -822,7 +822,7 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledEventWithWarning)
 "serviceInstances": [
   {
     "instanceSpecifier": "abc/abc/TirePressurePort",
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -865,7 +865,7 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledEventWithWarning)
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",
@@ -926,7 +926,7 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledFieldWithWarning)
 {
 "serviceTypes": [
   {
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -952,7 +952,7 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledFieldWithWarning)
 "serviceInstances": [
   {
     "instanceSpecifier": "abc/abc/TirePressurePort",
-    "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+    "serviceTypeName": "/score/ncar/services/TirePressureService",
     "version": {
       "major": 12,
       "minor": 34
@@ -995,7 +995,7 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForDisabledFieldWithWarning)
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "fields": [
         {
           "shortname": "CurrentTemperatureFrontLeft",
@@ -1054,7 +1054,7 @@ TEST_F(TraceConfigParserFixture, IgnoreTracePointForTemporarilyDisabledTracePoin
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",
@@ -1129,7 +1129,7 @@ TEST_F(TraceConfigParserFixture, ParserReturnsValidObjectWhenConfigurationContai
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",
@@ -1162,7 +1162,7 @@ TEST_F(TraceConfigParserFixture,
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",
@@ -1184,7 +1184,7 @@ TEST_F(TraceConfigParserFixture,
     // TracingFilterConfig
     const auto tracing_filter_config = std::move(result).value();
     const char* instance_specifier{"abc/abc/TirePressurePort"};
-    EXPECT_TRUE(tracing_filter_config.IsTracePointEnabled("/bmw/ncar/services/TirePressureService",
+    EXPECT_TRUE(tracing_filter_config.IsTracePointEnabled("/score/ncar/services/TirePressureService",
                                                           "CurrentPressureFrontLeft",
                                                           instance_specifier,
                                                           tracing::ProxyEventTracePointType::SUBSCRIBE));
@@ -1198,7 +1198,7 @@ TEST_F(TraceConfigParserFixture, MissingEventsShortnameCausesErrorLog)
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "trace_subscribe_received": true,
@@ -1237,7 +1237,7 @@ TEST_F(TraceConfigParserFixture, MissingFieldsShortnameCausesErrorLog)
 {
   "services": [
     {
-      "shortname_path": "/bmw/ncar/services/TirePressureService",
+      "shortname_path": "/score/ncar/services/TirePressureService",
       "events": [
         {
           "shortname": "CurrentPressureFrontLeft",

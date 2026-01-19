@@ -20,5 +20,5 @@ pub use com_api_concept::{
     Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
     InstanceSpecifier, Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder,
     Publisher, Reloc, Result, Runtime, SampleContainer, SampleMaybeUninit, SampleMut,
-    ServiceDiscovery, Subscriber, Subscription,
+    ServiceDiscovery, Subscriber, Subscription, TypeInfo,
 };

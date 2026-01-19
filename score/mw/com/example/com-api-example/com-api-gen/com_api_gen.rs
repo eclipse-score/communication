@@ -12,22 +12,28 @@
  ********************************************************************************/
 
 use com_api::{
-    Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber,
+    Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber, TypeInfo,
 };
 
 #[derive(Debug)]
 pub struct Tire {}
 unsafe impl Reloc for Tire {}
+impl TypeInfo for Tire {
+    const ID: &'static str = "Tire";
+}
 
 #[derive(Debug)]
 pub struct Exhaust {}
 unsafe impl Reloc for Exhaust {}
+impl TypeInfo for Exhaust {
+    const ID: &'static str = "Exhaust";
+}
 
 pub struct VehicleInterface {}
 
 /// Generic
 impl Interface for VehicleInterface {
-    const TYPE_ID: &'static str = "VehicleInterface";
+    const INTERFACE_ID: &'static str = "VehicleInterface";
     type Consumer<R: Runtime + ?Sized> = VehicleConsumer<R>;
     type Producer<R: Runtime + ?Sized> = VehicleProducer<R>;
 }

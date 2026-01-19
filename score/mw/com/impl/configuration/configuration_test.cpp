@@ -135,9 +135,9 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
     auto config = configuration::Parse(json_path);
 
     // Then manually generated ServiceTypes data structures using data from config file
-    const auto service_identifier_type = make_ServiceIdentifierType("/bmw/ncar/services/TirePressureService", 12, 34);
+    const auto service_identifier_type = make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12, 34);
 
-    const std::string service_type_name{"/bmw/ncar/services/TirePressureService"};
+    const std::string service_type_name{"/score/ncar/services/TirePressureService"};
     const std::string service_event_name{"CurrentPressureFrontLeft"};
     const std::string service_field_name{"CurrentTemperatureFrontLeft"};
     const LolaServiceId service_id{1234};

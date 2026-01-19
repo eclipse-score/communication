@@ -60,7 +60,7 @@ class ConfigParserFixture : public ::testing::Test
         }
     }
 
-    ServiceIdentifierType si_{make_ServiceIdentifierType("/bmw/ncar/services/TirePressureService", 12U, 34U)};
+    ServiceIdentifierType si_{make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U)};
     ServiceVersionType sv_{make_ServiceVersionType(12U, 34U)};
     std::pair<const ServiceIdentifierType*, const ServiceVersionType*> found_service_type_{&si_, &sv_};
 };
@@ -163,7 +163,7 @@ TEST(ConfigParserDeathTest, NoServiceNameInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -228,7 +228,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoVersionForServiceTypeDeployment)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "bindings": [
         {
              "binding": "SHM",
@@ -253,7 +253,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoBindingsForServiceTypeDeployment)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -276,7 +276,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoBindingIdentifierInServiceTypeDeployment)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -304,7 +304,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoServiceIdInServiceTypeDeployment)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -332,7 +332,7 @@ TEST_F(ConfigParserFixtureDeathTest, UnknownBindingIdentifierInServiceTypeDeploy
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -361,7 +361,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoEventsOrFieldsWillCauseTermination)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -390,7 +390,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoEventNameWillCauseTermination)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -423,7 +423,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoFieldNameWillCauseTermination)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -456,7 +456,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoEventIdWillCauseTermination)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -491,7 +491,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoFieldIdWillCauseTermination)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -524,7 +524,7 @@ TEST_F(ConfigParserFixtureDeathTest, WrongPermissionValueWillCauseTermination)
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -552,7 +552,7 @@ TEST_F(ConfigParserFixtureDeathTest, WrongPermissionValueWillCauseTermination)
   "serviceInstances": [
     {
       "instanceSpecifier": "abc/abc/TirePressurePort",
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -597,7 +597,7 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateEventTypeDeploymentWillCauseTermin
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -637,7 +637,7 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateFieldTypeDeploymentWillCauseTermin
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -677,7 +677,7 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceTypeDeploymentWillCauseTerm
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -692,7 +692,7 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceTypeDeploymentWillCauseTerm
       ]
     },
     {
-      "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+      "serviceTypeName": "/score/ncar/services/TirePressureService",
       "version": {
         "major": 12,
         "minor": 34
@@ -723,7 +723,7 @@ TEST(ConfigParserDeathTest, NoInstanceSpecifierInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -733,7 +733,7 @@ TEST(ConfigParserDeathTest, NoInstanceSpecifierInInstanceWillDie)
     ],
     "serviceInstances": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService"
+            "serviceTypeName": "/score/ncar/services/TirePressureService"
         }
     ]
   }
@@ -751,7 +751,7 @@ TEST(ConfigParserDeathTest, ServiceInstanceReferencesUnknownServiceTypeWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -762,7 +762,7 @@ TEST(ConfigParserDeathTest, ServiceInstanceReferencesUnknownServiceTypeWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/MeDoesntExist",
+            "serviceTypeName": "/score/ncar/services/MeDoesntExist",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -790,7 +790,7 @@ TEST(ConfigParserDeathTest, ServiceInstanceEventReferencesUnknownServiceTypeEven
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -818,7 +818,7 @@ TEST(ConfigParserDeathTest, ServiceInstanceEventReferencesUnknownServiceTypeEven
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -856,7 +856,7 @@ TEST(ConfigParserDeathTest, NoVersionInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -867,7 +867,7 @@ TEST(ConfigParserDeathTest, NoVersionInInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService"
+            "serviceTypeName": "/score/ncar/services/TirePressureService"
         }
     ]
   }
@@ -884,7 +884,7 @@ TEST(ConfigParserDeathTest, NoVersionDetailsInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -895,7 +895,7 @@ TEST(ConfigParserDeathTest, NoVersionDetailsInInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "minor": 34
             }
@@ -915,7 +915,7 @@ TEST(ConfigParserDeathTest, NoDeploymentInstancesInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -926,7 +926,7 @@ TEST(ConfigParserDeathTest, NoDeploymentInstancesInInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -947,7 +947,7 @@ TEST(ConfigParserDeathTest, EmptyDeploymentInstancesInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -958,7 +958,7 @@ TEST(ConfigParserDeathTest, EmptyDeploymentInstancesInInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -981,7 +981,7 @@ TEST(ConfigParserDeathTest, UnknownDeploymentInstancesInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -992,7 +992,7 @@ TEST(ConfigParserDeathTest, UnknownDeploymentInstancesInInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1019,7 +1019,7 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1030,7 +1030,7 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1044,7 +1044,7 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceWillDie)
         },
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1071,7 +1071,7 @@ TEST(ConfigParserDeathTest, NoAsilInDeploymentInstancesInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1082,7 +1082,7 @@ TEST(ConfigParserDeathTest, NoAsilInDeploymentInstancesInInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1108,7 +1108,7 @@ TEST(ConfigParserDeathTest, NoBindingInfoInDeploymentInstancesInInstanceWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1119,7 +1119,7 @@ TEST(ConfigParserDeathTest, NoBindingInfoInDeploymentInstancesInInstanceWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1145,7 +1145,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventWithoutNameCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1156,7 +1156,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventWithoutNameCausesTermination)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1188,7 +1188,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldWithoutNameCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1199,7 +1199,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldWithoutNameCausesTermination)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1231,7 +1231,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventNameDuplicateCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1270,7 +1270,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventIdDuplicateCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1297,7 +1297,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventIdDuplicateCausesTermination)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1334,7 +1334,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldNameDuplicateCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1373,7 +1373,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldIdDuplicateCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1400,7 +1400,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldIdDuplicateCausesTermination)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1436,7 +1436,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaMatchingEventAndFieldIdsIsNotAllowed)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1476,7 +1476,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectEventNameCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1487,7 +1487,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectEventNameCausesTermination)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1521,7 +1521,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectFieldNameCausesTermination)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1532,7 +1532,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectFieldNameCausesTermination)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1566,7 +1566,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventMaxSamplesAndNumberOfSampleSlotsCa
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1577,7 +1577,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventMaxSamplesAndNumberOfSampleSlotsCa
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1614,7 +1614,7 @@ TEST(ConfigParser, NoEventMaxSubscribersLeavesValueOptional)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1636,7 +1636,7 @@ TEST(ConfigParser, NoEventMaxSubscribersLeavesValueOptional)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1677,7 +1677,7 @@ TEST(ConfigParser, NoFieldMaxSubscribersLeavesValueOptional)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1699,7 +1699,7 @@ TEST(ConfigParser, NoFieldMaxSubscribersLeavesValueOptional)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1741,7 +1741,7 @@ TEST(ConfigParser, NoSHMInstanceIdLeavesValueOptional)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1752,7 +1752,7 @@ TEST(ConfigParser, NoSHMInstanceIdLeavesValueOptional)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1784,7 +1784,7 @@ TEST(ConfigParser, LolaEventOptionalMaxConcurrentAllocations)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1806,7 +1806,7 @@ TEST(ConfigParser, LolaEventOptionalMaxConcurrentAllocations)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1844,7 +1844,7 @@ TEST(ConfigParser, LolaEventDeprecatedMaxSamplesGetsRecognized)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1866,7 +1866,7 @@ TEST(ConfigParser, LolaEventDeprecatedMaxSamplesGetsRecognized)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1906,7 +1906,7 @@ TEST(ConfigParser, LolaFieldOptionalMaxConcurrentAllocations)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1928,7 +1928,7 @@ TEST(ConfigParser, LolaFieldOptionalMaxConcurrentAllocations)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -1971,7 +1971,7 @@ TEST(ConfigParser, LolaEventOptionalEnforceMaxSamples)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -1993,7 +1993,7 @@ TEST(ConfigParser, LolaEventOptionalEnforceMaxSamples)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2034,7 +2034,7 @@ TEST(ConfigParser, LolaFieldOptionalEnforceMaxSamples)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2056,7 +2056,7 @@ TEST(ConfigParser, LolaFieldOptionalEnforceMaxSamples)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2112,7 +2112,7 @@ TEST(ConfigParser, StrictPermissionIsSet)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2134,7 +2134,7 @@ TEST(ConfigParser, StrictPermissionIsSet)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2178,7 +2178,7 @@ TEST(ConfigParser, GetNoneStrictIfNoPermissionFlagAttr)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2200,7 +2200,7 @@ TEST(ConfigParser, GetNoneStrictIfNoPermissionFlagAttr)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2279,7 +2279,7 @@ std::string inconsistent_asil_config = R"json(
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2290,7 +2290,7 @@ std::string inconsistent_asil_config = R"json(
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2380,7 +2380,7 @@ TEST(ConfigParser, WrongQualityTypeForAllowedUsersWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2391,7 +2391,7 @@ TEST(ConfigParser, WrongQualityTypeForAllowedUsersWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2426,7 +2426,7 @@ TEST(ConfigParser, InvalidQualityTypeForAllowedConsumersWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2437,7 +2437,7 @@ TEST(ConfigParser, InvalidQualityTypeForAllowedConsumersWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2470,7 +2470,7 @@ TEST(ConfigParser, TerminateOnParsingSomeIP)
     {
         "serviceTypes": [
             {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2488,7 +2488,7 @@ TEST(ConfigParser, TerminateOnParsingSomeIP)
         "serviceInstances": [
             {
                 "instanceSpecifier": "abc/abc/TirePressurePort",
-                "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+                "serviceTypeName": "/score/ncar/services/TirePressureService",
                 "version": {
                     "major": 12,
                     "minor": 34
@@ -2765,7 +2765,7 @@ TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTra
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2790,7 +2790,7 @@ TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTra
           ]
         },
         {
-          "serviceTypeName": "/bmw/ncar/services/TireTemperatureService",
+          "serviceTypeName": "/score/ncar/services/TireTemperatureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2818,7 +2818,7 @@ TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTra
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2849,7 +2849,7 @@ TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTra
         },
         {
             "instanceSpecifier": "abc/abc/TireTemperaturePort",
-            "serviceTypeName": "/bmw/ncar/services/TireTemperatureService",
+            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -2892,14 +2892,14 @@ TEST(ConfigParserTracing, ProvidingServiceElementEnabledEnablesServiceElementTra
     EXPECT_TRUE(tracing_config.IsTracingEnabled());
 
     tracing::ServiceElementIdentifierView service_1_event{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_1_field{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
 
     tracing::ServiceElementIdentifierView service_2_event{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
+        "/score/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_2_field{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
+        "/score/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
 
     const auto service_1_instance_specifier =
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
@@ -2925,7 +2925,7 @@ TEST(ConfigParserTracing, DisablingGlobalTracingReturnsFalseForAllCallsToIsServi
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2950,7 +2950,7 @@ TEST(ConfigParserTracing, DisablingGlobalTracingReturnsFalseForAllCallsToIsServi
           ]
         },
         {
-          "serviceTypeName": "/bmw/ncar/services/TireTemperatureService",
+          "serviceTypeName": "/score/ncar/services/TireTemperatureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -2978,7 +2978,7 @@ TEST(ConfigParserTracing, DisablingGlobalTracingReturnsFalseForAllCallsToIsServi
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3009,7 +3009,7 @@ TEST(ConfigParserTracing, DisablingGlobalTracingReturnsFalseForAllCallsToIsServi
         },
         {
             "instanceSpecifier": "abc/abc/TireTemperaturePort",
-            "serviceTypeName": "/bmw/ncar/services/TireTemperatureService",
+            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3052,14 +3052,14 @@ TEST(ConfigParserTracing, DisablingGlobalTracingReturnsFalseForAllCallsToIsServi
     EXPECT_FALSE(tracing_config.IsTracingEnabled());
 
     tracing::ServiceElementIdentifierView service_1_event{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_1_field{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
 
     tracing::ServiceElementIdentifierView service_2_event{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
+        "/score/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_2_field{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
+        "/score/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
 
     const auto service_1_instance_specifier =
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
@@ -3085,7 +3085,7 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -3110,7 +3110,7 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
           ]
         },
         {
-          "serviceTypeName": "/bmw/ncar/services/TireTemperatureService",
+          "serviceTypeName": "/score/ncar/services/TireTemperatureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -3138,7 +3138,7 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3168,7 +3168,7 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
         },
         {
             "instanceSpecifier": "abc/abc/TireTemperaturePort",
-            "serviceTypeName": "/bmw/ncar/services/TireTemperatureService",
+            "serviceTypeName": "/score/ncar/services/TireTemperatureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3210,14 +3210,14 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
     EXPECT_TRUE(tracing_config.IsTracingEnabled());
 
     tracing::ServiceElementIdentifierView service_1_event{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontLeft", ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_1_field{
-        "/bmw/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
+        "/score/ncar/services/TirePressureService", "CurrentPressureFrontRight", ServiceElementType::FIELD};
 
     tracing::ServiceElementIdentifierView service_2_event{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
+        "/score/ncar/services/TireTemperatureService", "CurrentTemperatureFrontLeft", ServiceElementType::EVENT};
     tracing::ServiceElementIdentifierView service_2_field{
-        "/bmw/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
+        "/score/ncar/services/TireTemperatureService", "CurrentTemperatureFrontRight", ServiceElementType::FIELD};
 
     const auto service_1_instance_specifier =
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
@@ -3245,7 +3245,7 @@ score::json::Any generate_config_json(const std::string& instance_specifier,
     {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3268,7 +3268,7 @@ score::json::Any generate_config_json(const std::string& instance_specifier,
         {
             "instanceSpecifier": ")"
                        << instance_specifier << R"(",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3346,7 +3346,7 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceEventsWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3368,7 +3368,7 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceEventsWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3406,7 +3406,7 @@ TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceEventsWillNotDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3428,7 +3428,7 @@ TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceEventsWillNotDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3463,7 +3463,7 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceFieldWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3485,7 +3485,7 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceFieldWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3523,7 +3523,7 @@ TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceFieldWillNotDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3545,7 +3545,7 @@ TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceFieldWillNotDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3580,7 +3580,7 @@ TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichDoesNotCorrespond
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3602,7 +3602,7 @@ TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichDoesNotCorrespond
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3637,7 +3637,7 @@ TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichCorrespondToAServ
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3659,7 +3659,7 @@ TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichCorrespondToAServ
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3693,7 +3693,7 @@ TEST(ConfigParserDeathTest, UnknownShmSizeCalcModeKeyWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3715,7 +3715,7 @@ TEST(ConfigParserDeathTest, UnknownShmSizeCalcModeKeyWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3762,7 +3762,7 @@ TEST(ConfigParserDeathTest, KnownShmSizeCalcModeKeyWillNotDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3784,7 +3784,7 @@ TEST(ConfigParserDeathTest, KnownShmSizeCalcModeKeyWillNotDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3830,7 +3830,7 @@ TEST(ConfigParserDeathTest, WithoutServiceinstancesWillDie)
   {
     "serviceTypes": [
         {
-          "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
           "version": {
               "major": 12,
               "minor": 34
@@ -3854,7 +3854,7 @@ TEST(ConfigParserDeathTest, WithServiceinstancesWillNotDie)
  {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3883,7 +3883,7 @@ TEST(ConfigParserDeathTest, EmptyInstanceSpecifierWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3905,7 +3905,7 @@ TEST(ConfigParserDeathTest, EmptyInstanceSpecifierWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3943,7 +3943,7 @@ TEST(ConfigParserDeathTest, KnownInstanceSpecifierWillNotDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -3965,7 +3965,7 @@ TEST(ConfigParserDeathTest, KnownInstanceSpecifierWillNotDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4003,7 +4003,7 @@ TEST(ConfigParserDeathTest, InvalidServiceInstanceSpecifierWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4025,7 +4025,7 @@ TEST(ConfigParserDeathTest, InvalidServiceInstanceSpecifierWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "invalid_instance_specifier/",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4062,7 +4062,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoServiceTypeFieldsOrEventsWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4073,7 +4073,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoServiceTypeFieldsOrEventsWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4112,7 +4112,7 @@ TEST_F(ConfigParserFixtureDeathTest, WithServiceTypeFieldsOrEventsWillNotDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4134,7 +4134,7 @@ TEST_F(ConfigParserFixtureDeathTest, WithServiceTypeFieldsOrEventsWillNotDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4171,7 +4171,7 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceInstancesWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4193,7 +4193,7 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceInstancesWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4213,7 +4213,7 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceInstancesWillDie)
         },
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4241,7 +4241,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoDuplicateServiceInstancesWillNotDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4263,7 +4263,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoDuplicateServiceInstancesWillNotDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4296,7 +4296,7 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeVersionWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "bindings": [
                 {
                     "binding": "SHM",
@@ -4314,7 +4314,7 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeVersionWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4347,7 +4347,7 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMajorVersionWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "minor": 34
             },
@@ -4368,7 +4368,7 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMajorVersionWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4401,7 +4401,7 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMinorVersionWillDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4423,7 +4423,7 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMinorVersionWillDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12
             },
@@ -4456,7 +4456,7 @@ TEST(ConfigParserTest, ValidServiceTypeVersionWillNotDie)
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34
@@ -4478,7 +4478,7 @@ TEST(ConfigParserTest, ValidServiceTypeVersionWillNotDie)
     "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "version": {
                 "major": 12,
                 "minor": 34

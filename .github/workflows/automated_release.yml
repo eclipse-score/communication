@@ -23,7 +23,7 @@ on:
 
 jobs:
   create-draft-release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     outputs:
@@ -88,7 +88,7 @@ jobs:
       contents: write
 
   finalize-release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - create-draft-release
       - run-build-and-test-host
@@ -128,17 +128,11 @@ jobs:
             echo "all-success=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Delete trigger tag (on success)
-        if: steps.check-results.outputs.all-success == 'true'
+      - name: Delete trigger tag
         run: |
           gh api repos/${{ github.repository }}/git/refs/tags/${{ github.ref_name }} -X DELETE
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Keep draft release (on success)
-        if: steps.check-results.outputs.all-success == 'true'
-        run: |
-          echo "All workflows succeeded. Draft release ${{ needs.create-draft-release.outputs.release-tag }} remains available for manual publishing."
 
       - name: Delete draft release (on failure)
         if: steps.check-results.outputs.all-success == 'false'
@@ -157,4 +151,3 @@ jobs:
         if: steps.check-results.outputs.all-success == 'true'
         run: |
           echo "✅ All workflows succeeded. Draft release ${{ needs.create-draft-release.outputs.release-tag }} is ready for manual publishing."
-          echo "Trigger tag has been removed."

@@ -95,7 +95,7 @@ An example of such a mapping is shown here:
 {
     "serviceTypes": [
         {
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "serviceTypeId": 99999999999,
             "version": {
                 "major": 12,
@@ -130,7 +130,7 @@ An example of such a mapping is shown here:
         "serviceInstances": [
         {
             "instanceSpecifier": "abc/abc/TirePressurePort",
-            "serviceTypeName": "/bmw/ncar/services/TirePressureService",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
             "instances": [
                 {
                     "instanceId": 1234,

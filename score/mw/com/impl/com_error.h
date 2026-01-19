@@ -22,7 +22,6 @@ namespace score::mw::com::impl
  * \brief Error codes for the mw::com API
  * \details Enum values map 1:1 to the Communication Management error codes.
  * \requirement SWS_CM_10432
- * \public
  * \threadsafe
  */
 enum class ComErrc : score::result::ErrorCode
@@ -67,7 +66,6 @@ enum class ComErrc : score::result::ErrorCode
  * \brief Error domain for mw::com (CommunicationManagement)
  * \details This class implements the ErrorDomain interface for the mw::com API.
  * \requirement SWS_CM_11329
- * \public
  * \threadsafe
  */
 // This switch-case statement implements a "mapping table". Length of the mapping table does not add complexity!
@@ -90,7 +88,6 @@ class ComErrorDomain final : public score::result::ErrorDomain
      * \details This function is required by the std::error_domain interface
      * \param code The error code to translates
      * \return returns a string view to the human readable message
-     * \public
      * \threadsafe
      */
     std::string_view MessageFor(const score::result::ErrorCode& code) const noexcept override final

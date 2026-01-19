@@ -101,7 +101,14 @@ class ProxyWrapperClassTestView;
 /// It is then possible to interpret this interface as proxy or skeleton as `using TheProxy = AsProxy<TheInterface>`.
 /// It shall be noted, that the data types used, need to by PolymorphicOffsetPtrAllocator aware.
 
-/// \brief Encapsulates all necessary attributes for a proxy, which will then be used by an interface that uses traits
+/**
+ * \api
+ * \brief Encapsulates all necessary attributes for a proxy.
+ * \details Defines the trait types used by proxy interfaces following the trait pattern.
+ *          This trait provides ProxyBase as the base class, ProxyEvent for events,
+ *          and ProxyField for fields. Used as a template parameter when defining
+ *          service interfaces that will be instantiated as proxies (client-side).
+ */
 class ProxyTrait
 {
   public:
@@ -114,8 +121,14 @@ class ProxyTrait
     using Field = ProxyField<SampleType>;
 };
 
-/// \brief Encapsulates all necessary attributes for a skeleton, which will then be used by an interface that uses
-/// traits
+/**
+ * \api
+ * \brief Encapsulates all necessary attributes for a skeleton.
+ * \details Defines the trait types used by skeleton interfaces following the trait pattern.
+ *          This trait provides SkeletonBase as the base class, SkeletonEvent for events,
+ *          and SkeletonField for fields. Used as a template parameter when defining
+ *          service interfaces that will be instantiated as skeletons (server-side).
+ */
 class SkeletonTrait
 {
   public:
@@ -138,6 +151,16 @@ class SkeletonWrapperClass : public Interface<Trait>
     friend class SkeletonWrapperClassTestView<SkeletonWrapperClass>;
 
   public:
+    /**
+     * \api
+     * \brief Create a skeleton instance using an instance specifier.
+     * \details Creates a skeleton wrapper by resolving the instance specifier to an instance identifier,
+     *          then creating the skeleton binding and validating all service element bindings.
+     * \param specifier The instance specifier identifying the service instance.
+     * \param mode legacy parameter, only kept for backwards compatibility. Default value is kEvent, which should never
+     * change.
+     * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
+     */
     static Result<SkeletonWrapperClass> Create(
         const InstanceSpecifier& specifier,
         MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept
@@ -156,6 +179,15 @@ class SkeletonWrapperClass : public Interface<Trait>
         return Create(instance_identifier_result.value(), mode);
     }
 
+    /**
+     * \api
+     * \brief Create a skeleton instance using an instance identifier.
+     * \details Creates a skeleton wrapper by creating the skeleton binding for the given instance identifier
+     *          and validating all service element bindings.
+     * \param instance_identifier The instance identifier uniquely identifying the service instance.
+     * \param mode The method call processing mode for the skeleton (default: kEvent).
+     * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
+     */
     static Result<SkeletonWrapperClass> Create(
         const InstanceIdentifier& instance_identifier,
         MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept
@@ -219,7 +251,14 @@ class ProxyWrapperClass : public Interface<Trait>
     friend class ProxyWrapperClassTestView<ProxyWrapperClass>;
 
   public:
-    /// \brief Execption-less ProxyWrapperClass constructor
+    /**
+     * \api
+     * \brief Create a proxy instance from a service handle.
+     * \details Exception-less proxy constructor that creates a proxy wrapper by creating the proxy binding
+     *          for the given service handle and validating all service element bindings.
+     * \param instance_handle The handle identifying the service instance to connect to.
+     * \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
+     */
     static Result<ProxyWrapperClass> Create(HandleType instance_handle) noexcept
     {
         if (creation_results_.has_value())
@@ -265,10 +304,12 @@ template <template <class> class Interface, class Trait>
 std::optional<std::unordered_map<HandleType, std::queue<Result<ProxyWrapperClass<Interface, Trait>>>>>
     ProxyWrapperClass<Interface, Trait>::creation_results_{};
 
+/// \api
 /// \brief Interpret an interface that follows our traits as proxy (see description above)
 template <template <class> class T>
 using AsProxy = ProxyWrapperClass<T, ProxyTrait>;
 
+/// \api
 /// \brief Interpret an interface that follows our traits as skeleton (see description above)
 template <template <class> class T>
 using AsSkeleton = SkeletonWrapperClass<T, SkeletonTrait>;

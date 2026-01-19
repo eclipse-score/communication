@@ -21,7 +21,6 @@ namespace score::mw::com::impl
 /// \api
 /// \brief state of a proxy event.
 /// \requirement SWS_CM_00310
-/// \public
 enum class SubscriptionState : std::uint8_t
 {
     kSubscribed,           ///< Proxy is subscribed to a particular event and will receive data.

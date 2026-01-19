@@ -1,0 +1,68 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/bmw/adp/VehicleInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6433,
+          "events": [
+            {
+              "eventName": "left_tire",
+              "eventId": 1
+            },
+            {
+              "eventName": "exhaust",
+              "eventId": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "Vehicle/Service/Instance",
+      "serviceTypeName": "/bmw/adp/VehicleInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              4002,
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              4001,
+              0
+            ]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "left_tire",
+              "numberOfSampleSlots": 30,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "exhaust",
+              "numberOfSampleSlots": 30,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

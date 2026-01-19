@@ -19,6 +19,9 @@ rust_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
+        "//score/mw/com/impl/plumbing:sample_ptr_rs",
+        "//score/mw/com/impl/rust:generic_bridge_ffi_rs",
+        "//score/mw/com/impl/rust:proxy_bridge_rs",
         "//score/mw/com/impl/rust/com-api/com-api-concept",
         "@crate_index//:futures",
     ],

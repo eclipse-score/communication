@@ -16,6 +16,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 rust_binary(
     name = "com-api-example",
     srcs = ["basic-consumer-producer.rs"],
+    features = ["link_std_cpp_lib"],
     visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",

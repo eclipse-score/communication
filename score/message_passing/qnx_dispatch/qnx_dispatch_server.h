@@ -30,14 +30,18 @@ namespace score::message_passing::detail
 class QnxDispatchServer final : public IServer, private QnxDispatchEngine::ResourceManagerServer
 {
   public:
+    // class uses IServerConnection as iface and ResourceManagerConnection as a base class
     // NOLINTNEXTLINE(score-struct-usage-compliance): see QnxDispatchEngine::ResourceManagerConnection
+    // coverity[autosar_cpp14_a10_1_1_violation] see above
     class ServerConnection final : public IServerConnection, public QnxDispatchEngine::ResourceManagerConnection
     {
       public:
         ServerConnection(ClientIdentity client_identity, const QnxDispatchServer& server) noexcept;
 
         // User methods
+        // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
         const ClientIdentity& GetClientIdentity() const noexcept override;
+        // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
         UserData& GetUserData() noexcept override;
 
         score::cpp::expected_blank<score::os::Error> Reply(score::cpp::span<const std::uint8_t> message) noexcept override;
@@ -51,9 +55,10 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
         void ProcessDisconnect() noexcept override;
 
         // Server methods
+        // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
         void AcceptConnection(UserData&& data, score::cpp::pmr::unique_ptr<ServerConnection>&& self) noexcept;
 
-        ~ServerConnection() noexcept;
+        virtual ~ServerConnection() noexcept;
 
         ServerConnection(const ServerConnection&) noexcept = delete;
         ServerConnection(ServerConnection&&) noexcept = delete;
@@ -61,6 +66,7 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
         ServerConnection& operator=(ServerConnection&&) noexcept = delete;
 
       private:
+        // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in multiple class methods
         QnxDispatchServer& GetQnxDispatchServer() noexcept
         {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-static-cast-downcast) by API design
@@ -86,7 +92,9 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
         };
         SendMessage reply_message_;
         score::cpp::pmr::vector<SendMessage> notify_storage_;
+        // coverity[autosar_cpp14_a2_10_6_violation] false-positive: there is nothing with the same name
         score::containers::intrusive_list<SendMessage> notify_pool_;
+        // coverity[autosar_cpp14_a2_10_6_violation] false-positive: there is nothing with the same name
         score::containers::intrusive_list<SendMessage> send_queue_;
     };
 
@@ -100,6 +108,7 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
     QnxDispatchServer& operator=(const QnxDispatchServer&) = delete;
     QnxDispatchServer& operator=(QnxDispatchServer&&) = delete;
 
+    // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> StartListening(ConnectCallback connect_callback,
                                                        DisconnectCallback disconnect_callback,
                                                        MessageCallback sent_callback,

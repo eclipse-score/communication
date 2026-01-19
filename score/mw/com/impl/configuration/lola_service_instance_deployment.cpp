@@ -55,12 +55,29 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
     {
         std::string quality_string{it.first.GetAsStringView().data(), it.first.GetAsStringView().size()};
         const QualityType quality_type{FromString(std::move(quality_string))};
-        const auto& uids_json = it.second.As<score::json::List>().value().get();
+
+        // Check if the UID list structure itself is valid
+        const auto uids_json_result = it.second.As<score::json::List>();
+        if (!uids_json_result.has_value())
+        {
+            score::mw::log::LogFatal("lola") << "Failed to parse JSON UID list for quality type '" << quality_string
+                                           << "'. Configuration parsing failed. Terminating.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& uids_json = uids_json_result.value().get();
 
         std::vector<uid_t> uids{};
         for (auto& uid_json : uids_json)
         {
-            uids.push_back(uid_json.As<uid_t>().value());
+            // Check if each individual UID element can be parsed to uid_t type
+            const auto uid_result = uid_json.As<uid_t>();
+            if (!uid_result.has_value())
+            {
+                score::mw::log::LogFatal("lola") << "Failed to parse JSON UID value in quality type '" << quality_string
+                                               << "'. Configuration parsing failed. Terminating.";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            }
+            uids.push_back(uid_result.value());
         }
 
         const auto insert_result = uid_map.insert(std::make_pair(quality_type, std::move(uids)));

@@ -10,5 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+/// Error type for communication operations
 pub type Error = ();
+
 pub type Result<T> = std::result::Result<T, Error>;

@@ -131,7 +131,6 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const Inst
                                                                       const std::string_view event_name) noexcept
 {
     auto& runtime = Runtime::getInstance();
-    const auto* const tracing_config = runtime.GetTracingFilterConfig();
     auto* const tracing_runtime = runtime.GetTracingRuntime();
     // Suppress "AUTOSAR C++14 M8-5-2" rule finding. This rule declares: "Braces shall be used to indicate and match
     // the structure in the non-zero initialization of arrays and structures"
@@ -139,8 +138,16 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const Inst
     // We want to make sure that default initialization is always performed.
     // coverity[autosar_cpp14_m8_5_2_violation : FALSE]
     SkeletonEventTracingData skeleton_event_tracing_data{};
-    if ((tracing_config != nullptr) && (tracing_runtime != nullptr))
+    const bool is_tracing_globally_enabled = ((tracing_runtime != nullptr) && (tracing_runtime->IsTracingEnabled()));
+
+    // in case tracing is globally disabled, this will never switch back to enable. Thus, we work with default
+    // initialized skeleton_event_tracing_data, which has all trace-points disabled. Only if is_tracing_globally_enabled
+    // we specifically initialize skeleton_event_tracing_data.
+    if (is_tracing_globally_enabled)
     {
+        const auto* const tracing_config = runtime.GetTracingFilterConfig();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(tracing_config != nullptr,
+                               "tracing filter config must exist, when tracing runtime exists!");
         const auto service_element_instance_identifier_view =
             GetServiceElementInstanceIdentifierView(instance_identifier, event_name, ServiceElementType::EVENT);
         const auto instance_specifier_view = service_element_instance_identifier_view.instance_specifier;
@@ -185,7 +192,12 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromFieldConfig(const Inst
     // We want to make sure that default initialization is always performed.
     // coverity[autosar_cpp14_m8_5_2_violation : FALSE]
     SkeletonEventTracingData skeleton_event_tracing_data{};
-    if ((tracing_config != nullptr) && (tracing_runtime != nullptr))
+    const bool is_tracing_globally_enabled = ((tracing_runtime != nullptr) && (tracing_runtime->IsTracingEnabled()));
+
+    // in case tracing is globally disabled, this will never switch back to enable. Thus, we work with default
+    // initialized skeleton_event_tracing_data, which has all trace-points disabled. Only if is_tracing_globally_enabled
+    // we specifically initialize skeleton_event_tracing_data.
+    if (is_tracing_globally_enabled)
     {
         const auto service_element_instance_identifier_view =
             GetServiceElementInstanceIdentifierView(instance_identifier, field_name, ServiceElementType::FIELD);

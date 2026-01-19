@@ -23,12 +23,16 @@ namespace score::message_passing
 namespace
 {
 
+// false-positive: vars are being used in pulse _attach _detach calls
+// coverity[autosar_cpp14_a0_1_1_violation]
 constexpr std::int32_t kTimerPulseCode = _PULSE_CODE_MINAVAIL;
+// coverity[autosar_cpp14_a0_1_1_violation]
 constexpr std::int32_t kEventPulseCode = _PULSE_CODE_MINAVAIL + 1;
 
 template <typename T>
 // Suppress "AUTOSAR C++14 A9-5-1" rule finding: "Unions shall not be used.".
 // coverity[autosar_cpp14_a9_5_1_violation: FALSE]. False positive: no any union in the following line. (Ticket-219101)
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: namespace-scoped function, not a global (Ticket-234468)
 auto ValueOrTerminate(const score::cpp::expected<T, score::os::Error> expected, const std::string_view error_text) -> T
 {
     if (!expected.has_value())
@@ -47,6 +51,7 @@ auto ValueOrTerminate(const score::cpp::expected<T, score::os::Error> expected, 
 }
 
 template <typename T>
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: namespace-scoped function, not a global (Ticket-234468)
 void IfUnexpectedTerminate(const score::cpp::expected<T, score::os::Error> expected, const std::string_view error_text)
 {
     if (!expected.has_value())
@@ -162,6 +167,8 @@ int QnxDispatchEngine::EndpointFdSelectCallback(select_context_t* /*ctp*/,
     return 0;
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
 int QnxDispatchEngine::TimerPulseCallback(message_context_t* /*ctp*/,
                                           int /*code*/,
                                           unsigned /*flags*/,
@@ -177,6 +184,8 @@ int QnxDispatchEngine::TimerPulseCallback(message_context_t* /*ctp*/,
 }
 
 // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
 int QnxDispatchEngine::EventPulseCallback(message_context_t* ctp,
                                           int /*code*/,
                                           unsigned /*flags*/,
@@ -212,6 +221,7 @@ QnxDispatchEngine::~QnxDispatchEngine() noexcept
     os_resources_.dispatch->dispatch_context_free(context_pointer_);
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 score::cpp::expected<std::int32_t, score::os::Error> QnxDispatchEngine::TryOpenClientConnection(
     std::string_view identifier) noexcept
 {
@@ -227,6 +237,7 @@ void QnxDispatchEngine::CloseClientConnection(std::int32_t client_fd) noexcept
     score::cpp::ignore = os_resources_.unistd->close(client_fd);
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(IsOnCallbackThread());
@@ -247,6 +258,7 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
     posix_endpoint_list_.push_back(endpoint);
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void QnxDispatchEngine::UnregisterPosixEndpoint(PosixEndpointEntry& endpoint) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(IsOnCallbackThread());
@@ -255,6 +267,7 @@ void QnxDispatchEngine::UnregisterPosixEndpoint(PosixEndpointEntry& endpoint) no
     UnselectEndpoint(endpoint);
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void QnxDispatchEngine::UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept
 {
     score::cpp::ignore = os_resources_.dispatch->select_detach(dispatch_pointer_, endpoint.fd);
@@ -264,6 +277,7 @@ void QnxDispatchEngine::UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept
     }
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void QnxDispatchEngine::EnqueueCommand(CommandQueueEntry& entry,
                                        const TimePoint until,
                                        CommandCallback callback,
@@ -302,6 +316,7 @@ void QnxDispatchEngine::CleanUpOwner(const void* const owner) noexcept
     }
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 score::cpp::expected_blank<score::os::Error> QnxDispatchEngine::SendProtocolMessage(
     const std::int32_t fd,
     std::uint8_t code,
@@ -331,6 +346,7 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchEngine::SendProtocolMess
     return score::cpp::make_unexpected(result_expected.error());
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> QnxDispatchEngine::ReceiveProtocolMessage(
     const std::int32_t fd,
     std::uint8_t& code) noexcept
@@ -432,6 +448,7 @@ void QnxDispatchEngine::SetupResourceManagerCallbacks() noexcept
     io_funcs_.close_ocb = &io_close_ocb;
 }
 
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 score::cpp::expected_blank<score::os::Error> QnxDispatchEngine::StartServer(ResourceManagerServer& server,
                                                                    const QnxResourcePath& path) noexcept
 {

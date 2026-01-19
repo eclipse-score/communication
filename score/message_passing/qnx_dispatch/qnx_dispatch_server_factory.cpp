@@ -20,6 +20,8 @@ namespace score
 namespace message_passing
 {
 
+// coverity[autosar_cpp14_a2_10_6_violation] false-positive: there is nothing with the same name
+// coverity[autosar_cpp14_a3_3_1_violation] False positive: Constructor implementation for class declared in header
 QnxDispatchServerFactory::QnxDispatchServerFactory(score::cpp::pmr::memory_resource* const resource) noexcept
     : QnxDispatchServerFactory{score::cpp::pmr::make_shared<QnxDispatchEngine>(resource, resource)}
 {
@@ -32,6 +34,7 @@ QnxDispatchServerFactory::QnxDispatchServerFactory(const std::shared_ptr<QnxDisp
 
 QnxDispatchServerFactory::~QnxDispatchServerFactory() noexcept = default;
 
+// coverity[autosar_cpp14_a2_10_4_violation] false-positive: name is not reused; system-specific implementation
 score::cpp::pmr::unique_ptr<IServer> QnxDispatchServerFactory::Create(const ServiceProtocolConfig& protocol_config,
                                                                const ServerConfig& server_config) noexcept
 {

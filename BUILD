@@ -41,7 +41,7 @@ copyright_checker(
 )
 
 exports_files([
-    "wait_free_stack_fix.patch",
+    ".clang-tidy",
 ])
 
 format_multirun(

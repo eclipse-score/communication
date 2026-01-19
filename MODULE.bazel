@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2024-2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2024-2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -74,9 +74,10 @@ llvm.toolchain(
     cxx_standard = {"": "c++17"},
     link_libs = {"": [
         "-lrt",
+        # This is the agreed way to ensure linking for targets using std::atomic operations.
+        "-latomic",
     ]},
-    llvm_version = "19.1.0",
-    stdlib = {"": "dynamic-stdc++"},
+    llvm_version = "19.1.7",
 )
 use_repo(llvm, "llvm_toolchain")
 
@@ -91,10 +92,18 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "aspect_rules_lint", version = "1.10.2")
+bazel_dep(name = "aspect_rules_lint", version = "1.13.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "google_benchmark", version = "1.9.4")
 bazel_dep(name = "rules_rust", version = "0.61.0")
+bazel_dep(name = "score_toolchains_rust", version = "0.2.0", dev_dependency = True)
+
+git_override(
+    module_name = "score_toolchains_rust",
+    commit = "f3cc7820d47683bc356963f9aa6aeae80475f933",
+    remote = "https://github.com/eclipse-score/toolchains_rust.git",  # Replace with actual repository URL
+)
+
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 bazel_dep(name = "score_crates", version = "0.0.5", repo_name = "crate_index")
 
@@ -190,6 +199,20 @@ oci.pull(
     tag = "24.04",
 )
 use_repo(oci, "ubuntu_24_04")
+
+bazel_dep(name = "rules_distroless", version = "0.6.1")
+
+apt = use_extension(
+    "@rules_distroless//apt:extensions.bzl",
+    "apt",
+    dev_dependency = True,
+)
+apt.install(
+    name = "ubuntu24_04",
+    lock = "@@//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.lock.json",
+    manifest = "//quality/integration_testing/environments/ubuntu24_04_docker:ubuntu24_04.yaml",
+)
+use_repo(apt, "ubuntu24_04")
 
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 
