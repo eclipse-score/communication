@@ -18,7 +18,6 @@ use com_api::{
 #[derive(Debug, Reloc)]
 #[repr(C)]
 pub struct Tire {}
-unsafe impl Reloc for Tire {}
 impl TypeInfo for Tire {
     const ID: &'static str = "Tire";
 }
@@ -26,7 +25,6 @@ impl TypeInfo for Tire {
 #[derive(Debug, Reloc)]
 #[repr(C)]
 pub struct Exhaust {}
-unsafe impl Reloc for Exhaust {}
 impl TypeInfo for Exhaust {
     const ID: &'static str = "Exhaust";
 }
