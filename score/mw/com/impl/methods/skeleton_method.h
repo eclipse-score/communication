@@ -75,11 +75,11 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     SkeletonMethod(SkeletonMethod&& other) noexcept;
     SkeletonMethod& operator=(SkeletonMethod&& other) & noexcept;
 
-    /// \brief Register a callback with the binding, which will be executed by the binding when the Proxy calls this
+    /// \brief Register a handler with the binding, which will be executed by the binding when the Proxy calls this
     /// method.
     /// \return score::cpp::blank on success and ComErrc code specified by the binding on failiure
     template <typename Callable>
-    ResultBlank Register(Callable&& callback);
+    ResultBlank RegisterHandler(Callable&& callback);
 
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
 };
@@ -125,7 +125,7 @@ void SkeletonMethod<ReturnType(ArgTypes...)>::UpdateSkeletonReference(SkeletonBa
 
 template <typename ReturnType, typename... ArgTypes>
 template <typename Callable>
-ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::Register(Callable&& callback)
+ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback)
 {
     static_assert(std::is_rvalue_reference_v<decltype(callback)>,
                   "Callbeck provided to register has to be an rvalue reference");
@@ -138,7 +138,7 @@ ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::Register(Callable&& callbac
         return std::invoke(callable, (*ptrs)...);
     };
 
-    SkeletonMethodBinding::TypeErasedCallback type_erased_callable =
+    SkeletonMethodBinding::TypeErasedHandler type_erased_callable =
         [callable_invoker = std::move(callable_invoker)](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
                                                          std::optional<score::cpp::span<std::byte>> type_erased_return) {
             using InArgPtrTuple = std::tuple<ArgTypes*...>;
@@ -167,7 +167,7 @@ ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::Register(Callable&& callbac
             }
         };
 
-    return binding_->Register(std::move(type_erased_callable));
+    return binding_->RegisterHandler(std::move(type_erased_callable));
 }
 
 }  // namespace score::mw::com::impl

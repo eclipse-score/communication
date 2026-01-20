@@ -83,7 +83,7 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
     SkeletonMethodFixture& WithARegisteredCallback()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(unit_ != nullptr);
-        unit_->Register(registered_type_erased_callback_.AsStdFunction());
+        unit_->RegisterHandler(registered_type_erased_callback_.AsStdFunction());
         return *this;
     }
 

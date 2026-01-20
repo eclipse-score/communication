@@ -112,11 +112,11 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         foo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, foo_element_fq_id);
         dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_element_fq_id);
 
-        foo_method_->Register(
+        foo_method_->RegisterHandler(
             [this](std::optional<score::cpp::span<std::byte>> in_args, std::optional<score::cpp::span<std::byte>> return_arg) {
                 std::invoke(foo_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
             });
-        dumb_method_->Register(
+        dumb_method_->RegisterHandler(
             [this](std::optional<score::cpp::span<std::byte>> in_args, std::optional<score::cpp::span<std::byte>> return_arg) {
                 std::invoke(dumb_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
             });

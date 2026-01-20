@@ -42,7 +42,7 @@ class SkeletonMethod : public SkeletonMethodBinding
   public:
     SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_id);
 
-    ResultBlank Register(SkeletonMethodBinding::TypeErasedCallback&& type_erased_callback) override;
+    ResultBlank RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
 
   private:
     ResultBlank OnProxyMethodSubscribeFinished(
@@ -55,7 +55,7 @@ class SkeletonMethod : public SkeletonMethodBinding
 
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
-    std::optional<SkeletonMethodBinding::TypeErasedCallback> type_erased_callback_;
+    std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
     safecpp::Scope<> method_call_handler_scope_{};
 };
 

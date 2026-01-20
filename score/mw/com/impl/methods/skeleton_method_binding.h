@@ -35,12 +35,12 @@ class SkeletonMethodBinding
         sizeof(score::cpp::callback<TypeErasedCallbackSignature>) +
         std::max(score::cpp::callback<TypeErasedCallbackSignature>::alignment_t::value, sizeof(std::unique_ptr<void>))};
 
-    using TypeErasedCallback = score::cpp::callback<TypeErasedCallbackSignature, CallbackSize>;
+    using TypeErasedHandler = score::cpp::callback<TypeErasedCallbackSignature, CallbackSize>;
 
     SkeletonMethodBinding() = default;
     virtual ~SkeletonMethodBinding() = default;
 
-    virtual ResultBlank Register(TypeErasedCallback&& callback) = 0;
+    virtual ResultBlank RegisterHandler(TypeErasedHandler&& callback) = 0;
 
     SkeletonMethodBinding(const SkeletonMethodBinding&) = delete;
     SkeletonMethodBinding& operator=(const SkeletonMethodBinding&) & = delete;

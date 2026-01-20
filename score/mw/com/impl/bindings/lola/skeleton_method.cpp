@@ -42,7 +42,7 @@ SkeletonMethod::SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_
     skeleton.RegisterMethod(element_fq_id.element_id_, *this);
 }
 
-ResultBlank SkeletonMethod::Register(SkeletonMethodBinding::TypeErasedCallback&& type_erased_callback)
+ResultBlank SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)
 {
     type_erased_callback_ = std::move(type_erased_callback);
     return {};

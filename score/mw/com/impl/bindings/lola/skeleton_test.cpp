@@ -73,8 +73,8 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
 
         InitialiseSkeleton(instance_identifier);
 
-        fooo_method = std::make_unique<SkeletonMethod>(*skeleton_, fooo_method_fq_id_);
-        dumb_method = std::make_unique<SkeletonMethod>(*skeleton_, dumb_method_fq_id_);
+        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_method_fq_id_);
+        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_method_fq_id_);
 
         return *this;
     }
@@ -82,8 +82,8 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
     const ElementFqId fooo_method_fq_id_{10U, test::kFooMethodId, 3U, ServiceElementType::METHOD};
     const ElementFqId dumb_method_fq_id_{1U, test::kDumbMethodId, 2U, ServiceElementType::METHOD};
 
-    std::unique_ptr<SkeletonMethod> fooo_method{nullptr};
-    std::unique_ptr<SkeletonMethod> dumb_method{nullptr};
+    std::unique_ptr<SkeletonMethod> fooo_method_{nullptr};
+    std::unique_ptr<SkeletonMethod> dumb_method_{nullptr};
 
     SkeletonBinding::SkeletonEventBindings events_{};
     SkeletonBinding::SkeletonFieldBindings fields_{};
@@ -114,8 +114,8 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredSucceeds
         std::cout << "bla\n";
     };
 
-    fooo_method->Register(fooo_callback);
-    dumb_method->Register(dumb_callback);
+    fooo_method_->RegisterHandler(fooo_callback);
+    dumb_method_->RegisterHandler(dumb_callback);
 
     // Then VerifyAllMethodsRegistered succeeds
     EXPECT_EQ(skeleton_->VerifyAllMethodsRegistered(), true);
@@ -125,10 +125,10 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredFailsWhe
 {
     GivenASkeletonWithTwoMethods();
 
-    // When one callback is not registered to either one of the methods
+    // When one of the methods does not have a callback registered
     auto fooo_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
 
-    fooo_method->Register(fooo_callback);
+    fooo_method_->RegisterHandler(fooo_callback);
 
     // Then VerifyAllMethodsRegistered fails with kBindingFailure
     EXPECT_EQ(skeleton_->VerifyAllMethodsRegistered(), false);
