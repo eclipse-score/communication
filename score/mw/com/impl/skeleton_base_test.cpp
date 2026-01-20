@@ -132,6 +132,8 @@ class SkeletonBaseFixture : public ::testing::Test
 
         binding_mock_ = GetMockBinding(*skeleton_);
         ASSERT_NE(binding_mock_, nullptr);
+        ON_CALL(*binding_mock_, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+        ON_CALL(*binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
     }
 
     void ExpectOfferService() noexcept
@@ -216,6 +218,22 @@ TEST_F(SkeletonBaseOfferFixture, OfferService)
 
     // Then no error is returned
     ASSERT_TRUE(offer_result.has_value());
+}
+
+TEST_F(SkeletonBaseOfferFixture, OfferServiceFailsIfAllMethodsHaveNotBeenRegistered)
+{
+
+    // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
+    CreateSkeleton(GetInstanceIdentifierWithValidBinding());
+
+    // When VerifyAllMethodsRegistered returns false
+    EXPECT_CALL(*binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(false));
+
+    // When offering a Service
+    const auto offer_result = skeleton_->OfferService();
+
+    // Then kBindingFailure error is returned
+    ASSERT_EQ(offer_result, MakeUnexpected(ComErrc::kBindingFailure));
 }
 
 TEST_F(SkeletonBaseOfferFixture, CallingPrepareOfferWhenSkeletonBindingPrepareOfferFailsReturnsError)
@@ -500,6 +518,10 @@ TEST_F(SkeletonBaseMoveFixture, MovingConstructingSkeletonBaseDoesNotCallPrepare
         // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
         MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), GetInstanceIdentifierWithValidBinding()};
         mock_binding::Skeleton* const binding_mock = GetMockBinding(unit);
+
+        ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+        ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
         ASSERT_NE(binding_mock, nullptr);
 
         // Expecting that PrepareOffer gets called on the skeleton binding and both events / field
@@ -581,7 +603,11 @@ TEST_F(SkeletonBaseMoveFixture, MovingAssigningOfferedSkeletonBaseCallsPrepareSt
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), instance_identifier};
     mock_binding::Skeleton* const binding_mock = GetMockBinding(unit);
+
     ASSERT_NE(binding_mock, nullptr);
+
+    ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+    ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
 
     // Expecting that PrepareOffer gets called on the first skeleton binding
     EXPECT_CALL(*binding_mock, PrepareOffer(_, _, _));
@@ -643,6 +669,10 @@ TEST_F(SkeletonBaseMoveFixture, MovingAssigningOfferedSkeletonBaseCallsPrepareSt
 
     MyDummySkeleton unit2{std::make_unique<mock_binding::Skeleton>(), valid_instance_identifier2};
     mock_binding::Skeleton* const second_binding_mock = GetMockBinding(unit2);
+
+    ON_CALL(*second_binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+    ON_CALL(*second_binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
     ASSERT_NE(second_binding_mock, nullptr);
 
     // Expecting that PrepareOffer gets called on the second skeleton binding
@@ -700,6 +730,10 @@ TEST_F(SkeletonBaseMoveFixture, MovingAssigningUnOfferedSkeletonBaseDoesNotCallP
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), instance_identifier};
     mock_binding::Skeleton* const binding_mock = GetMockBinding(unit);
+
+    ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+    ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
     ASSERT_NE(binding_mock, nullptr);
 
     // Expecting that PrepareOffer is never called on the first skeleton binding
@@ -745,6 +779,10 @@ TEST_F(SkeletonBaseMoveFixture, MovingAssigningUnOfferedSkeletonBaseDoesNotCallP
 
     MyDummySkeleton unit2{std::make_unique<mock_binding::Skeleton>(), valid_instance_identifier2};
     mock_binding::Skeleton* const second_binding_mock = GetMockBinding(unit2);
+
+    ON_CALL(*second_binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+    ON_CALL(*second_binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
     ASSERT_NE(second_binding_mock, nullptr);
 
     // Expecting that PrepareOffer is called on the second skeleton binding
@@ -837,6 +875,10 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterMoveConstructingServi
     // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
     MyDummySkeleton skeleton(std::make_unique<mock_binding::Skeleton>(), GetInstanceIdentifierWithValidBinding());
     mock_binding::Skeleton* const binding_mock = GetMockBinding(skeleton);
+
+    ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+    ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
     ASSERT_NE(binding_mock, nullptr);
 
     // Expecting that PrepareOffer gets called on the skeleton binding and each event twice, each time OfferService is
@@ -896,6 +938,10 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         // Given a constructed Skeleton with a valid identifier with two events and a field registered with the skeleton
         MyDummySkeleton skeleton(std::make_unique<mock_binding::Skeleton>(), GetInstanceIdentifierWithValidBinding());
         mock_binding::Skeleton* const binding_mock = GetMockBinding(skeleton);
+
+        ON_CALL(*binding_mock, GetBindingType()).WillByDefault(Return(BindingType::kLoLa));
+        ON_CALL(*binding_mock, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
         ASSERT_NE(binding_mock, nullptr);
 
         // Expecting that PrepareOffer gets called on the skeleton binding and each event twice

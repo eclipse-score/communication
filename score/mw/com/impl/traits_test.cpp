@@ -776,6 +776,9 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _));
     EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _));
 
+    // and that VerifyAllMethodsRegistered returns true because there are no methods to register
+    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(true));
+
     // And that PrepareOffer is called on the skeleton binding and event / field
     EXPECT_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _))
         .WillOnce(

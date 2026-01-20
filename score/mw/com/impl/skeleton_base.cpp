@@ -244,6 +244,13 @@ auto SkeletonBase::OfferService() noexcept -> ResultBlank
     auto register_shm_object_callback =
         tracing::CreateRegisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
 
+    if (!binding_->VerifyAllMethodsRegistered())
+    {
+        constexpr std::string_view msg =
+            "Not all methods have been registered! Call Register(...) with an appropriate callback on each mehtod.";
+        return MakeUnexpected(ComErrc::kBindingFailure, msg);
+    }
+
     const auto result = binding_->PrepareOffer(event_bindings, field_bindings, std::move(register_shm_object_callback));
     if (!result.has_value())
     {
