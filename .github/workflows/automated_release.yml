@@ -87,6 +87,14 @@ jobs:
     permissions:
       contents: write
 
+  run-lobster-traceability-report:
+    needs: create-draft-release
+    uses: ./.github/workflows/lobster_traceability_report.yml
+    with:
+      release_tag: ${{ needs.create-draft-release.outputs.release-tag }}
+    permissions:
+      contents: write
+
   finalize-release:
     runs-on: ubuntu-24.04
     needs:
@@ -96,6 +104,7 @@ jobs:
       - run-thread-sanitizer
       - run-address-sanitizer
       - run-coverage-report
+      - run-lobster-traceability-report
     if: always()
     permissions:
       contents: write
@@ -111,18 +120,21 @@ jobs:
           RESULT_TSAN="${{ needs.run-thread-sanitizer.result }}"
           RESULT_ASAN="${{ needs.run-address-sanitizer.result }}"
           RESULT_COVERAGE="${{ needs.run-coverage-report.result }}"
+          RESULT_LOBSTER="${{ needs.run-lobster-traceability-report.result }}"
           
           echo "Build and test host: $RESULT_HOST"
           echo "Build and test QNX: $RESULT_QNX"
           echo "Thread sanitizer: $RESULT_TSAN"
           echo "Address sanitizer: $RESULT_ASAN"
           echo "Coverage report: $RESULT_COVERAGE"
+          echo "Lobster traceability: $RESULT_LOBSTER"
           
           if [[ "$RESULT_HOST" == "success" ]] && \
              [[ "$RESULT_QNX" == "success" ]] && \
              [[ "$RESULT_TSAN" == "success" ]] && \
              [[ "$RESULT_ASAN" == "success" ]] && \
-             [[ "$RESULT_COVERAGE" == "success" ]]; then
+             [[ "$RESULT_COVERAGE" == "success" ]] && \
+             [[ "$RESULT_LOBSTER" == "success" ]]; then
             echo "all-success=true" >> $GITHUB_OUTPUT
           else
             echo "all-success=false" >> $GITHUB_OUTPUT
