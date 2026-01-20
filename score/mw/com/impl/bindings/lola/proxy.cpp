@@ -71,6 +71,24 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
+// Suppress "AUTOSAR C++14 A16-0-1" rule findings. This rule stated: "The pre-processor shall only be used for
+// unconditional and conditional file inclusion and include guards, and using the following directives: (1) #ifndef,
+// #ifdef, (3) #if, (4) #if defined, (5) #elif, (6) #else, (7) #define, (8) #endif, (9) #include.".
+// Checks whether we run over QNX or linux to choose the appropriate path.
+// coverity[autosar_cpp14_a16_0_1_violation]
+#ifdef __QNXNTO__
+// Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
+// constant-initialized.".
+// score::filesystem::Path is not literal class as it has std::vector data member.
+// coverity[autosar_cpp14_a3_3_2_violation]
+const filesystem::Path kShmPathPrefix{"/dev/shmem"};
+// coverity[autosar_cpp14_a16_0_1_violation]
+#else
+// coverity[autosar_cpp14_a3_3_2_violation]
+const filesystem::Path kShmPathPrefix{"/dev/shm"};
+// coverity[autosar_cpp14_a16_0_1_violation]
+#endif
+
 using memory::DataTypeSizeInfo;
 
 /// \brief Tries to place a shared flock on the given service instance usage marker file
@@ -510,7 +528,8 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
     const auto method_shm_path_name = GetMethodChannelShmName();
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(filesystem_.standard != nullptr);
-    const auto are_in_restart_context_result = filesystem_.standard->Exists(method_shm_path_name);
+
+    const auto are_in_restart_context_result = filesystem_.standard->Exists(kShmPathPrefix / method_shm_path_name);
     if (!(are_in_restart_context_result.has_value()))
     {
         score::mw::log::LogWarn("lola") << "Failed to check if method shm path already exists. Exiting.";
