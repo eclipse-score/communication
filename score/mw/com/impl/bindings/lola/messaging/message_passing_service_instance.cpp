@@ -66,11 +66,8 @@ bool DeserializeFromPayload(const score::cpp::span<const std::uint8_t> payload, 
     // Suppress "AUTOSAR C++14 A12-0-2" The rule states: "Bitwise operations and operations that assume data
     // representation in memory shall not be performed on objects."
     // False-positive: trivially-copyable object
-    // Suppress "AUTOSAR C++14 A0-1-2": The return value of memcpy is not needed since it returns a void* to its
-    // destination (which is &t)
     // coverity[autosar_cpp14_a12_0_2_violation : FALSE]
-    // coverity[autosar_cpp14_a0_1_2_violation]
-    std::memcpy(&t, payload.data(), payload.size());
+    score::cpp::ignore = std::memcpy(&t, payload.data(), payload.size());
     // NOLINTEND(score-banned-function) deserialization of trivially copyable
     return true;
 }
@@ -85,10 +82,7 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
     std::array<std::uint8_t, sizeof(T) + 1> out{};
     out[0] = message_id;
     // NOLINTBEGIN(score-banned-function) serialization of trivially copyable
-    // Suppress "AUTOSAR C++14 A0-1-2": The return value of memcpy is not needed since it returns a void* to its
-    // destination (which is &out)
-    // coverity[autosar_cpp14_a0_1_2_violation]
-    std::memcpy(&out[1], &t, sizeof(T));
+    score::cpp::ignore = std::memcpy(&out[1], &t, sizeof(T));
     // NOLINTEND(score-banned-function) deserialization of trivially copyable
     return out;
 }
