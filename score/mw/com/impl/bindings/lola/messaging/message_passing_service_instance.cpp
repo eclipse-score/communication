@@ -49,6 +49,7 @@ namespace
 {
 
 constexpr std::uint32_t kMaxSendSize{9U};
+constexpr std::uint32_t kMaxReplySize{32U};
 
 // TODO: make proper serialization
 template <typename T>
@@ -107,7 +108,7 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQuality
 
     auto node_identifier = score::os::Unistd::instance().getpid();
     auto service_identifier = MessagePassingClientCache::CreateMessagePassingName(asil_level, node_identifier);
-    score::message_passing::ServiceProtocolConfig protocol_config{service_identifier, kMaxSendSize, 0U, 0U};
+    score::message_passing::ServiceProtocolConfig protocol_config{service_identifier, kMaxSendSize, kMaxReplySize, 0U};
     score::message_passing::IServerFactory::ServerConfig server_config{};
     server_ = server_factory.Create(protocol_config, server_config);
 

@@ -36,7 +36,8 @@ constexpr auto mq_name_prefix_mpcc("LoLa_2_");
 constexpr auto mq_name_qm_postfix_mpcc("_QM");
 constexpr auto mq_name_asil_b_postfix_mpcc("_ASIL_B");
 
-constexpr std::uint32_t kMaxSendSize{9U};
+constexpr std::uint32_t kMaxSendSize{32U};
+constexpr std::uint32_t kMaxReplySize{32U};
 
 constexpr std::uint32_t kStateTryAttempts{10U};
 constexpr std::chrono::milliseconds kStateRetryDelay{50};
@@ -76,8 +77,9 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
     const std::string service_identifier = CreateMessagePassingName(asil_level_, target_node_id);
 
     const bool fully_async = asil_level_ == ClientQualityType::kASIL_QMfromB;
-    const score::message_passing::ServiceProtocolConfig protocol_config{service_identifier, kMaxSendSize, 0U, 0U};
-    const score::message_passing::IClientFactory::ClientConfig client_config{0U, 20U, false, fully_async, true};
+    const score::message_passing::ServiceProtocolConfig protocol_config{
+        service_identifier, kMaxSendSize, kMaxReplySize, 0U};
+    const score::message_passing::IClientFactory::ClientConfig client_config{0U, 20U, false, fully_async, false};
 
     auto new_sender_unique_p = client_factory_.Create(protocol_config, client_config);
 
