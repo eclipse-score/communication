@@ -23,7 +23,9 @@
 namespace score::mw::com::impl::lola
 {
 
-/// \brief Struct containing the information that is required to uniquely identifer a Proxy instance.
+/// \brief Struct containing the information that is required by a Skeleton instance to uniquely identify a Proxy
+/// instance that is connected to it. I.e. with the assumption that the service ID and instance ID is already known by
+/// the Skeleton.
 ///
 /// There may be multiple Proxy instances with the same service ID and instance ID in the same process or in different
 /// processes. Therefore, in order to uniquely identifer a Proxy instance, we use Application ID (which uniquely
