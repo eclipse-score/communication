@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
@@ -56,7 +57,8 @@ class SkeletonMethod : public SkeletonMethodBinding
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
-    safecpp::Scope<> method_call_handler_scope_{};
+    safecpp::Scope<> method_call_handler_scope_;
+    QualityType asil_level_;
 };
 
 class SkeletonMethodView
