@@ -949,9 +949,11 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
 
     auto& method_data = GetMethodData(*(resource_it->second));
     auto& method_call_queues = method_data.method_call_queues_;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(method_call_queues.size() == skeleton_methods_.size());
     for (auto& [method_id, type_erased_call_queue] : method_call_queues)
     {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            skeleton_methods_.count(method_id) != 0U,
+            "Each method that was stored in shared memory by the proxy must be registered with the Skeleton!");
         auto& skeleton_method = skeleton_methods_.at(method_id);
         const auto result = SkeletonMethodView{skeleton_method.get()}.OnProxyMethodSubscribeFinished(
             type_erased_call_queue.GetTypeErasedElementInfo(),
