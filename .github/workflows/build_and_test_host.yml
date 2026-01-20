@@ -46,3 +46,7 @@ jobs:
         - name: Bazel test communication targets
           run: |
             bazel test --extra_toolchains=${{ matrix.toolchain }} //... --build_tests_only
+
+    lobster_traceability:
+      if: github.event_name == 'pull_request'
+      uses: ./.github/workflows/lobster_traceability_report.yml

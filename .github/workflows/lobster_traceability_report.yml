@@ -1,0 +1,83 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+name: Lobster Traceability Report
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: 'Release tag to upload artifacts to (optional, for release workflow)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  lobster-traceability-report:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write # required to upload release assets
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: ./actions/free_disk_space
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      - name: Build Lobster Traceability Reports
+        run: |
+          # Build sample library traceability report (complete example)
+          bazel build //third_party/traceability/doc/sample_library:safety_software_unit_example
+          
+          # TODO: Enable full communication module report when ready
+          # bazel build //score/mw/com/requirements:safety_software_unit_com
+
+      - name: Collect Lobster Reports
+        run: |
+          mkdir -p lobster_reports
+          
+          # Find and copy all generated HTML reports (use -L to follow symlinks)
+          find -L bazel-bin -name "*_report.html" -exec cp {} lobster_reports/ \;
+          
+          # Find and copy all generated JSON reports (use -L to follow symlinks)
+          find -L bazel-bin -name "*_report.json" -exec cp {} lobster_reports/ \;
+          
+          # List collected reports
+          echo "Collected Lobster reports:"
+          ls -lh lobster_reports/
+
+      - name: Create archive of Lobster reports
+        run: |
+          zip -r ${{ github.event.repository.name }}_lobster_traceability_report.zip lobster_reports/
+        shell: bash
+
+      - name: Upload Lobster report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_lobster_traceability_report.zip
+          path: ${{ github.event.repository.name }}_lobster_traceability_report.zip
+
+      - name: Upload Lobster report to existing draft release
+        if: inputs.release_tag != ''
+        run: |
+          # Upload the file to the existing release
+          gh release upload "${{ inputs.release_tag }}" "${{ github.event.repository.name }}_lobster_traceability_report.zip"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
