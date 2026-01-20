@@ -100,16 +100,13 @@ impl<R: Runtime + ?Sized> OfferedProducer<R> for VehicleOfferedProducer<R> {
     type Interface = VehicleInterface;
     type Producer = VehicleProducer<R>;
 
-    fn unoffer(self) -> Self::Producer {
+    fn unoffer(self) -> com_api::Result<Self::Producer> {
         let vehicle_producer = VehicleProducer {
             _runtime: std::marker::PhantomData,
             instance_info: self.instance_info.clone(),
         };
         // Stop offering the service instance to withdraw it from system availability
-        if let Err(e) = self.instance_info.stop_offer_service() {
-            //below line will be replaced with logging once logging is available
-            eprintln!("Failed to stop offering service: {:?}", e);
-        }
-        vehicle_producer
+        self.instance_info.stop_offer_service()?;
+        Ok(vehicle_producer)
     }
 }

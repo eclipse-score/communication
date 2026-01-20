@@ -425,7 +425,7 @@ pub trait OfferedProducer<R: Runtime + ?Sized> {
     /// # Returns
     ///
     /// The original producer instance after withdrawal.
-    fn unoffer(self) -> Self::Producer;
+    fn unoffer(self) -> Result<Self::Producer>;
 }
 
 /// Service instance to be offered to the system.
