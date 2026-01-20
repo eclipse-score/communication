@@ -893,6 +893,18 @@ void Skeleton::RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skel
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
 }
 
+bool Skeleton::VerifyAllMethodsRegistered() const
+{
+    for (const auto& [_, method_reference] : skeleton_methods_)
+    {
+        if (!SkeletonMethodView{method_reference.get()}.IsRegistered())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, there is no way for calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]

@@ -140,6 +140,8 @@ class Skeleton final : public SkeletonBinding
 
     void RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method);
 
+    bool VerifyAllMethodsRegistered() const override;
+
   private:
     ResultBlank OpenExistingSharedMemory(
         std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback);

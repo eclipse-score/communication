@@ -74,6 +74,11 @@ class SkeletonMethodView
             type_erased_element_info, in_arg_values_storage, return_value_storage, proxy_instance_identifier);
     }
 
+    bool IsRegistered()
+    {
+        return skeleton_method_.type_erased_callback_.has_value();
+    }
+
   private:
     SkeletonMethod& skeleton_method_;
 };
