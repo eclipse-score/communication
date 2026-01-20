@@ -1006,6 +1006,22 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "skeleton_base_test",
+    srcs = [
+        "skeleton_base_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -1022,7 +1038,6 @@ cc_test(
         "proxy_event_binding_base_test.cpp",
         "proxy_event_test.cpp",
         "service_element_map_test.cpp",
-        "skeleton_base_test.cpp",
         "skeleton_binding_test.cpp",
         "skeleton_event_base_test.cpp",
         "skeleton_event_binding_test.cpp",
@@ -1077,6 +1092,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":sample_reference_tracker_test",
         ":service_discovery_test",
         ":service_element_type_test",
+        ":skeleton_base_test",
         ":unit_test",
         ":traits_test",
         ":unit_test_runtime_single_exec",

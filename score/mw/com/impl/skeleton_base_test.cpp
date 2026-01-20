@@ -18,8 +18,6 @@
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
-#include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
