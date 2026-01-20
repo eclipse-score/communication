@@ -232,53 +232,50 @@ auto SkeletonBase::OfferService() noexcept -> ResultBlank
         return skeleton_mock_->OfferService();
     }
 
-    if (binding_ != nullptr)
-    {
-        auto event_bindings = GetSkeletonEventBindingsMap(events_);
-        auto field_bindings = GetSkeletonFieldBindingsMap(fields_);
-
-        auto register_shm_object_callback =
-            tracing::CreateRegisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
-
-        const auto result =
-            binding_->PrepareOffer(event_bindings, field_bindings, std::move(register_shm_object_callback));
-        if (!result.has_value())
-        {
-            score::mw::log::LogError("lola") << "SkeletonBinding::OfferService failed: " << result.error().Message()
-                                           << ": " << result.error().UserMessage();
-            return MakeUnexpected(ComErrc::kBindingFailure);
-        }
-
-        const auto event_verification_result = OfferServiceEvents();
-        if (!event_verification_result.has_value())
-        {
-            return event_verification_result;
-        }
-
-        const auto fields_verification_result = OfferServiceFields();
-        if (!fields_verification_result.has_value())
-        {
-            return fields_verification_result;
-        }
-
-        service_offered_flag_.Set();
-
-        const auto service_discovery_offer_result =
-            Runtime::getInstance().GetServiceDiscovery().OfferService(instance_id_);
-        if (!service_discovery_offer_result.has_value())
-        {
-            score::mw::log::LogError("lola")
-                << "SkeletonBinding::OfferService failed: service discovery could not start offer"
-                << service_discovery_offer_result.error().Message() << ": "
-                << service_discovery_offer_result.error().UserMessage();
-            return MakeUnexpected(ComErrc::kBindingFailure);
-        }
-    }
-    else
+    if (binding_ == nullptr)
     {
         score::mw::log::LogFatal("lola") << "Trying to call OfferService() on a skeleton WITHOUT a binding!";
         std::terminate();
     }
+
+    auto event_bindings = GetSkeletonEventBindingsMap(events_);
+    auto field_bindings = GetSkeletonFieldBindingsMap(fields_);
+
+    auto register_shm_object_callback =
+        tracing::CreateRegisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
+
+    const auto result = binding_->PrepareOffer(event_bindings, field_bindings, std::move(register_shm_object_callback));
+    if (!result.has_value())
+    {
+        score::mw::log::LogError("lola") << "SkeletonBinding::OfferService failed: " << result.error().Message() << ": "
+                                       << result.error().UserMessage();
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    const auto event_verification_result = OfferServiceEvents();
+    if (!event_verification_result.has_value())
+    {
+        return event_verification_result;
+    }
+
+    const auto fields_verification_result = OfferServiceFields();
+    if (!fields_verification_result.has_value())
+    {
+        return fields_verification_result;
+    }
+
+    service_offered_flag_.Set();
+
+    const auto service_discovery_offer_result = Runtime::getInstance().GetServiceDiscovery().OfferService(instance_id_);
+    if (!service_discovery_offer_result.has_value())
+    {
+        score::mw::log::LogError("lola")
+            << "SkeletonBinding::OfferService failed: service discovery could not start offer"
+            << service_discovery_offer_result.error().Message() << ": "
+            << service_discovery_offer_result.error().UserMessage();
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
     return {};
 }
 
