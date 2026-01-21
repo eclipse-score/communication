@@ -1,0 +1,8 @@
+{
+    "appId": "CSCA",
+    "appDesc": "concurrentskeletoncreation",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kConsole",
+    "dynamicDatarouterIdentifiers": true
+}

@@ -1,0 +1,104 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/test/small",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 8265,
+          "events": [
+            {
+              "eventName": "small_but_great",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/bmw/adp/DummyServiceType",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6433,
+          "events": [
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "smokeyeyes/small_but_great",
+      "serviceTypeName": "/score/mw/com/test/small",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "B": [
+              1300,
+              1301,
+              1302,
+              1303,
+              1304,
+              1305,
+              1306,
+              1307,
+              1308,
+              1309,
+              1310,
+              1311,
+              0
+            ]
+          },
+          "allowedProvider": {
+            "B": [
+              1300,
+              1301,
+              1302,
+              1303,
+              1304,
+              1305,
+              1306,
+              1307,
+              1308,
+              1309,
+              1310,
+              1311,
+              0
+            ]
+          },
+          "asil-level": "B",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "small_but_great",
+              "maxSamples": 1667,
+              "maxSubscribers": 160
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "B",
+    "queue-size": {
+    "QM-receiver": 160,
+    "B-receiver": 160,
+    "B-sender": 160
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+    "appId": "PROVMXSUBS",
+    "appDesc": "providermaxsubscribers",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kRemote|kConsole",
+    "dynamicDatarouterIdentifiers": true
+}

@@ -1,0 +1,8 @@
+{
+  "appId": "SMEY",
+  "appDesc": "smokeyeyes",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole",
+  "dynamicDatarouterIdentifiers" : true
+}

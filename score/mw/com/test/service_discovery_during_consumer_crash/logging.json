@@ -1,0 +1,8 @@
+{
+    "appId": "CONSCRSH",
+    "appDesc": "consumercrash",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kRemote|kConsole",
+    "dynamicDatarouterIdentifiers": true
+}

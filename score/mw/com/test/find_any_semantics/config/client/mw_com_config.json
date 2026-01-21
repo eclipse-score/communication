@@ -1,0 +1,45 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/mw/com/test/field_initial_value",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 3428,
+          "fields": [
+            {
+              "fieldName": "test_field",
+              "fieldId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/field_initial_value_client",
+      "serviceTypeName": "/score/mw/com/test/field_initial_value",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "asil-level": "QM",
+          "binding": "SHM",
+          "fields": [
+            {
+              "fieldName": "test_field"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+

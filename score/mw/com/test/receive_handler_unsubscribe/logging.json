@@ -1,0 +1,9 @@
+{
+  "appId": "BIGD",
+  "appDesc": "bigdata",
+  "ringBufferSize": 524288,
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole",
+  "dynamicDatarouterIdentifiers" : true
+}

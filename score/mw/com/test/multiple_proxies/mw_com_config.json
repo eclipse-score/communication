@@ -1,0 +1,143 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6432,
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "eventId": 1
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "eventId": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/bmw/adp/DummyServiceType",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6433,
+          "events": [
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "score/cp60/MapApiLanesStamped1",
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              1000,
+              0
+            ]
+          },
+          "asil-level": "QM",
+        "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "score/cp60/MapApiLanesStamped2",
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              1000,
+              0
+            ]
+          },
+          "asil-level": "QM",
+        "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "score/cp60/MapApiLanesStamped3",
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              1000,
+              0
+            ]
+          },
+          "asil-level": "QM",
+        "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

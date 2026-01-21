@@ -1,0 +1,68 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6432,
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "eventId": 10
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "eventId": 20
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "score/cp60/MapApiLanesStamped",
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+        "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              1000,
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              1001,
+              0
+            ]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "map_api_lanes_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            },
+            {
+              "eventName": "dummy_data_stamped",
+              "maxSamples": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
