@@ -71,7 +71,7 @@ cc_library(
         ":quality_type",
         ":service_type_deployment",
         ":someip_service_instance_deployment",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -150,7 +150,7 @@ cc_library(
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl/tracing/configuration:service_element_identifier",
         "//score/mw/com/impl/tracing/configuration:tracing_config",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -159,7 +159,7 @@ cc_library(
     srcs = ["global_configuration.cpp"],
     hdrs = ["global_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -175,7 +175,7 @@ cc_library(
     srcs = ["tracing_configuration.cpp"],
     hdrs = ["tracing_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -208,7 +208,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_common_resources",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
@@ -472,7 +472,7 @@ cc_library(
     deps = [
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 

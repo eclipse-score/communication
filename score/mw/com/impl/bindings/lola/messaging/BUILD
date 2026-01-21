@@ -204,8 +204,8 @@ cc_library(
         ":message_passing_service",
         ":message_passing_service_instance_factory",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
         "@score_communication//score/message_passing",
+        "@score_logging//score/mw/log",
     ],
 )
 

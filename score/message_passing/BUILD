@@ -186,7 +186,7 @@ cc_library(
     visibility = [
         "//platform/aas/pas/logging:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
-        "@score_baselibs//score/mw/log/detail/data_router:__subpackages__",
+        "@score_logging//score/mw/log/detail/data_router:__subpackages__",
     ],
     deps = [
         ":message_passing_common",

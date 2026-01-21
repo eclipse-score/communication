@@ -130,7 +130,20 @@ bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "flatbuffers", version = "25.2.10")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_doxygen", version = "2.5.0")
+
 bazel_dep(name = "score_baselibs", version = "0.2.2")
+git_override(
+    module_name = "score_baselibs",
+    commit = "ccfe7dc563bedc77fe6e19bd7050104e80fdf7e1",
+    remote = "https://github.com/eclipse-score/baselibs.git",
+)
+
+bazel_dep(name = "score_logging", version = "0.0.4")
+git_override(
+    module_name = "score_logging",
+    commit = "d5267a5d89ca7462bec29c49d3b295a10ee834c3",
+    remote = "https://github.com/eclipse-score/logging.git",
+)
 
 bazel_dep(name = "score_baselibs_rust", version = "0.0.1")
 git_override(

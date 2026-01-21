@@ -333,7 +333,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
         "//score/mw/com/impl/bindings/lola:shm_path_builder",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     deps = [
@@ -820,8 +820,8 @@ cc_test(
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os/mocklib:fcntl_mock",
+        "@score_logging//score/mw/log",
     ],
 )
 

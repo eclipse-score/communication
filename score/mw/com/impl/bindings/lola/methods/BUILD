@@ -106,7 +106,7 @@ cc_unit_test(
         "@score_baselibs//score/memory/shared:memory_resource_proxy",
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
