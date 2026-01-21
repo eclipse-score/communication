@@ -831,6 +831,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":proxy_method_binding_factory_test",
         ":proxy_field_binding_factory_test",
         ":proxy_event_field_binding_factory_test",
+        ":skeleton_method_binding_factory_test",
         ":binding_runtime_factory_test",
         ":skeleton_event_binding_factory_test",
         ":skeleton_field_binding_factory_test",
