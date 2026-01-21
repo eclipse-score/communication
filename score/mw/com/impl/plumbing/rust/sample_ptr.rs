@@ -13,6 +13,11 @@
 use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
+use common_rs::{
+    BlankBinding, ControlSlotType, CxxOptional, EventDataControl, SlotIndexType,
+    TransactionLogIndex,
+};
+
 #[cfg(target_os = "nto")]
 mod util_nto {
     #![allow(non_camel_case_types)]
@@ -30,10 +35,10 @@ mod util_nto {
     }
 }
 
-#[cfg(target_os = "nto")]
-use util_nto::max_align_t;
 #[cfg(not(target_os = "nto"))]
 use libc::max_align_t;
+#[cfg(target_os = "nto")]
+use util_nto::max_align_t;
 
 // @todo check whether we can get this info "somehow" from C++ code
 type CustomDeleterAlignment = max_align_t;
@@ -70,25 +75,6 @@ union MockVariant<T> {
 }
 
 #[repr(C)]
-struct CxxOptional<T> {
-    _data: T,
-    _engaged: bool,
-}
-
-#[repr(C)]
-struct EventDataControl {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-struct ControlSlotType  {
-    _dummy: [u8; 0],
-}
-
-type SlotIndexType = u16;
-type TransactionLogIndex = u8;
-
-#[repr(C)]
 struct ControlSlotIndicator {
     _slot_index: SlotIndexType,
     _slot_pointer: *mut ControlSlotType,
@@ -111,11 +97,6 @@ struct LolaBinding<T> {
 union LolaVariant<T> {
     _variant: ManuallyDrop<LolaBinding<T>>,
     _other: ManuallyDrop<MockVariant<T>>,
-}
-
-#[repr(C)]
-struct BlankBinding {
-    _data: [u8; 0],
 }
 
 #[repr(C)]
@@ -153,5 +134,76 @@ unsafe impl<T> Send for SamplePtr<T> {}
 impl<T> Debug for SamplePtr<T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("SamplePtr").finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_helper_size_ffi_rs::SamplePtrLola;
+    use test_utils_rs::*;
+
+    #[test]
+    fn test_sample_ptr_variant_int32_size() {
+        let cpp_size = SamplePtrLola::get_variant_int32();
+        verify_size_and_align!(SamplePtr<i32>, cpp_size, "SamplePtr<i32>");
+    }
+
+    #[test]
+    fn test_sample_ptr_variant_u8_size() {
+        let cpp_size = SamplePtrLola::get_variant_unsigned_char();
+        verify_size_and_align!(SamplePtr<u8>, cpp_size, "SamplePtr<u8>");
+    }
+
+    #[test]
+    fn test_sample_ptr_variant_u64_size() {
+        let cpp_size = SamplePtrLola::get_variant_unsigned_long_long();
+        verify_size_and_align!(SamplePtr<u64>, cpp_size, "SamplePtr<u64>");
+    }
+
+    #[test]
+    fn test_sample_ptr_variant_user_defined_type_size() {
+        let cpp_size = SamplePtrLola::get_variant_user_defined_type();
+        verify_size_and_align!(SamplePtr<UserType>, cpp_size, "SamplePtr<UserType>");
+    }
+
+    #[test]
+    fn test_control_slot_indicator_size() {
+        let cpp_size = SamplePtrLola::get_control_slot_indicator_size();
+        verify_size_and_align!(ControlSlotIndicator, cpp_size, "ControlSlotIndicator");
+    }
+
+    #[test]
+    fn test_sample_ptr_lolabinding_size() {
+        let cpp_size = SamplePtrLola::get_sample_ptr_size();
+        verify_size_and_align!(LolaBinding<i32>, cpp_size, "LolaBinding<i32>");
+    }
+
+    #[test]
+    fn test_mock_binding_sample_ptr_size() {
+        let cpp_size = SamplePtrLola::get_mock_binding_sample_ptr_size();
+        verify_size_and_align!(MockBinding<i32>, cpp_size, "MockBinding<i32>");
+    }
+
+    #[test]
+    fn test_slot_decrementer_size() {
+        let cpp_size = SamplePtrLola::get_slot_decrementer_size();
+        verify_size_and_align!(SlotDecrementer, cpp_size, "SlotDecrementer");
+    }
+
+    #[test]
+    #[should_panic(expected = "size mismatch")]
+    fn test_negative_sample_ptr_size_mismatch() {
+        let cpp_size = SamplePtrLola::get_variant_int32();
+        let incorrect = cpp_size.size + 1;
+        assert_eq!(incorrect, cpp_size.size, "SamplePtr size mismatch!");
+    }
+
+    #[test]
+    #[should_panic(expected = "align mismatch")]
+    fn test_negative_sample_ptr_align_mismatch() {
+        let cpp_size = SamplePtrLola::get_variant_int32();
+        let incorrect = cpp_size.align + 1;
+        assert_eq!(incorrect, cpp_size.align, "SamplePtr align mismatch!");
     }
 }

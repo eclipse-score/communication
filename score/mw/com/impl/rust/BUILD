@@ -70,7 +70,7 @@ rust_library(
     ],
     deps = [
         ":proxy_bridge_cpp",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
         "@crate_index//:arrayvec",
         "@crate_index//:futures",
     ],
@@ -97,7 +97,7 @@ rust_library(
         ":common",
         ":proxy_bridge_rs",
         ":skeleton_bridge_rs",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
     ],
 )
 
@@ -137,6 +137,6 @@ rust_library(
     deps = [
         ":proxy_bridge_rs",
         ":registry_bridge_macro_cpp",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
     ],
 )

@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -841,13 +840,4 @@ cc_unit_test_suites_for_host_and_qnx(
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
-)
-
-rust_library(
-    name = "sample_ptr_rs",
-    srcs = ["sample_ptr.rs"],
-    visibility = [
-        "//score/mw/com:__subpackages__",
-    ],
-    deps = ["@crate_index//:libc"],
 )
