@@ -62,6 +62,7 @@ cc_library(
     deps = [
         ":i_message_passing_service",
         ":message_passing_service_instance_factory",
+        ":mw_log_logger",
     ],
 )
 
@@ -192,6 +193,24 @@ cc_library(
 )
 
 cc_library(
+    name = "mw_log_logger",
+    srcs = [
+        "mw_log_logger.cpp",
+    ],
+    hdrs = [
+        "mw_log_logger.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+    deps = [
+        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "@score_communication//score/message_passing",
+        "@score_logging//score/mw/log",
+    ],
+)
+
+cc_library(
     name = "messaging",
     hdrs = [
         "thread_abstraction.h",
@@ -310,6 +329,19 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "mw_log_logger_test",
+    srcs = ["mw_log_logger_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":mw_log_logger",
+        "@score_baselibs//score/mw/log:recorder_mock",
+    ],
+)
+
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
@@ -318,6 +350,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":message_passing_service_instance_test",
         ":message_passing_client_cache_test",
         ":message_passing_service_test",
+        ":mw_log_logger_test",
     ],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
 )

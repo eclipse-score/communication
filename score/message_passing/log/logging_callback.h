@@ -33,7 +33,7 @@ enum class LogSeverity : std::uint8_t
 };
 
 using LogItem = std::variant<std::string_view, std::int64_t, std::uint64_t, const void*>;
-using LogItems = score::cpp::span<LogItem>;
+using LogItems = score::cpp::span<const LogItem>;
 using LoggingCallback = score::cpp::callback<void(LogSeverity, LogItems)>;
 
 LoggingCallback GetCerrLogger();
