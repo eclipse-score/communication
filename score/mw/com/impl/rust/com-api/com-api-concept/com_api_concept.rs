@@ -732,6 +732,17 @@ impl<S> SampleContainer<S> {
     }
 }
 
+///SampleContainer's Send implementation is unsafe because
+/// it implemented using FixedCapacityQueue which is implemented using NonNull type.
+/// and NonNull is not Send by default.
+//TODO: Send impl must be remove from here and be added to FixedCapacityQueue instead.
+
+//Safety: SampleContainer can be sent between the addressespaces safely
+// because initalzation of SampleContainer happens before usage and
+// And NonNull pointer inside FixedCapacityQueue
+// always points to valid memory during the usage of SampleContainer.
+unsafe impl<S> Send for SampleContainer<S> {}
+
 /// Active event subscription with polling and async receive capabilities.
 ///
 /// Represents a live subscription to an event source with methods for both

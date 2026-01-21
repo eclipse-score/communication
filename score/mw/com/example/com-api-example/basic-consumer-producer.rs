@@ -187,7 +187,7 @@ mod test {
     }
 
     async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
-        let mut buffer = SampleContainer::new();
+        let mut buffer = SampleContainer::new(5);
         for _ in 0..10 {
             //try_receive need to please with async receive call
             match subscribed.try_receive(&mut buffer, 3) {
