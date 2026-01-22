@@ -124,6 +124,7 @@ Our implementation of `mw::com` depends on the following components/libraries:
 * `//platform/aas/lib/filesystem`
 * `//platform/aas/lib/json:json_parser`
 * `//score/memory/shared`: Our whole shared-memory handling is implemented in this lib.
+* `//platform/aas/lib/message_passing` Our side-channel communication is handled in this lib
 * `//score/os/utils/acl:acl`
 * `//score/os/utils/inotify`
 * `/platform/aas/mw/log`
