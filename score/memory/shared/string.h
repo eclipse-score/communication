@@ -15,6 +15,8 @@
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
+#include "score/language/safecpp/string_view/char_traits_wrapper.h"
+
 #include <string>
 
 namespace score::memory::shared
@@ -31,7 +33,7 @@ namespace score::memory::shared
 
 /// \brief We provide our custom version of a std::BasicString to ensure that it supports HEAP and SharedMemory usage
 /// with our custom allocator.
-template <typename CharT, typename Traits = std::char_traits<CharT>>
+template <typename CharT, typename Traits = typename safecpp::char_traits_wrapper<CharT>::traits_type>
 using BasicString = std::basic_string<CharT, Traits, score::memory::shared::PolymorphicOffsetPtrAllocator<CharT>>;
 
 // Provide custom operator==/operator!= implementations to be interoperable with std::string in this regard

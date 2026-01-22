@@ -428,6 +428,7 @@ cc_library(
     ],
     deps = [
         ":polymorphic_offset_ptr_allocator",
+        "@score_baselibs//score/language/safecpp/string_view:char_traits_wrapper",
     ],
 )
 
