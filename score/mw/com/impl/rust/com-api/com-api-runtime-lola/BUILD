@@ -19,6 +19,7 @@ rust_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
+        "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
         "//score/mw/com/impl/rust:generic_bridge_ffi_rs",
         "//score/mw/com/impl/rust:proxy_bridge_rs",

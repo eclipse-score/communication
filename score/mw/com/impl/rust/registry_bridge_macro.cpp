@@ -309,5 +309,95 @@ void mw_com_delete_sample_ptr(void* sample_ptr, StringView type_name)
     registry->DeleteSamplePtr(sample_ptr);
 }
 
+/// @brief Get allocatee pointer from skeleton event of specific type
+/// @param event_ptr Opaque skeleton event pointer
+/// @param event_type UTF-8 string view of event type name
+/// @param allocatee_ptr Pointer to pre-allocated memory for allocatee
+void mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr, StringView event_type)
+{
+    if (event_ptr == nullptr || event_type.data == nullptr)
+    {
+        return ;
+    }
+
+    auto name = static_cast<std::string_view>(event_type);
+
+    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
+
+    if (registry == nullptr)
+    {
+        return ;
+    }
+     registry->GetAllocateePtr(event_ptr, allocatee_ptr);
+}
+
+/// @brief Delete allocatee pointer of specific type
+/// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
+/// @param event_type UTF-8 string view of event type name
+void mw_com_delete_allocatee_ptr(void* allocatee_ptr, StringView event_type)
+{
+    if (allocatee_ptr == nullptr || event_type.data == nullptr)
+    {
+        return ;
+    }
+
+    auto name = static_cast<std::string_view>(event_type);
+
+    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
+
+    if (registry == nullptr)
+    {
+        return ;
+    }
+     registry->DeleteAllocateePtr(allocatee_ptr);
+}
+
+/// @brief Get allocatee data pointer from allocatee of specific type
+/// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
+/// @param event_type UTF-8 string view of event type name
+/// @return Pointer to allocatee data, or nullptr if type mismatch
+void* mw_com_get_allocatee_data_ptr(void* allocatee_ptr, StringView event_type)
+{
+    if (allocatee_ptr == nullptr || event_type.data == nullptr)
+    {
+        return nullptr;
+    }
+
+    auto name = static_cast<std::string_view>(event_type);
+
+    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
+
+    if (registry == nullptr)
+    {
+        return nullptr;
+    }
+    return registry->GetAllocateeDataPtr(allocatee_ptr);
+}
+
+/// @brief  Send event via skeleton using allocatee pointer of specific type
+/// @param event_ptr Opaque skeleton event pointer
+/// @param event_type UTF-8 string view of event type name
+/// @param allocatee_ptr Pointer to SampleAllocateePtr<T>
+/// @return True if event was sent successfully, false otherwise
+bool mw_com_skeleton_send_event_allocatee( SkeletonEventBase* event_ptr,
+                                           StringView event_type,
+                                           void* allocatee_ptr)
+{
+    if ( event_type.data == nullptr || allocatee_ptr == nullptr)
+    {
+        return false;
+    }
+
+    auto name = static_cast<std::string_view>(event_type);
+
+    auto registry = GlobalRegistryMapping::FindTypeInformation(name);
+
+    if (registry == nullptr)
+    {
+        return false;
+    }
+    return registry->SkeletonSendEventAllocatee(event_ptr, allocatee_ptr);
+}
+
 }  // extern "C"
 }  // namespace score::mw::com::impl::rust

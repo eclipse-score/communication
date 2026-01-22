@@ -298,6 +298,131 @@ extern "C" {
     /// * `sample_ptr` - Opaque sample pointer
     /// * `type_name` - Type name string
     fn mw_com_delete_sample_ptr(sample_ptr: *mut std::ffi::c_void, type_name: StringView);
+
+    /// Get allocatee pointer from skeleton event of specific type
+    ///
+    /// # Arguments
+    /// * `event_ptr` - Opaque skeleton event pointer
+    /// * `allocatee_ptr` - Pointer to pre-allocated memory for allocatee
+    /// * `event_type` - Type name string
+    fn mw_com_get_allocatee_ptr(
+        event_ptr: *mut SkeletonEventBase,
+        allocatee_ptr: *mut std::ffi::c_void,
+        event_type: StringView,
+    );
+
+    /// Delete allocatee pointer of SampleAllocateePtr<T>
+    ///
+    /// # Arguments
+    /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+    /// * `type_name` - Type name string
+    fn mw_com_delete_allocatee_ptr(allocatee_ptr: *mut std::ffi::c_void, type_name: StringView);
+
+    /// Get allocatee data pointer from allocatee of specific type
+    ///
+    /// # Arguments
+    /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+    /// * `type_name` - Type name string
+    ///
+    /// # Returns
+    /// Pointer to allocatee data, or nullptr if type mismatch
+    fn mw_com_get_allocatee_data_ptr(
+        allocatee_ptr: *mut std::ffi::c_void,
+        type_name: StringView,
+    ) -> *mut std::ffi::c_void;
+
+    /// Send event via skeleton using allocatee pointer of specific type
+    ///
+    /// # Arguments
+    /// * `event_ptr` - Opaque skeleton event pointer
+    /// * `event_type` - Type name string
+    /// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+    ///
+    /// # Returns
+    /// True if event was sent successfully, false otherwise
+    fn mw_com_skeleton_send_event_allocatee(
+        event_ptr: *mut SkeletonEventBase,
+        event_type: StringView,
+        allocatee_ptr: *mut std::ffi::c_void,
+    ) -> bool;
+}
+
+/// Get allocatee pointer from skeleton event of specific type
+///
+/// # Arguments
+/// * `event_ptr` - Opaque skeleton event pointer
+/// * `allocatee_ptr` - Pointer to pre-allocated memory for allocatee
+/// * `event_type` - Type name string
+///
+/// # Safety
+/// event_ptr must point to a valid SkeletonEventBase, allocatee_ptr must point to valid memory for the allocatee,
+/// and event_type must be a valid UTF-8 string representing the event type.
+pub unsafe fn get_allocatee_ptr(
+    event_ptr: *mut SkeletonEventBase,
+    allocatee_ptr: *mut std::ffi::c_void,
+    event_type: &str,
+) {
+    // SAFETY: event_ptr is valid which is created using create_skeleton()
+    // and allocatee_ptr has enough memory allocated for the construction of allocatee instance.
+    let event_type = StringView::from(event_type);
+    mw_com_get_allocatee_ptr(event_ptr, allocatee_ptr, event_type);
+}
+
+/// Delete allocatee pointer of SampleAllocateePtr<T>
+///
+/// # Arguments
+/// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+/// * `type_name` - Type name string
+///
+/// # Safety
+/// allocatee_ptr must point to a valid SampleAllocateePtr<T> of the specified type.
+pub unsafe fn delete_allocatee_ptr(allocatee_ptr: *mut std::ffi::c_void, type_name: &str) {
+    // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and type_name is constructed using static str.
+    let type_name = StringView::from(type_name);
+    mw_com_delete_allocatee_ptr(allocatee_ptr, type_name);
+}
+
+/// Get allocatee data pointer from allocatee of specific type
+///
+/// # Arguments
+/// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+/// * `type_name` - Type name string
+///
+/// # Returns
+/// Pointer to allocatee data, or nullptr if type mismatch
+///
+/// # Safety
+/// allocatee_ptr must point to a valid SampleAllocateePtr<T> of the specified type
+pub unsafe fn get_allocatee_data_ptr(
+    allocatee_ptr: *mut std::ffi::c_void,
+    type_name: &str,
+) -> *mut std::ffi::c_void {
+    // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and type_name is constructed using static str.
+    let type_name = StringView::from(type_name);
+    mw_com_get_allocatee_data_ptr(allocatee_ptr, type_name)
+}
+
+/// Send event via skeleton using allocatee pointer of specific type
+///
+/// # Arguments
+/// * `event_ptr` - Opaque skeleton event pointer
+/// * `event_type` - Type name string
+/// * `allocatee_ptr` - Pointer to SampleAllocateePtr<T>
+///
+/// # Returns
+/// True if event was sent successfully, false otherwise
+///
+/// # Safety
+/// event_ptr must point to a valid SkeletonEventBase, allocatee_ptr must point to a valid SampleAllocateePtr<T>,
+/// and event_type must be a valid UTF-8 string representing the event type.
+pub unsafe fn skeleton_event_send_sample_allocatee(
+    event_ptr: *mut SkeletonEventBase,
+    event_type: &str,
+    allocatee_ptr: *mut std::ffi::c_void,
+) -> bool {
+    // SAFETY: event_ptr is valid which is created using create_skeleton() and allocatee_ptr is valid which is created using get_allocatee_ptr().
+    let event_type = StringView::from(event_type);
+    mw_com_skeleton_send_event_allocatee(event_ptr, event_type, allocatee_ptr)
 }
 
 /// Get SamplePtr<T> data pointer

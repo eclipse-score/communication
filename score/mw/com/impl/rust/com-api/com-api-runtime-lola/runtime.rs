@@ -28,6 +28,7 @@ use core::marker::PhantomData;
 use core::mem::{ManuallyDrop, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use std::collections::VecDeque;
+use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
@@ -222,8 +223,48 @@ where
     T: CommData,
 {
     skeleton_event: NativeSkeletonEventBase,
-    data: T,
+    allocatee_ptr: sample_allocatee_ptr_rs::SampleAllocateePtr<T>,
     lifetime: PhantomData<&'a T>,
+}
+
+impl<'a, T> Deref for SampleMut<'a, T>
+where
+    T: CommData,
+{
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        //SAFETY: It is safe to get the data pointer because allocatee_ptr is valid
+        //and data is valid as long as allocatee_ptr is valid
+        unsafe {
+            let data_ptr = generic_bridge_ffi_rs::get_allocatee_data_ptr(
+                &self.allocatee_ptr as *const sample_allocatee_ptr_rs::SampleAllocateePtr<T>
+                    as *mut std::ffi::c_void,
+                T::ID,
+            );
+            (data_ptr as *const T)
+                .as_ref()
+                .expect("Data pointer is null")
+        }
+    }
+}
+
+impl<'a, T> DerefMut for SampleMut<'a, T>
+where
+    T: CommData,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        //SAFETY: It is safe to get the data pointer because allocatee_ptr is valid
+        //and data is valid as long as allocatee_ptr is valid
+        unsafe {
+            let data_ptr = generic_bridge_ffi_rs::get_allocatee_data_ptr(
+                &self.allocatee_ptr as *const sample_allocatee_ptr_rs::SampleAllocateePtr<T>
+                    as *mut std::ffi::c_void,
+                T::ID,
+            );
+            (data_ptr as *mut T).as_mut().expect("Data pointer is null")
+        }
+    }
 }
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
@@ -237,14 +278,14 @@ where
     }
 
     fn send(self) -> com_api_concept::Result<()> {
-        //SAFETY: It is safe as we are passing valid skeleton event pointer and data pointer to send event
-        //the skeleton event pointer is created during publisher creation
-        //and data pointer is valid as it is owned by this SampleMut instance
+        //SAFETY: It is safe to send the sample because allocatee_ptr and skeleton_event are valid
+        // allocatee_ptr is created by FFI and skeleton_event is valid as long as the parent skeleton instance is valid
         let status = unsafe {
-            generic_bridge_ffi_rs::skeleton_send_event(
+            generic_bridge_ffi_rs::skeleton_event_send_sample_allocatee(
                 self.skeleton_event.skeleton_event_ptr,
                 T::ID,
-                &self.data as *const T as *const core::ffi::c_void,
+                &self.allocatee_ptr as *const sample_allocatee_ptr_rs::SampleAllocateePtr<T>
+                    as *mut std::ffi::c_void,
             )
         };
         if !status {
@@ -254,33 +295,13 @@ where
     }
 }
 
-impl<'a, T> Deref for SampleMut<'a, T>
-where
-    T: CommData,
-{
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}
-
-impl<'a, T> DerefMut for SampleMut<'a, T>
-where
-    T: CommData,
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.data
-    }
-}
-
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
     T: CommData,
 {
     skeleton_event: NativeSkeletonEventBase,
-    data: MaybeUninit<T>,
+    allocatee_ptr: sample_allocatee_ptr_rs::SampleAllocateePtr<T>,
     lifetime: PhantomData<&'a T>,
 }
 
@@ -291,12 +312,31 @@ where
     type SampleMut = SampleMut<'a, T>;
 
     fn write(self, val: T) -> SampleMut<'a, T> {
-        //With allocate API here we need to write on same memory location
-        //which receive from Lola allocate call
-        //With this we will avoid one copy during send
+        //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
+        // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
+        let data_ptr = unsafe {
+            generic_bridge_ffi_rs::get_allocatee_data_ptr(
+                &self.allocatee_ptr as *const sample_allocatee_ptr_rs::SampleAllocateePtr<T>
+                    as *mut std::ffi::c_void,
+                T::ID,
+            )
+        };
+        if data_ptr.is_null() {
+            // This should never happen as allocatee_ptr is valid
+            // add error logging
+            todo!();
+        }
+        let allocated_data = data_ptr as *mut T;
+
+        //SAFETY: It is safe to write the data because allocated_data is valid
+        // and as it is same type memory location which is allocated for T type
+        unsafe {
+            allocated_data.write(val);
+        }
+
         SampleMut {
             skeleton_event: self.skeleton_event,
-            data: val,
+            allocatee_ptr: self.allocatee_ptr,
             lifetime: PhantomData,
         }
     }
@@ -304,9 +344,7 @@ where
     unsafe fn assume_init(self) -> SampleMut<'a, T> {
         SampleMut {
             skeleton_event: self.skeleton_event,
-            //SAFETY: assume_init is safe to call because the documentation of
-            //the method clearly states that the data is to be initialized before calling
-            data: unsafe { self.data.assume_init() },
+            allocatee_ptr: self.allocatee_ptr,
             lifetime: PhantomData,
         }
     }
@@ -317,7 +355,7 @@ where
     T: CommData,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
-        &mut self.data
+        todo!()
     }
 }
 
@@ -697,13 +735,33 @@ where
         Self: 'a;
 
     fn allocate<'a>(&'a self) -> com_api_concept::Result<Self::SampleMaybeUninit<'a>> {
-        //Once Allocate API of Lola FFI is ready , call it here
-        // for now , just create uninit sample
-        Ok(SampleMaybeUninit {
+        //SAFETY: It is safe to get the allocatee ptr because skeleton_event is valid
+        // skeleton_event is created during publisher creation and valid as long as publisher is valid
+        // T::ID is valid as it is associated with CommData type
+        // allocatee_ptr is same type pointer which is allocated for T type and
+        // it will be constructed in cpp side and moved back to rust side
+        let allocatee_ptr = unsafe {
+            let mut sample =
+                MaybeUninit::<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>::uninit();
+            generic_bridge_ffi_rs::get_allocatee_ptr(
+                self.skeleton_event.skeleton_event_ptr,
+                sample.as_mut_ptr() as *mut std::ffi::c_void,
+                T::ID,
+            );
+
+            if sample.as_ptr().is_null() {
+                return Err(Error::Fail);
+            }
+            sample.assume_init()
+        };
+
+        let mut sample = SampleMaybeUninit {
             skeleton_event: self.skeleton_event.clone(),
-            data: MaybeUninit::uninit(),
+            allocatee_ptr,
             lifetime: PhantomData,
-        })
+        };
+
+        Ok(sample)
     }
 
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> com_api_concept::Result<Self> {

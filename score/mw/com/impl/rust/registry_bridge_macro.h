@@ -163,6 +163,30 @@ class TypeOperations
     /// \param sample_ptr Pointer to type-erased SamplePtr
     virtual void DeleteSamplePtr(void* sample_ptr) = 0;
 
+    /// @brief Get allocatee pointer from SkeletonEvent of specific type
+    /// \details Allocates a SampleAllocateePtr<T> from the SkeletonEvent and places it into the provided storage.
+    /// \param event_ptr Pointer to SkeletonEventBase instance
+    /// \param allocatee_ptr Pointer to storage for SampleAllocateePtr<T>
+    virtual void GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
+
+    /// \brief Get data pointer from SampleAllocateePtr of specific type
+    /// \details Casts the type-erased SampleAllocateePtr back to SampleAllocateePtr<T>
+    /// \param allocatee_ptr Pointer to SampleAllocateePtr<T>
+    /// \return Pointer to the underlying data of type T
+    virtual void* GetAllocateeDataPtr(void* allocatee_ptr) = 0;
+
+    /// \brief Delete SampleAllocateePtr of specific type
+    /// \details Casts the type-erased SampleAllocateePtr back to SampleAllocateePtr<T> and deletes it properly.
+    /// \param allocatee_ptr Pointer to type-erased SampleAllocateePtr
+    virtual void DeleteAllocateePtr(void* allocatee_ptr) = 0;
+
+    /// @brief Send allocatee data through SkeletonEvent of specific type
+    /// \details Casts the type-erased allocatee pointer back to SampleAllocateePtr<T> and sends it via SkeletonEvent.
+    /// \param event_ptr Pointer to SkeletonEventBase instance
+    /// \param allocatee_ptr Pointer SampleAllocateePtr (of type T)
+    /// \return true if send successful, false otherwise
+    virtual bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
+
     // TODO: Allocate API need to add - Ticket-234824
 };
 
@@ -216,6 +240,57 @@ class TypeOperationImpl : public TypeOperations
 
         auto* typed_ptr = static_cast<::score::mw::com::impl::SamplePtr<T>*>(sample_ptr);
         typed_ptr->~SamplePtr<T>();
+    }
+
+    void GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
+    {
+        auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
+        if (skeleton_event == nullptr)
+        {
+            return;
+        }
+
+        auto allocatee_ptr_lola = skeleton_event->Allocate();
+        if (!allocatee_ptr_lola.has_value())
+        {
+            return;
+        }
+
+        new (allocatee_ptr) SampleAllocateePtr<T>(std::move(allocatee_ptr_lola).value());
+    }
+
+    void DeleteAllocateePtr(void* allocatee_ptr) override
+    {
+        if (allocatee_ptr == nullptr)
+        {
+            return;
+        }
+
+        auto* typed_ptr = static_cast<SampleAllocateePtr<T>*>(allocatee_ptr);
+        typed_ptr->~SampleAllocateePtr<T>();
+    }
+
+    void* GetAllocateeDataPtr(void* allocatee_ptr) override
+    {
+        if (allocatee_ptr == nullptr)
+        {
+            return nullptr;
+        }
+
+        auto* typed_ptr = static_cast<SampleAllocateePtr<T>*>(allocatee_ptr);
+        return typed_ptr->Get();
+    }
+
+    bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
+    {
+        auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
+        if (skeleton_event == nullptr || allocatee_ptr == nullptr)
+        {
+            return false;
+        }
+
+        auto* typed_ptr = static_cast<SampleAllocateePtr<T>*>(allocatee_ptr);
+        return skeleton_event->Send(std::move(*typed_ptr)).has_value();
     }
 };
 
