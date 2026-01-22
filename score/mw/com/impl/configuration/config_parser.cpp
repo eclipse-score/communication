@@ -305,7 +305,7 @@ auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<
 // ToDo: implement a runtime validation check for json, after parsing when the first json object is created, s.t. we can
 // be sure json.As<T> call will return a value. See Ticket-177855.
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseAllowedUser(const score::json::Any& json, std::string_view key) noexcept
+auto ParseAllowedUser(const score::json::Any& json, std::string_view key)
     -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     std::unordered_map<QualityType, std::vector<uid_t>> user_map{};
@@ -358,12 +358,12 @@ auto ParseAllowedUser(const score::json::Any& json, std::string_view key) noexce
     return user_map;
 }
 
-auto ParseAllowedConsumer(const score::json::Any& json) noexcept -> std::unordered_map<QualityType, std::vector<uid_t>>
+auto ParseAllowedConsumer(const score::json::Any& json) -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     return ParseAllowedUser(json, kAllowedConsumerKey);
 }
 
-auto ParseAllowedProvider(const score::json::Any& json) noexcept -> std::unordered_map<QualityType, std::vector<uid_t>>
+auto ParseAllowedProvider(const score::json::Any& json) -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     return ParseAllowedUser(json, kAllowedProviderKey);
 }
@@ -455,7 +455,7 @@ class ServiceElementInstanceDeploymentParser
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) noexcept
+auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service)
     -> void
 {
     auto json_obj = json.As<score::json::Object>();
@@ -517,7 +517,7 @@ auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceI
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) noexcept
+auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service)
     -> void
 {
     auto json_obj = json.As<score::json::Object>();
@@ -578,7 +578,7 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceI
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaMethodInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) noexcept
+auto ParseLolaMethodInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service)
     -> void
 {
     const auto& methods = json.As<score::json::Object>().value().get().find(kMethodsKey.data());
@@ -609,7 +609,7 @@ auto ParseServiceElementTracingEnabled(const score::json::Any& json,
                                        TracingConfiguration& tracing_configuration,
                                        const std::string_view service_type_name_view,
                                        const InstanceSpecifier& instance_specifier,
-                                       const ServiceElementType service_element_type) noexcept
+                                       const ServiceElementType service_element_type)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         (service_element_type == ServiceElementType::EVENT) || (service_element_type == ServiceElementType::FIELD),
@@ -835,7 +835,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& tracing_configuration) noexcept
+auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& tracing_configuration)
     -> Configuration::ServiceInstanceDeployments
 {
     auto json_obj = json.As<score::json::Object>();
@@ -889,7 +889,7 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) noexcept -> bool
+auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) -> bool
 {
     auto json_obj = json.As<score::json::Object>();
     if (!json_obj.has_value())
@@ -944,7 +944,7 @@ auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceType
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) noexcept -> bool
+auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) -> bool
 {
     auto json_obj = json.As<score::json::Object>();
     if (!json_obj.has_value())
@@ -1000,7 +1000,7 @@ auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceType
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaMethodTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) noexcept -> bool
+auto ParseLolaMethodTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) -> bool
 {
     const auto& methods = json.As<score::json::Object>().value().get().find(kMethodsKey.data());
     if (methods == json.As<score::json::Object>().value().get().cend())
@@ -1038,7 +1038,7 @@ auto ParseLolaMethodTypeDeployments(const score::json::Any& json, LolaServiceTyp
     return true;
 }
 
-auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_service_type_deployment) noexcept -> bool
+auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_service_type_deployment) -> bool
 {
     const auto& events = lola_service_type_deployment.events_;
     const auto& fields = lola_service_type_deployment.fields_;
@@ -1081,7 +1081,7 @@ auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_servi
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) noexcept -> LolaServiceTypeDeployment
+auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) -> LolaServiceTypeDeployment
 {
     auto json_obj = json.As<score::json::Object>();
     if (!json_obj.has_value())
@@ -1121,7 +1121,7 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) noexcept -> L
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseServiceTypeDeployment(const score::json::Any& json) noexcept -> ServiceTypeDeployment
+auto ParseServiceTypeDeployment(const score::json::Any& json) -> ServiceTypeDeployment
 {
     auto json_obj = json.As<score::json::Object>();
     if (!json_obj.has_value())
@@ -1177,7 +1177,7 @@ auto ParseServiceTypeDeployment(const score::json::Any& json) noexcept -> Servic
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseServiceTypes(const score::json::Any& json) noexcept -> Configuration::ServiceTypeDeployments
+auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTypeDeployments
 {
     auto json_obj = json.As<score::json::Object>();
     if (!json_obj.has_value())
@@ -1300,7 +1300,7 @@ auto ParseSenderQueueSize(const score::json::Any& global_config) -> score::cpp::
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseGlobalProperties(const score::json::Any& json) noexcept -> GlobalConfiguration
+auto ParseGlobalProperties(const score::json::Any& json) -> GlobalConfiguration
 {
     GlobalConfiguration global_configuration{};
 
@@ -1449,7 +1449,7 @@ auto ParseTracingTraceFilterConfigPath(const score::json::Any& tracing_config) -
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseTracingProperties(const score::json::Any& json) noexcept -> TracingConfiguration
+auto ParseTracingProperties(const score::json::Any& json) -> TracingConfiguration
 {
     TracingConfiguration tracing_configuration{};
     auto top_level_obj = json.As<score::json::Object>();
@@ -1571,7 +1571,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
 // see the suppression of Parse.
 // This is not an
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto score::mw::com::impl::configuration::Parse(const std::string_view path) noexcept -> Configuration
+auto score::mw::com::impl::configuration::Parse(const std::string_view path) -> Configuration
 {
     const score::json::JsonParser json_parser_obj;
     // Reason for banning is AoU of vaJson library about integrity of provided path.
@@ -1594,7 +1594,7 @@ auto score::mw::com::impl::configuration::Parse(const std::string_view path) noe
 // implicit throw. Since the function checks if the variant holds the right alternative and explicitely throws if not,
 // after logging an error message.
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto score::mw::com::impl::configuration::Parse(score::json::Any json) noexcept -> Configuration
+auto score::mw::com::impl::configuration::Parse(score::json::Any json) -> Configuration
 {
     auto tracing_configuration = ParseTracingProperties(json);
     auto service_type_deployments = ParseServiceTypes(json);
