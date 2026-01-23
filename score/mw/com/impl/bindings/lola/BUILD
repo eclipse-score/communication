@@ -241,18 +241,40 @@ cc_library(
 )
 
 cc_library(
+    name = "generic_skeleton_event",
+    srcs = ["generic_skeleton_event.cpp"],
+    hdrs = ["generic_skeleton_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":event",
+        ":skeleton",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:generic_skeleton_event_binding",
+        "//score/mw/com/impl:size_info",
+        "//score/mw/com/impl/tracing:skeleton_event_tracing",
+        ":type_erased_sample_ptrs_guard",
+    ],
+)
+
+cc_library(
     name = "skeleton",
     srcs = [
         "skeleton.cpp",
         "skeleton_event.cpp",
         "skeleton_event_properties.cpp",
         "skeleton_method.cpp",
+        "generic_skeleton_event.cpp",
     ],
     hdrs = [
         "skeleton.h",
         "skeleton_event.h",
         "skeleton_event_properties.h",
         "skeleton_method.h",
+        "generic_skeleton_event.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -282,6 +304,8 @@ cc_library(
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         "//score/mw/com/impl/util:arithmetic_utils",
+        "//score/mw/com/impl:generic_skeleton_event_binding",
+        "//score/mw/com/impl:error",
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/safe_math",

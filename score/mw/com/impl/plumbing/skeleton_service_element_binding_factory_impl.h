@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/configuration/binding_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
@@ -29,6 +30,7 @@
 #include <score/overload.hpp>
 
 #include <chrono>
+#include <functional>
 #include <exception>
 #include <memory>
 #include <string>
@@ -65,9 +67,6 @@ lola::SkeletonEventProperties GetSkeletonEventProperties(
                                          lola_service_element_instance_deployment.max_subscribers_.value(),
                                          lola_service_element_instance_deployment.enforce_max_samples_};
 }
-
-}  // namespace detail
-
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
 // not be called implicitly.". std::visit Throws std::bad_variant_access if
@@ -77,9 +76,10 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 // an exception.
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
+auto CreateSkeletonServiceElementImpl(const InstanceIdentifier& identifier,
                                   SkeletonBase& parent,
-                                  const std::string_view service_element_name) noexcept
+                                  const std::string_view service_element_name,
+                                  const score::cpp::optional<std::reference_wrapper<const SizeInfo>>& size_info) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert(element_type != ServiceElementType::INVALID);
@@ -88,7 +88,7 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent, &service_element_name](
+        [identifier_view, &parent, &service_element_name, &size_info](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
             auto* const lola_parent = dynamic_cast<lola::Skeleton*>(SkeletonBaseView{parent}.GetBinding());
             if (lola_parent == nullptr)
@@ -114,8 +114,18 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                                                   lola_service_instance_deployment.instance_id_.value().GetId(),
                                                   element_type};
 
-            return std::make_unique<SkeletonServiceElement>(
-                *lola_parent, element_fq_id, service_element_name, skeleton_event_properties);
+            if constexpr (std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>)
+            {
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(size_info.has_value());
+                return std::make_unique<SkeletonServiceElement>(
+                    *lola_parent, skeleton_event_properties, element_fq_id, size_info.value().get());
+            }
+            else
+            {
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(!size_info.has_value());
+                return std::make_unique<SkeletonServiceElement>(
+                    *lola_parent, element_fq_id, service_element_name, skeleton_event_properties);
+            }
         },
         [](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
             return nullptr;
@@ -130,6 +140,39 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
         });
 
     return std::visit(visitor, identifier_view.GetServiceTypeDeployment().binding_info_);
+}
+
+}  // namespace detail
+
+
+/// @brief Overload for typed skeletons (which do not have a SizeInfo).
+template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
+auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
+                                  SkeletonBase& parent,
+                                  const std::string_view service_element_name) noexcept
+    -> std::unique_ptr<SkeletonServiceElementBinding>
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((!std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>),
+                                                "This overload is for typed skeletons only. Generic skeletons must provide a SizeInfo.");
+    return detail::CreateSkeletonServiceElementImpl<SkeletonServiceElementBinding, SkeletonServiceElement, element_type>(
+        identifier, parent, service_element_name, score::cpp::nullopt);
+}
+
+/// @brief Overload for generic skeletons (which require a SizeInfo).
+template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
+auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
+                                  SkeletonBase& parent,
+                                  const std::string_view service_element_name,
+                                  const SizeInfo& size_info) noexcept
+    -> std::unique_ptr<SkeletonServiceElementBinding>
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>),
+                                                "This overload is for generic skeletons only. Typed skeletons must not provide a SizeInfo.");
+    return detail::CreateSkeletonServiceElementImpl<SkeletonServiceElementBinding, SkeletonServiceElement, element_type>(
+        identifier,
+        parent,
+        service_element_name,
+        std::cref(size_info));
 }
 
 }  // namespace score::mw::com::impl

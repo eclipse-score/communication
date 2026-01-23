@@ -107,6 +107,12 @@ class Skeleton final : public SkeletonBinding
         return BindingType::kLoLa;
     };
 
+    std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> RegisterGeneric(
+        const ElementFqId element_fq_id,
+        const SkeletonEventProperties& element_properties,
+        const size_t sample_size,
+        const size_t sample_alignment) noexcept;
+
     /// \brief Enables dynamic registration of Events at the Skeleton.
     /// \tparam SampleType The type of the event
     /// \param element_fq_id The full qualified of the element (event or field) that shall be registered
@@ -169,6 +175,15 @@ class Skeleton final : public SkeletonBinding
         const ElementFqId element_fq_id,
         const SkeletonEventProperties& element_properties);
 
+    EventDataControlComposite CreateEventControlComposite(const ElementFqId element_fq_id,
+                                                          const SkeletonEventProperties& element_properties) noexcept;
+
+    std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
+    CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
+                                          const SkeletonEventProperties& element_properties,
+                                          size_t sample_size,
+                                          size_t sample_alignment) noexcept;
+
     class ShmResourceStorageSizes
     {
       public:
@@ -208,7 +223,7 @@ class Skeleton final : public SkeletonBinding
                                            pid_t proxy_pid);
     static MethodData& GetMethodData(const memory::shared::ManagedMemoryResource& resource);
 
-    /// \brief Checks whether the Proxy which sent a notification to the Skeleton that it subscribed to a method is in
+        /// \brief Checks whether the Proxy which sent a notification to the Skeleton that it subscribed to a method is in
     /// the allowed_consumers list in the configuration.
     bool IsProxyInAllowedConsumerList(const uid_t proxy_uid, const QualityType asil_level) const;
 
@@ -385,44 +400,7 @@ auto Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_f
                                            std::forward_as_tuple(sample_meta_info, event_data_raw_array));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second, "Couldn't register/emplace event-meta-info in data-section.");
 
-    auto control_qm =
-        control_qm_->event_controls_.emplace(std::piecewise_construct,
-                                             std::forward_as_tuple(element_fq_id),
-                                             std::forward_as_tuple(element_properties.number_of_slots,
-                                                                   element_properties.max_subscribers,
-                                                                   element_properties.enforce_max_samples,
-                                                                   control_qm_resource_->getMemoryResourceProxy()));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second, "Couldn't register/emplace event-meta-info in data-section.");
-
-    EventDataControl* control_asil_result{nullptr};
-    if (control_asil_resource_ != nullptr)
-    {
-        auto iterator = control_asil_b_->event_controls_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(element_fq_id),
-            std::forward_as_tuple(element_properties.number_of_slots,
-                                  element_properties.max_subscribers,
-                                  element_properties.enforce_max_samples,
-                                  control_asil_resource_->getMemoryResourceProxy()));
-
-        // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:
-        // A function shall not return a reference or a pointer to an automatic variable (including parameters), defined
-        // within the function.
-        // Suppress "AUTOSAR C++14 M7-5-2": The address of an object with automatic storage shall not be assigned to
-        // another object that may persist after the first object has ceased to exist.
-        // The result pointer is still valid outside this method until Skeleton object (as a holder) is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        control_asil_result = &iterator.first->second.data_control;
-    }
-    // clang-format off
-    // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
-    // coverity[autosar_cpp14_m7_5_1_violation]
-    // coverity[autosar_cpp14_m7_5_2_violation]
-    // coverity[autosar_cpp14_a3_8_1_violation]
-    return {typed_event_data_storage_ptr, EventDataControlComposite{&control_qm.first->second.data_control, control_asil_result}};
-    // clang-format on
+    return {typed_event_data_storage_ptr, CreateEventControlComposite(element_fq_id, element_properties)};
 }
 
 }  // namespace score::mw::com::impl::lola
