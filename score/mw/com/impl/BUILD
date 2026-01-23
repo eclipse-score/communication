@@ -990,6 +990,10 @@ cc_gtest_unit_test(
 cc_gtest_unit_test(
     name = "proxy_base_test",
     srcs = ["proxy_base_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         ":error",
         ":impl",
@@ -999,6 +1003,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
     ],
 )

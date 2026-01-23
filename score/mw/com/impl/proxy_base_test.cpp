@@ -38,6 +38,8 @@
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/result/result.h"
 
+#include <score/assert.hpp>
+#include <score/assert_support.hpp>
 #include <score/utility.hpp>
 
 #include <gmock/gmock-actions.h>
@@ -709,4 +711,30 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
 }
 
+TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateEventTerminatesOnFailiure)
+{
+    // Given a proxy with a registered event
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
+
+    // When we try to update the even but use a wrong name, then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateEvent("wrong_event_name", event_0_));
+}
+
+TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateFieldTerminatesOnFailiure)
+{
+    // Given a proxy with a registered event
+    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
+
+    // When we try to update the even but use a wrong name, then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateField("wrong_field_name", field_0_));
+}
+
+TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodTerminatesOnFailiure)
+{
+    // Given a proxy with a registered event
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
+
+    // When we try to update the even but use a wrong name, then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateMethod("wrong_method_name", method_0_));
+}
 }  // namespace score::mw::com::impl

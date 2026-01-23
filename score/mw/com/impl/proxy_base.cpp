@@ -200,8 +200,9 @@ void ProxyBaseView::UpdateEvent(const std::string_view event_name, ProxyEventBas
     if (event_it == proxy_base_.events_.cend())
     {
         score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateEvent failed to update, because the requested event "
-                                       << event_name << " doesn't exist! Terminating.";
-        std::terminate();
+                                       << event_name << " doesn't exist!";
+
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
     }
 
     event_it->second = event;
@@ -213,8 +214,8 @@ void ProxyBaseView::UpdateField(const std::string_view field_name, ProxyFieldBas
     if (field_it == proxy_base_.fields_.cend())
     {
         score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateField failed to update, because the requested field "
-                                       << field_name << " doesn't exist. Terminating.";
-        std::terminate();
+                                       << field_name << " doesn't exist";
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
     }
 
     field_it->second = field;
@@ -226,11 +227,16 @@ void ProxyBaseView::UpdateMethod(const std::string_view method_name, ProxyMethod
     if (method_it == proxy_base_.methods_.cend())
     {
         score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateMethod failed to update, because the requested method "
-                                       << method_name << " doesn't exist. Terminating.";
-        std::terminate();
+                                       << method_name << " doesn't exist";
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
     }
 
     method_it->second = method;
+}
+
+bool ProxyBaseView::AreBindingsValid() const
+{
+    return proxy_base_.AreBindingsValid();
 }
 
 }  // namespace score::mw::com::impl

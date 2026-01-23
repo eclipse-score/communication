@@ -187,10 +187,7 @@ class ProxyBaseView final
 
     void UpdateMethod(const std::string_view method_name, ProxyMethodBase& method);
 
-    bool AreBindingsValid() const
-    {
-        return proxy_base_.AreBindingsValid();
-    }
+    bool AreBindingsValid() const;
 
   private:
     ProxyBase& proxy_base_;
