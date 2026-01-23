@@ -28,7 +28,7 @@ use core::marker::PhantomData;
 use core::mem::{ManuallyDrop, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use std::collections::VecDeque;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 
@@ -842,18 +842,20 @@ impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder
     }
 }
 
-pub struct RuntimeBuilderImpl {}
+pub struct RuntimeBuilderImpl {
+    config_path: Option<PathBuf>,
+}
 
 impl Builder<LolaRuntimeImpl> for RuntimeBuilderImpl {
     fn build(self) -> com_api_concept::Result<LolaRuntimeImpl> {
+        proxy_bridge_rs::initialize(self.config_path.as_ref().map(PathBuf::as_path));
         Ok(LolaRuntimeImpl {})
     }
 }
 
-/// Entry point for the default implementation for the com module of s-core
 impl com_api_concept::RuntimeBuilder<LolaRuntimeImpl> for RuntimeBuilderImpl {
     fn load_config(&mut self, config: &Path) -> &mut Self {
-        proxy_bridge_rs::initialize(Some(config));
+        self.config_path = Some(config.to_path_buf());
         self
     }
 }
@@ -867,7 +869,7 @@ impl Default for RuntimeBuilderImpl {
 impl RuntimeBuilderImpl {
     /// Creates a new instance of the default implementation of the com layer
     pub fn new() -> Self {
-        Self {}
+        Self { config_path: None }
     }
 }
 

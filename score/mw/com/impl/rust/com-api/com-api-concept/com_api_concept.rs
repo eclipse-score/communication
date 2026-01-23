@@ -142,8 +142,6 @@ pub trait Runtime {
         &self,
         instance_specifier: InstanceSpecifier,
     ) -> Self::ProducerBuilder<I>;
-
-    // fn offer_service<I: Interface>(instance_info: Self::ProviderInfo) -> Result<()>;
 }
 
 /// This trait contains the APIs required for producer service instance management.
@@ -731,17 +729,6 @@ impl<S> SampleContainer<S> {
         self.inner.front().map(<S as Deref>::deref)
     }
 }
-
-///SampleContainer's Send implementation is unsafe because
-/// it implemented using FixedCapacityQueue which is implemented using NonNull type.
-/// and NonNull is not Send by default.
-//TODO: Send impl must be remove from here and be added to FixedCapacityQueue instead.
-
-//Safety: SampleContainer can be sent between the addressespaces safely
-// because initalzation of SampleContainer happens before usage and
-// And NonNull pointer inside FixedCapacityQueue
-// always points to valid memory during the usage of SampleContainer.
-unsafe impl<S> Send for SampleContainer<S> {}
 
 /// Active event subscription with polling and async receive capabilities.
 ///

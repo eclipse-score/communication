@@ -139,7 +139,11 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
         let tire_data = monitor.read_tire_data().unwrap();
         println!("{tire_data}");
     }
-    monitor.producer.unoffer();
+    //unoffer returns producer back, so if needed it can be used further
+    match monitor.producer.unoffer() {
+        Ok(_) => println!("Successfully unoffered the service"),
+        Err(e) => eprintln!("Failed to unoffer: {:?}", e),
+    }
     println!("=== {name} runtime completed ===\n");
 }
 
@@ -210,7 +214,7 @@ mod test {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn schedule_subscription_on_mt_scheduler() {
+    async fn receive_and_send_using_multi_thread() {
         println!("Starting async subscription test with Lola runtime");
         let service_id = InstanceSpecifier::new("/Vehicle/Service2/Instance")
             .expect("Failed to create InstanceSpecifier");
@@ -233,7 +237,11 @@ mod test {
             .await
             .expect("Error returned from task");
         let producer = sender_join_handle.await.expect("Error returned from task");
-        producer.unoffer();
+
+        match producer.unoffer() {
+            Ok(_) => println!("Successfully unoffered the service"),
+            Err(e) => eprintln!("Failed to unoffer: {:?}", e),
+        }
 
         println!("=== Async subscription test with Lola runtime completed ===\n");
     }
