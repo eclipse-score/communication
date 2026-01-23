@@ -610,5 +610,34 @@ TEST_F(ProxyMethodWithNoInArgsOrReturnFixture, ProxyMethodView_DoesNotReturnType
     EXPECT_FALSE(type_erased_return_type.has_value());
 }
 
+TEST(DetermineNextAvailableQueueSlotTest, DetermineNextAvailableQueueSlotCanSucceed)
+{
+    // Given an array that contains several available elements
+    containers::DynamicArray<bool> slots_in_use{3, true};
+
+    constexpr std::size_t first_available_element_index = 1;
+
+    slots_in_use[first_available_element_index] = false;
+    slots_in_use[2] = false;
+
+    // When DetermineNextAvailableQueueSlot is called
+    auto result = detail::DetermineNextAvailableQueueSlot(slots_in_use);
+
+    // Then it returns the first available element index
+    EXPECT_EQ(result.value(), first_available_element_index);
+}
+
+TEST(DetermineNextAvailableQueueSlot, DetermineNextAvailableQueueSlotCanFail)
+{
+    // Given an array that does not contain any free element
+    containers::DynamicArray<bool> no_slots_are_free{false};
+
+    // When DetermineNextAvailableQueueSlot is called
+    auto result = detail::DetermineNextAvailableQueueSlot(no_slots_are_free);
+
+    // Then an error code is returned
+    EXPECT_EQ(result, MakeUnexpected(ComErrc::kCallQueueFull));
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
