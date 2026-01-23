@@ -123,7 +123,7 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 
 template <typename... ArgTypes>
 ProxyMethod<void(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
-    : ProxyMethodBase(std::move(other)), are_in_arg_ptrs_active_{other.are_in_arg_ptrs_active_}
+    : ProxyMethodBase(std::move(other)), are_in_arg_ptrs_active_{std::move(other.are_in_arg_ptrs_active_)}
 {
     // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
@@ -135,8 +135,9 @@ auto ProxyMethod<void(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept -> 
 {
     if (this != &other)
     {
-        ProxyMethod::operator=(std::move(other));
-        are_in_arg_ptrs_active_ = other.are_in_arg_ptrs_active_;
+        ProxyMethodBase::operator=(std::move(other));
+        are_in_arg_ptrs_active_ = std::move(other.are_in_arg_ptrs_active_);
+
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};
         proxy_base_view.UpdateMethod(method_name_, *this);

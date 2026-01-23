@@ -116,7 +116,7 @@ auto ProxyMethod<ReturnType()>::operator=(ProxyMethod&& other) noexcept -> Proxy
 {
     if (this != &other)
     {
-        ProxyMethod::operator=(std::move(other));
+        ProxyMethodBase::operator=(std::move(other));
 
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};

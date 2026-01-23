@@ -47,6 +47,16 @@ constexpr int kDummyArg1{42};
 constexpr double kDummyArg2{3.14};
 constexpr char kDummyArg3{'a'};
 
+class TestProxyBase : public ProxyBase
+{
+  public:
+    using ProxyBase::ProxyBase;
+    const ProxyBase::ProxyMethods& GetMethods()
+    {
+        return methods_;
+    }
+};
+
 template <typename MethodType>
 class ProxyMethodTestFixture : public ::testing::Test
 {
@@ -72,6 +82,15 @@ class ProxyMethodTestFixture : public ::testing::Test
         return *this;
     }
 
+    auto GetMethodReferenceFromParent()
+    {
+        auto methods = this->proxy_base_.GetMethods();
+        auto moved_method = methods.find(kMethodName);
+
+        EXPECT_NE(moved_method, methods.end());
+        return &moved_method->second.get();
+    }
+
     alignas(8) std::array<std::byte, 1024> method_in_args_buffer_{};
     alignas(8) std::array<std::byte, 1024> method_return_type_buffer_{};
     ConfigurationStore config_store_{InstanceSpecifier::Create(std::string{"/my_dummy_instance_specifier"}).value(),
@@ -81,7 +100,7 @@ class ProxyMethodTestFixture : public ::testing::Test
                                      LolaServiceInstanceDeployment{1U}};
 
     mock_binding::ProxyMethod proxy_method_binding_mock_;
-    ProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), config_store_.GetHandle()};
+    TestProxyBase proxy_base_{std::make_unique<mock_binding::Proxy>(), config_store_.GetHandle()};
 
     ProxyMethodBindingFactoryMock proxy_method_binding_factory_mock_{};
     std::unique_ptr<ProxyServiceMethodType> unit_{nullptr};
@@ -125,6 +144,74 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, Construction)
     ProxyMethodType{this->proxy_base_,
                     std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
                     kMethodName};
+}
+
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveConstructingProxyMethodUpdateMethodIsCalled)
+{
+    using ProxyMethodType = ProxyMethod<TypeParam>;
+
+    // Given a proxy method
+    auto proxy_method =
+        ProxyMethodType{this->proxy_base_,
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
+                        kMethodName};
+
+    // When movie-constructing this method
+    auto moved_method{std::move(proxy_method)};
+
+    // Then the method is moved successfully and it updates itself with ProxyBase
+    auto registered_method_address = this->GetMethodReferenceFromParent();
+
+    EXPECT_EQ(registered_method_address, &moved_method);
+}
+
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, WhenMoveAssigningProxyMethodUpdateMethodIsCalled)
+{
+    using ProxyMethodType = ProxyMethod<TypeParam>;
+
+    // Given a proxy method
+    auto proxy_method =
+        ProxyMethodType{this->proxy_base_,
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
+                        kMethodName};
+
+    ProxyBase other_proxy_base = {std::make_unique<mock_binding::Proxy>(), this->config_store_.GetHandle()};
+
+    auto other_proxy_method =
+        ProxyMethodType{other_proxy_base,
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
+                        "this_method_will_be_overwritten_soon"};
+
+    // When move-assigning this method
+    other_proxy_method = std::move(proxy_method);
+    auto moved_method_address = &other_proxy_method;
+
+    // Then the method is moved successfully and it updates itself with ProxyBase
+    auto registered_method_address = this->GetMethodReferenceFromParent();
+
+    EXPECT_EQ(registered_method_address, moved_method_address);
+}
+
+TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture,
+           WhenMoveAssigningProxyMethodToItselfNothingHappensAndTheProgramDoesNotCrash)
+{
+    using ProxyMethodType = ProxyMethod<TypeParam>;
+
+    // Given a proxy method
+    auto proxy_method =
+        ProxyMethodType{this->proxy_base_,
+                        std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_),
+                        kMethodName};
+
+    auto same_method_ptr = &proxy_method;
+    // When move-assigning this method to itself
+    proxy_method = std::move(*same_method_ptr);
+
+    // Then nothing needs to happen (which is unobservable) and the registered method in ProxyBase still points to the
+    // original
+
+    auto registered_method_address = this->GetMethodReferenceFromParent();
+    EXPECT_EQ(registered_method_address, &proxy_method);
 }
 
 TYPED_TEST(ProxyMethodWithInArgsTestFixture, AllocateInArgs_ReturnsInArgPointersPointingToQueuePositionZero)
