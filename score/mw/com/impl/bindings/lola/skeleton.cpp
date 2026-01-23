@@ -969,9 +969,7 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     size_t sample_size,
     size_t sample_alignment) noexcept
 {
-    auto* data_storage = storage_resource_->construct<EventDataStorage<std::uint8_t>>(
-        sample_size * element_properties.number_of_slots,
-        memory::shared::PolymorphicOffsetPtrAllocator<std::uint8_t>(storage_resource_->getMemoryResourceProxy()));
+    void* data_storage = storage_resource_->allocate(sample_size * element_properties.number_of_slots, sample_alignment);
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
                                                          std::forward_as_tuple(element_fq_id),
@@ -980,11 +978,10 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
                                                "Couldn't register/emplace event-storage in data-section.");
 
     const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
-    void* const event_data_raw_array = data_storage->data();
     auto inserted_meta_info = storage_->events_metainfo_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(element_fq_id),
-        std::forward_as_tuple(sample_meta_info, event_data_raw_array));
+        std::forward_as_tuple(sample_meta_info, data_storage));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                "Couldn't register/emplace event-meta-info in data-section.");
 

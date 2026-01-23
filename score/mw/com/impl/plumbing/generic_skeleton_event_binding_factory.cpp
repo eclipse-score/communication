@@ -10,17 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#pragma once
-
-#include <cstddef>
-
-namespace score::mw::com::impl
-{
-/// @brief A struct to hold size and alignment information for generic type-erased data.
-struct SizeInfo
-{
-    size_t size;
-    size_t alignment;
-};
-
-}  // namespace score::mw::com::impl
+#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"

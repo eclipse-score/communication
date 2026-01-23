@@ -37,9 +37,14 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
     return {};
 }
 
-Result<score::Blank> GenericSkeletonEvent::Send(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept
+Result<score::Blank> GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());
+    const impl::SampleAllocateePtrView<void> view{sample};
+    auto ptr = view.template As<lola::SampleAllocateePtr<void>>();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != ptr);
+
+    auto control_slot_indicator = ptr->GetReferencedSlot();
     control_.value().EventReady(control_slot_indicator, ++current_timestamp_);
  
     // Only call NotifyEvent if there are any registered receive handlers for each quality level.
@@ -62,7 +67,7 @@ Result<score::Blank> GenericSkeletonEvent::Send(lola::ControlSlotCompositeIndica
     return {};
 }
 
-Result<lola::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
+Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 {
     if (!control_.has_value())
     {
@@ -82,13 +87,17 @@ Result<lola::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 
     if (slot.IsValidQM() || slot.IsValidAsilB())
     {
-        auto* data_storage = data_storage_.get<EventDataStorage<std::uint8_t>>();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(data_storage != nullptr);
-        // The at() method on EventDataStorage (which is a DynamicArray) correctly handles
-        // the pointer arithmetic based on its template type (std::uint8_t).
-        // We multiply by size_info_.size here because the underlying storage is a byte array.
-        void* data_ptr = &data_storage->at(static_cast<std::uint64_t>(slot.GetIndex()) * size_info_.size);
-        return lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
+        void* base_ptr = data_storage_.get(1); 
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(base_ptr != nullptr);
+
+        // 1. Cast base_ptr to uint8_t* so we can add bytes to it.
+        // 2. Cast GetIndex() to uint64_t BEFORE multiplying to ensure 64-bit arithmetic.
+        std::uint8_t* byte_ptr = static_cast<std::uint8_t*>(base_ptr);
+        std::uint64_t offset = static_cast<std::uint64_t>(slot.GetIndex()) * size_info_.size;
+        
+        void* data_ptr = byte_ptr + offset;   
+        auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
+        return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
     }
     else
     {

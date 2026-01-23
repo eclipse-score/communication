@@ -52,7 +52,7 @@ lola::SkeletonEventProperties GetSkeletonEventProperties(
     {
         score::mw::log::LogFatal("lola")
             << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Number of sample slots "
-               "was not specified in the configuration. Terminating.";
+                "was not specified in the configuration. Terminating.";
         std::terminate();
     }
 
@@ -60,7 +60,7 @@ lola::SkeletonEventProperties GetSkeletonEventProperties(
     {
         score::mw::log::LogFatal("lola")
             << "Could not create SkeletonEventProperties from ServiceElementInstanceDeployment. Max subscribers was "
-               "not specified in the configuration. Terminating.";
+                "not specified in the configuration. Terminating.";
         std::terminate();
     }
     return lola::SkeletonEventProperties{lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
@@ -152,8 +152,10 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                                   const std::string_view service_element_name) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((!std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>),
-                                                "This overload is for typed skeletons only. Generic skeletons must provide a SizeInfo.");
+    
+    static_assert(!std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>,
+                  "This overload is for typed skeletons only. Generic skeletons must provide a SizeInfo.");
+                  
     return detail::CreateSkeletonServiceElementImpl<SkeletonServiceElementBinding, SkeletonServiceElement, element_type>(
         identifier, parent, service_element_name, score::cpp::nullopt);
 }
@@ -166,8 +168,10 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                                   const SizeInfo& size_info) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE((std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>),
-                                                "This overload is for generic skeletons only. Typed skeletons must not provide a SizeInfo.");
+    
+    static_assert(std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>,
+                  "This overload is for generic skeletons only. Typed skeletons must not provide a SizeInfo.");
+
     return detail::CreateSkeletonServiceElementImpl<SkeletonServiceElementBinding, SkeletonServiceElement, element_type>(
         identifier,
         parent,

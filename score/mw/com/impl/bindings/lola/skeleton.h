@@ -107,6 +107,14 @@ class Skeleton final : public SkeletonBinding
         return BindingType::kLoLa;
     };
 
+    /// \brief Enables dynamic registration of Generic (type-erased) Events at the Skeleton.
+    /// \param element_fq_id The full qualified ID of the element (event) that shall be registered.
+    /// \param element_properties Properties of the element (e.g. number of slots, max subscribers).
+    /// \param sample_size The size of a single data sample in bytes.
+    /// \param sample_alignment The alignment requirement of the data sample in bytes.
+    /// \return A pair containing:
+    ///         - An OffsetPtr to the allocated data storage (void*).
+    ///         - The EventDataControlComposite for managing the event's control data.
     std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> RegisterGeneric(
         const ElementFqId element_fq_id,
         const SkeletonEventProperties& element_properties,
@@ -175,9 +183,19 @@ class Skeleton final : public SkeletonBinding
         const ElementFqId element_fq_id,
         const SkeletonEventProperties& element_properties);
 
+    /// \brief Creates the control structures (QM and optional ASIL-B) for an event.
+    /// \param element_fq_id The full qualified ID of the element.
+    /// \param element_properties Properties of the event.
+    /// \return The EventDataControlComposite containing pointers to the control structures.
     EventDataControlComposite CreateEventControlComposite(const ElementFqId element_fq_id,
                                                           const SkeletonEventProperties& element_properties) noexcept;
 
+    /// \brief Creates shared memory storage for a generic (type-erased) event.
+    /// \param element_fq_id The full qualified ID of the element.
+    /// \param element_properties Properties of the event.
+    /// \param sample_size The size of a single data sample.
+    /// \param sample_alignment The alignment of the data sample.
+    /// \return A pair containing the data storage pointer (void*) and the control composite.
     std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
     CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
                                           const SkeletonEventProperties& element_properties,

@@ -31,6 +31,7 @@
 #include <thread>
 #include <type_traits>
 #include <utility>
+#include <vector> // Added: Required for GenericSkeleton::Create
 
 using namespace std::chrono_literals;
 
@@ -482,7 +483,21 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
                                               const std::chrono::milliseconds cycle_time,
                                               const std::size_t num_cycles)
 {
-    auto create_result = impl::GenericSkeleton::Create(instance_specifier);
+    const auto event_name = "map_api_lanes_stamped";
+    
+    // Define the events we want to create
+    // Fix: Qualified SizeInfo as impl::SizeInfo
+    const impl::SizeInfo size_info{sizeof(MapApiLanesStamped), alignof(MapApiLanesStamped)};
+    
+    // Fix: Use vector to define events and handles
+    std::vector<impl::EventInfo> events = {
+        {event_name, size_info}
+    };
+    std::vector<impl::EventHandle> event_handles(events.size());
+
+    // Fix: Use atomic Create method
+    auto create_result = impl::GenericSkeleton::Create(instance_specifier, events, event_handles);
+    
     if (!create_result.has_value())
     {
         std::cerr << "Unable to construct skeleton: " << create_result.error() << ", bailing!\n";
@@ -490,15 +505,8 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
     }
     auto& skeleton = create_result.value();
 
-    const auto event_name = "map_api_lanes_stamped";
-    const SizeInfo size_info{sizeof(MapApiLanesStamped), alignof(MapApiLanesStamped)};
-    auto event_result = skeleton.AddEvent(event_name, size_info);
-    if (!event_result.has_value())
-    {
-        std::cerr << "Unable to add event to skeleton: " << event_result.error() << ", bailing!\n";
-        return EXIT_FAILURE;
-    }
-    auto& event = *event_result.value();
+    // Fix: Retrieve event using the handle
+    auto& event = skeleton.GetEvent(event_handles[0]);
 
     const auto offer_result = skeleton.OfferService();
     if (!offer_result.has_value())
