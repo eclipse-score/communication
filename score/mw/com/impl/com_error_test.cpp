@@ -190,6 +190,11 @@ TEST_F(ComErrorMessageForFixture, MessageForInvalidHandleFailure)
     testErrorMessage(ComErrc::kInvalidHandle, "StopFindService was called with invalid FindServiceHandle.");
 }
 
+TEST_F(ComErrorMessageForFixture, MessageForCallQueueFull)
+{
+    testErrorMessage(ComErrc::kCallQueueFull, "Call queue of service method is already full.");
+}
+
 TEST_F(ComErrorMessageForFixture, MessageForDefault)
 {
     testErrorMessage(static_cast<ComErrc>(0), "unknown future error");
