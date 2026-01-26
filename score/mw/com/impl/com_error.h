@@ -17,6 +17,7 @@
 
 namespace score::mw::com::impl
 {
+
 /**
  * \api
  * \brief Error codes for the mw::com API
@@ -26,7 +27,8 @@ namespace score::mw::com::impl
  */
 enum class ComErrc : score::result::ErrorCode
 {
-    kServiceNotAvailable = 1,
+    kInvalid,
+    kServiceNotAvailable,
     kMaxSamplesReached,
     kBindingFailure,
     kGrantEnforcementError,
@@ -57,7 +59,23 @@ enum class ComErrc : score::result::ErrorCode
     kFindServiceHandlerFailure,
     kInvalidHandle,
     kCallQueueFull,
+    kNumEnumElements
 };
+
+/// \brief Type used to represent ComErrc in a serialized format.
+///
+/// The serialized format is score::result::ErrorCode which is the underlying integer type of ComErrc. This ensures that a
+/// type of ComErrc can always fit inside the seralized type.
+using ComErrcSerializedType = score::result::ErrorCode;
+
+/// \brief Serializes the ComErrc into an integer format.
+///
+/// No error is represented by integer value 0. The error code is represented by its corresponding integer value in the
+/// enum.
+ComErrcSerializedType SerializeSuccess();
+ComErrcSerializedType SerializeError(ComErrc);
+
+score::ResultBlank Deserialize(ComErrcSerializedType);
 
 /**
  * \api

@@ -1022,12 +1022,26 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "com_error_test",
+    srcs = [
+        "com_error_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":error",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
     timeout = "moderate",
     srcs = [
-        "com_error_test.cpp",
         "enriched_instance_identifier_test.cpp",
         "generic_proxy_event_test.cpp",
         "handle_type_test.cpp",
@@ -1083,6 +1097,7 @@ cc_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
+        ":com_error_test",
         ":flag_owner_test",
         ":find_service_handle_test",
         ":generic_proxy_test",

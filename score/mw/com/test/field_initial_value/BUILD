@@ -74,7 +74,7 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/field_initial_value:__subpackages__",
+        "//score/mw/com/test/field_initial_value/sct:__pkg__",
     ],
 )
 
@@ -88,6 +88,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/field_initial_value:__subpackages__",
+        "//score/mw/com/test/field_initial_value/sct:__pkg__",
     ],
 )

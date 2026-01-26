@@ -1,6 +1,6 @@
 # Testing Guidelines
 
-These guidelines are based on discussions within mw/com team. They're not set in stone and can be changed in the future. Feel free to submit a PR if you disagree with something or want to add something.
+These guidelines are based on discussions within score com team. They're not set in stone and can be changed in the future. Feel free to submit a PR if you disagree with something or want to add something.
 These rules can also be deviated from depending on the specific case. It's impossible to come up with guidelines that are suitable in every single situation so use these as a starting point and if
 following the guidelines would make the tests less readable, less functional, more complex etc then you can deviate. However, if you want to deviate, only do so because there's a good reason.
 
