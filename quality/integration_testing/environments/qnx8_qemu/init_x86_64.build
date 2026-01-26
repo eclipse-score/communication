@@ -26,46 +26,191 @@
 }
 
 [+script] startup-script = {
+    procmgr_symlink /dev/shmem /tmp
     display_msg Welcome to QNX OS 8.0 on x86_64 tweaked for S-CORE!
     # These env variables get inherited by all programs which follow
     SYSNAME=nto
     TERM=qansi
+
+    # Open serial console for stdout/stderr/stdin
     devc-ser8250 &
+    waitfor /dev/ser1
     reopen /dev/ser1
+
+    # Enable logging via slogger2
+    slogger2 -m -s 253952 -G 7 -V -g 486
+    waitfor /dev/slog2
+
+    # Required to support POSIX pipes (used e.g. by service discovery)
+    pipe
+
+    # Service discovery depends on inotify, which requires fsevmgr
+    fsevmgr &
+    waitfor /dev/fsnotify
+
+    # Create a RAM disk and mount it at /tmp_discovery
+    devb-ram ram capacity=1 blk ramdisk=10m,cache=512k,vnode=256
+    waitfor /dev/ram0
+
+    # Block size reduced to the minimum, since we only put flag files without content.
+    # 4096 inodes for approx. 1360 service offers (~2-3 files per service offer)
+    # Should this command fail with "device too small for filesystem", either reduce the amount of inodes or increase the size of the ramdisk.
+    mkqnx6fs -q -b 512 -i 4096 /dev/ram0
+
+    mount -t qnx6 /dev/ram0 /tmp_discovery
+    chmod 777 /tmp_discovery
+
+    # We start a shell session to allow user interaction
     [+session] /bin/sh &
 }
 
-# shared libraries
+# dynamic loader
 /usr/lib/ldqnx-64.so.2=ldqnx-64.so.2
-libc.so
+
+cam-disk.so                              # CAM disk driver for storage devices
+fs-qnx6.so                               # QNX6 file system support
+io-blk.so                                # Block I/O manager
 libc++.so.2                              # C++ standard library
-libfsnotify.so.1
-libgcc_s.so.1
-libm.so
-libsecpol.so.1
-libtracelog.so.1
-libz.so
+libc.so                                  # C standard library (essential)
+libc.so.6                                # Main C library (malloc, printf, file I/O, etc.)
+libcam.so.2                              # CAM library for device access
+libfsnotify.so.1                         # File system notification library
+libgcc_s.so.1                            # GCC runtime support library
+libm.so                                  # Math library
+libqcrypto.so.1.0                        # QNX cryptographic library
+libqh.so                                 # QNX helper library
+libqnxnoexcept.so=${QNXNOEXCEPT_LIBRARY}
+libregex.so.1                            # Regular expression library
+libsecpol.so.1                           # Security policy library
+libslog2.so.1                            # System logging library (slog2_* functions)
+libslog2parse.so.1                       # System log parsing library
+libz.so                                  # Zlib compression library
 
-# tools
-ksh
-pidin
-shutdown
-toybox
+[type=link] /bin/sh=/proc/boot/ksh       # Create symbolic link: sh -> ksh (standard shell link)
+[type=link] /bin/ls=/proc/boot/ls        # Link ls to IFS version for compatibility
 
-# drivers
-devc-ser8250
+toybox                                   # Minimal Unix utilities collection (replaces many GNU tools)
+[type=link] cp=toybox                    # Copy files and directories
+[type=link] ls=toybox                    # List directory contents
+[type=link] cat=toybox                   # Display file contents
+[type=link] chmod=toybox                 # Change file permissions
+[type=link] rm=toybox                    # Remove files and directories
+[type=link] dd=toybox                    # Convert and copy files with specified I/O block size
+[type=link] echo=toybox                  # Display text
+[type=link] grep=toybox                  # Search text patterns in files
+[type=link] mkdir=toybox                 # Create directories
+[type=link] ascii=toybox                 # Display ASCII character set
+[type=link] base64=toybox                # Base64 encoding/decoding utility
+[type=link] basename=toybox              # Extract filename from path
+[type=link] bc=toybox                    # Basic calculator
+[type=link] bunzip2=toybox               # Decompress bzip2 files
+[type=link] bzcat=toybox                 # Display contents of bzip2 files
+[type=link] cal=toybox                   # Display calendar
+[type=link] chgrp=toybox                 # Change group ownership
+[type=link] chown=toybox                 # Change file ownership
+[type=link] cksum=toybox                 # Calculate checksums
+[type=link] clear=toybox                 # Clear terminal screen
+[type=link] cmp=toybox                   # Compare files byte by byte
+[type=link] comm=toybox                  # Compare sorted files line by line
+[type=link] cpio=toybox                  # Copy files to/from archives
+[type=link] crc32=toybox                 # Calculate CRC32 checksums
+[type=link] cut=toybox                   # Extract columns from files
+[type=link] date=toybox                  # Display or set system date
+[type=link] diff=toybox                  # Compare files line by line
+[type=link] dirname=toybox               # Extract directory from path
+[type=link] dos2unix=toybox              # Convert DOS line endings to Unix
+[type=link] du=toybox                    # Display disk usage
+[type=link] egrep=toybox                 # Extended grep with regular expressions
+[type=link] env=toybox                   # Display or set environment variables
+[type=link] expand=toybox                # Convert tabs to spaces
+[type=link] expr=toybox                  # Evaluate expressions
+[type=link] false=toybox                 # Return false status
+[type=link] fgrep=toybox                 # Fast grep for fixed strings
+[type=link] file=toybox                  # Determine file type
+[type=link] find=toybox                  # Search for files and directories
+[type=link] fmt=toybox                   # Format text paragraphs
+[type=link] groups=toybox                # Display user group membership
+[type=link] gunzip=toybox                # Decompress gzip files
+[type=link] gzip=toybox                  # Compress files with gzip
+[type=link] hd=toybox                    # Hexadecimal dump (alias for hexdump)
+[type=link] head=toybox                  # Display first lines of files
+[type=link] hexdump=toybox               # Display files in hexadecimal format
+[type=link] id=toybox                    # Display user and group IDs
+[type=link] install=toybox               # Copy files and set attributes
+[type=link] link=toybox                  # Create hard links
+[type=link] logname=toybox               # Display login name
+[type=link] md5sum=toybox                # Calculate MD5 checksums
+[type=link] mkfifo=toybox                # Create named pipes (FIFOs)
+[type=link] mktemp=toybox                # Create temporary files/directories
+[type=link] more=toybox                  # Display files page by page
+[type=link] mv=toybox                    # Move/rename files and directories
+[type=link] nl=toybox                    # Number lines in files
+[type=link] nohup=toybox                 # Run commands immune to hangups
+[type=link] od=toybox                    # Dump files in octal format
+[type=link] paste=toybox                 # Merge lines from files
+[type=link] patch=toybox                 # Apply patches to files
+[type=link] printenv=toybox              # Print environment variables
+[type=link] printf=toybox                # Format and print data
+[type=link] pwd=toybox                   # Print working directory
+[type=link] readlink=toybox              # Display target of symbolic links
+[type=link] realpath=toybox              # Display absolute path
+[type=link] rmdir=toybox                 # Remove empty directories
+[type=link] sed=toybox                   # Stream editor for filtering/transforming text
+[type=link] seq=toybox                   # Generate sequences of numbers
+[type=link] sha1sum=toybox               # Calculate SHA1 checksums
+[type=link] sleep=toybox                 # Suspend execution for specified time
+[type=link] sort=toybox                  # Sort lines in text files
+[type=link] split=toybox                 # Split files into pieces
+[type=link] stat=toybox                  # Display file/filesystem status
+[type=link] strings=toybox               # Extract printable strings from files
+[type=link] tail=toybox                  # Display last lines of files
+[type=link] tee=toybox                   # Copy input to files and stdout
+[type=link] test=toybox                  # Evaluate conditional expressions
+[type=link] time=toybox                  # Time command execution
+[type=link] timeout=toybox               # Run command with time limit
+[type=link] touch=toybox                 # Update file timestamps
+[type=link] tr=toybox                    # Translate or delete characters
+[type=link] true=toybox                  # Return true status
+[type=link] truncate=toybox              # Truncate files to specified size
+[type=link] tty=toybox                   # Display terminal name
+[type=link] uname=toybox                 # Display system information
+[type=link] uniq=toybox                  # Remove duplicate lines
+[type=link] unix2dos=toybox              # Convert Unix line endings to DOS
+[type=link] unlink=toybox                # Remove files (system call interface)
+[type=link] uudecode=toybox              # Decode uuencoded files
+[type=link] uuencode=toybox              # Encode files using uuencoding
+[type=link] uuidgen=toybox               # Generate UUIDs
+[type=link] wc=toybox                    # Count lines, words, and characters
+[type=link] which=toybox                 # Locate commands in PATH
+[type=link] whoami=toybox                # Display current username
+[type=link] xargs=toybox                 # Execute commands from standard input
+[type=link] xxd=toybox                   # Make hexdump or reverse
+[type=link] yes=toybox                   # Output string repeatedly
+[type=link] zcat=toybox                  # Display contents of compressed files
+[type=link] nc=toybox                    # Netcat for network connections and packet streaming
+[type=link] netcat=toybox                # Netcat alias for network connections
+[type=link] waitfor=on                   # Create symbolic link: waitfor -> on (waits for resources to become available)
+[type=link] ability=on                   # Create symbolic link: ability -> on (manages process abilities/privileges)
+[type=link] setconf=getconf              # Create symbolic link: setconf -> getconf (sets configuration parameters)
+[type=link] libslog2.so=libslog2.so.1    # Create version-neutral symbolic link
 
-# links
-[type=link] /bin/sh=/proc/boot/ksh
-[type=link] /tmp=/dev/shmem
-[type=link] cat=toybox
-[type=link] chmod=toybox
-[type=link] dd=toybox
-[type=link] echo=toybox
-[type=link] grep=toybox
-[type=link] ln=toybox
-[type=link] ls=toybox
-[type=link] rm=toybox
+#############################################
+### Tools ###
+#############################################
+devb-ram                                                                        # RAM disk block device manager
+devc-ser8250                                                                    # Serial port driver for 8250/16550 UART controllers (console access)
+fsevmgr                                                                         # File system event manager
+ksh                                                                             # Korn shell - provides command-line interface and scripting
+ln                                                                              # Create file links
+mkqnx6fs                                                                        # Create QNX6 file systems
+mount                                                                           # File system mount utility - mounts/unmounts file systems
+on                                                                              # Command execution utility - runs commands with specific options
+pdebug                                                                          # Process debugger
+pidin                                                                           # Process information display - shows running processes (like 'ps' on Linux)
+pipe                                                                            # Named pipe manager
+slay                                                                            # Kill or modify a process by name or ID
+slog2info                                                                       # System log viewer - displays logged messages
+slogger2                                                                        # System logging daemon - collects and manages log messages
 
 # Package provided filesystem to root
 /=${FOLDER}
