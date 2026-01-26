@@ -15,16 +15,16 @@ package Communication
 import ScoreReq
 
 /* broken_link_c/issue/5834990 */
-ScoreReq.CompReq MonotonicSemiDynamicMemoryAllocation {
+ScoreReq.AoU MonotonicSemiDynamicMemoryAllocation {
     description = "It shall be ensured that enough memory is configured for shared memory instances, in order that LoLa can perform all necessary allocations (e.g. push-back on a Vector)."
     safety = ScoreReq.Asil.B
     note = "LoLa implements a Monotonic Memory Resource. Once memory is claimed, there is no possibility to release it. LoLa pre-allocates a memory pool, only within this memory pool the monotonic allocations will happen."
     version = 1
-    mitigates = "TooMuchMemoryAllocated, SendingEventSendsToWrongConsumer"
+    mitigates = "TooMuchMemoryAllocated"
 }
 
 /* broken_link_c/issue/5835013 */
-ScoreReq.CompReq CorrectlyConfiguredMaximumNumberOfSubscriber {
+ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfSubscriber {
     description = "It shall be ensured that correct maximum number of subscriber is configured for each event for each service instance."
     safety = ScoreReq.Asil.B
     note = "The maximum number of subscriber is used to calculate necessary memory from LoLa side, ensure wait-freedom and ensure data consistency. Without the correct number, none of these guarantees can be given."
@@ -33,7 +33,7 @@ ScoreReq.CompReq CorrectlyConfiguredMaximumNumberOfSubscriber {
 }
 
 /* broken_link_c/issue/5835045 */
-ScoreReq.CompReq CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber {
+ScoreReq.AoU CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber {
     description = "It shall be ensured that correct maximum number of elements per subscriber is configured for each event for each service instance."
     safety = ScoreReq.Asil.B
     note = "The maximum number of elements per subscriber is used to calculate necessary memory from LoLa side, ensure wait-freedom and ensure data consistency. Without the correct number, none of these guarantees can be given."
@@ -42,7 +42,7 @@ ScoreReq.CompReq CorrectlyConfiguredMaximumNumberOfMaximumElementsPerSubscriber 
 }
 
 /* broken_link_c/issue/5835084 */
-ScoreReq.CompReq CorrectlyConfiguredAsilLevel {
+ScoreReq.AoU CorrectlyConfiguredAsilLevel {
     description = "It shall be ensured that the ASIL Level on process level and per service instance is correctly configured."
     safety = ScoreReq.Asil.B
     note = "The ASIL-Level is used to ensure Freedom from Interference (e.g. by configuring access rights). Without a proper configured level, this cannot be ensured."
@@ -51,7 +51,7 @@ ScoreReq.CompReq CorrectlyConfiguredAsilLevel {
 }
 
 /* broken_link_c/issue/5835098 */
-ScoreReq.CompReq OnlyLoLaSupportedTypes {
+ScoreReq.AoU OnlyLoLaSupportedTypes {
     description = "It shall be ensured that only types that are supported by LoLa are transmitted."
     safety = ScoreReq.Asil.B
     note = "Every type T transmitted via LoLa needs to fulfill all the following properties: DefaultConstructible (std::is_default_constructible(T) returns true), CopyAssignable (std::is_copy_assignable(T) == true), are not polymorphic (std::is_polymorphic(T) == false), T doesn't allocate dynamic memory."
@@ -60,7 +60,7 @@ ScoreReq.CompReq OnlyLoLaSupportedTypes {
 }
 
 /* broken_link_c/issue/5835119 */
-ScoreReq.CompReq NoApisFromImplementationNamespace {
+ScoreReq.AoU NoApisFromImplementationNamespace {
     description = "It shall be ensured that no API calls from the implementation namespace (e.g `impl`) are directly invoked or types from within are directly used."
     safety = ScoreReq.Asil.B
     note = "Certain measurements and maybe implemented around the implementation namespace, while it is theoretically possible to directly use these functions, this could lead to unknown and untested side-effects."
@@ -69,7 +69,7 @@ ScoreReq.CompReq NoApisFromImplementationNamespace {
 }
 
 /* broken_link_c/issue/5835135 */
-ScoreReq.CompReq NoGuaranteesForNotifications {
+ScoreReq.AoU NoGuaranteesForNotifications {
     description = "It shall be ensured that a miss behavior of event notification will not harm a safety goal."
     safety = ScoreReq.Asil.B
     note = "It is not guaranteed that notifications will arrive, neither in which latency this will happen, or if they happen too often or on a wrong event. This is caused by underlying OS/HW safety claims."
@@ -78,7 +78,7 @@ ScoreReq.CompReq NoGuaranteesForNotifications {
 }
 
 /* broken_link_c/issue/5835150 */
-ScoreReq.CompReq CheckingForPossibleMessageOverflow {
+ScoreReq.AoU CheckingForPossibleMessageOverflow {
     description = "It shall be ensured that a message overflow, which results in message loss will not harm a safety goal. If this is not possible, a check for message overflow and necessary actions need to be performed."
     safety = ScoreReq.Asil.B
     note = "A message overflow will take place if the event receiver checks/receives samples on a lower rate, than the event sender produces them. A message overflow/loss can be detected by checking if all reserved slots are full. If that is the case a message loss is possible and thus it needs to be handled as if a message loss has happened."
@@ -87,7 +87,7 @@ ScoreReq.CompReq CheckingForPossibleMessageOverflow {
 }
 
 /* broken_link_c/issue/5835175 */
-ScoreReq.CompReq DifferentUserForAsilAndQmProcesses {
+ScoreReq.AoU DifferentUserForAsilAndQmProcesses {
     description = "It shall be ensured that processes with a different ASIL shall be executed within different user-ids."
     safety = ScoreReq.Asil.B
     note = "LoLa utilizes operating system ACL mechanisms to ensure Freedom From Interference. If a lower ASIL process is executed with the rights of a higher level one, the Freedom from Interference can no longer be guaranteed."
@@ -96,7 +96,7 @@ ScoreReq.CompReq DifferentUserForAsilAndQmProcesses {
 }
 
 /* broken_link_c/issue/5835192 */
-ScoreReq.CompReq ConfigOnASafeFilesystem {
+ScoreReq.AoU ConfigOnASafeFilesystem {
     description = "It shall be ensured that any configuration item that is read at runtime by LoLa is stored on a safety certified filesystem (according to the highest supported safety level)."
     safety = ScoreReq.Asil.B
     note = "The configuration needs to be ensured to be valid and it needs to be ensured that no issue in the filesystem causes configuration issues."
@@ -105,7 +105,7 @@ ScoreReq.CompReq ConfigOnASafeFilesystem {
 }
 
 /* broken_link_c/issue/5835198 */
-ScoreReq.CompReq NoStaticContextSupport {
+ScoreReq.AoU NoStaticContextSupport {
     description = "It shall be ensured that LoLa is not used within static context within C++."
     safety = ScoreReq.Asil.B
     note = "LoLa uses itself static context within C++. A usage within static context could possibly cause the static (De-)Initialization-Fiasco."
@@ -114,7 +114,7 @@ ScoreReq.CompReq NoStaticContextSupport {
 }
 
 /* broken_link_c/issue/5835213 */
-ScoreReq.CompReq NoGuaranteeInAvailabilityOfServices {
+ScoreReq.AoU NoGuaranteeInAvailabilityOfServices {
     description = "It shall be ensured that no safety goal is harmed, because a service instance is not found."
     safety = ScoreReq.Asil.B
     note = "LoLa is a Service-Discovery based middleware. In such cases it is possible that a service is not offered. Thus, LoLa cannot give any guarantee that a service will be found."
@@ -123,7 +123,7 @@ ScoreReq.CompReq NoGuaranteeInAvailabilityOfServices {
 }
 
 /* broken_link_c/issue/5835249 */
-ScoreReq.CompReq NoNotificationOnTerminationOfProducer {
+ScoreReq.AoU NoNotificationOnTerminationOfProducer {
     description = "It shall be ensured that termination (either gracefully or due to a malfunction) of a producer will not lead to a violation of a safety goal."
     safety = ScoreReq.Asil.B
     note = "LoLa provides no mechanism to communicate the termination of an event data producer. It is also possible that a producer suddenly crashes and no events are any longer produced. A supervision can be implemented on application side, if events are polled in a certain interval. If no new events are present within a certain set of intervals, it can be assumed that the producer is malfunctioning."
@@ -132,16 +132,16 @@ ScoreReq.CompReq NoNotificationOnTerminationOfProducer {
 }
 
 /* broken_link_c/issue/5835257 */
-ScoreReq.CompReq SystemRestartOnLoLaProcessCrash {
+ScoreReq.AoU SystemRestartOnLoLaProcessCrash {
     description = "Expectation: Crash of a LoLa enabled process (producer or consumer) doesn't violate a safety goal. It shall be ensured that upon an unexpected termination of a producer or consumer, the whole system is restarted. I.e. NO selective restart of single processes, but a restart of the entire system."
     safety = ScoreReq.Asil.B
-    note = "It cannot be distinguished on LoLa side if a user crashed and restarted or if a faulty process tries to re-offer another service. In order to avoid masquerading we thus only allow one process to open a shared memory region as read-write. If a producer crashed, he will not close the Shared-Memory region and thus, he will not be able to re-open it. A system restart will clear all Shared Memory regions and thus resolve the situation."
+    note = "It cannot be distinguished on LoLa side if a user crashed and restarted or if a faulty process tries to re-offer another service. In order to avoid masquerading we thus only allow one process to open a shared memory region as read-write. If a producer crashed, he will not close the Shared-Memory region and thus, he will not be able to re-open it. A system restart will clear all Shared Memory regions and thus resolve the situation. Note_1: On the JC ADAPTIVE platform this requirement is already satisfied by design as in case of an app that crashed the [ITEM:5906108] will always first trigger the [system safe state|ISSUE:8455468] before any crash dumping operation is started. In consequence, the external safety controller then needs to perform a hard power-on-reset on the performance SoC."
     version = 1
     mitigates = ""
 }
 
 /* broken_link_c/issue/5835311 */
-ScoreReq.CompReq CheckForNullptrOnAllocate {
+ScoreReq.AoU CheckForNullptrOnAllocate {
     description = "It shall be checked if Allocate() on an event will return a nullptr. If a nullptr is returned, the system shall transition to safe state."
     safety = ScoreReq.Asil.B
     note = "A nullptr indicates in this case a non-recoverable error and indicates further an issue in the memory control."
@@ -150,7 +150,7 @@ ScoreReq.CompReq CheckForNullptrOnAllocate {
 }
 
 /* broken_link_c/issue/5835317 */
-ScoreReq.CompReq OneProducerOnlyOneAllocateePtr {
+ScoreReq.AoU OneProducerOnlyOneAllocateePtr {
     description = "It shall be ensured that at any time a producer instance per event only holds one AllocateePtr."
     safety = ScoreReq.Asil.B
     note = "LoLa does not support multi-producer pattern."
@@ -159,16 +159,16 @@ ScoreReq.CompReq OneProducerOnlyOneAllocateePtr {
 }
 
 /* broken_link_c/issue/5835324 */
-ScoreReq.CompReq NoCopySendWhileHoldingAllocateePtr {
+ScoreReq.AoU NoCopySendWhileHoldingAllocateePtr {
     description = "It shall be ensured that Send(const& value) is not invoked while an AllocateePtr is held."
     safety = ScoreReq.Asil.B
-    note = "Send(const& value) creates an AllocateePtr in its implementation. Thus we would harm the previously stated CompReq that only one AllocateePtr is held at any point in time."
+    note = "Send(const& value) creates an AllocateePtr in its implementation. Thus we would harm the previously stated AoU that only one AllocateePtr is held at any point in time."
     version = 1
     mitigates = ""
 }
 
 /* broken_link_c/issue/5835328 */
-ScoreReq.CompReq NoneReentrantMethodsPerEventInstance {
+ScoreReq.AoU NoneReentrantMethodsPerEventInstance {
     description = "It shall be ensured that any LoLa API that is bound to a specific event instance is not called in a reentrant manner."
     safety = ScoreReq.Asil.B
     note = "Thread-Safety is ensured for static methods and over instances."
@@ -177,7 +177,7 @@ ScoreReq.CompReq NoneReentrantMethodsPerEventInstance {
 }
 
 /* broken_link_c/issue/5835337 */
-ScoreReq.CompReq SkeletonAliveWhileItsAllocateePtrBeingUsed {
+ScoreReq.AoU SkeletonAliveWhileItsAllocateePtrBeingUsed {
     description = "It shall be ensured that a Skeleton instance is still alive while any AllocateePtr returned by it is used."
     safety = ScoreReq.Asil.B
     note = "A destruction of a Skeleton will invalidate the memory that the AllocateePtr is pointing to."
@@ -186,7 +186,7 @@ ScoreReq.CompReq SkeletonAliveWhileItsAllocateePtrBeingUsed {
 }
 
 /* broken_link_c/issue/5835346 */
-ScoreReq.CompReq EventSubscriptionActiveWhileHoldingSamplePtr {
+ScoreReq.AoU EventSubscriptionActiveWhileHoldingSamplePtr {
     description = "It shall be ensured that Unsubscribe() isn't called on a proxy event instance as long as any SamplePtr provided by it, is still held. Also the corresponding proxy instance shall be kept alive as on destruction it would implicitly call Unsubscribe()."
     safety = ScoreReq.Asil.B
     note = "Unsubscription of the proxy event will invalidate the memory that the SamplePtr is pointing to."
@@ -195,7 +195,7 @@ ScoreReq.CompReq EventSubscriptionActiveWhileHoldingSamplePtr {
 }
 
 /* broken_link_c/issue/5835351 */
-ScoreReq.CompReq NoneTerminatingCallbacks {
+ScoreReq.AoU NoneTerminatingCallbacks {
     description = "It shall be ensured that any callback passed to LoLa for invocation is not throwing."
     safety = ScoreReq.Asil.B
     note = "The behavior is undefined if a callback is throwing."
@@ -204,7 +204,7 @@ ScoreReq.CompReq NoneTerminatingCallbacks {
 }
 
 /* broken_link_c/issue/5835363 */
-ScoreReq.CompReq ValidCallbacksWhileProxyAlive {
+ScoreReq.AoU ValidCallbacksWhileProxyAlive {
     description = "It shall be ensured that all callbacks passed towards LoLa are valid as long as the associated proxy is alive."
     safety = ScoreReq.Asil.B
     note = "While a proxy is alive, it is possible that mentioned callbacks are invoked. If a callback contains for example a dangling reference or pointer, the correct execution cannot be ensured."
@@ -213,7 +213,7 @@ ScoreReq.CompReq ValidCallbacksWhileProxyAlive {
 }
 
 /* broken_link_c/issue/5835369 */
-ScoreReq.CompReq UnorderedElementsOnFullQueue {
+ScoreReq.AoU UnorderedElementsOnFullQueue {
     description = "It shall be ensured that the reception of elements in an unordered way on a full queue is not violating any safety goal."
     safety = ScoreReq.Asil.B
     note = "Order of elements cannot be guaranteed once the queue is full."
@@ -222,7 +222,7 @@ ScoreReq.CompReq UnorderedElementsOnFullQueue {
 }
 
 /* broken_link_c/issue/5835376 */
-ScoreReq.CompReq QualityOfDataIsDependentOnProducer {
+ScoreReq.AoU QualityOfDataIsDependentOnProducer {
     description = "It shall be ensured that the necessary quality of data is produced by the respective skeleton process."
     safety = ScoreReq.Asil.B
     note = "LoLa doesn't do ANY checks on the transmitted data. LoLa provides any data ASIL transparent. Meaning, it neither degrades the ASIL-Level nor does it perform any additional checks to enhance it."
@@ -231,7 +231,7 @@ ScoreReq.CompReq QualityOfDataIsDependentOnProducer {
 }
 
 /* broken_link_c/issue/5835388 */
-ScoreReq.CompReq ValidityOfPointerOnLoLaPointer {
+ScoreReq.AoU ValidityOfPointerOnLoLaPointer {
     description = "It shall be ensured that no pointer, pointing to the memory of a SamplePtr or AllocateePtr is used once the SamplePtr or AllocateePtr are invalid."
     safety = ScoreReq.Asil.B
     note = "Issue: Once the smart-pointers are invalid their respective memory is unmanaged and any access leads to undefined behavior."
@@ -240,7 +240,7 @@ ScoreReq.CompReq ValidityOfPointerOnLoLaPointer {
 }
 
 /* broken_link_c/issue/5835398 */
-ScoreReq.CompReq LoLaMemoryOnlyAccessedThroughLoLa {
+ScoreReq.AoU LoLaMemoryOnlyAccessedThroughLoLa {
     description = "It shall be ensured that no other code accesses the mapped memory managed by LoLa."
     safety = ScoreReq.Asil.B
     note = "A static mapping of memory or a wild access of heap memory causes undefined behavior."
@@ -249,7 +249,7 @@ ScoreReq.CompReq LoLaMemoryOnlyAccessedThroughLoLa {
 }
 
 /* broken_link_c/issue/5835403 */
-ScoreReq.CompReq NoSharedMemoryAllocationInNamespaceLola {
+ScoreReq.AoU NoSharedMemoryAllocationInNamespaceLola {
     description = "It shall be ensured that no other code creates shared memory segments beginning with \"lola\"."
     safety = ScoreReq.Asil.B
     note = "Certain contracts are based on the shared memory segment naming, these might get influenced by other code segments using this prefix."
@@ -258,7 +258,7 @@ ScoreReq.CompReq NoSharedMemoryAllocationInNamespaceLola {
 }
 
 /* broken_link_c/issue/5835421 */
-ScoreReq.CompReq OnlyQnx71Supported {
+ScoreReq.AoU OnlyQnx71Supported {
     description = "It shall be ensured that any application containing LoLa is only executed on QNX Safe Operating System 7.1."
     safety = ScoreReq.Asil.B
     note = "All safety guarantees only hold as long executed on a safe operating system."
@@ -267,7 +267,7 @@ ScoreReq.CompReq OnlyQnx71Supported {
 }
 
 /* broken_link_c/issue/5835427 */
-ScoreReq.CompReq LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
+ScoreReq.AoU LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
     description = "It shall be ensured that the LoLa specific QNX Message Passing end-points are only accessed through LoLa APIs."
     safety = ScoreReq.Asil.B
     note = "Any influence from other parts of the code might destroy expected contracts. The LoLa specific QNX Message Passing endpoints are located under: /mw_com/message_passing/LoLa_*"
@@ -276,15 +276,16 @@ ScoreReq.CompReq LoLaSpecificQnxMessagingEndPointsOnlyAccessedThroughLoLa {
 }
 
 /* broken_link_c/issue/5835432 */
-ScoreReq.CompReq InputArtifactsNotSafe {
-    description = "Input artifacts shall be reviewed for correctness"
+ScoreReq.AoU AragenNotSafe {
+    description = "Input artifacts shall be manually reviewed for correctness"
     safety = ScoreReq.Asil.B
+    note = "aragen is not safety qualified, thus its outputs are not safe also. Usage of aragen is not mandatory as the LoLa specific interfaces can be written manually in C++ using LoLa provided support templates."
     version = 1
     mitigates = "GeneratedCodeDoesNotMatchGenerationInputs"
 }
 
 /* broken_link_c/issue/5835457 */
-ScoreReq.CompReq UnsupportedDataTypes {
+ScoreReq.AoU UnsupportedDataTypes {
     description = "It shall be ensured that neither variants nor maps are sent via LoLa."
     safety = ScoreReq.Asil.B
     note = "LoLa theoretically supports these data-types, but they were not subject to audit and extensive testing."
@@ -293,7 +294,7 @@ ScoreReq.CompReq UnsupportedDataTypes {
 }
 
 /* broken_link_c/issue/6346567 */
-ScoreReq.CompReq NoGuaranteeOnExecutionTime {
+ScoreReq.AoU NoGuaranteeOnExecutionTime {
     description = "There is no guarantee on the execution time of any function call provided by LoLa."
     safety = ScoreReq.Asil.B
     note = "This implies that safety-relevant code, where the safety goal is dependent on timing, needs to be supervised."
@@ -302,7 +303,7 @@ ScoreReq.CompReq NoGuaranteeOnExecutionTime {
 }
 
 /* broken_link_c/issue/7091801 */
-ScoreReq.CompReq UsageOfConfigurationOversubscription {
+ScoreReq.AoU UsageOfConfigurationOversubscription {
     description = "If event instance \"oversubscription\" is enabled, LoLa makes no warranty that proxies/consumers can't suffer from data loss! It is the responsibility of the user to adapt scheduling/event-data access in a way that no data-loss happens."
     safety = ScoreReq.Asil.B
     note = "However, we can give the guarantee that if only QM consumers misbehave, ASIL consumers are not affected by these actions. The latter statement enables that a QM application where the scheduling/event-data access is not ensured, will not interfere the ASIL communication. The only thing that could happen is that the QM application might access wrong data or receive no data at all, in an error case (e.g. if it holds more samples then expected)."
@@ -311,7 +312,7 @@ ScoreReq.CompReq UsageOfConfigurationOversubscription {
 }
 
 /* broken_link_c/issue/21206172 */
-ScoreReq.CompReq SameCompilerSettingsForProviderAndConsumerSide {
+ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide {
     description = "All compiler settings having influence on the binary representation of data exchanged via {{mw::com}}/{{LoLa}} (event, field, service-method payloads) have to be identical for compilation of code containing {{mw::com}} proxies and skeletons, which communicate."
     safety = ScoreReq.Asil.B
     version = 1
@@ -319,7 +320,7 @@ ScoreReq.CompReq SameCompilerSettingsForProviderAndConsumerSide {
 }
 
 /* broken_link_c/issue/21209491 */
-ScoreReq.CompReq EventOrFieldReceptionViaGenericProxyNeedsSpecificCare {
+ScoreReq.AoU EventOrFieldReceptionViaGenericProxyNeedsSpecificCare {
     description = "When receiving event or field data via untyped {{GenericProxyEvent}} or {{GenericProxyField}}, care has to be taken when accessing the corresponding {{SamplePtr<void>}} delivered by calls to {{GetNewSamples()}}: When casting it to the expected type, it needs to be checked that no access behind the size returned by {{GetSampleSize()}} will happen."
     safety = ScoreReq.Asil.B
     version = 1
@@ -327,7 +328,7 @@ ScoreReq.CompReq EventOrFieldReceptionViaGenericProxyNeedsSpecificCare {
 }
 
 /* broken_link_c/issue/32388804 */
-ScoreReq.CompReq CorrectlyConfiguredEventsFieldsPerServiceType {
+ScoreReq.AoU CorrectlyConfiguredEventsFieldsPerServiceType {
     description = "It shall be ensured that all safety relevant events/fields in the service type are the same in all configurations."
     safety = ScoreReq.Asil.B
     version = 1
@@ -335,331 +336,18 @@ ScoreReq.CompReq CorrectlyConfiguredEventsFieldsPerServiceType {
 }
 
 /* broken_link_c/issue/25556819 */
-ScoreReq.CompReq LoLaIpcCommunicationLostOrDelayedIpcCommunication {
-    description = "IPC peers shall detect lost or delayed IPC communication by additional design measures on their IPC usage."
+ScoreReq.AoU LoLaIpcCommunicationLostOrDelayedIpcCommunication {
+    description = "[ISSUE:4542883] peers shall detect lost or delayed [ISSUE:4542883] communication by additional design measures on their [ISSUE:4542883] usage."
     safety = ScoreReq.Asil.B
+    note = "Platform cannot provide timing integrity by design, it only provides deadline monitoring which can be used by the [ISSUE:4542883] safe usage to detect [ISSUE:4542883] timing anomalies."
     version = 1
     mitigates = ""
 }
 
 /* broken_link_c/issue/23012160 */
-ScoreReq.CompReq EnsureTheIntegrityAndReliabilityOfCommunication {
+ScoreReq.AoU EnsureTheIntegrityAndReliabilityOfCommunication {
     description = "The Safety-Related Application Software and Safety-Related Platform Software shall ensure the integrity and reliability of communication by managing the following potential failure modes in the delivery of information: • Loss or delay of periodic or aperiodic events. • Loss or delayed delivery of a method call. • Loss or delayed delivery of a method response. • Loss or delay of field updates."
     safety = ScoreReq.Asil.B
     version = 1
     mitigates = ""
-}
-
-/* broken_link_c/issue/5152524 */
-ScoreReq.CompReq QOSCombinedPackageShallBeInstalledAsANewInstallation {
-    description = "If the compilation/build environment used for ASIL-B components (i.e., used for Safety-Related Platform Software and Safety-Related Application Software) makes use of at least one of the following packages: com.qnx.qnx710.target.qos.group, com.qnx.qnx710.target.microkernel.core.qos, com.qnx.qnx710.target.os_services.smmu.core.safety, com.qnx.qnx710.target.os_services.smmu.hw.rcar3.safety. Then the responsible of this compilation/build environment SHALL install the combined package com.qnx.qnx710.target.qos.group as a new installation that's separate from any existing installations of QNX SDP 7.1"
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "MisusedApis"
-    note = "Although it's possible to install com.qnx.qnx710.target.qos.group, com.qnx.qnx710.target.microkernel.core.qos, com.qnx.qnx710.target.os_services.smmu.core.safety and com.qnx.qnx710.target.os_services.smmu.hw.rcar3.safety packages individually, QOS (inside Release Notes QOS 2.2) requires that the compilation/build environment is based on combined package com.qnx.qnx710.target.qos.group installation as a new installation that's separate from any existing installations of QNX SDP 7.1."
-}
-
-/* broken_link_c/issue/113675 */
-ScoreReq.CompReq IPCCommunication {
-    description = "The OS shall avoid or control (see fault avoidance and control) communication faults of IPCs. This requirements applies for at least the following IPCs: shared memory using mmap (file-backed on tmpfs), message passing. In case of controlling faults, the OS shall deactivate the Safety-Related Application Software. Furthermore, deactivation of the OS, running on the relevant SoC, does not lead to a violation of the safety requirement."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceOfferedUnderWrongIds"
-}
-
-/* broken_link_c/issue/6221480 */
-ScoreReq.CompReq InstanceSpecifierResolutionCanNotRetrieveWrongInstanceIdentifier {
-    description = "It shall be ensured that the InstanceSpecifier resolution can _not_ retrieve a wrong InstanceIdentifier."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceOfferedUnderWrongIds, WrongServiceFound"
-}
-
-/* broken_link_c/issue/6221534 */
-ScoreReq.CompReq SharedMemoryResourcesCreatesSharedMemoryFileUnderCorrectName {
-    description = "The Shared Memory Ressource shall create the underlying shared memory file under the correct name, derived from the InstanceIdentifier."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceOfferedUnderWrongIds, WrongResourcesFreed"
-}
-
-/* broken_link_c/issue/6222081 */
-ScoreReq.CompReq OnOfferingAServiceAllItsEventsDescribedIinTheConfigurationShallBeOfferedBeforeReturning {
-    description = "On offering a service, all its events described in the configuration shall be offered before returning."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceOnlyPartiallyOffered"
-}
-
-/* broken_link_c/issue/21856131 */
-ScoreReq.CompReq OnOfferingAServiceAllItsEventsDescribedInTheConfigurationShallHavebeenOfferedWhenReturningWithoutError {
-    description = "On offering a service, all its events described in the configuration shall be offered. Only if all events have been offered successfully, the offer-call shall return successfully. In case not all events could be offered, it shall return with an error."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceOnlyPartiallyOffered"
-}
-
-/* broken_link_c/issue/6223501 */
-ScoreReq.CompReq AllTypesProvidedByMwComShallUsePolymorphicOffsetPtrAllocator {
-    description = "All allocator aware types provided by mw::com shall use PolymorphicOffsetPtrAllocator."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "MemoryAllocatedInWrongSection"
-}
-
-/* broken_link_c/issue/6223522 */
-ScoreReq.CompReq OnRegisteringALoLaEventTheSharedMemoryRessourceShallBeForwardedToTheEventType {
-    description = "On registering a LoLa event, the Shared Memory Ressource shall be forwarded to the event type. This includes the forwarding to all nested allocator aware types."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "MemoryAllocatedInWrongSection"
-}
-
-/* broken_link_c/issue/6241392 */
-ScoreReq.CompReq SharedMemoryResourceShallAllocateMemoryInAccordanceToTheAlignmentOfThatCPUArchitecture {
-    description = "SharedMemoryResource shall allocate memory in accordance to the alignment of that CPU architecture."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "WronglyAlignedMemoryAllocated"
-}
-
-/* broken_link_c/issue/6240703 */
-ScoreReq.CompReq SharedMemoryResourceShallAllocateTheRequestedMemoryOnAnAllocateCall {
-    description = "SharedMemoryResource shall allocate the requested memory on an allocate call"
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "AllocatesAlreadyAllocatedMemory"
-}
-
-/* broken_link_c/issue/6244525 */
-ScoreReq.CompReq DataThatIsMarkedByTheUserForSendingShallNotBeManipulated {
-    description = "Data that is marked by the user for sending shall not be manipulated."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SendingEventChangesUserData"
-}
-
-/* broken_link_c/issue/32156767 */
-ScoreReq.CompReq HandOnlyReadOnlyDataToIPCTracing {
-    description = "LoLa shall avoid to give write access to the IPC Tracing API."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SendingEventChangesUserData"
-}
-
-/* broken_link_c/issue/6244582 */
-ScoreReq.CompReq CopyOnSendShallNotAllocateMultipleSampleAllocateePtr {
-    description = "Copy-On-Send shall only temporarily allocate one SampleAllocateePtr during the call. Before returning from the call, it shall dispose the SampleAllocateePtr again."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SendingAnEventOrFieldSendsSameSampleNtimes, SendingEventDoesNotFreeResources"
-}
-
-/* broken_link_c/issue/6225206 */
-ScoreReq.CompReq SlotAllocationSynchronisation {
-    description = "Slot allocation algorithm and its synchronization shall follow the appended Flowcharts, which formally describe the algorithm: 1) to allocate a slot from the provider side in a pure ASIL-B setup (ASIL-B provider, ASIL-B consumer), 2) to allocate a slot from the provider side in a mixed critically setup (ASIL-B provider, ASIL-B consumer and ASIL-QM consumer), 3) to access/block samples for Read-access by the consumer. Flowcharts: ./assets/get_new_samples_activity.svg, ./assets/lola_coherent_set_writing_activity.svg, ./assets/lola_reference_next_event_activity.svg, ./assets/lola_event_allocate_mixed_critical_activity.svg, ./assets/lola_event_allocate_activity.svg"
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SendingEventDoesNotFreeResources, CallbackNotInvokedDespiteSamplesAvailable, CallbackInvokedWithWrongData, DoesNotFreeResourcesOnDestruction, UnintendedFunction, DoesNotReserveResources"
-}
-
-/* broken_link_c/issue/6244646 */
-ScoreReq.CompReq SampleAllocateePtrShallFreeResourcesOnlyOnDestruction {
-    description = "SampleAllocateePtr shall free resources only on destruction."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SendingEventDoesNotFreeResources"
-}
-
-/* broken_link_c/issue/6223615 */
-ScoreReq.CompReq SharedMemoryResourceShallReturnAnAssociatedProxy {
-    description = "The SharedMemoryResource shall return an associated proxy."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "WrongResourcesFreed"
-}
-
-/* broken_link_c/issue/6367126 */
-ScoreReq.CompReq SharedMemoryResourceShallFreeResourcesOnlyOnDestruction {
-    description = "SharedMemoryResource shall free resources only on destruction."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "NoResourcesFreed, EarlyCleanUp"
-}
-
-/* broken_link_c/issue/21792394 */
-ScoreReq.CompReq ProxyStopFindService {
-    description = "The Proxy class shall contain a public method: static bmw::ResultBlank Proxy::StopFindService(bmw::mw::com::FindServiceHandle handle) noexcept Arguments: handle: A handle of type FindServiceHandle identifying a previously started search. Behaviour: Stops the asynchronous search for available services, which has been started by either Proxy StartFindService with InstanceIdentifier or Proxy StartFindService with InstanceSpecifier. After the call has returned no further calls to the user provided FindServiceHandler takes place. Calls to StopFindService with a FindServiceHandle that was already used in a call to StopFindService which did not return an error will be silently ignored."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "StartFindServiceCallbackCalledUnexpectedly, StartedFindServiceIsNotStopped"
-}
-
-/* broken_link_c/issue/32385851 */
-ScoreReq.CompReq InvokeFindServiceHandlerOnlyOncePerChangedServiceDiscoveryEvent {
-    description = "It shall be ensured that a user provided find service handler is invoked only once, whenever a service instance changes its status (offered / stop offered)."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "StartFindServiceCallbackCalledUnexpectedly"
-}
-
-/* broken_link_c/issue/32386265 */
-ScoreReq.CompReq CorrectWatchesPerInstanceIdentifier {
-    description = "It shall be ensured that watches towards inotify are set according to the Instance Identifier to path mapping."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "StartFindServiceCallbackCalledUnexpectedly"
-}
-
-/* broken_link_c/issue/32157630 */
-ScoreReq.CompReq InstanceIdentifierShallMapToTheRightPath {
-    description = "LoLa shall ensure that the right path in the service discovery is mapped from an instance identifier."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "WrongServiceFound"
-}
-
-/* broken_link_c/issue/32158442 */
-ScoreReq.CompReq ReturnFailureOnProxyCreationOnWrongACLSettings {
-    description = "Return failure on Proxy creation on wrong ACL settings"
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceIsFoundButDoesNotExist"
-}
-
-/* broken_link_c/issue/32158471 */
-ScoreReq.CompReq ReturnFailureOnProxyCreationOnNonExistentSharedMemoryObject {
-    description = "Return failure on Proxy creation on non existent shared memory object (aka path + name)"
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceIsFoundButDoesNotExist"
-}
-
-/* broken_link_c/issue/33047276 */
-ScoreReq.CompReq ReturnFailureOnProxyCreationOnSharedMemoryObjectOfWrongProvider {
-    description = "Return failure on Proxy creation in case the shared-memory objects have been created by wrong provider."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ServiceIsFoundButDoesNotExist"
-}
-
-/* broken_link_c/issue/6285867 */
-ScoreReq.CompReq MessagePassingLibraryDoesNotManipulateInputData {
-    description = "It shall be ensured that the Message Passing library does not manipulate input data."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SubscribeToWrongEvent, SubscribeWithWrongMaxSampleCount, DoesNotUnsubscribe, UnsubscribesFromWrongEvent"
-}
-
-/* broken_link_c/issue/21205130 */
-ScoreReq.CompReq ServiceElementNameClashNeedsToGetUnambigiouslyDetected {
-    description = "Any clashes happening, when service element (event, field, service-method) related information gets stored based on its name, shall be unambigously detected. I.e. if storing information under a name A would overwrite information stored under a name B, this has to be detected and shall lead to an abort."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SubscribeToWrongEvent"
-}
-
-/* broken_link_c/issue/21555839 */
-ScoreReq.CompReq MappingFromEventFieldIdentificationToSharedMemoryStorageNeedsToBeUnambigous {
-    description = "When the storage location of a certain event/field within a service instance is resolved from the Event/Field identification, this shall be: unambiguous (i.e. must never be the case, that a wrong storage location gets resolved) the resolution shall be exactly the same on provider (skeleton) and consumer (proxy) side"
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SubscribeToWrongEvent"
-}
-
-/* broken_link_c/issue/6338237 */
-ScoreReq.CompReq SubscribeCallShallSubscribeWithTheUserProvidedMaxSampleCount {
-    description = "A subscribe call shall subscribe with the user provided max. sample count."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "SubscribeWithWrongMaxSampleCount"
-}
-
-/* broken_link_c/issue/6340966 */
-ScoreReq.CompReq EnsureThatNotMoreThanTheMaxSampleCountNumberOfSamplePtrAreReturnedToUser {
-    description = "It shall be ensure that not more than the max. SampleCount number of SamplePtr are returned to the user."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "UsesToManySampleptr, ReturnsWrongFreeSampleCount"
-}
-
-/* broken_link_c/issue/6342893 */
-ScoreReq.CompReq ReturnValueOfGetNewSamplesShallMatchTheNumberOfEffectivelyCalledCallbacks {
-    description = "The return value of GetNewSamples shall match the number of effectively called callbacks."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "ReturnsWrongSampleCount, SucceedsDespiteAnError"
-}
-
-/* broken_link_c/issue/29682665 */
-ScoreReq.CompReq AbilityToReinstantiateAnyProxy {
-    description = "After an application, which had instantiated a valid proxy instance for a service instance provided by a different process and maybe subscribed to events and/or fields of the provided service instance, restarts, it shall be able to successfully instantiate a proxy instance for the same service instance, given that the service instance is still offered."
-    safety = ScoreReq.Asil.B
-    note = "This shall be true for all proxies within an application."
-    version = 1
-    mitigates = "DoesNotUnsubscribe"
-}
-
-/* broken_link_c/issue/6285893 */
-ScoreReq.CompReq MessagePassingLibraryShallOnlyNotifyExpectedReceiver {
-    description = "The message passing library shall only notify expected receiver."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "UnsubscribesFromWrongEvent"
-}
-
-/* broken_link_c/issue/6346501 */
-ScoreReq.CompReq ReceiveHandlerThatWasSetByAUserShallBeNoLongerInvokedAfterAnUnsubscribe {
-    description = "A receive handler that was set by a user shall be no longer invoked after an unsubscribe."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "DoesNotImplicitRemoveReceiveHandler"
-}
-
-/* broken_link_c/issue/32391303 */
-ScoreReq.CompReq TypeMetaInformationForGenericProxyInReadOnlyMemory {
-    description = "The type-meta information for Generic Proxy shall be stored in read-only memory, where nobody else then the producer has write access."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "TheSizeReturnedIsBiggerThenTheActualValue, TheSizeReturnedIsSmallerThenTheActualSize "
-}
-
-/* broken_link_c/issue/32391820 */
-ScoreReq.CompReq LocationOfTypeMetaInformationForGenericProxy {
-    description = "The type-meta information for Generic Proxy events/fields shall be stored at the same location for producer and consumers."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "TheSizeReturnedIsBiggerThenTheActualValue, TheSizeReturnedIsSmallerThenTheActualSize "
-}
-
-/* broken_link_c/issue/32392058 */
-ScoreReq.CompReq TypeMetaInformationShallBeCalculatedBasedOnTheProvidedEventFieldType {
-    description = "The type-meta-information shall be calculated based on the provided event/field type on the producer side."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "TheSizeReturnedIsBiggerThenTheActualValue, TheSizeReturnedIsSmallerThenTheActualSize "
-}
-
-/* broken_link_c/issue/14035199 */
-ScoreReq.CompReq GenericProxyEventHasSerializedFormat {
-    description = "The GenericProxyEvent shall provide a public method: bool GenericProxyEvent::HasSerializedFormat() const noexcept Behaviour: HasSerializedFormat shall adhere to the re-entrancy and thread-safety specifications described in Re-entrancy and Thread-safety. Our mw::com implementation shall always return false, in case the shared-memory based binding is used. Return value: returns whether the representation of a sample event provided by the GenericProxyEvent instance has some (internal) serialization format (true) or is 1:1 the binary representation of the underlying C++ data type of the event sample (false)."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "WrongIndicationIfFormatIsSerialized"
-}
-
-/* broken_link_c/issue/6367235 */
-ScoreReq.CompReq AvalidSampleAllocateePtrAndSamplePtrShallReferenceAValidAndCorrectSlot {
-    description = "A valid SampleAllocateePtr and SamplePtr shall reference a valid and correct slot."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "DoesNotFreeResourcesOnDestruction, UnintendedFunction, DoesNotReserveResources, ReturnsWrongData"
-}
-
-/* broken_link_c/issue/6367376 */
-ScoreReq.CompReq FreeSampleCountShallBeAdjustedOnSamplePtrLifecycle {
-    description = "The number of free samples (GetFreeSampleCount()) shall be decreased with the creation of a SamplePtr and increased with a destruction of a SamplePtr."
-    safety = ScoreReq.Asil.B
-    version = 1
-    mitigates = "DoesNotUpdateFreeSampleCountCorrectly"
 }

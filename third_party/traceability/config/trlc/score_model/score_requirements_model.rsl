@@ -70,9 +70,8 @@ tuple FeatReqId {
 }
 
 type CompReq extends RequirementSafety {
-    derived_from optional   FeatReqId[1 .. *]
+    derived_from		    FeatReqId[1 .. *]
     fulfilledBy optional    String
-    mitigates optional      String
 }
 
 ///////////////////////////////
