@@ -119,15 +119,8 @@ void AbortIfFound(const score::json::Object::const_iterator& iterator_to_element
     }
 }
 
-auto ParseInstanceSpecifier(const score::json::Any& json) -> InstanceSpecifier
+auto ParseInstanceSpecifier(const score::json::Object& json_map) -> InstanceSpecifier
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "No instance specifier provided. Required argument.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& instanceSpecifierJson = json_map.find(kInstanceSpecifierKey.data());
     if (instanceSpecifierJson != json_map.cend())
     {
@@ -152,15 +145,8 @@ auto ParseInstanceSpecifier(const score::json::Any& json) -> InstanceSpecifier
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
 }
 
-auto ParseServiceTypeName(const score::json::Any& json) -> const std::string&
+auto ParseServiceTypeName(const score::json::Object& json_map) -> const std::string&
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "No service type name provided. Required argument.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& serviceTypeName = json_map.find(kServiceTypeNameKey.data());
     if (serviceTypeName != json_map.cend())
     {
@@ -178,15 +164,8 @@ auto ParseServiceTypeName(const score::json::Any& json) -> const std::string&
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 }
 
-auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std::uint32_t>
+auto ParseVersion(const score::json::Object& json_map) -> std::pair<std::uint32_t, std::uint32_t>
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "No Version provided. Required argument.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& version = json_map.find(kVersionKey.data());
     if (version != json_map.cend())
     {
@@ -218,7 +197,7 @@ auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std:
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 }
 
-auto ParseServiceTypeIdentifier(const score::json::Any& json) -> ServiceIdentifierType
+auto ParseServiceTypeIdentifier(const score::json::Object& json) -> ServiceIdentifierType
 {
     const auto& name = ParseServiceTypeName(json);
     const auto& version = ParseVersion(json);
@@ -226,14 +205,8 @@ auto ParseServiceTypeIdentifier(const score::json::Any& json) -> ServiceIdentifi
     return make_ServiceIdentifierType(name.data(), version.first, version.second);
 }
 
-auto ParseAsilLevel(const score::json::Any& json) -> score::cpp::optional<QualityType>
+auto ParseAsilLevel(const score::json::Object& json_map) -> score::cpp::optional<QualityType>
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return score::cpp::nullopt;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& quality = json_map.find(kAsilKey.data());
     if (quality != json_map.cend())
     {
@@ -260,14 +233,8 @@ auto ParseAsilLevel(const score::json::Any& json) -> score::cpp::optional<Qualit
     return score::cpp::nullopt;
 }
 
-auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<ShmSizeCalculationMode>
+auto ParseShmSizeCalcMode(const score::json::Object& json_map) -> score::cpp::optional<ShmSizeCalculationMode>
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return score::cpp::nullopt;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& shm_size_calc_mode = json_map.find(kShmSizeCalcModeKey.data());
     if (shm_size_calc_mode != json_map.cend())
     {
@@ -305,16 +272,10 @@ auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<
 // ToDo: implement a runtime validation check for json, after parsing when the first json object is created, s.t. we can
 // be sure json.As<T> call will return a value. See Ticket-177855.
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseAllowedUser(const score::json::Any& json, std::string_view key)
+auto ParseAllowedUser(const score::json::Object& json_map, std::string_view key)
     -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     std::unordered_map<QualityType, std::vector<uid_t>> user_map{};
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return user_map;
-    }
-    const auto& json_map = json_obj.value().get();
     auto allowed_user = json_map.find(key.data());
 
     if (allowed_user != json_map.cend())
@@ -358,12 +319,12 @@ auto ParseAllowedUser(const score::json::Any& json, std::string_view key)
     return user_map;
 }
 
-auto ParseAllowedConsumer(const score::json::Any& json) -> std::unordered_map<QualityType, std::vector<uid_t>>
+auto ParseAllowedConsumer(const score::json::Object& json) -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     return ParseAllowedUser(json, kAllowedConsumerKey);
 }
 
-auto ParseAllowedProvider(const score::json::Any& json) -> std::unordered_map<QualityType, std::vector<uid_t>>
+auto ParseAllowedProvider(const score::json::Object& json) -> std::unordered_map<QualityType, std::vector<uid_t>>
 {
     return ParseAllowedUser(json, kAllowedProviderKey);
 }
@@ -455,14 +416,8 @@ class ServiceElementInstanceDeploymentParser
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) -> void
+auto ParseLolaEventInstanceDeployment(const score::json::Object& json_map, LolaServiceInstanceDeployment& service) -> void
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& events = json_map.find(kEventsKey.data());
     if (events == json_map.cend())
     {
@@ -516,14 +471,8 @@ auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceI
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) -> void
+auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaServiceInstanceDeployment& service) -> void
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& fields = json_map.find(kFieldsKey.data());
     if (fields == json_map.cend())
     {
@@ -576,10 +525,10 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceI
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaMethodInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) -> void
+auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, LolaServiceInstanceDeployment& service) -> void
 {
-    const auto& methods = json.As<score::json::Object>().value().get().find(kMethodsKey.data());
-    if (methods == json.As<score::json::Object>().value().get().cend())
+    const auto& methods = json_map.find(kMethodsKey.data());
+    if (methods == json_map.cend())
     {
         return;
     }
@@ -602,7 +551,7 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Any& json, LolaService
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseServiceElementTracingEnabled(const score::json::Any& json,
+auto ParseServiceElementTracingEnabled(const score::json::Object& json_map,
                                        TracingConfiguration& tracing_configuration,
                                        const std::string_view service_type_name_view,
                                        const InstanceSpecifier& instance_specifier,
@@ -616,12 +565,6 @@ auto ParseServiceElementTracingEnabled(const score::json::Any& json,
         (service_element_type == ServiceElementType::EVENT ? std::make_pair(kEventsKey, kEventNameKey)
                                                            : std::make_pair(kFieldsKey, kFieldNameKey));
 
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& service_elements = json_map.find(ElementKey);
     if (service_elements == json_map.cend())
     {
@@ -661,14 +604,8 @@ auto ParseServiceElementTracingEnabled(const score::json::Any& json,
     }
 }
 
-auto ParsePermissionChecks(const score::json::Any& deployment_instance) -> std::string_view
+auto ParsePermissionChecks(const score::json::Object& deployment_map) -> std::string_view
 {
-    auto deployment_obj = deployment_instance.As<score::json::Object>();
-    if (!deployment_obj.has_value())
-    {
-        return kDefaultPermissionChecks;
-    }
-    const auto& deployment_map = deployment_obj.value().get();
     const auto permission_checks = deployment_map.find(kPermissionChecksKey.data());
     if (permission_checks != deployment_map.cend())
     {
@@ -687,31 +624,23 @@ auto ParsePermissionChecks(const score::json::Any& deployment_instance) -> std::
     return kFilePermissionsOnEmpty;
 }
 
-auto ParseLolaServiceInstanceDeployment(const score::json::Any& json) -> LolaServiceInstanceDeployment
+auto ParseLolaServiceInstanceDeployment(const score::json::Object& json_map) -> LolaServiceInstanceDeployment
 {
     LolaServiceInstanceDeployment service{};
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return service;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& found_shm_size = json_map.find(kLolaShmSizeKey.data());
     if (found_shm_size != json_map.cend())
     {
         service.shared_memory_size_ = found_shm_size->second.As<std::uint64_t>().value();
     }
 
-    const auto& found_control_asil_b_shm_size =
-        json.As<score::json::Object>().value().get().find(kLolaControlAsilBShmSizeKey.data());
-    if (found_control_asil_b_shm_size != json.As<score::json::Object>().value().get().cend())
+    const auto& found_control_asil_b_shm_size = json_map.find(kLolaControlAsilBShmSizeKey.data());
+    if (found_control_asil_b_shm_size != json_map.cend())
     {
         service.control_asil_b_memory_size_ = found_control_asil_b_shm_size->second.As<std::uint64_t>().value();
     }
 
-    const auto& found_control_qm_shm_size =
-        json.As<score::json::Object>().value().get().find(kLolaControlQmShmSizeKey.data());
-    if (found_control_qm_shm_size != json.As<score::json::Object>().value().get().cend())
+    const auto& found_control_qm_shm_size = json_map.find(kLolaControlQmShmSizeKey.data());
+    if (found_control_qm_shm_size != json_map.cend())
     {
         service.control_qm_memory_size_ = found_control_qm_shm_size->second.As<std::uint64_t>().value();
     }
@@ -723,31 +652,24 @@ auto ParseLolaServiceInstanceDeployment(const score::json::Any& json) -> LolaSer
             LolaServiceInstanceId{instance_id->second.As<LolaServiceInstanceId::InstanceId>().value()};
     }
 
-    ParseLolaEventInstanceDeployment(json, service);
-    ParseLolaFieldInstanceDeployment(json, service);
-    ParseLolaMethodInstanceDeployment(json, service);
+    ParseLolaEventInstanceDeployment(json_map, service);
+    ParseLolaFieldInstanceDeployment(json_map, service);
+    ParseLolaMethodInstanceDeployment(json_map, service);
 
-    service.strict_permissions_ = ParsePermissionChecks(json) == kStrictPermission;
+    service.strict_permissions_ = ParsePermissionChecks(json_map) == kStrictPermission;
 
-    service.allowed_consumer_ = ParseAllowedConsumer(json);
-    service.allowed_provider_ = ParseAllowedProvider(json);
+    service.allowed_consumer_ = ParseAllowedConsumer(json_map);
+    service.allowed_provider_ = ParseAllowedProvider(json_map);
 
     return service;
 }
 
-auto ParseServiceInstanceDeployments(const score::json::Any& json,
+auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
                                      TracingConfiguration& tracing_configuration,
                                      const ServiceIdentifierType& service,
                                      const InstanceSpecifier& instance_specifier)
     -> std::vector<ServiceInstanceDeployment>
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "Invalid JSON object for service instance deployments. Terminating";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& deploymentInstances = json_map.find(kDeploymentInstancesKey);
     if (deploymentInstances == json_map.cend())
     {
@@ -767,19 +689,20 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
     auto& deplymentObjs = deplymentObjs_result.value().get();
     for (const auto& deploymentInstance : deplymentObjs)
     {
-        const auto asil_level = ParseAsilLevel(deploymentInstance);
-        if ((asil_level.has_value() == false) || (asil_level.value() == QualityType::kInvalid))
-        {
-            score::mw::log::LogFatal("lola") << "Invalid or no ASIL-Level provided. Required argument.";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
         auto deployment_obj = deploymentInstance.As<score::json::Object>();
         if (!deployment_obj.has_value())
         {
             continue;
         }
         const auto& deployment_map = deployment_obj.value().get();
+
+        const auto asil_level = ParseAsilLevel(deployment_map);
+        if ((asil_level.has_value() == false) || (asil_level.value() == QualityType::kInvalid))
+        {
+            score::mw::log::LogFatal("lola") << "Invalid or no ASIL-Level provided. Required argument.";
+            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
         const auto binding = deployment_map.find(kBindingKey.data());
         if (binding != deployment_map.cend())
         {
@@ -798,7 +721,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
             {
                 // Return Value not needed in this context
                 score::cpp::ignore = deployments.emplace_back(service,
-                                                       ParseLolaServiceInstanceDeployment(deploymentInstance),
+                                                       ParseLolaServiceInstanceDeployment(deployment_map),
                                                        asil_level.value(),
                                                        instance_specifier);
             }
@@ -815,9 +738,9 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
                 constexpr auto FIELD = ServiceElementType::FIELD;
                 const auto service_name = service.ToString();
                 ParseServiceElementTracingEnabled(
-                    deploymentInstance, tracing_configuration, service_name, instance_specifier, EVENT);
+                    deployment_map, tracing_configuration, service_name, instance_specifier, EVENT);
                 ParseServiceElementTracingEnabled(
-                    deploymentInstance, tracing_configuration, service_name, instance_specifier, FIELD);
+                    deployment_map, tracing_configuration, service_name, instance_specifier, FIELD);
             }
         }
         else
@@ -832,15 +755,9 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& tracing_configuration)
+auto ParseServiceInstances(const score::json::Object& object, TracingConfiguration& tracing_configuration)
     -> Configuration::ServiceInstanceDeployments
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return Configuration::ServiceInstanceDeployments{};
-    }
-    const auto& object = json_obj.value().get();
     const auto& servicesInstances = object.find(kServiceInstancesKey.data());
     if (servicesInstances == object.cend())
     {
@@ -855,14 +772,21 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
         score::mw::log::LogFatal("lola") << "Service instances is not a valid JSON list. Terminating";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
-    for (const auto& serviceInstance : services_list.value().get())
+    for (const auto& service_instance : services_list.value().get())
     {
-        auto instanceSpecifier = ParseInstanceSpecifier(serviceInstance);
+        auto service_instance_obj = service_instance.As<score::json::Object>();
+        if (!service_instance_obj.has_value())
+        {
+            score::mw::log::LogFatal("lola") << "Service type is not a valid JSON object. Terminating";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& service_instance_map = service_instance_obj.value().get();
+        auto instanceSpecifier = ParseInstanceSpecifier(service_instance_map);
 
-        auto service_identifier = ParseServiceTypeIdentifier(serviceInstance);
+        auto service_identifier = ParseServiceTypeIdentifier(service_instance_map);
 
         auto instance_deployments = ParseServiceInstanceDeployments(
-            serviceInstance, tracing_configuration, service_identifier, instanceSpecifier);
+            service_instance_map, tracing_configuration, service_identifier, instanceSpecifier);
         if (instance_deployments.size() != 1U)
         {
             score::mw::log::LogFatal("lola") << "More or less then one deployment for " << service_identifier.ToString()
@@ -886,14 +810,8 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) -> bool
+auto ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service) -> bool
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return false;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& events = json_map.find(kEventsKey.data());
     if (events == json_map.cend())
     {
@@ -941,14 +859,8 @@ auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceType
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) -> bool
+auto ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service) -> bool
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return false;
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& fields = json_map.find(kFieldsKey.data());
     if (fields == json_map.cend())
     {
@@ -997,10 +909,10 @@ auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceType
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaMethodTypeDeployments(const score::json::Any& json, LolaServiceTypeDeployment& service) -> bool
+auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaServiceTypeDeployment& service) -> bool
 {
-    const auto& methods = json.As<score::json::Object>().value().get().find(kMethodsKey.data());
-    if (methods == json.As<score::json::Object>().value().get().cend())
+    const auto& methods = json_map.find(kMethodsKey.data());
+    if (methods == json_map.cend())
     {
         return false;
     }
@@ -1078,22 +990,15 @@ auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_servi
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) -> LolaServiceTypeDeployment
+auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> LolaServiceTypeDeployment
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "Invalid JSON object for LoLa service type deployments. Terminating";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& service_id = json_map.find(kServiceIdKey.data());
     if (service_id != json_map.cend())
     {
         LolaServiceTypeDeployment lola{service_id->second.As<std::uint16_t>().value()};
-        const bool events_exist = ParseLolaEventTypeDeployments(json, lola);
-        const bool fields_exist = ParseLolaFieldTypeDeployments(json, lola);
-        const bool methods_exist = ParseLolaMethodTypeDeployments(json, lola);
+        const bool events_exist = ParseLolaEventTypeDeployments(json_map, lola);
+        const bool fields_exist = ParseLolaFieldTypeDeployments(json_map, lola);
+        const bool methods_exist = ParseLolaMethodTypeDeployments(json_map, lola);
         if (!events_exist && !fields_exist && !methods_exist)
         {
             score::mw::log::LogFatal("lola") << "Configuration should contain at least one event, field, or method.";
@@ -1118,15 +1023,10 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) -> LolaServic
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseServiceTypeDeployment(const score::json::Any& json) -> ServiceTypeDeployment
+auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceTypeDeployment
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        return ServiceTypeDeployment{score::cpp::blank{}};
-    }
-    const auto& bindings = json_obj.value().get().find(kBindingsKey.data());
-    if (bindings == json_obj.value().get().cend())
+    const auto& bindings = json_map.find(kBindingsKey.data());
+    if (bindings == json_map.cend())
     {
         score::mw::log::LogFatal("lola") << "Key" << kBindingsKey << "provided. Required argument.";
         /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
@@ -1154,7 +1054,7 @@ auto ParseServiceTypeDeployment(const score::json::Any& json) -> ServiceTypeDepl
             const auto& value = value_result.value().get();
             if (value == kShmBinding)
             {
-                LolaServiceTypeDeployment lola_deployment = ParseLoLaServiceTypeDeployments(binding);
+                LolaServiceTypeDeployment lola_deployment = ParseLoLaServiceTypeDeployments(binding_map);
                 return ServiceTypeDeployment{lola_deployment};
             }
             else if (value == kSomeIpBinding)
@@ -1180,15 +1080,8 @@ auto ParseServiceTypeDeployment(const score::json::Any& json) -> ServiceTypeDepl
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTypeDeployments
+auto ParseServiceTypes(const score::json::Object& json_map) -> Configuration::ServiceTypeDeployments
 {
-    auto json_obj = json.As<score::json::Object>();
-    if (!json_obj.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "Invalid JSON object for service types. Terminating";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    const auto& json_map = json_obj.value().get();
     const auto& service_types = json_map.find(kServiceTypesKey.data());
     if (service_types == json_map.cend())
     {
@@ -1206,9 +1099,16 @@ auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTy
     }
     for (const auto& service_type : service_types_list.value().get())
     {
-        const auto service_identifier = ParseServiceTypeIdentifier(service_type);
+        auto service_type_obj = service_type.As<score::json::Object>();
+        if (!service_type_obj.has_value())
+        {
+            score::mw::log::LogFatal("lola") << "Service type is not a valid JSON object. Terminating";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& service_type_map = service_type_obj.value().get();
+        const auto service_identifier = ParseServiceTypeIdentifier(service_type_map);
 
-        const auto service_deployment = ParseServiceTypeDeployment(service_type);
+        const auto service_deployment = ParseServiceTypeDeployment(service_type_map);
         const auto inserted = service_type_deployments.emplace(std::piecewise_construct,
                                                                std::forward_as_tuple(service_identifier),
                                                                std::forward_as_tuple(service_deployment));
@@ -1223,15 +1123,9 @@ auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTy
     return service_type_deployments;
 }
 
-auto ParseReceiverQueueSize(const score::json::Any& global_config, const QualityType quality_type)
+auto ParseReceiverQueueSize(const score::json::Object& global_config_map, const QualityType quality_type)
     -> score::cpp::optional<std::int32_t>
 {
-    auto global_config_obj = global_config.As<json::Object>();
-    if (!global_config_obj.has_value())
-    {
-        return score::cpp::nullopt;
-    }
-    const auto& global_config_map = global_config_obj.value().get();
     const auto& queue_size = global_config_map.find(kQueueSizeKey.data());
     if (queue_size != global_config_map.cend())
     {
@@ -1275,14 +1169,8 @@ auto ParseReceiverQueueSize(const score::json::Any& global_config, const Quality
     }
 }
 
-auto ParseSenderQueueSize(const score::json::Any& global_config) -> score::cpp::optional<std::int32_t>
+auto ParseSenderQueueSize(const score::json::Object& global_config_map) -> score::cpp::optional<std::int32_t>
 {
-    auto global_config_obj = global_config.As<json::Object>();
-    if (!global_config_obj.has_value())
-    {
-        return score::cpp::nullopt;
-    }
-    const auto& global_config_map = global_config_obj.value().get();
     const auto& queue_size = global_config_map.find(kQueueSizeKey.data());
     if (queue_size != global_config_map.cend())
     {
@@ -1311,20 +1199,21 @@ auto ParseSenderQueueSize(const score::json::Any& global_config) -> score::cpp::
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseGlobalProperties(const score::json::Any& json) -> GlobalConfiguration
+auto ParseGlobalProperties(const score::json::Object& top_level_object) -> GlobalConfiguration
 {
     GlobalConfiguration global_configuration{};
-
-    auto top_level_obj = json.As<score::json::Object>();
-    if (!top_level_obj.has_value())
-    {
-        return global_configuration;
-    }
-    const auto& top_level_object = top_level_obj.value().get();
     const auto& process_properties = top_level_object.find(kGlobalPropertiesKey.data());
     if (process_properties != top_level_object.cend())
     {
-        const auto asil_level = ParseAsilLevel(process_properties->second);
+        const auto process_properties_obj = process_properties->second.As<score::json::Object>();
+        if (!process_properties_obj.has_value())
+        {
+            ::score::mw::log::LogFatal("lola") << "Process properties not a valid JSON object. Terminating";
+            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& process_properties_map = process_properties_obj.value().get();
+        const auto asil_level = ParseAsilLevel(process_properties_map);
         if (asil_level.has_value() == false)
         {
             // set default (ASIL-QM)
@@ -1356,38 +1245,32 @@ auto ParseGlobalProperties(const score::json::Any& json) -> GlobalConfiguration
         }
 
         const score::cpp::optional<std::int32_t> qm_rx_message_size{
-            ParseReceiverQueueSize(process_properties->second, QualityType::kASIL_QM)};
+            ParseReceiverQueueSize(process_properties_map, QualityType::kASIL_QM)};
         if (qm_rx_message_size.has_value())
         {
             global_configuration.SetReceiverMessageQueueSize(QualityType::kASIL_QM, qm_rx_message_size.value());
         }
 
         const score::cpp::optional<std::int32_t> b_rx_message_size{
-            ParseReceiverQueueSize(process_properties->second, QualityType::kASIL_B)};
+            ParseReceiverQueueSize(process_properties_map, QualityType::kASIL_B)};
         if (b_rx_message_size.has_value())
         {
             global_configuration.SetReceiverMessageQueueSize(QualityType::kASIL_B, b_rx_message_size.value());
         }
 
-        const score::cpp::optional<std::int32_t> b_tx_message_size{ParseSenderQueueSize(process_properties->second)};
+        const score::cpp::optional<std::int32_t> b_tx_message_size{ParseSenderQueueSize(process_properties_map)};
         if (b_tx_message_size.has_value())
         {
             global_configuration.SetSenderMessageQueueSize(b_tx_message_size.value());
         }
 
         const score::cpp::optional<ShmSizeCalculationMode> shm_size_calc_mode{
-            ParseShmSizeCalcMode(process_properties->second)};
+            ParseShmSizeCalcMode(process_properties_map)};
         if (shm_size_calc_mode.has_value())
         {
             global_configuration.SetShmSizeCalcMode(shm_size_calc_mode.value());
         }
 
-        auto process_properties_obj = process_properties->second.As<json::Object>();
-        if (!process_properties_obj.has_value())
-        {
-            return global_configuration;
-        }
-        const auto& process_properties_map = process_properties_obj.value().get();
         const auto& application_id_it = process_properties_map.find(kApplicationIdKey.data());
         if (application_id_it != process_properties_map.cend())
         {
@@ -1402,14 +1285,8 @@ auto ParseGlobalProperties(const score::json::Any& json) -> GlobalConfiguration
     return global_configuration;
 }
 
-auto ParseTracingEnabled(const score::json::Any& tracing_config) -> bool
+auto ParseTracingEnabled(const score::json::Object& tracing_config_map) -> bool
 {
-    auto tracing_config_obj = tracing_config.As<json::Object>();
-    if (!tracing_config_obj.has_value())
-    {
-        return kTracingGloballyEnabledDefaultValue;
-    }
-    const auto& tracing_config_map = tracing_config_obj.value().get();
     const auto& tracing_enabled = tracing_config_map.find(kTracingEnabledKey);
     if (tracing_enabled != tracing_config_map.cend())
     {
@@ -1420,15 +1297,8 @@ auto ParseTracingEnabled(const score::json::Any& tracing_config) -> bool
     return kTracingGloballyEnabledDefaultValue;
 }
 
-auto ParseTracingApplicationInstanceId(const score::json::Any& tracing_config) -> const std::string&
+auto ParseTracingApplicationInstanceId(const score::json::Object& tracing_config_map) -> const std::string&
 {
-    auto tracing_config_obj = tracing_config.As<json::Object>();
-    if (!tracing_config_obj.has_value())
-    {
-        score::mw::log::LogFatal("lola") << "Could not parse tracing config as JSON object. Exiting";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    }
-    const auto& tracing_config_map = tracing_config_obj.value().get();
     const auto& tracing_application_instance_id = tracing_config_map.find(kTracingApplicationInstanceIDKey.data());
     if (tracing_application_instance_id != tracing_config_map.cend())
     {
@@ -1439,14 +1309,8 @@ auto ParseTracingApplicationInstanceId(const score::json::Any& tracing_config) -
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 }
 
-auto ParseTracingTraceFilterConfigPath(const score::json::Any& tracing_config) -> std::string_view
+auto ParseTracingTraceFilterConfigPath(const score::json::Object& tracing_config_map) -> std::string_view
 {
-    auto tracing_config_obj = tracing_config.As<json::Object>();
-    if (!tracing_config_obj.has_value())
-    {
-        return kTracingTraceFilterConfigPathDefaultValue;
-    }
-    const auto& tracing_config_map = tracing_config_obj.value().get();
     const auto& tracing_filter_config_path = tracing_config_map.find(kTracingTraceFilterConfigPathKey.data());
     if (tracing_filter_config_path != tracing_config_map.cend())
     {
@@ -1460,25 +1324,26 @@ auto ParseTracingTraceFilterConfigPath(const score::json::Any& tracing_config) -
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseTracingProperties(const score::json::Any& json) -> TracingConfiguration
+auto ParseTracingProperties(const score::json::Object& top_level_object) -> TracingConfiguration
 {
     TracingConfiguration tracing_configuration{};
-    auto top_level_obj = json.As<score::json::Object>();
-    if (!top_level_obj.has_value())
-    {
-        return tracing_configuration;
-    }
-    const auto& top_level_object = top_level_obj.value().get();
     const auto& tracing_properties = top_level_object.find(kTracingPropertiesKey);
     if (tracing_properties != top_level_object.cend())
     {
-        const auto tracing_enabled = ParseTracingEnabled(tracing_properties->second);
+        auto tracing_properties_obj = tracing_properties->second.As<json::Object>();
+        if (!tracing_properties_obj.has_value())
+        {
+            score::mw::log::LogFatal("lola") << "Could not parse tracing config as JSON object. Exiting";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+        const auto& tracing_properties_map = tracing_properties_obj.value().get();
+        const auto tracing_enabled = ParseTracingEnabled(tracing_properties_map);
         tracing_configuration.SetTracingEnabled(tracing_enabled);
 
-        auto tracing_application_instance_id = ParseTracingApplicationInstanceId(tracing_properties->second);
+        auto tracing_application_instance_id = ParseTracingApplicationInstanceId(tracing_properties_map);
         tracing_configuration.SetApplicationInstanceID(std::move(tracing_application_instance_id));
 
-        auto tracing_filter_config_path = ParseTracingTraceFilterConfigPath(tracing_properties->second);
+        auto tracing_filter_config_path = ParseTracingTraceFilterConfigPath(tracing_properties_map);
         tracing_configuration.SetTracingTraceFilterConfigPath(
             std::string{tracing_filter_config_path.data(), tracing_filter_config_path.size()});
     }
@@ -1613,10 +1478,19 @@ auto score::mw::com::impl::configuration::Parse(const std::string_view path) -> 
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto score::mw::com::impl::configuration::Parse(score::json::Any json) -> Configuration
 {
-    auto tracing_configuration = ParseTracingProperties(json);
-    auto service_type_deployments = ParseServiceTypes(json);
-    auto service_instance_deployments = ParseServiceInstances(json, tracing_configuration);
-    auto global_configuration = ParseGlobalProperties(json);
+    const auto json_obj = json.As<score::json::Object>();
+    if (!json_obj.has_value())
+    {
+        ::score::mw::log::LogFatal("lola") << "Configuration not a valid JSON object. Terminating";
+        /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    const auto& json_map = json_obj.value().get();
+
+    auto tracing_configuration = ParseTracingProperties(json_map);
+    auto service_type_deployments = ParseServiceTypes(json_map);
+    auto service_instance_deployments = ParseServiceInstances(json_map, tracing_configuration);
+    auto global_configuration = ParseGlobalProperties(json_map);
 
     Configuration configuration{std::move(service_type_deployments),
                                 std::move(service_instance_deployments),
