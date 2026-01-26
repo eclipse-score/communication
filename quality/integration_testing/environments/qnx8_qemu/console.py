@@ -112,6 +112,14 @@ class Console:
 
             output.append(line)
 
+    def run_sh_cmd_async(self, cmd, timeout=30):
+        self.clear_history()
+        self.write(f"{cmd} &")
+        exit_code, output = self.run_sh_cmd_output(f"echo CREATED_PID=$!", timeout=timeout)
+        assert exit_code == 0
+        return int(re.search(r'CREATED_PID=(\d+)', output).group(1))
+
+
     def add_expr_cbk(self, expr, cbk, regex=False):
         self.line_reader.add_expr_cbk(expr, cbk, regex)
 
