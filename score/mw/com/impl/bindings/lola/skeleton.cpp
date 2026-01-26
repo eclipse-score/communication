@@ -168,9 +168,10 @@ std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceUsageMarkerFi
 
     // The instance usage marker file should be created if the skeleton is starting up for the very first time and
     // opened in all other cases.
-    // We should never take ownership of the file so that it remains in the filesystem indefinitely. This is because
-    // proxies might still have a shared lock on the file while destructing the skeleton. It is imperative to retain
-    // this knowledge between skeleton restarts.
+    // Initially, when creating/opening the usage marker file, we do not take ownership of it!
+    // Because we don't want to have automatic file-system unlinking in place, when we destroy/stop-offer the skeleton
+    // instance! We decide, whether to unlink the file or not, in the PrepareStopOffer() method of the Skeleton, based
+    // on whether there are still active proxies connected to the skeleton instance or not.
     constexpr bool take_ownership{false};
     return memory::shared::LockFile::CreateOrOpen(service_instance_usage_marker_file_path, take_ownership);
 }
@@ -390,7 +391,7 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
             // class shall not be used as operands to built-in and overloaded operators other than the subscript
             // operator [ ], the assignment operator =, the equality operators == and ! =, the unary & operator, and the
             // relational operators <,
-            // <=, >, >=.". The enum is not an operand, its a function parameter.
+            // <=, >, >=.". The enum is not an operand, it is a function parameter.
             // coverity[autosar_cpp14_a4_5_1_violation : FALSE]
             tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback);
     }
@@ -402,13 +403,21 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     {
         score::mw::log::LogInfo("lola")
             << "Skeleton::RemoveSharedMemory(): Could not exclusively lock service instance usage "
-               "marker file indicating that some proxies are still subscribed. Will not remove shared memory.";
+               "marker file indicating that some proxies are still subscribed. Will not remove shared memory and will "
+               "keep the service-instance-usage-marker-file for future skeletons to reuse.";
         return;
     }
     else
     {
+        // Since we were able to exclusively lock the usage marker file, it means that no proxies are currently using
+        // the shared memory region.
         RemoveSharedMemory();
+        // We take ownership of the usage marker file so that it gets unlinked from the fs, when we destroy it.
+        service_instance_usage_marker_file_.value().TakeOwnership();
+        // Unlock the usage marker file before destroying it so that the destructor doesn't try to unlock an already
+        // invalid file/fd.
         service_instance_usage_lock.unlock();
+        // this effectively deletes the usage marker file from filesystem
         service_instance_usage_marker_file_.reset();
     }
 
