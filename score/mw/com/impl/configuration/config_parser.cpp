@@ -280,20 +280,22 @@ auto ParseAllowedUser(const score::json::Object& json_map, std::string_view key)
 
     if (allowed_user != json_map.cend())
     {
-        auto user_obj = allowed_user->second.As<score::json::Object>();
-        if (!user_obj.has_value())
+        const auto user_obj_result = allowed_user->second.As<score::json::Object>();
+        if (!user_obj_result.has_value())
         {
             return user_map;
         }
-        for (const auto& user : user_obj.value().get())
+        const auto& user_obj = user_obj_result.value().get();
+        for (const auto& user : user_obj)
         {
             std::vector<uid_t> user_ids{};
-            auto user_list = user.second.As<score::json::List>();
-            if (!user_list.has_value())
+            const auto user_list_result = user.second.As<score::json::List>();
+            if (!user_list_result.has_value())
             {
                 continue;
             }
-            for (const auto& user_id : user_list.value().get())
+            const auto& user_list = user_list_result.value().get();
+            for (const auto& user_id : user_list)
             {
                 user_ids.push_back(user_id.As<uid_t>().value());
             }
@@ -424,9 +426,10 @@ auto ParseLolaEventInstanceDeployment(const score::json::Object& json_map, LolaS
         return;
     }
 
-    auto events_list = events->second.As<score::json::List>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(events_list.has_value());
-    for (const auto& event : events_list.value().get())
+    const auto events_list_result = events->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(events_list_result.has_value());
+    const auto& events_list = events_list_result.value().get();
+    for (const auto& event : events_list)
     {
         auto event_obj = event.As<score::json::Object>();
         if (!event_obj.has_value())
@@ -479,9 +482,10 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
         return;
     }
 
-    auto fields_list = fields->second.As<score::json::List>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(fields_list.has_value());
-    for (const auto& field : fields_list.value().get())
+    const auto fields_list_result = fields->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(fields_list_result.has_value());
+    const auto& fields_list = fields_list_result.value().get();
+    for (const auto& field : fields_list)
     {
         auto field_obj = field.As<score::json::Object>();
         if (!field_obj.has_value())
@@ -533,9 +537,10 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
         return;
     }
 
-    const auto methods_list = methods->second.As<score::json::List>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(methods_list.has_value());
-    for (const auto& method : methods_list.value().get())
+    const auto methods_list_result = methods->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(methods_list_result.has_value());
+    const auto& methods_list = methods_list_result.value().get();
+    for (const auto& method : methods_list)
     {
         const auto& method_object = method.As<score::json::Object>().value().get();
         const auto& method_name = GetValueFromJson<std::string>(method_object, kMethodNameKey);
@@ -571,9 +576,10 @@ auto ParseServiceElementTracingEnabled(const score::json::Object& json_map,
         return;
     }
 
-    auto elements_list = service_elements->second.As<score::json::List>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(elements_list.has_value());
-    for (const auto& element : elements_list.value().get())
+    const auto elements_list_result = service_elements->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(elements_list_result.has_value());
+    const auto& elements_list = elements_list_result.value().get();
+    for (const auto& element : elements_list)
     {
         auto element_obj = element.As<score::json::Object>();
         if (!element_obj.has_value())
@@ -766,13 +772,14 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     Configuration::ServiceInstanceDeployments service_instance_deployments{};
-    auto services_list = servicesInstances->second.As<score::json::List>();
-    if (!services_list.has_value())
+    auto services_list_result = servicesInstances->second.As<score::json::List>();
+    if (!services_list_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Service instances is not a valid JSON list. Terminating";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
-    for (const auto& service_instance : services_list.value().get())
+    const auto& services_list = services_list_result.value().get();
+    for (const auto& service_instance : services_list)
     {
         auto service_instance_obj = service_instance.As<score::json::Object>();
         if (!service_instance_obj.has_value())
@@ -817,12 +824,10 @@ auto ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServ
     {
         return false;
     }
-    auto events_list = events->second.As<score::json::List>();
-    if (!events_list.has_value())
-    {
-        return false;
-    }
-    for (const auto& event : events_list.value().get())
+    auto events_list_result = events->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(events_list_result.has_value(), "Events list is not a list");
+    const auto& events_list = events_list_result.value().get();
+    for (const auto& event : events_list)
     {
         auto event_obj = event.As<score::json::Object>();
         if (!event_obj.has_value())
@@ -867,12 +872,10 @@ auto ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServ
         return false;
     }
 
-    auto fields_list = fields->second.As<score::json::List>();
-    if (!fields_list.has_value())
-    {
-        return false;
-    }
-    for (const auto& field : fields_list.value().get())
+    auto fields_list_result = fields->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(fields_list_result.has_value(), "Fields list is not a list");
+    const auto& fields_list = fields_list_result.value().get();
+    for (const auto& field : fields_list)
     {
         auto field_obj = field.As<score::json::Object>();
         if (!field_obj.has_value())
@@ -917,7 +920,10 @@ auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaSer
         return false;
     }
 
-    for (const auto& method : methods->second.As<score::json::List>().value().get())
+    auto methods_list_result = methods->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(methods_list_result.has_value(), "Methods list is not a list");
+    const auto& methods_list = methods_list_result.value().get();
+    for (const auto& method : methods_list)
     {
         const auto& method_object = method.As<score::json::Object>().value().get();
         const auto& method_name = method_object.find(kMethodNameKey.data());
@@ -1033,9 +1039,10 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
 
-    auto bindings_list = bindings->second.As<score::json::List>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(bindings_list.has_value());
-    for (const auto& binding : bindings_list.value().get())
+    const auto bindings_list_result = bindings->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(bindings_list_result.has_value());
+    const auto& bindings_list = bindings_list_result.value().get();
+    for (const auto& binding : bindings_list)
     {
         auto binding_obj = binding.As<score::json::Object>();
         if (!binding_obj.has_value())
@@ -1091,13 +1098,14 @@ auto ParseServiceTypes(const score::json::Object& json_map) -> Configuration::Se
     }
 
     Configuration::ServiceTypeDeployments service_type_deployments{};
-    auto service_types_list = service_types->second.As<score::json::List>();
-    if (!service_types_list.has_value())
+    const auto service_types_list_result = service_types->second.As<score::json::List>();
+    if (!service_types_list_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Service types is not a valid JSON list. Terminating";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
-    for (const auto& service_type : service_types_list.value().get())
+    const auto& service_types_list = service_types_list_result.value().get();
+    for (const auto& service_type : service_types_list)
     {
         auto service_type_obj = service_type.As<score::json::Object>();
         if (!service_type_obj.has_value())
