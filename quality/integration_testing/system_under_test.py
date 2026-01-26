@@ -15,6 +15,20 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 
 
+class Process(ABC):
+
+    @abstractmethod
+    def __enter__(self):
+        pass
+
+    @abstractmethod
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+    @abstractmethod
+    def wait_for_exit(self, timeout: int = 60) -> int:
+        pass
+
+
 class SystemUnderTest(ABC):
     """
     Abstract class that builds the interface, that every environment has to implement.
@@ -25,4 +39,8 @@ class SystemUnderTest(ABC):
     @abstractmethod
     def execute(self, command: str) -> Tuple[int, str]:
         """Executes a command on the serial interface of the system under test"""
+        pass
+
+    @abstractmethod
+    def start_process(self, command: str, cwd: str = "") -> Process:
         pass
