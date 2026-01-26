@@ -17,8 +17,9 @@ from quality.integration_testing.system_under_test import SystemUnderTest
 from typing import Tuple
 import pytest
 
-
 logger = logging.getLogger(__name__)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("docker").setLevel(logging.WARNING)
 
 
 def pytest_addoption(parser):
