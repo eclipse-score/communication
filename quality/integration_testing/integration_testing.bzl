@@ -80,12 +80,17 @@ def integration_test(name, srcs, filesystem, **kwargs):
         "args",
         select({
             "//conditions:default": [
+                "--log-cli-level=DEBUG",
+                "--capture=tee-sys",
+                "--show-capture=all",
                 "--docker-image-bootstrap=$(location {})".format(image_tarball),
                 "--docker-image={}".format(repo_tag),
                 "-p no:cacheprovider",
                 "-p quality.integration_testing.environments.ubuntu24_04_docker.docker",
             ],
             "@platforms//os:qnx": [
+                "--log-cli-level=DEBUG",
+                "--show-capture=all",
                 "--qemu_image=$(location {})".format(qemu_image),
                 "-p no:cacheprovider",
                 "-p quality.integration_testing.environments.qnx8_qemu.qemu",
