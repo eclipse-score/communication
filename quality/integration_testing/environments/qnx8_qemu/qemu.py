@@ -38,7 +38,16 @@ class QemuUnderTest(SystemUnderTest):
 def sut(request):
     qemu_image = request.config.getoption("qemu_image")
     with QEMURunner(qemu_image) as qemu:
+        found = False
+        while not found:
+            line = qemu.console.readline(block=True, timeout=10)
+            if line and "Welcome to QNX" in line:
+                found = True
         # We have to init the console once, after boot-up.
-        qemu.console.run_cmd("echo")
+        qemu.console.run_cmd("\n\n\n\n\n\n\n")
+        qemu.console.run_sh_cmd_output("echo")
+        exit_code, _ = qemu.console.run_sh_cmd_output("set +m")  # Disable job control messages
+        assert exit_code == 0
+        qemu.console.clear_history()
         qemu_under_test = QemuUnderTest(qemu)
         yield qemu_under_test
