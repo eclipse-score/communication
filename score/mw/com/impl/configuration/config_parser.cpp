@@ -105,7 +105,7 @@ constexpr auto kTracingTraceFilterConfigPathDefaultValue = "./etc/mw_com_trace_f
 constexpr auto kStrictPermission = "strict"sv;
 constexpr auto kFilePermissionsOnEmpty = "file-permissions-on-empty"sv;
 
-void ErrorIfFound(const score::json::Object::const_iterator& iterator_to_element, const score::json::Object& json_obj)
+void AbortIfFound(const score::json::Object::const_iterator& iterator_to_element, const score::json::Object& json_obj)
 {
 
     if (iterator_to_element != json_obj.end())
@@ -480,7 +480,7 @@ auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceI
         }
         const auto& event_object = event_obj.value().get();
         const auto& max_concurrent_allocations_it = event_object.find(kEventMaxConcurrentAllocationsKey);
-        ErrorIfFound(max_concurrent_allocations_it, event_object);
+        AbortIfFound(max_concurrent_allocations_it, event_object);
 
         ServiceElementInstanceDeploymentParser deployment_parser{event_object};
 
@@ -541,7 +541,7 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceI
         }
         const auto& field_object = field_obj.value().get();
         const auto& max_concurrent_allocations_it = field_object.find(kFieldMaxConcurrentAllocationsKey);
-        ErrorIfFound(max_concurrent_allocations_it, field_object);
+        AbortIfFound(max_concurrent_allocations_it, field_object);
 
         ServiceElementInstanceDeploymentParser deployment_parser{field_object};
 
