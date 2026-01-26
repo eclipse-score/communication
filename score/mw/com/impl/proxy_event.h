@@ -136,9 +136,6 @@ class ProxyEvent final : public ProxyEventBase
 
     /// \brief Indicates whether this event is a field event (i.e. owned by a ProxyField, which is a composite of
     /// method/event) or not.
-    /// \details Field events are not registered in the parent ProxyBase's event map. So we need to track this to avoid
-    /// updating the parent ProxyBase's event map on move operations.
-    bool is_field_event_;
 };
 
 template <typename SampleType>
@@ -146,8 +143,7 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
                                    std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding,
                                    const std::string_view event_name)
     : ProxyEventBase{base, ProxyBaseView{base}.GetBinding(), std::move(proxy_event_binding), event_name},
-      proxy_event_mock_{nullptr},
-      is_field_event_{false}
+      proxy_event_mock_{nullptr}
 {
     ProxyBaseView proxy_base_view{base};
     if (!binding_base_)
@@ -190,16 +186,11 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
 
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyEvent&& other) noexcept
-    : ProxyEventBase(std::move(other)),
-      proxy_event_mock_{std::move(other.proxy_event_mock_)},
-      is_field_event_{std::move(other.is_field_event_)}
+    : ProxyEventBase(std::move(other)), proxy_event_mock_{std::move(other.proxy_event_mock_)}
 {
-    if (!is_field_event_)
-    {
-        // Since the address of this event has changed, we need update the address stored in the parent proxy.
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateEvent(event_name_, *this);
-    }
+    // Since the address of this event has changed, we need update the address stored in the parent proxy.
+    ProxyBaseView proxy_base_view{proxy_base_.get()};
+    proxy_base_view.UpdateEvent(event_name_, *this);
 }
 
 template <typename SampleType>
@@ -214,14 +205,9 @@ auto ProxyEvent<SampleType>::operator=(ProxyEvent&& other) & noexcept -> ProxyEv
     {
         ProxyEvent::operator=(std::move(other));
         proxy_event_mock_ = std::move(other.proxy_event_mock_);
-        is_field_event_ = std::move(other.is_field_event_);
-
-        if (!is_field_event_)
-        {
-            // Since the address of this event has changed, we need update the address stored in the parent proxy.
-            ProxyBaseView proxy_base_view{proxy_base_.get()};
-            proxy_base_view.UpdateEvent(event_name_, *this);
-        }
+        // Since the address of this event has changed, we need update the address stored in the parent proxy.
+        ProxyBaseView proxy_base_view{proxy_base_.get()};
+        proxy_base_view.UpdateEvent(event_name_, *this);
     }
     return *this;
 }
