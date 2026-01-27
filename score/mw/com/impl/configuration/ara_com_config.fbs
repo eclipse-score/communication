@@ -1,0 +1,157 @@
+namespace score.mw.com.impl.configuration;
+
+// Binding technology types
+enum BindingType:uint8 {
+    SOME_IP = 0,  // JSON: "SOME/IP"
+    SHM = 1       // JSON: "SHM"
+}
+
+// ASIL level types
+enum AsilLevel:uint8 {
+    QM = 0,  // JSON: "QM"
+    B = 1    // JSON: "B"
+}
+
+// Permission check strategy
+enum PermissionCheckStrategy:uint8 {
+    FILE_PERMISSIONS_ON_EMPTY = 0,  // JSON: "file-permissions-on-empty"
+    STRICT = 1                      // JSON: "strict"
+}
+
+// Shared memory size calculation mode
+enum ShmSizeCalcMode:uint8 {
+    SIMULATION = 0  // JSON: "SIMULATION"
+}
+
+struct Version {
+    major:uint32;
+    minor:uint32;
+}
+
+table ComConfiguration {
+    service_types:[ServiceType] (required);
+    service_instances:[ServiceInstance] (required);
+    global:Global;
+    tracing:Tracing;
+}
+
+table ServiceType {
+    service_type_name:string (required);
+    version:Version (required);
+    bindings:[BindingElement] (required);
+}
+
+table BindingElement {
+    binding:BindingType;
+    service_id:uint16;
+    events:[Event];
+    fields:[Field];
+    methods:[Method];
+}
+
+table Event {
+    event_name:string (required);
+    // JSON validation: eventId is 8 bit for LoLa, 15 bit for SOME/IP - using uint16 to accommodate both
+    event_id:uint16;
+}
+
+table Field {
+    field_name:string (required);
+    // JSON validation: fieldId is 8 bit for LoLa, 15 bit for SOME/IP - using uint16 to accommodate both
+    field_id:uint16;
+    get:bool = false;
+    set:bool = false;
+}
+
+table Method {
+    method_name:string (required);
+    // JSON validation: methodId is 8 bit for LoLa, 15 bit for SOME/IP - using uint16 to accommodate both
+    method_id:uint16;
+}
+
+// ServiceInstances definitions
+table ServiceInstance {
+    instance_specifier:string (required);
+    service_type_name:string (required);
+    version:Version (required);
+    instances:[Instance] (required);
+}
+
+table Instance {
+    // JSON validation: instanceId is optional 16 bit value (used for subscriber/R-port side)
+    instance_id:uint16;
+    asil_level:AsilLevel;
+    binding:BindingType;
+    shm_size:uint32;
+    control_asil_b_shm_size:uint32;
+    control_qm_shm_size:uint32;
+    permission_checks:PermissionCheckStrategy = FILE_PERMISSIONS_ON_EMPTY;
+    allowed_consumer:AllowedConsumer;
+    allowed_provider:AllowedProvider;
+    events:[InstanceEvent];
+    fields:[InstanceField];
+    methods:[InstanceMethod];
+}
+
+// User IDs for access control
+table AllowedConsumer {
+    qm:[uint32];
+    b:[uint32];
+}
+
+table AllowedProvider {
+    qm:[uint32];
+    b:[uint32];
+}
+
+table InstanceEvent {
+    event_name:string (required);
+    max_samples:uint16 (deprecated);
+    // JSON validation: number_of_sample_slots must be between 1 and 65535 - not enforceable in FlatBuffers
+    number_of_sample_slots:uint16 = 1;
+    max_subscribers:uint16;
+    enforce_max_samples:bool = true;
+    number_of_ipc_tracing_slots:uint16 = 0;
+}
+
+table InstanceField {
+    field_name:string (required);
+    // JSON validation: number_of_sample_slots must be between 1 and 65535 - not enforceable in FlatBuffers
+    number_of_sample_slots:uint16 = 1;
+    max_subscribers:uint16;
+    enforce_max_samples:bool = true;
+    number_of_ipc_tracing_slots:uint16 = 0;
+}
+
+table InstanceMethod {
+    method_name:string (required);
+    // JSON validation: queue_size must be between 1 and 255 - not enforceable in FlatBuffers
+    queue_size:uint16 = 1;
+}
+
+// Global definitions
+table Global {
+    asil_level:AsilLevel = QM;
+    application_id:uint32;
+    queue_size:QueueSize;
+    shm_size_calc_mode:ShmSizeCalcMode = SIMULATION;
+}
+
+table QueueSize {
+    qm_receiver:uint16 = 10;
+    b_receiver:uint16 = 10;
+    // JSON validation: max value is 100 - not enforceable in FlatBuffers
+    b_sender:uint16 = 20;
+}
+
+// Tracing definitions
+table Tracing {
+    // JSON validation: default value is true
+    enable:bool = true;
+    application_instance_id:string (required);
+    // JSON validation: default value is "./etc/mw_com_trace_filter.json" - not enforceable in FlatBuffers
+    trace_filter_config_path:string;
+}
+
+root_type ComConfiguration;
+file_identifier "SCOM";
