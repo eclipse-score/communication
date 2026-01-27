@@ -49,7 +49,12 @@ class MessagePassingServiceInstanceTest : public ::testing::Test
         ON_CALL(server_factory_mock_, Create(::testing::_, ::testing::_))
             .WillByDefault(::testing::Return(::testing::ByMove(std::move(server_mock_))));
 
-        ON_CALL(*client_connection_mock_, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
+        auto client_connection_mock_facade = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
+            score::cpp::pmr::new_delete_resource(), client_connection_mock_);
+        ON_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+            .WillByDefault(::testing::Return(::testing::ByMove(std::move(client_connection_mock_facade))));
+
+        ON_CALL(client_connection_mock_, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
 
         ON_CALL(*server_connection_mock_, GetClientIdentity()).WillByDefault(::testing::ReturnRef(client_identity_));
         ON_CALL(*server_connection_mock_, GetUserData()).WillByDefault(::testing::ReturnRef(user_data_));
@@ -94,8 +99,7 @@ class MessagePassingServiceInstanceTest : public ::testing::Test
     AsilSpecificCfg asil_cfg_{};
     ClientQualityType quality_type_{ClientQualityType::kASIL_B};
 
-    score::cpp::pmr::unique_ptr<::testing::NiceMock<ClientConnectionMock>> client_connection_mock_{
-        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource())};
+    ::testing::NiceMock<ClientConnectionMock> client_connection_mock_{};
     score::cpp::pmr::unique_ptr<::testing::NiceMock<ServerConnectionMock>> server_connection_mock_{
         score::cpp::pmr::make_unique<::testing::NiceMock<ServerConnectionMock>>(score::cpp::pmr::new_delete_resource())};
 
@@ -395,12 +399,8 @@ TEST_F(MessagePassingServiceInstanceTest, RegisterEventNotificationRemoteSendsRe
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When handler being registered with pid != local_pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -420,12 +420,8 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called and return an error
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When handler being registered with pid != local_pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -445,12 +441,8 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When handler being registered with pid != local_pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -488,13 +480,9 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration and once upon unregistration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .Times(2)
         .WillRepeatedly(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered with pid != local_pid
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -511,13 +499,9 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called twice: on registration and unregistration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered for event with pid != local_pid
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -533,12 +517,8 @@ TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesn
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered with pid != local_pid
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -555,12 +535,8 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered with pid != local_pid twice
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -604,12 +580,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClients)
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyEvent() for the same event is called
     instance.NotifyEvent(event_id_);
@@ -646,12 +618,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClientsRegist
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyEvent() for the same event is called
     instance.NotifyEvent(event_id_);
@@ -668,12 +636,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntTerminateOnSend
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // and client connection that returns an error on Send()
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyEvent() for the same event is called
     // Expect it to not terminate
@@ -753,11 +717,7 @@ TEST_F(MessagePassingServiceInstanceTest,
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_)).Times(1);
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_)).Times(1);
 
     // When unregister event notifier message is received for different event
     ++event_id_.element_id_;
@@ -823,11 +783,7 @@ TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdCalledWithUnregist
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_)).Times(1);
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_)).Times(1);
 
     // Given notification is registered
     received_send_message_callback_(*server_connection_mock_,
@@ -863,12 +819,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageCallsRegisteredHandl
         });
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // when handler being registered for event
     instance.RegisterEventNotification(event_id_, handler, remote_pid_);
@@ -894,12 +846,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageDoesntCallHandlerFor
         });
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // when handler being registered for event
     instance.RegisterEventNotification(event_id_, handler, remote_pid_);
@@ -990,12 +938,8 @@ TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationForTheSameE
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given event notification being registered for remote pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -1042,12 +986,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeCreatesClientAndSend
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyOutdatedNodeId() is called for a previously unused target_node_id
     instance.NotifyOutdatedNodeId(remote_pid_, remote_pid_ + 2);
@@ -1060,12 +1000,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeDoesntTerminateOnFai
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyOutdatedNodeId() is called for a previously unused target_node_id
     instance.NotifyOutdatedNodeId(remote_pid_, remote_pid_ + 2);
@@ -1119,10 +1055,8 @@ TEST_F(MessagePassingServiceInstanceTest, RegisterCallbackWithExistingRemoteHand
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Setup client connection mock for remote registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
 
@@ -1312,10 +1246,8 @@ TEST_F(MessagePassingServiceInstanceTest, RemoteHandlerRegistrationInvokesCallba
     });
 
     // Setup client connection mock for remote registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When registering first remote handler
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
