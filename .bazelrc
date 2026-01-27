@@ -52,7 +52,7 @@ test --sandbox_tmpfs_path=/tmp
 # Tests require to be run in a sandbox. Otherwise some will be flaky.
 test --nosandbox_default_allow_network
 
-common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
+common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
 
 # With this instrumentation filter for our two main components, we ensure that `bazel coverage //...` is yielding the correct results
@@ -78,3 +78,8 @@ test:clang-tidy --output_groups=+rules_lint_report
 test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 
 import quality/sanitizer/sanitizer.bazelrc
+
+build --java_language_version=17
+build --java_runtime_version=remotejdk_17
+build --tool_java_language_version=17
+build --tool_java_runtime_version=remotejdk_17
