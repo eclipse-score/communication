@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SKELETON_SERVICE_ELEMENT_BINDING_FACTORY_IMPL_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_SERVICE_ELEMENT_BINDING_FACTORY_IMPL_H
 
+#include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
@@ -79,7 +80,7 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 auto CreateSkeletonServiceElementImpl(const InstanceIdentifier& identifier,
                                   SkeletonBase& parent,
                                   const std::string_view service_element_name,
-                                  const score::cpp::optional<std::reference_wrapper<const SizeInfo>>& size_info) noexcept
+                                  const score::cpp::optional<std::reference_wrapper<const DataTypeMetaInfo>>& size_info) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert(element_type != ServiceElementType::INVALID);
@@ -145,7 +146,7 @@ auto CreateSkeletonServiceElementImpl(const InstanceIdentifier& identifier,
 }  // namespace detail
 
 
-/// @brief Overload for typed skeletons (which do not have a SizeInfo).
+/// @brief Overload for typed skeletons (which do not have a DataTypeMetaInfo).
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                                   SkeletonBase& parent,
@@ -154,23 +155,23 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
 {
     
     static_assert(!std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>,
-                  "This overload is for typed skeletons only. Generic skeletons must provide a SizeInfo.");
+                  "This overload is for typed skeletons only. Generic skeletons must provide a DataTypeMetaInfo.");
                   
     return detail::CreateSkeletonServiceElementImpl<SkeletonServiceElementBinding, SkeletonServiceElement, element_type>(
         identifier, parent, service_element_name, score::cpp::nullopt);
 }
 
-/// @brief Overload for generic skeletons (which require a SizeInfo).
+/// @brief Overload for generic skeletons (which require a DataTypeMetaInfo).
 template <typename SkeletonServiceElementBinding, typename SkeletonServiceElement, ServiceElementType element_type>
 auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                                   SkeletonBase& parent,
                                   const std::string_view service_element_name,
-                                  const SizeInfo& size_info) noexcept
+                                  const DataTypeMetaInfo& size_info) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     
     static_assert(std::is_same_v<SkeletonServiceElement, lola::GenericSkeletonEvent>,
-                  "This overload is for generic skeletons only. Typed skeletons must not provide a SizeInfo.");
+                  "This overload is for generic skeletons only. Typed skeletons must not provide a DataTypeMetaInfo.");
 
     return detail::CreateSkeletonServiceElementImpl<SkeletonServiceElementBinding, SkeletonServiceElement, element_type>(
         identifier,

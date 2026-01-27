@@ -968,8 +968,19 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     const SkeletonEventProperties& element_properties,
     size_t sample_size,
     size_t sample_alignment) noexcept
-{
-    void* data_storage = storage_resource_->allocate(sample_size * element_properties.number_of_slots, sample_alignment);
+{   
+    const auto aligned_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
+    const auto total_data_size = aligned_size * element_properties.number_of_slots;
+
+        std::cout << "Skeleton::CreateEventDataFromOpenedSharedMemory (Generic):"
+                                     << " event_fq_id=" << element_fq_id.ToString()
+                                     << " sample_size=" << sample_size
+                                     << " sample_alignment=" << sample_alignment
+                                     << " aligned_size=" << aligned_size
+                                     << " number_of_slots=" << element_properties.number_of_slots
+                                     << " total_data_size=" << total_data_size;
+
+    void* data_storage = storage_resource_->allocate(total_data_size, sample_alignment);
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
                                                          std::forward_as_tuple(element_fq_id),
@@ -977,7 +988,7 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
                                                "Couldn't register/emplace event-storage in data-section.");
 
-    const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
+    const impl::DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
     auto inserted_meta_info = storage_->events_metainfo_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(element_fq_id),

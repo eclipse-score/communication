@@ -15,14 +15,9 @@
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
-#include "score/mw/com/impl/size_info.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
-#include "score/memory/shared/offset_ptr.h"
-#include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-
-#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
-#include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
-#include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
+#include "score/mw/com/impl/data_type_meta_info.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h" 
+#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" 
 
 namespace score::mw::com::impl::lola
 {
@@ -35,10 +30,11 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 {
   public:
     GenericSkeletonEvent(Skeleton& parent,
-                         const SkeletonEventProperties& event_properties,
+                         const SkeletonEventProperties& event_properties, 
                          const ElementFqId& event_fqn,
-                         const SizeInfo& size_info);
-
+                         const DataTypeMetaInfo& size_info,
+                         impl::tracing::SkeletonEventTracingData tracing_data = {});
+ 
     Result<score::Blank> Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
 
     Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate() noexcept override;
@@ -49,7 +45,10 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     ResultBlank PrepareOffer() noexcept override;
     void PrepareStopOffer() noexcept override;
     BindingType GetBindingType() const noexcept override;
-    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override;
+    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
+    {
+        common_event_logic_.GetTracingData() = tracing_data;
+    }
 
     std::size_t GetMaxSize() const noexcept override
     {
@@ -57,71 +56,26 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     }
 
   private:
-    Skeleton& parent_;
-    SizeInfo size_info_;
+    DataTypeMetaInfo size_info_;
     const SkeletonEventProperties event_properties_;
-    const ElementFqId event_fqn_;
     score::cpp::optional<EventDataControlComposite> control_{};
     EventSlotStatus::EventTimeStamp current_timestamp_{0U};
     score::memory::shared::OffsetPtr<void> data_storage_{nullptr};
     bool qm_disconnect_{false};
-    impl::tracing::SkeletonEventTracingData tracing_data_{};
-    std::atomic<bool> qm_event_update_notifications_registered_{false};
-    std::atomic<bool> asil_b_event_update_notifications_registered_{false};
-    std::optional<lola::TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
-    std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
-
-  public:
-    // The following methods are public but intended for use by PrepareOfferImpl helper
-    impl::tracing::SkeletonEventTracingData& GetTracingData()
-    {
-        return tracing_data_;
-    }
-
-    void EmplaceTransactionLogRegistrationGuard()
-    {
-        score::cpp::ignore = transaction_log_registration_guard_.emplace(
-            TransactionLogRegistrationGuard::Create(control_.value().GetQmEventDataControl()));
-    }
-
-    void EmplaceTypeErasedSamplePtrsGuard()
-    {
-        score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
-    }
-
-    void UpdateCurrentTimestamp()
-    {
-        current_timestamp_ = control_.value().GetLatestTimestamp();
-    }
-
-    Skeleton& GetParent()
-    {
-        return parent_;
-    }
-
-    const ElementFqId& GetElementFQId() const
-    {
-        return event_fqn_;
-    }
-
-    void SetQmNotificationsRegistered(bool value)
-    {
-        qm_event_update_notifications_registered_.store(value);
-    }
-
-    void SetAsilBNotificationsRegistered(bool value)
-    {
-        asil_b_event_update_notifications_registered_.store(value);
-    }
+    
+    SkeletonEventCommon common_event_logic_; // Aggregated common logic
+    
+    // This method is needed by Allocate() and Send()
+    Skeleton& GetParent() { return common_event_logic_.GetParent(); }
+    const ElementFqId& GetElementFQId() const { return common_event_logic_.GetElementFQId(); }
+    bool IsQmRegistered() const { return common_event_logic_.IsQmRegistered(); }
+    bool IsAsilBRegistered() const { return common_event_logic_.IsAsilBRegistered(); }
 
     void ResetGuards() noexcept
     {
-        type_erased_sample_ptrs_guard_.reset();
-        if (control_.has_value())
-        {
-            transaction_log_registration_guard_.reset();
-        }
-        control_.reset();
+        common_event_logic_.ResetGuards();
+        // Reset members specific to GenericSkeletonEvent
+        control_.reset(); // This was part of the original ResetGuards in GenericSkeletonEvent
         data_storage_ = nullptr;
     }
 };

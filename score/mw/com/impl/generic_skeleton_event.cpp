@@ -85,7 +85,7 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
     return result;
 }
 
-SizeInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
+DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
     const auto* const binding = static_cast<const GenericSkeletonEventBinding*>(binding_.get());
     const auto size_info_pair = binding->GetSizeInfo();

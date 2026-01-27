@@ -485,18 +485,17 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
 {
     const auto event_name = "map_api_lanes_stamped";
     
-    // Define the events we want to create
-    // Fix: Qualified SizeInfo as impl::SizeInfo
-    const impl::SizeInfo size_info{sizeof(MapApiLanesStamped), alignof(MapApiLanesStamped)};
-    
-    // Fix: Use vector to define events and handles
-    std::vector<impl::EventInfo> events = {
+    const impl::DataTypeMetaInfo size_info{sizeof(MapApiLanesStamped), alignof(MapApiLanesStamped)};
+
+   impl::GenericSkeletonCreateParams create_params;
+    // Use a temporary vector to construct the span
+    const std::vector<impl::EventInfo> events_vec = {
         {event_name, size_info}
     };
-    std::vector<impl::EventHandle> event_handles(events.size());
+    create_params.events = events_vec;
+    // create_params.fields = {}; // No fields yet
 
-    // Fix: Use atomic Create method
-    auto create_result = impl::GenericSkeleton::Create(instance_specifier, events, event_handles);
+    auto create_result = impl::GenericSkeleton::Create(instance_specifier, create_params);
     
     if (!create_result.has_value())
     {
@@ -505,8 +504,10 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
     }
     auto& skeleton = create_result.value();
 
-    // Fix: Retrieve event using the handle
-    auto& event = skeleton.GetEvent(event_handles[0]);
+    // Retrieve event using its name
+    auto event_it = skeleton.GetEvents().find(event_name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != skeleton.GetEvents().cend(), "Event not found in GenericSkeleton");
+    auto& event = event_it->second;
 
     const auto offer_result = skeleton.OfferService();
     if (!offer_result.has_value())

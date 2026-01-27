@@ -15,8 +15,8 @@
 
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/skeleton_base.h"
-#include "score/mw/com/impl/size_info.h"
-#include "score/mw/com/impl/service_element_type.h" // Added for ServiceElementType
+#include "score/mw/com/impl/data_type_meta_info.h"
+#include "score/mw/com/impl/service_element_type.h" 
 #include "score/mw/com/impl/plumbing/skeleton_service_element_binding_factory_impl.h"
 
 #include "score/result/result.h"
@@ -31,8 +31,8 @@ class GenericSkeletonEventBindingFactory
 {
   public:
     static Result<std::unique_ptr<GenericSkeletonEventBinding>> Create(SkeletonBase& skeleton_base,
-                                                                       std::string_view event_name,
-                                                                       const SizeInfo& size_info) noexcept
+                                                                       const std::string_view event_name,
+                                                                       const DataTypeMetaInfo& size_info) noexcept
     {
         const auto& instance_identifier = SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier();
         return CreateSkeletonServiceElement<GenericSkeletonEventBinding, lola::GenericSkeletonEvent, ServiceElementType::EVENT>(

@@ -320,6 +320,9 @@ cc_library(
     implementation_deps = [
         "skeleton_binding_factory_impl",
     ],
+     visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
     tags = ["FFI"],
     deps = [
         ":i_skeleton_binding_factory",

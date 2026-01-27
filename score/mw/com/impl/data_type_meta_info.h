@@ -10,17 +10,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#pragma once
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H
 
 #include <cstddef>
+#include <cstdint>
 
 namespace score::mw::com::impl
 {
-/// @brief A struct to hold size and alignment information for generic type-erased data.
-struct SizeInfo
+
+/// \brief Meta-info of a data type exchanged via mw::com/LoLa. I.e. can be the data type of an event/filed/method arg.
+struct DataTypeMetaInfo
 {
-    size_t size;
-    size_t alignment;
+    //@todo -> std::uint64_t fingerprint
+    std::size_t size;
+    std::size_t alignment;
 };
 
 }  // namespace score::mw::com::impl
+
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H

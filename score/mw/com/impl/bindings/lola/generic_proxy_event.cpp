@@ -78,7 +78,7 @@ inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver,
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept
 {
-    return meta_info_.data_type_info_.size_of_;
+    return meta_info_.data_type_info_.size;
 }
 
 bool GenericProxyEvent::HasSerializedFormat() const noexcept
@@ -129,8 +129,8 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
 
     auto& event_control = proxy_event_common_.GetEventControl();
 
-    const std::size_t sample_size = meta_info_.data_type_info_.size_of_;
-    const std::uint8_t sample_alignment = meta_info_.data_type_info_.align_of_;
+    const std::size_t sample_size = meta_info_.data_type_info_.size;
+    const std::size_t sample_alignment = meta_info_.data_type_info_.alignment;
     const std::size_t aligned_size =
         memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
 
@@ -146,6 +146,15 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         score::mw::log::LogFatal("lola") << "Could not calculate the event slots raw array size. Terminating.";
         std::terminate();
     }
+
+        std::cout << "GenericProxyEvent::GetNewSamplesImpl:"
+                                     << " sample_size=" << sample_size
+                                     << " sample_alignment=" << sample_alignment
+                                     << " aligned_size=" << aligned_size
+                                     << " max_number_of_sample_slots=" << max_number_of_sample_slots
+                                     << " expected_array_size=" << event_slots_raw_array_size.value();
+
+
     const void* const event_slots_raw_array = meta_info_.event_slots_raw_array_.get(event_slots_raw_array_size.value());
 
     // AMP assert that the event_slots_raw_array address is according to sample_alignment

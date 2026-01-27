@@ -14,9 +14,9 @@
 
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
-#include "score/mw/com/impl/size_info.h"
 
 #include "score/result/result.h"
+#include "score/mw/com/impl/data_type_meta_info.h" // For DataTypeMetaInfo
 
 namespace score::mw::com::impl
 {
@@ -38,7 +38,7 @@ class GenericSkeletonEvent : public SkeletonEventBase
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 
    
-    SizeInfo GetSizeInfo() const noexcept;
+    DataTypeMetaInfo GetSizeInfo() const noexcept;
 };
 
 } // namespace score::mw::com::impl

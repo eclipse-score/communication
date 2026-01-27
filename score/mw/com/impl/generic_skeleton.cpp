@@ -13,10 +13,10 @@
 #include "score/mw/com/impl/generic_skeleton.h"
 
 #include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h"
-#include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
-#include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/size_info.h"
+#include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h" 
+//#include "score/mw/com/impl/plumbing/generic_skeleton_field_binding_factory.h"  //not implemented yet
+#include "score/mw/com/impl/runtime.h" 
+#include "score/mw/com/impl/plumbing/skeleton_binding_factory.h" 
 #include "score/mw/com/impl/skeleton_binding.h"
 
 #include <cassert>
@@ -27,8 +27,7 @@ namespace score::mw::com::impl
 
 Result<GenericSkeleton> GenericSkeleton::Create(
     const InstanceSpecifier& specifier,
-    score::cpp::span<const EventInfo> events,
-    score::cpp::span<EventHandle> out_handles,
+    const GenericSkeletonCreateParams& in,
     MethodCallProcessingMode mode) noexcept
 {
     const auto instance_identifier_result = GetInstanceIdentifier(specifier);
@@ -39,18 +38,14 @@ Result<GenericSkeleton> GenericSkeleton::Create(
         return MakeUnexpected(ComErrc::kInstanceIDCouldNotBeResolved);
     }
 
-    return Create(instance_identifier_result.value(), events, out_handles, mode);
+    return Create(instance_identifier_result.value(), in, mode); 
 }
 
 Result<GenericSkeleton> GenericSkeleton::Create(
     const InstanceIdentifier& identifier,
-    score::cpp::span<const EventInfo> events,
-    score::cpp::span<EventHandle> out_handles,
+    const GenericSkeletonCreateParams& in,
     MethodCallProcessingMode mode) noexcept
 {
-    // Ensure the output span is large enough to hold handles for all events
-    assert(events.size() == out_handles.size());
-
     auto binding = SkeletonBindingFactory::Create(identifier);
     if (!binding)
     {
@@ -62,40 +57,73 @@ Result<GenericSkeleton> GenericSkeleton::Create(
     // 1. Create the Skeleton (Private Constructor)
     GenericSkeleton skeleton(identifier, std::move(binding), mode);
 
-    // 2. Reserve space for events to avoid reallocation
-    skeleton.owned_events_.reserve(events.size());
-
     // 3. Atomically create all events
-    for (std::size_t i = 0; i < events.size(); ++i)
+    for (const auto& info : in.events) // Iterate directly over in.events
     {
-        const auto& info = events[i];
-
         // Create the event binding
-        auto event_binding_result = GenericSkeletonEventBindingFactory::Create(skeleton, info.name, info.size_info);
+        auto event_binding_result =
+            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
         
         if (!event_binding_result.has_value())
         {
-            // If any event fails to bind, the whole creation fails (Atomic)
+            // If any event fails to bind, the whole creation fails (Atomic). Error logging is typically handled within the factory.
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        // Store the event in the vector
-        skeleton.owned_events_.push_back(std::make_unique<GenericSkeletonEvent>(
-            skeleton, info.name, std::move(event_binding_result).value()));
+        // Store the event in the map
+        const auto emplace_result = skeleton.events_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(info.name),
+            std::forward_as_tuple(skeleton, info.name, std::move(event_binding_result).value()));
 
-        // Assign the handle (index in the vector)
-        out_handles[i] = EventHandle{static_cast<std::uint16_t>(i)};
+        if (!emplace_result.second) {
+            score::mw::log::LogError("GenericSkeleton") << "Failed to emplace GenericSkeletonEvent for name: " << info.name;
+            return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
+        }
     }
+
+    // // 4. Atomically create all fields
+    // for (const auto& info : in.fields) // Iterate directly over in.fields
+    // {
+    //     // Create the field binding
+    //     auto field_binding_result =
+    //         GenericSkeletonFieldBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
+
+    //     if (!field_binding_result.has_value())
+    //     {
+    //         // If any field fails to bind, the whole creation fails (Atomic). Error logging is typically handled within the factory.
+    //         return MakeUnexpected(ComErrc::kBindingFailure);
+    //     }
+
+    //     // Store the field in the map
+    //     const auto emplace_result = skeleton.fields_.emplace(
+    //         std::piecewise_construct,
+    //         std::forward_as_tuple(info.name),
+    //         std::forward_as_tuple(skeleton, info.name, std::move(field_binding_result).value(), info.initial_value_bytes));
+
+    //     if (!emplace_result.second) {
+    //         score::mw::log::LogError("GenericSkeleton") << "Failed to emplace GenericSkeletonField for name: " << info.name;
+    //         return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
+    //     }
+    // }
 
     return skeleton;
 }
 
-GenericSkeletonEvent& GenericSkeleton::GetEvent(EventHandle h) noexcept
+const GenericSkeleton::EventMap& GenericSkeleton::GetEvents() const noexcept
 {
-    // Fast O(1) lookup
-    assert(h.index < owned_events_.size());
-    return *owned_events_[h.index];
+    return events_;
 }
+
+GenericSkeleton::EventMap& GenericSkeleton::GetEvents() noexcept
+{
+    return events_;
+}
+
+// const GenericSkeleton::FieldMap& GenericSkeleton::GetFields() const noexcept
+// {
+//     return fields_;
+// }
 
 Result<score::Blank> GenericSkeleton::OfferService() noexcept
 {

@@ -56,8 +56,8 @@ class SkeletonEventAttorney
     /// \brief Set handler availability flags for testing purposes
     void SetHandlerAvailability(bool qm_available, bool asil_b_available)
     {
-        skeleton_event_.qm_event_update_notifications_registered_.store(qm_available);
-        skeleton_event_.asil_b_event_update_notifications_registered_.store(asil_b_available);
+        skeleton_event_.common_event_logic_.SetQmNotificationsRegistered(qm_available);        
+        skeleton_event_.common_event_logic_.SetAsilBNotificationsRegistered(asil_b_available);
     }
 
   private:
@@ -316,8 +316,8 @@ TEST_F(SkeletonEventComponentTestFixture, SkeletonWillCalculateEventMetaInfoFrom
 
     // Then the event meta info should correspond to the type of the skeleton event
     ASSERT_TRUE(event_meta_info.has_value());
-    EXPECT_EQ(event_meta_info.value().data_type_info_.align_of_, alignof(SkeletonEventSampleType));
-    EXPECT_EQ(event_meta_info.value().data_type_info_.size_of_, sizeof(SkeletonEventSampleType));
+    EXPECT_EQ(event_meta_info.value().data_type_info_.alignment, alignof(SkeletonEventSampleType));
+    EXPECT_EQ(event_meta_info.value().data_type_info_.size, sizeof(SkeletonEventSampleType));
 }
 
 using SkeletonEventComponentDeathTest = SkeletonEventComponentTestFixture;
