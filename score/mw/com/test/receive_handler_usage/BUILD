@@ -44,6 +44,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/receive_handler_usage/sct:__pkg__",
+        "//score/mw/com/test/receive_handler_usage:__subpackages__",
     ],
 )

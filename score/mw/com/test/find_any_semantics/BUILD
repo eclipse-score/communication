@@ -80,7 +80,7 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/find_any_semantics/sct:__pkg__",
+        "//score/mw/com/test/find_any_semantics:__subpackages__",
     ],
 )
 
@@ -94,6 +94,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/find_any_semantics/sct:__pkg__",
+        "//score/mw/com/test/find_any_semantics:__subpackages__",
     ],
 )

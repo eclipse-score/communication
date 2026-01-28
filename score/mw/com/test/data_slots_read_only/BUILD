@@ -41,6 +41,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/data_slots_read_only/sct:__pkg__",
+        "//score/mw/com/test/data_slots_read_only:__subpackages__",
     ],
 )

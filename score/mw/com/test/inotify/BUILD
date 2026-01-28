@@ -33,6 +33,6 @@ pkg_application(
     bin = [":inotify_test"],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/inotify/sct:__pkg__",
+        "//score/mw/com/test/inotify:__subpackages__",
     ],
 )

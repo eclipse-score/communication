@@ -46,6 +46,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/partial_restart/checks_number_of_allocations/sct:__pkg__",
+        "//score/mw/com/test/partial_restart/checks_number_of_allocations:__subpackages__",
     ],
 )

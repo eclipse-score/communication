@@ -87,7 +87,7 @@ pkg_application(
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
         "//score/mw/com/test:__pkg__",
-        "//score/mw/com/test/service_discovery_offer_and_search/sct:__pkg__",
+        "//score/mw/com/test/service_discovery_offer_and_search:__subpackages__",
     ],
 )
 
@@ -102,6 +102,6 @@ pkg_application(
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
         "//score/mw/com/test:__pkg__",
-        "//score/mw/com/test/service_discovery_offer_and_search/sct:__pkg__",
+        "//score/mw/com/test/service_discovery_offer_and_search:__subpackages__",
     ],
 )

@@ -59,6 +59,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/shared_memory_storage/sct:__pkg__",
+        "//score/mw/com/test/shared_memory_storage:__subpackages__",
     ],
 )

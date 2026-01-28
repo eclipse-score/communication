@@ -77,6 +77,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/partial_restart/proxy_restart_shall_not_affect_other_proxies/sct:__pkg__",
+        "//score/mw/com/test/partial_restart/proxy_restart_shall_not_affect_other_proxies:__subpackages__",
     ],
 )
