@@ -11,9 +11,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+# Capture README.md for Sphinx documentation at convenient location
+sphinx_docs_library(
+    name = "readme_md",
+    srcs = ["README.md"],
+    prefix = "score/mw/com/doc/sphinx/",  # Place under sphinx out folder
+    visibility = ["//score/mw/com/doc/sphinx:__pkg__"],
+)
 
 cc_library(
     name = "com_error_domain",
