@@ -11,13 +11,16 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_docs")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("//score/mw/com/doc/sphinx/utils:defs.bzl", "generate_api_rst")
 
 # Create the sphinx-build binary with required dependencies
-sphinx_build_binary(
+py_binary(
     name = "sphinx-build",
+    srcs = ["//score/mw/com/doc/sphinx/utils:sphinx_build_wrapper"],
+    main = "sphinx_build_wrapper.py",
     deps = [
         "@score_communication_pip//breathe",
         "@score_communication_pip//myst_parser",

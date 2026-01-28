@@ -437,6 +437,12 @@ IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
     if (!message_expected.has_value())
     {
         auto os_code = message_expected.error().GetOsDependentErrorCode();
+        if (os_code == EAGAIN)
+        {
+            // cam happen due to notificaion intended to older connection, but shall be rare
+            LogWarn(engine_->GetLogger(), "ProcessInputEvent ", identifier_, " spurious wake-up");
+            return StopReason::kNone;
+        }
         return os_code == EPIPE ? StopReason::kClosedByPeer : StopReason::kIoError;
     }
     auto message = message_expected.value();

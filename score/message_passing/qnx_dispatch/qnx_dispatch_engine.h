@@ -127,29 +127,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     class ResourceManagerConnection : private iofunc_ocb_t
     {
       public:
-        ResourceManagerConnection() noexcept : iofunc_ocb_t{}, notify_{}
-        {
-            // Suppress following rule findings:
-            //  - "AUTOSAR C++14 A4-10-1": "Only nullptr literal shall be used as the null-pointer-constant".
-            //  - "AUTOSAR C++14 M5-0-10" If the bitwise operators ~and << are applied to an operand with an underlying
-            //      type of unsigned char or unsigned short, the result shall be immediately cast to the underlying type
-            //      of the operand.
-            //  - "AUTOSAR C++14 M5-0-15": "Array indexing shall be the only form of pointer arithmetic".
-            //  - "AUTOSAR C++14 M5-0-21": "Bitwise operators shall only be applied to operands of unsigned underlying
-            //      type."
-            //  - "AUTOSAR C++14 M5-0-4": "An implicit integral conversion shall not change the signedness of the
-            //      underlying type."
-            //  - "AUTOSAR C++14 M6-2-1": "Assignment operators shall not be used in sub-expressions.".
-            // Justification: The findings relate to IOFUNC_NOTIFY_INIT macro which is a part of QNX API and cannot be
-            // modified.
-            // coverity[autosar_cpp14_a4_10_1_violation]
-            // coverity[autosar_cpp14_m5_0_4_violation]
-            // coverity[autosar_cpp14_m5_0_10_violation]
-            // coverity[autosar_cpp14_m5_0_15_violation]
-            // coverity[autosar_cpp14_m5_0_21_violation]
-            // coverity[autosar_cpp14_m6_2_1_violation]
-            IOFUNC_NOTIFY_INIT(notify_.data());
-        }
+        ResourceManagerConnection() noexcept : iofunc_ocb_t{}, rcvid_{}, select_event_{} {}
 
         virtual ~ResourceManagerConnection() = default;
 
@@ -164,10 +142,8 @@ class QnxDispatchEngine final : public ISharedResourceEngine
         }
 
       protected:
-        // Suppress "AUTOSAR C++14 M11-0-1" rule finding: "Member data in non-POD class types shall be private.".
-        // QnxDispatchServer::ServerConnection requires access to notification data
-        // coverity[autosar_cpp14_m11_0_1_violation]
-        std::array<iofunc_notify_t, 3> notify_;
+        rcvid_t rcvid_;
+        sigevent select_event_;
 
       private:
         // Suppress "AUTOSAR C++14 A11-3-1" rule finding: "Friend declarations shall not be used."
@@ -275,9 +251,10 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     void ProcessCleanup(const void* const owner) noexcept;
     void RunOnThread() noexcept;
 
-    static int EndpointFdSelectCallback(select_context_t* ctp, int fd, unsigned flags, void* handle) noexcept;
     static int TimerPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
     static int EventPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
+    static int SelectPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
+    static int CoidDeathPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
 
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept;
@@ -324,9 +301,8 @@ class QnxDispatchEngine final : public ISharedResourceEngine
 
     static std::int32_t io_write(resmgr_context_t* const ctp, io_write_t* const msg, RESMGR_OCB_T* const ocb) noexcept;
     static std::int32_t io_read(resmgr_context_t* const ctp, io_read_t* const msg, RESMGR_OCB_T* const ocb) noexcept;
-    static std::int32_t io_notify(resmgr_context_t* const ctp,
-                                  io_notify_t* const msg,
-                                  RESMGR_OCB_T* const ocb) noexcept;
+
+    static std::int32_t io_msg(resmgr_context_t* ctp, io_msg_t* msg, RESMGR_OCB_T* ocb) noexcept;
 
     score::cpp::pmr::memory_resource* const memory_resource_;
     OsResources os_resources_;
@@ -337,6 +313,14 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     std::thread thread_;
     std::mutex thread_mutex_;
     std::condition_variable thread_condition_;
+
+    struct PollEndpoint
+    {
+        PosixEndpointEntry* endpoint;
+        std::uint32_t nonce;
+    };
+
+    score::cpp::pmr::vector<PollEndpoint> poll_endpoints_;
 
     detail::TimedCommandQueue timer_queue_;
     score::containers::intrusive_list<PosixEndpointEntry> posix_endpoint_list_;

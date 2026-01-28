@@ -84,9 +84,9 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection
 
     send_queue_.push_back(reply_message_);
     auto& os_resources = server.engine_->GetOsResources();
+
     // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    os_resources.iofunc->iofunc_notify_trigger(
-        notify_.data(), static_cast<std::int32_t>(send_queue_.size()), IOFUNC_NOTIFY_INPUT);
+    score::cpp::ignore = os_resources.channel->MsgDeliverEvent(rcvid_, &select_event_);
     return {};
 }
 
@@ -111,9 +111,7 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection
     send_queue_.push_back(notify_message);
     auto& os_resources = server.engine_->GetOsResources();
 
-    std::int32_t size = 1;
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    os_resources.iofunc->iofunc_notify_trigger(notify_.data(), size, IOFUNC_NOTIFY_INPUT);
+    score::cpp::ignore = os_resources.channel->MsgDeliverEvent(rcvid_, &select_event_);
     return {};
 }
 

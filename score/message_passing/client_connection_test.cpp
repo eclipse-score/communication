@@ -576,6 +576,18 @@ TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenFirstReadDi
     EXPECT_EQ(connection.GetStopReason(), StopReason::kClosedByPeer);
 }
 
+TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenSpuriousReadGetsIgnored)
+{
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    AtProtocolReceive_Return(0, score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN)));
+    InvokeEndpointInput();
+    EXPECT_EQ(connection.GetState(), State::kReady);
+
+    StopCurrentConnection(connection);
+}
+
 TEST_F(ClientConnectionTest, NotConnectedSendNotReady)
 {
     detail::ClientConnection connection(engine_, protocol_config_, client_config_);

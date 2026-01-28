@@ -118,10 +118,10 @@ class ResourceManagerMockHelper
     score::cpp::expected_blank<std::int32_t> dispatch_handler(dispatch_context_t* const /*ctp*/) noexcept
     {
         std::cerr << "dispatch_handler 0" << std::endl;
-        if (std::holds_alternative<PulseMessage>(current_message_))
+        if (std::holds_alternative<InternalPulseMessage>(current_message_))
         {
-            std::cerr << "dispatch_handler PulseMessage 0" << std::endl;
-            auto& pulse = std::get<PulseMessage>(current_message_);
+            std::cerr << "dispatch_handler InternalPulseMessage 0" << std::endl;
+            auto& pulse = std::get<InternalPulseMessage>(current_message_);
 
             message_context_t context{};
             resmgr_iomsgs_t message{};
@@ -130,7 +130,22 @@ class ResourceManagerMockHelper
 
             auto& handler = pulse_handlers_[pulse.code];
             score::cpp::ignore = handler.first(&context, pulse.code, 0, handler.second);
-            std::cerr << "dispatch_handler PulseMessage 1" << std::endl;
+            std::cerr << "dispatch_handler InternalPulseMessage 1" << std::endl;
+        }
+        if (std::holds_alternative<TestPulseMessage>(current_message_))
+        {
+            std::cerr << "dispatch_handler TestPulseMessage 0" << std::endl;
+            auto& pulse = std::get<TestPulseMessage>(current_message_);
+
+            message_context_t context{};
+            resmgr_iomsgs_t message{};
+            context.msg = &message;
+            message.pulse.value.sival_int = pulse.value;
+
+            auto& handler = pulse_handlers_[pulse.code];
+            score::cpp::ignore = handler.first(&context, pulse.code, 0, handler.second);
+            std::cerr << "dispatch_handler TestPulseMessage 1" << std::endl;
+            promises_.pulse.set_value();
         }
         else if (std::holds_alternative<IoOpenMessage>(current_message_))
         {
@@ -171,13 +186,15 @@ class ResourceManagerMockHelper
             const auto result = (*io_funcs_->read)(&context, &message, ocb_);
             promises_.read.set_value(result);
         }
-        else if (std::holds_alternative<IoNotifyMessage>(current_message_))
+        else if (std::holds_alternative<IoMsgMessage>(current_message_))
         {
+            auto& io_msg = std::get<IoMsgMessage>(current_message_);
             resmgr_context_t context{};
-            io_notify_t message{};
+            io_msg_t message{};
+            message.i.mgrid = io_msg.mgrid;
 
-            const auto result = (*io_funcs_->notify)(&context, &message, ocb_);
-            promises_.notify.set_value(result);
+            const auto result = (*io_funcs_->msg)(&context, &message, ocb_);
+            promises_.msg.set_value(result);
         }
         return {};
     }
@@ -239,25 +256,13 @@ class ResourceManagerMockHelper
         return io_read.iofunc_read_verify_result;
     }
 
-    /// Compares the passed trig value with the expected one
-    std::int32_t iofunc_notify(resmgr_context_t* const /*ctp*/,
-                               io_notify_t* const /*msg*/,
-                               iofunc_notify_t* const /*nop*/,
-                               const std::int32_t trig,
-                               const std::int32_t* const /*notifycounts*/,
-                               std::int32_t* const /*armed*/) noexcept
-    {
-        auto& io_notify = std::get<IoNotifyMessage>(current_message_);
-        return io_notify.trig == trig ? EOK : EINVAL;
-    }
-
     /// Queues a pulse event to process in dispatch loop
     score::cpp::expected_blank<score::os::Error> MsgSendPulse(const std::int32_t coid,
                                                      const std::int32_t priority,
                                                      const std::int32_t code,
                                                      const std::int32_t value) noexcept
     {
-        message_queue_.CreateSender().push(PulseMessage{code, value});
+        message_queue_.CreateSender().push(InternalPulseMessage{code, value});
         return {};
     }
 
@@ -296,26 +301,39 @@ class ResourceManagerMockHelper
         message_queue_.CreateSender().push(IoReadMessage{iofunc_read_verify_result, xtype, nbytes});
     }
 
-    /// Queues an io_notify event
-    void HelperInsertIoNotify(std::int32_t trig)
+    /// Queues an io_msg event
+    void HelperInsertIoMsg(std::uint16_t mgrid)
     {
-        message_queue_.CreateSender().push(IoNotifyMessage{trig});
+        message_queue_.CreateSender().push(IoMsgMessage{mgrid});
+    }
+
+    /// Queues a test pulse event
+    void HelperInsertPulse(std::int32_t code, std::int32_t value)
+    {
+        message_queue_.CreateSender().push(TestPulseMessage{code, value});
     }
 
     constexpr static std::int32_t kFakeResmgrServerId{1};
 
     struct Promises
     {
-        std::promise<std::int32_t> open;    ///< Fulfilled when `io_open` event has been processed
-        std::promise<std::int32_t> write;   ///< Fulfilled when `io_write` event has been processed
-        std::promise<std::int32_t> read;    ///< Fulfilled when `io_read` event has been processed
-        std::promise<std::int32_t> notify;  ///< Fulfilled when `io_notify` event has been processed
+        std::promise<std::int32_t> open;   ///< Fulfilled when `io_open` event has been processed
+        std::promise<std::int32_t> write;  ///< Fulfilled when `io_write` event has been processed
+        std::promise<std::int32_t> read;   ///< Fulfilled when `io_read` event has been processed
+        std::promise<std::int32_t> msg;    ///< Fulfilled when `io_msg` event has been processed
+        std::promise<void> pulse;          ///< Fulfilled when test pulse event has been processed
     };
 
     Promises promises_{};
 
   private:
-    struct PulseMessage
+    struct InternalPulseMessage
+    {
+        std::int32_t code;
+        std::int32_t value;
+    };
+
+    struct TestPulseMessage
     {
         std::int32_t code;
         std::int32_t value;
@@ -346,18 +364,19 @@ class ResourceManagerMockHelper
         std::size_t nbytes;
     };
 
-    struct IoNotifyMessage
+    struct IoMsgMessage
     {
-        std::int32_t trig;
+        std::uint16_t mgrid;
     };
 
     using QueueMessage = std::variant<std::monostate,
                                       ErrnoPseudoMessage,
-                                      PulseMessage,
+                                      InternalPulseMessage,
+                                      TestPulseMessage,
                                       IoOpenMessage,
                                       IoWriteMessage,
                                       IoReadMessage,
-                                      IoNotifyMessage>;
+                                      IoMsgMessage>;
 
     std::unordered_map<std::int32_t, std::pair<pulse_handler_t, void*>> pulse_handlers_{};
     const resmgr_connect_funcs_t* connect_funcs_{};
@@ -411,7 +430,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
 
         EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(1).WillOnce(Return(kFakeDispatchPtr));
         EXPECT_CALL(*dispatch_, pulse_attach)
-            .Times(2)
+            .Times(4)
             .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach));
         EXPECT_CALL(*dispatch_, message_connect).Times(1).WillOnce(Return(kFakeCoid));
         EXPECT_CALL(*dispatch_, resmgr_attach(_, _, IsNull(), _, _, _, _, _))
@@ -441,7 +460,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
     {
         EXPECT_CALL(*timer_, TimerDestroy).Times(1);
         EXPECT_CALL(*channel_, ConnectDetach).Times(1);
-        EXPECT_CALL(*dispatch_, pulse_detach).Times(2);
+        EXPECT_CALL(*dispatch_, pulse_detach).Times(4);
         EXPECT_CALL(*dispatch_, dispatch_destroy).Times(1);
         EXPECT_CALL(*dispatch_, dispatch_context_free).Times(1);
     }
