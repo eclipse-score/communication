@@ -97,14 +97,6 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
         std::uint64_t offset = static_cast<std::uint64_t>(slot.GetIndex()) * aligned_size;
 
         void* data_ptr = byte_ptr + offset;   
-
-        std::cout << "GenericSkeletonEvent::Allocate:"
-                                         << " slot_index=" << slot.GetIndex()
-                                         << " aligned_size=" << aligned_size
-                                         << " offset=" << offset
-                                         << " base_ptr=" << base_ptr
-                                         << " data_ptr=" << data_ptr;
-
         auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
         return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
     }

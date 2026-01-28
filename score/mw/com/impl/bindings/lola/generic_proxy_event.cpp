@@ -147,14 +147,6 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         std::terminate();
     }
 
-        std::cout << "GenericProxyEvent::GetNewSamplesImpl:"
-                                     << " sample_size=" << sample_size
-                                     << " sample_alignment=" << sample_alignment
-                                     << " aligned_size=" << aligned_size
-                                     << " max_number_of_sample_slots=" << max_number_of_sample_slots
-                                     << " expected_array_size=" << event_slots_raw_array_size.value();
-
-
     const void* const event_slots_raw_array = meta_info_.event_slots_raw_array_.get(event_slots_raw_array_size.value());
 
     // AMP assert that the event_slots_raw_array address is according to sample_alignment

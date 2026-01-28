@@ -130,9 +130,9 @@ cc_library(
         ":instance_identifier",
         ":instance_specifier",
         ":runtime",
-        ":skeleton_base", # For SkeletonBase
-        ":skeleton_binding", # For SkeletonBinding
-        ":data_type_meta_info", # For DataTypeMetaInfo
+        ":skeleton_base", 
+        ":skeleton_binding", 
+        ":data_type_meta_info", 
         ":service_element_map",
         "@score_baselibs//score/result",
         
@@ -152,9 +152,9 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
         ":generic_skeleton_event_binding",
         ":skeleton_base",
-        ":skeleton_event_base", # For SkeletonEventBase
-        ":skeleton_event_binding", # For SkeletonEventBinding
-        ":data_type_meta_info", # For DataTypeMetaInfo
+        ":skeleton_event_base", 
+        ":skeleton_event_binding", 
+        ":data_type_meta_info", 
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "@score_baselibs//score/result",
     ],
@@ -461,7 +461,7 @@ cc_library(
     deps = [
         ":binding_type",
         ":generic_skeleton_event_binding",
-        ":data_type_meta_info", # For DataTypeMetaInfo
+        ":data_type_meta_info", 
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:i_shared_memory_resource",

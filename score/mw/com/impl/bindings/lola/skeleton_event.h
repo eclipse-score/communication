@@ -27,7 +27,7 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" // New common class
+#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" 
 
 #include "score/mw/log/logging.h"
 

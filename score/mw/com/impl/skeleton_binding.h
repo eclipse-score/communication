@@ -16,7 +16,6 @@
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
-//#include "score/mw/com/impl/size_info.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 

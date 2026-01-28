@@ -972,14 +972,6 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     const auto aligned_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
     const auto total_data_size = aligned_size * element_properties.number_of_slots;
 
-        std::cout << "Skeleton::CreateEventDataFromOpenedSharedMemory (Generic):"
-                                     << " event_fq_id=" << element_fq_id.ToString()
-                                     << " sample_size=" << sample_size
-                                     << " sample_alignment=" << sample_alignment
-                                     << " aligned_size=" << aligned_size
-                                     << " number_of_slots=" << element_properties.number_of_slots
-                                     << " total_data_size=" << total_data_size;
-
     void* data_storage = storage_resource_->allocate(total_data_size, sample_alignment);
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
