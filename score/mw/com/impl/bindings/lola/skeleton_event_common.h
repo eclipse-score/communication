@@ -67,7 +67,7 @@ class SkeletonEventCommon
     void UpdateCurrentTimestamp();
     void SetQmNotificationsRegistered(bool value);
     void SetAsilBNotificationsRegistered(bool value);
-    void ResetGuards();
+    void ResetGuards() noexcept;
     
     // Accessors for atomic flags for derived classes' Send() method
     bool IsQmRegistered() const noexcept;
