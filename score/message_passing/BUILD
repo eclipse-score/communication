@@ -57,8 +57,8 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//platform/aas/pas/logging:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
+        "@score_logging//score/datarouter:__subpackages__",
         "@score_logging//score/mw/log/detail/data_router:__subpackages__",
     ],
     deps = select({
@@ -201,8 +201,8 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//platform/aas/pas/logging:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
+        "@score_logging//score/datarouter:__subpackages__",
         "@score_logging//score/mw/log/detail/data_router:__subpackages__",
     ],
     deps = [
