@@ -83,14 +83,14 @@ TEST_F(MwLogLoggerFixture, ValidSeveritiesMapAsExpected)
 
     // expect the recorder receives the expected log levels in sequence
     InSequence is;
-    for (const auto pair : mapping)
+    for (const auto& pair : mapping)
     {
         EXPECT_CALL(recorder_, StartRecord("mp_2", pair.second)).WillOnce(Return(HANDLE));
         EXPECT_CALL(recorder_, StopRecord(_)).Times(1);
     }
 
     // when the respective severity levels are requested
-    for (const auto pair : mapping)
+    for (const auto& pair : mapping)
     {
         logger(pair.first, score::message_passing::LogItems());
     }
