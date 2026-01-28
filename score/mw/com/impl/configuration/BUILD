@@ -502,19 +502,17 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_gtest_unit_test(
     name = "config_parser_test",
-    size = "small",
-    timeout = "long",
     srcs = ["config_parser_test.cpp"],
     data = ["example/ara_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
     ],
-    tags = ["unit"],
     deps = [
         ":config_parser",
-        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
@@ -522,22 +520,13 @@ cc_gtest_unit_test(
     name = "config_parser_methods_test",
     srcs = ["config_parser_methods_test.cpp"],
     data = ["example/ara_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [":config_parser"],
-)
-
-cc_test(
-    name = "config_parser_dangling_reference_fixes_test",
-    size = "small",
-    timeout = "long",
-    srcs = ["config_parser_dangling_reference_fixes_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
     ],
-    tags = ["unit"],
     deps = [
         ":config_parser",
-        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 

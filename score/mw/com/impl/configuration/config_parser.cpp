@@ -115,7 +115,7 @@ void ErrorIfFound(const score::json::Object::const_iterator& iterator_to_element
                             << " Remove this element from the configuration. Aborting!\n";
 
         // Abortion call tolerated. See Assumptions of Use in mw/com/design/README.md
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
 }
 
@@ -125,7 +125,7 @@ auto ParseInstanceSpecifier(const score::json::Any& json) -> InstanceSpecifier
     if (!json_obj.has_value())
     {
         score::mw::log::LogFatal("lola") << "No instance specifier provided. Required argument.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& json_map = json_obj.value().get();
     const auto& instanceSpecifierJson = json_map.find(kInstanceSpecifierKey.data());
@@ -135,7 +135,7 @@ auto ParseInstanceSpecifier(const score::json::Any& json) -> InstanceSpecifier
         if (!string_result.has_value())
         {
             score::mw::log::LogFatal("lola") << "Invalid InstanceSpecifier.";
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         const auto& string_view = string_result.value().get();
         const auto instance_specifier_result = InstanceSpecifier::Create(string_view);
@@ -143,13 +143,13 @@ auto ParseInstanceSpecifier(const score::json::Any& json) -> InstanceSpecifier
         {
             score::mw::log::LogFatal("lola") << "Invalid InstanceSpecifier.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         return instance_specifier_result.value();
     }
 
     score::mw::log::LogFatal("lola") << "No instance specifier provided. Required argument.";
-    std::terminate(); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
 }
 
 auto ParseServiceTypeName(const score::json::Any& json) -> const std::string&
@@ -158,7 +158,7 @@ auto ParseServiceTypeName(const score::json::Any& json) -> const std::string&
     if (!json_obj.has_value())
     {
         score::mw::log::LogFatal("lola") << "No service type name provided. Required argument.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& json_map = json_obj.value().get();
     const auto& serviceTypeName = json_map.find(kServiceTypeNameKey.data());
@@ -168,14 +168,14 @@ auto ParseServiceTypeName(const score::json::Any& json) -> const std::string&
         if (!string_result.has_value())
         {
             score::mw::log::LogFatal("lola") << "No service type name provided. Required argument.";
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         return string_result.value().get();
     }
 
     score::mw::log::LogFatal("lola") << "No service type name provided. Required argument.";
     /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-    std::terminate();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 }
 
 auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std::uint32_t>
@@ -184,7 +184,7 @@ auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std:
     if (!json_obj.has_value())
     {
         score::mw::log::LogFatal("lola") << "No Version provided. Required argument.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& json_map = json_obj.value().get();
     const auto& version = json_map.find(kVersionKey.data());
@@ -194,7 +194,7 @@ auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std:
         if (!version_obj.has_value())
         {
             score::mw::log::LogFatal("lola") << "No Version provided. Required argument.";
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         const auto& version_object = version_obj.value().get();
         const auto major_version_number = version_object.find(kMajorVersionKey.data());
@@ -215,7 +215,7 @@ auto ParseVersion(const score::json::Any& json) -> std::pair<std::uint32_t, std:
 
     score::mw::log::LogFatal("lola") << "No Version provided. Required argument.";
     /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-    std::terminate();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 }
 
 auto ParseServiceTypeIdentifier(const score::json::Any& json) -> ServiceIdentifierType
@@ -275,7 +275,7 @@ auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<
         if (!mode_result.has_value())
         {
             score::mw::log::LogError("lola") << "Invalid shm-size-calc-mode value";
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         const auto& shm_size_calc_mode_value = mode_result.value().get();
 
@@ -288,7 +288,7 @@ auto ParseShmSizeCalcMode(const score::json::Any& json) -> score::cpp::optional<
             score::mw::log::LogError("lola")
                 << "Unknown value " << shm_size_calc_mode_value << " in key " << kShmSizeCalcModeKey;
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
 
@@ -350,7 +350,7 @@ auto ParseAllowedUser(const score::json::Any& json, std::string_view key)
                 score::mw::log::LogError("lola")
                     << "Unknown quality type in " << key << " " << user.first.GetAsStringView();
                 /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                std::terminate();
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
     }
@@ -375,13 +375,13 @@ class ServiceElementInstanceDeploymentParser
 
     // See Note 1
     // coverity[autosar_cpp14_a15_5_3_violation]
-    std::string GetName(const score::json::Object::const_iterator name) const noexcept
+    std::string GetName(const score::json::Object::const_iterator name) const
     {
         if (name == json_object_.cend())
         {
             score::mw::log::LogFatal("lola") << "No Event/Field-Name provided. Required attribute";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         return name->second.As<std::string>().value().get();
     }
@@ -392,7 +392,7 @@ class ServiceElementInstanceDeploymentParser
         {
             score::mw::log::LogFatal("lola") << "Event Name Duplicated. Not allowed";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
 
@@ -402,7 +402,7 @@ class ServiceElementInstanceDeploymentParser
         {
             score::mw::log::LogFatal("lola") << "Field Name Duplicated. Not allowed";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
 
@@ -439,7 +439,7 @@ class ServiceElementInstanceDeploymentParser
             score::mw::log::LogFatal("lola")
                 << "<maxSamples> and <numberOfSampleSlots> provided for event " << event_name << ". This is invalid!";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
 
         score::mw::log::LogWarn("lola")
@@ -455,8 +455,7 @@ class ServiceElementInstanceDeploymentParser
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service)
-    -> void
+auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) -> void
 {
     auto json_obj = json.As<score::json::Object>();
     if (!json_obj.has_value())
@@ -517,8 +516,7 @@ auto ParseLolaEventInstanceDeployment(const score::json::Any& json, LolaServiceI
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service)
-    -> void
+auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) -> void
 {
     auto json_obj = json.As<score::json::Object>();
     if (!json_obj.has_value())
@@ -578,8 +576,7 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Any& json, LolaServiceI
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto ParseLolaMethodInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service)
-    -> void
+auto ParseLolaMethodInstanceDeployment(const score::json::Any& json, LolaServiceInstanceDeployment& service) -> void
 {
     const auto& methods = json.As<score::json::Object>().value().get().find(kMethodsKey.data());
     if (methods == json.As<score::json::Object>().value().get().cend())
@@ -682,7 +679,7 @@ auto ParsePermissionChecks(const score::json::Any& deployment_instance) -> std::
         {
             score::mw::log::LogFatal("lola") << "Unknown permission" << perm_result << "in permission-checks attribute";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         return perm_result;
     }
@@ -748,7 +745,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
     if (!json_obj.has_value())
     {
         score::mw::log::LogFatal("lola") << "Invalid JSON object for service instance deployments. Terminating";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& json_map = json_obj.value().get();
     const auto& deploymentInstances = json_map.find(kDeploymentInstancesKey);
@@ -756,7 +753,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
     {
         score::mw::log::LogFatal("lola") << "No deployment instances provided. Required argument.";
         /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
 
     std::vector<ServiceInstanceDeployment> deployments{};
@@ -765,7 +762,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
     if (!deplymentObjs_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Deployment instances is not a valid JSON list. Terminating";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     auto& deplymentObjs = deplymentObjs_result.value().get();
     for (const auto& deploymentInstance : deplymentObjs)
@@ -775,7 +772,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
         {
             score::mw::log::LogFatal("lola") << "Invalid or no ASIL-Level provided. Required argument.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         auto deployment_obj = deploymentInstance.As<score::json::Object>();
         if (!deployment_obj.has_value())
@@ -795,7 +792,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
             if (bindingValue == kSomeIpBinding)
             {
                 score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which can not be parsed.";
-                std::terminate();
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
             else if (bindingValue == kShmBinding)
             {
@@ -809,7 +806,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
             {
                 score::mw::log::LogFatal("lola") << "No unknown binding provided. Required argument.";
                 /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                std::terminate();
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
 
             if (tracing_configuration.IsTracingEnabled())
@@ -827,7 +824,7 @@ auto ParseServiceInstanceDeployments(const score::json::Any& json,
         {
             score::mw::log::LogFatal("lola") << "No binding provided. Required argument.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
     return deployments;
@@ -849,14 +846,14 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
     {
         score::mw::log::LogFatal("lola") << "No service instances provided. Required argument.";
         /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     Configuration::ServiceInstanceDeployments service_instance_deployments{};
     auto services_list = servicesInstances->second.As<score::json::List>();
     if (!services_list.has_value())
     {
         score::mw::log::LogFatal("lola") << "Service instances is not a valid JSON list. Terminating";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     for (const auto& serviceInstance : services_list.value().get())
     {
@@ -871,7 +868,7 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
             score::mw::log::LogFatal("lola") << "More or less then one deployment for " << service_identifier.ToString()
                                            << ". Multi-Binding support right now not supported";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
 
         auto emplaceRes = service_instance_deployments.emplace(std::piecewise_construct,
@@ -881,7 +878,7 @@ auto ParseServiceInstances(const score::json::Any& json, TracingConfiguration& t
         {
             score::mw::log::LogFatal("lola") << "Unexpected error, when inserting service instance deployments.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
     return service_instance_deployments;
@@ -929,14 +926,14 @@ auto ParseLolaEventTypeDeployments(const score::json::Any& json, LolaServiceType
             {
                 score::mw::log::LogFatal("lola") << "An event was configured twice.";
                 /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                std::terminate();
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
         else
         {
             score::mw::log::LogFatal("lola") << "Either no Event-Name or no Event-Id provided";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
     return true;
@@ -985,14 +982,14 @@ auto ParseLolaFieldTypeDeployments(const score::json::Any& json, LolaServiceType
             {
                 score::mw::log::LogFatal("lola") << "A field was configured twice.";
                 /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                std::terminate();
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
         else
         {
             score::mw::log::LogFatal("lola") << "Either no Field-Name or no Field-Id provided";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
     return true;
@@ -1025,14 +1022,14 @@ auto ParseLolaMethodTypeDeployments(const score::json::Any& json, LolaServiceTyp
             {
                 score::mw::log::LogFatal("lola") << "A method was configured twice.";
                 /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                std::terminate();
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
         else
         {
             score::mw::log::LogFatal("lola") << "Either no Method-Name or no Method-Id provided";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
     return true;
@@ -1087,7 +1084,7 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) -> LolaServic
     if (!json_obj.has_value())
     {
         score::mw::log::LogFatal("lola") << "Invalid JSON object for LoLa service type deployments. Terminating";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& json_map = json_obj.value().get();
     const auto& service_id = json_map.find(kServiceIdKey.data());
@@ -1101,13 +1098,13 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) -> LolaServic
         {
             score::mw::log::LogFatal("lola") << "Configuration should contain at least one event, field, or method.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         if (!AreEventFieldAndMethodIdsUnique(lola))
         {
             score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         return lola;
     }
@@ -1115,7 +1112,7 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Any& json) -> LolaServic
     {
         score::mw::log::LogFatal("lola") << "No Service Id Provided. Required argument.";
         /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
 }
 
@@ -1129,6 +1126,12 @@ auto ParseServiceTypeDeployment(const score::json::Any& json) -> ServiceTypeDepl
         return ServiceTypeDeployment{score::cpp::blank{}};
     }
     const auto& bindings = json_obj.value().get().find(kBindingsKey.data());
+    if (bindings == json_obj.value().get().cend())
+    {
+        score::mw::log::LogFatal("lola") << "Key" << kBindingsKey << "provided. Required argument.";
+        /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
 
     auto bindings_list = bindings->second.As<score::json::List>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(bindings_list.has_value());
@@ -1162,14 +1165,14 @@ auto ParseServiceTypeDeployment(const score::json::Any& json) -> ServiceTypeDepl
             {
                 score::mw::log::LogFatal("lola") << "No unknown binding provided. Required argument.";
                 /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                std::terminate();
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
         else
         {
             score::mw::log::LogFatal("lola") << "No binding provided. Required argument.";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
     return ServiceTypeDeployment{score::cpp::blank{}};
@@ -1183,7 +1186,7 @@ auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTy
     if (!json_obj.has_value())
     {
         score::mw::log::LogFatal("lola") << "Invalid JSON object for service types. Terminating";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& json_map = json_obj.value().get();
     const auto& service_types = json_map.find(kServiceTypesKey.data());
@@ -1191,7 +1194,7 @@ auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTy
     {
         score::mw::log::LogFatal("lola") << "No service type deployments provided. Terminating";
         /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
 
     Configuration::ServiceTypeDeployments service_type_deployments{};
@@ -1199,7 +1202,7 @@ auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTy
     if (!service_types_list.has_value())
     {
         score::mw::log::LogFatal("lola") << "Service types is not a valid JSON list. Terminating";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     for (const auto& service_type : service_types_list.value().get())
     {
@@ -1214,7 +1217,7 @@ auto ParseServiceTypes(const score::json::Any& json) -> Configuration::ServiceTy
         {
             score::mw::log::LogFatal("lola") << "Service Type was deployed twice";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
     return service_type_deployments;
@@ -1244,7 +1247,7 @@ auto ParseReceiverQueueSize(const score::json::Any& global_config, const Quality
             case QualityType::kInvalid:  // LCOV_EXCL_LINE defensive programming
             default:  // LCOV_EXCL_LINE defensive programming Bug: We only must hand over QM or B here.
                 /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                std::terminate();  // LCOV_EXCL_LINE defensive programming
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);  // LCOV_EXCL_LINE defensive programming
                 // coverity[autosar_cpp14_m0_1_1_violation]: Break necessary to have well-formed switch statement
                 break;
         }
@@ -1255,7 +1258,11 @@ auto ParseReceiverQueueSize(const score::json::Any& global_config, const Quality
         const auto& asil_queue_size = queue_size_map.find(queue_type_str.data());
         if (asil_queue_size != queue_size_map.cend())
         {
-            return asil_queue_size->second.As<std::int32_t>().value();
+            return score::ResultToAmpOptionalOrElse(asil_queue_size->second.As<std::int32_t>(), [](const auto&) {
+                score::mw::log::LogFatal("lola") << "Invalid value for ReceiverQueueSize";
+                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            });
         }
         else
         {
@@ -1285,7 +1292,11 @@ auto ParseSenderQueueSize(const score::json::Any& global_config) -> score::cpp::
         const auto& asil_tx_queue_size = queue_size_map.find("B-sender");
         if (asil_tx_queue_size != queue_size_map.cend())
         {
-            return asil_tx_queue_size->second.As<std::int32_t>().value();
+            return score::ResultToAmpOptionalOrElse(asil_tx_queue_size->second.As<std::int32_t>(), [](const auto&) {
+                score::mw::log::LogFatal("lola") << "Invalid value for SenderQueueSize";
+                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            });
         }
         else
         {
@@ -1326,7 +1337,7 @@ auto ParseGlobalProperties(const score::json::Any& json) -> GlobalConfiguration
                 case QualityType::kInvalid:
                     ::score::mw::log::LogFatal("lola") << "Invalid ASIL in global/asil-level, terminating.";
                     /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                    std::terminate();
+                    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
                     // coverity[autosar_cpp14_m0_1_1_violation]: Break necessary to have well-formed switch
                     break;
                 case QualityType::kASIL_QM:
@@ -1337,7 +1348,7 @@ auto ParseGlobalProperties(const score::json::Any& json) -> GlobalConfiguration
                 default:
                     ::score::mw::log::LogFatal("lola") << "Unexpected QualityType, terminating";
                     /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-                    std::terminate();
+                    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
                     // coverity[autosar_cpp14_m0_1_1_violation]: Break necessary to have well-formed switch
                     break;
                     // LCOV_EXCL_STOP
@@ -1415,7 +1426,7 @@ auto ParseTracingApplicationInstanceId(const score::json::Any& tracing_config) -
     if (!tracing_config_obj.has_value())
     {
         score::mw::log::LogFatal("lola") << "Could not parse tracing config as JSON object. Exiting";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     const auto& tracing_config_map = tracing_config_obj.value().get();
     const auto& tracing_application_instance_id = tracing_config_map.find(kTracingApplicationInstanceIDKey.data());
@@ -1425,7 +1436,7 @@ auto ParseTracingApplicationInstanceId(const score::json::Any& tracing_config) -
     }
     score::mw::log::LogFatal("lola") << "Could not find" << kTracingApplicationInstanceIDKey
                                    << "in json file which is a required attribute.";
-    std::terminate();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 }
 
 auto ParseTracingTraceFilterConfigPath(const score::json::Any& tracing_config) -> std::string_view
@@ -1484,7 +1495,7 @@ void CrosscheckAsilLevels(const Configuration& config)
             ::score::mw::log::LogFatal("lola")
                 << "Service instance has a higher ASIL than the process. This is invalid, terminating";
             /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
-            std::terminate();
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
 }
@@ -1505,7 +1516,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
                 << "Service instance " << service_instance.first << "refers to a service type ("
                 << service_instance.second.service_.ToString()
                 << "), which is not configured. This is invalid, terminating";
-            std::terminate(); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
         }
         // check, that binding in service type and service instance are equal. Since currently ServiceTypeDeployment
         // only supports LolaServiceTypeDeployment, everything else than LolaServiceInstanceDeployment is an error.
@@ -1520,8 +1531,14 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
             // a LolaServiceInstanceDeployment.
             ::score::mw::log::LogFatal("lola") << "Service instance " << service_instance.first
                                              << "refers to an not yet supported binding. This is invalid, terminating";
-            std::terminate(); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             // LCOV_EXCL_STOP
+        }
+        if (!std::holds_alternative<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_))
+        {
+            ::score::mw::log::LogFatal("lola") << "Service type " << service_instance.second.service_.ToString()
+                                             << "refers to an not yet supported binding. This is invalid, terminating";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
         }
         // check, that for each service-element-name in the instance deployment, there exists a corresponding
         // service-element-name in the type deployment
@@ -1538,7 +1555,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
                     << "Service instance " << service_instance.first << "event" << eventInstanceElement.first
                     << "refers to an event, which doesn't exist in the referenced service type ("
                     << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                std::terminate(); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             }
         }
         for (const auto& fieldInstanceElement : serviceInstanceDeployment.fields_)
@@ -1552,7 +1569,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
                     << "Service instance " << service_instance.first << "field" << fieldInstanceElement.first
                     << "refers to a field, which doesn't exist in the referenced service type ("
                     << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                std::terminate(); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             }
         }
     }
@@ -1583,7 +1600,7 @@ auto score::mw::com::impl::configuration::Parse(const std::string_view path) -> 
         ::score::mw::log::LogFatal("lola") << "Parsing config file" << path
                                          << "failed with error:" << json_result.error().Message() << ": "
                                          << json_result.error().UserMessage() << " . Terminating.";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return Parse(std::move(json_result).value());
 }
