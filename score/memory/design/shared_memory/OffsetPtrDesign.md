@@ -54,7 +54,7 @@ Each class deriving from `ManagedMemoryResource` (e.g. `SharedMemoryResource`) c
 managing should be bounds checked by an `OffsetPtr`.
 It does this by implementing the function `ManagedMemoryResource::IsOffsetPtrBoundsCheckBypassingEnabled()`.
 
-[Bounds checking](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/swh/safe-posix-platform/score/memory/design/shared_memory/bounds_checking.puml)
+[Bounds checking](https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/baselibs/refs/heads/main/score/memory/design/shared_memory/bounds_checking.puml)
 contains a minimalistic UML diagram of the bounds checking.
 
 #### Bounds Checking Performance - Memory Bounds Lookup
