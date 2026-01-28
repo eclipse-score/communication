@@ -53,6 +53,12 @@ struct GenericSkeletonCreateParams
     score::cpp::span<const EventInfo> events{};
     //score::cpp::span<const FieldInfo> fields{};
 };
+
+/// @brief Represents a type-erased, runtime-configurable skeleton for a service instance.
+///
+/// A `GenericSkeleton` is created at runtime based on configuration data. It manages
+/// a collection of `GenericSkeletonEvent` and `GenericSkeletonField` instances.
+
 class GenericSkeleton : public SkeletonBase
 {
   public:
