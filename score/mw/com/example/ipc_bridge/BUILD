@@ -102,4 +102,11 @@ cc_library(
 
 exports_files([
     "etc/mw_com_config.json",
+    "assert_handler.cpp",
+    "assert_handler.h",
+    "datatype.cpp",
+    "datatype.h",
+    "sample_sender_receiver.cpp",
+    "sample_sender_receiver.h",
+    "main.cpp",
 ])
