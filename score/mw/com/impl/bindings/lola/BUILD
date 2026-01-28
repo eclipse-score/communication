@@ -19,6 +19,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
+        "//score/mw/com:__subpackages__",
         "//score/mw/com/impl/bindings/lola/test:__pkg__",
         "//score/mw/com/impl/plumbing:__pkg__",
     ],
@@ -257,6 +258,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
+        "//score/mw/com:__subpackages__",
         "//score/mw/com/impl/bindings/lola/test:__pkg__",
         "//score/mw/com/impl/bindings/lola/test_doubles:__pkg__",
     ],
@@ -330,7 +332,9 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola/test:__pkg__"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+        "//score/mw/com/impl/bindings/lola/test:__pkg__"],
     deps = [
         ":event",
         ":event_control",
@@ -729,7 +733,9 @@ cc_library(
         "//score/mw/com/impl/tracing:service_element_tracing_data",
     ],
     tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+        "//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:runtime",
