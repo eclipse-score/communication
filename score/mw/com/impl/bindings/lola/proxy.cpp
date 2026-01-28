@@ -676,6 +676,7 @@ std::vector<TypeErasedCallQueue::TypeErasedElementInfo> Proxy::GetTypeErasedElem
     std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos{};
     for (auto [method_id, queue_size] : enabled_method_data)
     {
+        score::cpp::ignore = queue_size;
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_methods_.count(method_id) != 0U);
         auto& proxy_method = proxy_methods_.at(method_id).get();
 
@@ -710,7 +711,8 @@ pid_t Proxy::GetSourcePid() const noexcept
 
 void Proxy::RegisterMethod(const ElementFqId::ElementId method_id, ProxyMethod& proxy_method) noexcept
 {
-    const auto [_, was_inserted] = proxy_methods_.insert({method_id, proxy_method});
+    const auto [ignorable, was_inserted] = proxy_methods_.insert({method_id, proxy_method});
+    score::cpp::ignore = ignorable;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
 }
 

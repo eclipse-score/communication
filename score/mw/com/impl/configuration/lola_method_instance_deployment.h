@@ -60,6 +60,10 @@ class LolaMethodInstanceDeployment
      * backward compatibility. If the format changes in future versions, this number
      * should be incremented.
      */
+    // Finding States that: A project shall not contain instances of non-volatile variables being given values that are
+    // not subsequently used.
+    // Since the goal of the serializationVersion is to be used in the future, we decide to ignore this warning.
+    // coverity[autosar_cpp14_a0_1_1_violation]
     constexpr static std::uint8_t serializationVersion{1U};
 
     /**

@@ -898,14 +898,16 @@ void Skeleton::DisconnectQmConsumers()
 
 void Skeleton::RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method)
 {
-    const auto [_, was_inserted] = skeleton_methods_.insert({method_id, skeleton_method});
+    const auto [ignorable, was_inserted] = skeleton_methods_.insert({method_id, skeleton_method});
+    score::cpp::ignore = ignorable;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
 }
 
 bool Skeleton::VerifyAllMethodsRegistered() const
 {
-    for (const auto& [_, method_reference] : skeleton_methods_)
+    for (const auto& [ignorable, method_reference] : skeleton_methods_)
     {
+        score::cpp::ignore = ignorable;
         if (!SkeletonMethodView{method_reference.get()}.IsRegistered())
         {
             return false;
