@@ -28,6 +28,10 @@ class SkeletonBase;
 
 class SkeletonMethodBase
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a read only view to the private members of this class inside the impl
+    // module.
+    // coverity[autosar_cpp14_a11_3_1_violation]
     friend SkeletonMethodBaseView;
 
   public:

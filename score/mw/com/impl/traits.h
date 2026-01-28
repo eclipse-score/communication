@@ -163,6 +163,10 @@ template <template <class> class Interface, class Trait>
 // NOLINTNEXTLINE(score-struct-usage-compliance): Tolerated.
 class SkeletonWrapperClass : public Interface<Trait>
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a read only view to the private members of this class inside the impl
+    // module.
+    // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonWrapperClassTestView<SkeletonWrapperClass>;
 
   public:
@@ -255,6 +259,10 @@ std::optional<std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonW
 template <template <class> class Interface, class Trait>
 class ProxyWrapperClass : public Interface<Trait>
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a read only view to the private members of this class inside the impl
+    // module.
+    // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyWrapperClassTestView<ProxyWrapperClass>;
 
   public:
