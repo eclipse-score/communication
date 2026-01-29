@@ -624,9 +624,11 @@ auto OffsetPtr<PointedType>::operator*() const -> reference
 template <typename PointedType>
 auto OffsetPtr<PointedType>::operator[](difference_type idx) const -> reference
 {
-    const pointer ptr = get();
+    // NOLINTNEXTLINE(score-banned-function) See justification above class.
+    pointer ptr = GetPointerWithBoundsCheck(
+        this, offset_ + (static_cast<difference_type>(sizeof(PointedType)) * idx), memory_bounds_, sizeof(PointedType));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr != nullptr, "Cannot dereference a nullptr.");
-    return *std::next(ptr, idx);  // bounds checks for `idx` will get added here as part of Ticket-238363
+    return *ptr;
 }
 
 template <typename PointedType>

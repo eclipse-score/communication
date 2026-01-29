@@ -66,6 +66,25 @@ class OffsetPtrBoundsCheckParamaterisedFixture : public ::testing::TestWithParam
         {gSecondMemoryPool.GetStartOfValidRegion(), gSecondMemoryPool.GetEndOfValidRegion()}};
 };
 
+TEST(OffsetPtrBoundsCheckDeathTest, IndexDereferenceGoesOutOfMemoryRegion)
+{
+    // Given a memory resource with a certain size, where an array is allocated
+    MyBoundedMemoryResource memory_resource_{{gMemoryPool.GetStartOfValidRegion(), gMemoryPool.GetEndOfValidRegion()}};
+    constexpr std::size_t arraySize{3};
+
+    auto* raw_ptr = memory_resource_.allocate(sizeof(std::uint8_t) * arraySize);
+    raw_ptr = new (raw_ptr) std::uint8_t[arraySize]{1, 2, 3};
+
+    auto* const int_ptr = static_cast<std::uint8_t*>(raw_ptr);
+
+    auto* const ptr_to_offset_ptr = memory_resource_.template construct<OffsetPtr<std::uint8_t>>(int_ptr);
+    auto offset_ptr = *ptr_to_offset_ptr;
+
+    // When accessing that array through the []-operator which goes out of the memory region
+    // Then the bounds checking kicks in
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(offset_ptr[gMemoryPool.GetEndOfValidRegion() - gMemoryPool.GetStartOfValidRegion()]);
+}
+
 std::vector<TestParams> GenerateOffsetPtrAddressesThatPassBoundsChecks(BoundsCheckMemoryPool<PointedType>& memory_pool)
 {
     // OffsetPtr that lies inside valid range will not die if start address of pointed-to object is in the same range.
@@ -331,6 +350,18 @@ TEST_P(OffsetPtrBoundsCheckDeathFixture, OffsetPtrGetTerminates)
     // When calling get() on the offset_ptr
     // Then the program should terminate
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = ptr_to_offset_ptr->get());
+}
+
+TEST_P(OffsetPtrBoundsCheckDeathFixture, HandlesRegularArrayIndexAndPerformanceBoundsChecking)
+{
+    const auto& params = GetParam();
+
+    // Given a memory region registered with the MemoryResourceRegistry and an OffsetPtr
+    auto* const ptr_to_offset_ptr = CreateOffsetPtr<PointedType>(params.ptr_to_offset_ptr, params.pointed_to_address);
+
+    // When calling [[]-operator on the offset_ptr
+    // Then the program should terminate
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = (*ptr_to_offset_ptr)[0]);
 }
 
 TEST_P(OffsetPtrBoundsCheckDeathFixture, OffsetPtrTypedGetTerminates)
