@@ -64,8 +64,15 @@ score::Result<InstanceIdentifier> InstanceIdentifier::Create(std::string&& seria
         ::score::mw::log::LogFatal("lola") << "InstanceIdentifier serialized string is invalid. Exiting";
         return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
     }
-    const auto& json_object = std::move(json_result).value().As<json::Object>().value().get();
-    return InstanceIdentifier{json_object, std::move(serialized_format)};
+    auto json_obj_result = std::move(json_result).value().As<json::Object>();
+    if (!json_obj_result.has_value())
+    {
+        ::score::mw::log::LogFatal("lola") << "InstanceIdentifier JSON object conversion failed. Exiting";
+        return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
+    }
+    const auto& json_object = json_obj_result.value().get();
+    InstanceIdentifier instance_identifier{json_object, std::move(serialized_format)};
+    return instance_identifier;
 }
 
 // Suppress "AUTOSAR C++14 A12-1-5" rule finding. This rule states:"Common class initialization for non-constant
