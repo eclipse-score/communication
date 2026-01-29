@@ -32,7 +32,6 @@ generate_api_rst(
     doxygen_xml = "//score/mw/com/design/doxygen_build:generate_doxygen",
     output_dir = "generated",
     project_name = "mw::com",
-    verbose = True,
 )
 
 # Build Sphinx documentation

@@ -16,7 +16,7 @@ Message Passing provides:
 * **Uni-directional n-to-1 communication**: Multiple senders to one receiver
 * **Asynchronous behavior**: Non-blocking message sending
 * **OS-specific implementations**: POSIX and QNX native support
-* **Low-level primitives**: Foundation for higher-level communication like ara::com
+* **Low-level primitives**: Foundation for higher-level communication like mw::com
 
 Key Components
 --------------
@@ -32,6 +32,7 @@ Supported Platforms
 * **QNX**: Native QNX messaging for optimal performance
 
 .. code-block:: cpp
+
    // Client connection
    auto client = UnixDomainClient::connect("/tmp/my_service");
 

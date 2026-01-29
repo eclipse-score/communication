@@ -61,9 +61,8 @@ html_theme_options = {
     # Navigation settings
     'navigation_depth': 4,
     'collapse_navigation': False,
-    'sticky_navigation': True,
-    'includehidden': True,
-    'titles_only': False,
+    'show_nav_level': 2,  # Depth of sidebar navigation
+    'show_toc_level': 2,  # Depth of page table of contents
 
     # Header layout
     'navbar_align': 'left',

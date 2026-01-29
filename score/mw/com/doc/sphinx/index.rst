@@ -1,7 +1,7 @@
 Communication Middleware (mw::com)
 ==================================
 
-Welcome to the documentation for BMW's Communication Middleware (mw::com),
+Welcome to the documentation for Communication Middleware (mw::com),
 including the LoLa (Low Latency) implementation and Message Passing library.
 
 .. toctree::
@@ -34,13 +34,12 @@ Key Features
 ------------
 
 * Zero-copy shared-memory based communication
-* AUTOSAR ara::com compatible API
 * Support for Linux (POSIX) and QNX platforms
 * Type-safe message passing
 * Real-time capable with deterministic performance
 
-
 .. code-block:: cpp
+
    // Create a client connection
    auto client = create_client_connection("/tmp/service");
 
