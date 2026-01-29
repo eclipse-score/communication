@@ -1,0 +1,92 @@
+# *******************************************************************************
+# Copyright (c) 2024 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: PR Coverage Report
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  coverage-report:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: ./actions/free_disk_space
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run Unit Test with Coverage for C++
+        run: |
+          bazel coverage //... --build_tests_only
+
+      - name: Collect Bazel Test Logs
+        if: always() # Ensure logs are uploaded even if tests fail
+        run: |
+          mkdir -p unit_test_logs
+
+          if [ -d "bazel-testlogs" ]; then
+            echo "Collecting test.log and test.xml files..."
+            find bazel-testlogs/ -name 'test.log' -print0 | xargs -0 -I{} cp --parents {} unit_test_logs/
+            find bazel-testlogs/ -name 'test.xml' -print0 | xargs -0 -I{} cp --parents {} unit_test_logs/
+          else
+            echo "bazel-testlogs directory not found. Build might have failed before tests ran."
+          fi
+        shell: bash
+
+      - name: Upload Test Logs Artifact
+        if: always()  # Ensure logs are uploaded even if tests fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit_test_logs
+          path: unit_test_logs/
+
+      - name: Generate HTML Coverage Report
+        run: |
+          OUTPUT_PATH=$(bazel info output_path)
+          if [ -f "${OUTPUT_PATH}/_coverage/_coverage_report.dat" ]; then
+            genhtml "${OUTPUT_PATH}/_coverage/_coverage_report.dat" \
+              -o=cpp_coverage \
+              --show-details \
+              --legend \
+              --function-coverage \
+              --branch-coverage
+          else
+            echo "Cannot run test coverage report generation as no coverage data file found."
+          fi
+        shell: bash
+
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}_coverage_report
+          path: cpp_coverage/
