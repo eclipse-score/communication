@@ -692,6 +692,7 @@ auto SharedMemoryResource::do_allocate(const std::size_t bytes, const std::size_
      * For the proof of concept we agreed to use a monotonic allocation algorithm.
      * So there is no need for any fancy logic.
      */
+    const std::size_t already_allocated_bytes = this->control_block_->alreadyAllocatedBytes.load();
     void* const allocation_start_address =
         // In our architecture we have a one-to-one mapping between pointers and integral values.
         // Therefore, casting between the two is well-defined.
@@ -700,7 +701,7 @@ auto SharedMemoryResource::do_allocate(const std::size_t bytes, const std::size_
         // Therefore, the resulting pointer will always point into the memory arena.
         // In C++23 std::start_lifetime_as_array can be used to inform the compiler.
         // NOLINTNEXTLINE(score-banned-function) see above
-        AddOffsetToPointer(this->base_address_, this->control_block_->alreadyAllocatedBytes.load());
+        AddOffsetToPointer(this->base_address_, already_allocated_bytes);
     // In our architecture we have a one-to-one mapping between pointers and integral values.
     // Therefore, casting between the two is well-defined.
     // This pointer is not dereferenced.
@@ -712,16 +713,16 @@ auto SharedMemoryResource::do_allocate(const std::size_t bytes, const std::size_
     if (new_address_aligned == nullptr)
     {
         score::mw::log::LogFatal("shm")
-            << "Cannot allocate shared memory block of size" << bytes << " at: ["
-            << PointerToLogValue(allocation_start_address)
-            << ":"
+            << "Cannot allocate shared memory block of size" << bytes << "with alignement " << alignment
+            << " at: ["
             // In our architecture we have a one-to-one mapping between pointers and integral values.
             // Therefore, casting between the two is well-defined.
             // The resulting pointer is used for logging and is not dereferenced.
             // NOLINTNEXTLINE(score-banned-function) see above
-            << PointerToLogValue(AddOffsetToPointer(allocation_start_address, bytes))
+            << PointerToLogValue(allocation_start_address) << ":" << PointerToLogValue(allocation_end_address)
             << "]. Does not fit within shared memory segment: [" << PointerToLogValue(this->base_address_) << ":"
-            << PointerToLogValue(this->getEndAddress()) << "]";
+            << PointerToLogValue(this->getEndAddress()) << "]. Already allocated bytes: " << already_allocated_bytes
+            << ". Virtual address space to reserve: " << virtual_address_space_to_reserve_;
         std::terminate();
     }
     const auto padding = SubtractPointersBytes(new_address_aligned, allocation_start_address);
