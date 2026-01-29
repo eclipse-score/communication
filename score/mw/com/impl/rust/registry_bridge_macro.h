@@ -244,19 +244,23 @@ class TypeOperationImpl : public TypeOperations
 
     void GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
     {
+        if (event_ptr == nullptr)
+        {
+            return;
+        }
         auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
         if (skeleton_event == nullptr)
         {
             return;
         }
 
-        auto allocatee_ptr_lola = skeleton_event->Allocate();
-        if (!allocatee_ptr_lola.has_value())
+        auto allocatee_ptr_ = skeleton_event->Allocate();
+        if (!allocatee_ptr_.has_value())
         {
             return;
         }
 
-        new (allocatee_ptr) SampleAllocateePtr<T>(std::move(allocatee_ptr_lola).value());
+        new (allocatee_ptr) SampleAllocateePtr<T>(std::move(allocatee_ptr_).value());
     }
 
     void DeleteAllocateePtr(void* allocatee_ptr) override
@@ -283,13 +287,17 @@ class TypeOperationImpl : public TypeOperations
 
     bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
     {
-        auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
-        if (skeleton_event == nullptr || allocatee_ptr == nullptr)
+        if (event_ptr == nullptr || allocatee_ptr == nullptr)
         {
             return false;
         }
-
+        auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
         auto* typed_ptr = static_cast<SampleAllocateePtr<T>*>(allocatee_ptr);
+
+        if (skeleton_event == nullptr || typed_ptr == nullptr)
+        {
+            return false;
+        }
         return skeleton_event->Send(std::move(*typed_ptr)).has_value();
     }
 };
