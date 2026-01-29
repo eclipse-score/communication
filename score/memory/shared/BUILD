@@ -237,6 +237,7 @@ cc_library(
     hdrs = ["lock_file.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
+        "@score_baselibs//score/mw/log:frontend",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:stat",
         "@score_baselibs//score/os:unistd",
