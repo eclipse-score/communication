@@ -132,7 +132,7 @@ std::vector<TestParams> GenerateOffsetPtrAddressesThatFailsBoundsChecks(
             TestParams{memory_pool.GetOffsetPtrAddressFinishingAtEndAddress(), memory_pool.GetPointedToAddressOverlappingWithStartRange()},
             TestParams{memory_pool.GetOffsetPtrAddressFinishingAtEndAddress(), memory_pool.GetPointedToAddressOverlappingWithEndRange()},
             TestParams{memory_pool.GetOffsetPtrAddressFinishingAtEndAddress(), memory_pool.GetPointedToAddressOverlappingWithEndRange()},
-    
+
             // OffsetPtr that lies inside valid range will die if pointed-to object is in a different memory region.
             TestParams{memory_pool.GetOffsetPtrAddressInValidRange(), memory_pool_2.GetPointedToAddressInValidRange()},
             TestParams{memory_pool.GetOffsetPtrAddressInValidRange(), memory_pool_2.GetPointedToAddressFinishingAtEndAddress()},
@@ -185,13 +185,13 @@ TEST_P(OffsetPtrNoBoundsCheckFixture, CreatingVoidOffsetPtrDoesNotTerminate)
 }
 
 // clang-format off
-INSTANTIATE_TEST_SUITE_P(OffsetPtrNoBoundsCheckBoundsChecksWouldPass, OffsetPtrNoBoundsCheckFixture, 
+INSTANTIATE_TEST_SUITE_P(OffsetPtrNoBoundsCheckBoundsChecksWouldPass, OffsetPtrNoBoundsCheckFixture,
     ::testing::ValuesIn(GenerateOffsetPtrAddressesThatPassBoundsChecks(gMemoryPool))
 );
-INSTANTIATE_TEST_SUITE_P(OffsetPtrNoBoundsCheckBoundsChecksNotRequired, OffsetPtrNoBoundsCheckFixture, 
+INSTANTIATE_TEST_SUITE_P(OffsetPtrNoBoundsCheckBoundsChecksNotRequired, OffsetPtrNoBoundsCheckFixture,
     ::testing::ValuesIn(GenerateOffsetPtrAddressesThatDoNotTriggerChecks(gMemoryPool))
 );
-INSTANTIATE_TEST_SUITE_P(OffsetPtrNoBoundsCheckBoundsChecksWouldFail, OffsetPtrNoBoundsCheckFixture, 
+INSTANTIATE_TEST_SUITE_P(OffsetPtrNoBoundsCheckBoundsChecksWouldFail, OffsetPtrNoBoundsCheckFixture,
     ::testing::ValuesIn(GenerateOffsetPtrAddressesThatFailsBoundsChecks(gMemoryPool, gSecondMemoryPool))
 );
 // clang-format on
