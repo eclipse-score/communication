@@ -248,6 +248,12 @@ Named `SharedMemoryResource` can be created by calling either of the following `
 Shared memory is allocated in either typed memory or OS-system memory based on the `prefer_typed_memory` parameter of the above APIs; when set to true, the shared memory will be allocated in a typed memory region. The [score::memory::shared::TypedMemory](../../shared/typedshm/typedshm_wrapper/typed_memory.h) class acts as a wrapper that uses the [`typed_memory_daemon`](../../../../intc/typedmemd/README.md)  client interface[`score::tmd::TypedSharedMemory`](../../../../intc/typedmemd/code/clientlib/typedsharedmemory.h) APIs to allocate shared memory in typed memory.
 If allocation in typed memory fails, the allocation of shared memory will fall back to the OS-system memory ([DMA Accessible Memory Fallback](broken_link_c/issue/31034619)).
 
+The `TypedMemory` wrapper provides the following APIs:
+- `AllocateNamedTypedMemory()`: Allocates a named shared memory object in typed memory region
+- `AllocateAndOpenAnonymousTypedMemory()`: Allocates an anonymous shared memory object in typed memory region
+- `Unlink()`: Unlinks a named shared memory object allocated in typed memory. Only the original creator of the SHM object can unlink it. The creator is verified by checking the internal ownership map maintained by `typed_memory_daemon`
+- `GetCreatorUid()`: Retrieves the creator UID of a named shared memory object allocated in typed memory. The creator UID is retrieved from the internal ownership map maintained by `typed_memory_daemon`
+
 ### User permissions of Shared Memory
 The `permissions` parameter in the `Create APIs`, allows the user to specify the access rights for the `SharedMemoryResource`.
 
@@ -347,16 +353,15 @@ Therefore, when another process opens the memory it only needs to perform a simp
 
 Due to safety considerations, typed memory cannot be directly allocated by a process using the POSIX primitives, so the allocation is delegated to an ASIL B application called [`typed_memory_daemon`](broken_link_g/swh/safe-posix-platform/blob/master/platform/aas/intc/typedmemd/README.md).
 The `typed_memory_daemon` will allocate the memory with its `euid` as the owner `uid`.
-For safety and security reasons the `typed_memory_daemon` cannot transfer ownership of the memory using `chown` to the application's `euid` from which it got the delegation, so it will use Acess Control Lists ([ACLs](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.security.system/topic/manual/access_control.html)) to give read/write permissions to the requestor's `euid` as well as any other needed `uid`. \
-In this case, to be able to identify the requestor process, the `typed_memory_daemon` will add on top of the read/write permissions also the execution permissions to the requestor's `euid` **only** as per its [ASIL B requirement](broken_link_c/issue/42033981).
+For safety and security reasons the `typed_memory_daemon` cannot transfer ownership of the memory using `chown` to the application's `euid` from which it got the delegation, so it will use Access Control Lists ([ACLs](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.security.system/topic/manual/access_control.html)) to give read/write permissions to the requestor's `euid` as well as any other needed `uid`. \
+In this case, to be able to identify the requestor process, the `typed_memory_daemon` maintains an internal ownership map that tracks the creator UID for each shared memory object as per its [ASIL B requirement](broken_link_c/issue/42033981).
 When another process opens the `SharedMemoryResource` it will then check if the `uid` of the memory is identical to the `typed_memory_daemon`'s `euid`.
 The `typed_memory_daemon`'s `euid` is currently a hardcoded constant in the code.
-If the check is succesfull it means that the memory is in typed memory and the corresponding internal flag (`is_shm_in_typed_memory_`) will also be updated.
-Then it will inspect the ACLs and compare the single `uid` with execution permissions with the passed expected provider.
-If there are none or multiple `uids` with execution permissions the application will be terminated.
+If the check is successful it means that the memory is in typed memory and the corresponding internal flag (`is_shm_in_typed_memory_`) will also be updated.
+Then it will query the `typed_memory_daemon` via `TypedMemory::GetCreatorUid()` to retrieve the creator UID from the internal ownership map and compare it with the passed expected provider.
+If the creator UID cannot be retrieved (e.g., the shared memory object was not allocated by `typed_memory_daemon`), the application will be terminated.
 
-This solution of using the execution bit to mark the owner/creator of the memory was chosen as a workaround to enable the usage of typed memory by components relying on the allowed providers check (e.g. users of `mw::com`).
-Using the execution is a lightweight solution as it only needs one system call to get the necessary information on the ACLs.
+This solution of querying the `typed_memory_daemon` for the creator UID was chosen as it provides a reliable way to identify the owner/creator of the memory without relying on ACL inspection for ownership determination.
 It also does not have any impact on security as [PathTrust](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.security.system/topic/manual/pathtrust.html) is enabled which makes it impossible to execute anything allocated in `/dev/shmem` and even prevents other side effects like mapped and executed by the default QNX loader.
 
 The complete sequence to find the owner is:

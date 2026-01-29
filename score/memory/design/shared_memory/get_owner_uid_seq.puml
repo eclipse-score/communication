@@ -1,8 +1,9 @@
 @startuml GetOwnerUid
 
-participant SharedMemoryResource 
+participant SharedMemoryResource
 participant "os::Stat" as os
-participant "os::Acl" as acl
+participant TypedMemory
+participant "typed_memory_daemon" as tmd
 
 [->  SharedMemoryResource: GetOwnerUid(fd)
 SharedMemoryResource -> os : fstat(fd)
@@ -11,22 +12,22 @@ os -> SharedMemoryResource: return StatBuffer
 SharedMemoryResource -> SharedMemoryResource: set owner_uid = StatBuffer.uid
 
 alt StatBuffer.uid == typed memory manager uid && memory is named
-    SharedMemoryResource -> acl: get_acl(fd)
-    acl -> SharedMemoryResource: return acl
+    SharedMemoryResource -> TypedMemory: GetCreatorUid(shm_name)
+    TypedMemory -> tmd: query ownership map
+    tmd -> TypedMemory: return creator_uid
 
-    SharedMemoryResource -> SharedMemoryResource: get uids with execution \n permissions from acl
-
-    alt number of uids with exec permission != 1
+    alt creator_uid retrieval failed
         note over SharedMemoryResource
-        It is impossible to determine the owner
-        as mutiple uids have execution permission
+        Unable to retrieve creator UID from
+        typed_memory_daemon ownership map
         Process is terminated
         endnote
         SharedMemoryResource -> SharedMemoryResource: std::terminate()
         destroy SharedMemoryResource
     end
 
-    SharedMemoryResource -> SharedMemoryResource: owner_uid = uid found in the acls
+    TypedMemory -> SharedMemoryResource: return creator_uid
+    SharedMemoryResource -> SharedMemoryResource: owner_uid = creator_uid
 end
 
 SharedMemoryResource ->[: return owner_uid
