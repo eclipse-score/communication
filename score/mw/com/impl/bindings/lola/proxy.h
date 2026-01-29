@@ -123,7 +123,8 @@ class Proxy : public ProxyBinding
           std::optional<memory::shared::LockFile> service_instance_usage_marker_file,
           std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
               service_instance_usage_flock_mutex_and_lock,
-          score::filesystem::Filesystem filesystem) noexcept;
+          score::filesystem::Filesystem filesystem,
+          ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter) noexcept;
 
     /// Returns the address of the control structure, for the given event ID.
     ///

@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
@@ -36,6 +37,7 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/service_element_type.h"
 
+#include "score/language/safecpp/safe_math/details/atomics/fetch_add.h"
 #include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
 #include "score/memory/shared/flock/shared_flock_mutex.h"
@@ -56,6 +58,7 @@
 #include <cstring>
 #include <exception>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -352,6 +355,17 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType handle) noexcept
         return nullptr;
     }
 
+    const auto proxy_instance_counter_result =
+        safe_math::TryFetchAdd<ProxyInstanceIdentifier::ProxyInstanceCounter>(current_proxy_instance_counter_, 1U);
+    if (!(proxy_instance_counter_result.has_value()))
+    {
+        score::mw::log::LogError("lola")
+            << "Could not create proxy: Proxy instance counter overflowed. This can occur if more than"
+            << std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()
+            << "proxies were created during the process lifetime. No more proxies can be crated.";
+        return nullptr;
+    }
+
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter{lola_service_deployment,
                                                                           lola_service_instance_id.GetId()};
     const auto filesystem = filesystem::FilesystemFactory{}.CreateInstance();
@@ -362,7 +376,8 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType handle) noexcept
                                    handle,
                                    std::move(service_instance_usage_marker_file),
                                    std::move(service_instance_usage_mutex_and_lock),
-                                   filesystem);
+                                   filesystem,
+                                   proxy_instance_counter_result.value());
 }
 
 Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
@@ -373,7 +388,8 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
              std::optional<memory::shared::LockFile> service_instance_usage_marker_file,
              std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
                  service_instance_usage_flock_mutex_and_lock,
-             score::filesystem::Filesystem filesystem) noexcept
+             score::filesystem::Filesystem filesystem,
+             ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter) noexcept
     : ProxyBinding{},
       control_{std::move(control)},
       data_{std::move(data)},
@@ -399,7 +415,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       proxy_methods_{},
       method_data_{nullptr},
       proxy_instance_identifier_{GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId(),
-                                 current_proxy_instance_counter_.fetch_add(1)},
+                                 proxy_instance_counter},
       filesystem_{filesystem}
 {
 }

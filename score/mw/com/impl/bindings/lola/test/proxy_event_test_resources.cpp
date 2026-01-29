@@ -109,7 +109,8 @@ void ProxyMockedMemoryFixture::InitialiseProxyWithConstructor(const InstanceIden
                                      make_HandleType(instance_identifier),
                                      std::optional<memory::shared::LockFile>{},
                                      nullptr,
-                                     filesystem_fake_.CreateInstance());
+                                     filesystem_fake_.CreateInstance(),
+                                     0U);
 }
 
 void ProxyMockedMemoryFixture::InitialiseProxyWithCreate(const InstanceIdentifier& instance_identifier)

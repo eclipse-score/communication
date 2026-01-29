@@ -362,6 +362,7 @@ cc_library(
         "//score/mw/com/impl/util:type_erased_storage",
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/safecpp/safe_math",
+        "@score_baselibs//score/language/safecpp/safe_math:safe_atomics",
         "@score_baselibs//score/memory/shared",
         "@score_baselibs//score/memory/shared:lock_file",
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
