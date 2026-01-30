@@ -142,6 +142,35 @@ where
     }
 }
 
+/// Wrapper that ensures FFI cleanup of allocatee_ptr.
+/// SampleAllocateePtr is wrapped in ManuallyDrop to control when the cleanup occurs.
+/// Safe to move between SampleMaybeUninit and SampleMut because
+/// the Drop impl guarantees cleanup exactly once.
+#[derive(Debug)]
+struct AllocateePtrWrapper<T>
+where
+    T: CommData,
+{
+    inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
+}
+
+impl<T> Drop for AllocateePtrWrapper<T>
+where
+    T: CommData,
+{
+    fn drop(&mut self) {
+        //SAFETY: It is safe to call the delete function because allocatee_ptr is valid
+        //SampleAllocateePtr created by FFI
+        unsafe {
+            let mut allocatee_ptr = ManuallyDrop::take(&mut self.inner);
+            generic_bridge_ffi_rs::delete_allocatee_ptr(
+                std::ptr::from_mut(&mut allocatee_ptr) as *mut std::ffi::c_void,
+                T::ID,
+            );
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Sample<T>
 where
@@ -222,7 +251,7 @@ where
     T: CommData,
 {
     skeleton_event: NativeSkeletonEventBase,
-    allocatee_ptr: sample_allocatee_ptr_rs::SampleAllocateePtr<T>,
+    allocatee_ptr: AllocateePtrWrapper<T>,
     lifetime: PhantomData<&'a T>,
 }
 
@@ -235,8 +264,7 @@ where
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
             let data_ptr = generic_bridge_ffi_rs::get_allocatee_data_ptr(
-                &self.allocatee_ptr as *const sample_allocatee_ptr_rs::SampleAllocateePtr<T>
-                    as *mut std::ffi::c_void,
+                std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
                 T::ID,
             );
             data_ptr as *mut T
@@ -289,12 +317,13 @@ where
     fn send(self) -> com_api_concept::Result<()> {
         //SAFETY: It is safe to send the sample because allocatee_ptr and skeleton_event are valid
         // allocatee_ptr is created by FFI and skeleton_event is valid as long as the parent skeleton instance is valid
+        // We've taken ownership via self (consumed, not borrowed), and
+        // FFI call will complete before drop run on AllocateePtrWrapper and NativeSkeletonEventBase
         let status = unsafe {
             generic_bridge_ffi_rs::skeleton_event_send_sample_allocatee(
                 self.skeleton_event.skeleton_event_ptr,
                 T::ID,
-                &self.allocatee_ptr as *const sample_allocatee_ptr_rs::SampleAllocateePtr<T>
-                    as *mut std::ffi::c_void,
+                std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
             )
         };
         if !status {
@@ -310,9 +339,7 @@ where
     T: CommData,
 {
     skeleton_event: NativeSkeletonEventBase,
-    //TODO: Ticket-242086 ManuallyDrop require to add here and Drop impl for this type
-    //Drop will delete the allocatee_ptr using FFI in CPP side
-    allocatee_ptr: sample_allocatee_ptr_rs::SampleAllocateePtr<T>,
+    allocatee_ptr: AllocateePtrWrapper<T>,
     lifetime: PhantomData<&'a T>,
 }
 
@@ -325,8 +352,7 @@ where
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
             let data_ptr = generic_bridge_ffi_rs::get_allocatee_data_ptr(
-                &self.allocatee_ptr as *const sample_allocatee_ptr_rs::SampleAllocateePtr<T>
-                    as *mut std::ffi::c_void,
+                std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
                 T::ID,
             );
             data_ptr as *mut T
@@ -804,7 +830,9 @@ where
 
         Ok(SampleMaybeUninit {
             skeleton_event: self.skeleton_event.clone(),
-            allocatee_ptr,
+            allocatee_ptr: AllocateePtrWrapper {
+                inner: ManuallyDrop::new(allocatee_ptr),
+            },
             lifetime: PhantomData,
         })
     }
