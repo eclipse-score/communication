@@ -192,6 +192,12 @@ class IMessagePassingService
     /// ProxyMethodInstanceIdentifier is required to identify which of the connected ProxyMethods the provided callback
     /// corresponds to.
     ///
+    /// Each MethodCallHandler stores pointers to the InArg and Return storage in the specific shared memory region
+    /// created by the Proxy. For this reason, we need to register a method call handler per ProxyMethod, not per
+    /// SkeletonMethod (i.e. because a SkeletonMethod will register different handlers per connected ProxyMethod). Note:
+    /// This handler is NOT the user provided handler, but a wrapper around it. We only have one user provided handler
+    /// per SkeletonMethod.
+    ///
     /// \param asil_level ASIL level of method.
     /// \param proxy_method_instance_identifier to identify which MethodCallHandler to call when CallMethod is called on
     /// the Proxy side
