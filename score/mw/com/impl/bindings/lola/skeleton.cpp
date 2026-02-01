@@ -972,23 +972,36 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     const auto aligned_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
     const auto total_data_size = aligned_size * element_properties.number_of_slots;
 
-    void* data_storage = storage_resource_->allocate(total_data_size, sample_alignment);
+    // 1. Construct the Vector Object (Typed Proxy needs this)
+    auto* vector_ptr = storage_resource_->construct<EventDataStorage<std::uint8_t>>(
+        total_data_size, 
+        memory::shared::PolymorphicOffsetPtrAllocator<std::uint8_t>(storage_resource_->getMemoryResourceProxy())
+    );
+
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(vector_ptr != nullptr, 
+        "Failed to construct Generic Vector in Shared Memory");
+
+    // 2. Register the VECTOR OBJECT in the Data Map (for Typed Proxy)
+    void* vector_obj_void = static_cast<void*>(vector_ptr);
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
                                                          std::forward_as_tuple(element_fq_id),
-                                                         std::forward_as_tuple(data_storage));
+                                                         std::forward_as_tuple(vector_obj_void));
+    
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
                                                "Couldn't register/emplace event-storage in data-section.");
 
+    // 3. Get the RAW DATA POINTER (The actual buffer inside the vector)
+    void* raw_data_ptr = static_cast<void*>(vector_ptr->data());
     const impl::DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
     auto inserted_meta_info = storage_->events_metainfo_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(element_fq_id),
-        std::forward_as_tuple(sample_meta_info, data_storage));
+        std::forward_as_tuple(sample_meta_info, raw_data_ptr));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
+    return {raw_data_ptr, CreateEventControlComposite(element_fq_id, element_properties)};
 }
 
 std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> Skeleton::RegisterGeneric(

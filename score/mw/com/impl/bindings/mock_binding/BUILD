@@ -65,3 +65,15 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
     ],
 )
+
+
+cc_library(
+    name = "sample_allocatee_ptr",
+    hdrs = ["sample_allocatee_ptr.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/plumbing:__pkg__"],
+    deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)

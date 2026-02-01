@@ -541,7 +541,9 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = ["//score/mw/com/impl/bindings/lola:event"],
+    deps = ["//score/mw/com/impl/bindings/lola:event",
+        "//score/mw/com/impl/bindings/mock_binding:sample_allocatee_ptr",
+        ],
 )
 
 cc_library(
