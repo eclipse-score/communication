@@ -4519,24 +4519,21 @@ TEST_F(ConfigParserFixture, ValidServiceTypeVersionWillNotDie)
 
 TEST_F(ConfigParserFixture, ParseWithMalformedServiceInstancesStructureCausesTermination)
 {
-    // Test scenarios that would trigger the dangling reference fixes
-    // in ParseServiceInstances and related functions
-
+    // Given a malformed JSON where serviceInstances is not an array
     auto malformed_config = R"({
         "serviceTypes": [],
         "serviceInstances": "not_an_array"
     })"_json;
 
-    // This should trigger error handling in ParseServiceInstances where
-    // services_list.has_value() check was added to fix dangling reference
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedInstanceSpecifierCausesTermination)
 {
-    // Test the ParseInstanceSpecifier fix where json_obj.has_value() check was added
-
+    // Given a malformed JSON where instance specifier is a number instead of a string
     auto malformed_config = R"({
         "serviceTypes": [{
             "serviceTypeName": "/test/service",
@@ -4551,15 +4548,15 @@ TEST_F(ConfigParserFixture, ParseWithMalformedInstanceSpecifierCausesTermination
         }]
     })"_json;
 
-    // Should trigger error in ParseInstanceSpecifier when instanceSpecifier is not a string
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedServiceTypeNameCausesTermination)
 {
-    // Test the ParseServiceTypeName fix where string_result.has_value() check was added
-
+    // Given a malformed JSON where service type name is a number instead of a string
     auto malformed_config = R"({
         "serviceTypes": [{
             "serviceTypeName": 123,
@@ -4569,15 +4566,15 @@ TEST_F(ConfigParserFixture, ParseWithMalformedServiceTypeNameCausesTermination)
         "serviceInstances": []
     })"_json;
 
-    // Should trigger error in ParseServiceTypeName when serviceTypeName is not a string
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedVersionObjectCausesTermination)
 {
-    // Test the ParseVersion fix where version_obj.has_value() check was added
-
+    // Given a malformed JSON where version is a string instead of an object
     auto malformed_config = R"({
         "serviceTypes": [{
             "serviceTypeName": "/test/service",
@@ -4587,15 +4584,15 @@ TEST_F(ConfigParserFixture, ParseWithMalformedVersionObjectCausesTermination)
         "serviceInstances": []
     })"_json;
 
-    // Should trigger error in ParseVersion when version is not an object
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedDeploymentInstanceCausesTermination)
 {
-    // Test the ParseServiceInstanceDeployments fix where deployment_obj.has_value() check was added
-
+    // Given a malformed JSON where instances is an array of strings instead of objects
     auto malformed_config = R"({
         "serviceTypes": [{
             "serviceTypeName": "/test/service",
@@ -4610,17 +4607,15 @@ TEST_F(ConfigParserFixture, ParseWithMalformedDeploymentInstanceCausesTerminatio
         }]
     })"_json;
 
-    // Should trigger error when deployment instance is not an object
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedAsilLevelCausesTermination)
 {
-    // Test the ParseAsilLevel fix where quality_result.has_value() check was added
-    // Even though the function handles invalid asil gracefully, the configuration
-    // still needs to be complete (have events/fields/methods) to be valid
-
+    // Given a malformed JSON where asil level is a number instead of a string
     auto config_with_invalid_asil = R"({
         "serviceTypes": [{
             "serviceTypeName": "/test/service",
@@ -4639,15 +4634,15 @@ TEST_F(ConfigParserFixture, ParseWithMalformedAsilLevelCausesTermination)
         }]
     })"_json;
 
-    // The invalid asil-level is handled gracefully, but other validation may still cause termination
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_asil)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedShmSizeCalcModeHandledGracefully)
 {
-    // Test the ParseShmSizeCalcMode fix where mode_result.has_value() check was added
-
+    // Given a malformed JSON where shm-size-calc-mode is a number instead of a string
     auto config_with_invalid_shm_mode = R"({
         "serviceTypes": [{
             "serviceTypeName": "/test/service",
@@ -4666,15 +4661,15 @@ TEST_F(ConfigParserFixture, ParseWithMalformedShmSizeCalcModeHandledGracefully)
         }]
     })"_json;
 
-    // Should handle invalid shm-size-calc-mode
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_shm_mode)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedAllowedUserHandledGracefully)
 {
-    // Test the ParseAllowedUser fix where user_obj.has_value() and user_list.has_value() checks were added
-
+    // Given a malformed JSON where allowedConsumer is a string instead of an object
     auto config_with_invalid_allowed_user = R"({
         "serviceTypes": [{
             "serviceTypeName": "/test/service",
@@ -4693,15 +4688,15 @@ TEST_F(ConfigParserFixture, ParseWithMalformedAllowedUserHandledGracefully)
         }]
     })"_json;
 
-    // Should handle invalid allowedConsumer, but may still terminate due to other validation
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_allowed_user)); });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedPermissionChecksHandledGracefully)
 {
-    // Test the ParsePermissionChecks fix where perm_result_obj.has_value() check was added
-
+    // Given a malformed JSON where permission-checks is a number instead of an object
     auto config_with_invalid_permissions = R"({
         "serviceTypes": [{
             "serviceTypeName": "/test/service",
@@ -4720,7 +4715,8 @@ TEST_F(ConfigParserFixture, ParseWithMalformedPermissionChecksHandledGracefully)
         }]
     })"_json;
 
-    // Should handle invalid permission-checks, but may still terminate due to other validation
+    // When parsing the JSON
+    // Then it shall issue a contract violation
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
         { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_permissions)); });
 }
