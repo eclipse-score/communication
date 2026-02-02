@@ -12,8 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/com_error.h"
 
-#include <score/assert_support.hpp>
-
 #include <gtest/gtest.h>
 
 namespace score::mw::com::impl
@@ -193,6 +191,24 @@ TEST_F(ComErrorMessageForFixture, MessageForInvalidHandleFailure)
 TEST_F(ComErrorMessageForFixture, MessageForCallQueueFull)
 {
     testErrorMessage(ComErrc::kCallQueueFull, "Call queue of service method is already full.");
+}
+
+using ComErrorMessageForDeathTest = ComErrorMessageForFixture;
+TEST_F(ComErrorMessageForDeathTest, MessageForkInvalidTerminates)
+{
+    // When calling MessageFor with the code kInvalid
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kInvalid)),
+                 ".*");
+}
+
+TEST_F(ComErrorMessageForDeathTest, MessageForNumEnumElements)
+{
+    // When calling MessageFor with the code kNumEnumElements
+    // Then the program terminates
+    EXPECT_DEATH(
+        score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements)),
+        ".*");
 }
 
 }  // namespace

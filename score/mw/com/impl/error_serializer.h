@@ -20,7 +20,7 @@
 namespace score::mw::com::impl
 {
 
-/// \brief Class containing static methods which allow serializing / deserializing error types
+/// \brief Class containing static methods which allow serializing / deserializing error types.
 ///
 /// The serialized format represents No error with integer value 0. The error code is represented by its corresponding
 /// integer value in the error code enum.
@@ -29,7 +29,8 @@ namespace score::mw::com::impl
 /// the class only for "allowed" error codes. It also allows us to perform checks on the error code type (e.g. testing
 /// that the type adheres to the requirements specified below) and also allows us to make the allowed error codes
 /// implementation dependencies (since the implementation can go in the source file with explicit template
-/// instantiations).
+/// instantiations). When using this class to serialize a new error code, **YOU MUST ADD AN EXPLICIT TEMPLATE
+/// INSTANTIATION FOR YOUR ERROR CODE IN THE SOURCE FILE**
 ///
 /// These error codes must adhere to the following requirements:
 ///     - The underlying integer type of the enum must be score::result::ErrorCode
