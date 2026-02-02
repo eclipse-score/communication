@@ -114,7 +114,6 @@ void AbortIfFound(const score::json::Object::const_iterator& iterator_to_element
                             << " which is not currently supported."
                             << " Remove this element from the configuration. Aborting!\n";
 
-        // Abortion call tolerated. See Assumptions of Use in mw/com/design/README.md
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
 }
@@ -132,7 +131,6 @@ auto ParseInstanceSpecifier(const score::json::Object& json_map) -> InstanceSpec
     if (!instance_specifier_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Invalid InstanceSpecifier.";
-        /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return instance_specifier_result.value();
@@ -224,7 +222,6 @@ auto ParseShmSizeCalcMode(const score::json::Object& json_map) -> score::cpp::op
         {
             score::mw::log::LogError("lola")
                 << "Unknown value " << shm_size_calc_mode_value << " in key " << kShmSizeCalcModeKey;
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -280,7 +277,6 @@ auto ParseAllowedUser(const score::json::Object& json_map, std::string_view key)
             {
                 score::mw::log::LogError("lola")
                     << "Unknown quality type in " << key << " " << user.first.GetAsStringView();
-                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
@@ -320,7 +316,6 @@ class ServiceElementInstanceDeploymentParser
         if (service.ContainsEvent(name_value))
         {
             score::mw::log::LogFatal("lola") << "Event Name Duplicated. Not allowed";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -331,7 +326,6 @@ class ServiceElementInstanceDeploymentParser
         if (service.ContainsField(name_value))
         {
             score::mw::log::LogFatal("lola") << "Field Name Duplicated. Not allowed";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -690,7 +684,6 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
             else
             {
                 score::mw::log::LogFatal("lola") << "Unknown binding provided. Required argument.";
-                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
 
@@ -708,7 +701,6 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
         else
         {
             score::mw::log::LogFatal("lola") << "No binding provided. Required argument.";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -742,7 +734,6 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
         {
             score::mw::log::LogFatal("lola") << "More or less then one deployment for " << service_identifier.ToString()
                                            << ". Multi-Binding support right now not supported";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
 
@@ -752,7 +743,6 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
         if (emplaceRes.second == false)
         {
             score::mw::log::LogFatal("lola") << "Unexpected error, when inserting service instance deployments.";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -793,7 +783,6 @@ auto ParseLolaEventTypeDeployments(const score::json::Object& json_map, LolaServ
         if (result.second != true)
         {
             score::mw::log::LogFatal("lola") << "An event was configured twice.";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -835,7 +824,6 @@ auto ParseLolaFieldTypeDeployments(const score::json::Object& json_map, LolaServ
         if (result.second != true)
         {
             score::mw::log::LogFatal("lola") << "A field was configured twice.";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -878,7 +866,6 @@ auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaSer
         if (result.second != true)
         {
             score::mw::log::LogFatal("lola") << "A method was configured twice.";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -942,13 +929,11 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> Lol
     if (!events_exist && !fields_exist && !methods_exist)
     {
         score::mw::log::LogFatal("lola") << "Configuration should contain at least one event, field, or method.";
-        /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     if (!AreEventFieldAndMethodIdsUnique(lola))
     {
         score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
-        /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return lola;
@@ -988,7 +973,6 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
         else
         {
             score::mw::log::LogFatal("lola") << "No unknown binding provided. Required argument.";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -1022,7 +1006,6 @@ auto ParseServiceTypes(const score::json::Object& json_map) -> Configuration::Se
         if (inserted.second != true)
         {
             score::mw::log::LogFatal("lola") << "Service Type was deployed twice";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -1046,7 +1029,6 @@ auto ParseReceiverQueueSize(const score::json::Object& global_config_map, const 
                 break;
             case QualityType::kInvalid:  // LCOV_EXCL_LINE defensive programming
             default:  // LCOV_EXCL_LINE defensive programming Bug: We only must hand over QM or B here.
-                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);  // LCOV_EXCL_LINE defensive programming
                 // coverity[autosar_cpp14_m0_1_1_violation]: Break necessary to have well-formed switch statement
                 break;
@@ -1060,7 +1042,6 @@ auto ParseReceiverQueueSize(const score::json::Object& global_config_map, const 
         {
             return score::ResultToAmpOptionalOrElse(asil_queue_size->second.As<std::int32_t>(), [](const auto&) {
                 score::mw::log::LogFatal("lola") << "Invalid value for ReceiverQueueSize";
-                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             });
         }
@@ -1088,7 +1069,6 @@ auto ParseSenderQueueSize(const score::json::Object& global_config_map) -> score
         {
             return score::ResultToAmpOptionalOrElse(asil_tx_queue_size->second.As<std::int32_t>(), [](const auto&) {
                 score::mw::log::LogFatal("lola") << "Invalid value for SenderQueueSize";
-                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             });
         }
@@ -1127,7 +1107,6 @@ auto ParseGlobalProperties(const score::json::Object& top_level_object) -> Globa
             {
                 case QualityType::kInvalid:
                     ::score::mw::log::LogFatal("lola") << "Invalid ASIL in global/asil-level, terminating.";
-                    /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
                     // coverity[autosar_cpp14_m0_1_1_violation]: Break necessary to have well-formed switch
                     break;
@@ -1138,7 +1117,6 @@ auto ParseGlobalProperties(const score::json::Object& top_level_object) -> Globa
                 // LCOV_EXCL_START defensive programming
                 default:
                     ::score::mw::log::LogFatal("lola") << "Unexpected QualityType, terminating";
-                    /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
                     // coverity[autosar_cpp14_m0_1_1_violation]: Break necessary to have well-formed switch
                     break;
@@ -1264,7 +1242,6 @@ void CrosscheckAsilLevels(const Configuration& config)
         {
             ::score::mw::log::LogFatal("lola")
                 << "Service instance has a higher ASIL than the process. This is invalid, terminating";
-            /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
     }
@@ -1286,7 +1263,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
                 << "Service instance " << service_instance.first << "refers to a service type ("
                 << service_instance.second.service_.ToString()
                 << "), which is not configured. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         // check, that binding in service type and service instance are equal. Since currently ServiceTypeDeployment
         // only supports LolaServiceTypeDeployment, everything else than LolaServiceInstanceDeployment is an error.
@@ -1301,14 +1278,14 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
             // a LolaServiceInstanceDeployment.
             ::score::mw::log::LogFatal("lola") << "Service instance " << service_instance.first
                                              << "refers to an not yet supported binding. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             // LCOV_EXCL_STOP
         }
         if (!std::holds_alternative<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_))
         {
             ::score::mw::log::LogFatal("lola") << "Service type " << service_instance.second.service_.ToString()
                                              << "refers to an not yet supported binding. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
         // check, that for each service-element-name in the instance deployment, there exists a corresponding
         // service-element-name in the type deployment
@@ -1325,7 +1302,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
                     << "Service instance " << service_instance.first << "event" << eventInstanceElement.first
                     << "refers to an event, which doesn't exist in the referenced service type ("
                     << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
         for (const auto& fieldInstanceElement : serviceInstanceDeployment.fields_)
@@ -1339,7 +1316,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
                     << "Service instance " << service_instance.first << "field" << fieldInstanceElement.first
                     << "refers to a field, which doesn't exist in the referenced service type ("
                     << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false); /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
         }
     }

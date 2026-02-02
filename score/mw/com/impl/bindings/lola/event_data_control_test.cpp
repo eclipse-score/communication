@@ -703,7 +703,6 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
             if (!slot.IsValid())
             {
                 EventDataControl::DumpPerformanceCounters();
-                /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                 std::terminate();
             }
             else

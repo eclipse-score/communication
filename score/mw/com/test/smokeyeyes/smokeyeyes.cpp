@@ -345,7 +345,6 @@ int run_receiver(SharedState& shared_state,
 
                 default:
                     out << "Unknown DataState, terminating\n";
-                    /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
                     std::terminate();
                     break;
             }
