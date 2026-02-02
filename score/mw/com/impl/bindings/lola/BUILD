@@ -1261,6 +1261,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":transaction_log",
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "@score_baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )

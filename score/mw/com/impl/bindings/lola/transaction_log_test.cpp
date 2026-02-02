@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
+#include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
@@ -686,6 +687,39 @@ TEST_F(TransactionLogContainsTransactionsReferenceFixture, ReturnsFalseWhenDeref
     // When calling ContainsTransactions
     // Then the result should be false
     EXPECT_FALSE(unit_.ContainsTransactions());
+}
+
+// Test for boundary condition: ReferenceTransactionBegin should retry and terminate
+// when transaction-END bit remains TRUE after max retries (indicating stuck dereference thread).
+class ReferenceTransactionBoundaryConditionFixture : public TransactionLogFixture
+{
+};
+
+TEST_F(ReferenceTransactionBoundaryConditionFixture, ReferenceTransactionBeginTerminatesWhenTransactionEndRemainsTrue)
+{
+    // Given a TransactionLog with a slot where transaction-END bit is stuck TRUE
+    // Set up the slot: BEGIN=false, END=true (boundary condition)
+    auto& slot = TransactionLogAttorney{unit_}.GetReferenceCountSlot(kSlotIndex0);
+    slot.SetTransactionBegin(false);
+    slot.SetTransactionEnd(true);
+
+    // When ReferenceTransactionBegin is called with transaction-END still TRUE
+    // Then it should attempt retries and finally terminate (because END stays TRUE)
+    EXPECT_DEATH(unit_.ReferenceTransactionBegin(kSlotIndex0), ".*");
+}
+
+TEST_F(ReferenceTransactionBoundaryConditionFixture, ReferenceTransactionBeginSuccessfulWhenTransactionEndIsFalse)
+{
+    // Given a TransactionLog with a slot
+    // Set up the slot: BEGIN=false, END=false
+    auto& slot = TransactionLogAttorney{unit_}.GetReferenceCountSlot(kSlotIndex0);
+    slot.SetTransactionBegin(false);
+    slot.SetTransactionEnd(false);
+
+    // When ReferenceTransactionBegin is called
+    unit_.ReferenceTransactionBegin(kSlotIndex0);
+    // then TransactionBegin is set to true.
+    EXPECT_TRUE(slot.GetTransactionBegin());
 }
 
 }  // namespace

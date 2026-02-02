@@ -60,6 +60,11 @@ class TransactionLogAttorney
   public:
     TransactionLogAttorney(TransactionLog& transaction_log) noexcept : transaction_log_{transaction_log} {}
 
+    TransactionLogSlot& GetReferenceCountSlot(const TransactionLog::SlotIndexType slot_index) noexcept
+    {
+        return transaction_log_.reference_count_slots_.at(static_cast<std::size_t>(slot_index));
+    }
+
     bool IsSubscribeTransactionSuccesfullyRecorded() noexcept
     {
         return (transaction_log_.subscribe_transactions_.GetTransactionBegin() &&
