@@ -167,7 +167,8 @@ class TypeOperations
     /// \details Allocates a SampleAllocateePtr<T> from the SkeletonEvent and places it into the provided storage.
     /// \param event_ptr Pointer to SkeletonEventBase instance
     /// \param allocatee_ptr Pointer to storage for SampleAllocateePtr<T>
-    virtual void GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
+    /// \return true if allocation successful, false otherwise
+    virtual bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
 
     /// \brief Get data pointer from SampleAllocateePtr of specific type
     /// \details Casts the type-erased SampleAllocateePtr back to SampleAllocateePtr<T>
@@ -242,25 +243,26 @@ class TypeOperationImpl : public TypeOperations
         typed_ptr->~SamplePtr<T>();
     }
 
-    void GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
+    bool GetAllocateePtr(SkeletonEventBase* event_ptr, void* allocatee_ptr) override
     {
         if (event_ptr == nullptr)
         {
-            return;
+            return false;
         }
         auto skeleton_event = dynamic_cast<SkeletonEvent<T>*>(event_ptr);
         if (skeleton_event == nullptr)
         {
-            return;
+            return false;
         }
 
         auto allocatee_ptr_ = skeleton_event->Allocate();
         if (!allocatee_ptr_.has_value())
         {
-            return;
+            return false;
         }
 
         new (allocatee_ptr) SampleAllocateePtr<T>(std::move(allocatee_ptr_).value());
+        return true;
     }
 
     void DeleteAllocateePtr(void* allocatee_ptr) override

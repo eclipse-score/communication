@@ -313,11 +313,12 @@ void mw_com_delete_sample_ptr(void* sample_ptr, StringView type_name)
 /// @param event_ptr Opaque skeleton event pointer
 /// @param event_type Type name string
 /// @param allocatee_ptr Pointer to pre-allocated memory for allocatee
-void mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr, StringView event_type)
+/// @return True if allocatee pointer was retrieved successfully, false otherwise
+bool mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr, StringView event_type)
 {
     if (event_ptr == nullptr || event_type.data == nullptr)
     {
-        return;
+        return false;
     }
 
     auto name = static_cast<std::string_view>(event_type);
@@ -326,9 +327,9 @@ void mw_com_get_allocatee_ptr(SkeletonEventBase* event_ptr, void* allocatee_ptr,
 
     if (registry == nullptr)
     {
-        return;
+        return false;
     }
-    registry->GetAllocateePtr(event_ptr, allocatee_ptr);
+    return registry->GetAllocateePtr(event_ptr, allocatee_ptr);
 }
 
 /// @brief Delete allocatee pointer of specific type
