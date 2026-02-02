@@ -120,7 +120,9 @@ def sut(request):
 
     docker_image = request.config.getoption("docker_image")
     client = pypi_docker.from_env()
-    container = client.containers.run(docker_image, "sleep infinity", detach=True, auto_remove=True, init=True)
+    # Increase shared memory size to 512MB to support tests with large shared memory requirements
+    # (default is 64MB which is insufficient for tests like receive_handler_usage that need 218MB)
+    container = client.containers.run(docker_image, "sleep infinity", detach=True, auto_remove=True, init=True, shm_size='512m')
     docker_under_test = DockerUnderTest(container)
     yield docker_under_test
     container.stop(timeout=1)
