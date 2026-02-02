@@ -23,11 +23,11 @@ py_binary(
     srcs = ["//score/mw/com/doc/sphinx/utils:sphinx_build_wrapper"],
     main = "sphinx_build_wrapper.py",
     deps = [
-        "@score_communication_pip//breathe",
-        "@score_communication_pip//myst_parser",
-        "@score_communication_pip//pydata_sphinx_theme",
-        "@score_communication_pip//sphinx",
-        "@score_communication_pip//sphinx_rtd_theme",
+        "//third_party/breathe",
+        "//third_party/myst_parser",
+        "//third_party/pydata_sphinx_theme",
+        "//third_party/sphinx",
+        "//third_party/sphinx_rtd_theme",
     ],
 )
 
@@ -35,11 +35,11 @@ py_binary(
 sphinx_build_binary(
     name = "sphinx-build-native",
     deps = [
-        "@score_communication_pip//breathe",
-        "@score_communication_pip//myst_parser",
-        "@score_communication_pip//pydata_sphinx_theme",
-        "@score_communication_pip//sphinx",
-        "@score_communication_pip//sphinx_rtd_theme",
+        "//third_party/breathe",
+        "//third_party/myst_parser",
+        "//third_party/pydata_sphinx_theme",
+        "//third_party/sphinx",
+        "//third_party/sphinx_rtd_theme",
     ],
 )
 

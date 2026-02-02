@@ -57,7 +57,7 @@ cc_library(
     deprecation = "Please change your dependency to //score/mw/com/impl/rust:bridge_macros",
     visibility = [
         "//visibility:public",  # platform_only
-        # "@ddad//platform/aas:__subpackages__",
+        # "@xyz//platform/aas:__subpackages__",
     ],
     deps = [":bridge_macros"],
 )

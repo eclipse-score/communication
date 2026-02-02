@@ -245,5 +245,5 @@ an [io-blk parameter](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.neutr
 It can be specified using argument `fse-period=msecs`.
 
 Please
-see [here](broken_link_g/swh/xpad-shared/pull/25644/files#diff-efef05fd44fdac6a87092251ce97754b11cbd41612a3f3eb6791531e7c4d0a9fR10)
+see [here](broken_link_g/swh/abc-lmn/pull/25644/files#diff-efef05fd44fdac6a87092251ce97754b11cbd41612a3f3eb6791531e7c4d0a9fR10)
 for how to add this parameter to io-blk.
