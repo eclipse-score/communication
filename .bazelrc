@@ -76,5 +76,7 @@ test:clang-tidy --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect
 test:clang-tidy --output_groups=+rules_lint_report
 # Use LLVM toolchain for clang-tidy so it can find system headers
 test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+# Use LLVM bare-metal toolchain with QNX sysroot for QNX targets
+test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-none
 
 import quality/sanitizer/sanitizer.bazelrc
