@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/error_serializer.h"
 
-#include "score/result/result.h"
+#include "score/mw/com/impl/bindings/lola/methods/method_error.h"
 #include "score/mw/com/impl/com_error.h"
 
 namespace score::mw::com::impl
@@ -58,5 +58,6 @@ auto ErrorSerializer<ErrorCode>::Deserialize(const SerializedErrorType serialize
 }
 
 template class ErrorSerializer<ComErrc>;
+template class ErrorSerializer<lola::MethodErrc>;
 
 }  // namespace score::mw::com::impl

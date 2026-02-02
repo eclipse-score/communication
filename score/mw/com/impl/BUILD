@@ -829,6 +829,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":error",
+        "//score/mw/com/impl/bindings/lola/methods:method_error",
     ],
     tags = ["FFI"],
     visibility = [
@@ -1066,6 +1067,7 @@ cc_gtest_unit_test(
     deps = [
         ":error",
         ":error_serializer",
+        "//score/mw/com/impl/bindings/lola/methods:method_error",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )

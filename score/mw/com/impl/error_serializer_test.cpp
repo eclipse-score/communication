@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/error_serializer.h"
 
+#include "score/mw/com/impl/bindings/lola/methods/method_error.h"
 #include "score/mw/com/impl/com_error.h"
 
 #include <score/assert_support.hpp>
@@ -39,7 +40,17 @@ class ErrorSerializationTypedFixture<ComErrc> : public ::testing::Test
     }
 };
 
-using AllowedErrorCodes = ::testing::Types<ComErrc>;
+template <>
+class ErrorSerializationTypedFixture<lola::MethodErrc> : public ::testing::Test
+{
+  public:
+    lola::MethodErrc GetValidErrorCode()
+    {
+        return lola::MethodErrc::kSkeletonAlreadyDestroyed;
+    }
+};
+
+using AllowedErrorCodes = ::testing::Types<ComErrc, lola::MethodErrc>;
 TYPED_TEST_SUITE(ErrorSerializationTypedFixture, AllowedErrorCodes, );
 
 TYPED_TEST(ErrorSerializationTypedFixture, SerializeSuccessReturnsZero)
