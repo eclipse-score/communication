@@ -143,7 +143,7 @@ mod ffi {
             container: *const NativeHandleContainer,
             pos: u32,
         ) -> *const HandleType;
-        pub(super) fn mw_com_impl_initialize(options: *mut *const i8, len: i32);
+        pub(super) fn mw_com_impl_initialize(options: *mut *const std::ffi::c_char, len: i32);
         pub(super) fn mw_com_impl_sample_ptr_get_size() -> u32;
         pub(super) fn mw_com_impl_proxy_event_subscribe(
             proxy_event: *mut ProxyEventBase,
