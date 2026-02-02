@@ -822,6 +822,23 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "error_serializer",
+    srcs = ["error_serializer.cpp"],
+    hdrs = ["error_serializer.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":error",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "@score_baselibs//score/result",
+    ],
+)
+
 cc_test(
     name = "unit_test_runtime_single_exec",
     timeout = "moderate",
@@ -1037,6 +1054,22 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "error_serializer_test",
+    srcs = [
+        "error_serializer_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":error",
+        ":error_serializer",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
@@ -1105,6 +1138,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":runtime_test",
         ":proxy_base_test",
         ":sample_reference_tracker_test",
+        ":error_serializer_test",
         ":service_discovery_test",
         ":service_element_type_test",
         ":skeleton_base_test",
