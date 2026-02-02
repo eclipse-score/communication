@@ -88,6 +88,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/service_discovery_during_consumer_crash/sct:__subpackages__",
+        "//score/mw/com/test/service_discovery_during_consumer_crash:__subpackages__",
     ],
 )

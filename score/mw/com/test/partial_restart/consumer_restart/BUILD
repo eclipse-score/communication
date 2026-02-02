@@ -79,6 +79,6 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//score/mw/com/test/partial_restart/consumer_restart/sct:__subpackages__",
+        "//score/mw/com/test/partial_restart/consumer_restart/integration_test:__pkg__",
     ],
 )
