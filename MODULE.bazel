@@ -132,6 +132,13 @@ bazel_dep(name = "flatbuffers", version = "25.2.10")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_doxygen", version = "2.5.0")
 
+# Apply patch to fix Doxyfile template for our use cases
+single_version_override(
+    module_name = "rules_doxygen",
+    patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
+    patch_strip = 1,
+)
+
 # Apply patch to fix visibility issue with interprocess_notification target
 bazel_dep(name = "score_baselibs", version = "0.2.2")
 git_override(
