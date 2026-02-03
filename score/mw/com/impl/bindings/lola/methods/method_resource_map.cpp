@@ -61,12 +61,16 @@ auto MethodResourceMap::InsertAndCleanUpOldRegions(
 auto MethodResourceMap::EraseRegionsFromCrashedProcesses(const GlobalConfiguration::ApplicationId proxy_app_id,
                                                          const pid_t proxy_pid) -> CleanUpResult
 {
+    // If no entry currently exists for the provided application ID, then there were no entries from a crashed process
+    // for this service so we can return without cleaning anything up.
     auto resources_it = resource_map_.find(proxy_app_id);
     if (resources_it == resource_map_.cend())
     {
         return CleanUpResult::NO_REGIONS_REMOVED;
     }
 
+    // If the found memory region has the same PID as the process which is trying to insert a new region, then any
+    // existing regions are from the currently running process and therefore should not be cleaned up!
     const auto& [old_pid, resources] = resources_it->second;
     if (old_pid != proxy_pid)
     {
