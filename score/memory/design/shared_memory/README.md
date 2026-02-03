@@ -354,15 +354,13 @@ Therefore, when another process opens the memory it only needs to perform a simp
 Due to safety considerations, typed memory cannot be directly allocated by a process using the POSIX primitives, so the allocation is delegated to an ASIL B application called [`typed_memory_daemon`](broken_link_g/swh/safe-posix-platform/blob/master/platform/aas/intc/typedmemd/README.md).
 The `typed_memory_daemon` will allocate the memory with its `euid` as the owner `uid`.
 For safety and security reasons the `typed_memory_daemon` cannot transfer ownership of the memory using `chown` to the application's `euid` from which it got the delegation, so it will use Access Control Lists ([ACLs](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.security.system/topic/manual/access_control.html)) to give read/write permissions to the requestor's `euid` as well as any other needed `uid`. \
-In this case, to be able to identify the requestor process, the `typed_memory_daemon` maintains an internal ownership map that tracks the creator UID for each shared memory object as per its [ASIL B requirement](broken_link_c/issue/42033981).
+In this case, to be able to identify the requestor process, the `typed_memory_daemon` maintains an internal ownership map that tracks the creator UID for each shared memory object.
 When another process opens the `SharedMemoryResource` it will then check if the `uid` of the memory is identical to the `typed_memory_daemon`'s `euid`.
-The `typed_memory_daemon`'s `euid` is currently a hardcoded constant in the code.
 If the check is successful it means that the memory is in typed memory and the corresponding internal flag (`is_shm_in_typed_memory_`) will also be updated.
 Then it will query the `typed_memory_daemon` via `TypedMemory::GetCreatorUid()` to retrieve the creator UID from the internal ownership map and compare it with the passed expected provider.
 If the creator UID cannot be retrieved (e.g., the shared memory object was not allocated by `typed_memory_daemon`), the application will be terminated.
 
 This solution of querying the `typed_memory_daemon` for the creator UID was chosen as it provides a reliable way to identify the owner/creator of the memory without relying on ACL inspection for ownership determination.
-It also does not have any impact on security as [PathTrust](https://www.qnx.com/developers/docs/7.1/#com.qnx.doc.security.system/topic/manual/pathtrust.html) is enabled which makes it impossible to execute anything allocated in `/dev/shmem` and even prevents other side effects like mapped and executed by the default QNX loader.
 
 The complete sequence to find the owner is:
 
