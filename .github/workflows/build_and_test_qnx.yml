@@ -48,7 +48,6 @@ jobs:
       runs-on: ubuntu-24.04
       permissions:
         contents: read
-        pull-requests: read
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
