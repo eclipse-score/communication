@@ -268,7 +268,7 @@ impl<'a, T> SampleMut<'a, T>
 where
     T: CommData,
 {
-    fn get_allocatee_data_ptr_const(&self) -> *const T {
+    fn get_allocatee_data_ptr_const(&self) -> Option<&T> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
@@ -276,11 +276,11 @@ where
                 std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *const std::ffi::c_void,
                 T::ID,
             );
-            data_ptr as *const T
+            (data_ptr as *const T).as_ref()
         }
     }
 
-    fn get_allocatee_data_ptr_mut(&mut self) -> *mut T {
+    fn get_allocatee_data_ptr_mut(&mut self) -> Option<&mut T> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
@@ -288,7 +288,7 @@ where
                 std::ptr::from_mut(&mut (*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
                 T::ID,
             );
-            data_ptr as *mut T
+            (data_ptr as *mut T).as_mut()
         }
     }
 }
@@ -300,9 +300,8 @@ where
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        //SAFETY: It is safe to get the data pointer because allocatee_ptr is valid created using get_allocatee_ptr()
-        //allocatee_ptr resource managed by rust side and data is valid as long as allocatee_ptr is valid
-        unsafe { self.get_allocatee_data_ptr_const().as_ref() }.expect("data pointer is null")
+        self.get_allocatee_data_ptr_const()
+            .expect("Allocatee data pointer is null")
     }
 }
 
@@ -311,9 +310,8 @@ where
     T: CommData,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        //SAFETY: It is safe to get the data pointer because allocatee_ptr is valid created using get_allocatee_ptr()
-        //allocatee_ptr resource managed by rust side and data is valid as long as allocatee_ptr is valid
-        unsafe { self.get_allocatee_data_ptr_mut().as_mut() }.expect("data pointer is null")
+        self.get_allocatee_data_ptr_mut()
+            .expect("Allocatee data pointer is null")
     }
 }
 
@@ -360,7 +358,7 @@ impl<'a, T> SampleMaybeUninit<'a, T>
 where
     T: CommData,
 {
-    fn get_allocatee_data_ptr(&self) -> *mut core::mem::MaybeUninit<T> {
+    fn get_allocatee_data_ptr(&self) -> Option<&mut core::mem::MaybeUninit<T>> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         let data_ptr = unsafe {
@@ -369,16 +367,7 @@ where
                 T::ID,
             ) as *mut core::mem::MaybeUninit<T>
         };
-
-        //data_ptr shall never return null but adding an assert to be safe
-        //because allocatee_ptr is validated during creating and if
-        //allocatee_ptr is valid then only user can call this API
-        assert!(
-            !data_ptr.is_null(),
-            "Allocatee data pointer is null - memory corruption or type mismatch"
-        );
-
-        data_ptr
+        unsafe { data_ptr.as_mut() }
     }
 }
 
@@ -389,13 +378,13 @@ where
     type SampleMut = SampleMut<'a, T>;
 
     fn write(self, val: T) -> SampleMut<'a, T> {
-        let data_ptr = self.get_allocatee_data_ptr();
+        let data_ptr = self
+            .get_allocatee_data_ptr()
+            .expect("Allocatee data pointer is null");
 
-        //SAFETY: It is safe to write the data because allocated_data is valid
-        // and pointer belongs to same type T as val.
-        unsafe {
-            (*data_ptr).write(val);
-        }
+        //It is safe to write the value because data_ptr is valid
+        // and we are writing the value of type T which is same as allocatee_ptr type
+        data_ptr.write(val);
 
         SampleMut {
             skeleton_event: self.skeleton_event,
@@ -418,11 +407,8 @@ where
     T: CommData,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
-        let data_ptr = self.get_allocatee_data_ptr();
-        //SAFETY: It is safe to return mutable reference because
-        // validation of data_ptr is done in get_allocatee_data_ptr()
-        // and it is guaranteed to be valid as long as allocatee_ptr is valid
-        unsafe { &mut *data_ptr }
+        self.get_allocatee_data_ptr()
+            .expect("Allocatee data pointer is null")
     }
 }
 
