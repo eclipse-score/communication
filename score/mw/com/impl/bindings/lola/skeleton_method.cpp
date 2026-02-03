@@ -12,12 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 
-#include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"

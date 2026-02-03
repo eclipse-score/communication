@@ -452,10 +452,19 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
         return;
     }
 
-    // We only re-call SubscribeServiceMethod in the proxy autoreconnect case, i.e. when the skeleton has crashed
-    // and restarted. This will always occur when this function has called first with is_service_available == false
-    // and then with is_service_available == true. The handling of this logic is handled by the OfferedStateMachine.
-    if (offered_state_machine_.GetCurrentState() == OfferedStateMachine::State::RE_OFFERED)
+    // When we get a notification that the service StopOffered, then we mark the ProxyMethods as unsubscribed so that
+    // any calls on them will return errors. (Note: if calls are made on them after the Skeleton was StopOffered but
+    // before the ProxyMethods are unsubscribed below, then the calls will still fail due to errors returned by message
+    // passing. However, by marking them ProxyMethods explicitly unsubscribed, it allows early returns which avoids
+    // dispatching to message passing and allows more specific error handling / logging).
+    if (offered_state_machine_.GetCurrentState() == OfferedStateMachine::State::STOP_OFFERED)
+    {
+        for (auto& proxy_method : proxy_methods_)
+        {
+            proxy_method.second.get().MarkUnsubscribed();
+        }
+    }
+    else if (offered_state_machine_.GetCurrentState() == OfferedStateMachine::State::RE_OFFERED)
     {
         // When a skeleton restarts, it needs to re-open the methods shared memory region that was created by the
         // Proxy on construction (in SetupMethods()). To open the shared memory region, it needs the UID of this
@@ -473,12 +482,22 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
             quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
         if (!(subscribe_service_method_result.has_value()))
         {
+            // This SubscribeServiceMethod call can only be called after SetupMethods() has been called (so the methods
+            // shared memory region exists) and the skeleton has stop offered and reoffered (either via a manual
+            // StopOfferService or a crash restart of the process containing the Skeleton). This handler would have
+            // already been called when the skeleton was stop offered which would have marked the ProxyMethods as
+            // unsubscribed. Therefore, if this call fails, we simply log an error and leave the ProxyMethods
+            // unsubscribed and SubscribeServiceMethod can be retried if the Skeleton restarts again.
             score::mw::log::LogError("lola")
-                << __func__ << __LINE__
-                << "SubscribeServiceMethod failed with error:" << subscribe_service_method_result.error() << "";
-
-            // TODO: Decide how we want to handle this error: Ticket-233173
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+                << __func__ << __LINE__ << "ServiceAvailabilityChangeHandler: SubscribeServiceMethod failed with error:"
+                << subscribe_service_method_result.error() << "";
+        }
+        else
+        {
+            for (auto& proxy_method : proxy_methods_)
+            {
+                proxy_method.second.get().MarkSubscribed();
+            }
         }
     }
 }
@@ -632,9 +651,22 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
+    // We set the are_proxy_methods_setup_ flag to true here to indicate that the methods shared memory has been
+    // created, regardless of the success of the SubscribeServiceMethodCall. SubscribeServiceMethod may fail (e.g. if
+    // the skeleton has crashed) but the flag should still be true in the case because the
+    // ServiceAvailabilityChangeHandler will then try to resend SubscribeServiceMethod on skeleton restart. However, the
+    // ProxyMethods are only marked as subscribed if SubscribeServiceMethod succeeded.
     are_proxy_methods_setup_.store(true);
-    return lola_message_passing.SubscribeServiceMethod(
+    const auto subscription_result = lola_message_passing.SubscribeServiceMethod(
         quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
+    if (subscription_result.has_value())
+    {
+        for (auto& proxy_method : proxy_methods_)
+        {
+            proxy_method.second.get().MarkSubscribed();
+        }
+    }
+    return subscription_result;
 }
 
 memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermissions() const

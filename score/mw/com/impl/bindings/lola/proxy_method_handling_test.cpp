@@ -449,12 +449,72 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, ResendsSubscribeMethodEveryTi
     OfferService();
 }
 
-TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, TerminatesWhnSubscribeMethodReturnsErrorWhenSkeletonReOffered)
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, MarksProxyMethodsUnsubscribedWhenSkeletonStopOffered)
 {
     GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
         {{kDummyMethodId0,
           TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}}});
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+         {kDummyMethodId1,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+
+    // Given that SetupMethods was called which should mark the ProxyMethods as subscribed
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+    EXPECT_TRUE(proxy_method_storage_.at(0).IsSubscribed());
+    EXPECT_TRUE(proxy_method_storage_.at(1).IsSubscribed());
+
+    // and given that the service was initially offered
+    OfferService();
+
+    // When the service is stop-offered
+    StopOfferService();
+
+    // Then all registered proxy methods should be marked as unsubscribed
+    EXPECT_FALSE(proxy_method_storage_.at(0).IsSubscribed());
+    EXPECT_FALSE(proxy_method_storage_.at(1).IsSubscribed());
+}
+
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
+       MarksProxyMethodsSubscribedWhenSkeletonReOfferedAndSubscriptionSucceeds)
+{
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+         {kDummyMethodId1,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+
+    // Expecting that SubscribeServiceMethod will be called once in SetupMethods and a second time in the find service
+    // handler when the service has been reoffered which succeeds
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(2).WillRepeatedly(Return(score::cpp::blank{}));
+
+    // Given that SetupMethods was called
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
+
+    // and given that the service was initially offered and then stop-offered
+    OfferService();
+    StopOfferService();
+
+    // When the service is re-offered
+    OfferService();
+
+    // Then all registered proxy methods should be marked as subscribed
+    EXPECT_TRUE(proxy_method_storage_.at(0).IsSubscribed());
+    EXPECT_TRUE(proxy_method_storage_.at(1).IsSubscribed());
+}
+
+TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
+       DoesNotMarkProxyMethodsSubscribedWhenSkeletonReOfferedAndSubscriptionFails)
+{
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+         {kDummyMethodId1,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called once in SetupMethods
     Sequence subscribe_service_method_sequence{};
@@ -469,13 +529,16 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, TerminatesWhnSubscribeMethodR
     // Given that SetupMethods was called
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
 
-    // Given that the service was initially offered
+    // and given that the service was initially offered and then stop-offered
+    OfferService();
+    StopOfferService();
+
+    // When the service is re-offered
     OfferService();
 
-    // When the service is stop-offered and re-offered, indicating that the service has restarted and been reoffered
-    // Then the program terminates
-    StopOfferService();
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(OfferService());
+    // Then all registered proxy methods should still be marked as unsubscribed
+    EXPECT_FALSE(proxy_method_storage_.at(0).IsSubscribed());
+    EXPECT_FALSE(proxy_method_storage_.at(1).IsSubscribed());
 }
 
 TEST_F(ProxySetupMethodsProxyAutoReconnectFixture, DoesNotResendSubscribeMethodIfSkeletonNeverCrashed)
@@ -557,6 +620,53 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesForwa
     // Then the result contains the error returned by message passing
     ASSERT_FALSE(setup_methods_result.has_value());
     EXPECT_EQ(setup_methods_result.error(), call_service_method_subscribed_error_code);
+}
+
+TEST_F(ProxySetupMethodsMessagePassingFixture, ProxyMethodsMarkedAsSubscribedWhenSubscribeServiceMethodReturnsValid)
+{
+    // Given that a ProxyMethod is registered
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+         {kDummyMethodId1,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+
+    // Expecting that SubscribeServiceMethod will be called and returns a valid result
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::cpp::blank{}));
+
+    // When calling SetupMethods with the name of the registered ProxyMethods
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+
+    // Then all registered proxy methods should be marked as subscribed
+    EXPECT_TRUE(proxy_method_storage_.at(0).IsSubscribed());
+    EXPECT_TRUE(proxy_method_storage_.at(1).IsSubscribed());
+}
+
+TEST_F(ProxySetupMethodsMessagePassingFixture,
+       ProxyMethodsNotMarkedAsUnsubscribedWhenSubscribeServiceMethodReturnsError)
+{
+    // Given that a ProxyMethod is registered
+    GivenAProxy().GivenAMockedSharedMemoryResource().WithRegisteredProxyMethods(
+        {{kDummyMethodId0,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
+         {kDummyMethodId1,
+          TypeErasedCallQueue::TypeErasedElementInfo{
+              kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
+
+    // Expecting that SubscribeServiceMethod will be called which returns an error
+    const auto call_service_method_subscribed_error_code = ComErrc::kCallQueueFull;
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
+        .WillOnce(Return(MakeUnexpected(call_service_method_subscribed_error_code)));
+
+    // When calling SetupMethods with the name of the registered ProxyMethods
+    score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
+
+    // Then all registered proxy methods should be marked as unsubscribed
+    EXPECT_FALSE(proxy_method_storage_.at(0).IsSubscribed());
+    EXPECT_FALSE(proxy_method_storage_.at(1).IsSubscribed());
 }
 
 TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingZeroMethodsDoesNotNotifiesSubscribeServiceMethod)

@@ -25,6 +25,7 @@
 #include <score/span.hpp>
 #include <score/stop_token.hpp>
 
+#include <atomic>
 #include <cstddef>
 #include <optional>
 
@@ -60,6 +61,16 @@ class ProxyMethod : public ProxyMethodBinding
     void SetInArgsAndReturnStorages(std::optional<score::cpp::span<std::byte>> in_args_storage,
                                     std::optional<score::cpp::span<std::byte>> return_storage);
 
+    /// \brief Marks that the ProxyMethod successfully [un]subscribed to its SkeletonMethod
+    ///
+    /// This helps with error reporting by early returning with an error e.g. if a user calls AllocateInArgs on a method
+    /// that was never enabled in Proxy::Create. It is also important to allow us to "disable" a method in the proxy
+    /// auto-reconnect case (when the Skeleton has restarted) in case the re-subscription fails.
+    void MarkSubscribed();
+    void MarkUnsubscribed();
+
+    bool IsSubscribed() const;
+
   private:
     pid_t skeleton_pid_;
     QualityType asil_level_;
@@ -68,6 +79,9 @@ class ProxyMethod : public ProxyMethodBinding
     std::optional<score::cpp::span<std::byte>> in_args_storage_;
     std::optional<score::cpp::span<std::byte>> return_storage_;
     ProxyMethodInstanceIdentifier proxy_method_instance_identifier_;
+
+    // is_subscribed_ is an atomic since it may be modified by the FindServiceHandler registered within the Proxy
+    std::atomic_bool is_subscribed_;
 };
 
 }  // namespace score::mw::com::impl::lola
