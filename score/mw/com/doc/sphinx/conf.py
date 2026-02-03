@@ -1,7 +1,20 @@
+# ******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
 """Sample Configuration file for the Sphinx documentation builder.
 
 This example demonstrates how to create professional, elegant documentation
-for the Safe Posix Platform with BMW branding.
+for the Eclipse S-CORE.
 """
 
 import os
@@ -10,9 +23,9 @@ import warnings
 from pathlib import Path
 
 # -- Project information --
-project = 'Safe Posix Platform'
-copyright = '2026, BMW AG'
-author = 'BMW AG'
+project = 'Eclipse S-CORE'
+copyright = '2026, Eclipse S-CORE Contributors'
+author = 'Eclipse Foundation'
 release = '1.0.0'
 
 # -- General configuration ---
@@ -77,30 +90,21 @@ html_theme_options = {
     'footer_start': ['copyright'],
     'footer_end': ['sphinx-version'],
 
-    # Sidebar settings
-    'show_toc_level': 2,
-    'show_nav_level': 2,
-
     # Navigation buttons
     'show_prev_next': True,
 
     # Logo configuration
     'logo': {
-        'text': 'Safe Posix Platform',
+        'text': 'Eclipse S-CORE',
     },
 
-    # External links - Safe Posix Platform GitHub and BMW official site
+    # External links - S-CORE GitHub
     'icon_links': [
         {
-            'name': 'Safe Posix Platform GitHub',
-            'url': 'broken_link_g/swh/safe-posix-platform',
+            'name': 'S-CORE GitHub',
+            'url': 'https://github.com/eclipse-score',
             'icon': 'fab fa-github',
-        },
-        {
-            'name': 'BMW AG',
-            'url': 'https://www.bmw.com',
-            'icon': 'fas fa-car',
-        },
+        }
     ],
 }
 

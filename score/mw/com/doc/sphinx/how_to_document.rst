@@ -4,7 +4,7 @@ This section provides brief overview on how to document using Breathe directive 
 
 .. note::
    API documentation is generated using Doxygen and integrated via Breathe.
-   Due to Sphinx 5.x limitations with complex C++ templates, use specific class
+   Due to Sphinx version < 9.x limitations with complex C++ templates, use specific class
    and function directives rather than namespace-level documentation.
 
 Automatic API Documentation with @api Tag
