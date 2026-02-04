@@ -14,7 +14,13 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "com-api-runtime-lola",
-    srcs = ["runtime.rs"],
+    srcs = [
+        "consumer.rs",
+        "lib.rs",
+        "producer.rs",
+        "runtime.rs",
+    ],
+    crate_root = "lib.rs",
     visibility = [
         "//visibility:public",  # platform_only
     ],
