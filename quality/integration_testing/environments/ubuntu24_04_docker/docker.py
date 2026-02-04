@@ -76,6 +76,8 @@ class DockerProcess(Process):
             if exec_info['Running']:
                 return self
             time.sleep(0.05)
+        
+        return self
 
     def wait_for_exit(self, timeout: int = 60) -> int:
         if self._exec_id:
