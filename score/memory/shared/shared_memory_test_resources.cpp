@@ -74,7 +74,8 @@ constexpr const char* const TestValues::sharedMemorySegmentLockPath;
 constexpr const char* const TestValues::secondSharedMemorySegmentLockPath;
 constexpr std::size_t TestValues::some_share_memory_size;
 constexpr uid_t TestValues::our_uid;
-constexpr auto kTypedmemdProcessName = "typed_memory_daemon";
+constexpr auto kTypedmemdUserName = "typed_memory_daemon";
+constexpr auto kTSHMDeviceName = "/dev/typedshm";
 constexpr std::uint32_t kMaxBufferSize = 16384U;
 
 bool is_aligned(const volatile void* const p, const std::size_t n) noexcept
@@ -240,7 +241,7 @@ void SharedMemoryResourceTest::SetUp()
     SharedMemoryFactory::SetTypedMemoryProvider(typedmemory_mock_);
     EXPECT_CALL(*mman_mock_, shm_unlink(::testing::_)).Times(0);
     EXPECT_CALL(*unistd_mock_, getuid).Times(::testing::AnyNumber()).WillRepeatedly(Return(TestValues::our_uid));
-    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, kMaxBufferSize, _))
+    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdUserName), _, _, kMaxBufferSize, _))
         .WillRepeatedly(DoAll(SetArgPointee<1>(pwd_), SetArgPointee<4>(&pwd_), Return(score::cpp::blank{})));
 }
 
@@ -406,6 +407,12 @@ void SharedMemoryResourceTest::expectSharedMemorySuccessfullyOpened(std::int32_t
     // That the shared memory segment is opened read only if not otherwise specified.
     expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
     expectFstatReturns(file_descriptor, false, st_uid);
+
+    // and that the "/dev/typedshm" device exists
+    EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _))
+        .Times(::testing::AtMost(1))
+        .WillRepeatedly(Return(score::cpp::blank{}));
+
     expectMmapReturns(data_region_start, file_descriptor, is_read_write);
 
     // and the memory region is safely unmapped on destruction
@@ -450,6 +457,10 @@ void SharedMemoryResourceTest::expectSharedMemorySuccessfullyCreated(
             .WillOnce(Return(file_descriptor));
 
         expectFstatReturns(file_descriptor);
+
+        EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _))
+            .Times(::testing::AtMost(1))
+            .WillRepeatedly(Return(score::cpp::blank{}));
     }
 
     expectMmapReturns(data_region_start, file_descriptor);

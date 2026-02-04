@@ -41,6 +41,12 @@ using Error = score::os::Error;
 using ControlBlock = SharedMemoryResourceTestAttorney::ControlBlock;
 
 using SharedMemoryResourceOpenTest = SharedMemoryResourceTest;
+
+#if defined(__QNX__)
+constexpr auto kTypedmemdUserName = "typed_memory_daemon";
+constexpr auto kTSHMDeviceName = "/dev/typedshm";
+#endif
+
 TEST_F(SharedMemoryResourceOpenTest, OpensSharedMemoryReadOnlyByDefault)
 {
     RecordProperty("Verifies", "SCR-5899175, SCR-6240424");
@@ -281,6 +287,8 @@ TEST_F(SharedMemoryResourceOpenTest, DifferentChildClassIsNotEqual)
     ASSERT_FALSE(resource->is_equal(otherResource));
 }
 
+// typed memory daemon is only running on the QNX, so these tests will only pass on the QNX
+#if defined(__QNX__)
 TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsTrueWhenOpenTypedSharedMemorySuccess)
 {
     InSequence sequence{};
@@ -302,6 +310,9 @@ TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsTrueWhenOpenTypedS
     // Expecting that fstat returns the typedmem UID indicating that the shared memory region is in typed memory.
     expectFstatReturns(
         file_descriptor, is_death_test, static_cast<uid_t>(TestValues::typedmemd_uid), static_cast<std::int64_t>(1));
+
+    // and that the "/dev/typedshm" device exists
+    EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _)).WillOnce(Return(score::cpp::blank{}));
 
     // and that the creator UID is set
     EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath)))
@@ -326,26 +337,29 @@ TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenAcquireTy
     InSequence sequence{};
     constexpr std::int32_t file_descriptor = 1;
     constexpr bool is_read_write = false;
-    constexpr auto kTypedmemdProcessName = "typed_memory_daemon";
     auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
     score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
     auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
 
-    // Given that the acquire typedmemd UID failed
-    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
-        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
-
-    // and that the lock file does not exist
+    // Given that the lock file does not exist
     expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
                               score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
 
     // That the shared memory segment is opened read only if not otherwise specified.
     expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
     expectFstatReturns(file_descriptor);
-    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    // and that the "/dev/typedshm" device exists
+    EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _)).WillOnce(Return(score::cpp::blank{}));
+
+    // and that the acquire typedmemd UID failed
+    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _))
+        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
 
     // and that the creator UID is not called
     EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath))).Times(0);
+
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
 
     // and given the shared memory region is opened
     const auto resource_result = SharedMemoryResourceTestAttorney::Open(
@@ -364,27 +378,30 @@ TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenAcquireTy
     InSequence sequence{};
     constexpr std::int32_t file_descriptor = 1;
     constexpr bool is_read_write = false;
-    constexpr auto kTypedmemdProcessName = "typed_memory_daemon";
     auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
     score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
     auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
     passwd* pwd = nullptr;
 
-    // Given that the acquire typedmemd UID user does not exist
-    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
-        .WillOnce((DoAll(SetArgPointee<4>(pwd), Return(score::cpp::blank{}))));
-
-    // and that the lock file does not exist
+    // Given that the lock file does not exist
     expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
                               score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
 
     // That the shared memory segment is opened read only if not otherwise specified.
     expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
     expectFstatReturns(file_descriptor);
-    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    // and that the "/dev/typedshm" device exists
+    EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _)).WillOnce(Return(score::cpp::blank{}));
+
+    // and that the acquire typedmemd UID user does not exist
+    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _))
+        .WillOnce((DoAll(SetArgPointee<4>(pwd), Return(score::cpp::blank{}))));
 
     // and that the creator UID is not called
     EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath))).Times(0);
+
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
 
     // and given the shared memory region is opened
     const auto resource_result = SharedMemoryResourceTestAttorney::Open(
@@ -397,6 +414,89 @@ TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenAcquireTy
     // Then the result is false
     EXPECT_FALSE(is_in_typed_memory);
 }
+
+TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenTypedshmDeviceDoesNotExist)
+{
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    constexpr bool is_read_write = false;
+    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
+    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
+    auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
+
+    // Given that the lock file does not exist
+    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
+                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
+
+    // That the shared memory segment is opened read only if not otherwise specified.
+    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
+    expectFstatReturns(file_descriptor);
+
+    // and that the "/dev/typedshm" device does not exists
+    EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _))
+        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
+
+    // and that the acquire typedmemd UID user is not called
+    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _)).Times(0);
+
+    // and that the creator UID is not called
+    EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath))).Times(0);
+
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    // and given the shared memory region is opened
+    const auto resource_result = SharedMemoryResourceTestAttorney::Open(
+        TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock);
+    ASSERT_TRUE(resource_result.has_value());
+
+    // When checking if the shared memory region is in typed memory
+    const auto is_in_typed_memory = resource_result.value()->IsShmInTypedMemory();
+
+    // Then the result is false
+    EXPECT_FALSE(is_in_typed_memory);
+}
+
+TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenTypedshmDeviceIsNotAccessible)
+{
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 1;
+    constexpr bool is_read_write = false;
+    auto acl_control_list_mock = std::make_unique<score::os::AccessControlListMock>();
+    score::os::IAccessControlList* acl_control_list = acl_control_list_mock.get();
+    auto typedmemory_mock = std::make_shared<score::memory::shared::TypedMemoryMock>();
+
+    // Given that the lock file does not exist
+    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
+                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
+
+    // That the shared memory segment is opened read only if not otherwise specified.
+    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write);
+    expectFstatReturns(file_descriptor);
+
+    // and that the "/dev/typedshm" device is not accessible
+    EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _))
+        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(EACCES))));
+
+    // and that the acquire typedmemd UID user is not called
+    EXPECT_CALL(*unistd_mock_, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _)).Times(0);
+
+    // and that the creator UID is not called
+    EXPECT_CALL(*typedmemory_mock, GetCreatorUid(StrEq(TestValues::sharedMemorySegmentPath))).Times(0);
+
+    expectMmapReturns(reinterpret_cast<void*>(1), file_descriptor, is_read_write);
+
+    // and given the shared memory region is opened
+    const auto resource_result = SharedMemoryResourceTestAttorney::Open(
+        TestValues::sharedMemorySegmentPath, is_read_write, acl_control_list, typedmemory_mock);
+    ASSERT_TRUE(resource_result.has_value());
+
+    // When checking if the shared memory region is in typed memory
+    const auto is_in_typed_memory = resource_result.value()->IsShmInTypedMemory();
+
+    // Then the result is false
+    EXPECT_FALSE(is_in_typed_memory);
+}
+#endif
 
 TEST_F(SharedMemoryResourceOpenTest, IsShmInTypedMemoryReturnsFalseWhenOpenTypedSharedMemoryFail)
 {

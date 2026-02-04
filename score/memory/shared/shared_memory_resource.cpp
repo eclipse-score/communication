@@ -18,6 +18,7 @@
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/memory/shared/sealedshm/sealedshm_wrapper/sealed_shm.h"
 #include "score/memory/shared/typedshm/typedshm_wrapper/typed_memory.h"
+#include "score/memory/shared/typedshm/utils/typed_memory_utils.h"
 
 #include "score/language/safecpp/safe_math/safe_math.h"
 
@@ -196,8 +197,7 @@ score::os::IAccessControlList::UserIdentifier GetCreatorUidFromTypedmemd(
 ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescriptor fd,
                                        bool is_named_shm,
                                        const std::string* const path,
-                                       const score::memory::shared::TypedMemory* typed_memory_ptr,
-                                       const std::optional<uid_t> typedmemd_uid)
+                                       const score::memory::shared::TypedMemory* typed_memory_ptr)
 {
     score::os::StatBuffer stat_buffer{};
 
@@ -209,17 +209,21 @@ ShmObjectStatInfo GetShmObjectStatInfo(const ISharedMemoryResource::FileDescript
     }
     const auto owner_uid = stat_buffer.st_uid;
     bool is_shm_in_typed_memory = false;
-    if (is_named_shm && (typedmemd_uid.has_value() && (typedmemd_uid.value() == owner_uid)))
+    if (typed_memory_ptr != nullptr)
     {
-        // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
-        // variables being given values that are not subsequently used"
-        // Rationale: There is no variable defined in the following line.
-        // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(path != nullptr, "shm-object file path is not set.");
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_memory_ptr != nullptr, "Typed memory is not available.");
-        is_shm_in_typed_memory = true;
-        score::mw::log::LogInfo("shm") << "Named-shm is in TypedMemory. Querying typedmemd for shm object creator UID.";
-        stat_buffer.st_uid = GetCreatorUidFromTypedmemd(*path, *typed_memory_ptr);
+        const auto typedmemd_uid = AcquireTypedMemoryDaemonUid();
+        if (is_named_shm && (typedmemd_uid.has_value() && (typedmemd_uid.value() == owner_uid)))
+        {
+            // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
+            // variables being given values that are not subsequently used"
+            // Rationale: There is no variable defined in the following line.
+            // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(path != nullptr, "shm-object file path is not set.");
+            is_shm_in_typed_memory = true;
+            score::mw::log::LogInfo("shm")
+                << "Named-shm is in TypedMemory. Querying typedmemd for shm object creator UID.";
+            stat_buffer.st_uid = GetCreatorUidFromTypedmemd(*path, *typed_memory_ptr);
+        }
     }
     // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
     // variables being given values that are not subsequently used"
@@ -468,7 +472,6 @@ SharedMemoryResource::SharedMemoryResource(std::variant<std::string, std::uint64
       control_block_{nullptr},
       acl_factory_{std::move(acl_factory)},
       is_shm_in_typed_memory_{false},
-      typedmemd_uid_{AcquireTypedMemoryDemonUid()},
       log_identification_{std::holds_alternative<std::string>(identifier)
                               ? "file: " + std::get<std::string>(identifier)
                               : "id: " + std::to_string(std::get<std::uint64_t>(identifier))},
@@ -526,8 +529,8 @@ score::cpp::expected_blank<Error> SharedMemoryResource::CreateImpl(const std::si
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(file_descriptor_ >= 0, "No valid file descriptor");
 
-    const auto stat_values =
-        GetShmObjectStatInfo(file_descriptor_, (path != nullptr), path, typed_memory_ptr_.get(), typedmemd_uid_);
+    const auto typed_memory_ptr = (is_shm_in_typed_memory_ ? typed_memory_ptr_.get() : nullptr);
+    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, (path != nullptr), path, typed_memory_ptr);
     file_owner_uid_ = stat_values.owner_uid;
 
     if (!is_shm_in_typed_memory_)
@@ -620,8 +623,7 @@ auto SharedMemoryResource::waitForOtherProcessAndOpen() noexcept -> score::cpp::
         return score::cpp::make_unexpected(result.error());
     }
     file_descriptor_ = result.value();
-    const auto stat_values =
-        GetShmObjectStatInfo(file_descriptor_, is_named_shm, path, typed_memory_ptr_.get(), typedmemd_uid_);
+    const auto stat_values = GetShmObjectStatInfo(file_descriptor_, is_named_shm, path, typed_memory_ptr_.get());
     is_shm_in_typed_memory_ = stat_values.is_shm_in_typed_memory;
     file_owner_uid_ = stat_values.owner_uid;
     virtual_address_space_to_reserve_ = stat_values.size;
@@ -672,31 +674,6 @@ auto SharedMemoryResource::getOwnerUid() const noexcept -> uid_t
 auto SharedMemoryResource::GetLockFilePath(const std::string& input_path) noexcept -> std::string
 {
     return std::string{kTmpPathPrefix} + input_path + "_lock";
-}
-
-auto SharedMemoryResource::AcquireTypedMemoryDemonUid() noexcept -> std::optional<uid_t>
-{
-    constexpr auto kTypedMemoryDaemonProcessName = "typed_memory_daemon";
-    constexpr std::uint32_t kMaxBufferSize = 16384U;
-    passwd pwd{};
-    passwd* result = nullptr;
-    std::vector<char> buffer(kMaxBufferSize);
-
-    const auto pw = ::score::os::Unistd::instance().getpwnam_r(
-        kTypedMemoryDaemonProcessName, &pwd, buffer.data(), buffer.size(), &result);
-    if (pw.has_value())
-    {
-        if (result == nullptr)
-        {
-            score::mw::log::LogError("shm")
-                << "AcquireTypedMemoryDaemonUid: user " << std::string{kTypedMemoryDaemonProcessName} << " not found";
-            return std::nullopt;
-        }
-        score::mw::log::LogInfo("shm") << "AcquireTypedMemoryDaemonUid: typed_memory_daemon uid: " << pwd.pw_uid;
-        return static_cast<uid_t>(pwd.pw_uid);
-    }
-    score::mw::log::LogError("shm") << "AcquireTypedMemoryDaemonUid failed: " << pw.error();
-    return std::nullopt;
 }
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)

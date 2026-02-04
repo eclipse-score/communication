@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/memory/shared/shared_memory_factory_impl.h"
+#include "score/memory/shared/typedshm/utils/typed_memory_utils.h"
 #include "score/os/errno_logging.h"
 #include "score/mw/log/logging.h"
 
@@ -93,36 +94,12 @@ auto GetResourceIfAlreadyOpened(
     return resource;
 }
 
-std::optional<uid_t> AcquireTypedMemoryDaemonUid() noexcept
+bool IsShmInTypedMemory(const std::string& path)
 {
-    constexpr auto kTypedMemoryDaemonProcessName = "typed_memory_daemon";
-    constexpr std::uint32_t kMaxBufferSize = 16384U;
-    passwd pwd{};
-    passwd* result = nullptr;
-    std::vector<char> buffer(kMaxBufferSize);
-
-    const auto pw = score::os::Unistd::instance().getpwnam_r(
-        kTypedMemoryDaemonProcessName, &pwd, buffer.data(), buffer.size(), &result);
-    if (pw.has_value())
-    {
-        if (result == nullptr)
-        {
-            score::mw::log::LogError("shm")
-                << "AcquireTypedMemoryDaemonUid: user " << std::string{kTypedMemoryDaemonProcessName} << " not found";
-            return std::nullopt;
-        }
-        score::mw::log::LogInfo("shm") << "AcquireTypedMemoryDaemonUid: typed_memory_daemon uid: " << pwd.pw_uid;
-        return static_cast<uid_t>(pwd.pw_uid);
-    }
-    score::mw::log::LogError("shm") << "AcquireTypedMemoryDaemonUid failed: " << pw.error();
-    return std::nullopt;
-}
-
-bool IsShmInTypedMemory(const std::string& path, const std::optional<uid_t> typedmemd_uid)
-{
+    const auto typedmemd_uid = AcquireTypedMemoryDaemonUid();
     if (!typedmemd_uid.has_value())
     {
-        score::mw::log::LogError("shm") << "Typed memory daemon uid is not initialized. Shm is not in TypedMemory: "
+        score::mw::log::LogDebug("shm") << "Typed memory daemon uid is not initialized. Shm is not in TypedMemory:"
                                       << path;
         return false;
     }
@@ -327,8 +304,7 @@ auto SharedMemoryFactoryImpl::RemoveStaleArtefacts(const std::string& path) noex
     const auto lock_file_path = SharedMemoryResource::GetLockFilePath(path);
     score::cpp::ignore = ::score::os::Unistd::instance().unlink(lock_file_path.data());
 
-    const auto typedmemd_uid = AcquireTypedMemoryDaemonUid();
-    const bool is_shm_in_typed_memory = IsShmInTypedMemory(path, typedmemd_uid);
+    const bool is_shm_in_typed_memory = IsShmInTypedMemory(path);
     // Known coverage bug: "decision couldn't be analyzed"
     // Acceptable at a 100% line coverage
     // The code is actually covered by

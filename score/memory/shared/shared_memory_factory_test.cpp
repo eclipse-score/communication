@@ -20,8 +20,6 @@
 
 #if defined(__QNXNTO__)
 constexpr auto kTypedSharedMemoryPathPrefix = "/dev/shmem";
-#else
-constexpr auto kTypedSharedMemoryPathPrefix = "/tmp";
 #endif
 
 namespace score::memory::shared::test
@@ -36,7 +34,8 @@ static constexpr std::int32_t kFileDescriptor = 1;
 
 static constexpr uid_t kOurUid = 99;
 static constexpr uid_t kTypedmemdUid = 3020;
-static constexpr auto kTypedmemdProcessName = "typed_memory_daemon";
+static constexpr auto kTypedmemdUserName = "typed_memory_daemon";
+static constexpr auto kTSHMDeviceName = "/dev/typedshm";
 static_assert(kOurUid == TestValues::our_uid, "mock/test UID values mismatch");
 static constexpr uid_t kNotOurUid = 1;
 static constexpr uid_t kMatchingProviders[] = {1, 2};
@@ -66,11 +65,12 @@ int CountNonNullResources(const std::vector<std::shared_ptr<ManagedMemoryResourc
         });
     return non_null_count;
 }
-
+#if defined(__QNXNTO__)
 std::string GetShmFilePath(const std::string& input_path) noexcept
 {
     return std::string{kTypedSharedMemoryPathPrefix} + input_path;
 }
+#endif
 }  // namespace
 
 using SharedMemoryFactoryTest = SharedMemoryResourceTest;
@@ -825,14 +825,20 @@ TEST(SharedMemoryFactoryRemoveStaleArtefactsTest, CallingRemoveStaleArtefactsWil
 {
     os::MockGuard<os::UnistdMock> unistd_mock{};
     os::MockGuard<os::MmanMock> mman_mock{};
+    os::MockGuard<os::StatMock> stat_mock{};
     passwd pwd{};
     pwd.pw_uid = kTypedmemdUid;
 
     const std::string dummy_input_path{"/my_shared_memory_path"};
     const auto lock_file_path = SharedMemoryResourceTestAttorney::GetLockFilePath(dummy_input_path);
 
-    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
-        .WillOnce((DoAll(SetArgPointee<1>(pwd), SetArgPointee<4>(&pwd), Return(score::cpp::blank{}))));
+    EXPECT_CALL(*stat_mock, stat(StrEq(kTSHMDeviceName), _, _)).Times(AtMost(1)).WillRepeatedly(Return(score::cpp::blank{}));
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _))
+        .Times(AtMost(1))
+        .WillRepeatedly((DoAll(SetArgPointee<1>(pwd), SetArgPointee<4>(&pwd), Return(score::cpp::blank{}))));
+    EXPECT_CALL(*stat_mock, stat(HasSubstr(dummy_input_path), _, _))
+        .Times(AtMost(1))
+        .WillRepeatedly(Return(score::cpp::blank{}));
     EXPECT_CALL(*unistd_mock, unlink(StrEq(lock_file_path.data())));
 
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
@@ -842,27 +848,37 @@ TEST(SharedMemoryFactoryRemoveStaleArtefactsTest, CallingRemoveStaleArtefactsWil
 {
     os::MockGuard<os::UnistdMock> unistd_mock{};
     os::MockGuard<os::MmanMock> mman_mock{};
+    os::MockGuard<os::StatMock> stat_mock{};
     passwd pwd{};
     pwd.pw_uid = kTypedmemdUid;
 
     const std::string dummy_input_path{"/my_shared_memory_path"};
 
-    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
-        .WillOnce((DoAll(SetArgPointee<1>(pwd), SetArgPointee<4>(&pwd), Return(score::cpp::blank{}))));
+    EXPECT_CALL(*stat_mock, stat(StrEq(kTSHMDeviceName), _, _)).Times(AtMost(1)).WillRepeatedly(Return(score::cpp::blank{}));
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _))
+        .Times(AtMost(1))
+        .WillRepeatedly((DoAll(SetArgPointee<1>(pwd), SetArgPointee<4>(&pwd), Return(score::cpp::blank{}))));
+    EXPECT_CALL(*stat_mock, stat(HasSubstr(dummy_input_path), _, _))
+        .Times(AtMost(1))
+        .WillRepeatedly(Return(score::cpp::blank{}));
     EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
 
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
 }
 
+// typed memory daemon is only running on the QNX, so these tests will only pass on the QNX
+#if defined(__QNXNTO__)
 TEST(SharedMemoryFactoryRemoveStaleArtefactsTest,
      CallingRemoveStaleArtefactsWillUnlinkAnOldSharedMemoryRegionWhenAcquireTmdUidFailed)
 {
     os::MockGuard<os::UnistdMock> unistd_mock{};
     os::MockGuard<os::MmanMock> mman_mock{};
+    os::MockGuard<os::StatMock> stat_mock{};
 
     const std::string dummy_input_path{"/my_shared_memory_path"};
 
-    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+    EXPECT_CALL(*stat_mock, stat(StrEq(kTSHMDeviceName), _, _)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _))
         .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
     EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
 
@@ -874,11 +890,45 @@ TEST(SharedMemoryFactoryRemoveStaleArtefactsTest,
 {
     os::MockGuard<os::UnistdMock> unistd_mock{};
     os::MockGuard<os::MmanMock> mman_mock{};
+    os::MockGuard<os::StatMock> stat_mock{};
     passwd* pwd = nullptr;
     const std::string dummy_input_path{"/my_shared_memory_path"};
 
-    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdProcessName), _, _, _, _))
+    EXPECT_CALL(*stat_mock, stat(StrEq(kTSHMDeviceName), _, _)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _))
         .WillOnce((DoAll(SetArgPointee<4>(pwd), Return(score::cpp::blank{}))));
+    EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
+
+    SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
+}
+
+TEST(SharedMemoryFactoryRemoveStaleArtefactsTest,
+     CallingRemoveStaleArtefactsWillUnlinkAnOldSharedMemoryRegionWhenTypedshmDeviceDoesNotExist)
+{
+    os::MockGuard<os::UnistdMock> unistd_mock{};
+    os::MockGuard<os::MmanMock> mman_mock{};
+    os::MockGuard<os::StatMock> stat_mock{};
+    const std::string dummy_input_path{"/my_shared_memory_path"};
+
+    EXPECT_CALL(*stat_mock, stat(StrEq(kTSHMDeviceName), _, _))
+        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(ENOENT))));
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _)).Times(0);
+    EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
+
+    SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
+}
+
+TEST(SharedMemoryFactoryRemoveStaleArtefactsTest,
+     CallingRemoveStaleArtefactsWillUnlinkAnOldSharedMemoryRegionWhenTypedshmDeviceInNotAccessible)
+{
+    os::MockGuard<os::UnistdMock> unistd_mock{};
+    os::MockGuard<os::MmanMock> mman_mock{};
+    os::MockGuard<os::StatMock> stat_mock{};
+    const std::string dummy_input_path{"/my_shared_memory_path"};
+
+    EXPECT_CALL(*stat_mock, stat(StrEq(kTSHMDeviceName), _, _))
+        .WillOnce(Return(score::cpp::make_unexpected(Error::createFromErrno(EACCES))));
+    EXPECT_CALL(*unistd_mock, getpwnam_r(StrEq(kTypedmemdUserName), _, _, _, _)).Times(0);
     EXPECT_CALL(*mman_mock, shm_unlink(StrEq(dummy_input_path.data())));
 
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
@@ -921,6 +971,7 @@ TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsWillNotCrashWhenUnlin
     // Then the program does not crash
     SharedMemoryFactory::RemoveStaleArtefacts(dummy_input_path);
 }
+#endif
 
 TEST_F(SharedMemoryFactoryTest, CallingRemoveStaleArtefactsAfterCreatingWillTerminate)
 {
@@ -1049,6 +1100,9 @@ TEST_F(SharedMemoryFactoryDeathTest, FailingToInsertResourceIntoRegistryTerminat
     expectShmOpenReturns(TestValues::sharedMemorySegmentPath, kFileDescriptor, is_read_write);
     // expect fstat call returning shared-mem-object size of shm-object file.
     expectFstatReturns(kFileDescriptor);
+
+    // and that the "/dev/typedshm" device exists
+    EXPECT_CALL(*stat_mock_, stat(StrEq(kTSHMDeviceName), _, _)).Times(AtMost(1)).WillRepeatedly(Return(score::cpp::blank{}));
 
     // and the memory region is mapped into the process
     expectMmapReturns(reinterpret_cast<void*>(1), kFileDescriptor, is_read_write, true);
