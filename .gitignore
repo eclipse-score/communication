@@ -7,3 +7,7 @@ user.bazelrc
 .cache/*
 compile_commands.json
 rust-project.json
+
+# docs build artifacts
+/_build*
+docs/ubproject.toml

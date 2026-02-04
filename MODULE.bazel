@@ -167,7 +167,7 @@ doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_ex
 use_repo(doxygen_extension, "doxygen")
 
 # Python 3.12 toolchain for Bazel
-bazel_dep(name = "rules_python", version = "1.5.1")
+bazel_dep(name = "rules_python", version = "1.4.1")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
@@ -248,3 +248,4 @@ use_repo(apt, "ubuntu24_04")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 
 bazel_dep(name = "score_tooling", version = "1.0.4")
+bazel_dep(name = "score_docs_as_code", version = "2.2.0")
