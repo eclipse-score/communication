@@ -12,13 +12,14 @@
 # *******************************************************************************
 
 load("@rules_python//python:defs.bzl", "py_binary")
-load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_docs")
+load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("//score/mw/com/doc/sphinx/utils:defs.bzl", "generate_api_rst")
 
 # Create the sphinx-build binary with required dependencies
+# This wrapper approach is used for older environments (e.g. Sphinx <=7.2.* and rules_python 1.2)
 py_binary(
-    name = "sphinx-build",
+    name = "sphinx-build-wrapper",
     srcs = ["//score/mw/com/doc/sphinx/utils:sphinx_build_wrapper"],
     main = "sphinx_build_wrapper.py",
     deps = [
@@ -28,6 +29,29 @@ py_binary(
         "@score_communication_pip//sphinx",
         "@score_communication_pip//sphinx_rtd_theme",
     ],
+)
+
+# Native sphinx_build_binary for newer environments (e.g. Sphinx 9.*, rules_python 1.5)
+sphinx_build_binary(
+    name = "sphinx-build-native",
+    deps = [
+        "@score_communication_pip//breathe",
+        "@score_communication_pip//myst_parser",
+        "@score_communication_pip//pydata_sphinx_theme",
+        "@score_communication_pip//sphinx",
+        "@score_communication_pip//sphinx_rtd_theme",
+    ],
+)
+
+# Alias to select  appropriate sphinx-build implementation based on feature flag
+# Default: uses wrapper approach for compatibility with older environment
+# Use --//path/to/sphinx/utils:use_native_sphinx_build for native binary
+alias(
+    name = "sphinx-build",
+    actual = select({
+        "//score/mw/com/doc/sphinx/utils:use_native": ":sphinx-build-native",
+        "//score/mw/com/doc/sphinx/utils:use_wrapper": ":sphinx-build-wrapper",
+    }),
 )
 
 # Capture the Doxygen XML output for Breathe

@@ -12,6 +12,10 @@
 # *******************************************************************************
 
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+load(":sphinx_build_flags.bzl", "sphinx_build_settings")
+
+# Setup feature flags for sphinx build selection
+sphinx_build_settings(visibility = ["//score/mw/com/doc/sphinx:__subpackages__"])
 
 py_library(
     name = "sphinx_build_wrapper",
