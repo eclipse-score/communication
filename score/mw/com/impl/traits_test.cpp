@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/traits.h"
 
 #include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/handle_type.h"
@@ -450,7 +451,6 @@ TEST(GeneratedSkeletonTest, IsMoveable)
 
 class SkeletonCreationFixture : public ::testing::Test
 {
-
   public:
     void SetUp() override
     {
@@ -488,6 +488,14 @@ class SkeletonCreationFixture : public ::testing::Test
         // By default the runtime configuration resolves instance identifiers
         resolved_instance_identifiers_.push_back(identifier_with_valid_binding_);
         ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
+
+        // By default the skeleton binding will report that all methods were correctly registered
+        ON_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
+        // By default the skeleton and service element bindings will report that offer service preparation succeeded
+        ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(skeleton_event_binding_mock_, PrepareOffer()).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillByDefault(Return(score::cpp::blank{}));
     }
 
     std::vector<InstanceIdentifier> resolved_instance_identifiers_{};
@@ -822,6 +830,346 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     unit.some_event.Send(event_value);
 
     // Then we don't crash
+}
+
+class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixture
+{
+  public:
+    void SetUp() override
+    {
+        SkeletonCreationFixture::SetUp();
+
+        ON_CALL(skeleton_binding_mock_, PrepareStopOffer(_)).WillByDefault(Invoke([this] {
+            skeleton_stop_offer_called_ = true;
+        }));
+        ON_CALL(skeleton_event_binding_mock_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_event_stop_offer_called_ = true;
+        }));
+        ON_CALL(skeleton_field_binding_mock_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_field_stop_offer_called_ = true;
+        }));
+
+        ON_CALL(skeleton_binding_mock_2_, PrepareStopOffer(_)).WillByDefault(Invoke([this] {
+            skeleton_stop_offer_called_2_ = true;
+        }));
+        ON_CALL(skeleton_event_binding_mock_2_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_event_stop_offer_called_2_ = true;
+        }));
+        ON_CALL(skeleton_field_binding_mock_2_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_field_stop_offer_called_2_ = true;
+        }));
+
+        // By default the skeleton binding will report that all methods were correctly registered
+        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
+        // By default the skeleton and service element bindings will report that offer service preparation succeeded
+        ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(skeleton_event_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(skeleton_field_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::cpp::blank{}));
+    }
+
+    MySkeleton CreateService()
+    {
+        auto skeleton_result = MySkeleton::Create(kInstanceSpecifier);
+
+        // Use EXPECT_TRUE and amp assert to inform the user of the failure while also ensuring that we don't continue
+        // (and access the skeleton_result) in case creation failed. We can't use ASSERT_TRUE since it requires the
+        // return type of the function to be void.
+        EXPECT_TRUE(skeleton_result.has_value());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_result.has_value());
+        return std::move(skeleton_result).value();
+    }
+
+    void OfferService(MySkeleton& skeleton)
+    {
+        const TestSampleType field_value{10};
+        const auto update_result = skeleton.some_field.Update(field_value);
+        ASSERT_TRUE(update_result.has_value());
+
+        const auto offer_result = skeleton.OfferService();
+        ASSERT_TRUE(offer_result.has_value());
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& GivenASkeleton()
+    {
+        score::cpp::ignore = skeleton_.emplace(CreateService());
+
+        return *this;
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& GivenTwoSkeletons()
+    {
+        // Since the parent fixture sets the default behaviour of the factories to always return the same mock binding,
+        // we need to override that behaviour used EXPECT_CALL so that the first call to each factory will return the
+        // first bindings and the second call will return the second bindings.
+        ::testing::InSequence in_sequence{};
+        EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(_))
+            .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_))));
+        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_))));
+        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_))));
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_))));
+
+        EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(_))
+            .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_2_))));
+        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_2_))));
+        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_2_))));
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_2_))));
+
+        score::cpp::ignore = skeleton_.emplace(CreateService());
+        score::cpp::ignore = skeleton_2_.emplace(CreateService());
+
+        return *this;
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& WhichHasBeenOffered()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_.has_value());
+        OfferService(skeleton_.value());
+
+        return *this;
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& WhichHaveBothBeenOffered()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_.has_value());
+        OfferService(skeleton_.value());
+
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_2_.has_value());
+        OfferService(skeleton_2_.value());
+
+        return *this;
+    }
+
+    bool skeleton_stop_offer_called_{false};
+    bool skeleton_event_stop_offer_called_{false};
+    bool skeleton_field_stop_offer_called_{false};
+
+    bool skeleton_stop_offer_called_2_{false};
+    bool skeleton_event_stop_offer_called_2_{false};
+    bool skeleton_field_stop_offer_called_2_{false};
+
+    mock_binding::Skeleton skeleton_binding_mock_2_{};
+    mock_binding::SkeletonEvent<TestSampleType> skeleton_event_binding_mock_2_{};
+    mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_2_{};
+    mock_binding::SkeletonMethod skeleton_method_binding_mock_2_{};
+
+    std::optional<MySkeleton> skeleton_{};
+    std::optional<MySkeleton> skeleton_2_{};
+};
+
+using GeneratedSkeletonDestructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
+TEST_F(GeneratedSkeletonDestructionFixture, CallsStopOfferServiceOnDestructionOfOfferedService)
+{
+    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // Expecting that PrepareStopOffer is called on the skeleton binding and event / field
+    EXPECT_CALL(skeleton_binding_mock_, PrepareStopOffer(_));
+    EXPECT_CALL(skeleton_event_binding_mock_, PrepareStopOffer());
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareStopOffer());
+
+    // When destroying the Skeleton
+    skeleton_.reset();
+
+    EXPECT_TRUE(skeleton_stop_offer_called_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonDestructionFixture, DoesNotCallStopOfferServiceOnDestructionOfNotOfferedService)
+{
+    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton();
+
+    // Expecting that PrepareStopOffer is not called on the skeleton binding and event / field
+    EXPECT_CALL(skeleton_binding_mock_, PrepareStopOffer(_)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_mock_, PrepareStopOffer()).Times(0);
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareStopOffer()).Times(0);
+
+    // When destroying the Skeleton
+    skeleton_.reset();
+}
+
+using GeneratedSkeletonMoveConstructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
+TEST_F(GeneratedSkeletonMoveConstructionFixture, MoveConstructingDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move constructible");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // When move constructing the skeleton
+    auto moved_to_skeleton{std::move(skeleton_).value()};
+
+    // Then StopOfferService should not have been called
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedToSkeletonCallsStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move constructible");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // and given a move constructed skeleton
+    std::optional<MySkeleton> moved_to_skeleton{std::move(skeleton_).value()};
+
+    // When destroying the moved-to skeleton
+    moved_to_skeleton.reset();
+
+    // Then StopOffer should have been called
+    EXPECT_TRUE(skeleton_stop_offer_called_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move constructible");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // and given a move constructed skeleton
+    std::optional<MySkeleton> moved_to_skeleton{std::move(skeleton_).value()};
+
+    // When destroying the moved-from skeleton
+    skeleton_.reset();
+
+    // Then StopOfferService should not have been called
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+}
+
+using GeneratedSkeletonMoveAssignmentFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningCallsStopOfferServiceOnMovedToSkeleton)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // When move assigning the first to the second
+    skeleton_2_.value() = std::move(skeleton_).value();
+
+    // Then only the second service should be stop offered
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+
+    EXPECT_TRUE(skeleton_stop_offer_called_2_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_2_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_2_);
+}
+
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedToSkeletonCallsStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // and given the first was move assigned to the second
+    skeleton_2_.value() = std::move(skeleton_).value();
+
+    // When destroying the moved-to skeleton
+    skeleton_2_.reset();
+
+    // Then the first service should be stop offered
+    EXPECT_TRUE(skeleton_stop_offer_called_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // Expecting that PrepareStopOffer is called on the second skeleton's binding and event / field only once
+    EXPECT_CALL(skeleton_binding_mock_2_, PrepareStopOffer(_));
+    EXPECT_CALL(skeleton_event_binding_mock_2_, PrepareStopOffer());
+    EXPECT_CALL(skeleton_field_binding_mock_2_, PrepareStopOffer());
+
+    // and given the first was move assigned to the second
+    skeleton_2_.value() = std::move(skeleton_).value();
+
+    // When destroying the moved-from skeleton
+    skeleton_2_.reset();
+}
+
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningToAMovedFromSkeletonDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // and given that a new skeleton was move constructed from the first
+    auto moved_to_skeleton{std::move(skeleton_).value()};
+
+    // When move assigning the second skeleton to the first (which was already moved from and therefore no longer "owns"
+    // the first service)
+    skeleton_.value() = std::move(skeleton_2_).value();
+
+    // Then neither of the services should have been stop offered (since skeleton_ now "owns" the second service and
+    // moved_to_skeleton "owns" the first)
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+
+    EXPECT_FALSE(skeleton_stop_offer_called_2_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_2_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_2_);
 }
 
 }  // namespace

@@ -53,10 +53,7 @@ class SkeletonEventBase
     {
     }
 
-    virtual ~SkeletonEventBase()
-    {
-        Cleanup();
-    }
+    virtual ~SkeletonEventBase() = default;
 
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept
     {
@@ -91,21 +88,7 @@ class SkeletonEventBase
     SkeletonEventBase& operator=(const SkeletonEventBase&) & = delete;
 
     SkeletonEventBase(SkeletonEventBase&&) noexcept = default;
-    // Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either
-    // move or respectively copy base classes and data members of a class, without any side effects." false-positive;
-    // can't be replaced with =default because of the self guard.
-    // coverity[autosar_cpp14_a6_2_1_violation]
-    SkeletonEventBase& operator=(SkeletonEventBase&& other) & noexcept
-    {
-        if (this != &other)
-        {
-            Cleanup();
-
-            binding_ = std::move(other.binding_);
-            service_offered_flag_ = std::move(other.service_offered_flag_);
-        }
-        return *this;
-    }
+    SkeletonEventBase& operator=(SkeletonEventBase&& other) & noexcept = default;
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". We need these data elements to exchange this information between the SkeletonEventBase and the
@@ -125,15 +108,6 @@ class SkeletonEventBase
     tracing::SkeletonEventTracingData tracing_data_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     FlagOwner service_offered_flag_;
-
-  private:
-    /// \brief Perform required clean up operations when a SkeletonBase object is destroyed or overwritten (by the
-    /// move assignment operator) Currently just dispatches to PrepareStopOffer(), however we provide for symmetry
-    /// with SkeletonBase and to allow easy additions to the clean up functionality in future.
-    void Cleanup() noexcept
-    {
-        PrepareStopOffer();
-    }
 };
 
 class SkeletonEventBaseView

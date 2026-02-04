@@ -90,8 +90,6 @@ SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonBase& skeleton_b
                                                         std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding)
     : SkeletonMethodBase(skeleton_base, method_name, std::move(skeleton_method_binding))
 {
-    std::cout << "makin skeleton methods... did it work tho? binding_==nullptr" << (binding_ == nullptr) << " \n";
-
     auto skeleton_base_view = SkeletonBaseView{skeleton_base};
     skeleton_base_view.RegisterMethod(method_name_, *this);
 }

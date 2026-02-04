@@ -59,7 +59,7 @@ class SkeletonBase
     /// \param instance_id The instance identifier which uniquely identifies this Skeleton instance.
     SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, InstanceIdentifier instance_id);
 
-    virtual ~SkeletonBase();
+    virtual ~SkeletonBase() = default;
 
     /// \brief A Skeleton shall not be copyable
     /// \requirement SWS_CM_00134
@@ -107,10 +107,6 @@ class SkeletonBase
     InstanceIdentifier instance_id_;
 
     ISkeletonBase* skeleton_mock_;
-
-    /// \brief Perform required clean up operations when a SkeletonBase object is destroyed or overwritten (by the
-    /// move assignment operator)
-    void Cleanup();
 
     [[nodiscard]] score::ResultBlank OfferServiceEvents() const noexcept;
     [[nodiscard]] score::ResultBlank OfferServiceFields() const noexcept;

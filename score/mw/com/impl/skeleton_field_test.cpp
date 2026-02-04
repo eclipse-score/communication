@@ -137,9 +137,6 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOff
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
 
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
-
     // and Send will be called on the event binding with the initial value and returns an empty result
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _))
         .WillOnce(InvokeWithoutArgs([&is_send_called_on_binding]() noexcept -> ResultBlank {
@@ -198,9 +195,6 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBindi
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
 
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
-
     // and Send will be called on the event binding with the initial value and returns an error
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _))
         .WillOnce(InvokeWithoutArgs([&is_send_called_on_binding] {
@@ -256,9 +250,6 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBind
 
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
-
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
 
     // and Send will be called on the event binding with the initial value and returns an empty result
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _)).WillOnce(Return(Blank{}));
@@ -316,9 +307,6 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServicePropagatesBindin
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
 
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
-
     // and Send will be called on the event binding with the initial value and returns an empty result
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _)).WillOnce(Return(Blank{}));
 
@@ -367,9 +355,6 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateBeforePrepareOfferDoesNotReturnVa
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).Times(0);
 
-    // and PrepareStopOffer will be called on destruction as the field was never offered
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer()).Times(0);
-
     // and Allocate will not be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, Allocate()).Times(0);
 
@@ -408,9 +393,6 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBind
 
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
-
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -466,9 +448,6 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBinding
 
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
-
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -526,9 +505,6 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDisp
 
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
-
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -605,9 +581,6 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceProp
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
 
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
-
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
 
@@ -681,9 +654,6 @@ TEST(SkeletonFieldInitialValueFixture, LatestFieldValueWillBeSetOnPrepareOffer)
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
 
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
-
     // and Send will be called only once on the event binding with the latest value
     EXPECT_CALL(skeleton_field_binding_mock, Send(latest_value, _));
 
@@ -732,9 +702,6 @@ TEST(SkeletonFieldInitialValueFixture, OfferingFieldBeforeUpdatingValueReturnsEr
     // and that PrepareOffer() will not be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).Times(0);
 
-    // and PrepareStopOffer won't be called on destruction as the field was never offered
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer()).Times(0);
-
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -766,9 +733,6 @@ TEST(SkeletonFieldInitialValueFixture, MoveConstructingFieldBeforePrepareOfferWi
 
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
-
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -813,9 +777,6 @@ TEST(SkeletonFieldInitialValueFixture, MoveAssigningFieldBeforePrepareOfferWillK
 
     // and that PrepareOffer() will be called on the event binding
     EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(Blank{}));
-
-    // and PrepareStopOffer will be called on destruction of the field
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareStopOffer());
 
     // and Send will be called on the event binding with the initial value from the moved-from field
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));

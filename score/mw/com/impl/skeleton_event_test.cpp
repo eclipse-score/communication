@@ -131,9 +131,6 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBind
     EXPECT_CALL(skeleton_event_binding_mock, Allocate())
         .WillOnce(Return(ByMove(MakeSampleAllocateePtr(std::make_unique<TestSampleType>()))));
 
-    // and that PrepareStopOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareStopOffer());
-
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -234,9 +231,6 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferWhenBindingFails
     EXPECT_CALL(skeleton_event_binding_mock, Allocate())
         .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kInvalidConfiguration))));
 
-    // and that PrepareStopOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareStopOffer());
-
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -283,8 +277,6 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendDispatchesToBinding)
             EXPECT_EQ(*sample_ptr, 42);
             return {};
         })));
-
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareStopOffer());
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -381,8 +373,6 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendWhenBindingFailsReturnsError)
             return MakeUnexpected(ComErrc::kInvalidConfiguration);
         })));
 
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareStopOffer());
-
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -434,9 +424,6 @@ TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
 
     // and that Send() is called once on the event binding
     EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _)).WillOnce(Return(ResultBlank{}));
-
-    // and that PrepareStopOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareStopOffer());
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -545,9 +532,6 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterPrepareOfferWhenBindingFails
     // and that Send() is called once on the event binding which returns an error
     EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _))
         .WillOnce(Return(MakeUnexpected(ComErrc::kInvalidConfiguration)));
-
-    // and that PrepareStopOffer() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, PrepareStopOffer());
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};

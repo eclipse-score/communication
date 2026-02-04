@@ -634,6 +634,12 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStores
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferencesToServiceElements)
 {
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move constructible");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     // Given a valid MyProxy object on which 2 Events, Fields and Methods were registered
     ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
     ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_);
@@ -664,6 +670,12 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
     constexpr auto other_event_name{"other_event"};
     constexpr auto other_field_name{"other_field"};
     constexpr auto other_method_name{"other_method"};

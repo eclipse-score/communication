@@ -94,33 +94,6 @@ SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, In
 {
 }
 
-SkeletonBase::~SkeletonBase()
-{
-    Cleanup();
-}
-
-void SkeletonBase::Cleanup()
-{
-    // If the skeleton is mocked, then we shouldn't perform any actual cleanup.
-    if (skeleton_mock_ != nullptr)
-    {
-        return;
-    }
-
-    // The SkeletonBase is responsible for calling PrepareStopOffer on the skeleton binding when the SkeletonBase is
-    // destroyed. The SkeletonEventBase is responsible for calling PrepareStopOffer on the SkeletonEvent binding as the
-    // SkeletonEventBases are owned by the child class of SkeletonBase and will therefore be fully destroyed before
-    // ~SkeletonBase() is called.
-    if (service_offered_flag_.IsSet())
-    {
-        StopOfferServiceInServiceDiscovery(instance_id_);
-        auto tracing_handler = tracing::CreateUnregisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
-
-        binding_->PrepareStopOffer(std::move(tracing_handler));
-        service_offered_flag_.Clear();
-    }
-}
-
 SkeletonBase::SkeletonBase(SkeletonBase&& other) noexcept
     : binding_{std::move(other.binding_)},
       events_{std::move(other.events_)},
@@ -157,7 +130,6 @@ SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
 {
     if (this != &other)
     {
-        Cleanup();
         binding_ = std::move(other.binding_);
         events_ = std::move(other.events_);
         fields_ = std::move(other.fields_);
