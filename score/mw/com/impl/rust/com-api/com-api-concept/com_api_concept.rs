@@ -50,6 +50,7 @@ use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 pub mod reloc;
+pub use com_api_concept_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
 pub use reloc::Reloc;
 use std::path::Path;

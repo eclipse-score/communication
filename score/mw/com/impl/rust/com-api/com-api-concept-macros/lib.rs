@@ -12,9 +12,110 @@
  ********************************************************************************/
 
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, Meta, Type};
 
+/// Derive macro for the `CommData` trait. This macro automatically implements the `CommData` trait
+/// for structs and C-like enums, ensuring that the type is marked with `#[repr(C)]`.
+/// It internally also derives the `Reloc` trait for the type.
+/// It also supports an optional attribute to specify a custom ID string:
+/// ```
+/// #[comm_data(id = "CustomID_String")]
+/// ```
+/// If no custom ID is provided, the struct or enum name is used as the ID.
+/// Example usage:
+/// ```
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub struct MyData {
+///    value: u32,
+/// }
+/// ```
+/// with custom ID:
+/// ```
+/// pub trait CommData {
+///   const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data(id = "CustomID_MyData")]
+/// pub struct MyData {
+///  value: u32,
+/// }
+/// ```
+#[proc_macro_derive(CommData, attributes(comm_data))]
+pub fn derive_comm_data(input: TokenStream) -> TokenStream {
+    let input_args = parse_macro_input!(input as DeriveInput);
+    let ident_name = &input_args.ident;
+
+    // Ensure #[repr(C)] on the struct itself
+    if !has_repr_c(&input_args.attrs) {
+        return syn::Error::new_spanned(
+            &ident_name,
+            "The #[derive(CommData)] macro requires #[repr(C)] on the type",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    // Validate that the type is supported (struct, tuple struct, unit struct, or C-like enum)
+    if let Err(()) = collect_field_types(&input_args.data) {
+        return syn::Error::new_spanned(
+            &ident_name,
+            "The #[derive(CommData)] macro is supported only for enums(C-like), structs and tuple structs",
+        )
+        .to_compile_error()
+        .into();
+    }
+    //Add where clause if there are generics
+    let generics = input_args.generics.clone();
+    let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
+
+    // Generate ID string from struct name
+    let id_str =
+        extract_id_from_attribute(&input_args.attrs).unwrap_or_else(|| ident_name.to_string());
+
+    let comm_data_impl = quote! {
+        impl #impl_generics CommData for #ident_name #type_generics #where_clause {
+            const ID: &'static str = #id_str;
+        }
+    };
+    // Get the input back as TokenStream for derive_reloc
+    let input_for_reloc = input_args.to_token_stream().into();
+
+    // Call derive_reloc to generate Reloc implementation
+    let reloc_impl_tokens = derive_reloc(input_for_reloc);
+
+    // Merge the TokenStreams
+    let mut result = TokenStream::from(quote! { #comm_data_impl });
+    result.extend(reloc_impl_tokens);
+    result
+}
+
+/// Extract custom ID from #[comm_data(id = "...")] attribute
+fn extract_id_from_attribute(attrs: &[syn::Attribute]) -> Option<String> {
+    for attr in attrs {
+        if attr.path().is_ident("comm_data") {
+            if let Meta::List(list) = &attr.meta {
+                if let Ok(Meta::NameValue(nv)) = list.parse_args::<Meta>() {
+                    if nv.path.is_ident("id") {
+                        if let syn::Expr::Lit(expr_lit) = &nv.value {
+                            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
+                                return Some(lit_str.value());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
+}
 ///
 /// Derive macro for the `Reloc` trait. This macro automatically implements the `Reloc` trait
 /// for structs, ensuring that all field types also implement `Reloc`. This also requires that the
@@ -258,3 +359,83 @@ fn reloc_fails_if_member_is_not_reloc_on_struct() {}
 /// ```
 #[cfg(doctest)]
 fn reloc_fails_on_generic_types_that_do_not_impl_reloc() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// pub struct MyData {
+///     value: u32,
+/// }
+/// ```
+/// This will fail because of missing #[repr(C)]
+#[cfg(doctest)]
+fn comm_data_fails_without_repr_c() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///   const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub enum MyEnum {
+///   A,
+///   B,
+///  C(u32),
+/// }
+/// This will fail because of non C-like enum
+/// ```
+#[cfg(doctest)]
+fn comm_data_fails_on_non_c_like_enum() {}
+
+/// ```
+/// pub trait CommData {
+///  const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub enum MyEnum {
+///  A,
+///  B,
+///  C,
+/// }
+/// This will succeed because of C-like enum
+/// ```
+#[cfg(doctest)]
+fn comm_data_works_on_c_like_enum() {}
+
+/// ```
+/// pub trait CommData {
+/// const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub struct MyStruct {
+///    value: u32,
+/// }
+///
+/// This will succeed because of struct with repr(C)
+/// ```
+#[cfg(doctest)]
+fn comm_data_works_on_struct() {}
+
+/// ```
+/// pub trait CommData {
+/// const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data(id = "CustomID_MyStruct")]
+/// pub struct MyStruct {
+///   value: u32,
+/// }
+/// This will succeed because of struct with repr(C) and custom ID
+/// ```
+#[cfg(doctest)]
+fn comm_data_works_on_struct_with_custom_id() {}
