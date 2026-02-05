@@ -13,7 +13,6 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_H
 
-#include "score/memory/shared/managed_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
@@ -256,6 +255,11 @@ class Skeleton final : public SkeletonBinding
     std::mutex on_service_methods_subscribed_mutex_;
     MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
+
+    /// \brief Scope that is passed to the method call handler that is registered for each ProxyMethod
+    ///
+    /// This scope will be manually expired in PrepareStopOffer.
+    safecpp::Scope<> method_call_handler_scope_;
 
     bool was_old_shm_region_reopened_;
 

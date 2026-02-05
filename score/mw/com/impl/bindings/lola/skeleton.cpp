@@ -292,6 +292,7 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       on_service_methods_subscribed_mutex_{},
       method_resources_{},
       skeleton_methods_{},
+      method_call_handler_scope_{},
       was_old_shm_region_reopened_{false},
       filesystem_{std::move(filesystem)},
       on_service_method_subscribed_handler_scope_{}
@@ -1001,7 +1002,8 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
             type_erased_call_queue.GetInArgValuesQueueStorage(),
             type_erased_call_queue.GetReturnValueQueueStorage(),
             proxy_method_instance_identifier,
-            opened_shm_region);
+            opened_shm_region,
+            method_call_handler_scope_);
         if (!(result.has_value()))
         {
             score::mw::log::LogError("lola")

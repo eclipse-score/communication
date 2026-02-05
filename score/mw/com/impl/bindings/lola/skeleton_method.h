@@ -56,14 +56,14 @@ class SkeletonMethod : public SkeletonMethodBinding
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-        std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource);
+        std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource,
+        const safecpp::Scope<>& method_call_handler_scope);
 
     void Call(const std::optional<score::cpp::span<std::byte>> in_args, const std::optional<score::cpp::span<std::byte>> return_arg);
 
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
-    safecpp::Scope<> method_call_handler_scope_;
     QualityType asil_level_;
 };
 
@@ -77,13 +77,15 @@ class SkeletonMethodView
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-        std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource)
+        std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource,
+        const safecpp::Scope<>& method_call_handler_scope)
     {
         return skeleton_method_.OnProxyMethodSubscribeFinished(type_erased_element_info,
                                                                in_arg_queue_storage,
                                                                return_queue_storage,
                                                                proxy_method_instance_identifier,
-                                                               methods_shm_resource);
+                                                               methods_shm_resource,
+                                                               method_call_handler_scope);
     }
 
     bool IsRegistered()
