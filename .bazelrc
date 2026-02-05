@@ -78,3 +78,6 @@ test:clang-tidy --output_groups=+rules_lint_report
 test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 
 import quality/sanitizer/sanitizer.bazelrc
+
+# Use native sphinx_build_binary instead of the wrapper
+build --//score/mw/com/doc/sphinx/utils:use_native_sphinx_build
