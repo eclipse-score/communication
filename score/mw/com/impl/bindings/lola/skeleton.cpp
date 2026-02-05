@@ -400,6 +400,17 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
             tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback);
     }
 
+    // Clean up method resources
+    // Expiring the method call handler scope will wait until all current method calls are finished and will block any
+    // new handlers from being called.
+    method_call_handler_scope_.Expire();
+
+    // Destroy our pointers to all opened shared memory regions
+    method_resources_.Clear();
+
+    /// TODO: Unregister the OnServiceMethodSubscribedHandler and all MethodCallHandlers relating to this Skeleton
+    /// instance. To be done in: Ticket-243577
+
     memory::shared::ExclusiveFlockMutex service_instance_usage_mutex{*service_instance_usage_marker_file_};
     std::unique_lock<memory::shared::ExclusiveFlockMutex> service_instance_usage_lock{service_instance_usage_mutex,
                                                                                       std::defer_lock};

@@ -77,6 +77,8 @@ class MethodResourceMap
                                     const std::shared_ptr<memory::shared::ISharedMemoryResource>& methods_shm_resource)
         -> std::pair<iterator, CleanUpResult>;
 
+    void Clear();
+
   private:
     auto EraseRegionsFromCrashedProcesses(const GlobalConfiguration::ApplicationId proxy_app_id, const pid_t proxy_pid)
         -> CleanUpResult;

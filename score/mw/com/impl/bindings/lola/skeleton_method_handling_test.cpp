@@ -247,6 +247,72 @@ TEST_F(SkeletonPrepareOfferFixture, FailingToGetBindingRuntimeInPrepareOfferTerm
             kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback)));
 }
 
+using SkeletonPrepareStopOfferFixture = SkeletonMethodHandlingFixture;
+TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCallHandlers)
+{
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+
+    // Expecting that a method call handler is registered for both methods
+    const ProxyMethodInstanceIdentifier foo_proxy_method_instance_identifier{proxy_instance_identifier_,
+                                                                             test::kFooMethodId};
+    const ProxyMethodInstanceIdentifier dumb_proxy_method_instance_identifier{proxy_instance_identifier_,
+                                                                              test::kDumbMethodId};
+    std::optional<IMessagePassingService::MethodCallHandler> method_call_handler_1{};
+    std::optional<IMessagePassingService::MethodCallHandler> method_call_handler_2{};
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_instance_identifier, _))
+        .WillOnce(WithArgs<2>(Invoke([&method_call_handler_1](auto method_call_handler) -> ResultBlank {
+            method_call_handler_1.emplace(method_call_handler);
+            return {};
+        })));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_instance_identifier, _))
+        .WillOnce(WithArgs<2>(Invoke([&method_call_handler_2](auto method_call_handler) -> ResultBlank {
+            method_call_handler_2.emplace(method_call_handler);
+            return {};
+        })));
+
+    // and given that PrepareStopOffer was called
+    skeleton_->PrepareStopOffer({});
+
+    // and given that the registered method subscribed handler is called
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
+                              proxy_instance_identifier_,
+                              test::kAllowedQmMethodConsumer,
+                              QualityType::kASIL_QM,
+                              kDummyPid);
+
+    // When calling the method call handlers
+    const auto method_call_handler_result_1 = std::invoke(method_call_handler_1.value(), 0U);
+    const auto method_call_handler_result_2 = std::invoke(method_call_handler_1.value(), 0U);
+
+    // Then both call results will contain errors indicating that the scope has expired
+    EXPECT_FALSE(method_call_handler_result_1.has_value());
+    EXPECT_FALSE(method_call_handler_result_2.has_value());
+}
+
+TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDestroysPointerToSharedMemory)
+{
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+
+    // When calling the registered method subscribed handler which will open the shared memory region
+    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
+                              proxy_instance_identifier_,
+                              test::kAllowedQmMethodConsumer,
+                              QualityType::kASIL_QM,
+                              kDummyPid);
+
+    // When calling PrepareStopOffer
+    const auto shm_resource_ref_counter_after_opening = mock_method_memory_resource_.use_count();
+    skeleton_->PrepareStopOffer({});
+
+    // Then the reference counter for the methods SharedMemoryResource should be decremented, indicating that it's
+    // been deleted from the Skeleton's state
+    EXPECT_EQ(mock_method_memory_resource_.use_count(), shm_resource_ref_counter_after_opening - 1U);
+}
+
 using SkeletonOnServiceMethodsSubscribedFixture = SkeletonMethodHandlingFixture;
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsValidWhenQmProxyUidIsInAllowedConsumers)
 {

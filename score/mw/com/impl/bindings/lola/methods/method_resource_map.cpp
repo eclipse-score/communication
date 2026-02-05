@@ -82,4 +82,9 @@ auto MethodResourceMap::EraseRegionsFromCrashedProcesses(const GlobalConfigurati
     return CleanUpResult::NO_REGIONS_REMOVED;
 }
 
+auto MethodResourceMap::Clear() -> void
+{
+    resource_map_.clear();
+}
+
 }  // namespace score::mw::com::impl::lola
