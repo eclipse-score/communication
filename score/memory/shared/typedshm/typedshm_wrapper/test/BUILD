@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 cc_library(
     name = "typedmemory_mock",
     testonly = True,
