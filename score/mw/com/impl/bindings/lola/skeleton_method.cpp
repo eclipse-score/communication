@@ -108,6 +108,11 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
         asil_level_, proxy_method_instance_identifier, std::move(method_call_callback));
 }
 
+bool SkeletonMethod::IsRegistered() const
+{
+    return type_erased_callback_.has_value();
+}
+
 void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_args,
                           const std::optional<score::cpp::span<std::byte>> return_arg)
 {

@@ -923,7 +923,7 @@ bool Skeleton::VerifyAllMethodsRegistered() const
     for (const auto& [ignorable, method_reference] : skeleton_methods_)
     {
         score::cpp::ignore = ignorable;
-        if (!SkeletonMethodView{method_reference.get()}.IsRegistered())
+        if (!method_reference.get().IsRegistered())
         {
             return false;
         }
@@ -1008,13 +1008,13 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
             "Each method that was stored in shared memory by the proxy must be registered with the Skeleton!");
         auto& skeleton_method = skeleton_methods_.at(method_id);
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
-        const auto result = SkeletonMethodView{skeleton_method.get()}.OnProxyMethodSubscribeFinished(
-            type_erased_call_queue.GetTypeErasedElementInfo(),
-            type_erased_call_queue.GetInArgValuesQueueStorage(),
-            type_erased_call_queue.GetReturnValueQueueStorage(),
-            proxy_method_instance_identifier,
-            opened_shm_region,
-            method_call_handler_scope_);
+        const auto result =
+            skeleton_method.get().OnProxyMethodSubscribeFinished(type_erased_call_queue.GetTypeErasedElementInfo(),
+                                                                 type_erased_call_queue.GetInArgValuesQueueStorage(),
+                                                                 type_erased_call_queue.GetReturnValueQueueStorage(),
+                                                                 proxy_method_instance_identifier,
+                                                                 opened_shm_region,
+                                                                 method_call_handler_scope_);
         if (!(result.has_value()))
         {
             score::mw::log::LogError("lola")

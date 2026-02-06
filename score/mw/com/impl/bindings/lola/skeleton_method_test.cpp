@@ -122,9 +122,6 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
     safecpp::Scope<> method_call_handler_scope_{};
 };
 
-// Note: OnProxyMethodSubscribeFinished is private to prevent end users of mw::com accessing it. However, it is used
-// by the parent Skeleton (accessed via SkeletonMethodView) and so is part of the public API within the implementation
-// of mw::com. Therefore, we test it here.
 using SkeletonMethodOnProxyMethodSubscribedFixture = SkeletonMethodFixture;
 TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingWithoutRegisteringCallbackTerminates)
 {
@@ -132,13 +129,12 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingWithoutRegisteringCa
 
     // When calling OnProxyMethodSubscribeFinished without first calling Register
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(
-        score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                                kValidInArgStorage,
-                                                                                kValidReturnStorage,
-                                                                                proxy_method_instance_identifier_,
-                                                                                methods_shared_memory_resource_,
-                                                                                method_call_handler_scope_));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                                                     kValidInArgStorage,
+                                                                                     kValidReturnStorage,
+                                                                                     proxy_method_instance_identifier_,
+                                                                                     methods_shared_memory_resource_,
+                                                                                     method_call_handler_scope_));
 }
 
 TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredCallbackWithMessagePassing)
@@ -156,12 +152,12 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredC
         })));
 
     // When calling OnProxyMethodSubscribeFinished with a registered callback
-    const auto result = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                                  kValidInArgStorage,
-                                                                                  kValidReturnStorage,
-                                                                                  proxy_method_instance_identifier_,
-                                                                                  methods_shared_memory_resource_,
-                                                                                  method_call_handler_scope_);
+    const auto result = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                              kValidInArgStorage,
+                                                              kValidReturnStorage,
+                                                              proxy_method_instance_identifier_,
+                                                              methods_shared_memory_resource_,
+                                                              method_call_handler_scope_);
 
     // Then the result will be valid
     ASSERT_TRUE(result.has_value());
@@ -177,12 +173,12 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, PropagatesErrorFromMessageP
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling OnProxyMethodSubscribeFinished with a registered callback
-    const auto result = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                                  kValidInArgStorage,
-                                                                                  kValidReturnStorage,
-                                                                                  proxy_method_instance_identifier_,
-                                                                                  methods_shared_memory_resource_,
-                                                                                  method_call_handler_scope_);
+    const auto result = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                              kValidInArgStorage,
+                                                              kValidReturnStorage,
+                                                              proxy_method_instance_identifier_,
+                                                              methods_shared_memory_resource_,
+                                                              method_call_handler_scope_);
 
     // Then the result will contain an error
     ASSERT_FALSE(result.has_value());
@@ -198,13 +194,12 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, FailingToGetLolaRuntimeTerm
 
     // When calling OnProxyMethodSubscribeFinished with a registered callback
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                                kValidInArgStorage,
-                                                                                kValidReturnStorage,
-                                                                                proxy_method_instance_identifier_,
-                                                                                methods_shared_memory_resource_,
-                                                                                method_call_handler_scope_));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                                                     kValidInArgStorage,
+                                                                                     kValidReturnStorage,
+                                                                                     proxy_method_instance_identifier_,
+                                                                                     methods_shared_memory_resource_,
+                                                                                     method_call_handler_scope_));
 }
 
 using SkeletonMethodCallFixture = SkeletonMethodFixture;
@@ -220,12 +215,12 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndStorageDispatchesTo
         }));
 
     // Given that OnProxyMethodSubscribeFinished was called with only InArgs TypeErasedElementInfo and storage
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsOnly,
-                                                                            kValidInArgStorage,
-                                                                            kEmptyReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsOnly,
+                                                        kValidInArgStorage,
+                                                        kEmptyReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_,
+                                                        method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -246,12 +241,12 @@ TEST_F(SkeletonMethodCallFixture,
         }));
 
     // Given that OnProxyMethodSubscribeFinished was called with only Return TypeErasedElementInfo and storage
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithReturnOnly,
-                                                                            kEmptyInArgStorage,
-                                                                            kValidReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithReturnOnly,
+                                                        kEmptyInArgStorage,
+                                                        kValidReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_,
+                                                        method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -273,12 +268,12 @@ TEST_F(SkeletonMethodCallFixture,
 
     // Given that OnProxyMethodSubscribeFinished was called with both InArgs and Return TypeErasedElementInfo and
     // storage
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                            kValidInArgStorage,
-                                                                            kValidReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                        kValidInArgStorage,
+                                                        kValidReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_,
+                                                        method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -298,12 +293,12 @@ TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToR
         }));
 
     // Given that OnProxyMethodSubscribeFinished was called with only Return TypeErasedElementInfo and storage
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
-                                                                            kEmptyInArgStorage,
-                                                                            kEmptyReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
+                                                        kEmptyInArgStorage,
+                                                        kEmptyReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_,
+                                                        method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -317,12 +312,12 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndNoValidStorageTermi
 
     // Given that OnProxyMethodSubscribeFinished was called with only InArgs TypeErasedElementInfo but no valid InArgs
     // storage
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsOnly,
-                                                                            kEmptyInArgStorage,
-                                                                            kEmptyReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsOnly,
+                                                        kEmptyInArgStorage,
+                                                        kEmptyReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_,
+                                                        method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -337,12 +332,12 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
 
     // Given that OnProxyMethodSubscribeFinished was called with only Return TypeErasedElementInfo but no valid Return
     // storage
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithReturnOnly,
-                                                                            kEmptyInArgStorage,
-                                                                            kEmptyReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithReturnOnly,
+                                                        kEmptyInArgStorage,
+                                                        kEmptyReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_,
+                                                        method_call_handler_scope_);
 
     // and given that the method call handler scope has expired
     method_call_handler_scope_.Expire();
@@ -367,12 +362,12 @@ TEST_F(SkeletonMethodPartialRestartFixture, CallingCallWithValidSharedMemoryReso
     // Given that OnProxyMethodSubscribeFinished was called with a weak_ptr to a valid methods shared memory resource
     const std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shared_memory_resource_weak_ptr{
         methods_shared_memory_resource_};
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                            kValidInArgStorage,
-                                                                            kValidReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_weak_ptr,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                        kValidInArgStorage,
+                                                        kValidReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_weak_ptr,
+                                                        method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -392,12 +387,12 @@ TEST_F(SkeletonMethodPartialRestartFixture, CallingCallWithoutValidSharedMemoryR
     const std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shared_memory_resource_weak_ptr{
         methods_shared_memory_resource_};
     methods_shared_memory_resource_.reset();
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                            kValidInArgStorage,
-                                                                            kValidReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_weak_ptr,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                        kValidInArgStorage,
+                                                        kValidReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_weak_ptr,
+                                                        method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -421,12 +416,12 @@ TEST_F(SkeletonMethodPartialRestartFixture,
     // Given that OnProxyMethodSubscribeFinished was called with a weak_ptr to a valid methods shared memory resource
     const std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shared_memory_resource_weak_ptr{
         methods_shared_memory_resource_};
-    score::cpp::ignore = SkeletonMethodView{*unit_}.OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                            kValidInArgStorage,
-                                                                            kValidReturnStorage,
-                                                                            proxy_method_instance_identifier_,
-                                                                            methods_shared_memory_resource_weak_ptr,
-                                                                            method_call_handler_scope_);
+    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                        kValidInArgStorage,
+                                                        kValidReturnStorage,
+                                                        proxy_method_instance_identifier_,
+                                                        methods_shared_memory_resource_weak_ptr,
+                                                        method_call_handler_scope_);
 
     // (The methods shared memory resource should only be referenced by the shared_ptr in the fixture which is
     // representing its storage in a Skeleton)
