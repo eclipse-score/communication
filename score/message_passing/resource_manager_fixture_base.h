@@ -394,8 +394,50 @@ class ResourceManagerMockHelper
 class ResourceManagerFixtureBase : public ::testing::Test
 {
   protected:
+    // in order to not lose access to mocks once we move their unique_ptr to their new owner,
+    // we will save raw pointers to them. Then we can still use EXPECT_CALL() on them without UB,
+    // as long as we do it before the new owner destructs the mock.
+    template <typename T>
+    class RetainableUniquePtr
+    {
+      public:
+        RetainableUniquePtr() = default;
+        ~RetainableUniquePtr() = default;
+
+        // to avoid complicating lifetime issues, we will make this wrapper noncopyable
+        RetainableUniquePtr(const RetainableUniquePtr&) = delete;
+        RetainableUniquePtr(RetainableUniquePtr&&) = delete;
+        RetainableUniquePtr& operator=(const RetainableUniquePtr&) = delete;
+        RetainableUniquePtr& operator=(RetainableUniquePtr&&) = delete;
+
+        RetainableUniquePtr& operator=(score::cpp::pmr::unique_ptr<T>&& assigned)
+        {
+            owner_ = std::move(assigned);
+            pointer_ = owner_.get();
+            return *this;
+        }
+
+        score::cpp::pmr::unique_ptr<T>&& MoveOwnership()
+        {
+            return std::move(owner_);
+            // and retain pointer_
+        }
+
+        T& operator*()
+        {
+            return *pointer_;
+        }
+
+      private:
+        score::cpp::pmr::unique_ptr<T> owner_{};
+        T* pointer_{};
+    };
+
     template <typename Mock>
-    static void SetupResource(score::cpp::pmr::unique_ptr<Mock>& mock_ptr)
+    using mock_ptr = RetainableUniquePtr<testing::StrictMock<Mock>>;
+
+    template <typename Mock>
+    static void SetupResource(RetainableUniquePtr<Mock>& mock_ptr)
     {
         mock_ptr = score::cpp::pmr::make_unique<Mock>(score::cpp::pmr::get_default_resource());
     }
@@ -411,17 +453,23 @@ class ResourceManagerFixtureBase : public ::testing::Test
         SetupResource(unistd_);
     }
 
-    void TearDown() override {}
+    void TearDown() override
+    {
+        if (engine_)
+        {
+            ExpectEngineDestructed();
+        }
+    }
 
     QnxDispatchEngine::OsResources MoveMockOsResources() noexcept
     {
-        return {std::move(channel_),
-                std::move(dispatch_),
-                std::move(fcntl_),
-                std::move(iofunc_),
-                std::move(timer_),
-                std::move(sysuio_),
-                std::move(unistd_)};
+        return {channel_.MoveOwnership(),
+                dispatch_.MoveOwnership(),
+                fcntl_.MoveOwnership(),
+                iofunc_.MoveOwnership(),
+                timer_.MoveOwnership(),
+                sysuio_.MoveOwnership(),
+                unistd_.MoveOwnership()};
     }
 
     void ExpectEngineConstructed()
@@ -506,8 +554,20 @@ class ResourceManagerFixtureBase : public ::testing::Test
             .WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_ocb_attach));
     }
 
-    template <typename Mock>
-    using mock_ptr = score::cpp::pmr::unique_ptr<testing::StrictMock<Mock>>;
+    void WithEngineRunning(LoggingCallback logger = {})
+    {
+        ExpectEngineConstructed();
+        ExpectEngineThreadRunning();
+        if (!logger.empty())
+        {
+            engine_ = std::make_shared<QnxDispatchEngine>(
+                score::cpp::pmr::get_default_resource(), MoveMockOsResources(), std::move(logger));
+        }
+        else
+        {
+            engine_ = std::make_shared<QnxDispatchEngine>(score::cpp::pmr::get_default_resource(), MoveMockOsResources());
+        }
+    }
 
     mock_ptr<score::os::MockChannel> channel_;
     mock_ptr<score::os::MockDispatch> dispatch_;
@@ -518,6 +578,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
     mock_ptr<score::os::UnistdMock> unistd_;
 
     ResourceManagerMockHelper helper_;
+    std::shared_ptr<QnxDispatchEngine> engine_;
 
     constexpr static dispatch_t* kFakeDispatchPtr{nullptr};
     constexpr static dispatch_context_t* kFakeContextPtr{nullptr};

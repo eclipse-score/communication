@@ -29,64 +29,54 @@ using QnxDispatchMockedServerFixture = ResourceManagerFixtureBase;
 
 TEST_F(QnxDispatchMockedServerFixture, ServerOpenConnectClientInfoFailure)
 {
-    ExpectEngineConstructed();
-    ExpectEngineThreadRunning();
-    ExpectServerAttached();
-    ExpectConnectionOpen();
+    WithEngineRunning();
 
-    EXPECT_CALL(*channel_, ConnectClientInfo)
-        .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL))));
-
-    ExpectServerDetached();
-    ExpectEngineDestructed();
-
-    auto engine = std::make_shared<QnxDispatchEngine>(score::cpp::pmr::get_default_resource(), MoveMockOsResources());
     ServiceProtocolConfig protocol_config{"fake_path", 0U, 0U, 0U};
     IServerFactory::ServerConfig server_config{};
-    detail::QnxDispatchServer server{engine, protocol_config, server_config};
-    QnxDispatchEngine::QnxResourcePath path{"fake_path"};
+    detail::QnxDispatchServer server{engine_, protocol_config, server_config};
 
     auto connect_callback = [this](IServerConnection&) -> void* {
         return nullptr;
     };
 
+    ExpectServerAttached();
+    EXPECT_CALL(*channel_, ConnectClientInfo)
+        .WillOnce(Return(score::cpp::make_unexpected(score::os::Error::createFromErrno(EINVAL))));
+
+    ExpectConnectionOpen();
     ASSERT_TRUE(server.StartListening(connect_callback, DisconnectCallback{}, MessageCallback{}, MessageCallback{})
                     .has_value());
 
     helper_.HelperInsertIoOpen(score::cpp::blank{});
     EXPECT_EQ(helper_.promises_.open.get_future().get(), EINVAL);
 
+    ExpectServerDetached();
     server.StopListening();
 }
 
 TEST_F(QnxDispatchMockedServerFixture, ServerOpenConnectOcbAttachFailure)
 {
-    ExpectEngineConstructed();
-    ExpectEngineThreadRunning();
-    ExpectServerAttached();
-    ExpectConnectionOpen();
+    WithEngineRunning();
 
-    EXPECT_CALL(*channel_, ConnectClientInfo).Times(1);
-    EXPECT_CALL(*iofunc_, iofunc_ocb_attach).WillOnce(Return(score::cpp::make_unexpected(EIO)));
-
-    ExpectServerDetached();
-    ExpectEngineDestructed();
-
-    auto engine = std::make_shared<QnxDispatchEngine>(score::cpp::pmr::get_default_resource(), MoveMockOsResources());
     ServiceProtocolConfig protocol_config{"fake_path", 0U, 0U, 0U};
     IServerFactory::ServerConfig server_config{};
-    detail::QnxDispatchServer server{engine, protocol_config, server_config};
+    detail::QnxDispatchServer server{engine_, protocol_config, server_config};
 
     auto connect_callback = [this](IServerConnection&) -> void* {
         return nullptr;
     };
 
+    ExpectServerAttached();
     ASSERT_TRUE(server.StartListening(connect_callback, DisconnectCallback{}, MessageCallback{}, MessageCallback{})
                     .has_value());
 
+    EXPECT_CALL(*channel_, ConnectClientInfo).Times(1);
+    EXPECT_CALL(*iofunc_, iofunc_ocb_attach).WillOnce(Return(score::cpp::make_unexpected(EIO)));
+    ExpectConnectionOpen();
     helper_.HelperInsertIoOpen(score::cpp::blank{});
     EXPECT_EQ(helper_.promises_.open.get_future().get(), EIO);
 
+    ExpectServerDetached();
     server.StopListening();
 }
 
