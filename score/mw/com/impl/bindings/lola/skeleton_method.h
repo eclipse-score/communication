@@ -48,7 +48,6 @@ class SkeletonMethod : public SkeletonMethodBinding
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-        std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource,
         const safecpp::Scope<>& method_call_handler_scope);
 
     bool IsRegistered() const;

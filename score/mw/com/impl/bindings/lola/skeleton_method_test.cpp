@@ -133,7 +133,6 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingWithoutRegisteringCa
                                                                                      kValidInArgStorage,
                                                                                      kValidReturnStorage,
                                                                                      proxy_method_instance_identifier_,
-                                                                                     methods_shared_memory_resource_,
                                                                                      method_call_handler_scope_));
 }
 
@@ -156,7 +155,6 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredC
                                                               kValidInArgStorage,
                                                               kValidReturnStorage,
                                                               proxy_method_instance_identifier_,
-                                                              methods_shared_memory_resource_,
                                                               method_call_handler_scope_);
 
     // Then the result will be valid
@@ -177,7 +175,6 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, PropagatesErrorFromMessageP
                                                               kValidInArgStorage,
                                                               kValidReturnStorage,
                                                               proxy_method_instance_identifier_,
-                                                              methods_shared_memory_resource_,
                                                               method_call_handler_scope_);
 
     // Then the result will contain an error
@@ -198,7 +195,6 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, FailingToGetLolaRuntimeTerm
                                                                                      kValidInArgStorage,
                                                                                      kValidReturnStorage,
                                                                                      proxy_method_instance_identifier_,
-                                                                                     methods_shared_memory_resource_,
                                                                                      method_call_handler_scope_));
 }
 
@@ -219,7 +215,6 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndStorageDispatchesTo
                                                         kValidInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_,
                                                         method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
@@ -245,7 +240,6 @@ TEST_F(SkeletonMethodCallFixture,
                                                         kEmptyInArgStorage,
                                                         kValidReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_,
                                                         method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
@@ -272,7 +266,6 @@ TEST_F(SkeletonMethodCallFixture,
                                                         kValidInArgStorage,
                                                         kValidReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_,
                                                         method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
@@ -297,7 +290,6 @@ TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToR
                                                         kEmptyInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_,
                                                         method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
@@ -316,7 +308,6 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndNoValidStorageTermi
                                                         kEmptyInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_,
                                                         method_call_handler_scope_);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
@@ -336,7 +327,6 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
                                                         kEmptyInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_,
                                                         method_call_handler_scope_);
 
     // and given that the method call handler scope has expired
@@ -344,88 +334,6 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
 
     // Expecting that the registered type erased callback will not be called
     EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).Times(0);
-
-    // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
-    // to call the method)
-    ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
-}
-
-using SkeletonMethodPartialRestartFixture = SkeletonMethodFixture;
-TEST_F(SkeletonMethodPartialRestartFixture, CallingCallWithValidSharedMemoryResourceWillCallHandler)
-{
-    GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
-
-    // Expecting that the registered type erased callback is called
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).Times(1);
-
-    // Given that OnProxyMethodSubscribeFinished was called with a weak_ptr to a valid methods shared memory resource
-    const std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shared_memory_resource_weak_ptr{
-        methods_shared_memory_resource_};
-    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                        kValidInArgStorage,
-                                                        kValidReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_weak_ptr,
-                                                        method_call_handler_scope_);
-
-    // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
-    // to call the method)
-    ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
-}
-
-TEST_F(SkeletonMethodPartialRestartFixture, CallingCallWithoutValidSharedMemoryResourceWillNotCallHandler)
-{
-    GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
-
-    // Expecting that the registered type erased callback is not called
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).Times(0);
-
-    // Given that OnProxyMethodSubscribeFinished was called with a weak_ptr to a methods shared memory resource which
-    // was already destroyed
-    const std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shared_memory_resource_weak_ptr{
-        methods_shared_memory_resource_};
-    methods_shared_memory_resource_.reset();
-    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                        kValidInArgStorage,
-                                                        kValidReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_weak_ptr,
-                                                        method_call_handler_scope_);
-
-    // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
-    // to call the method)
-    ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
-}
-
-TEST_F(SkeletonMethodPartialRestartFixture,
-       CallingCallWithValidSharedMemoryResourceWillExtendItsLifetimeUntilHandlerIsCalled)
-{
-    GivenASkeletonMethod().WithARegisteredCallback().WhichCapturesRegisteredMethodCallHandler();
-
-    // Expecting that the registered type erased callback is called
-    EXPECT_CALL(registered_type_erased_callback_, Call(_, _)).WillOnce(InvokeWithoutArgs([this]() {
-        // Then the lifetime of the methods shared memory region should have been extended for the duration of the
-        // methods call (which is shown as the reference count of the methods shared memory region should have been
-        // incremented by the shared_ptr created in the handler
-        EXPECT_EQ(methods_shared_memory_resource_.use_count(), 2);
-    }));
-
-    // Given that OnProxyMethodSubscribeFinished was called with a weak_ptr to a valid methods shared memory resource
-    const std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shared_memory_resource_weak_ptr{
-        methods_shared_memory_resource_};
-    score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                        kValidInArgStorage,
-                                                        kValidReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        methods_shared_memory_resource_weak_ptr,
-                                                        method_call_handler_scope_);
-
-    // (The methods shared memory resource should only be referenced by the shared_ptr in the fixture which is
-    // representing its storage in a Skeleton)
-    ASSERT_EQ(methods_shared_memory_resource_.use_count(), 1);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)

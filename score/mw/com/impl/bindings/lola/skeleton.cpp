@@ -1013,7 +1013,6 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
                                                                  type_erased_call_queue.GetInArgValuesQueueStorage(),
                                                                  type_erased_call_queue.GetReturnValueQueueStorage(),
                                                                  proxy_method_instance_identifier,
-                                                                 opened_shm_region,
                                                                  method_call_handler_scope_);
         if (!(result.has_value()))
         {
