@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
@@ -202,9 +203,34 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscri
 {
     GivenASkeletonWithTwoMethods();
 
-    // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns a valid
-    // result
-    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(_, skeleton_instance_identifier_, _))
+    // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing for QM only which returns a
+    // valid result
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+        .WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
+        .Times(0);
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then a valid result is returned
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOnAsilBSkeletonWillRegisterQmAndAsilBServiceMethodSubscribedHandler)
+{
+    GivenAnAsilBSkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing for QM and Asil B which
+    // returns a valid result
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+        .WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
         .WillOnce(Return(score::ResultBlank{}));
 
     // When calling PrepareOffer
@@ -217,11 +243,35 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscri
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfRegisterServiceMethodSubscribedHandlerReturnsError)
 {
-    GivenASkeletonWithTwoMethods();
+    GivenAnAsilBSkeletonWithTwoMethods();
 
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns an error
     const auto error_code = ComErrc::kCommunicationLinkError;
-    EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(_, skeleton_instance_identifier_, _))
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+        .WillOnce(Return(MakeUnexpected(error_code)));
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), error_code);
+}
+
+TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfAsilBRegisterServiceMethodSubscribedHandlerReturnsError)
+{
+    GivenAnAsilBSkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing for QM which returns blank
+    // and ASIL B which returns an error
+    const auto error_code = ComErrc::kCommunicationLinkError;
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+        .WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling PrepareOffer

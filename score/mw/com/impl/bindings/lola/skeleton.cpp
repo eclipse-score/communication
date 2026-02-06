@@ -356,22 +356,41 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         CleanupSharedMemoryAfterCrash();
     }
 
-    // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
-    // message passing that it has finished setting up the regions.
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
     const SkeletonInstanceIdentifier skeleton_instance_identifier{lola_service_id_, lola_instance_id_};
-    return lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
-        GetInstanceQualityType(),
-        skeleton_instance_identifier,
-        IMessagePassingService::ServiceMethodSubscribedHandler{
-            on_service_method_subscribed_handler_scope_,
-            [this](const ProxyInstanceIdentifier proxy_instance_identifier,
-                   const uid_t proxy_uid,
-                   const QualityType asil_level,
-                   const pid_t proxy_pid) -> ResultBlank {
-                return OnServiceMethodsSubscribed(proxy_instance_identifier, proxy_uid, asil_level, proxy_pid);
-            }});
+
+    // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
+    // message passing that it has finished setting up the regions. We always register a handler for QM proxies and also
+    // register a handler for ASIL-B proxies if this skeleton is ASIL-B.
+    IMessagePassingService::ServiceMethodSubscribedHandler service_method_subscribed_handler{
+        on_service_method_subscribed_handler_scope_,
+        [this](const ProxyInstanceIdentifier proxy_instance_identifier,
+               const uid_t proxy_uid,
+               const QualityType asil_level,
+               const pid_t proxy_pid) -> ResultBlank {
+            return OnServiceMethodsSubscribed(proxy_instance_identifier, proxy_uid, asil_level, proxy_pid);
+        }};
+    const auto qm_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+        QualityType::kASIL_QM, skeleton_instance_identifier, service_method_subscribed_handler);
+    if (!(qm_registration_result.has_value()))
+    {
+        score::mw::log::LogError("lola") << "Could not register QM service method handler. Returning error.";
+        return qm_registration_result;
+    }
+
+    if (detail_skeleton::HasAsilBSupport(identifier_))
+    {
+        const auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+            QualityType::kASIL_B, skeleton_instance_identifier, service_method_subscribed_handler);
+        if (!(asil_b_registration_result))
+        {
+            score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
+        }
+        return asil_b_registration_result;
+    }
+
+    return {};
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
