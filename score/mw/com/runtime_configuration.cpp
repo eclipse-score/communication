@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <fstream>
 #include <optional>
 #include <string>
 #include <utility>
@@ -31,13 +32,25 @@ namespace score::mw::com::runtime
 namespace
 {
 
-constexpr auto kDefaultConfigurationPath = "./etc/mw_com_config.json";
+constexpr auto kDefaultConfigurationPathJson = "./etc/mw_com_config.json";
+constexpr auto kDefaultConfigurationPathBin = "./etc/mw_com_config.bin";
 constexpr auto kDeprecatedConfigurationPathCommandLineKey = std::string_view{"-service_instance_manifest"};
 constexpr auto kConfigurationPathCommandLineKey = std::string_view{"--service_instance_manifest"};
 
+filesystem::Path GetDefaultConfigurationPath()
+{
+    // Try FlatBuffer configuration first - use simple file existence check
+    std::ifstream bin_file(kDefaultConfigurationPathBin);
+    if (bin_file.good())
+    {
+        return kDefaultConfigurationPathBin;
+    }
+    return kDefaultConfigurationPathJson;
+}
+
 }  // namespace
 
-RuntimeConfiguration::RuntimeConfiguration() : RuntimeConfiguration{kDefaultConfigurationPath} {}
+RuntimeConfiguration::RuntimeConfiguration() : RuntimeConfiguration{GetDefaultConfigurationPath()} {}
 
 RuntimeConfiguration::RuntimeConfiguration(filesystem::Path configuration_path)
     : configuration_path_{std::move(configuration_path)}
@@ -51,7 +64,7 @@ RuntimeConfiguration::RuntimeConfiguration(const std::int32_t argc, score::Strin
         argv, static_cast<score::cpp::span<const score::StringLiteral>::size_type>(argc));
     auto configuration_path = ParseConfigurationPath(command_line_arguments);
     configuration_path_ =
-        configuration_path.has_value() ? std::move(configuration_path).value() : kDefaultConfigurationPath;
+        configuration_path.has_value() ? std::move(configuration_path).value() : GetDefaultConfigurationPath();
 }
 
 const filesystem::Path& RuntimeConfiguration::GetConfigurationPath() const
