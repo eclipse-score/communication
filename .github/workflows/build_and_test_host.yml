@@ -28,6 +28,8 @@ jobs:
         matrix:
           toolchain: ["@llvm_toolchain//:cc-toolchain-x86_64-linux", "@gcc_toolchain//:host_gcc_12"]
       runs-on: ubuntu-24.04
+      permissions:
+        contents: read
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
