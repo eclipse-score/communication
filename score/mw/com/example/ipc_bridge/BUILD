@@ -88,7 +88,6 @@ rust_binary(
         ":mw_com_config.bin",
     ],
     features = ["link_std_cpp_lib"],
-    rustc_flags = ["-Clink-arg=-lstdc++"],
     deps = [
         ":ipc_bridge_gen_rs",
         "//score/mw/com/impl/rust:mw_com",
