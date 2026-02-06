@@ -20,6 +20,7 @@ rust_library(
     features = ["link_std_cpp_lib"],
     visibility = [
         "//score/mw/com:__subpackages__",
+        "//examples:__subpackages__",
     ],
     deps = [
         ":vehicle_gen_cpp",
