@@ -16,23 +16,16 @@ use com_api::{
     Runtime, Subscriber,
 };
 
-#[derive(Debug, Reloc)]
+#[derive(Debug, CommData)]
 #[repr(C)]
 pub struct Tire {
     pub pressure: f32,
 }
 
-impl CommData for Tire {
-    const ID: &'static str = "Tire";
-}
-
-#[derive(Debug, Reloc)]
+#[derive(Debug, CommData)]
 #[repr(C)]
+#[comm_data(id = "com_api_gen::Exhaust")]
 pub struct Exhaust {}
-
-impl CommData for Exhaust {
-    const ID: &'static str = "Exhaust";
-}
 
 pub struct VehicleInterface {}
 
