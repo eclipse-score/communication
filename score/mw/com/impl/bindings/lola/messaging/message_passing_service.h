@@ -24,13 +24,8 @@
 
 #include "score/concurrency/thread_pool.h"
 
-#ifdef __QNX__
-#include "score/message_passing/qnx_dispatch/qnx_dispatch_client_factory.h"
-#include "score/message_passing/qnx_dispatch/qnx_dispatch_server_factory.h"
-#else
-#include "score/message_passing/unix_domain/unix_domain_client_factory.h"
-#include "score/message_passing/unix_domain/unix_domain_server_factory.h"
-#endif
+#include "score/message_passing/client_factory.h"
+#include "score/message_passing/server_factory.h"
 
 #include "score/concurrency/thread_pool.h"
 
@@ -148,20 +143,9 @@ class MessagePassingService final : public IMessagePassingService
                            std::size_t queue_position) override;
 
   private:
-// Suppress "AUTOSAR C++14 A16-0-1" rule findings.
-// This is the standard way to determine if it runs on QNX or Unix
-// coverity[autosar_cpp14_a16_0_1_violation]
-#ifdef __QNX__
-    using Engine = score::message_passing::QnxDispatchEngine;
-    using ClientFactory = score::message_passing::QnxDispatchClientFactory;
-    using ServerFactory = score::message_passing::QnxDispatchServerFactory;
-    // coverity[autosar_cpp14_a16_0_1_violation]
-#else
-    using Engine = score::message_passing::UnixDomainEngine;
-    using ClientFactory = score::message_passing::UnixDomainClientFactory;
-    using ServerFactory = score::message_passing::UnixDomainServerFactory;
-    // coverity[autosar_cpp14_a16_0_1_violation]
-#endif
+    using Engine = score::message_passing::Engine;
+    using ClientFactory = score::message_passing::ClientFactory;
+    using ServerFactory = score::message_passing::ServerFactory;
 
     ClientFactory client_factory_;
 

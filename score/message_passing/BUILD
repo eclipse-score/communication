@@ -43,13 +43,28 @@ test_suite(
     visibility = ["//score/message_passing:__pkg__"],
 )
 
-alias(
+cc_library(
     name = "message_passing",
-    actual = select({
-        "@platforms//os:qnx": ":message_passing_qnx_dispatch",
-        "//conditions:default": ":message_passing_unix_domain",
+    hdrs = [
+        "client_factory.h",
+        "engine.h",
+        "server_factory.h",
+    ],
+    features = [
+        "treat_warnings_as_errors",
+        "strict_warnings",
+        "additional_warnings",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//platform/aas/pas/logging:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
+        "@score_logging//score/mw/log/detail/data_router:__subpackages__",
+    ],
+    deps = select({
+        "@platforms//os:qnx": [":message_passing_qnx_dispatch"],
+        "//conditions:default": [":message_passing_unix_domain"],
     }),
-    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -69,7 +84,6 @@ cc_library(
         "service_protocol_config.h",
         "timed_command_queue_entry.h",
     ],
-    deprecation = "DEPRECATED: use @score_communication//score/message_passing:message_passing instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",
