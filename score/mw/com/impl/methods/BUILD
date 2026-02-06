@@ -212,5 +212,5 @@ cc_unit_test_suites_for_host_and_qnx(
         "skeleton_method_base_test",
         "skeleton_method_test",
     ],
-    visibility = ["//score/mw/com:__subpackages__"],
+    visibility = ["//score/mw/com/impl:__pkg__"],
 )

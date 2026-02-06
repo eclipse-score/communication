@@ -69,5 +69,5 @@ cc_unit_test_suites_for_host_and_qnx(
         ":runtime_mock_test",
     ],
     test_suites_from_sub_packages = [],
-    visibility = ["//score/mw/com:__subpackages__"],
+    visibility = ["//score/mw/com:__pkg__"],
 )
