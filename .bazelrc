@@ -70,6 +70,11 @@ coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
 coverage --cxxopt -mllvm
 coverage --cxxopt -runtime-counter-relocation
 
+# Clippy linting (enabled by default)
+build --aspects=@score_rust_policies//clippy:linters.bzl%clippy_strict
+build --output_groups=+rules_lint_human
+build:lint --@aspect_rules_lint//lint:fail_on_violation=true
+
 # Clang-tidy configuration
 # Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
 test:clang-tidy --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect

@@ -358,12 +358,12 @@ impl<'a, T> SampleMaybeUninit<'a, T>
 where
     T: CommData,
 {
-    fn get_allocatee_data_ptr(&self) -> Option<&mut core::mem::MaybeUninit<T>> {
+    fn get_allocatee_data_ptr(&mut self) -> Option<&mut core::mem::MaybeUninit<T>> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         let data_ptr = unsafe {
             generic_bridge_ffi_rs::get_allocatee_data_ptr(
-                std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
+                std::ptr::from_mut(&mut (*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
                 T::ID,
             ) as *mut core::mem::MaybeUninit<T>
         };
@@ -378,17 +378,20 @@ where
     type SampleMut = SampleMut<'a, T>;
 
     fn write(self, val: T) -> SampleMut<'a, T> {
-        let data_ptr = self
-            .get_allocatee_data_ptr()
-            .expect("Allocatee data pointer is null");
+        let mut this = self;
+        {
+            let data_ptr = this
+                .get_allocatee_data_ptr()
+                .expect("Allocatee data pointer is null");
 
-        //It is safe to write the value because data_ptr is valid
-        // and we are writing the value of type T which is same as allocatee_ptr type
-        data_ptr.write(val);
+            //It is safe to write the value because data_ptr is valid
+            // and we are writing the value of type T which is same as allocatee_ptr type
+            data_ptr.write(val);
+        }
 
         SampleMut {
-            skeleton_event: self.skeleton_event,
-            allocatee_ptr: self.allocatee_ptr,
+            skeleton_event: this.skeleton_event,
+            allocatee_ptr: this.allocatee_ptr,
             lifetime: PhantomData,
         }
     }
@@ -958,7 +961,7 @@ pub struct RuntimeBuilderImpl {
 
 impl Builder<LolaRuntimeImpl> for RuntimeBuilderImpl {
     fn build(self) -> com_api_concept::Result<LolaRuntimeImpl> {
-        proxy_bridge_rs::initialize(self.config_path.as_ref().map(PathBuf::as_path));
+        proxy_bridge_rs::initialize(self.config_path.as_deref());
         Ok(LolaRuntimeImpl {})
     }
 }
