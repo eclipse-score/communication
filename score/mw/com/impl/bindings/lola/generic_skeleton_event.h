@@ -19,6 +19,8 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h" 
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" 
 
+#include <string_view> 
+
 namespace score::mw::com::impl::lola
 {
 
@@ -29,9 +31,11 @@ class Skeleton;
 class GenericSkeletonEvent : public GenericSkeletonEventBinding
 {
   public:
+
     GenericSkeletonEvent(Skeleton& parent,
-                         const SkeletonEventProperties& event_properties, 
                          const ElementFqId& event_fqn,
+                         std::string_view event_name,
+                         const SkeletonEventProperties& event_properties, 
                          const DataTypeMetaInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
  
@@ -47,7 +51,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     BindingType GetBindingType() const noexcept override;
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
-        common_event_logic_.GetTracingData() = tracing_data;
+        event_shared_impl_.GetTracingData() = tracing_data;
     }
 
     std::size_t GetMaxSize() const noexcept override
@@ -59,25 +63,12 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     DataTypeMetaInfo size_info_;
     const SkeletonEventProperties event_properties_;
     score::cpp::optional<EventDataControlComposite> control_{};
-    EventSlotStatus::EventTimeStamp current_timestamp_{0U};
+    EventSlotStatus::EventTimeStamp current_timestamp_{1U};
     score::memory::shared::OffsetPtr<void> data_storage_{nullptr};
     bool qm_disconnect_{false};
     
-    SkeletonEventCommon common_event_logic_; // Aggregated common logic
+    SkeletonEventCommon event_shared_impl_; 
     
-    // This method is needed by Allocate() and Send()
-    Skeleton& GetParent() { return common_event_logic_.GetParent(); }
-    const ElementFqId& GetElementFQId() const { return common_event_logic_.GetElementFQId(); }
-    bool IsQmRegistered() const { return common_event_logic_.IsQmRegistered(); }
-    bool IsAsilBRegistered() const { return common_event_logic_.IsAsilBRegistered(); }
-
-    void ResetGuards() noexcept
-    {
-        common_event_logic_.ResetGuards();
-        // Reset members specific to GenericSkeletonEvent
-        control_.reset(); // This was part of the original ResetGuards in GenericSkeletonEvent
-        data_storage_ = nullptr;
-    }
 };
 
 } // namespace score::mw::com::impl::lola

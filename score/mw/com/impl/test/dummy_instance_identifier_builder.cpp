@@ -58,6 +58,16 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdenti
     service_instance_deployment_.instance_id_ = LolaServiceInstanceId{0x42};
     service_instance_deployment_.allowed_consumer_ = {{QualityType::kASIL_QM, {42}}};
     service_instance_deployment_.events_ = events;
+
+    // The GenericSkeleton needs the event names to be present in the Type Deployment
+    // to perform the stable string lookup. We sync it here.
+    service_type_deployment_.events_.clear();
+    for (const auto& event_pair : events) {
+        // Add the event name to the type deployment map.
+        // We assume default construction of the value (EventId) is sufficient for this mock.
+        service_type_deployment_.events_[event_pair.first] = {}; 
+    }
+
     type_deployment_.binding_info_ = service_type_deployment_;
     instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(
         type_, service_instance_deployment_, QualityType::kASIL_QM, instance_specifier_);

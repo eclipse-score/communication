@@ -14,15 +14,15 @@
 
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
-
 #include "score/result/result.h"
-#include "score/mw/com/impl/data_type_meta_info.h" // For DataTypeMetaInfo
+#include "score/mw/com/impl/data_type_meta_info.h" 
+
+#include <string> 
 
 namespace score::mw::com::impl
 {
 
 class GenericSkeletonEventBinding;
-
 
 class GenericSkeletonEvent : public SkeletonEventBase
 {
@@ -31,13 +31,10 @@ class GenericSkeletonEvent : public SkeletonEventBase
                          const std::string_view event_name,
                          std::unique_ptr<GenericSkeletonEventBinding> binding);
 
- 
     Result<score::Blank> Send(SampleAllocateePtr<void> sample) noexcept;
 
- 
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 
-   
     DataTypeMetaInfo GetSizeInfo() const noexcept;
 };
 

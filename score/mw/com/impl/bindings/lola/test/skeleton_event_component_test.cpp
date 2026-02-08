@@ -56,8 +56,8 @@ class SkeletonEventAttorney
     /// \brief Set handler availability flags for testing purposes
     void SetHandlerAvailability(bool qm_available, bool asil_b_available)
     {
-        skeleton_event_.common_event_logic_.SetQmNotificationsRegistered(qm_available);        
-        skeleton_event_.common_event_logic_.SetAsilBNotificationsRegistered(asil_b_available);
+        skeleton_event_.event_shared_impl_.SetQmNotificationsRegistered(qm_available);        
+        skeleton_event_.event_shared_impl_.SetAsilBNotificationsRegistered(asil_b_available);
     }
 
   private:

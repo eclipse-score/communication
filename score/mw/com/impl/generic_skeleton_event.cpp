@@ -14,6 +14,7 @@
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/skeleton_base.h"
+#include "score/mw/com/impl/com_error.h" 
 
 #include <functional>
 
@@ -31,10 +32,14 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     {
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
-        const auto binding_type = binding_->GetBindingType();
-        auto tracing_data =
-            tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
-        binding_->SetSkeletonEventTracingData(tracing_data);
+        auto* const binding_ptr = static_cast<GenericSkeletonEventBinding*>(binding_.get());
+        if (binding_ptr)
+        {
+             const auto binding_type = binding_ptr->GetBindingType();
+             auto tracing_data =
+                 tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+             binding_ptr->SetSkeletonEventTracingData(tracing_data);
+        }
     }
 }
 
@@ -88,6 +93,7 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
     const auto* const binding = static_cast<const GenericSkeletonEventBinding*>(binding_.get());
+    if (!binding) return {};
     const auto size_info_pair = binding->GetSizeInfo();
     return {size_info_pair.first, size_info_pair.second};
 }

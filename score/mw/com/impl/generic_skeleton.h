@@ -26,7 +26,7 @@
 #include <vector>
 #include <string_view>
 #include <cstdint>
-
+#include <memory>
 
 namespace score::mw::com::impl
 {
@@ -62,7 +62,7 @@ struct GenericSkeletonCreateParams
 class GenericSkeleton : public SkeletonBase
 {
   public:
-    using EventMap = ServiceElementMap<GenericSkeletonEvent>;
+    using EventMap = ServiceElementMap<GenericSkeletonEvent*>;
 //      using FieldMap = ServiceElementMap<GenericSkeletonField>; // commented out as field not implemented
 /// @brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
 ///
@@ -92,9 +92,6 @@ class GenericSkeleton : public SkeletonBase
 /// @note The returned reference is valid as long as the GenericSkeleton lives. 
 [[nodiscard]] const EventMap& GetEvents() const noexcept;
 
-/// @brief Returns a reference to the name-keyed map of events.
-/// @note The returned reference is valid as long as the GenericSkeleton lives.
-[[nodiscard]] EventMap& GetEvents() noexcept;
 
 /// @brief Returns a const reference to the name-keyed map of fields.
 /// @note The returned reference is valid as long as the GenericSkeleton lives. 
@@ -110,6 +107,7 @@ void StopOfferService() noexcept;
     // Private constructor, only callable by static Create methods.
     GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding, MethodCallProcessingMode mode);
 
+    std::vector<std::unique_ptr<GenericSkeletonEvent>> owned_events_;
     /// @brief This map owns all GenericSkeletonEvent instances.
     EventMap events_;
 

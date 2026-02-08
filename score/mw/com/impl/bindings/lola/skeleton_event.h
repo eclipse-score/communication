@@ -27,11 +27,22 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
+#include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" 
 
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
+#include <score/optional.hpp>
+#include <score/utility.hpp>
+
+#include <atomic>
+#include <mutex>
+#include <optional>
+#include <string_view>
+#include <tuple>
+#include <utility>
+
 namespace score::mw::com::impl::lola
 {
 
@@ -53,11 +64,23 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonEventAttorney;
 
-   
-
-
-  public: // Public API from SkeletonEventBinding
+  public: 
     using typename SkeletonEventBinding<SampleType>::SendTraceCallback;
+    using typename SkeletonEventBindingBase::SubscribeTraceCallback;
+    using typename SkeletonEventBindingBase::UnsubscribeTraceCallback;
+
+     SkeletonEvent(Skeleton& parent,
+                  const ElementFqId event_fqn,
+                  const std::string_view event_name,
+                  const SkeletonEventProperties properties,
+                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {}) noexcept;
+
+    SkeletonEvent(const SkeletonEvent&) = delete;
+    SkeletonEvent(SkeletonEvent&&) noexcept = delete;
+    SkeletonEvent& operator=(const SkeletonEvent&) & = delete;
+    SkeletonEvent& operator=(SkeletonEvent&&) & noexcept = delete;
+
+    ~SkeletonEvent() override = default;
 
     /// \brief Sends a value by _copy_ towards a consumer. It will allocate the necessary space and then copy the value
     /// into Shared Memory.
@@ -73,21 +96,18 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     void PrepareStopOffer() noexcept override;
 
-    BindingType GetBindingType() const noexcept override { return BindingType::kLoLa; }
-    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override { common_event_logic_.GetTracingData() = tracing_data; }
-    ~SkeletonEvent() override = default;
-     SkeletonEvent(Skeleton& parent,
-                  const ElementFqId event_fqn,
-                  const std::string_view event_name,
-                  const SkeletonEventProperties properties,
-                  impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {}) noexcept;
+    BindingType GetBindingType() const noexcept override 
+    { 
+        return BindingType::kLoLa; 
+    }
 
-    SkeletonEvent(const SkeletonEvent&) = delete;
-    SkeletonEvent(SkeletonEvent&&) noexcept = delete;
-    SkeletonEvent& operator=(const SkeletonEvent&) & = delete;
-    SkeletonEvent& operator=(SkeletonEvent&&) & noexcept = delete;
-    
-  private: // Private members
+    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override 
+    { 
+        event_shared_impl_.GetTracingData() = tracing_data; 
+    }
+
+  
+  private: 
     const std::string_view event_name_;
     const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
@@ -95,17 +115,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     EventSlotStatus::EventTimeStamp current_timestamp_;
     bool qm_disconnect_;
 
-    SkeletonEventCommon common_event_logic_; // Aggregated common logic
+    SkeletonEventCommon event_shared_impl_; 
 
-    Skeleton& GetParent() { return common_event_logic_.GetParent(); }
-    const ElementFqId& GetElementFQId() const { return common_event_logic_.GetElementFQId(); }
-    bool IsQmRegistered() const { return common_event_logic_.IsQmRegistered(); }
-    bool IsAsilBRegistered() const { return common_event_logic_.IsAsilBRegistered(); }
-
-    void ResetGuards() noexcept
-    {
-        common_event_logic_.ResetGuards();
-    }
 };
 
 template <typename SampleType>
@@ -113,7 +124,7 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          const ElementFqId event_fqn,
                                          const std::string_view event_name,
                                          const SkeletonEventProperties properties,
-                                         impl::tracing::SkeletonEventTracingData tracing_data) noexcept
+                                         impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
       event_name_{event_name},
       event_properties_{properties},
@@ -121,7 +132,7 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
       event_data_control_composite_{score::cpp::nullopt},
       current_timestamp_{1U},
       qm_disconnect_{false},
-      common_event_logic_(parent, event_fqn, event_data_control_composite_, current_timestamp_, tracing_data)
+      event_shared_impl_(parent, event_fqn, event_data_control_composite_, current_timestamp_, skeleton_event_tracing_data)
 {
 }
 
@@ -172,17 +183,17 @@ ResultBlank SkeletonEvent<SampleType>::Send(impl::SampleAllocateePtr<SampleType>
     // This avoids the expensive lock operation in the common case where no handlers are registered.
     // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
     // handler registration, the next Send() will pick it up.
-    if (IsQmRegistered() && !qm_disconnect_)
+    if (event_shared_impl_.IsQmNotificationsRegistered() && !qm_disconnect_)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_QM, GetElementFQId());
+            .NotifyEvent(QualityType::kASIL_QM, event_shared_impl_.GetElementFQId());
     }
-    if (IsAsilBRegistered() && GetParent().GetInstanceQualityType() == QualityType::kASIL_B)
+    if (event_shared_impl_.IsAsilBNotificationsRegistered() && event_shared_impl_.GetParent().GetInstanceQualityType() == QualityType::kASIL_B)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_B, GetElementFQId());
+            .NotifyEvent(QualityType::kASIL_B, event_shared_impl_.GetElementFQId());
     }
     return {};
 }
@@ -209,9 +220,10 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     if (!qm_disconnect_ && event_data_control_composite_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
     {
         qm_disconnect_ = true;
-        score::mw::log::LogWarn("lola") << __func__ << __LINE__
-                                      << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << GetElementFQId();
-        GetParent().DisconnectQmConsumers();
+        score::mw::log::LogWarn("lola") 
+            << __func__ << __LINE__
+            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << event_shared_impl_.GetElementFQId();
+        event_shared_impl_.GetParent().DisconnectQmConsumers();
     }
 
     if (slot.IsValidQM() || slot.IsValidAsilB())
@@ -243,12 +255,14 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
-    std::tie(event_data_storage_, event_data_control_composite_) = GetParent().template Register<SampleType>(GetElementFQId(), event_properties_);
+
+    std::tie(event_data_storage_, event_data_control_composite_) =
+        event_shared_impl_.GetParent().template Register<SampleType>(event_shared_impl_.GetElementFQId(), event_properties_);
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                            "Defensive programming as event_data_control_composite_ is set by Register above.");
 
-    common_event_logic_.PrepareOfferCommon();
+    event_shared_impl_.PrepareOfferCommon();
 
     return {};
 }
@@ -262,7 +276,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void SkeletonEvent<SampleType>::PrepareStopOffer() noexcept
 {
-    common_event_logic_.PrepareStopOfferCommon();
+    event_shared_impl_.PrepareStopOfferCommon();
 }
 
 }  // namespace score::mw::com::impl::lola

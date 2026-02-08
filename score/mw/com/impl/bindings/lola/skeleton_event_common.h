@@ -12,11 +12,8 @@
  ********************************************************************************/
 #pragma once
 
-#include "score/mw/com/impl/binding_type.h"
+
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
-#include "score/mw/com/impl/bindings/lola/event_slot_status.h" 
-#include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/runtime.h"
@@ -34,11 +31,21 @@
 namespace score::mw::com::impl::lola
 {
 
-class Skeleton; // Forward declaration
+template <typename SampleType> 
+class SkeletonEventAttorney;
+
+class Skeleton; 
 
 /// @brief Common implementation for LoLa skeleton events, shared between SkeletonEvent and GenericSkeletonEvent.
 class SkeletonEventCommon
 {
+  // Grant friendship to allow access to private helpers
+  // The "SkeletonEventAttorney" class is a helper, which sets the internal state of "SkeletonEventCommon" accessing
+  // private members and used for testing purposes only.
+ 
+  template <typename SampleType>
+  friend class SkeletonEventAttorney;
+
   public:
     SkeletonEventCommon(Skeleton& parent,
                         const ElementFqId& event_fqn,
@@ -46,7 +53,7 @@ class SkeletonEventCommon
                         EventSlotStatus::EventTimeStamp& current_timestamp_ref,
                         impl::tracing::SkeletonEventTracingData tracing_data = {}) noexcept;
 
-    // No copy, no move
+  
     SkeletonEventCommon(const SkeletonEventCommon&) = delete;
     SkeletonEventCommon(SkeletonEventCommon&&) noexcept = delete;
     SkeletonEventCommon& operator=(const SkeletonEventCommon&) & = delete;
@@ -54,7 +61,7 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    ResultBlank PrepareOfferCommon() noexcept;
+    void PrepareOfferCommon() noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     // Accessors for members used by PrepareOfferCommon/PrepareStopOfferCommon
@@ -62,16 +69,10 @@ class SkeletonEventCommon
     const ElementFqId& GetElementFQId() const { return event_fqn_; }
     Skeleton& GetParent() { return parent_; }
 
-    void EmplaceTransactionLogRegistrationGuard();
-    void EmplaceTypeErasedSamplePtrsGuard();
-    void UpdateCurrentTimestamp();
-    void SetQmNotificationsRegistered(bool value);
-    void SetAsilBNotificationsRegistered(bool value);
-    void ResetGuards() noexcept;
-    
     // Accessors for atomic flags for derived classes' Send() method
-    bool IsQmRegistered() const noexcept;
-    bool IsAsilBRegistered() const noexcept;
+    bool IsQmNotificationsRegistered() const noexcept;
+    bool IsAsilBNotificationsRegistered() const noexcept;
+
 
   private:
     Skeleton& parent_;
@@ -79,11 +80,31 @@ class SkeletonEventCommon
     score::cpp::optional<EventDataControlComposite>& event_data_control_composite_ref_; // Reference to the optional in derived class
     EventSlotStatus::EventTimeStamp& current_timestamp_ref_; // Reference to the timestamp in derived class
     impl::tracing::SkeletonEventTracingData tracing_data_;
-
+    
+    /// \brief Atomic flags indicating whether any receive handlers are currently registered for this event
+    ///        at each quality level (QM and ASIL-B).
+    /// \details These flags are updated via callbacks from MessagePassingServiceInstance when handler
+    ///          registration status changes. They allow Send() to skip the NotifyEvent() call when no
+    ///          handlers are registered for a specific quality level, avoiding unnecessary lock overhead
+    ///          in the main path. Uses memory_order_relaxed as the flags are optimisation hints - false
+    ///          positives (thinking handlers exist when they don't) are harmless, and false negatives
+    ///          (missing handlers) are prevented by the callback mechanism.
     std::atomic<bool> qm_event_update_notifications_registered_{false};
     std::atomic<bool> asil_b_event_update_notifications_registered_{false};
-    std::optional<lola::TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
+
+    /// \brief optional RAII guards for tracing transaction log registration/un-registration and cleanup of "pending"
+    /// type erased sample pointers which are created in PrepareOfferCommon() and destroyed in PrepareStopOfferCommon() - optional
+    /// as only needed when tracing is enabled and when they haven't been cleaned up via a call to PrepareStopOfferCommon().
+    std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
+
+    void EmplaceTransactionLogRegistrationGuard();
+    void EmplaceTypeErasedSamplePtrsGuard();
+    void UpdateCurrentTimestamp();
+    void SetQmNotificationsRegistered(bool value);
+    void SetAsilBNotificationsRegistered(bool value);
+    void ResetGuards() noexcept;
+
 };
 
 } // namespace score::mw::com::impl::lola

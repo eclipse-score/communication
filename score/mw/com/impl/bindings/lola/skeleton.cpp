@@ -112,22 +112,6 @@ ServiceDataStorage* GetServiceDataStorageSkeletonSide(const memory::shared::Mana
     return service_data_storage;
 }
 
-std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceExistenceMarkerFile(
-    const LolaServiceInstanceId::InstanceId lola_instance_id,
-    const IPartialRestartPathBuilder& partial_restart_path_builder)
-{
-    auto service_instance_existence_marker_file_path =
-        partial_restart_path_builder.GetServiceInstanceExistenceMarkerFilePath(lola_instance_id);
-
-    // The instance existence marker file can be opened in the case that another skeleton of the same service currently
-    // exists or that a skeleton of the same service previously crashed. We cannot determine which is true until we try
-    // to flock the file. Therefore, we do not take ownership on construction and take ownership later if we can
-    // exclusively flock the file.
-    bool take_ownership{false};
-    return memory::shared::LockFile::CreateOrOpen(std::move(service_instance_existence_marker_file_path),
-                                                  take_ownership);
-}
-
 enum class ShmObjectType : std::uint8_t
 {
     kControl_QM = 0x00,
@@ -158,6 +142,22 @@ bool CreatePartialRestartDirectory(const score::filesystem::Filesystem& filesyst
         return false;
     }
     return true;
+}
+
+std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceExistenceMarkerFile(
+    const LolaServiceInstanceId::InstanceId lola_instance_id,
+    const IPartialRestartPathBuilder& partial_restart_path_builder)
+{
+    auto service_instance_existence_marker_file_path =
+        partial_restart_path_builder.GetServiceInstanceExistenceMarkerFilePath(lola_instance_id);
+
+    // The instance existence marker file can be opened in the case that another skeleton of the same service currently
+    // exists or that a skeleton of the same service previously crashed. We cannot determine which is true until we try
+    // to flock the file. Therefore, we do not take ownership on construction and take ownership later if we can
+    // exclusively flock the file.
+    bool take_ownership{false};
+    return memory::shared::LockFile::CreateOrOpen(std::move(service_instance_existence_marker_file_path),
+                                                  take_ownership);
 }
 
 std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceUsageMarkerFile(

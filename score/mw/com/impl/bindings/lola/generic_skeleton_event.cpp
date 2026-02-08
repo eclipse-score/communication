@@ -20,20 +20,25 @@
 namespace score::mw::com::impl::lola
 {
 GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
-                                             const SkeletonEventProperties& event_properties,
-                                             const ElementFqId& event_fqn,
-                                             const DataTypeMetaInfo& size_info,
-                                             impl::tracing::SkeletonEventTracingData tracing_data)
-    : size_info_(size_info), event_properties_(event_properties),
-      common_event_logic_(parent, event_fqn, control_, current_timestamp_, tracing_data)
+                                           const ElementFqId& event_fqn,
+                                           std::string_view event_name,
+                                           const SkeletonEventProperties& event_properties,
+                                           const DataTypeMetaInfo& size_info,
+                                           impl::tracing::SkeletonEventTracingData tracing_data)
+    : size_info_(size_info), 
+      event_properties_(event_properties),
+      event_shared_impl_(parent, event_fqn, control_, current_timestamp_, tracing_data)
 {
+    // The factory passes the name, but we don't store it in this class currently.
+    // Casting to void suppresses "unused parameter" compiler warnings.
+    static_cast<void>(event_name);
 }
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
     std::tie(data_storage_, control_) =
-        GetParent().RegisterGeneric(GetElementFQId(), event_properties_, size_info_.size, size_info_.alignment);
-    common_event_logic_.PrepareOfferCommon();
+        event_shared_impl_.GetParent().RegisterGeneric(event_shared_impl_.GetElementFQId(), event_properties_, size_info_.size, size_info_.alignment);
+    event_shared_impl_.PrepareOfferCommon();
 
     return {};
 }
@@ -52,17 +57,19 @@ Result<score::Blank> GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllo
     // This avoids the expensive lock operation in the common case where no handlers are registered.
     // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
     // handler registration, the next Send() will pick it up.
-    if (IsQmRegistered() && !qm_disconnect_)
+    
+
+    if (event_shared_impl_.IsQmNotificationsRegistered() && !qm_disconnect_)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_QM, GetElementFQId());
+            .NotifyEvent(QualityType::kASIL_QM, event_shared_impl_.GetElementFQId());
     }
-    if (IsAsilBRegistered() && GetParent().GetInstanceQualityType() == QualityType::kASIL_B)
+    if (event_shared_impl_.IsAsilBNotificationsRegistered() && event_shared_impl_.GetParent().GetInstanceQualityType() == QualityType::kASIL_B)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_B, GetElementFQId());
+            .NotifyEvent(QualityType::kASIL_B, event_shared_impl_.GetElementFQId());
     }
 
     return {};
@@ -82,8 +89,8 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
             << __func__ << __LINE__
-            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << GetElementFQId();
-        GetParent().DisconnectQmConsumers();
+            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << event_shared_impl_.GetElementFQId();
+        event_shared_impl_.GetParent().DisconnectQmConsumers();
     }
 
     if (slot.IsValidQM() || slot.IsValidAsilB())
@@ -93,7 +100,6 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
 
         const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
         std::uint8_t* byte_ptr = static_cast<std::uint8_t*>(base_ptr);
-        //std::uint64_t offset = static_cast<std::uint64_t>(slot.GetIndex()) * size_info_.size;
         std::uint64_t offset = static_cast<std::uint64_t>(slot.GetIndex()) * aligned_size;
 
         void* data_ptr = byte_ptr + offset;   
@@ -119,7 +125,9 @@ std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 
 void GenericSkeletonEvent::PrepareStopOffer() noexcept
 {
-    common_event_logic_.PrepareStopOfferCommon();
+    event_shared_impl_.PrepareStopOfferCommon();
+    control_.reset();
+    data_storage_ = nullptr;
 }
 
 BindingType GenericSkeletonEvent::GetBindingType() const noexcept
@@ -127,6 +135,5 @@ BindingType GenericSkeletonEvent::GetBindingType() const noexcept
     return BindingType::kLoLa;
 }
  
-// SetSkeletonEventTracingData is now handled by common_event_logic_
 
 } // namespace score::mw::com::impl::lola

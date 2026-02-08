@@ -751,6 +751,20 @@ cc_library(
 )
 
 cc_library(
+    name = "i_generic_skeleton_event_binding_factory",
+    hdrs = ["i_generic_skeleton_event_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":generic_skeleton_event_binding",
+        ":skeleton_base",
+    ],
+)
+
+cc_library(
     name = "event_receive_handler",
     srcs = ["event_receive_handler.cpp"],
     hdrs = ["event_receive_handler.h"],
@@ -1060,6 +1074,40 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "generic_skeleton_test",
+    srcs = ["generic_skeleton_test.cpp"],
+    deps = [
+        ":generic_skeleton",
+        ":runtime_mock",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:generic_skeleton_event",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory",
+        ":service_discovery_client_mock",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "generic_skeleton_event_test",
+    srcs = ["generic_skeleton_event_test.cpp",
+            "service_discovery_client_mock.h"],
+    deps = [
+        ":generic_skeleton",
+        ":generic_skeleton_event",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:generic_skeleton_event",
+         "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory", 
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "traits_test",
     srcs = [
         "traits_test.cpp",
@@ -1144,6 +1192,8 @@ cc_unit_test_suites_for_host_and_qnx(
     cc_unit_tests = [
         ":flag_owner_test",
         ":find_service_handle_test",
+        ":generic_skeleton_test",
+        ":generic_skeleton_event_test",
         ":generic_proxy_test",
         ":proxy_field_test",
         ":runtime_test",

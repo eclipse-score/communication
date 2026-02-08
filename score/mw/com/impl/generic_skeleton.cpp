@@ -19,11 +19,38 @@
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h" 
 #include "score/mw/com/impl/skeleton_binding.h"
 
+#include <score/overload.hpp> 
+
 #include <cassert>
 #include <utility>
 
 namespace score::mw::com::impl
 {
+
+namespace
+{
+// Helper to fetch the stable event name from the Configuration
+std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_view search_name)
+{
+    const auto& service_type_deployment = InstanceIdentifierView{identifier}.GetServiceTypeDeployment();
+
+    auto visitor = score::cpp::overload(
+        [&](const LolaServiceTypeDeployment& deployment) -> std::string_view {
+            const auto it = deployment.events_.find(std::string{search_name});
+            if (it != deployment.events_.end())
+            {
+                return it->first; // Return the stable address of the Key from the Config Map
+            }
+            return {};
+        },
+        [](const score::cpp::blank&) noexcept -> std::string_view {
+            return {};
+        }
+    );
+
+    return std::visit(visitor, service_type_deployment.binding_info_);
+}
+} // namespace
 
 Result<GenericSkeleton> GenericSkeleton::Create(
     const InstanceSpecifier& specifier,
@@ -57,9 +84,25 @@ Result<GenericSkeleton> GenericSkeleton::Create(
     // 1. Create the Skeleton (Private Constructor)
     GenericSkeleton skeleton(identifier, std::move(binding), mode);
 
-    // 3. Atomically create all events
+    // 2. Atomically create all events
     for (const auto& info : in.events) // Iterate directly over in.events
     {
+        // Check for duplicates before creating the binding to prevent unnecessary work and potential memory issues.
+        if (skeleton.events_.find(info.name) != skeleton.events_.cend())
+        {
+            score::mw::log::LogError("GenericSkeleton") << "Duplicate event name provided: " << info.name;
+            return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
+        }
+
+        // 1. Fetch the STABLE Name from Configuration
+        std::string_view stable_name = GetEventName(identifier, info.name);
+        
+        if (stable_name.empty())
+        {
+             score::mw::log::LogError("GenericSkeleton") << "Event name not found in configuration: " << info.name;
+             return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
         // Create the event binding
         auto event_binding_result =
             GenericSkeletonEventBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
@@ -70,16 +113,16 @@ Result<GenericSkeleton> GenericSkeleton::Create(
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        // Store the event in the map
-        const auto emplace_result = skeleton.events_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(info.name),
-            std::forward_as_tuple(skeleton, info.name, std::move(event_binding_result).value()));
+        // 2. Create object in Vector (Ownership & Stability)
+        // Pass stable_name to constructor
+        skeleton.owned_events_.push_back(std::make_unique<GenericSkeletonEvent>(
+            skeleton, stable_name, std::move(event_binding_result).value()));
 
-        if (!emplace_result.second) {
-            score::mw::log::LogError("GenericSkeleton") << "Failed to emplace GenericSkeletonEvent for name: " << info.name;
-            return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
-        }
+        // 3. Get Pointer to the stable object
+        auto* event_ptr = skeleton.owned_events_.back().get();
+
+        // 4. Store Pointer in Map using the stable_name retrieved from config
+        skeleton.events_.emplace(stable_name, event_ptr);
     }
 
     // // 4. Atomically create all fields
@@ -111,11 +154,6 @@ Result<GenericSkeleton> GenericSkeleton::Create(
 }
 
 const GenericSkeleton::EventMap& GenericSkeleton::GetEvents() const noexcept
-{
-    return events_;
-}
-
-GenericSkeleton::EventMap& GenericSkeleton::GetEvents() noexcept
 {
     return events_;
 }

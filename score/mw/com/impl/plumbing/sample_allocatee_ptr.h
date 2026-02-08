@@ -102,10 +102,18 @@ class SampleAllocateePtr
     // -------------------------------------------------------------------------
     
     /// \brief operator* - Enabled via SFINAE only if SampleType is NOT void
+    /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
+    /// terminate.
+    // Suppress "AUTOSAR C++14 A15-5-3" rule finding: See rationale above (fix in Ticket-173043)
+    // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     template <typename T = SampleType, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
     typename std::add_lvalue_reference<SampleType>::type operator*() const noexcept;
 
     /// \brief operator-> - Enabled via SFINAE only if SampleType is NOT void
+    /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
+    /// terminate.
+    // Suppress "AUTOSAR C++14 A15-5-3" rule finding: See rationale above (fix in Ticket-173043)
+    // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     template <typename T = SampleType, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
     pointer operator->() const noexcept;
 
@@ -135,7 +143,8 @@ class SampleAllocateePtr
     template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SampleAllocateePtrMutableView;
-
+    
+    // We don't use the pimpl idiom because it would require dynamic memory allocation (that we want to avoid)
     // Stores either the LoLa pointer or the Mock Binding pointer (which handles void safely)
     std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>> internal_;
 };

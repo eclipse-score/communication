@@ -507,7 +507,7 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
     // Retrieve event using its name
     auto event_it = skeleton.GetEvents().find(event_name);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != skeleton.GetEvents().cend(), "Event not found in GenericSkeleton");
-    auto& event = event_it->second;
+    auto* event_ptr = event_it->second;
 
     const auto offer_result = skeleton.OfferService();
     if (!offer_result.has_value())
@@ -519,7 +519,7 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
 
     for (std::size_t cycle = 0U; cycle < num_cycles || num_cycles == 0U; ++cycle)
     {
-        auto sample_result = PrepareMapLaneSample(event, cycle);
+        auto sample_result = PrepareMapLaneSample(*event_ptr, cycle);
         if (!sample_result.has_value())
         {
             std::cerr << "No sample received. Exiting.\n";
@@ -529,7 +529,7 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
 
         {
             std::lock_guard lock{event_sending_mutex_};
-            event.Send(std::move(sample));
+            event_ptr->Send(std::move(sample));
             event_published_ = true;
         }
         std::this_thread::sleep_for(cycle_time);

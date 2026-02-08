@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h" // For GetBindingRuntime
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h" // For RegisterEventNotificationExistenceChangedCallback
+#include "score/mw/com/impl/bindings/lola/skeleton.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -30,7 +31,7 @@ SkeletonEventCommon::SkeletonEventCommon(Skeleton& parent,
 {
 }
 
-ResultBlank SkeletonEventCommon::PrepareOfferCommon() noexcept
+void SkeletonEventCommon::PrepareOfferCommon() noexcept
 {
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
@@ -41,6 +42,10 @@ ResultBlank SkeletonEventCommon::PrepareOfferCommon() noexcept
 
     const bool tracing_for_skeleton_event_enabled =
         tracing_data_.enable_send || tracing_data_.enable_send_with_allocate;
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
+    // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
+    // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in
+    // Ticket-188259).
     if (tracing_for_skeleton_event_enabled)
     {
         EmplaceTransactionLogRegistrationGuard();
@@ -70,7 +75,7 @@ ResultBlank SkeletonEventCommon::PrepareOfferCommon() noexcept
                     SetAsilBNotificationsRegistered(has_handlers);
                 });
     }
-    return {};
+
 }
 
 void SkeletonEventCommon::PrepareStopOfferCommon() noexcept
@@ -131,18 +136,16 @@ void SkeletonEventCommon::ResetGuards() noexcept
     }
 }
 
-bool SkeletonEventCommon::IsQmRegistered() const noexcept
+bool SkeletonEventCommon::IsQmNotificationsRegistered() const noexcept
 {
-    // Using memory_order_relaxed is safe here as this is an optimisation. If we miss a very recent
-    // handler registration, the next Send() will pick it up.
-    return qm_event_update_notifications_registered_.load(std::memory_order_relaxed);
+    
+    return qm_event_update_notifications_registered_.load();
 }
 
-bool SkeletonEventCommon::IsAsilBRegistered() const noexcept
+bool SkeletonEventCommon::IsAsilBNotificationsRegistered() const noexcept
 {
-    // Using memory_order_relaxed is safe here as this is an optimisation. If we miss a very recent
-    // handler registration, the next Send() will pick it up.
-    return asil_b_event_update_notifications_registered_.load(std::memory_order_relaxed);
+ 
+    return asil_b_event_update_notifications_registered_.load();
 }
 
 } // namespace score::mw::com::impl::lola
