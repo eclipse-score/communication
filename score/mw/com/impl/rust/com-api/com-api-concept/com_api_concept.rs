@@ -319,16 +319,6 @@ pub trait SampleMut<T>: DerefMut<Target = T> + Debug
 where
     T: CommData,
 {
-    /// Sample type for immutable access
-    type Sample: Sample<T>;
-
-    /// Consume the sample into an immutable sample.
-    ///
-    /// # Returns
-    ///
-    /// A `Sample` instance providing immutable access to the data.
-    fn into_sample(self) -> Self::Sample;
-
     /// Send the sample and consume it.
     ///
     /// # Returns

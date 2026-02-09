@@ -192,12 +192,6 @@ impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
     T: CommData,
 {
-    type Sample = Sample<'a, T>;
-
-    fn into_sample(self) -> Self::Sample {
-        todo!()
-    }
-
     fn send(self) -> com_api_concept::Result<()> {
         todo!()
     }

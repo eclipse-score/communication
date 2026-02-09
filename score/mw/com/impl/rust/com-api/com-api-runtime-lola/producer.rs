@@ -175,12 +175,6 @@ impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
     T: CommData,
 {
-    type Sample = super::Sample<T>;
-
-    fn into_sample(self) -> Self::Sample {
-        todo!()
-    }
-
     fn send(self) -> Result<()> {
         //SAFETY: It is safe to send the sample because allocatee_ptr and skeleton_event are valid
         // allocatee_ptr is created by FFI and skeleton_event is valid as long as the parent skeleton instance is valid
