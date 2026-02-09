@@ -12,12 +12,19 @@
  ********************************************************************************/
 
 use com_api::{
-    Builder, Error, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl,
+    Builder, Error, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
     OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
-use com_api_gen::{Tire, VehicleConsumer, VehicleInterface, VehicleOfferedProducer};
+use com_api_gen::{Tire, VehicleInterface };
+
+// Type aliases for generated consumer and offered producer types for the Vehicle interface
+// VehicleConsumer is the consumer type generated for the Vehicle interface, parameterized by the runtime R
+type VehicleConsumer<R> = <VehicleInterface as Interface>::Consumer<R>;
+// VehicleOfferedProducer is the offered producer type generated for the Vehicle interface, parameterized by the runtime R
+type VehicleOfferedProducer<R> =
+    <<VehicleInterface as Interface>::Producer<R> as Producer<R>>::OfferedProducer;
 
 // Example struct demonstrating composition with VehicleConsumer
 pub struct VehicleMonitor<R: Runtime> {
