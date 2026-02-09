@@ -456,9 +456,12 @@ TEST_F(MessagePassingServiceInstanceLocalSubscribeMethodTest,
 
     // When calling SubscribeServiceMethod with a SkeletonMethodInstanceIdentifier for which no subscribe method handler
     // has been registered
-    // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = unit_->SubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kLocalPid));
+    const auto call_result =
+        unit_->SubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kLocalPid);
+
+    // Then the result contains an error
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(MessagePassingServiceInstanceLocalSubscribeMethodTest,

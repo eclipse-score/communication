@@ -49,6 +49,21 @@ TEST_F(MethodErrorMessageForFixture, MessageForUnexpectedMessageSize)
     TestErrorMessage(MethodErrc::kUnexpectedMessageSize, "Message with an unexpected size was received.");
 }
 
+TEST_F(MethodErrorMessageForFixture, MessageForMessagePassingError)
+{
+    TestErrorMessage(MethodErrc::kMessagePassingError, "Message passing failed with an error.");
+}
+
+TEST_F(MethodErrorMessageForFixture, MessageForNotSubscribed)
+{
+    TestErrorMessage(MethodErrc::kNotSubscribed, "Method has not been succesfully subscribed.");
+}
+
+TEST_F(MethodErrorMessageForFixture, MessageForNotOffered)
+{
+    TestErrorMessage(MethodErrc::kNotOffered, "Method has not been fully offered.");
+}
+
 using MethodErrorMessageForDeathTest = MethodErrorMessageForFixture;
 TEST_F(MethodErrorMessageForDeathTest, MessageForkInvalidTerminates)
 {

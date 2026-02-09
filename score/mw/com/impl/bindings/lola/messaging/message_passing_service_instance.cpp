@@ -167,7 +167,8 @@ bool IsMethodErrorRecoverable(const score::result::Error error)
 {
     const auto com_error = static_cast<MethodErrc>(*error);
 
-    if ((com_error == MethodErrc::kSkeletonAlreadyDestroyed))
+    if ((com_error == MethodErrc::kSkeletonAlreadyDestroyed) || (com_error == MethodErrc::kNotSubscribed) ||
+        (com_error == MethodErrc::kNotOffered))
     {
         return true;
     }
@@ -606,9 +607,13 @@ score::ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodLoca
     // call is still running.
     std::shared_lock<std::shared_mutex> read_lock{subscribe_service_method_handlers_mutex_};
     auto method_subscribed_handler_it = subscribe_service_method_handlers_.find(skeleton_instance_identifier);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        method_subscribed_handler_it != subscribe_service_method_handlers_.cend(),
-        "Trying to extract a handler corresponding to a SkeletonInstanceIdentifier which was never registered!");
+    if (method_subscribed_handler_it == subscribe_service_method_handlers_.cend())
+    {
+        // This can occur if a ProxyMethod calls subscribe method with an invalid/corrupted SkeletonInstanceIdentifier.
+        mw::log::LogError("lola") << "Subscribe method handler has not been registered for this SkeletonMethod!";
+        return MakeUnexpected(MethodErrc::kNotOffered);
+    }
+
     auto method_subscribed_handler_copy = method_subscribed_handler_it->second;
     read_lock.unlock();
 
@@ -616,7 +621,7 @@ score::ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodLoca
         std::invoke(method_subscribed_handler_copy, proxy_instance_identifier, proxy_uid, asil_level, proxy_pid);
     if (!(invocation_result.has_value()))
     {
-        mw::log::LogDebug("lola")
+        mw::log::LogError("lola")
             << "Invocation of subscribe service method handler failed as scope has been destroyed: "
                "SkeletonMethod has already been destroyed.";
         return MakeUnexpected(MethodErrc::kSkeletonAlreadyDestroyed);
@@ -635,10 +640,10 @@ score::ResultBlank MessagePassingServiceInstance::CallServiceMethodLocally(
     auto method_call_handler_it = call_method_handlers_.find(proxy_method_instance_identifier);
     if (method_call_handler_it == call_method_handlers_.cend())
     {
-        mw::log::LogError("lola")
-            << "Method call handler has not been registered for this ProxyMethod! This can occur "
-               "if calling a method when the skeleton has crashed and restarted but the proxy "
-               "hasn't yet re-subscribed (so the method call handler has not yet been registered)!";
+        // This can occur if calling a method when the skeleton has crashed and restarted but the proxy hasn't yet
+        // re-subscribed (so the method call handler has not yet been registered). It can also occur if a ProxyMethod
+        // calls the method with an invalid/corrupted ProxyMethodInstanceIdentifier.
+        mw::log::LogError("lola") << "Method call handler has not been registered for this ProxyMethod!";
         return MakeUnexpected(MethodErrc::kNotSubscribed);
     }
 
