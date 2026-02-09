@@ -59,7 +59,7 @@ pub struct RuntimeBuilderImpl {
 
 impl Builder<LolaRuntimeImpl> for RuntimeBuilderImpl {
     fn build(self) -> Result<LolaRuntimeImpl> {
-        proxy_bridge_rs::initialize(self.config_path.as_ref().map(PathBuf::as_path));
+        mw_com::initialize(self.config_path.as_deref());
         Ok(LolaRuntimeImpl {})
     }
 }

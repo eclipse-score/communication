@@ -304,10 +304,7 @@ unsafe impl Sync for NativeSkeletonHandle {}
 unsafe impl Send for NativeSkeletonHandle {}
 
 impl NativeSkeletonHandle {
-    pub fn new(
-        interface_id: &str,
-        instance_specifier: &proxy_bridge_rs::InstanceSpecifier,
-    ) -> Self {
+    pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Self {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
         let handle = unsafe {
             generic_bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native())
@@ -445,7 +442,7 @@ impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder
 impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
         let instance_specifier_runtime =
-            proxy_bridge_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
+            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
                 .map_err(|_| Error::Fail)?;
 
         let skeleton_handle =

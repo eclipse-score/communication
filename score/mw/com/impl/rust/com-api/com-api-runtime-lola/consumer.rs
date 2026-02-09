@@ -49,7 +49,7 @@ use crate::LolaRuntimeImpl;
 #[derive(Clone, Debug)]
 pub struct LolaConsumerInfo {
     pub instance_specifier: InstanceSpecifier,
-    pub handle_container: Arc<proxy_bridge_rs::HandleContainer>,
+    pub handle_container: Arc<mw_com::proxy::HandleContainer>,
     pub handle_index: usize,
     pub interface_id: &'static str,
 }
@@ -444,11 +444,11 @@ where
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
         let instance_specifier_lola =
-            proxy_bridge_rs::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
+            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
                 .map_err(|_| Error::Fail)?;
 
         let service_handle =
-            proxy_bridge_rs::find_service(instance_specifier_lola).map_err(|_| Error::Fail)?;
+            mw_com::proxy::find_service(instance_specifier_lola).map_err(|_| Error::Fail)?;
 
         let service_handle_arc = Arc::new(service_handle);
         let available_instances = (0..service_handle_arc.len())

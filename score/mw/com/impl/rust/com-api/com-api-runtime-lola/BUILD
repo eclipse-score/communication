@@ -21,14 +21,13 @@ rust_library(
         "producer.rs",
         "runtime.rs",
     ],
-    crate_root = "lib.rs",
     visibility = [
         "//visibility:public",  # platform_only
     ],
     deps = [
         "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
-        "//score/mw/com/impl/rust:proxy_bridge_rs",
+        "//score/mw/com/impl/rust:mw_com",
         "//score/mw/com/impl/rust/com-api/com-api-concept",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:generic_bridge_ffi_rs",
         "@crate_index//:futures",

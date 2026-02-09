@@ -62,12 +62,11 @@ use std::ffi::c_char;
 pub type CVoidPtr = *const std::ffi::c_void;
 pub type CMutVoidPtr = *mut std::ffi::c_void;
 
-pub use proxy_bridge_rs::FatPtr;
-pub use proxy_bridge_rs::HandleType;
-pub use proxy_bridge_rs::ProxyEventBase;
-pub use proxy_bridge_rs::ProxyWrapperClass;
-
-pub use proxy_bridge_rs::NativeInstanceSpecifier;
+pub use mw_com::proxy::FatPtr;
+pub use mw_com::proxy::HandleType;
+pub use mw_com::proxy::NativeInstanceSpecifier;
+pub use mw_com::proxy::ProxyEventBase;
+pub use mw_com::proxy::ProxyWrapperClass;
 
 /// Opaque proxy base struct
 #[repr(C)]

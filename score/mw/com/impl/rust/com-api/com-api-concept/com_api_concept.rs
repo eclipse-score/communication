@@ -196,9 +196,9 @@ where
 }
 
 /// Communication data type requirements trait.
-/// Bounds the data type to be relocatable and sendable across threads.
+/// Requires the data type to be relocatable between address spaces and sendable across threads.
 /// Also requires the data type to implement Debug for logging and debugging purposes.
-/// 'static' lifetime ensures the data type does not contain non-static references.
+/// 'static' lifetime is required to ensure the data can live for the entire duration of the program.
 pub trait CommData: Reloc + Send + Debug + 'static {
     const ID: &'static str;
 }
