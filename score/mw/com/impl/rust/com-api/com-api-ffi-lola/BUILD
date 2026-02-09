@@ -12,25 +12,30 @@
 # *******************************************************************************
 
 load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
-rust_library(
-    name = "com-api-runtime-lola",
-    srcs = [
-        "consumer.rs",
-        "lib.rs",
-        "producer.rs",
-        "runtime.rs",
-    ],
-    crate_root = "lib.rs",
+cc_library(
+    name = "registry_bridge_macro_cpp",
+    srcs = ["registry_bridge_macro.cpp"],
+    hdrs = ["registry_bridge_macro.h"],
+    features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public",  # platform_only
     ],
     deps = [
-        "//score/mw/com/impl/plumbing/rust:sample_allocatee_ptr_rs",
+        "//score/mw/com/impl/rust:proxy_bridge_cpp",
+    ],
+)
+
+rust_library(
+    name = "generic_bridge_ffi_rs",
+    srcs = ["generic_bridge_ffi.rs"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":registry_bridge_macro_cpp",
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
         "//score/mw/com/impl/rust:proxy_bridge_rs",
-        "//score/mw/com/impl/rust/com-api/com-api-concept",
-        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:generic_bridge_ffi_rs",
-        "@crate_index//:futures",
     ],
 )

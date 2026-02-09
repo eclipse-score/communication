@@ -25,8 +25,8 @@ rust_library(
     ],
     deps = [
         ":vehicle_gen_cpp",
-        "//score/mw/com/impl/rust:generic_bridge_ffi_rs",
         "//score/mw/com/impl/rust/com-api/com-api",
+        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:generic_bridge_ffi_rs",
     ],
 )
 
@@ -36,7 +36,7 @@ cc_library(
     hdrs = ["vehicle_gen.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "//score/mw/com/impl/rust:registry_bridge_macro_cpp",
+        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:registry_bridge_macro_cpp",
     ],
     alwayslink = True,
 )

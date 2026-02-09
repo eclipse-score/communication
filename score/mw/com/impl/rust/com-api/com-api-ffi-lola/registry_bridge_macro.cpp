@@ -20,7 +20,7 @@
 /// - Rust side: String-based, safe wrapper APIs
 /// - C++ side: Template-based, type-erased implementation
 
-#include "score/mw/com/impl/rust/registry_bridge_macro.h"
+#include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/proxy_event_base.h"

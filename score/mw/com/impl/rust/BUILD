@@ -25,6 +25,9 @@ cc_library(
     srcs = ["proxy_bridge.cpp"],
     hdrs = ["proxy_bridge.h"],
     features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
     deps = [
         "//score/mw/com:runtime",
         "//score/mw/com:runtime_configuration",
@@ -113,31 +116,5 @@ rust_library(
         ":macros",
         ":proxy_bridge_rs",
         ":skeleton_bridge_rs",
-    ],
-)
-
-cc_library(
-    name = "registry_bridge_macro_cpp",
-    srcs = ["registry_bridge_macro.cpp"],
-    hdrs = ["registry_bridge_macro.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":proxy_bridge_cpp",
-    ],
-)
-
-rust_library(
-    name = "generic_bridge_ffi_rs",
-    srcs = ["generic_bridge_ffi.rs"],
-    visibility = [
-        "//score/mw/com:__subpackages__",
-    ],
-    deps = [
-        ":proxy_bridge_rs",
-        ":registry_bridge_macro_cpp",
-        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
     ],
 )
