@@ -1,4 +1,5 @@
 #include "score/mw/com/impl/bindings/lola/messaging/client_quality_type.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_error.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
@@ -50,6 +51,7 @@ struct MethodCallUnserializedPayload
     std::size_t queue_position;
 };
 
+using MethodUnserializedReply = score::ResultBlank;
 using MethodReplyPayload = ErrorSerializer<MethodErrc>::SerializedErrorType;
 
 constexpr pid_t kLocalPid{1};
@@ -71,6 +73,11 @@ const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier2{LolaServiceId{13U}
                                                               LolaServiceInstanceId::InstanceId{23U}};
 
 constexpr std::size_t kQueuePosition{1U};
+
+MATCHER_P(ContainsError, error_code, "contains a specific error")
+{
+    return !arg.has_value() && arg.error() == error_code;
+}
 
 class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
 {
@@ -137,6 +144,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         SkeletonInstanceIdentifier skeleton_instance_identifier)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(unit_ != nullptr);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(client_identity_ != nullptr);
         IMessagePassingService::ServiceMethodSubscribedHandler scoped_subscribe_method_handler{
             subscribe_method_handler_scope_, mock_subscribe_method_handler_.AsStdFunction()};
         auto result = unit_->RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier,
@@ -149,6 +157,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(unit_ != nullptr);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(client_identity_ != nullptr);
         IMessagePassingService::MethodCallHandler scoped_method_call_handler{method_call_handler_scope_,
                                                                              mock_method_call_handler_.AsStdFunction()};
         auto result = unit_->RegisterMethodCallHandler(proxy_method_instance_identifier, scoped_method_call_handler);
@@ -166,6 +175,16 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
         UnserializedPayload actual_unserialized_payload{};
         std::memcpy(&actual_unserialized_payload, message.data() + 1U, sizeof(UnserializedPayload));
         return actual_unserialized_payload;
+    }
+
+    MethodUnserializedReply DeserializeMethodReplyMessage(score::cpp::span<const std::uint8_t> message)
+    {
+        EXPECT_EQ(message.size(), (sizeof(MethodReplyPayload)));
+
+        MethodReplyPayload actual_unserialized_payload{};
+        std::memcpy(&actual_unserialized_payload, message.data(), sizeof(MethodReplyPayload));
+
+        return ErrorSerializer<MethodErrc>::Deserialize(actual_unserialized_payload);
     }
 
     template <typename T>
@@ -188,6 +207,18 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
                 : ErrorSerializer<MethodErrc>::SerializeError(static_cast<MethodErrc>(*method_reply.error()));
         score::cpp::ignore = std::memcpy(&message_reply_buffer[0], &serialized_com_errc, sizeof(MethodReplyPayload));
         return {message_reply_buffer.data(), message_reply_buffer.size()};
+    }
+
+    score::cpp::span<const uint8_t> CreateValidCallMethodMessage()
+    {
+        MethodCallUnserializedPayload payload{kProxyMethodInstanceIdentifier, kQueuePosition};
+        return CreateSerializedMethodMessage(payload, MessageWithReplyType::kCallMethod);
+    }
+
+    score::cpp::span<const uint8_t> CreateValidSubscribeMethodMessage()
+    {
+        const SubscribeServiceMethodUnserializedPayload payload{kSkeletonInstanceIdentifier, kProxyInstanceIdentifier};
+        return CreateSerializedMethodMessage(payload, MessageWithReplyType::kSubscribeServiceMethod);
     }
 
     NiceMock<ClientFactoryMock> client_factory_mock_{};
@@ -658,23 +689,188 @@ TEST_F(MessagePassingServiceInstanceRegisterSubscribeHandlerTest, ReregisteringH
     EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
 }
 
+using MessagePassingServiceInstanceHandleMessageWithReplyTest = MessagePassingServiceInstanceMethodsFixture;
+TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest, ReturnsErrorWhenEmptyMessageReceived)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // When a MessageWithReply message is received which is empty
+    std::vector<std::uint8_t> empty_message(0U);
+    const auto result = received_send_message_with_reply_callback_(
+        server_connection_mock_, score::cpp::span<std::uint8_t>{empty_message.data(), empty_message.size()});
+
+    // Then an error is returned since the error is unrecoverable
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), os::Error::Code::kUnexpected);
+}
+
+TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest, RepliesWithErrorWhenEmptyMessageReceived)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // Expecting that a reply will be sent containing an unexpected message size error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kUnexpectedMessageSize));
+            return {};
+        }));
+
+    // When a MessageWithReply message is received which is empty
+    std::vector<std::uint8_t> empty_message(0U);
+    const auto result = received_send_message_with_reply_callback_(
+        server_connection_mock_, score::cpp::span<std::uint8_t>{empty_message.data(), empty_message.size()});
+}
+
+TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest, ReturnsErrorWhenUnexpectedMessageReceived)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // When a MessageWithReply message is received of unexpected type
+    std::vector<std::uint8_t> payload_with_unexpected_type(sizeof(MethodCallUnserializedPayload) + 2U);
+    payload_with_unexpected_type[0] = 20U;
+    const auto result = received_send_message_with_reply_callback_(
+        server_connection_mock_,
+        score::cpp::span<std::uint8_t>{payload_with_unexpected_type.data(), payload_with_unexpected_type.size()});
+
+    // Then an error is returned since the error is unrecoverable
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), os::Error::Code::kUnexpected);
+}
+
+TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest, RepliesWithErrorWhenUnexpectedMessageReceived)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // Expecting that a reply will be sent containing an unexpected message error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kUnexpectedMessage));
+            return {};
+        }));
+
+    // When a MessageWithReply message is received of unexpected type
+    std::vector<std::uint8_t> payload_with_unexpected_type(sizeof(MethodCallUnserializedPayload) + 2U);
+    payload_with_unexpected_type[0] = 20U;
+    const auto result = received_send_message_with_reply_callback_(
+        server_connection_mock_,
+        score::cpp::span<std::uint8_t>{payload_with_unexpected_type.data(), payload_with_unexpected_type.size()});
+}
+
 using MessagePassingServiceInstanceHandleCallMethodMessageTest = MessagePassingServiceInstanceMethodsFixture;
 TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, ReturnsErrorWhenPayloadHasUnexpectedSize)
 {
     GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredMethodCallHandler(
         kProxyMethodInstanceIdentifier);
 
-    // When a message a MessageWithReply message is received of type kCallMethod with the wrong size which calls the
-    // message with reply callback (which will trigger a non-recoverable error)
+    // Expecting that the registered method call handler will not be called
+    EXPECT_CALL(mock_method_call_handler_, Call(_)).Times(0);
+
+    // When a MessageWithReply message is received of type kCallMethod with the wrong payload size
     std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(MethodCallUnserializedPayload) + 2U);
     payload_with_unexpected_size[0] = static_cast<std::uint8_t>(MessageWithReplyType::kCallMethod);
     const auto result = received_send_message_with_reply_callback_(
         server_connection_mock_,
         score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()});
 
-    // Then an error is returned
+    // Then an error is returned since the error is unrecoverable
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), os::Error::Code::kUnexpected);
+}
+
+TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesWithErrorWhenPayloadHasUnexpectedSize)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredMethodCallHandler(
+        kProxyMethodInstanceIdentifier);
+
+    // Expecting that a reply will be sent containing an unexpected message size error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kUnexpectedMessageSize));
+            return {};
+        }));
+
+    // When a MessageWithReply message is received of type kCallMethod with the wrong payload size
+    std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(MethodCallUnserializedPayload) + 2U);
+    payload_with_unexpected_size[0] = static_cast<std::uint8_t>(MessageWithReplyType::kCallMethod);
+    score::cpp::ignore = received_send_message_with_reply_callback_(
+        server_connection_mock_,
+        score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()});
+}
+
+TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, ReturnsSuccessWhenHandlerNotRegistered)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // Expecting that the registered method call handler will not be called
+    EXPECT_CALL(mock_method_call_handler_, Call(_)).Times(0);
+
+    // When a valid MessageWithReply message is received of type kCallMethod when no method call handler has been
+    // registered
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+
+    // Then a valid result is returned since the error is a recoverable error
+    ASSERT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesWithErrorWhenHandlerNotRegistered)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // Expecting that a reply will be sent containing a not subscribed error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kNotSubscribed));
+            return {};
+        }));
+
+    // When a valid MessageWithReply message is received of type kCallMethod when no method call handler has been
+    // registered
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, ReturnsSuccessWhenHandlerScopeAlreadyExpired)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredMethodCallHandler(
+        kProxyMethodInstanceIdentifier);
+
+    // and given that the method call handler scope has expired (which will trigger a recoverable error)
+    method_call_handler_scope_.Expire();
+
+    // Expecting that the registered method call handler will not be called
+    EXPECT_CALL(mock_method_call_handler_, Call(_)).Times(0);
+
+    // When a valid MessageWithReply message is received of type kCallMethod
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+
+    // Then a valid result is returned (the error will be serialized and sent back to the caller, but the callback
+    // itself will not return an error)
+    ASSERT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesWithErrorWhenHandlerScopeAlreadyExpired)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredMethodCallHandler(
+        kProxyMethodInstanceIdentifier);
+
+    // and given that the method call handler scope has expired (which will trigger a recoverable error)
+    method_call_handler_scope_.Expire();
+
+    // Expecting that a reply will be sent containing a skeleton already destroyed error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kSkeletonAlreadyDestroyed));
+            return {};
+        }));
+
+    // When a valid MessageWithReply message is received of type kCallMethod
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 }
 
 TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest,
@@ -686,32 +882,29 @@ TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest,
     // Expecting that the registered method call handler will be called with the provided queue position
     EXPECT_CALL(mock_method_call_handler_, Call(kQueuePosition));
 
-    // When a message a MessageWithReply message is received of type kCallMethod and a valid
-    // ProxyMethodInstanceidentifier and queue position
-    MethodCallUnserializedPayload payload{kProxyMethodInstanceIdentifier, kQueuePosition};
-    const auto message = CreateSerializedMethodMessage(payload, MessageWithReplyType::kCallMethod);
-    const auto result = received_send_message_with_reply_callback_(server_connection_mock_, message);
+    // When a valid MessageWithReply message is received of type kCallMethod
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 
     // Then a valid result is returned
     ASSERT_TRUE(result.has_value());
 }
 
-TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, DoesNotPropagateRecoverableError)
+TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesSuccessWhenMethodHandlerCalledSuccessfully)
 {
     GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredMethodCallHandler(
         kProxyMethodInstanceIdentifier);
 
-    // and given that the method call handler scope has expired (which will trigger a recoverable error)
-    method_call_handler_scope_.Expire();
+    // Expecting that a reply will be sent containing success
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_TRUE(reply_result.has_value());
+            return {};
+        }));
 
-    // When a message a MessageWithReply message is received of type kCallMethod and a valid
-    // ProxyMethodInstanceidentifier and queue position
-    MethodCallUnserializedPayload payload{kProxyMethodInstanceIdentifier, kQueuePosition};
-    const auto message = CreateSerializedMethodMessage(payload, MessageWithReplyType::kCallMethod);
-    const auto result = received_send_message_with_reply_callback_(server_connection_mock_, message);
-
-    // Then a valid result is returned
-    ASSERT_TRUE(result.has_value());
+    // When a valid MessageWithReply message is received of type kCallMethod
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 }
 
 using MessagePassingServiceInstanceHandleSubscribeMethodMessageTest = MessagePassingServiceInstanceMethodsFixture;
@@ -720,63 +913,111 @@ TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest, ReturnsErr
     GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredSubscribeMethodHandler(
         kSkeletonInstanceIdentifier);
 
-    // When a message a MessageWithReply message of type kSubscribeServiceMethod is received with the wrong size which
-    // calls the message with reply callback (which will trigger a non-recoverable error)
+    // When a MessageWithReply message is received of type kSubscribeServiceMethod with the wrong payload size
     std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(SubscribeServiceMethodUnserializedPayload) + 2U);
     payload_with_unexpected_size[0] = static_cast<std::uint8_t>(MessageWithReplyType::kSubscribeServiceMethod);
     const auto result = received_send_message_with_reply_callback_(
         server_connection_mock_,
         score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()});
 
-    // Then an error is returned
+    // Then an error is returned since the error is unrecoverable
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), os::Error::Code::kUnexpected);
 }
 
-TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest,
-       CallsSubscribeMethodHandlerRegisteredWithProvidedSkeletonIdentifier)
+TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest, RepliesWithErrorWhenPayloadHasUnexpectedSize)
 {
-    const auto client_quality_type = ClientQualityType::kASIL_QM;
-    GivenAMessagePassingServiceInstance(client_quality_type)
-        .WithAClientInTheSameProcess()
-        .WithARegisteredSubscribeMethodHandler(kSkeletonInstanceIdentifier);
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredSubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
 
-    // Expecting that the registered method subscribe handler will be called with the provided,
-    // ProxyInstanceIdentifier and the proxy PID / UID / Asil level derived from the
-    // MessagePassingServiceInstance itself.
-    EXPECT_CALL(mock_subscribe_method_handler_,
-                Call(kProxyInstanceIdentifier, kLocalUid, QualityType::kASIL_QM, kLocalPid));
+    // Expecting that a reply will be sent containing an unexpected message size error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kUnexpectedMessageSize));
+            return {};
+        }));
 
-    // When a message a MessageWithReply message is received of type kCallMethod and a valid
-    // ProxyMethodInstanceidentifier and queue position
-    const SubscribeServiceMethodUnserializedPayload payload{kSkeletonInstanceIdentifier, kProxyInstanceIdentifier};
-    const auto message = CreateSerializedMethodMessage(payload, MessageWithReplyType::kSubscribeServiceMethod);
-    const auto result = received_send_message_with_reply_callback_(server_connection_mock_, message);
+    // When a MessageWithReply message is received of type kSubscribeServiceMethod with the wrong payload size
+    std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(SubscribeServiceMethodUnserializedPayload) + 2U);
+    payload_with_unexpected_size[0] = static_cast<std::uint8_t>(MessageWithReplyType::kSubscribeServiceMethod);
+    score::cpp::ignore = received_send_message_with_reply_callback_(
+        server_connection_mock_,
+        score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()});
+}
 
-    // Then a valid result is returned
+TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest, ReturnsSuccessWhenHandlerNotRegistered)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // Expecting that the registered subscribe method handler will not be called
+    EXPECT_CALL(mock_subscribe_method_handler_, Call(_, _, _, _)).Times(0);
+
+    // When a valid MessageWithReply message is received of type kSubscribeServiceMethod when no method call handler has
+    // been registered
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidSubscribeMethodMessage());
+
+    // Then a valid result is returned since the error is a recoverable error
     ASSERT_TRUE(result.has_value());
 }
 
-TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest,
-       CallsHandlerWithQualityTypeOfMessagePassingServiceInstanceAsilB)
+TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest, RepliesWithErrorWhenHandlerNotRegistered)
 {
-    const auto client_quality_type = ClientQualityType::kASIL_B;
-    GivenAMessagePassingServiceInstance(client_quality_type)
-        .WithAClientInTheSameProcess()
-        .WithARegisteredSubscribeMethodHandler(kSkeletonInstanceIdentifier);
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
 
-    // Expecting that the registered method subscribe handler will be called with ASIL level B
-    EXPECT_CALL(mock_subscribe_method_handler_,
-                Call(kProxyInstanceIdentifier, kLocalUid, QualityType::kASIL_B, kLocalPid));
+    // Expecting that a reply will be sent containing a not subscribed error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kNotOffered));
+            return {};
+        }));
 
-    // When a message a MessageWithReply message is received of type kCallMethod and a valid
-    // ProxyMethodInstanceidentifier and queue position
-    const SubscribeServiceMethodUnserializedPayload payload{kSkeletonInstanceIdentifier, kProxyInstanceIdentifier};
-    const auto message = CreateSerializedMethodMessage(payload, MessageWithReplyType::kSubscribeServiceMethod);
-    const auto result = received_send_message_with_reply_callback_(server_connection_mock_, message);
+    // When a valid MessageWithReply message is received of type kSubscribeServiceMethod when no method call handler has
+    // been registered
+    score::cpp::ignore =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidSubscribeMethodMessage());
+}
 
-    // Then a valid result is returned
+TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest, ReturnsSuccessWhenHandlerScopeAlreadyExpired)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredSubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // and given that the subscribe method handler scope has expired (which will trigger a recoverable error)
+    subscribe_method_handler_scope_.Expire();
+
+    // Expecting that the registered subscribe method handler will not be called
+    EXPECT_CALL(mock_subscribe_method_handler_, Call(_, _, _, _)).Times(0);
+
+    // When a valid MessageWithReply message is received of type kSubscribeServiceMethod
+    const auto result =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidSubscribeMethodMessage());
+
+    // Then a valid result is returned since the error is a recoverable error
     ASSERT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest, RepliesWithErrorWhenHandlerScopeAlreadyExpired)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredSubscribeMethodHandler(
+        kSkeletonInstanceIdentifier);
+
+    // and given that the subscribe method handler scope has expired (which will trigger a recoverable error)
+    subscribe_method_handler_scope_.Expire();
+
+    // Expecting that a reply will be sent containing a skeleton already destroyed error
+    EXPECT_CALL(server_connection_mock_, Reply(_))
+        .WillOnce(Invoke([this](auto reply_buffer) -> score::cpp::expected_blank<score::os::Error> {
+            const auto reply_result = DeserializeMethodReplyMessage(reply_buffer);
+            EXPECT_THAT(reply_result, ContainsError(MethodErrc::kSkeletonAlreadyDestroyed));
+            return {};
+        }));
+
+    // When a valid MessageWithReply message is received of type kSubscribeServiceMethod
+    score::cpp::ignore =
+        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidSubscribeMethodMessage());
 }
 
 TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest,

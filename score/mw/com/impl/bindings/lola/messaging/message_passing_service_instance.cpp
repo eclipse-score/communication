@@ -316,16 +316,18 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
         }
 
         const auto& message_handling_result = function_invocation_result.value();
+        const auto did_message_handling_fail_unrecoverable =
+            !(message_handling_result.has_value()) && (!IsMethodErrorRecoverable(message_handling_result.error()));
 
-        if (!(message_handling_result.has_value()))
+        // If we received an unrecoverable error then we log here and return an error after attempting to send a reply.
+        // We log since an unrecoverable error may indicate that message passing is broken, so we can't rely on the
+        // caller receiving an informative error message. We log here in case the message reply fails which will return
+        // early from this function to ensure that we log both error messages in that case.
+        if (did_message_handling_fail_unrecoverable)
         {
-            if (!IsMethodErrorRecoverable(message_handling_result.error()))
-            {
-                score::mw::log::LogError("lola")
-                    << "Handling message with reply failed with unrecoverable error:" << message_handling_result.error()
-                    << ". Disconnecting from client.";
-                return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
-            }
+            score::mw::log::LogError("lola")
+                << "Handling message with reply failed with unrecoverable error:" << message_handling_result.error()
+                << ". Disconnecting from client.";
         }
 
         const auto reply = SerializeToMethodReplyMessage(message_handling_result);
@@ -336,6 +338,12 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
                 << "Failed to send reply after successfully processing message with reply. Disconnecting from client.";
             return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
         }
+
+        if (did_message_handling_fail_unrecoverable)
+        {
+            return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
+        }
+
         return {};
     };
     return received_send_message_with_reply_callback;
