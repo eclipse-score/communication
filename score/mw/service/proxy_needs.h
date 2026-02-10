@@ -16,6 +16,8 @@
 #include <memory>
 #include <tuple>
 #include <utility>
+#include "score/mw/service/proxy_future.h"
+#include "score/concurrency/future/interruptible_promise.h"
 
 namespace score
 {
@@ -61,6 +63,18 @@ class Optional
     [[nodiscard]] const ProxyType* get() const noexcept
     {
         return proxy_.get();
+    }
+
+    /// @brief Implicit conversion to ProxyFuture for compatibility
+    /// This allows Optional<T> to be used where ProxyFuture<std::unique_ptr<T>> is expected
+    operator ProxyFuture<std::unique_ptr<ProxyType>>() &&
+    {
+        // Create a promise and immediately fulfill it with the proxy value
+        score::concurrency::InterruptiblePromise<std::unique_ptr<ProxyType>> promise;
+        auto future_expected = promise.GetInterruptibleFuture();
+        promise.SetValue(std::move(proxy_));
+        // Extract the future from the expected (assume success in stub)
+        return std::move(future_expected.value());
     }
 
   private:

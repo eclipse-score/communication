@@ -14,43 +14,21 @@
 #ifndef SCORE_MW_SERVICE_PROXY_FUTURE_H
 #define SCORE_MW_SERVICE_PROXY_FUTURE_H
 
-#include <optional>
+#include "score/concurrency/future/interruptible_future.h"
 
 namespace score
 {
-namespace cpp
-{
-class stop_token;
-}  // namespace cpp
-
 namespace mw
 {
 namespace service
 {
 
 /**
- * @brief Future class for asynchronous proxy operations
+ * @brief ProxyFuture is a stub/alias for InterruptibleFuture
+ * @tparam T The type of the value held by the future
  */
-class ProxyFuture
-{
-  public:
-    ProxyFuture() = default;
-    virtual ~ProxyFuture() = default;
-    ProxyFuture(ProxyFuture&&) = delete;
-    ProxyFuture(const ProxyFuture&) = delete;
-
-    ProxyFuture& operator=(ProxyFuture&&) = delete;
-    ProxyFuture& operator=(const ProxyFuture&) = delete;
-
-    /**
-     * @brief Get the result of the future with stop token support
-     * @tparam T The type of the proxy holder
-     * @param stop_token Token to support cancellation
-     * @return Optional containing the proxy holder if available
-     */
-    template <typename T = int>
-    std::optional<T> Get(const score::cpp::stop_token& stop_token);
-};
+template <typename T>
+using ProxyFuture = score::concurrency::InterruptibleFuture<T>;
 
 }  // namespace service
 }  // namespace mw
