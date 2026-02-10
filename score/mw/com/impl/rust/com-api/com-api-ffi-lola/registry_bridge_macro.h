@@ -39,7 +39,7 @@
 //  EXPORT_MW_COM_TYPE)
 //  - Macros create static helper structs that register operations in GlobalRegistryMapping at program startup
 //  - Operations are looked up at RUNTIME using string keys (interface_id, event_id, type_name)
-//  - Rust calls generic FFI functions with string identifiers
+//  - Rust calls FFI functions with string identifiers
 //  - C++ resolves actual types via registry and invokes appropriate virtual methods
 //
 //  Example flow for event subscription:
@@ -53,7 +53,7 @@
 //  Template specialization pattern:
 //  - EXPORT_MW_COM_TYPE macro specializes RustRefMutCallable template for each type
 //  - This allows C++ to invoke Rust FnMut closures with type-specific SamplePtr<T>
-//  - SamplePtr<T> is wrapped in placement-new storage and passed to generic mw_com_impl_call_dyn_ref_fnmut_sample()
+//  - SamplePtr<T> is wrapped in placement-new storage and passed to mw_com_impl_call_dyn_ref_fnmut_sample()
 //  - The Rust side reconstructs the FatPtr and invokes the original closure
 //
 //  Application side usage:
@@ -61,8 +61,8 @@
 //  - Macros are typically invoked in a dedicated registration compilation unit
 //  - Registry is thread-safe via static initialization (runs before main)
 
-#ifndef SCORE_MW_COM_IMPL_RUST_GENERIC_BRIDGE_MACROS_H
-#define SCORE_MW_COM_IMPL_RUST_GENERIC_BRIDGE_MACROS_H
+#ifndef SCORE_MW_COM_REGISTRY_BRIDGE_MACROS_H
+#define SCORE_MW_COM_REGISTRY_BRIDGE_MACROS_H
 
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -556,9 +556,11 @@ class GlobalRegistryMapping
     }
 };
 
-// Declare the generic Rust FFI function
+// Declare the FFI function for Rust closure invocation with type erasure.
+// This function will be defined in the FFI implementation file and called by C++ code to invoke Rust closures with
+// SamplePtr arguments.
 extern "C" {
-/// \brief Generic Rust closure invocation for all types
+/// \brief Rust closure invocation for SamplePtr with type erasure
 /// \details This function is called by C++ to invoke a Rust closure with a sample pointer.
 /// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
 /// \param sample_ptr Pointer to SamplePtr<T> representing the sample data
@@ -567,7 +569,7 @@ void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::F
 
 /// \brief Macro to begin registration of interface operations
 /// \details Creates registry and type aliases for a specific interface. Uses a static struct to register
-/// interface operations at startup/before main(). Declares the generic Rust FFI function.
+/// interface operations at startup/before main(). Declares the Rust FFI function for closure invocation.
 /// \param id Interface TYPE ID that the Rust side uses to identify the interface
 /// \param proxy_type Proxy class type for the interface
 /// \param skeleton_type Skeleton class type for the interface
@@ -643,7 +645,7 @@ void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::F
         static void invoke(::score::mw::com::impl::rust::FatPtr ptr_,                                                 \
                            ::score::mw::com::impl::SamplePtr<type> sample) noexcept                                   \
         {                                                                                                           \
-            /* Wrap in placement-new and call the generic Rust function */                                          \
+            /* Wrap in placement-new and call the Rust FFI function for closure invocation */                       \
             alignas(                                                                                                \
                 ::score::mw::com::impl::SamplePtr<type>) char storage[sizeof(::score::mw::com::impl::SamplePtr<type>)]; \
             auto* placement_sample = new (storage)::score::mw::com::impl::SamplePtr<type>(std::move(sample));         \
@@ -664,4 +666,4 @@ void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::F
     static type_tag##_TypeRegistrationHelper type_tag##_type_reg_instance;
 }  // namespace score::mw::com::impl::rust
 
-#endif  // SCORE_MW_COM_IMPL_RUST_GENERIC_BRIDGE_MACROS_H
+#endif  // SCORE_MW_COM_REGISTRY_BRIDGE_MACROS_H

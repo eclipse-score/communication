@@ -42,7 +42,7 @@ use com_api_concept::{
     Interface, Result, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 
-use generic_bridge_ffi_rs::*;
+use bridge_ffi_rs::*;
 
 use crate::LolaRuntimeImpl;
 
@@ -80,7 +80,7 @@ where
         //SamplePtr created by FFI
         unsafe {
             let mut sample_ptr = ManuallyDrop::take(&mut self.data);
-            generic_bridge_ffi_rs::sample_ptr_delete(
+            bridge_ffi_rs::sample_ptr_delete(
                 std::ptr::from_mut(&mut sample_ptr) as *mut std::ffi::c_void,
                 T::ID,
             );
@@ -108,7 +108,7 @@ where
         //SAFETY: It is safe to get the data pointer because SamplePtr is valid
         //and data is valid as long as SamplePtr is valid
         unsafe {
-            let data_ptr = generic_bridge_ffi_rs::sample_ptr_get(
+            let data_ptr = bridge_ffi_rs::sample_ptr_get(
                 std::ptr::from_ref(&(*self.inner.data)) as *const std::ffi::c_void,
                 T::ID,
             );
@@ -204,7 +204,7 @@ impl Drop for NativeProxyBase {
         //SAFETY: It is safe to destroy the proxy because it was created by FFI
         // and proxy pointer received at the time of create_proxy called
         unsafe {
-            generic_bridge_ffi_rs::destroy_proxy(self.proxy);
+            bridge_ffi_rs::destroy_proxy(self.proxy);
         }
     }
 }
@@ -219,7 +219,7 @@ impl NativeProxyBase {
     pub fn new(interface_id: &str, handle: &HandleType) -> Self {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id
-        let proxy = unsafe { generic_bridge_ffi_rs::create_proxy(interface_id, handle) };
+        let proxy = unsafe { bridge_ffi_rs::create_proxy(interface_id, handle) };
         Self { proxy }
     }
 }
@@ -245,7 +245,7 @@ impl NativeProxyEventBase {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
         let proxy_event_ptr =
-            unsafe { generic_bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
+            unsafe { bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
         Self { proxy_event_ptr }
     }
 }
@@ -288,7 +288,7 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
         let status = unsafe {
-            generic_bridge_ffi_rs::subscribe_to_event(
+            bridge_ffi_rs::subscribe_to_event(
                 event_instance.proxy_event_ptr,
                 max_num_samples.try_into().unwrap(),
             )
@@ -393,7 +393,7 @@ where
             // The lifetime of the callback is managed by Rust, and it will not outlive
             // the scope of this function call.
             let count = unsafe {
-                generic_bridge_ffi_rs::get_samples_from_event(
+                bridge_ffi_rs::get_samples_from_event(
                     event.proxy_event_ptr,
                     T::ID,
                     &fat_ptr,

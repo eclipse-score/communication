@@ -39,7 +39,7 @@ use com_api_concept::{
     ProviderInfo, Result,
 };
 
-use generic_bridge_ffi_rs::*;
+use bridge_ffi_rs::*;
 
 use crate::LolaRuntimeImpl;
 
@@ -55,7 +55,7 @@ impl ProviderInfo for LolaProviderInfo {
         //SAFETY: it is safe as we are passing valid skeleton handle to offer service
         // the skeleton handle is created during building the provider info instance
         let status =
-            unsafe { generic_bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
+            unsafe { bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
         if !status {
             return Err(Error::Fail);
         }
@@ -65,9 +65,7 @@ impl ProviderInfo for LolaProviderInfo {
     fn stop_offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to stop offer service
         // the skeleton handle is created during building the provider info instance
-        unsafe {
-            generic_bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle)
-        };
+        unsafe { bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle) };
         Ok(())
     }
 }
@@ -93,7 +91,7 @@ where
         //SampleAllocateePtr created by FFI
         unsafe {
             let mut allocatee_ptr = ManuallyDrop::take(&mut self.inner);
-            generic_bridge_ffi_rs::delete_allocatee_ptr(
+            bridge_ffi_rs::delete_allocatee_ptr(
                 std::ptr::from_mut(&mut allocatee_ptr) as *mut std::ffi::c_void,
                 T::ID,
             );
@@ -128,7 +126,7 @@ where
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
-            let data_ptr = generic_bridge_ffi_rs::get_allocatee_data_ptr(
+            let data_ptr = bridge_ffi_rs::get_allocatee_data_ptr(
                 std::ptr::from_ref(&(*self.allocatee_ptr.inner)) as *const std::ffi::c_void,
                 T::ID,
             );
@@ -140,7 +138,7 @@ where
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         unsafe {
-            let data_ptr = generic_bridge_ffi_rs::get_allocatee_data_ptr(
+            let data_ptr = bridge_ffi_rs::get_allocatee_data_ptr(
                 std::ptr::from_mut(&mut (*self.allocatee_ptr.inner)) as *mut std::ffi::c_void,
                 T::ID,
             );
@@ -181,7 +179,7 @@ where
         // We've taken ownership via self (consumed, not borrowed), and
         // FFI call will complete before drop run on AllocateePtrWrapper and NativeSkeletonEventBase
         let status = unsafe {
-            generic_bridge_ffi_rs::skeleton_event_send_sample_allocatee(
+            bridge_ffi_rs::skeleton_event_send_sample_allocatee(
                 self.skeleton_event.skeleton_event_ptr,
                 T::ID,
                 std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
@@ -212,7 +210,7 @@ where
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         let data_ptr = unsafe {
-            generic_bridge_ffi_rs::get_allocatee_data_ptr(
+            bridge_ffi_rs::get_allocatee_data_ptr(
                 std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
                 T::ID,
             ) as *mut core::mem::MaybeUninit<T>
@@ -300,9 +298,8 @@ unsafe impl Send for NativeSkeletonHandle {}
 impl NativeSkeletonHandle {
     pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Self {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
-        let handle = unsafe {
-            generic_bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native())
-        };
+        let handle =
+            unsafe { bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native()) };
         Self { handle }
     }
 }
@@ -312,7 +309,7 @@ impl Drop for NativeSkeletonHandle {
         //SAFETY: It is safe as we are passing valid skeleton handle to destroy skeleton
         // the handle was created using create_skeleton
         unsafe {
-            generic_bridge_ffi_rs::destroy_skeleton(self.handle);
+            bridge_ffi_rs::destroy_skeleton(self.handle);
         }
     }
 }
@@ -335,7 +332,7 @@ impl NativeSkeletonEventBase {
         //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
         // skeleton handle is created during producer offer call
         let skeleton_event_ptr = unsafe {
-            generic_bridge_ffi_rs::get_event_from_skeleton(
+            bridge_ffi_rs::get_event_from_skeleton(
                 instance_info.skeleton_handle.0.handle,
                 instance_info.interface_id,
                 identifier,
@@ -385,7 +382,7 @@ where
         let allocatee_ptr = unsafe {
             let mut sample =
                 core::mem::MaybeUninit::<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>::uninit();
-            let status = generic_bridge_ffi_rs::get_allocatee_ptr(
+            let status = bridge_ffi_rs::get_allocatee_ptr(
                 self.skeleton_event.skeleton_event_ptr,
                 sample.as_mut_ptr() as *mut std::ffi::c_void,
                 T::ID,

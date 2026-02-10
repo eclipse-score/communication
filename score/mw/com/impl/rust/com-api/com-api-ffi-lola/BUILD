@@ -32,8 +32,8 @@ cc_library(
 )
 
 rust_library(
-    name = "generic_bridge_ffi_rs",
-    srcs = ["generic_bridge_ffi.rs"],
+    name = "bridge_ffi_rs",
+    srcs = ["bridge_ffi.rs"],
     visibility = [
         "//score/mw/com:__subpackages__",
     ],

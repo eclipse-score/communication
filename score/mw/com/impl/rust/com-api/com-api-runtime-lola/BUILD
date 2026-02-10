@@ -29,7 +29,7 @@ rust_library(
         "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
         "//score/mw/com/impl/rust:mw_com",
         "//score/mw/com/impl/rust/com-api/com-api-concept",
-        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:generic_bridge_ffi_rs",
+        "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_rs",
         "@crate_index//:futures",
     ],
 )

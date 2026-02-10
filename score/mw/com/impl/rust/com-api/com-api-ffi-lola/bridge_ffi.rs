@@ -11,38 +11,38 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-// Why generic and dynamic FFI bridge instead of static macros which is already available in macros.rs -->
+// Why dynamic FFI bridge instead of static macros which is already available in macros.rs -->
 //
-// DESIGN DECISION: Generic FFI Bridge for Runtime-Independent COM-API
+// DESIGN DECISION:  FFI Bridge for Compile-time decoupling of COM-API and Lola
 //
 // Problem with macros.rs approach:
 // - macros.rs file provides static, compile-time bindings tightly coupled with specific runtime implementations
 // - This violates COM-API design principle of being independent of any specific runtime
-// - We cannot invoke macros defined in runtime-specific crates (like Lola, Mock) from generic COM-API library
+// - We cannot invoke macros defined in runtime-specific crates (like Lola, Mock) from COM-API library which is runtime-agnostic
 // - macros.rs mixes two concerns: API abstraction (what to communicate) and runtime binding (how to communicate)
 //
 // Why this file exists:
-// - This file provides FFI bindings and generic bridge functions for COM API that work with any runtime
+// - This file provides FFI bindings and bridge functions for COM API that work with Lola runtime
 // - COM-API library is independent of any specific runtime implementation
-// - generic_bridge_ffi.rs enables Rust COM-API to work with different runtime backends without runtime-specific macros
-// - It bridges between Rust COM-API and C++ COM-API implementations using type-erased FFI layer
+// - bridge_ffi_rs.rs enables Rust COM-API to work with Lola's C++ implementation via FFI without compile-time coupling
+// - It uses type erasure and dynamic type resolution on C++ side to decouple compile-time dependencies while still enabling type-safe communication
 //
 // Key design elements:
 // - It defines opaque structs for Proxy and Skeleton base types (ProxyBase, SkeletonBase, SkeletonEventBase)
 // - Opaque types hide C++ implementation details and prevent accidental field access from Rust
 // - It defines FFI functions for creating, destroying, and interacting with proxies and skeletons
 // - String-based type identifiers (interface_id, event_id, event_type) enable runtime type checking
-// - It provides generic Rust closure invocation function (mw_com_impl_call_dyn_ref_fnmut_sample) for callbacks from C++
+// - It provides Rust closure invocation function (mw_com_impl_call_dyn_ref_fnmut_sample) for callbacks from C++
 // - This allows C++ code to call back into Rust closures in type-erased manner using FatPtr trait objects
 // - Overall, this file serves as the FFI bridge layer for COM-API functionality
 //
 // How it works with C++:
 // - extern "C" functions defined here are called via Lola APIs implemented in C++
-// - FFI for generic proxy and skeleton handling uses registry-based dynamic type system on C++ side
+// - FFI for C++ functions are implemented in registry_bridge_macro.cpp, which uses the type registry to resolve operations at runtime
 // - FFI C++ implementations are in registry_bridge_macro.cpp file
 // - C++ side maintains type registry built by macros defined in registry_bridge_macro.h file
 // - Registry is populated at application build time via auto-generated code for each interface and type
-// - When Rust calls generic FFI functions with type name strings, C++ resolves type at runtime via registry
+// - When Rust calls FFI functions with type name strings, C++ resolves type at runtime via registry
 // - This enables type-safe communication without C++ needing to know Rust types at compile time
 //
 // Dependencies:
@@ -116,7 +116,7 @@ impl From<&'_ str> for StringView {
     }
 }
 
-/// Generic Rust closure invocation for all types
+///  Rust closure invocation for C++ callbacks
 ///
 /// This function is called by C++ to invoke a Rust closure with a sample pointer.
 /// The closure is reconstructed from the FatPtr trait object.
@@ -144,7 +144,7 @@ pub unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
     callable(sample_ptr);
 }
 
-// FFI declarations for C++ generic event bridge functions
+// FFI declarations for C++ functions implemented in registry_bridge_macro.cpp
 extern "C" {
 
     /// Subscribe to event to start receiving samples

@@ -36,7 +36,6 @@ impl CommData for Exhaust {
 
 pub struct VehicleInterface {}
 
-/// Generic
 impl Interface for VehicleInterface {
     const INTERFACE_ID: &'static str = "VehicleInterface";
     type Consumer<R: Runtime + ?Sized> = VehicleConsumer<R>;
