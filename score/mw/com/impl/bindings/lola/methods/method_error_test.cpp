@@ -64,6 +64,11 @@ TEST_F(MethodErrorMessageForFixture, MessageForNotOffered)
     TestErrorMessage(MethodErrc::kNotOffered, "Method has not been fully offered.");
 }
 
+TEST_F(MethodErrorMessageForFixture, MessageForUnknownProxy)
+{
+    TestErrorMessage(MethodErrc::kUnknownProxy, "Proxy is not allowed to access method.");
+}
+
 using MethodErrorMessageForDeathTest = MethodErrorMessageForFixture;
 TEST_F(MethodErrorMessageForDeathTest, MessageForkInvalidTerminates)
 {

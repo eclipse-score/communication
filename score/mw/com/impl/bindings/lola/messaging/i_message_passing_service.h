@@ -32,6 +32,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <set>
 
 namespace score::mw::com::impl::lola
 {
@@ -71,19 +73,13 @@ class IMessagePassingService
     ///        referring to consumers of the event/field shared memory region that the Skeleton creates. However, for
     ///        methods, the proxy whose UID must be checked is actually the provider of the shared memory region). It's
     ///        also used in the allowed_provider list when opening the shared memory region.
-    /// \param asil_level (QM or Asil-B) of the Proxy instance which subscribed to the method. This is required so that
-    ///        the Skeleton can check the correct allowed_consumer list (since there's a different list for QM and
-    ///        ASIL-B).
     /// \param proxy_pid PID of the proxy process which is used to determine whether the call to
     ///        SubscribeServiceMethod by a proxy is being called after the proxy process restarted and recreated
     ///        the methods shared memory region. If it is being called after a restart, then the Skeleton needs to open
     ///        the new shared memory region and close all methods shared memory regions that were in the process that
     ///        restarted.
-    using ServiceMethodSubscribedHandler =
-        safecpp::CopyableScopedFunction<score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier,
-                                                         uid_t proxy_uid,
-                                                         QualityType asil_level,
-                                                         pid_t proxy_pid)>;
+    using ServiceMethodSubscribedHandler = safecpp::CopyableScopedFunction<
+        score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier, uid_t proxy_uid, pid_t proxy_pid)>;
 
     /// \brief Handler which will be called when the proxy process sends a message that it has called a method.
     ///
@@ -100,6 +96,13 @@ class IMessagePassingService
     /// Only one copy of the handler will ever be called at one time, so the provided handler does not need to
     /// ensure it can safely be called concurrently.
     using MethodCallHandler = safecpp::CopyableScopedFunction<void(std::size_t queue_position)>;
+
+    /// \brief Allowed consumer uids which define which processes can subscribe to and call service methods.
+    ///
+    /// If the optional is empty, is indicates that any uid is allowed.
+    /// If the optional is filled, then all allowed uids are listed in the set. An empty set indicates that no uids are
+    /// allowed.
+    using AllowedConsumerUids = std::optional<std::set<uid_t>>;
 
     IMessagePassingService() noexcept = default;
 
@@ -175,12 +178,19 @@ class IMessagePassingService
     ///
     /// \param asil_level ASIL level of method.
     /// \param skeleton_instance_identifier to identify which ServiceMethodSubscribedHandler to call when
-    /// SubscribeServiceMethod is called on the Proxy side
+    ///        SubscribeServiceMethod is called on the Proxy side
     /// \param subscribed_callback callback that will be called when SubscribeServiceMethod is called
+    /// \param allowed_proxy_uids set of uids of processes containing proxies which are allowed to register to this
+    ///        method. This will be derived from the allowed_consumer set in the mw/com configuration using the
+    ///        asil_level provided to this function (i.e. the ASIL-level of the particular MessagePassingServiceInstance
+    ///        on which we'll register the handler). If an empty optional is provided, it means all uids are allowed. A
+    ///        set of uids is provided because different Proxy instances will be able to subscribe via this registered
+    ///        handler.
     virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
         const QualityType asil_level,
         SkeletonInstanceIdentifier skeleton_instance_identifier,
-        ServiceMethodSubscribedHandler subscribed_callback) = 0;
+        ServiceMethodSubscribedHandler subscribed_callback,
+        AllowedConsumerUids allowed_proxy_uids) = 0;
 
     /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a ProxyMethod.
     ///
@@ -202,9 +212,13 @@ class IMessagePassingService
     /// \param proxy_method_instance_identifier to identify which MethodCallHandler to call when CallMethod is called on
     /// the Proxy side
     /// \param method_call_callback callback that will be called when CallMethod is called
+    /// \param allowed_proxy_uid The uid of the proxy process which can call the registered handler. Since we register a
+    ///        method call handler per ProxyMethod, we can restrict the caller of the handler to the ProxyMethod who
+    ///        registered it.
     virtual ResultBlank RegisterMethodCallHandler(const QualityType asil_level,
                                                   ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-                                                  MethodCallHandler method_call_callback) = 0;
+                                                  MethodCallHandler method_call_callback,
+                                                  uid_t allowed_proxy_uid) = 0;
 
     /// \brief Notify given target_node_id about outdated_node_id being an old/not to be used node identifier.
     /// \details This is used by LoLa proxy instances during creation, when they detect, that they are re-starting

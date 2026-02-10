@@ -146,22 +146,25 @@ IMessagePassingServiceInstance& MessagePassingService::GetMessagePassingServiceI
 ResultBlank MessagePassingService::RegisterOnServiceMethodSubscribedHandler(
     const QualityType asil_level,
     SkeletonInstanceIdentifier skeleton_instance_identifier,
-    ServiceMethodSubscribedHandler subscribed_callback)
+    ServiceMethodSubscribedHandler subscribed_callback,
+    AllowedConsumerUids allowed_proxy_uids)
 {
     auto& instance = GetMessagePassingServiceInstance(asil_level);
 
-    return instance.RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier,
-                                                             std::move(subscribed_callback));
+    return instance.RegisterOnServiceMethodSubscribedHandler(
+        skeleton_instance_identifier, std::move(subscribed_callback), allowed_proxy_uids);
 }
 
 ResultBlank MessagePassingService::RegisterMethodCallHandler(
     const QualityType asil_level,
     ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-    MethodCallHandler method_call_callback)
+    MethodCallHandler method_call_callback,
+    uid_t allowed_proxy_uid)
 {
     auto& instance = GetMessagePassingServiceInstance(asil_level);
 
-    return instance.RegisterMethodCallHandler(proxy_method_instance_identifier, std::move(method_call_callback));
+    return instance.RegisterMethodCallHandler(
+        proxy_method_instance_identifier, std::move(method_call_callback), allowed_proxy_uid);
 }
 
 void MessagePassingService::RegisterEventNotificationExistenceChangedCallback(

@@ -25,6 +25,7 @@
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 
 #include <score/assert.hpp>
@@ -63,6 +64,9 @@ const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithNoInArgsOrRe
     std::optional<memory::DataTypeSizeInfo>{},
     10U};
 
+const uid_t kAllowedProxyUid{10};
+const auto kAsilLevel{QualityType::kASIL_QM};
+
 const std::optional<score::cpp::span<std::byte>> kValidInArgStorage{score::cpp::span<std::byte>{}};
 const std::optional<score::cpp::span<std::byte>> kValidReturnStorage{score::cpp::span<std::byte>{}};
 
@@ -92,7 +96,7 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
 
     SkeletonMethodFixture& WhichCapturesRegisteredMethodCallHandler()
     {
-        ON_CALL(message_passing_mock_, RegisterMethodCallHandler(_, proxy_method_instance_identifier_, _))
+        ON_CALL(message_passing_mock_, RegisterMethodCallHandler(_, proxy_method_instance_identifier_, _, _))
             .WillByDefault(WithArg<2>(Invoke([this](auto method_call_handler) -> ResultBlank {
                 captured_method_call_handler_.emplace(std::move(method_call_handler));
                 return {};
@@ -133,7 +137,32 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingWithoutRegisteringCa
                                                                                      kValidInArgStorage,
                                                                                      kValidReturnStorage,
                                                                                      proxy_method_instance_identifier_,
-                                                                                     method_call_handler_scope_));
+                                                                                     method_call_handler_scope_,
+                                                                                     kAllowedProxyUid,
+                                                                                     kAsilLevel));
+}
+
+TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersCallbackWithProvidedData)
+{
+    GivenASkeletonMethod().WithARegisteredCallback();
+
+    // Expecting that RegisterMethodCallHandler will be called on message passing with the data provided to
+    // OnProxyMethoSubscribeFinished.
+    const auto asil_level = QualityType::kASIL_B;
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(asil_level, proxy_method_instance_identifier_, _, kAllowedProxyUid));
+
+    // When calling OnProxyMethodSubscribeFinished with a registered callback
+    const auto result = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                              kValidInArgStorage,
+                                                              kValidReturnStorage,
+                                                              proxy_method_instance_identifier_,
+                                                              method_call_handler_scope_,
+                                                              kAllowedProxyUid,
+                                                              asil_level);
+
+    // Then the result will be valid
+    ASSERT_TRUE(result.has_value());
 }
 
 TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredCallbackWithMessagePassing)
@@ -144,7 +173,7 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredC
     // registered callback. We check this by calling the subscribed callback and checking that the registered
     // callback was called.
     EXPECT_CALL(registered_type_erased_callback_, Call(_, _));
-    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(_, proxy_method_instance_identifier_, _))
+    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(_, proxy_method_instance_identifier_, _, _))
         .WillOnce(WithArg<2>(Invoke([](auto method_call_handler) -> ResultBlank {
             std::invoke(method_call_handler, kDummyQueueSize);
             return {};
@@ -155,7 +184,9 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredC
                                                               kValidInArgStorage,
                                                               kValidReturnStorage,
                                                               proxy_method_instance_identifier_,
-                                                              method_call_handler_scope_);
+                                                              method_call_handler_scope_,
+                                                              kAllowedProxyUid,
+                                                              kAsilLevel);
 
     // Then the result will be valid
     ASSERT_TRUE(result.has_value());
@@ -167,7 +198,7 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, PropagatesErrorFromMessageP
 
     // Expecting that RegisterMethodCallHandler will be called on message passing which returns an error.
     const auto error_code = ComErrc::kCallQueueFull;
-    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(_, proxy_method_instance_identifier_, _))
+    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(_, proxy_method_instance_identifier_, _, _))
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling OnProxyMethodSubscribeFinished with a registered callback
@@ -175,7 +206,9 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, PropagatesErrorFromMessageP
                                                               kValidInArgStorage,
                                                               kValidReturnStorage,
                                                               proxy_method_instance_identifier_,
-                                                              method_call_handler_scope_);
+                                                              method_call_handler_scope_,
+                                                              kAllowedProxyUid,
+                                                              kAsilLevel);
 
     // Then the result will contain an error
     ASSERT_FALSE(result.has_value());
@@ -195,7 +228,9 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, FailingToGetLolaRuntimeTerm
                                                                                      kValidInArgStorage,
                                                                                      kValidReturnStorage,
                                                                                      proxy_method_instance_identifier_,
-                                                                                     method_call_handler_scope_));
+                                                                                     method_call_handler_scope_,
+                                                                                     kAllowedProxyUid,
+                                                                                     kAsilLevel));
 }
 
 using SkeletonMethodCallFixture = SkeletonMethodFixture;
@@ -215,7 +250,9 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndStorageDispatchesTo
                                                         kValidInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_);
+                                                        method_call_handler_scope_,
+                                                        kAllowedProxyUid,
+                                                        kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -240,7 +277,9 @@ TEST_F(SkeletonMethodCallFixture,
                                                         kEmptyInArgStorage,
                                                         kValidReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_);
+                                                        method_call_handler_scope_,
+                                                        kAllowedProxyUid,
+                                                        kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -266,7 +305,9 @@ TEST_F(SkeletonMethodCallFixture,
                                                         kValidInArgStorage,
                                                         kValidReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_);
+                                                        method_call_handler_scope_,
+                                                        kAllowedProxyUid,
+                                                        kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -290,7 +331,9 @@ TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToR
                                                         kEmptyInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_);
+                                                        method_call_handler_scope_,
+                                                        kAllowedProxyUid,
+                                                        kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -308,7 +351,9 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndNoValidStorageTermi
                                                         kEmptyInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_);
+                                                        method_call_handler_scope_,
+                                                        kAllowedProxyUid,
+                                                        kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -327,7 +372,9 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
                                                         kEmptyInArgStorage,
                                                         kEmptyReturnStorage,
                                                         proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_);
+                                                        method_call_handler_scope_,
+                                                        kAllowedProxyUid,
+                                                        kAsilLevel);
 
     // and given that the method call handler scope has expired
     method_call_handler_scope_.Expire();

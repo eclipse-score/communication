@@ -54,7 +54,9 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
     const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
     const std::optional<score::cpp::span<std::byte>> return_queue_storage,
     const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-    const safecpp::Scope<>& method_call_handler_scope)
+    const safecpp::Scope<>& method_call_handler_scope,
+    uid_t allowed_proxy_uid,
+    const QualityType asil_level)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_callback_.has_value(),
                            "Cannot register a method call handler without a registered handler from Register()!");
@@ -90,7 +92,7 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
     return lola_message_passing.RegisterMethodCallHandler(
-        asil_level_, proxy_method_instance_identifier, std::move(method_call_callback));
+        asil_level, proxy_method_instance_identifier, std::move(method_call_callback), allowed_proxy_uid);
 }
 
 bool SkeletonMethod::IsRegistered() const

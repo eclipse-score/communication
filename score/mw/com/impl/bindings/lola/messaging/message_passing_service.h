@@ -103,13 +103,15 @@ class MessagePassingService final : public IMessagePassingService
     /// \details see IMessagePassingService::RegisterOnServiceMethodSubscribedHandler
     ResultBlank RegisterOnServiceMethodSubscribedHandler(const QualityType asil_level,
                                                          SkeletonInstanceIdentifier skeleton_instance_identifier,
-                                                         ServiceMethodSubscribedHandler subscribed_callback) override;
+                                                         ServiceMethodSubscribedHandler subscribed_callback,
+                                                         AllowedConsumerUids allowed_proxy_uids) override;
 
     /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a Proxy.
     /// \details see IMessagePassingService::RegisterMethodCallHandler
     ResultBlank RegisterMethodCallHandler(const QualityType asil_level,
                                           ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-                                          MethodCallHandler method_call_callback) override;
+                                          MethodCallHandler method_call_callback,
+                                          uid_t allowed_proxy_uid) override;
 
     /// \brief Notifies target node about outdated_node_id being an old/outdated node id, not being used anymore.
     /// \details see IMessagePassingService::NotifyOutdatedNodeId

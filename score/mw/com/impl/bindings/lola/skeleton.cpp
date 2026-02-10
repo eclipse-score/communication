@@ -15,6 +15,7 @@
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/result/result.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
@@ -363,16 +364,19 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
     // message passing that it has finished setting up the regions. We always register a handler for QM proxies and also
     // register a handler for ASIL-B proxies if this skeleton is ASIL-B.
-    IMessagePassingService::ServiceMethodSubscribedHandler service_method_subscribed_handler{
-        on_service_method_subscribed_handler_scope_,
-        [this](const ProxyInstanceIdentifier proxy_instance_identifier,
-               const uid_t proxy_uid,
-               const QualityType asil_level,
-               const pid_t proxy_pid) -> ResultBlank {
-            return OnServiceMethodsSubscribed(proxy_instance_identifier, proxy_uid, asil_level, proxy_pid);
-        }};
+    auto allowed_consumers_qm = GetAllowedConsumers(QualityType::kASIL_QM);
     const auto qm_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
-        QualityType::kASIL_QM, skeleton_instance_identifier, service_method_subscribed_handler);
+        QualityType::kASIL_QM,
+        skeleton_instance_identifier,
+        IMessagePassingService::ServiceMethodSubscribedHandler{
+            on_service_method_subscribed_handler_scope_,
+            [this](const ProxyInstanceIdentifier proxy_instance_identifier,
+                   const uid_t proxy_uid,
+                   const pid_t proxy_pid) -> ResultBlank {
+                return OnServiceMethodsSubscribed(
+                    proxy_instance_identifier, proxy_uid, QualityType::kASIL_QM, proxy_pid);
+            }},
+        allowed_consumers_qm);
     if (!(qm_registration_result.has_value()))
     {
         score::mw::log::LogError("lola") << "Could not register QM service method handler. Returning error.";
@@ -381,8 +385,19 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
 
     if (detail_skeleton::HasAsilBSupport(identifier_))
     {
+        auto allowed_consumers_asil_b = GetAllowedConsumers(QualityType::kASIL_B);
         const auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
-            QualityType::kASIL_B, skeleton_instance_identifier, service_method_subscribed_handler);
+            QualityType::kASIL_B,
+            skeleton_instance_identifier,
+            IMessagePassingService::ServiceMethodSubscribedHandler{
+                on_service_method_subscribed_handler_scope_,
+                [this](const ProxyInstanceIdentifier proxy_instance_identifier,
+                       const uid_t proxy_uid,
+                       const pid_t proxy_pid) -> ResultBlank {
+                    return OnServiceMethodsSubscribed(
+                        proxy_instance_identifier, proxy_uid, QualityType::kASIL_B, proxy_pid);
+                }},
+            allowed_consumers_asil_b);
         if (!(asil_b_registration_result))
         {
             score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
@@ -999,13 +1014,6 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         shm_path_builder_->GetMethodChannelShmName(lola_instance_id_, proxy_instance_identifier);
     const bool is_read_write{true};
 
-    if (!IsProxyInAllowedConsumerList(proxy_uid, asil_level))
-    {
-        score::mw::log::LogError("lola") << "Proxy UID:" << proxy_uid << "is not listed in" << ToString(asil_level)
-                                       << "allowed_consumers for method" << method_channel_shm_name;
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-
     const std::vector<uid_t> allowed_providers{proxy_uid};
     auto opened_shm_region =
         memory::shared::SharedMemoryFactory::Open(method_channel_shm_name, is_read_write, allowed_providers);
@@ -1032,7 +1040,9 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
                                                                  type_erased_call_queue.GetInArgValuesQueueStorage(),
                                                                  type_erased_call_queue.GetReturnValueQueueStorage(),
                                                                  proxy_method_instance_identifier,
-                                                                 method_call_handler_scope_);
+                                                                 method_call_handler_scope_,
+                                                                 proxy_uid,
+                                                                 asil_level);
         if (!(result.has_value()))
         {
             score::mw::log::LogError("lola")
@@ -1046,25 +1056,32 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
     return {};
 }
 
-bool Skeleton::IsProxyInAllowedConsumerList(const uid_t proxy_uid, const QualityType asil_level) const
+IMessagePassingService::AllowedConsumerUids Skeleton::GetAllowedConsumers(const QualityType asil_level) const
 {
     const auto& lola_service_instance_deployment = GetLolaServiceInstanceDeployment(identifier_);
-    const auto& allowed_consumer = lola_service_instance_deployment.allowed_consumer_;
+    const auto& allowed_consumers = lola_service_instance_deployment.allowed_consumer_;
+    const auto strict_permissions = lola_service_instance_deployment.strict_permissions_;
 
-    // Check if there is an allowed consumer list for the specified quality (ASIL-B / QM)
-    const auto allowed_consumer_list_it = allowed_consumer.find(asil_level);
-    if (allowed_consumer_list_it == allowed_consumer.cend())
+    const auto allowed_consumer_list_it = allowed_consumers.find(asil_level);
+    if (allowed_consumer_list_it == allowed_consumers.cend())
     {
-        score::mw::log::LogDebug("lola") << "Quality type:" << ToString(asil_level)
-                                       << "does not exist in allowed_consumer list in configuration!";
-        return false;
+        // If strict_permissions is false, then an empty allowed_cunsumers list means that anyone is an allowed
+        // consumer. Otherwise, it means that noone is an allowed consumer.
+        if (strict_permissions)
+        {
+            score::mw::log::LogDebug("lola") << "Quality type:" << ToString(asil_level)
+                                           << "does not exist in allowed_consumer list in configuration!";
+            return std::set<uid_t>{};
+        }
+        else
+        {
+            return std::optional<std::set<uid_t>>{};
+        }
     }
 
     // Check if the proxy_uid is in the allowed consumer list for the specified quality
-    const auto& allowed_consumer_list = allowed_consumer_list_it->second;
-    return std::any_of(allowed_consumer_list.begin(), allowed_consumer_list.end(), [proxy_uid](const auto uid) {
-        return uid == proxy_uid;
-    });
+    const auto& allowed_consumer_vector = allowed_consumer_list_it->second;
+    return std::set<uid_t>{allowed_consumer_vector.begin(), allowed_consumer_vector.end()};
 }
 
 MethodData& Skeleton::GetMethodData(const memory::shared::ManagedMemoryResource& resource)

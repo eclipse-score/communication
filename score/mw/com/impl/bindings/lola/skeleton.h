@@ -217,11 +217,11 @@ class Skeleton final : public SkeletonBinding
                                            const uid_t proxy_uid,
                                            const QualityType asil_level,
                                            const pid_t proxy_pid);
+
     static MethodData& GetMethodData(const memory::shared::ManagedMemoryResource& resource);
 
-    /// \brief Checks whether the Proxy which sent a notification to the Skeleton that it subscribed to a method is in
-    /// the allowed_consumers list in the configuration.
-    bool IsProxyInAllowedConsumerList(const uid_t proxy_uid, const QualityType asil_level) const;
+    /// \brief Gets the set of allowed proxy consumer IDs from the configuration
+    IMessagePassingService::AllowedConsumerUids GetAllowedConsumers(const QualityType asil_level) const;
 
     InstanceIdentifier identifier_;
     const LolaServiceInstanceDeployment& lola_service_instance_deployment_;

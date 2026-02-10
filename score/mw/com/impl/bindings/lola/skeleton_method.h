@@ -21,7 +21,6 @@
 
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/memory/data_type_size_info.h"
-#include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
@@ -48,7 +47,9 @@ class SkeletonMethod : public SkeletonMethodBinding
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-        const safecpp::Scope<>& method_call_handler_scope);
+        const safecpp::Scope<>& method_call_handler_scope,
+        uid_t allowed_proxy_uid,
+        const QualityType asil_level);
 
     bool IsRegistered() const;
 

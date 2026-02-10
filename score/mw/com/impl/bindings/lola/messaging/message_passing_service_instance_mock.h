@@ -39,12 +39,14 @@ class MessagePassingServiceInstanceMock : public IMessagePassingServiceInstance
 
     MOCK_METHOD(ResultBlank,
                 RegisterOnServiceMethodSubscribedHandler,
-                (SkeletonInstanceIdentifier, IMessagePassingService::ServiceMethodSubscribedHandler),
+                (SkeletonInstanceIdentifier,
+                 IMessagePassingService::ServiceMethodSubscribedHandler,
+                 IMessagePassingService::AllowedConsumerUids),
                 (override));
 
     MOCK_METHOD(ResultBlank,
                 RegisterMethodCallHandler,
-                (ProxyMethodInstanceIdentifier, IMessagePassingService::MethodCallHandler),
+                (ProxyMethodInstanceIdentifier, IMessagePassingService::MethodCallHandler, uid_t),
                 (override));
 
     MOCK_METHOD(void, NotifyOutdatedNodeId, (const pid_t, const pid_t), (noexcept, override));

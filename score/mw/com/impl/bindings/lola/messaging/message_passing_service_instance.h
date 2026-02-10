@@ -82,10 +82,12 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
 
     ResultBlank RegisterOnServiceMethodSubscribedHandler(
         SkeletonInstanceIdentifier skeleton_instance_identifier,
-        IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback) override;
+        IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
+        IMessagePassingService::AllowedConsumerUids allowed_proxy_uids) override;
 
     ResultBlank RegisterMethodCallHandler(ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-                                          IMessagePassingService::MethodCallHandler method_call_callback) override;
+                                          IMessagePassingService::MethodCallHandler method_call_callback,
+                                          uid_t allowed_proxy_uid) override;
 
     void NotifyOutdatedNodeId(const pid_t outdated_node_id, const pid_t target_node_id) noexcept override;
 
@@ -164,10 +166,11 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     using EventUpdateNodeIdMapType = std::unordered_map<ElementFqId, std::set<pid_t>>;
     using EventUpdateRegistrationCountMapType = std::unordered_map<ElementFqId, NodeCounter>;
 
-    using SubscribeServiceMethodMapType =
-        std::unordered_map<SkeletonInstanceIdentifier, IMessagePassingService::ServiceMethodSubscribedHandler>;
+    using SubscribeServiceMethodMapType = std::unordered_map<
+        SkeletonInstanceIdentifier,
+        std::pair<IMessagePassingService::ServiceMethodSubscribedHandler, IMessagePassingService::AllowedConsumerUids>>;
     using CallMethodMapType =
-        std::unordered_map<ProxyMethodInstanceIdentifier, IMessagePassingService::MethodCallHandler>;
+        std::unordered_map<ProxyMethodInstanceIdentifier, std::pair<IMessagePassingService::MethodCallHandler, uid_t>>;
 
     /// \brief tmp buffer for copying ids under lock.
     /// \todo Make its size configurable?
@@ -188,7 +191,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     score::ResultBlank HandleSubscribeServiceMethodMsg(const score::cpp::span<const std::uint8_t> payload,
                                                      const uid_t sender_uid,
                                                      const pid_t sender_node_id);
-    score::ResultBlank HandleCallMethodMsg(const score::cpp::span<const std::uint8_t> payload);
+    score::ResultBlank HandleCallMethodMsg(const score::cpp::span<const std::uint8_t> payload, const uid_t sender_uid);
 
     std::uint32_t NotifyEventLocally(const ElementFqId event_id) noexcept;
     void NotifyEventRemote(const ElementFqId event_id) noexcept;
@@ -201,10 +204,10 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     score::ResultBlank CallSubscribeServiceMethodLocally(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
                                                        const ProxyInstanceIdentifier& proxy_instance_identifier,
                                                        const uid_t proxy_uid,
-                                                       const QualityType asil_level,
                                                        const pid_t proxy_pid);
     score::ResultBlank CallServiceMethodLocally(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
-                                              const std::size_t queue_position);
+                                              const std::size_t queue_position,
+                                              const uid_t proxy_uid);
 
     ResultBlank CallSubscribeServiceMethodRemotely(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
                                                    const ProxyInstanceIdentifier& proxy_instance_identifier,

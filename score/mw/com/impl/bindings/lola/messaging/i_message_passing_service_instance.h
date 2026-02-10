@@ -51,10 +51,12 @@ class IMessagePassingServiceInstance
 
     virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
         SkeletonInstanceIdentifier skeleton_instance_identifier,
-        IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback) = 0;
+        IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
+        IMessagePassingService::AllowedConsumerUids allowed_proxy_uids) = 0;
 
     virtual ResultBlank RegisterMethodCallHandler(ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-                                                  IMessagePassingService::MethodCallHandler method_call_callback) = 0;
+                                                  IMessagePassingService::MethodCallHandler method_call_callback,
+                                                  uid_t allowed_proxy_uid) = 0;
 
     virtual void NotifyOutdatedNodeId(const pid_t outdated_node_id, const pid_t target_node_id) noexcept = 0;
 

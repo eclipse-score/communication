@@ -34,6 +34,7 @@ enum class MethodErrc : score::result::ErrorCode
     kMessagePassingError,
     kNotSubscribed,
     kNotOffered,
+    kUnknownProxy,
     // Note. kNumEnumElements must ALWAYS be the last enum entry
     kNumEnumElements
 };
@@ -75,6 +76,9 @@ class MethodErrorDomain final : public score::result::ErrorDomain
                 // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(MethodErrc::kNotOffered):
                 return "Method has not been fully offered.";
+                // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(MethodErrc::kUnknownProxy):
+                return "Proxy is not allowed to access method.";
                 // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(MethodErrc::kInvalid):
             case static_cast<score::result::ErrorCode>(MethodErrc::kNumEnumElements):

@@ -57,7 +57,8 @@ namespace
 
 using namespace ::testing;
 
-constexpr auto kMethodChannelName{"/lola-methods-0000000000000001-00016-06543-00005"};
+constexpr auto kMethodChannelNameQm{"/lola-methods-0000000000000001-00016-06543-00005"};
+constexpr auto kMethodChannelNameAsilB{"/lola-methods-0000000000000001-00016-06543-00006"};
 
 const TypeErasedCallQueue::TypeErasedElementInfo kFooTypeErasedElementInfo{memory::DataTypeSizeInfo{32, 8},
                                                                            memory::DataTypeSizeInfo{64, 16},
@@ -72,9 +73,13 @@ SkeletonBinding::SkeletonFieldBindings kEmptyFieldBindings{};
 constexpr pid_t kDummyPid{15};
 const auto kDummyQualityType = QualityType::kASIL_QM;
 
-ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{5U};
+ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounterQm{5U};
+ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounterAsilB{6U};
 
 std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> kEmptyRegisterShmObjectTraceCallback{};
+
+const std::vector<uid_t> kAllowedQmConsumers{test::kAllowedQmMethodConsumer};
+const std::vector<uid_t> kAllowedAsilBConsumers{test::kAllowedAsilBMethodConsumer};
 
 /// \brief Fake MethodData which simulates the MethodData which would be created by the Proxy side
 ///
@@ -127,13 +132,19 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
   public:
     SkeletonMethodHandlingFixture()
     {
-        ON_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _))
-            .WillByDefault(Return(mock_method_memory_resource_));
+        ON_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _))
+            .WillByDefault(Return(mock_method_memory_resource_qm_));
+        ON_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameAsilB, true, _))
+            .WillByDefault(Return(mock_method_memory_resource_asil_b_));
 
         ON_CALL(*mock_method_memory_resource_2_, getUsableBaseAddress())
             .WillByDefault(Return(static_cast<void*>(&fake_method_data_2_.method_data_)));
-        ON_CALL(*mock_method_memory_resource_, getUsableBaseAddress())
-            .WillByDefault(Return(static_cast<void*>(&fake_method_data_.method_data_)));
+        ON_CALL(*mock_method_memory_resource_qm_, getUsableBaseAddress())
+            .WillByDefault(Return(static_cast<void*>(&fake_method_data_qm_.method_data_)));
+        ON_CALL(*mock_method_memory_resource_asil_b_, getUsableBaseAddress())
+            .WillByDefault(Return(static_cast<void*>(&fake_method_data_b_.method_data_)));
+
+        ON_CALL(message_passing_mock_, RegisterMethodCallHandler(_, _, _, _)).WillByDefault(Return(score::ResultBlank{}));
     }
 
     SkeletonMethodHandlingFixture& GivenASkeletonWithTwoMethods()
@@ -160,11 +171,18 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         return *this;
     }
 
-    SkeletonMethodHandlingFixture& WhichCapturesRegisteredMethodSubscribedHandler()
+    SkeletonMethodHandlingFixture& WhichCapturesRegisteredMethodSubscribedHandlers()
     {
-        ON_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(_, skeleton_instance_identifier_, _))
+        ON_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
             .WillByDefault(WithArg<2>(Invoke([this](auto method_subscribed_handler) -> ResultBlank {
-                captured_method_subscribed_handler_.emplace(std::move(method_subscribed_handler));
+                captured_method_subscribed_handler_qm_.emplace(std::move(method_subscribed_handler));
+                return {};
+            })));
+        ON_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
+            .WillByDefault(WithArg<2>(Invoke([this](auto method_subscribed_handler) -> ResultBlank {
+                captured_method_subscribed_handler_b_.emplace(std::move(method_subscribed_handler));
                 return {};
             })));
         return *this;
@@ -177,10 +195,17 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         return *this;
     }
 
-    ProxyInstanceIdentifier proxy_instance_identifier_{kDummyApplicationId, kDummyProxyInstanceCounter};
+    ProxyInstanceIdentifier proxy_instance_identifier_qm_{kDummyApplicationId, kDummyProxyInstanceCounterQm};
+    ProxyInstanceIdentifier proxy_instance_identifier_b_{kDummyApplicationId, kDummyProxyInstanceCounterAsilB};
+    ProxyMethodInstanceIdentifier foo_proxy_method_identifier_qm_{proxy_instance_identifier_qm_, test::kFooMethodId};
+    ProxyMethodInstanceIdentifier dumb_proxy_method_identifier_qm_{proxy_instance_identifier_qm_, test::kDumbMethodId};
+    ProxyMethodInstanceIdentifier foo_proxy_method_identifier_b_{proxy_instance_identifier_b_, test::kFooMethodId};
+    ProxyMethodInstanceIdentifier dumb_proxy_method_identifier_b_{proxy_instance_identifier_b_, test::kDumbMethodId};
     SkeletonInstanceIdentifier skeleton_instance_identifier_{test::kLolaServiceId, test::kDefaultLolaInstanceId};
 
-    FakeMethodData fake_method_data_{
+    FakeMethodData fake_method_data_qm_{
+        {{test::kFooMethodId, kFooTypeErasedElementInfo}, {test::kDumbMethodId, kDumbTypeErasedElementInfo}}};
+    FakeMethodData fake_method_data_b_{
         {{test::kFooMethodId, kFooTypeErasedElementInfo}, {test::kDumbMethodId, kDumbTypeErasedElementInfo}}};
     FakeMethodData fake_method_data_2_{
         {{test::kFooMethodId, kFooTypeErasedElementInfo}, {test::kDumbMethodId, kDumbTypeErasedElementInfo}}};
@@ -188,14 +213,17 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
     std::unique_ptr<SkeletonMethod> foo_method_{nullptr};
     std::unique_ptr<SkeletonMethod> dumb_method_{nullptr};
 
-    std::shared_ptr<NiceMock<memory::shared::SharedMemoryResourceMock>> mock_method_memory_resource_{
+    std::shared_ptr<NiceMock<memory::shared::SharedMemoryResourceMock>> mock_method_memory_resource_qm_{
+        std::make_shared<NiceMock<memory::shared::SharedMemoryResourceMock>>()};
+    std::shared_ptr<NiceMock<memory::shared::SharedMemoryResourceMock>> mock_method_memory_resource_asil_b_{
         std::make_shared<NiceMock<memory::shared::SharedMemoryResourceMock>>()};
     std::shared_ptr<NiceMock<memory::shared::SharedMemoryResourceMock>> mock_method_memory_resource_2_{
         std::make_shared<NiceMock<memory::shared::SharedMemoryResourceMock>>()};
 
     MockFunction<SkeletonMethodBinding::TypeErasedCallbackSignature> foo_mock_type_erased_callback_{};
     MockFunction<SkeletonMethodBinding::TypeErasedCallbackSignature> dumb_mock_type_erased_callback_{};
-    std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_{};
+    std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_qm_{};
+    std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_b_{};
 };
 
 using SkeletonPrepareOfferFixture = SkeletonMethodHandlingFixture;
@@ -206,10 +234,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscri
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing for QM only which returns a
     // valid result
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
         .WillOnce(Return(score::ResultBlank{}));
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
         .Times(0);
 
     // When calling PrepareOffer
@@ -227,10 +255,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOnAsilBSkeletonWillRegisterQmAnd
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing for QM and Asil B which
     // returns a valid result
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
         .WillOnce(Return(score::ResultBlank{}));
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
         .WillOnce(Return(score::ResultBlank{}));
 
     // When calling PrepareOffer
@@ -248,7 +276,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfRegisterServiceMet
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns an error
     const auto error_code = ComErrc::kCommunicationLinkError;
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling PrepareOffer
@@ -268,10 +296,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfAsilBRegisterServi
     // and ASIL B which returns an error
     const auto error_code = ComErrc::kCommunicationLinkError;
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _))
-        .WillOnce(Return(score::cpp::blank{}));
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
+        .WillOnce(Return(score::ResultBlank{}));
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _))
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling PrepareOffer
@@ -300,23 +328,19 @@ TEST_F(SkeletonPrepareOfferFixture, FailingToGetBindingRuntimeInPrepareOfferTerm
 using SkeletonPrepareStopOfferFixture = SkeletonMethodHandlingFixture;
 TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCallHandlers)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a method call handler is registered for both methods
-    const ProxyMethodInstanceIdentifier foo_proxy_method_instance_identifier{proxy_instance_identifier_,
-                                                                             test::kFooMethodId};
-    const ProxyMethodInstanceIdentifier dumb_proxy_method_instance_identifier{proxy_instance_identifier_,
-                                                                              test::kDumbMethodId};
     std::optional<IMessagePassingService::MethodCallHandler> method_call_handler_1{};
     std::optional<IMessagePassingService::MethodCallHandler> method_call_handler_2{};
     EXPECT_CALL(message_passing_mock_,
-                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_instance_identifier, _))
+                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
         .WillOnce(WithArgs<2>(Invoke([&method_call_handler_1](auto method_call_handler) -> ResultBlank {
             method_call_handler_1.emplace(method_call_handler);
             return {};
         })));
     EXPECT_CALL(message_passing_mock_,
-                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_instance_identifier, _))
+                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_identifier_qm_, _, _))
         .WillOnce(WithArgs<2>(Invoke([&method_call_handler_2](auto method_call_handler) -> ResultBlank {
             method_call_handler_2.emplace(method_call_handler);
             return {};
@@ -326,11 +350,10 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCall
     skeleton_->PrepareStopOffer({});
 
     // and given that the registered method subscribed handler is called
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // When calling the method call handlers
@@ -344,154 +367,106 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCall
 
 TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDestroysPointerToSharedMemory)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // When calling the registered method subscribed handler which will open the shared memory region
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // When calling PrepareStopOffer
-    const auto shm_resource_ref_counter_after_opening = mock_method_memory_resource_.use_count();
+    const auto shm_resource_ref_counter_after_opening = mock_method_memory_resource_qm_.use_count();
     skeleton_->PrepareStopOffer({});
 
     // Then the reference counter for the methods SharedMemoryResource should be decremented, indicating that it's
     // been deleted from the Skeleton's state
-    EXPECT_EQ(mock_method_memory_resource_.use_count(), shm_resource_ref_counter_after_opening - 1U);
+    EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), shm_resource_ref_counter_after_opening - 1U);
 }
 
 using SkeletonOnServiceMethodsSubscribedFixture = SkeletonMethodHandlingFixture;
-TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsValidWhenQmProxyUidIsInAllowedConsumers)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
+       CallingRegistersMethodCallHandlerWithQualityTypeOfMessagePassingInstanceQmOnly)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    // When calling the registered method subscribed handler with a QM uid that is in the configuration's
-    // allowed_consumer list
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    // Expecting that RegisterMethodCallHandler is called with ASIL level QM for both methods which return valid results
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(
+                    QualityType::kASIL_QM, foo_proxy_method_identifier_qm_, _, test::kAllowedQmMethodConsumer));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(
+                    QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_, _, test::kAllowedQmMethodConsumer));
+
+    // When calling the registered Qm method subscribed handler
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    kDummyPid);
 
-    // Then the result should be valid
-    EXPECT_TRUE(scoped_handler_result.has_value());
-}
-
-TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsValidWhenAsilBProxyUidIsInAllowedConsumers)
-{
-    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-
-    // When calling the registered method subscribed handler with an ASIL-B uid that is in the configuration's
-    // allowed_consumer list
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
-                                                   test::kAllowedAsilBMethodConsumer,
-                                                   QualityType::kASIL_B,
-                                                   kDummyPid);
-
-    // Then the result should be valid
-    EXPECT_TRUE(scoped_handler_result.has_value());
-}
-
-TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenNoQmAllowedConsumersAreInConfiguration)
-{
-    GivenASkeletonWithoutConfiguredMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-
-    // When calling the registered method subscribed handler with a QM uid when there is no QM allowed consumer list
-    // in the configuration
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
-                                                   test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
-                                                   kDummyPid);
-
-    // Then the result should contain an error
+    // Then the handler should return a valid result
     ASSERT_TRUE(scoped_handler_result.has_value());
-    ASSERT_FALSE(scoped_handler_result->has_value());
-    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
+    ASSERT_TRUE(scoped_handler_result->has_value());
 }
 
-TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenNoAsilBAllowedConsumersAreInConfiguration)
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
+       CallingRegistersMethodCallHandlerWithQualityTypeOfMessagePassingInstanceQmAndAsilB)
 {
-    GivenASkeletonWithoutConfiguredMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    // When calling the registered method subscribed handler with an ASIL-B uid when there is no ASIL-B allowed
-    // consumer list in the configuration
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
-                                                   test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
-                                                   kDummyPid);
+    // Expecting that RegisterMethodCallHandler is called with both QM and ASIL-B levels for both methods which return
+    // valid results
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(
+                    QualityType::kASIL_QM, foo_proxy_method_identifier_qm_, _, test::kAllowedQmMethodConsumer));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(
+                    QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_, _, test::kAllowedQmMethodConsumer));
 
-    // Then the result should contain an error
-    ASSERT_TRUE(scoped_handler_result.has_value());
-    ASSERT_FALSE(scoped_handler_result->has_value());
-    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
-}
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(
+                    QualityType::kASIL_B, foo_proxy_method_identifier_b_, _, test::kAllowedAsilBMethodConsumer));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(
+                    QualityType::kASIL_B, dumb_proxy_method_identifier_b_, _, test::kAllowedAsilBMethodConsumer));
 
-TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenQmProxyUidIsNotInAllowedConsumers)
-{
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    // When calling the registered Qm and ASIL-B method subscribed handlers
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result_qm = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                      proxy_instance_identifier_qm_,
+                                                      test::kAllowedQmMethodConsumer,
+                                                      kDummyPid);
+    ASSERT_TRUE(captured_method_subscribed_handler_b_.has_value());
+    const auto scoped_handler_result_b = std::invoke(captured_method_subscribed_handler_b_.value(),
+                                                     proxy_instance_identifier_b_,
+                                                     test::kAllowedAsilBMethodConsumer,
+                                                     kDummyPid);
 
-    // When calling the registered method subscribed handler with a QM uid that is not in the QM allowed consumer
-    // list in the configuration
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
-                                                   test::kAllowedAsilBMethodConsumer,
-                                                   QualityType::kASIL_QM,
-                                                   kDummyPid);
+    // Then both handlers should return valid results
+    ASSERT_TRUE(scoped_handler_result_qm.has_value());
+    ASSERT_TRUE(scoped_handler_result_qm->has_value());
 
-    // Then the result should contain an error
-    ASSERT_TRUE(scoped_handler_result.has_value());
-    ASSERT_FALSE(scoped_handler_result->has_value());
-    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
-}
-
-TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorWhenAsilBProxyUidIsNotInAllowedConsumers)
-{
-    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
-
-    // When calling the registered method subscribed handler with an ASIL-B uid that is not in the ASIL-B allowed
-    // consumer list in the configuration
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
-                                                   test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_B,
-                                                   kDummyPid);
-
-    // Then the result should contain an error
-    ASSERT_TRUE(scoped_handler_result.has_value());
-    ASSERT_FALSE(scoped_handler_result->has_value());
-    EXPECT_EQ(scoped_handler_result->error(), ComErrc::kBindingFailure);
+    ASSERT_TRUE(scoped_handler_result_b.has_value());
+    ASSERT_TRUE(scoped_handler_result_b->has_value());
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorIfRegisteringMethodCallHandlerReturnedError)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that RegisterMethodCallHandler is called on the first method which returns an error
     const auto error_code = ComErrc::kCommunicationLinkError;
-    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier_,
-                                                                         test::kFooMethodId};
     EXPECT_CALL(message_passing_mock_,
-                RegisterMethodCallHandler(kDummyQualityType, proxy_method_instance_identifier, _))
+                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
         .WillOnce(Return(MakeUnexpected(error_code)));
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   kDummyQualityType,
                                                    kDummyPid);
 
     // Then the handler should return an error
@@ -502,30 +477,28 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorIfRegisteri
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingOpensShmIfAlreadyCalledWithDifferentApplicationIdAndSamePid)
 {
-    const ProxyInstanceIdentifier proxy_instance_identifier_2{123, kDummyProxyInstanceCounter};
+    const ProxyInstanceIdentifier proxy_instance_identifier_2{123, kDummyProxyInstanceCounterQm};
     constexpr auto method_channel_name_2{"/lola-methods-0000000000000001-00016-00123-00005"};
 
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a different shared memory region will be opened in each call to the handler
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _));
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _));
     EXPECT_CALL(shared_memory_factory_mock_, Open(method_channel_name_2, true, _))
         .WillOnce(Return(mock_method_memory_resource_2_));
 
     // Given that the registered method subscribed handler was called once
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceCounter and PID but a different application ID
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
                                                    proxy_instance_identifier_2,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    kDummyPid);
 
     // Then the result should be valid
@@ -538,27 +511,25 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
     const ProxyInstanceIdentifier proxy_instance_identifier_2{kDummyApplicationId, 15U};
     constexpr auto method_channel_name_2{"/lola-methods-0000000000000001-00016-06543-00015"};
 
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a different shared memory region will be opened in each call to the handler
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _));
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _));
     EXPECT_CALL(shared_memory_factory_mock_, Open(method_channel_name_2, true, _))
         .WillOnce(Return(mock_method_memory_resource_2_));
 
     // Given that the registered method subscribed handler was called once
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // application ID and PID but a different ProxyInstanceCounter
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
                                                    proxy_instance_identifier_2,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    kDummyPid);
 
     // Then the result should be valid
@@ -570,26 +541,24 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
 {
     const pid_t pid_2{25U};
 
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a different shared memory region will be opened in each call to the handler with the same path
     // (the first region will be cleaned up in the second call, but this is tested in a different test).
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(2);
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _)).Times(2);
 
     // Given that the registered method subscribed handler was called once
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceIdentifier but a different PID
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    pid_2);
 
     // Then the result should be valid
@@ -598,25 +567,23 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingDoesNotOpenShmIfAlreadyCalledWithSameProxyInstanceIdAndPid)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a shared memory region will only be opened once
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(1);
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _)).Times(1);
 
     // Given that the registered method subscribed handler was called once
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceIdentifier and the same PID
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    kDummyPid);
 
     // Then the result should be valid
@@ -629,39 +596,37 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRemovesOldRegionsFromCa
     constexpr auto method_channel_name_2{"/lola-methods-0000000000000001-00016-06543-00015"};
     const pid_t pid_2{25U};
 
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Given that the second shared memory region will be opened which returns a valid resource
     ON_CALL(shared_memory_factory_mock_, Open(method_channel_name_2, true, _))
         .WillByDefault(Return(mock_method_memory_resource_2_));
 
-    const auto first_initial_shm_resource_ref_counter = mock_method_memory_resource_.use_count();
+    const auto first_initial_shm_resource_ref_counter = mock_method_memory_resource_qm_.use_count();
 
     // Given that the registered method subscribed handler was called once
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceIdentifier and a different PID
-    EXPECT_EQ(mock_method_memory_resource_.use_count(), first_initial_shm_resource_ref_counter + 1U);
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
+    EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), first_initial_shm_resource_ref_counter + 1U);
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
                                                    proxy_instance_identifier_2,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    pid_2);
 
     // Then the reference counter for the first methods SharedMemoryResource should be have been decremented, indicating
     // that it's been removed from the Skeleton's state
-    EXPECT_EQ(mock_method_memory_resource_.use_count(), first_initial_shm_resource_ref_counter);
+    EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), first_initial_shm_resource_ref_counter);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHandlerPerMethodWithInfoFromMethodData)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that the type erased callback will be called for each method with InArgs and ReturnArg storage provided
     // if TypeErasedElementInfo for the method in MethodData contains InArgs / a ReturnArg
@@ -678,53 +643,47 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
 
     // Expecting that a method call handler is registered for both methods which calls the handler directly with the
     // largest possible queue index for that method
-    const ProxyMethodInstanceIdentifier foo_proxy_method_instance_identifier{proxy_instance_identifier_,
-                                                                             test::kFooMethodId};
-    const ProxyMethodInstanceIdentifier dumb_proxy_method_instance_identifier{proxy_instance_identifier_,
-                                                                              test::kDumbMethodId};
     EXPECT_CALL(message_passing_mock_,
-                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_instance_identifier, _))
+                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
         .WillOnce(WithArgs<2>(Invoke([](auto method_call_handler) -> ResultBlank {
             std::invoke(method_call_handler, test::kFooMethodQueueSize - 1U);
             return {};
         })));
     EXPECT_CALL(message_passing_mock_,
-                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_instance_identifier, _))
+                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_identifier_qm_, _, _))
         .WillOnce(WithArgs<2>(Invoke([](auto method_call_handler) -> ResultBlank {
             std::invoke(method_call_handler, test::kDumbMethodQueueSize - 1U);
             return {};
         })));
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingQmOpensSharedMemoryWithProxyUidAsAllowedProvider)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the allowed
     // provider list
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _))
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _))
         .WillOnce(WithArgs<2>(
             Invoke([this](auto allowed_providers) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
                 EXPECT_TRUE(allowed_providers.has_value());
                 EXPECT_EQ(allowed_providers.value().size(), 1U);
                 EXPECT_EQ(allowed_providers.value()[0], test::kAllowedQmMethodConsumer);
-                return mock_method_memory_resource_;
+                return mock_method_memory_resource_qm_;
             })));
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    kDummyPid);
 
     // Then the result should be valid
@@ -733,25 +692,24 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingQmOpensSharedMemoryWith
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBOpensSharedMemoryWithProxyUidAsAllowedProvider)
 {
-    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the allowed
     // provider list
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _))
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameAsilB, true, _))
         .WillOnce(WithArgs<2>(
             Invoke([this](auto allowed_providers) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
                 EXPECT_TRUE(allowed_providers.has_value());
                 EXPECT_EQ(allowed_providers.value().size(), 1U);
                 EXPECT_EQ(allowed_providers.value()[0], test::kAllowedAsilBMethodConsumer);
-                return mock_method_memory_resource_;
+                return mock_method_memory_resource_qm_;
             })));
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_b_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_b_.value(),
+                                                   proxy_instance_identifier_b_,
                                                    test::kAllowedAsilBMethodConsumer,
-                                                   QualityType::kASIL_B,
                                                    kDummyPid);
 
     // Then the result should be valid
@@ -760,36 +718,34 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBOpensSharedMemoryW
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingStoresSharedMemoryInClassState)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    const auto initial_shm_resource_ref_counter = mock_method_memory_resource_.use_count();
+    const auto initial_shm_resource_ref_counter = mock_method_memory_resource_qm_.use_count();
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                              proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                              proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
-                              QualityType::kASIL_QM,
                               kDummyPid);
 
     // Then the reference counter for the methods SharedMemoryResource should be incremented, indicating that it's
     // been stored in the Skeleton's state
-    EXPECT_EQ(mock_method_memory_resource_.use_count(), initial_shm_resource_ref_counter + 1U);
+    EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), initial_shm_resource_ref_counter + 1U);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, FailingToOpenSharedMemoryReturnsError)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened which returns a nullptr
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).WillOnce(Return(nullptr));
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _)).WillOnce(Return(nullptr));
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    kDummyPid);
 
     // Then the handler should return an error
@@ -800,34 +756,32 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, FailingToOpenSharedMemoryRetur
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, FailingToGetUsableBaseAddressForRetrievingMethodDataTerminates)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that getUsableBaseAddress is called on the methods shared memory resource which returns an error
-    EXPECT_CALL(*mock_method_memory_resource_, getUsableBaseAddress()).WillOnce(Return(nullptr));
+    EXPECT_CALL(*mock_method_memory_resource_qm_, getUsableBaseAddress()).WillOnce(Return(nullptr));
 
     // When calling the registered method subscribed handler
     // Then the program terminates
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = std::invoke(captured_method_subscribed_handler_.value(),
-                                                           proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                           proxy_instance_identifier_qm_,
                                                            test::kAllowedQmMethodConsumer,
-                                                           QualityType::kASIL_QM,
                                                            kDummyPid));
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilQmWithoutInArgsOrReturnStillOpensSharedMemory)
 {
-    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(1);
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _)).Times(1);
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
                                                    test::kAllowedQmMethodConsumer,
-                                                   QualityType::kASIL_QM,
                                                    kDummyPid);
 
     // Then the result should be valid
@@ -836,17 +790,16 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilQmWithoutInArgsOrRe
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWithoutInArgsOrReturnStillOpensSharedMemory)
 {
-    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandler().WhichIsOffered();
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
     // Expecting that a shared memory region will be opened
-    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelName, true, _)).Times(1);
+    EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameAsilB, true, _)).Times(1);
 
     // When calling the registered method subscribed handler
-    ASSERT_TRUE(captured_method_subscribed_handler_.has_value());
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_.value(),
-                                                   proxy_instance_identifier_,
+    ASSERT_TRUE(captured_method_subscribed_handler_b_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_b_.value(),
+                                                   proxy_instance_identifier_b_,
                                                    test::kAllowedAsilBMethodConsumer,
-                                                   QualityType::kASIL_B,
                                                    kDummyPid);
 
     // Then the result should be valid
