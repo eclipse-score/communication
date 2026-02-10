@@ -19,7 +19,6 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h" 
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" 
 
-#include <string_view> 
 
 namespace score::mw::com::impl::lola
 {
@@ -33,9 +32,8 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
   public:
 
     GenericSkeletonEvent(Skeleton& parent,
-                         const ElementFqId& event_fqn,
-                         std::string_view event_name,
                          const SkeletonEventProperties& event_properties, 
+                         const ElementFqId& event_fqn,                         
                          const DataTypeMetaInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
  

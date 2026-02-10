@@ -20,18 +20,15 @@
 namespace score::mw::com::impl::lola
 {
 GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
-                                           const ElementFqId& event_fqn,
-                                           std::string_view event_name,
-                                           const SkeletonEventProperties& event_properties,
-                                           const DataTypeMetaInfo& size_info,
-                                           impl::tracing::SkeletonEventTracingData tracing_data)
+                                             const SkeletonEventProperties& event_properties,
+                                             const ElementFqId& event_fqn,
+                                             const DataTypeMetaInfo& size_info,
+                                             impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info), 
       event_properties_(event_properties),
       event_shared_impl_(parent, event_fqn, control_, current_timestamp_, tracing_data)
 {
-    // The factory passes the name, but we don't store it in this class currently.
-    // Casting to void suppresses "unused parameter" compiler warnings.
-    static_cast<void>(event_name);
+
 }
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept

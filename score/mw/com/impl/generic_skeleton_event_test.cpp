@@ -128,7 +128,8 @@ TEST_F(GenericSkeletonEventTest, AllocateBeforeOfferReturnsError)
     const auto& events_map = skeleton.GetEvents();
     auto it = events_map.find(event_name);
     ASSERT_NE(it, events_map.cend());
-    auto* event = it->second; 
+    
+    auto* event = const_cast<GenericSkeletonEvent*>(&it->second); 
 
     // When calling Allocate() before OfferService()
     auto alloc_result = event->Allocate();
@@ -161,7 +162,8 @@ TEST_F(GenericSkeletonEventTest, SendBeforeOfferReturnsError)
     ASSERT_TRUE(skeleton_result.has_value());
     
     auto& skeleton = skeleton_result.value();
-    auto* event = skeleton.GetEvents().find(event_name)->second;
+
+    auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
 
     // And a valid sample to send
     mock_binding::SampleAllocateePtr<void> dummy_sample{nullptr, [](void*){}};
@@ -198,7 +200,8 @@ TEST_F(GenericSkeletonEventTest, AllocateAndSendDispatchesToBindingAfterOffer)
     );
     ASSERT_TRUE(skeleton_result.has_value());
     auto& skeleton = skeleton_result.value();
-    auto* event = skeleton.GetEvents().find(event_name)->second;
+    
+    auto* event = const_cast<GenericSkeletonEvent*>(&skeleton.GetEvents().find(event_name)->second);
 
     // And Given the service is Offered
     EXPECT_CALL(*mock_event_binding_ptr, PrepareOffer()).WillOnce(Return(score::Blank{}));

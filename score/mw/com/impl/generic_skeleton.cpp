@@ -14,15 +14,16 @@
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/plumbing/generic_skeleton_event_binding_factory.h" 
-//#include "score/mw/com/impl/plumbing/generic_skeleton_field_binding_factory.h"  //not implemented yet
 #include "score/mw/com/impl/runtime.h" 
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h" 
 #include "score/mw/com/impl/skeleton_binding.h"
+#include "score/mw/com/impl/configuration/lola_service_type_deployment.h" 
 
 #include <score/overload.hpp> 
 
 #include <cassert>
 #include <utility>
+#include <tuple> 
 
 namespace score::mw::com::impl
 {
@@ -84,10 +85,10 @@ Result<GenericSkeleton> GenericSkeleton::Create(
     // 1. Create the Skeleton (Private Constructor)
     GenericSkeleton skeleton(identifier, std::move(binding), mode);
 
-    // 2. Atomically create all events
-    for (const auto& info : in.events) // Iterate directly over in.events
+    // 2. Create events directly in the map
+    for (const auto& info : in.events)
     {
-        // Check for duplicates before creating the binding to prevent unnecessary work and potential memory issues.
+        // Check for duplicates
         if (skeleton.events_.find(info.name) != skeleton.events_.cend())
         {
             score::mw::log::LogError("GenericSkeleton") << "Duplicate event name provided: " << info.name;
@@ -103,52 +104,29 @@ Result<GenericSkeleton> GenericSkeleton::Create(
              return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        // Create the event binding
-        auto event_binding_result =
-            GenericSkeletonEventBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
+        auto event_binding_result = GenericSkeletonEventBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
         
         if (!event_binding_result.has_value())
         {
-            // If any event fails to bind, the whole creation fails (Atomic). Error logging is typically handled within the factory.
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
-        // 2. Create object in Vector (Ownership & Stability)
-        // Pass stable_name to constructor
-        skeleton.owned_events_.push_back(std::make_unique<GenericSkeletonEvent>(
-            skeleton, stable_name, std::move(event_binding_result).value()));
+        const auto emplace_result = skeleton.events_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(stable_name), 
+            std::forward_as_tuple(              
+                skeleton,                      
+                stable_name,                    
+                std::move(event_binding_result).value() 
+            )
+        );
 
-        // 3. Get Pointer to the stable object
-        auto* event_ptr = skeleton.owned_events_.back().get();
-
-        // 4. Store Pointer in Map using the stable_name retrieved from config
-        skeleton.events_.emplace(stable_name, event_ptr);
+        if (!emplace_result.second)
+        {
+            score::mw::log::LogError("GenericSkeleton") << "Failed to emplace event in map: " << info.name;
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
     }
-
-    // // 4. Atomically create all fields
-    // for (const auto& info : in.fields) // Iterate directly over in.fields
-    // {
-    //     // Create the field binding
-    //     auto field_binding_result =
-    //         GenericSkeletonFieldBindingFactory::Create(skeleton, info.name, info.data_type_meta_info);
-
-    //     if (!field_binding_result.has_value())
-    //     {
-    //         // If any field fails to bind, the whole creation fails (Atomic). Error logging is typically handled within the factory.
-    //         return MakeUnexpected(ComErrc::kBindingFailure);
-    //     }
-
-    //     // Store the field in the map
-    //     const auto emplace_result = skeleton.fields_.emplace(
-    //         std::piecewise_construct,
-    //         std::forward_as_tuple(info.name),
-    //         std::forward_as_tuple(skeleton, info.name, std::move(field_binding_result).value(), info.initial_value_bytes));
-
-    //     if (!emplace_result.second) {
-    //         score::mw::log::LogError("GenericSkeleton") << "Failed to emplace GenericSkeletonField for name: " << info.name;
-    //         return MakeUnexpected(ComErrc::kServiceElementAlreadyExists);
-    //     }
-    // }
 
     return skeleton;
 }
@@ -157,11 +135,6 @@ const GenericSkeleton::EventMap& GenericSkeleton::GetEvents() const noexcept
 {
     return events_;
 }
-
-// const GenericSkeleton::FieldMap& GenericSkeleton::GetFields() const noexcept
-// {
-//     return fields_;
-// }
 
 Result<score::Blank> GenericSkeleton::OfferService() noexcept
 {

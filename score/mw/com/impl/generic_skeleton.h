@@ -62,7 +62,7 @@ struct GenericSkeletonCreateParams
 class GenericSkeleton : public SkeletonBase
 {
   public:
-    using EventMap = ServiceElementMap<GenericSkeletonEvent*>;
+    using EventMap = ServiceElementMap<GenericSkeletonEvent>;
 //      using FieldMap = ServiceElementMap<GenericSkeletonField>; // commented out as field not implemented
 /// @brief Creates a GenericSkeleton and all its service elements (events + fields) atomically.
 ///
@@ -107,7 +107,6 @@ void StopOfferService() noexcept;
     // Private constructor, only callable by static Create methods.
     GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding, MethodCallProcessingMode mode);
 
-    std::vector<std::unique_ptr<GenericSkeletonEvent>> owned_events_;
     /// @brief This map owns all GenericSkeletonEvent instances.
     EventMap events_;
 

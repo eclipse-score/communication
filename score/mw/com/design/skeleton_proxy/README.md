@@ -4,8 +4,8 @@
 
 The following structural view shows, how the separation of generic/binding independent part of a proxy/skeleton from
 its flexible/variable technical binding implementation is achieved. **Note**: It does **only** reflect the common use
-case of strongly typed proxies. The special case of "generic proxies" is described in
-[design extension for generic proxies](generic_proxy/README.md#) to not bloat this class diagram even more:
+case of strongly typed proxies and skeletons. The special case of "generic proxies" and "generic skeletons" are described in
+[design extension for generic proxies](generic_proxy/README.md#) and [design extension for generic skeletons](generic_skeleton/README.md#) to not bloat this class diagram even more:
 
 <a name="classdiagram"></a>
 
@@ -224,6 +224,8 @@ The [class diagram](#classdiagram) also shows, that our `LoLa` proxy event bindi
 aggregates an object of type `lola::ProxyEventCommon`, to which it dispatches all its `SampleType` agnostic method
 calls, it has to implement to fulfill its interface `ProxyEventBindingBase`.
 The reason for this architectural decision is described in the [design extension for generic proxies](./generic_proxy/README.md)
+
+Similarly, on the skeleton side, `lola::SkeletonEvent` aggregates an object of type `lola::SkeletonEventCommon`. This class encapsulates all `SampleTyp`e agnostic logic (such as interaction with `lola::Skeleton` for offering services, timestamp management, and notification handling). This allows both strongly typed skeletons and generic skeletons to share the same core implementation logic.
 
 ### Proxy auto-reconnect functionality
 
