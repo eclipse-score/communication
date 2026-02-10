@@ -325,6 +325,46 @@ TEST_F(SkeletonPrepareOfferFixture, FailingToGetBindingRuntimeInPrepareOfferTerm
             kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback)));
 }
 
+TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotRegisterServiceMethodSubscribedHandlerWhenNoMethodsExistQm)
+{
+    GivenASkeletonWithoutConfiguredMethods();
+
+    // Expecting that RegisterOnServiceMethodSubscribedHandler is not called on message passing for QM or ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
+        .Times(0);
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
+        .Times(0);
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then a valid result is returned
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotRegisterServiceMethodSubscribedHandlerWhenNoMethodsExistAsilB)
+{
+    GivenAnAsilBSkeletonWithoutConfiguredMethods();
+
+    // Expecting that RegisterOnServiceMethodSubscribedHandler is not called on message passing for QM or ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
+        .Times(0);
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
+        .Times(0);
+
+    // When calling PrepareOffer
+    const auto result = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then a valid result is returned
+    EXPECT_TRUE(result.has_value());
+}
+
 using SkeletonPrepareStopOfferFixture = SkeletonMethodHandlingFixture;
 TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCallHandlers)
 {

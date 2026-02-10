@@ -357,6 +357,13 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         CleanupSharedMemoryAfterCrash();
     }
 
+    // If there are no registered SkeletonMethods, then we don't need to register a method subscribed handler and can
+    // therefore exit early.
+    if (skeleton_methods_.empty())
+    {
+        return {};
+    }
+
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
     const SkeletonInstanceIdentifier skeleton_instance_identifier{lola_service_id_, lola_instance_id_};
