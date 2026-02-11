@@ -107,6 +107,8 @@ class ProxyEvent final : public ProxyEventBase
     ProxyEvent(ProxyEvent&& other) noexcept;
     ProxyEvent& operator=(ProxyEvent&& other) & noexcept;
 
+    ~ProxyEvent() override = default;
+
     /**
      * \api
      * \brief Receive pending data from the event.
