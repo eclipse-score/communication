@@ -63,7 +63,7 @@ class hash<score::mw::com::impl::lola::ProxyInstanceIdentifier>
         constexpr auto proxy_instance_counter_bit_width =
             std::numeric_limits<decltype(proxy_instance_identifier.proxy_instance_counter)>::digits;
         return std::hash<std::uint64_t>{}((static_cast<std::uint64_t>(proxy_instance_identifier.process_identifier)
-                                           << proxy_instance_counter_bit_width) |
+                                           << static_cast<std::uint64_t>(proxy_instance_counter_bit_width)) |
                                           static_cast<std::uint64_t>(proxy_instance_identifier.proxy_instance_counter));
     }
 };
