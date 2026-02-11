@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,7 +11,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 filegroup(
-    name = "config",
+    name = "basic_config",
     srcs = ["mw_com_config.json"],
+    visibility = ["//score/mw/com/performance_benchmarks/api_microbenchmarks:__subpackages__"],
+)
+
+filegroup(
+    name = "config_qm_high_frequency_send_large_data",
+    srcs = ["mw_com_config_qm_high_frequency_send_large_data.json"],
+    visibility = ["//score/mw/com/performance_benchmarks/api_microbenchmarks:__subpackages__"],
+)
+
+filegroup(
+    name = "logging_json",
+    srcs = ["logging.json"],
     visibility = ["//score/mw/com/performance_benchmarks/api_microbenchmarks:__subpackages__"],
 )

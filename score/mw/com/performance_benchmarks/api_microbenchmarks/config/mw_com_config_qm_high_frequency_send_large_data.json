@@ -31,7 +31,7 @@
             "instances": [
                 {
                     "instanceId": 1,
-                    "asil-level": "B",
+                    "asil-level": "QM",
                     "binding": "SHM",
                     "events": [
                         {
@@ -45,6 +45,6 @@
         }
     ],
     "global": {
-        "asil-level": "B"
+        "asil-level": "QM"
     }
 }
