@@ -81,13 +81,13 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                      const pid_t target_node_id) noexcept override;
 
     ResultBlank RegisterOnServiceMethodSubscribedHandler(
-        SkeletonInstanceIdentifier skeleton_instance_identifier,
+        const SkeletonInstanceIdentifier skeleton_instance_identifier,
         IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
         IMessagePassingService::AllowedConsumerUids allowed_proxy_uids) override;
 
-    ResultBlank RegisterMethodCallHandler(ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+    ResultBlank RegisterMethodCallHandler(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
                                           IMessagePassingService::MethodCallHandler method_call_callback,
-                                          uid_t allowed_proxy_uid) override;
+                                          const uid_t allowed_proxy_uid) override;
 
     void NotifyOutdatedNodeId(const pid_t outdated_node_id, const pid_t target_node_id) noexcept override;
 

@@ -188,7 +188,7 @@ class IMessagePassingService
     ///        handler.
     virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
         const QualityType asil_level,
-        SkeletonInstanceIdentifier skeleton_instance_identifier,
+        const SkeletonInstanceIdentifier skeleton_instance_identifier,
         ServiceMethodSubscribedHandler subscribed_callback,
         AllowedConsumerUids allowed_proxy_uids) = 0;
 
@@ -216,9 +216,9 @@ class IMessagePassingService
     ///        method call handler per ProxyMethod, we can restrict the caller of the handler to the ProxyMethod who
     ///        registered it.
     virtual ResultBlank RegisterMethodCallHandler(const QualityType asil_level,
-                                                  ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+                                                  const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
                                                   MethodCallHandler method_call_callback,
-                                                  uid_t allowed_proxy_uid) = 0;
+                                                  const uid_t allowed_proxy_uid) = 0;
 
     /// \brief Notify given target_node_id about outdated_node_id being an old/not to be used node identifier.
     /// \details This is used by LoLa proxy instances during creation, when they detect, that they are re-starting

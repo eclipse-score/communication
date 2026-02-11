@@ -1100,7 +1100,7 @@ void MessagePassingServiceInstance::UnregisterEventNotification(
 }
 
 ResultBlank MessagePassingServiceInstance::RegisterOnServiceMethodSubscribedHandler(
-    SkeletonInstanceIdentifier skeleton_instance_identifier,
+    const SkeletonInstanceIdentifier skeleton_instance_identifier,
     IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
     IMessagePassingService::AllowedConsumerUids allowed_proxy_uids)
 {
@@ -1119,9 +1119,9 @@ ResultBlank MessagePassingServiceInstance::RegisterOnServiceMethodSubscribedHand
 }
 
 ResultBlank MessagePassingServiceInstance::RegisterMethodCallHandler(
-    ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
     IMessagePassingService::MethodCallHandler method_call_callback,
-    uid_t allowed_proxy_uid)
+    const uid_t allowed_proxy_uid)
 {
     std::unique_lock<std::shared_mutex> write_lock(call_method_handlers_mutex_);
 
