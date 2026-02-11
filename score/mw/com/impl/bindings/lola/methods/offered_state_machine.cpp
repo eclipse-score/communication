@@ -27,12 +27,12 @@ OfferedStateMachine::OfferedStateMachine()
 
 void OfferedStateMachine::Offer()
 {
-    current_state_ = states_[static_cast<std::uint8_t>(current_state_)]->Offer();
+    current_state_ = states_.at(static_cast<std::uint8_t>(current_state_))->Offer();
 }
 
 void OfferedStateMachine::StopOffer()
 {
-    current_state_ = states_[static_cast<std::uint8_t>(current_state_)]->StopOffer();
+    current_state_ = states_.at(static_cast<std::uint8_t>(current_state_))->StopOffer();
 }
 
 namespace detail
