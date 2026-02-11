@@ -11,10 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use com_api::{
-    CommData, Consumer, Interface, OfferedProducer, Producer, ProviderInfo, Publisher, Reloc,
-    Runtime, Subscriber,
-};
+use com_api::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
 
 #[derive(Debug, Reloc)]
 #[repr(C)]
@@ -34,81 +31,23 @@ impl CommData for Exhaust {
     const ID: &'static str = "Exhaust";
 }
 
-pub struct VehicleInterface {}
-
-/// Generic
-impl Interface for VehicleInterface {
-    const INTERFACE_ID: &'static str = "VehicleInterface";
-    type Consumer<R: Runtime + ?Sized> = VehicleConsumer<R>;
-    type Producer<R: Runtime + ?Sized> = VehicleProducer<R>;
-}
-
-pub struct VehicleConsumer<R: Runtime + ?Sized> {
-    pub left_tire: R::Subscriber<Tire>,
-    pub exhaust: R::Subscriber<Exhaust>,
-}
-
-impl<R: Runtime + ?Sized> Consumer<R> for VehicleConsumer<R> {
-    fn new(instance_info: R::ConsumerInfo) -> Self {
-        VehicleConsumer {
-            left_tire: R::Subscriber::new("left_tire", instance_info.clone())
-                .expect("Failed to create subscriber"),
-            exhaust: R::Subscriber::new("exhaust", instance_info.clone())
-                .expect("Failed to create subscriber"),
-        }
-    }
-}
-
-pub struct AnotherInterface {}
-
-pub struct VehicleProducer<R: Runtime + ?Sized> {
-    _runtime: core::marker::PhantomData<R>,
-    instance_info: R::ProviderInfo,
-}
-
-impl<R: Runtime + ?Sized> Producer<R> for VehicleProducer<R> {
-    type Interface = VehicleInterface;
-    type OfferedProducer = VehicleOfferedProducer<R>;
-
-    fn offer(self) -> com_api::Result<Self::OfferedProducer> {
-        let vehicle_offered_producer = VehicleOfferedProducer {
-            left_tire: R::Publisher::new("left_tire", self.instance_info.clone())
-                .expect("Failed to create publisher"),
-            exhaust: R::Publisher::new("exhaust", self.instance_info.clone())
-                .expect("Failed to create publisher"),
-            instance_info: self.instance_info.clone(),
-        };
-        // Offer the service instance to make it discoverable
-        // this is called after skeleton created using producer_builder API
-        self.instance_info.offer_service()?;
-        Ok(vehicle_offered_producer)
-    }
-
-    fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
-        Ok(VehicleProducer {
-            _runtime: core::marker::PhantomData,
-            instance_info,
-        })
-    }
-}
-
-pub struct VehicleOfferedProducer<R: Runtime + ?Sized> {
-    pub left_tire: R::Publisher<Tire>,
-    pub exhaust: R::Publisher<Exhaust>,
-    instance_info: R::ProviderInfo,
-}
-
-impl<R: Runtime + ?Sized> OfferedProducer<R> for VehicleOfferedProducer<R> {
-    type Interface = VehicleInterface;
-    type Producer = VehicleProducer<R>;
-
-    fn unoffer(self) -> com_api::Result<Self::Producer> {
-        let vehicle_producer = VehicleProducer {
-            _runtime: std::marker::PhantomData,
-            instance_info: self.instance_info.clone(),
-        };
-        // Stop offering the service instance to withdraw it from system availability
-        self.instance_info.stop_offer_service()?;
-        Ok(vehicle_producer)
-    }
-}
+// Example interface definition using the interface macro
+// This will generate the following types and trait implementations:
+// - VehicleInterface struct with INTERFACE_ID = "Vehicle"
+// - VehicleConsumer<R>, VehicleProducer<R>, VehicleOfferedProducer<R> with appropriate trait
+//   implementations for the Vehicle interface.
+// The macro invocation defines an interface named "Vehicle" with two events: "left_tire" and "exhaust".
+// The generated code will include:
+// - VehicleInterface struct with INTERFACE_ID = "Vehicle"
+// - VehicleConsumer<R> struct that implements Consumer trait for subscribing to "left_tire"
+//   and "exhaust" events.
+// - VehicleProducer<R> struct that implements Producer trait for producing "left_tire" and
+//   "exhaust" events.
+// - VehicleOfferedProducer<R> struct that implements OfferedProducer trait for offering
+//   "left_tire" and "exhaust" events.
+interface!(
+    interface Vehicle {
+        left_tire: Event<Tire>,
+        exhaust: Event<Exhaust>,
+     }
+);

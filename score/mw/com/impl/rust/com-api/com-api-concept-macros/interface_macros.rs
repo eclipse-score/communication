@@ -1,0 +1,170 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+
+/// Main interface macro that generates Consumer, Producer, and OfferedProducer types
+/// along with all necessary trait implementations.
+///
+/// Automatically generates unique type names from the identifier of macro invocation.
+/// For an interface with identifier `{id}`, it generates:
+/// - `{id}Interface` - Struct representing the interface with INTERFACE_ID constant
+/// - `{id}Consumer<R>` - Consumer implementation with event subscribers
+/// - `{id}Producer<R>` - Producer implementation
+/// - `{id}OfferedProducer<R>` - Offered producer implementation with event publishers
+/// - Implements the `Interface`, `Consumer`, `Producer`, and `OfferedProducer` traits
+///  for the respective types.
+/// - `id` is used to be UID for the interface.
+///
+/// Parameters:
+/// - Keywords: `interface` followed by the interface identifier and a block of event definitions.
+/// - `$id`: Simple identifier used for type name generation (e.g., Vehicle, Engine)
+/// - `$event_name`: Event field name
+/// - `$event_type`: Event data type
+/// Example usage:
+/// ```
+/// interface!(
+///    interface Vehicle {
+///       left_tire: Event<Tire>,
+///      exhaust: Event<Exhaust>,
+///   }
+/// );
+/// ```
+/// The generated code will include:
+/// - `VehicleInterface` struct with `INTERFACE_ID = "Vehicle"`
+/// - `VehicleConsumer<R>` struct that implements `Consumer` trait for subscribing to "left_tire" and "exhaust" events.
+/// - `VehicleProducer<R>` struct that implements `Producer` trait for producing "left_tire" and "exhaust" events.
+/// - `VehicleOfferedProducer<R>` struct that implements `OfferedProducer` trait for offering "left_tire" and "exhaust" events.
+pub use paste::paste;
+
+#[macro_export]
+macro_rules! interface {
+    (interface $id:ident { $($event_name:ident : Event<$event_type:ty>),+$(,)? }) => {
+        $crate::paste! {
+            $crate::interface_common!($id);
+            $crate::interface_consumer!($id, $($event_name, Event<$event_type>),+);
+            $crate::interface_producer!($id, $($event_name, Event<$event_type>),+);
+        }
+    };
+
+    (interface $id:ident { $($event_name:ident : Method<$event_type:ty>),+$(,)? }) => {
+        compile_error!("Method definitions are not supported in this macro version. Please use Event<T> syntax for defining events.");
+    };
+
+    (interface $id:ident { $($event_name:ident : Field<$event_type:ty>),+$(,)? }) => {
+        compile_error!("Field definitions are not supported in this macro version. Please use Event<T> syntax for defining events.");
+    };
+}
+
+/// Macro create a unique interface struct and implement the Interface trait for it.
+/// Generates the INTERFACE_ID constant and associated Consumer/Producer types.
+#[macro_export]
+macro_rules! interface_common {
+    ($id:ident) => {
+        $crate::paste! {
+            pub struct [<$id Interface>] {}
+            impl com_api::Interface for [<$id Interface>] {
+                const INTERFACE_ID: &'static str = stringify!($id);
+                type Consumer<R: com_api::Runtime + ?Sized> = [<$id Consumer>]<R>;
+                type Producer<R: com_api::Runtime + ?Sized> = [<$id Producer>]<R>;
+            }
+        }
+    };
+}
+
+/// Macro to implement the Consumer trait for a given interface ID and its events.
+/// Generates the Consumer struct with subscribers for each event.
+#[macro_export]
+macro_rules! interface_consumer {
+    ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
+        $crate::paste! {
+            pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $event_name: R::Subscriber<$event_type>,
+                )+
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::Consumer<R> for [<$id Consumer>]<R> {
+                fn new(instance_info: R::ConsumerInfo) -> Self {
+                    [<$id Consumer>] {
+                        $(
+                            $event_name: R::Subscriber::new(
+                                stringify!($event_name),
+                                instance_info.clone()
+                            ).expect(&format!("Failed to create subscriber for {}", stringify!($event_name))),
+                        )+
+                    }
+                }
+            }
+        }
+    };
+}
+
+/// Macro to implement the Producer and OfferedProducer traits for a given interface ID and its events.
+/// Generates Producer and OfferedProducer structs with publishers for each event.
+#[macro_export]
+macro_rules! interface_producer {
+    ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
+        $crate::paste! {
+            pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
+                _runtime: core::marker::PhantomData<R>,
+                instance_info: R::ProviderInfo,
+            }
+
+            pub struct [<$id OfferedProducer>]<R: com_api::Runtime + ?Sized> {
+                $(
+                    pub $event_name: R::Publisher<$event_type>,
+                )+
+                instance_info: R::ProviderInfo,
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::Producer<R> for [<$id Producer>]<R> {
+                type Interface = [<$id Interface>];
+                type OfferedProducer = [<$id OfferedProducer>]<R>;
+                fn offer(self) -> com_api::Result<Self::OfferedProducer> {
+                    let offered = [<$id OfferedProducer>] {
+                        $(
+                            $event_name: R::Publisher::new(
+                                stringify!($event_name),
+                                self.instance_info.clone()
+                            ).expect(&format!("Failed to create publisher for {}", stringify!($event_name))),
+                        )+
+                        instance_info: self.instance_info.clone(),
+                    };
+                    // Offer the service instance to make it discoverable
+                    self.instance_info.offer_service()?;
+                    Ok(offered)
+                }
+
+                fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
+                    Ok([<$id Producer>] {
+                        _runtime: core::marker::PhantomData,
+                        instance_info,
+                    })
+                }
+            }
+
+            impl<R: com_api::Runtime + ?Sized> com_api::OfferedProducer<R> for [<$id OfferedProducer>]<R> {
+                type Interface = [<$id Interface>];
+                type Producer = [<$id Producer>]<R>;
+                fn unoffer(self) -> com_api::Result<Self::Producer> {
+                    let producer = [<$id Producer>] {
+                        _runtime: core::marker::PhantomData,
+                        instance_info: self.instance_info.clone(),
+                    };
+                    // Stop offering the service instance to withdraw it from system availability
+                    self.instance_info.stop_offer_service()?;
+                    Ok(producer)
+                }
+            }
+        }
+    };
+}

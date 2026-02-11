@@ -22,3 +22,5 @@ pub use com_api_concept::{
     ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer,
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
+
+pub use com_api_concept_interface_macros::interface;
