@@ -72,7 +72,7 @@ class MethodErrorDomain final : public score::result::ErrorDomain
                 return "Message passing failed with an error.";
                 // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(MethodErrc::kNotSubscribed):
-                return "Method has not been succesfully subscribed.";
+                return "Method has not been successfully subscribed.";
                 // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(MethodErrc::kNotOffered):
                 return "Method has not been fully offered.";

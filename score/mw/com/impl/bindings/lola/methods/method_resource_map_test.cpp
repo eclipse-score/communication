@@ -245,5 +245,22 @@ TEST_F(MethodResourceMapContainsFixture, ContainsReturnsTrueWhenElementMatchingK
     EXPECT_TRUE(does_contain);
 }
 
+using MethodResourceMapClearFixture = MethodResourceMapFixture;
+TEST_F(MethodResourceMapClearFixture, ClearingRemovesAllElements)
+{
+    GivenAMethodResourceMap()
+        .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1)
+        .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2}, kDummyPid2);
+
+    // When calling Clear on the map
+    method_resource_map_->Clear();
+
+    // Then the map should no longer contain the inserted regions
+    EXPECT_FALSE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                                kDummyPid1));
+    EXPECT_FALSE(method_resource_map_->Contains(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2},
+                                                kDummyPid2));
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

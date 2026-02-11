@@ -166,15 +166,20 @@ auto SerializeToMethodReplyMessage(score::ResultBlank reply_result) noexcept
 
 bool IsMethodErrorRecoverable(const score::result::Error error)
 {
-    const auto com_error = static_cast<MethodErrc>(*error);
+    const auto error_code = *error;
 
-    if ((com_error == MethodErrc::kSkeletonAlreadyDestroyed || (com_error == MethodErrc::kUnknownProxy) ||
-         (com_error == MethodErrc::kNotSubscribed) || (com_error == MethodErrc::kNotOffered)))
+    // We static cast each individual Method error code to the base integer type to avoid coverity warnings about static
+    // casting the generic error code (from *error) to a specific error code (i.e. MethodErrc)
+    if ((error_code == static_cast<result::ErrorCode>(MethodErrc::kSkeletonAlreadyDestroyed) ||
+         (error_code == static_cast<result::ErrorCode>(MethodErrc::kUnknownProxy)) ||
+         (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotSubscribed)) ||
+         (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotOffered))))
     {
         return true;
     }
-    else if ((com_error == MethodErrc::kUnexpectedMessage) || (com_error == MethodErrc::kUnexpectedMessageSize) ||
-             (com_error == MethodErrc::kMessagePassingError))
+    else if ((error_code == static_cast<result::ErrorCode>(MethodErrc::kUnexpectedMessage)) ||
+             (error_code == static_cast<result::ErrorCode>(MethodErrc::kUnexpectedMessageSize)) ||
+             (error_code == static_cast<result::ErrorCode>(MethodErrc::kMessagePassingError)))
     {
         return false;
     }

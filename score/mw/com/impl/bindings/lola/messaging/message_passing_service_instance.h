@@ -130,7 +130,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
 
     enum class MessageWithReplyType : std::uint8_t
     {
-        kSubscribeServiceMethod = 1,
+        kSubscribeServiceMethod = 1U,
         kCallMethod,
     };
 

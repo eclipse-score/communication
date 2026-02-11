@@ -56,7 +56,7 @@ TEST_F(MethodErrorMessageForFixture, MessageForMessagePassingError)
 
 TEST_F(MethodErrorMessageForFixture, MessageForNotSubscribed)
 {
-    TestErrorMessage(MethodErrc::kNotSubscribed, "Method has not been succesfully subscribed.");
+    TestErrorMessage(MethodErrc::kNotSubscribed, "Method has not been successfully subscribed.");
 }
 
 TEST_F(MethodErrorMessageForFixture, MessageForNotOffered)
