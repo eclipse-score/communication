@@ -164,7 +164,7 @@ class SamplePtr final
 
   private:
     template <typename BindingSamplePtrType>
-    SamplePtr(BindingSamplePtrType&& binding_sample_ptr)
+    explicit SamplePtr(BindingSamplePtrType&& binding_sample_ptr)
         : binding_sample_ptr_{std::forward<BindingSamplePtrType>(binding_sample_ptr)}, reference_guard_{}
     {
     }
