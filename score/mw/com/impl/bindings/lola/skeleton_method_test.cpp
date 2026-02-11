@@ -388,5 +388,28 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
     std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
 }
 
+using SkeletonMethodIsRegisteredFixture = SkeletonMethodFixture;
+TEST_F(SkeletonMethodIsRegisteredFixture, IsRegisteredReturnsFalseIfRegisterHandlerNeverCalled)
+{
+    GivenASkeletonMethod();
+
+    // When calling IsRegistered when no handler was ever registered
+    const auto is_registered = unit_->IsRegistered();
+
+    // Then the result should be false
+    EXPECT_FALSE(is_registered);
+}
+
+TEST_F(SkeletonMethodIsRegisteredFixture, IsRegisteredReturnsTrueIfRegisterHandlerWasCalled)
+{
+    GivenASkeletonMethod().WithARegisteredCallback();
+
+    // When calling IsRegistered when a handler was registered
+    const auto is_registered = unit_->IsRegistered();
+
+    // Then the result should be true
+    EXPECT_TRUE(is_registered);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola
