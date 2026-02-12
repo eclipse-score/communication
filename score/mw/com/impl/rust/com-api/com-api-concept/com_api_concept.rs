@@ -50,6 +50,7 @@ use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 pub mod reloc;
+pub use com_api_concept_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
 pub use reloc::Reloc;
 use std::path::Path;
@@ -199,6 +200,14 @@ where
 /// Bounds the data type to be relocatable and sendable across threads.
 /// Also requires the data type to implement Debug for logging and debugging purposes.
 /// 'static' lifetime ensures the data type does not contain non-static references.
+/// # Important
+/// Users must NOT implement the `CommData` trait manually. Always use this derive macro instead.
+/// like `#[derive(CommData)]` on the struct definition. 
+/// This is to ensure that all necessary trait bounds and metadata are correctly applied to the communication data types.
+/// Also if user wants to specify a custom ID for the communication data type, 
+/// they can use the `#[comm_data(id = "CustomID")]` attribute on the struct definition. 
+/// The custom ID must be unique across all communication data types to avoid conflicts in the system.
+/// If no custom ID is provided, the struct name will be used as the default ID with module path as prefix to ensure uniqueness.
 pub trait CommData: Reloc + Send + Debug + 'static {
     const ID: &'static str;
 }

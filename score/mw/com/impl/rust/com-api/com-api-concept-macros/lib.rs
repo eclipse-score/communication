@@ -12,9 +12,140 @@
  ********************************************************************************/
 
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{parse_macro_input, parse_quote, Data, DeriveInput, Fields, Generics, Meta, Type};
 
+/// Derive macro for the `CommData` trait. This macro automatically implements the `CommData` trait
+/// for structs and C-like enums, ensuring that the type is marked with `#[repr(C)]`.
+/// It internally also derives the `Reloc` trait for the type.
+///
+/// # Important
+/// Users must NOT implement the `CommData` trait manually. Always use this derive macro instead.
+///
+/// It also supports an optional attribute to specify a custom ID string:
+/// ```
+/// #[comm_data(id = "CustomID_String")]
+/// ```
+/// If no custom ID is provided, a fully qualified type name is used as the ID.
+/// Example usage:
+/// ```
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub struct MyData {
+///    value: u32,
+/// }
+/// ```
+/// with custom ID:
+/// ```
+/// pub trait CommData {
+///   const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data(id = "CustomID_MyData")]
+/// pub struct MyData {
+///  value: u32,
+/// }
+/// ```
+/// ```
+#[proc_macro_derive(CommData, attributes(comm_data))]
+pub fn derive_comm_data(input: TokenStream) -> TokenStream {
+    let input_args = parse_macro_input!(input as DeriveInput);
+    let ident_name = &input_args.ident;
+
+    // Call derive_reloc to generate Reloc implementation
+    let reloc_impl_tokens = derive_reloc(input_args.to_token_stream().into());
+
+    //Add where clause if there are generics
+    let generics = input_args.generics.clone();
+    let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
+
+    // Generate ID string: use user-provided ID if available, otherwise use fully qualified type name
+    let id_str = match extract_id_from_attribute(&input_args.attrs) {
+        Ok(Some(user_id)) => {
+            // User-provided ID
+            quote! { #user_id }
+        }
+        Ok(None) => {
+            // Auto-generated: use fully qualified type name with module_path!()
+            quote! { concat!(module_path!(), "::", stringify!(#ident_name)) }
+        }
+        Err(err) => {
+            // Propagate the error to the compiler
+            return err.to_compile_error().into();
+        }
+    };
+
+    let comm_data_impl = quote! {
+        impl #impl_generics CommData for #ident_name #type_generics #where_clause {
+            const ID: &'static str = #id_str;
+        }
+    }; 
+    // Merge the TokenStreams
+    let mut result = TokenStream::from(quote! { #comm_data_impl });
+    result.extend(reloc_impl_tokens);
+    result
+}
+
+/// Extract custom ID from #[comm_data(id = "...")] attribute
+fn extract_id_from_attribute(attrs: &[syn::Attribute]) -> Result<Option<String>, syn::Error> {
+    for attr in attrs {
+        if !attr.path().is_ident("comm_data") {
+            continue;
+        }
+
+        let Meta::List(list) = &attr.meta else {
+            return Err(syn::Error::new_spanned(
+                &attr,
+                "Expected #[comm_data(id = \"...\")]",
+            ));
+        };
+
+        let Ok(Meta::NameValue(nv)) = list.parse_args::<Meta>() else {
+            return Err(syn::Error::new_spanned(
+                &attr,
+                "Expected #[comm_data(id = \"...\")]",
+            ));
+        };
+
+        if !nv.path.is_ident("id") {
+            return Err(syn::Error::new_spanned(
+                &nv.path,
+                "Expected #[comm_data(id = \"...\")]",
+            ));
+        }
+
+        let syn::Expr::Lit(expr_lit) = &nv.value else {
+            return Err(syn::Error::new_spanned(
+                &nv.value,
+                "Expected a string literal value",
+            ));
+        };
+
+        let syn::Lit::Str(lit_str) = &expr_lit.lit else {
+            return Err(syn::Error::new_spanned(
+                &expr_lit,
+                "Expected a string literal value",
+            ));
+        };
+
+        let id_value = lit_str.value();
+        if id_value.is_empty() {
+            return Err(syn::Error::new_spanned(
+                &expr_lit,
+                "The id cannot be an empty string",
+            ));
+        }
+
+        return Ok(Some(id_value));
+    }
+    Ok(None)
+}
 ///
 /// Derive macro for the `Reloc` trait. This macro automatically implements the `Reloc` trait
 /// for structs, ensuring that all field types also implement `Reloc`. This also requires that the
@@ -258,3 +389,149 @@ fn reloc_fails_if_member_is_not_reloc_on_struct() {}
 /// ```
 #[cfg(doctest)]
 fn reloc_fails_on_generic_types_that_do_not_impl_reloc() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// pub struct MyData {
+///     value: u32,
+/// }
+/// ```
+/// This will fail because of missing #[repr(C)]
+#[cfg(doctest)]
+fn comm_data_fails_without_repr_c() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///   const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub enum MyEnum {
+///   A,
+///   B,
+///  C(u32),
+/// }
+/// This will fail because of non C-like enum
+/// ```
+#[cfg(doctest)]
+fn comm_data_fails_on_non_c_like_enum() {}
+
+/// ```
+/// pub trait CommData {
+///  const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub enum MyEnum {
+///  A,
+///  B,
+///  C,
+/// }
+/// // ID will be auto-generated as "module_path::MyEnum"
+/// ```
+#[cfg(doctest)]
+fn comm_data_works_on_c_like_enum() {}
+
+/// ```
+/// pub trait CommData {
+/// const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// pub struct MyStruct {
+///    value: u32,
+/// }
+///
+/// // This will succeed because of struct with repr(C)
+/// // ID will be auto-generated as fully qualified type name: "module_path::MyStruct"
+/// ```
+#[cfg(doctest)]
+fn comm_data_works_on_struct() {}
+
+/// ```
+/// pub trait CommData {
+/// const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data(id = "CustomID_MyStruct")]
+/// pub struct MyStruct {
+///   value: u32,
+/// }
+/// // This will succeed because of struct with repr(C) and custom ID
+/// // ID will be the user-provided string: "CustomID_MyStruct"
+/// ```
+#[cfg(doctest)]
+fn comm_data_works_on_struct_with_custom_id() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data(wrong = "value")]
+/// pub struct MyData {
+///     value: u32,
+/// }
+/// ```
+/// This will fail because of invalid attribute key (should be "id")
+#[cfg(doctest)]
+fn comm_data_fails_with_invalid_attribute_key() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data(id = 123)]
+/// pub struct MyData {
+///     value: u32,
+/// }
+/// ```
+/// This will fail because id value must be a string literal, not a number
+#[cfg(doctest)]
+fn comm_data_fails_with_non_string_id() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data]
+/// pub struct MyData {
+///     value: u32,
+/// }
+/// ```
+/// This will fail because of malformed attribute (missing id = "...")
+#[cfg(doctest)]
+fn comm_data_fails_with_malformed_attribute() {}
+
+/// ```compile_fail
+/// pub trait CommData {
+///    const ID: &'static str;
+/// }
+/// use com_api_concept_macros::CommData;
+/// #[derive(CommData)]
+/// #[repr(C)]
+/// #[comm_data(id = "")]
+/// pub struct MyData {
+///     value: u32,
+/// }
+/// ```
+/// This will fail because id cannot be an empty string
+#[cfg(doctest)]
+fn comm_data_fails_with_empty_string_id() {}
