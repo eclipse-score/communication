@@ -159,7 +159,7 @@ TEST_F(MessagePassingServiceInstanceTest, ConnectCallbackReturnsClientPid)
     EXPECT_EQ(std::get<uintptr_t>(pid_result.value()), client_identity_.pid);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DisconnectCallbackSuccesfullyExecuted)
+TEST_F(MessagePassingServiceInstanceTest, DisconnectCallbackSuccessfullyExecuted)
 {
     // Just a placeholder due to disconnect callback being empty
     MessagePassingServiceInstance instance{
@@ -169,7 +169,7 @@ TEST_F(MessagePassingServiceInstanceTest, DisconnectCallbackSuccesfullyExecuted)
 }
 
 // received_send_message_with_reply
-TEST_F(MessagePassingServiceInstanceTest, MessageWithReplyIsSuccesfullyExecutedWhenValidPidIsPassed)
+TEST_F(MessagePassingServiceInstanceTest, MessageWithReplyIsSuccessfullyExecutedWhenValidPidIsPassed)
 {
     // Given message passing instance
     MessagePassingServiceInstance instance{
@@ -201,7 +201,7 @@ TEST_F(MessagePassingServiceInstanceDeathTest, MessageWithReplyTerminatesWhenInv
 }
 
 // received_send_message
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingAnEmptyMessage)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingAnEmptyMessage)
 {
     // Given message passing instance
     MessagePassingServiceInstance instance{
@@ -212,7 +212,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingAnEmptyMes
     received_send_message_callback_(*server_connection_mock_, {});
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingMessageOfInvalidType)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingMessageOfInvalidType)
 {
     // Given message passing instance
     MessagePassingServiceInstance instance{
@@ -224,7 +224,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingMessageOfI
 }
 
 // incorrect length
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingRegisterEventNotifierWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingRegisterEventNotifierWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -233,7 +233,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingRegisterEv
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier, false));
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingUnegisterEventNotifierWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingUnregisterEventNotifierWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -242,7 +242,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingUnegisterE
                                     Serialize(event_id_, MessageType::kUnregisterEventNotifier, false));
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingNotifyEventWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingNotifyEventWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -250,7 +250,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingNotifyEven
     received_send_message_callback_(*server_connection_mock_, Serialize(event_id_, MessageType::kNotifyEvent, false));
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingOutdatedNodeIdWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingOutdatedNodeIdWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -283,7 +283,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyCallsRegisteredHandl
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntTerminateUponEncounteringDestroyedHandler)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesNotTerminateUponEncounteringDestroyedHandler)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -299,7 +299,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntTerminateUponE
     (*executor_task_)(stop_token_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntCallUnregisteredHandler)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesNotCallUnregisteredHandler)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -319,7 +319,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntCallUnregister
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterEventNotificationCalledWithNonExistingHandlerRegistrationDoesntAffectExistingRegistrations)
+       UnregisterEventNotificationCalledWithNonExistingHandlerRegistrationDoesNotAffectExistingRegistrations)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -346,7 +346,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventDoesntPostNotifyEventLocallyIfNothingRegisteredForTheEvent)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventDoesNotPostNotifyEventLocallyIfNothingRegisteredForTheEvent)
 {
     // Given service instance with no registered handlers
     MessagePassingServiceInstance instance{
@@ -407,7 +407,7 @@ TEST_F(MessagePassingServiceInstanceTest, RegisterEventNotificationRemoteSendsRe
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       RegisterEventNotificationRemoteDoesnTermianteWhenFailsToSendRegistrationMessage)
+       RegisterEventNotificationRemoteDoesNotTerminateWhenFailsToSendRegistrationMessage)
 {
     RecordProperty("Verifies", "SCR-5899276");
     RecordProperty("Description", "Register Event notification callback.");
@@ -492,7 +492,7 @@ TEST_F(MessagePassingServiceInstanceTest,
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterEventNotificationRemoteDoesnTerminateUponUnregistrationMessageSendFailure)
+       UnregisterEventNotificationRemoteDoesNotTerminateUponUnregistrationMessageSendFailure)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -510,7 +510,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     instance.UnregisterEventNotification(event_id_, registration_no, remote_pid_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesntUndergisterOnPidMismatch)
+TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesNotUnregisterOnPidMismatch)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -528,7 +528,7 @@ TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesn
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterEventNotificationRemoteDoesntSendMessageUponUnregisteringNonLastHandler)
+       UnregisterEventNotificationRemoteDoesNotSendMessageUponUnregisteringNonLastHandler)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -546,7 +546,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     instance.UnregisterEventNotification(event_id_, registration_no, remote_pid_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesntUnregisterLocalRegistations)  // TODO
+TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesNotUnregisterLocalRegistrations)  // TODO
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -625,7 +625,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClientsRegist
     instance.NotifyEvent(event_id_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntTerminateOnSendFail)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesNotTerminateOnSendFail)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -684,7 +684,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClientsExceed
 }
 
 // unregister message
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntNotifyUnregisteredClient)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesNotNotifyUnregisteredClient)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -706,7 +706,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntNotifyUnregiste
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterMessageForNonExistingRegistrationDoesntAffectTheExistingRegistrations)
+       UnregisterMessageForNonExistingRegistrationDoesNotAffectTheExistingRegistrations)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -729,7 +729,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     instance.NotifyEvent(event_id_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, MultipleUnregistrationsForTheSameClientDontLeadToTermination)
+TEST_F(MessagePassingServiceInstanceTest, MultipleUnregistrationsForTheSameClientDoNotLeadToTermination)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -776,7 +776,7 @@ TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdMsgRemovesOutdated
     instance.NotifyEvent(event_id_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdCalledWithUnregisteredPidDoesntAffectOtherRegistrations)
+TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdCalledWithUnregisteredPidDoesNotAffectOtherRegistrations)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -832,7 +832,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageCallsRegisteredHandl
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageDoesntCallHandlerForDifferentEvent)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageDoesNotCallHandlerForDifferentEvent)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -878,7 +878,7 @@ TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationDoesNotRegi
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       ReregisterEventNotificationDoesntAffectLocalRegistrationsWhenCalledWithRemotePid)
+       ReregisterEventNotificationDoesNotAffectLocalRegistrationsWhenCalledWithRemotePid)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -905,7 +905,7 @@ TEST_F(MessagePassingServiceInstanceTest,
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       ReregisterEventNotificationDoesntAffectLocalRegistrationsWhenCalledWithLocalPid)
+       ReregisterEventNotificationDoesNotAffectLocalRegistrationsWhenCalledWithLocalPid)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -931,7 +931,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationForTheSameEventPidCombinationDoesntSendMessage)
+TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationForTheSameEventPidCombinationDoesNotSendMessage)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -976,7 +976,7 @@ TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationWithDiffere
 TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeCreatesClientAndSendsMessage)
 {
     RecordProperty("Verifies", "SCR-5898962, SCR-5899276, SCR-5899282");
-    RecordProperty("Description", "Outdated Nodie Id notification is exchanged via message-passing");
+    RecordProperty("Description", "Outdated Node Id notification is exchanged via message-passing");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -993,7 +993,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeCreatesClientAndSend
     instance.NotifyOutdatedNodeId(remote_pid_, remote_pid_ + 2);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeDoesntTerminateOnFailedSend)
+TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeDoesNotTerminateOnFailedSend)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
