@@ -64,6 +64,10 @@ class MessagePassingServiceInstanceMock : public IMessagePassingServiceInstance
                 (override));
 
     MOCK_METHOD(ResultBlank, CallMethod, (const ProxyMethodInstanceIdentifier&, std::size_t, pid_t), (override));
+
+    MOCK_METHOD(void, UnregisterOnServiceMethodSubscribedHandler, (SkeletonInstanceIdentifier), (override));
+
+    MOCK_METHOD(void, UnregisterMethodCallHandler, (ProxyMethodInstanceIdentifier), (override));
 };
 
 }  // namespace score::mw::com::impl::lola

@@ -294,6 +294,32 @@ class IMessagePassingService
                                    const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
                                    const std::size_t queue_position,
                                    const pid_t target_node_id) = 0;
+
+  private:
+    /// \brief Unregister handler that was registered with RegisterOnServiceMethodSubscribedHandler
+    ///
+    /// The corresponding handler will no longer be able to be called. This function is private and will only be called
+    /// by MethodSubscriptionRegistrationGuardFactory on destruction.
+    ///
+    /// Precondition: Shall only be called after RegisterOnServiceMethodSubscribedHandler was successfully called.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param skeleton_instance_identifier to identify which registered ServiceMethodSubscribedHandler to unregister
+    virtual void UnregisterOnServiceMethodSubscribedHandler(
+        const QualityType asil_level,
+        SkeletonInstanceIdentifier skeleton_instance_identifier) = 0;
+
+    /// \brief Unregister handler that was registered with RegisterMethodCallHandler
+    ///
+    /// The corresponding handler will no longer be able to be called. This function is private and will only be called
+    /// by MethodCallRegistrationGuardFactory on destruction.
+    ///
+    /// Precondition: Shall only be called after RegisterMethodCallHandler was successfully called.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param proxy_method_instance_identifier to identify which registered MethodCallHandler to unregister
+    virtual void UnregisterMethodCallHandler(const QualityType asil_level,
+                                             ProxyMethodInstanceIdentifier proxy_method_instance_identifier) = 0;
 };
 
 }  // namespace score::mw::com::impl::lola

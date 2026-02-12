@@ -58,6 +58,11 @@ class IMessagePassingServiceInstance
                                                   IMessagePassingService::MethodCallHandler method_call_callback,
                                                   const uid_t allowed_proxy_uid) = 0;
 
+    virtual void UnregisterOnServiceMethodSubscribedHandler(
+        SkeletonInstanceIdentifier skeleton_instance_identifier) = 0;
+
+    virtual void UnregisterMethodCallHandler(ProxyMethodInstanceIdentifier proxy_method_instance_identifier) = 0;
+
     virtual void NotifyOutdatedNodeId(const pid_t outdated_node_id, const pid_t target_node_id) noexcept = 0;
 
     virtual void RegisterEventNotificationExistenceChangedCallback(

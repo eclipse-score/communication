@@ -155,6 +155,11 @@ class MessagePassingService final : public IMessagePassingService
     using ClientFactory = score::message_passing::ClientFactory;
     using ServerFactory = score::message_passing::ServerFactory;
 
+    void UnregisterOnServiceMethodSubscribedHandler(const QualityType asil_level,
+                                                    SkeletonInstanceIdentifier skeleton_instance_identifier) override;
+
+    void UnregisterMethodCallHandler(const QualityType asil_level,
+                                     ProxyMethodInstanceIdentifier proxy_method_instance_identifier) override;
     ClientFactory client_factory_;
 
     /// \brief thread pool for processing local event update notification.

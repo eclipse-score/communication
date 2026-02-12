@@ -206,4 +206,21 @@ ResultBlank MessagePassingService::CallMethod(const QualityType asil_level,
     return instance.CallMethod(proxy_method_instance_identifier, queue_position, target_node_id);
 }
 
+void MessagePassingService::UnregisterOnServiceMethodSubscribedHandler(
+    const QualityType asil_level,
+    SkeletonInstanceIdentifier skeleton_instance_identifier)
+{
+    auto& instance = GetMessagePassingServiceInstance(asil_level);
+
+    instance.UnregisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier);
+}
+
+void MessagePassingService::UnregisterMethodCallHandler(const QualityType asil_level,
+                                                        ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+{
+    auto& instance = GetMessagePassingServiceInstance(asil_level);
+
+    instance.UnregisterMethodCallHandler(proxy_method_instance_identifier);
+}
+
 }  // namespace score::mw::com::impl::lola

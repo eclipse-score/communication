@@ -1147,6 +1147,22 @@ ResultBlank MessagePassingServiceInstance::RegisterMethodCallHandler(
     return {};
 }
 
+void MessagePassingServiceInstance::UnregisterOnServiceMethodSubscribedHandler(
+    SkeletonInstanceIdentifier skeleton_instance_identifier)
+{
+    std::unique_lock<std::shared_mutex> write_lock(subscribe_service_method_handlers_mutex_);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(subscribe_service_method_handlers_.count(skeleton_instance_identifier) != 0U);
+    score::cpp::ignore = subscribe_service_method_handlers_.erase(skeleton_instance_identifier);
+}
+
+void MessagePassingServiceInstance::UnregisterMethodCallHandler(
+    ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+{
+    std::unique_lock<std::shared_mutex> write_lock(call_method_handlers_mutex_);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(call_method_handlers_.count(proxy_method_instance_identifier) != 0U);
+    score::cpp::ignore = call_method_handlers_.erase(proxy_method_instance_identifier);
+}
+
 void MessagePassingServiceInstance::NotifyOutdatedNodeId(const pid_t outdated_node_id,
                                                          const pid_t target_node_id) noexcept
 {

@@ -1216,5 +1216,64 @@ TEST_F(MessagePassingServiceInstanceHandleSubscribeMethodMessageTest,
         received_send_message_with_reply_callback_(server_connection_mock_, CreateValidSubscribeMethodMessage());
 }
 
+using MessagePassingServiceInstanceUnregisterMethodCallHandlerTest = MessagePassingServiceInstanceMethodsFixture;
+TEST_F(MessagePassingServiceInstanceUnregisterMethodCallHandlerTest, CallingHandlerAfterUnregisteringReturnsError)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredMethodCallHandler(
+        kProxyMethodInstanceIdentifier, client_identity_->uid);
+
+    // and given that the handler has been unregistered
+    unit_->UnregisterMethodCallHandler(kProxyMethodInstanceIdentifier);
+
+    // Expecting that the registered method call handler will be not called
+    EXPECT_CALL(mock_method_call_handler_, Call(_)).Times(0);
+
+    // When calling CallMethod with target_node_id equal to the PID of the current process
+    const auto call_result = unit_->CallMethod(kProxyMethodInstanceIdentifier, kQueuePosition, kLocalPid);
+
+    // Then the result contains an error
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(MessagePassingServiceInstanceUnregisterMethodCallHandlerTest, CallingUnregisterHandlerBeforeRegisterTerminates)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // When calling UnregisterMethodCallHandler before registering a handler
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit_->UnregisterMethodCallHandler(kProxyMethodInstanceIdentifier));
+}
+
+using MessagePassingServiceInstanceUnregisterSubscribeMethodHandlerTest = MessagePassingServiceInstanceMethodsFixture;
+TEST_F(MessagePassingServiceInstanceUnregisterSubscribeMethodHandlerTest, CallingHandlerAfterUnregisteringReturnsError)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess().WithARegisteredSubscribeMethodHandler(
+        kSkeletonInstanceIdentifier, {{client_identity_->uid}});
+
+    // and given that the handler has been unregistered
+    unit_->UnregisterOnServiceMethodSubscribedHandler(kSkeletonInstanceIdentifier);
+
+    // Expecting that the registered method subscribe handler will not be called
+    EXPECT_CALL(mock_subscribe_method_handler_, Call(_, _, _)).Times(0);
+
+    // When calling SubscribeServiceMethod with target_node_id equal to the PID of the current process
+    const auto call_result =
+        unit_->SubscribeServiceMethod(kSkeletonInstanceIdentifier, kProxyInstanceIdentifier, kLocalPid);
+
+    // Then the result contains an error
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(MessagePassingServiceInstanceUnregisterSubscribeMethodHandlerTest,
+       CallingUnregisterHandlerBeforeRegisterTerminates)
+{
+    GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
+
+    // When calling UnregisterOnServiceMethodSubscribedHandler before registering a handler
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit_->UnregisterOnServiceMethodSubscribedHandler(kSkeletonInstanceIdentifier));
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

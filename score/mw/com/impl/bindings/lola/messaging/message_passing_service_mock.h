@@ -64,6 +64,15 @@ class MessagePassingServiceMock : public IMessagePassingService
                 CallMethod,
                 (QualityType, const ProxyMethodInstanceIdentifier&, std::size_t, pid_t),
                 (override));
+
+    MOCK_METHOD(void,
+                UnregisterOnServiceMethodSubscribedHandler,
+                (const QualityType asil_level, SkeletonInstanceIdentifier skeleton_instance_identifier),
+                (override));
+    MOCK_METHOD(void,
+                UnregisterMethodCallHandler,
+                (const QualityType asil_level, ProxyMethodInstanceIdentifier proxy_method_instance_identifier),
+                (override));
 };
 
 }  // namespace score::mw::com::impl::lola
