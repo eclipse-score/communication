@@ -48,11 +48,11 @@ class MessagePassingServiceMock : public IMessagePassingService
                 (QualityType, ElementFqId),
                 (noexcept, override));
 
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<MethodSubscriptionRegistrationGuard>,
                 RegisterOnServiceMethodSubscribedHandler,
                 (QualityType, SkeletonInstanceIdentifier, ServiceMethodSubscribedHandler, AllowedConsumerUids),
                 (override));
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<MethodSubscriptionRegistrationGuard>,
                 RegisterMethodCallHandler,
                 (QualityType, ProxyMethodInstanceIdentifier, MethodCallHandler, uid_t),
                 (override));

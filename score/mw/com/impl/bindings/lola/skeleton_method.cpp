@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/runtime.h"
 
@@ -38,7 +39,8 @@ SkeletonMethod::SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_
     : in_args_type_erased_info_{},
       return_type_type_erased_info_{},
       type_erased_callback_{},
-      asil_level_{skeleton.GetInstanceQualityType()}
+      asil_level_{skeleton.GetInstanceQualityType()},
+      registration_guards_{}
 {
     skeleton.RegisterMethod(element_fq_id.element_id_, *this);
 }
@@ -87,8 +89,19 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
 
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
-    return lola_message_passing.RegisterMethodCallHandler(
+    auto registration_result = lola_message_passing.RegisterMethodCallHandler(
         asil_level, proxy_method_instance_identifier, std::move(method_call_callback), allowed_proxy_uid);
+    if (!(registration_result.has_value()))
+    {
+        return MakeUnexpected<Blank>(registration_result.error());
+    }
+    registration_guards_.insert({proxy_method_instance_identifier, std::move(registration_result).value()});
+    return {};
+}
+
+void SkeletonMethod::UnregisterMethodCallHandlers()
+{
+    registration_guards_.clear();
 }
 
 bool SkeletonMethod::IsRegistered() const

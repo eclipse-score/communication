@@ -144,7 +144,22 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         ON_CALL(*mock_method_memory_resource_asil_b_, getUsableBaseAddress())
             .WillByDefault(Return(static_cast<void*>(&fake_method_data_b_.method_data_)));
 
-        ON_CALL(message_passing_mock_, RegisterMethodCallHandler(_, _, _, _)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(message_passing_mock_, RegisterMethodCallHandler(_, _, _, _))
+            .WillByDefault(WithArgs<0, 1>(Invoke(
+                [this](auto asil_level, auto proxy_method_instance_identifier) -> Result<MethodCallRegistrationGuard> {
+                    return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                                      asil_level,
+                                                                      proxy_method_instance_identifier,
+                                                                      method_call_registration_guard_scope_);
+                })));
+
+        ON_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(_, _, _, _))
+            .WillByDefault(WithArgs<0, 1>(Invoke([this](auto asil_level, auto skeleton_instance_identifier) {
+                return MethodSubscriptionRegistrationGuardFactory::Create(message_passing_mock_,
+                                                                          asil_level,
+                                                                          skeleton_instance_identifier,
+                                                                          method_call_registration_guard_scope_);
+            })));
     }
 
     SkeletonMethodHandlingFixture& GivenASkeletonWithTwoMethods()
@@ -173,18 +188,32 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
 
     SkeletonMethodHandlingFixture& WhichCapturesRegisteredMethodSubscribedHandlers()
     {
-        ON_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
-            .WillByDefault(WithArg<2>(Invoke([this](auto method_subscribed_handler) -> ResultBlank {
-                captured_method_subscribed_handler_qm_.emplace(std::move(method_subscribed_handler));
-                return {};
-            })));
-        ON_CALL(message_passing_mock_,
+        EXPECT_CALL(
+            message_passing_mock_,
+            RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
+            .WillOnce(WithArgs<0, 1, 2>(
+                Invoke([this](auto asil_level, auto skeleton_instance_identifier, auto method_subscribed_handler) {
+                    captured_method_subscribed_handler_qm_.emplace(std::move(method_subscribed_handler));
+                    return MethodSubscriptionRegistrationGuardFactory::Create(message_passing_mock_,
+                                                                              asil_level,
+                                                                              skeleton_instance_identifier,
+                                                                              method_call_registration_guard_scope_);
+                })));
+        if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+        {
+            EXPECT_CALL(
+                message_passing_mock_,
                 RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
-            .WillByDefault(WithArg<2>(Invoke([this](auto method_subscribed_handler) -> ResultBlank {
-                captured_method_subscribed_handler_b_.emplace(std::move(method_subscribed_handler));
-                return {};
-            })));
+                .WillOnce(WithArgs<0, 1, 2>(
+                    Invoke([this](auto asil_level, auto skeleton_instance_identifier, auto method_subscribed_handler) {
+                        captured_method_subscribed_handler_b_.emplace(std::move(method_subscribed_handler));
+                        return MethodSubscriptionRegistrationGuardFactory::Create(
+                            message_passing_mock_,
+                            asil_level,
+                            skeleton_instance_identifier,
+                            method_call_registration_guard_scope_);
+                    })));
+        }
         return *this;
     }
 
@@ -224,6 +253,8 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
     MockFunction<SkeletonMethodBinding::TypeErasedCallbackSignature> dumb_mock_type_erased_callback_{};
     std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_qm_{};
     std::optional<IMessagePassingService::ServiceMethodSubscribedHandler> captured_method_subscribed_handler_b_{};
+
+    safecpp::Scope<> method_call_registration_guard_scope_{};
 };
 
 using SkeletonPrepareOfferFixture = SkeletonMethodHandlingFixture;
@@ -234,8 +265,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscri
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing for QM only which returns a
     // valid result
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
-        .WillOnce(Return(score::ResultBlank{}));
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _));
     EXPECT_CALL(message_passing_mock_,
                 RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
         .Times(0);
@@ -255,11 +285,9 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOnAsilBSkeletonWillRegisterQmAnd
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing for QM and Asil B which
     // returns a valid result
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
-        .WillOnce(Return(score::ResultBlank{}));
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _));
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
-        .WillOnce(Return(score::ResultBlank{}));
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _));
 
     // When calling PrepareOffer
     const auto result = skeleton_->PrepareOffer(
@@ -277,7 +305,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfRegisterServiceMet
     const auto error_code = ComErrc::kCommunicationLinkError;
     EXPECT_CALL(message_passing_mock_,
                 RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
-        .WillOnce(Return(MakeUnexpected(error_code)));
+        .WillOnce(Return(ByMove(MakeUnexpected(error_code))));
 
     // When calling PrepareOffer
     const auto result = skeleton_->PrepareOffer(
@@ -296,11 +324,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferReturnsErrorIfAsilBRegisterServi
     // and ASIL B which returns an error
     const auto error_code = ComErrc::kCommunicationLinkError;
     EXPECT_CALL(message_passing_mock_,
-                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _))
-        .WillOnce(Return(score::ResultBlank{}));
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _));
     EXPECT_CALL(message_passing_mock_,
                 RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
-        .WillOnce(Return(MakeUnexpected(error_code)));
+        .WillOnce(Return(ByMove(MakeUnexpected(error_code))));
 
     // When calling PrepareOffer
     const auto result = skeleton_->PrepareOffer(
@@ -365,6 +392,45 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotRegisterServiceMethodSubs
     EXPECT_TRUE(result.has_value());
 }
 
+TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillNotCallUnregisterSubscribedMethodHandler)
+{
+    GivenAnAsilBSkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodSubscribedHandler will be called for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _));
+
+    // Expecting that UnregisterOnServiceMethodSubscribedHandler will not be called for each method for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _)).Times(0);
+
+    // When calling PrepareOffer
+    score::cpp::ignore = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+}
+
+TEST_F(SkeletonPrepareOfferFixture, CallingAsilBWillUnregisterQmHandlerOnAsilBRegistrationFailure)
+{
+    GivenAnAsilBSkeletonWithTwoMethods();
+
+    // Expecting that RegisterOnServiceMethodSubscribedHandler will be called for QM and ASIL-B which succeeds for QM
+    // but fails for ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_, _, _))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kCallQueueFull))));
+
+    // Expecting that UnregisterOnServiceMethodSubscribedHandler will be called for method for QM
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_));
+
+    // When calling PrepareOffer
+    score::cpp::ignore = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+}
+
 using SkeletonPrepareStopOfferFixture = SkeletonMethodHandlingFixture;
 TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCallHandlers)
 {
@@ -375,15 +441,21 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCall
     std::optional<IMessagePassingService::MethodCallHandler> method_call_handler_2{};
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
-        .WillOnce(WithArgs<2>(Invoke([&method_call_handler_1](auto method_call_handler) -> ResultBlank {
+        .WillOnce(WithArgs<2>(Invoke([this, &method_call_handler_1](auto method_call_handler) {
             method_call_handler_1.emplace(method_call_handler);
-            return {};
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              foo_proxy_method_identifier_qm_,
+                                                              method_call_registration_guard_scope_);
         })));
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_identifier_qm_, _, _))
-        .WillOnce(WithArgs<2>(Invoke([&method_call_handler_2](auto method_call_handler) -> ResultBlank {
+        .WillOnce(WithArgs<2>(Invoke([this, &method_call_handler_2](auto method_call_handler) {
             method_call_handler_2.emplace(method_call_handler);
-            return {};
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              dumb_proxy_method_identifier_qm_,
+                                                              method_call_registration_guard_scope_);
         })));
 
     // and given that the registered method subscribed handler is called
@@ -443,13 +515,60 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDestroysPointerToSharedM
     EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), shm_resource_ref_counter_after_opening - 1U);
 }
 
+TEST_F(SkeletonPrepareStopOfferFixture, UnregistersQmAndAsilBSubscribedMethodHandlers)
+{
+    GivenAnAsilBSkeletonWithTwoMethods().WhichIsOffered();
+
+    // Expecting that UnregisterOnServiceMethodSubscribedHandler will be called for method for QM and Asil-B
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodSubscribedHandler(QualityType::kASIL_QM, skeleton_instance_identifier_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterOnServiceMethodSubscribedHandler(QualityType::kASIL_B, skeleton_instance_identifier_));
+
+    // When calling PrepareStopOffer
+    skeleton_->PrepareStopOffer({});
+}
+
+TEST_F(SkeletonPrepareStopOfferFixture, UnregistersAllRegisteredMethodCallHandlers)
+{
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Expecting that UnregisterMethodCallHandler will be called for each method for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_));
+
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_B, foo_proxy_method_identifier_b_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_B, dumb_proxy_method_identifier_b_));
+
+    // and given that the registered method subscribed handler was called for both QM and AsilB
+    ASSERT_TRUE(captured_method_subscribed_handler_b_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
+                                                   test::kAllowedAsilBMethodConsumer,
+                                                   kDummyPid);
+    EXPECT_TRUE(scoped_handler_result.has_value());
+    const auto scoped_handler_result_2 = std::invoke(captured_method_subscribed_handler_b_.value(),
+                                                     proxy_instance_identifier_b_,
+                                                     test::kAllowedAsilBMethodConsumer,
+                                                     kDummyPid);
+    EXPECT_TRUE(scoped_handler_result_2.has_value());
+
+    // When calling PrepareStopOffer
+    skeleton_->PrepareStopOffer({});
+}
+
 using SkeletonOnServiceMethodsSubscribedFixture = SkeletonMethodHandlingFixture;
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
        CallingRegistersMethodCallHandlerWithQualityTypeOfMessagePassingInstanceQmOnly)
 {
     GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    // Expecting that RegisterMethodCallHandler is called with ASIL level QM for both methods which return valid results
+    // Expecting that RegisterMethodCallHandler is called with ASIL level QM for both methods which return valid
+    // results
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(
                     QualityType::kASIL_QM, foo_proxy_method_identifier_qm_, _, test::kAllowedQmMethodConsumer));
@@ -474,8 +593,8 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
 {
     GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    // Expecting that RegisterMethodCallHandler is called with both QM and ASIL-B levels for both methods which return
-    // valid results
+    // Expecting that RegisterMethodCallHandler is called with both QM and ASIL-B levels for both methods which
+    // return valid results
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(
                     QualityType::kASIL_QM, foo_proxy_method_identifier_qm_, _, test::kAllowedQmMethodConsumer));
@@ -518,7 +637,7 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingReturnsErrorIfRegisteri
     const auto error_code = ComErrc::kCommunicationLinkError;
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
-        .WillOnce(Return(MakeUnexpected(error_code)));
+        .WillOnce(Return(ByMove(MakeUnexpected(error_code))));
 
     // When calling the registered method subscribed handler
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
@@ -677,8 +796,8 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRemovesOldRegionsFromCa
                                                    test::kAllowedQmMethodConsumer,
                                                    pid_2);
 
-    // Then the reference counter for the first methods SharedMemoryResource should be have been decremented, indicating
-    // that it's been removed from the Skeleton's state
+    // Then the reference counter for the first methods SharedMemoryResource should be have been decremented,
+    // indicating that it's been removed from the Skeleton's state
     EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), first_initial_shm_resource_ref_counter);
 }
 
@@ -686,8 +805,8 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
 {
     GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    // Expecting that the type erased callback will be called for each method with InArgs and ReturnArg storage provided
-    // if TypeErasedElementInfo for the method in MethodData contains InArgs / a ReturnArg
+    // Expecting that the type erased callback will be called for each method with InArgs and ReturnArg storage
+    // provided if TypeErasedElementInfo for the method in MethodData contains InArgs / a ReturnArg
     EXPECT_CALL(foo_mock_type_erased_callback_, Call(_, _))
         .WillOnce(Invoke([](auto in_args_optional, auto result_optional) {
             EXPECT_EQ(in_args_optional.has_value(), kFooTypeErasedElementInfo.in_arg_type_info.has_value());
@@ -703,15 +822,21 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
     // largest possible queue index for that method
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
-        .WillOnce(WithArgs<2>(Invoke([](auto method_call_handler) -> ResultBlank {
+        .WillOnce(WithArgs<2>(Invoke([this](auto method_call_handler) {
             std::invoke(method_call_handler, test::kFooMethodQueueSize - 1U);
-            return {};
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              foo_proxy_method_identifier_qm_,
+                                                              method_call_registration_guard_scope_);
         })));
     EXPECT_CALL(message_passing_mock_,
                 RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_identifier_qm_, _, _))
-        .WillOnce(WithArgs<2>(Invoke([](auto method_call_handler) -> ResultBlank {
+        .WillOnce(WithArgs<2>(Invoke([this](auto method_call_handler) {
             std::invoke(method_call_handler, test::kDumbMethodQueueSize - 1U);
-            return {};
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              dumb_proxy_method_identifier_qm_,
+                                                              method_call_registration_guard_scope_);
         })));
 
     // When calling the registered method subscribed handler
@@ -726,8 +851,8 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingQmOpensSharedMemoryWith
 {
     GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the allowed
-    // provider list
+    // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the
+    // allowed provider list
     EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameQm, true, _))
         .WillOnce(WithArgs<2>(
             Invoke([this](auto allowed_providers) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
@@ -752,8 +877,8 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBOpensSharedMemoryW
 {
     GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
 
-    // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the allowed
-    // provider list
+    // Expecting that a shared memory region will be opened with the proxy's uid from the configuration in the
+    // allowed provider list
     EXPECT_CALL(shared_memory_factory_mock_, Open(kMethodChannelNameAsilB, true, _))
         .WillOnce(WithArgs<2>(
             Invoke([this](auto allowed_providers) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
@@ -862,6 +987,40 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWithoutInArgsOrRet
 
     // Then the result should be valid
     EXPECT_TRUE(scoped_handler_result.has_value());
+}
+
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWillNotCallUnregisterMethodCallHandler)
+{
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Expecting that RegisterMethodCallHandler will be called for each method for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_, _, _));
+
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_B, foo_proxy_method_identifier_b_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_B, dumb_proxy_method_identifier_b_, _, _));
+
+    // Expecting that UnregisterMethodCallHandler will not be called for each method for QM and ASIL-B
+    EXPECT_CALL(message_passing_mock_, UnregisterMethodCallHandler(_, _)).Times(0);
+
+    // When calling the registered method subscribed handler for both QM and AsilB
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   kDummyPid);
+    EXPECT_TRUE(scoped_handler_result.has_value());
+
+    ASSERT_TRUE(captured_method_subscribed_handler_b_.has_value());
+    const auto scoped_handler_result_2 = std::invoke(captured_method_subscribed_handler_b_.value(),
+                                                     proxy_instance_identifier_b_,
+                                                     test::kAllowedAsilBMethodConsumer,
+                                                     kDummyPid);
+    EXPECT_TRUE(scoped_handler_result_2.has_value());
 }
 
 }  // namespace

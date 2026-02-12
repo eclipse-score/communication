@@ -14,6 +14,8 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_IMESSAGEPASSINGSERVICE_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
@@ -43,6 +45,9 @@ namespace score::mw::com::impl::lola
 ///          and register for/notify for event updates.
 class IMessagePassingService
 {
+    friend class MethodSubscriptionRegistrationGuardFactory;
+    friend class MethodCallRegistrationGuardFactory;
+
   public:
     using HandlerRegistrationNoType = std::uint32_t;
 
@@ -186,7 +191,7 @@ class IMessagePassingService
     ///        on which we'll register the handler). If an empty optional is provided, it means all uids are allowed. A
     ///        set of uids is provided because different Proxy instances will be able to subscribe via this registered
     ///        handler.
-    virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
+    virtual Result<MethodSubscriptionRegistrationGuard> RegisterOnServiceMethodSubscribedHandler(
         const QualityType asil_level,
         const SkeletonInstanceIdentifier skeleton_instance_identifier,
         ServiceMethodSubscribedHandler subscribed_callback,
@@ -215,10 +220,11 @@ class IMessagePassingService
     /// \param allowed_proxy_uid The uid of the proxy process which can call the registered handler. Since we register a
     ///        method call handler per ProxyMethod, we can restrict the caller of the handler to the ProxyMethod who
     ///        registered it.
-    virtual ResultBlank RegisterMethodCallHandler(const QualityType asil_level,
-                                                  const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
-                                                  MethodCallHandler method_call_callback,
-                                                  const uid_t allowed_proxy_uid) = 0;
+    virtual Result<MethodCallRegistrationGuard> RegisterMethodCallHandler(
+        const QualityType asil_level,
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+        MethodCallHandler method_call_callback,
+        const uid_t allowed_proxy_uid) = 0;
 
     /// \brief Notify given target_node_id about outdated_node_id being an old/not to be used node identifier.
     /// \details This is used by LoLa proxy instances during creation, when they detect, that they are re-starting

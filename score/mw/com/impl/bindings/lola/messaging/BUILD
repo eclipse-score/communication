@@ -35,11 +35,18 @@ cc_library(
     name = "i_message_passing_service",
     srcs = [
         "i_message_passing_service.cpp",
+        "method_call_registration_guard.cpp",
+        "method_subscription_registration_guard.cpp",
     ],
     hdrs = [
         "i_message_passing_service.h",
+        "method_call_registration_guard.h",
+        "method_subscription_registration_guard.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "@score_logging//score/mw/log",
+    ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
@@ -52,6 +59,7 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/scoped_function:copyable_scoped_function",
         "@score_baselibs//score/result",
+        "@score_baselibs//score/utils:scoped_operation",
     ],
 )
 
@@ -348,6 +356,34 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "method_subscription_registration_guard_test",
+    srcs = ["method_subscription_registration_guard_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_message_passing_service",
+        ":message_passing_service_mock",
+        "@score_baselibs//score/mw/log:recorder_mock",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "method_call_registration_guard_test",
+    srcs = ["method_call_registration_guard_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_message_passing_service",
+        ":message_passing_service_mock",
+        "@score_baselibs//score/mw/log:recorder_mock",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "message_passing_service_instance_methods_test",
     srcs = ["message_passing_service_instance_methods_test.cpp"],
     features = COMPILER_WARNING_FEATURES + [
@@ -374,6 +410,8 @@ cc_unit_test_suites_for_host_and_qnx(
         ":message_passing_service_instance_methods_test",
         ":message_passing_service_test",
         ":mw_log_logger_test",
+        ":method_subscription_registration_guard_test",
+        ":method_call_registration_guard_test",
     ],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
 )

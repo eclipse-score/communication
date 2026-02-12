@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_METHOD_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -29,6 +30,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <unordered_map>
 
 namespace score::mw::com::impl::lola
 {
@@ -53,6 +55,8 @@ class SkeletonMethod : public SkeletonMethodBinding
 
     bool IsRegistered() const;
 
+    void UnregisterMethodCallHandlers();
+
   private:
     void Call(const std::optional<score::cpp::span<std::byte>> in_args, const std::optional<score::cpp::span<std::byte>> return_arg);
 
@@ -60,6 +64,7 @@ class SkeletonMethod : public SkeletonMethodBinding
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
     QualityType asil_level_;
+    std::unordered_map<ProxyMethodInstanceIdentifier, MethodCallRegistrationGuard> registration_guards_;
 };
 
 }  // namespace score::mw::com::impl::lola

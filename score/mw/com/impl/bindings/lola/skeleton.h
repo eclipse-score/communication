@@ -18,6 +18,8 @@
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
@@ -255,6 +257,13 @@ class Skeleton final : public SkeletonBinding
     std::mutex on_service_methods_subscribed_mutex_;
     MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
+
+    /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler on destruction
+    ///
+    /// Each guard corresponds to the ServiceMethodSubscribedHandler which was registered in Skeleton::PrepareOffer()
+    /// (in case any methods were registered). The guard objects will be destroyed in Skeleton::PrepareStopOffer()
+    MethodSubscriptionRegistrationGuard method_subscription_registration_guard_qm_;
+    MethodSubscriptionRegistrationGuard method_subscription_registration_guard_asil_b_;
 
     bool was_old_shm_region_reopened_;
 

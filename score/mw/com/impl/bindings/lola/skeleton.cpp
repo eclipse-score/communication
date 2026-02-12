@@ -293,6 +293,8 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       on_service_methods_subscribed_mutex_{},
       method_resources_{},
       skeleton_methods_{},
+      method_subscription_registration_guard_qm_{nullptr},
+      method_subscription_registration_guard_asil_b_{nullptr},
       was_old_shm_region_reopened_{false},
       filesystem_{std::move(filesystem)},
       method_call_handler_scope_{},
@@ -372,7 +374,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     // message passing that it has finished setting up the regions. We always register a handler for QM proxies and also
     // register a handler for ASIL-B proxies if this skeleton is ASIL-B.
     auto allowed_consumers_qm = GetAllowedConsumers(QualityType::kASIL_QM);
-    const auto qm_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+    auto qm_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
         QualityType::kASIL_QM,
         skeleton_instance_identifier,
         IMessagePassingService::ServiceMethodSubscribedHandler{
@@ -387,13 +389,14 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     if (!(qm_registration_result.has_value()))
     {
         score::mw::log::LogError("lola") << "Could not register QM service method handler. Returning error.";
-        return qm_registration_result;
+        return MakeUnexpected<Blank>(qm_registration_result.error());
     }
+    method_subscription_registration_guard_qm_ = std::move(qm_registration_result).value();
 
     if (detail_skeleton::HasAsilBSupport(identifier_))
     {
         auto allowed_consumers_asil_b = GetAllowedConsumers(QualityType::kASIL_B);
-        const auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+        auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
             QualityType::kASIL_B,
             skeleton_instance_identifier,
             IMessagePassingService::ServiceMethodSubscribedHandler{
@@ -407,9 +410,11 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
             allowed_consumers_asil_b);
         if (!(asil_b_registration_result))
         {
+            method_subscription_registration_guard_qm_.reset();
             score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
+            return MakeUnexpected<Blank>(asil_b_registration_result.error());
         }
-        return asil_b_registration_result;
+        method_subscription_registration_guard_asil_b_ = std::move(asil_b_registration_result).value();
     }
 
     return {};
@@ -453,8 +458,15 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     // Destroy our pointers to all opened shared memory regions
     method_resources_.Clear();
 
-    /// TODO: Unregister the OnServiceMethodSubscribedHandler and all MethodCallHandlers relating to this Skeleton
-    /// instance. To be done in: Ticket-243577
+    // Unregister any MethodCallHandlers that were registered by the SkeletonMethods
+    for (auto& skeleton_method : skeleton_methods_)
+    {
+        skeleton_method.second.get().UnregisterMethodCallHandlers();
+    }
+
+    // Destroy registration guards which will destroy any registered ServiceMethodSubscribedHandlers
+    method_subscription_registration_guard_qm_.reset();
+    method_subscription_registration_guard_asil_b_.reset();
 
     memory::shared::ExclusiveFlockMutex service_instance_usage_mutex{*service_instance_usage_marker_file_};
     std::unique_lock<memory::shared::ExclusiveFlockMutex> service_instance_usage_lock{service_instance_usage_mutex,
