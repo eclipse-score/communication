@@ -16,6 +16,8 @@
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 
+#include "score/mw/log/logging.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -32,6 +34,8 @@ struct ProxyMethodInstanceIdentifier
 };
 
 bool operator==(const ProxyMethodInstanceIdentifier& lhs, const ProxyMethodInstanceIdentifier& rhs) noexcept;
+
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyMethodInstanceIdentifier& value) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 

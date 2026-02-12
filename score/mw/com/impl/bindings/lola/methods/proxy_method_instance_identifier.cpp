@@ -20,4 +20,10 @@ bool operator==(const ProxyMethodInstanceIdentifier& lhs, const ProxyMethodInsta
     return ((lhs.proxy_instance_identifier == rhs.proxy_instance_identifier) && (lhs.method_id == rhs.method_id));
 }
 
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyMethodInstanceIdentifier& value) noexcept
+{
+    stream << "ProxyInstanceIdentifier:" << value.proxy_instance_identifier << ". Method ID:" << value.method_id;
+    return stream;
+}
+
 }  // namespace score::mw::com::impl::lola

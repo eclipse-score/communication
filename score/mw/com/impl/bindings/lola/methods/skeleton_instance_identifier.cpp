@@ -20,4 +20,10 @@ bool operator==(const SkeletonInstanceIdentifier& lhs, const SkeletonInstanceIde
     return ((lhs.service_id == rhs.service_id) && (lhs.instance_id == rhs.instance_id));
 }
 
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const SkeletonInstanceIdentifier& value) noexcept
+{
+    stream << "Service ID:" << value.service_id << ". Instance ID:" << value.instance_id;
+    return stream;
+}
+
 }  // namespace score::mw::com::impl::lola

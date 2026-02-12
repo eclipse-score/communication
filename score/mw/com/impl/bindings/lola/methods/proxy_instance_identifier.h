@@ -15,6 +15,8 @@
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
 
+#include "score/mw/log/logging.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -42,6 +44,8 @@ struct ProxyInstanceIdentifier
 };
 
 bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs) noexcept;
+
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyInstanceIdentifier& value) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 
