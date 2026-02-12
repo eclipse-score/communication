@@ -2,6 +2,7 @@ bazel-*
 MODULE.bazel.lock
 user.bazelrc
 .clwb_aspects
+.clwb
 
 # Compilation databases for code completion in IDEs
 .cache/*
