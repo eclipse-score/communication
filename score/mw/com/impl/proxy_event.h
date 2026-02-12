@@ -79,7 +79,7 @@ class ProxyEvent final : public ProxyEventBase
     ///
     /// \param proxy_binding The binding that shall be associated with this proxy.
     ProxyEvent(ProxyBase& base,
-               std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
+               std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding,
                const std::string_view event_name);
 
     /// \brief Constructor that allows to set the binding directly.

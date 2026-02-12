@@ -62,7 +62,7 @@ class ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> : public IProxyMeth
     /// \param method_name The binding unspecific name of the method inside the proxy denoted by handle.
     /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
     std::unique_ptr<ProxyMethodBinding> Create(HandleType parent_handle,
-                                               ProxyBinding* parent_bindign,
+                                               ProxyBinding* parent_binding,
                                                const std::string_view method_name) noexcept override;
 };
 

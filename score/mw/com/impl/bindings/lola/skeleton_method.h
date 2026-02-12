@@ -53,8 +53,8 @@ class SkeletonMethod : public SkeletonMethodBinding
   private:
     ResultBlank OnProxyMethodSubscribeFinished(
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
-        const std::optional<score::cpp::span<std::byte>> in_arg_values_storage,
-        const std::optional<score::cpp::span<std::byte>> return_value_storage,
+        const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
+        const std::optional<score::cpp::span<std::byte>> return_queue_storage,
         const ProxyInstanceIdentifier proxy_instance_identifier,
         std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource);
 
@@ -74,14 +74,14 @@ class SkeletonMethodView
 
     ResultBlank OnProxyMethodSubscribeFinished(
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
-        const std::optional<score::cpp::span<std::byte>> in_arg_values_storage,
-        const std::optional<score::cpp::span<std::byte>> return_value_storage,
+        const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
+        const std::optional<score::cpp::span<std::byte>> return_queue_storage,
         const ProxyInstanceIdentifier proxy_instance_identifier,
         std::weak_ptr<memory::shared::ISharedMemoryResource> methods_shm_resource)
     {
         return skeleton_method_.OnProxyMethodSubscribeFinished(type_erased_element_info,
-                                                               in_arg_values_storage,
-                                                               return_value_storage,
+                                                               in_arg_queue_storage,
+                                                               return_queue_storage,
                                                                proxy_instance_identifier,
                                                                methods_shm_resource);
     }

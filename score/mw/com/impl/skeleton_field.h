@@ -129,12 +129,12 @@ SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& parent, const std::st
 }
 
 template <typename SampleDataType>
-SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& parent,
+SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& skeleton_base,
                                              const std::string_view field_name,
                                              std::unique_ptr<SkeletonEventBinding<FieldType>> binding)
-    : SkeletonFieldBase{parent,
+    : SkeletonFieldBase{skeleton_base,
                         field_name,
-                        std::make_unique<SkeletonEvent<FieldType>>(parent, field_name, std::move(binding))},
+                        std::make_unique<SkeletonEvent<FieldType>>(skeleton_base, field_name, std::move(binding))},
       skeleton_field_mock_{nullptr}
 {
 }
