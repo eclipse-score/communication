@@ -121,7 +121,7 @@ cc_library(
 
 alias(
     name = "config_schema",
-    actual = "//score/mw/com/impl/configuration:ara_com_config_schema",
+    actual = "//score/mw/com/impl/configuration:mw_com_config_schema",
     visibility = ["//visibility:public"],
 )
 
@@ -133,7 +133,7 @@ cc_gtest_unit_test(
         "types_test.cpp",
     ],
     data = [
-        "//score/mw/com/impl/configuration:ara_com_config.json",
+        "//score/mw/com/impl/configuration:mw_com_config.json",
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [

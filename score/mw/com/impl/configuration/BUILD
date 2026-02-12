@@ -38,15 +38,15 @@ genrule(
 )
 
 validate_json_schema_test(
-    name = "validate_ara_com_config_schema",
-    json = "example/ara_com_config.json",
-    schema = ":ara_com_config_schema",
+    name = "validate_mw_com_config_schema",
+    json = "example/mw_com_config.json",
+    schema = ":mw_com_config_schema",
     tags = ["lint"],
 )
 
 filegroup(
-    name = "ara_com_config_schema",
-    srcs = ["ara_com_config_schema.json"],
+    name = "mw_com_config_schema",
+    srcs = ["mw_com_config_schema.json"],
     visibility = [
         "//score/mw/com:__subpackages__",
         "//score/mw/com/impl/configuration/test:__subpackages__",
@@ -506,7 +506,7 @@ cc_library(
 cc_gtest_unit_test(
     name = "config_parser_test",
     srcs = ["config_parser_test.cpp"],
-    data = ["example/ara_com_config.json"],
+    data = ["example/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
@@ -520,7 +520,7 @@ cc_gtest_unit_test(
 cc_gtest_unit_test(
     name = "config_parser_methods_test",
     srcs = ["config_parser_methods_test.cpp"],
-    data = ["example/ara_com_config.json"],
+    data = ["example/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
@@ -559,7 +559,7 @@ cc_gtest_unit_test(
 cc_gtest_unit_test(
     name = "configuration_test",
     srcs = ["configuration_test.cpp"],
-    data = ["example/ara_com_config.json"],
+    data = ["example/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":config_parser",
@@ -777,34 +777,34 @@ cc_unit_test_suites_for_host_and_qnx(
 )
 
 filegroup(
-    name = "ara_com_config.json",
-    srcs = ["example/ara_com_config.json"],
+    name = "mw_com_config.json",
+    srcs = ["example/mw_com_config.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_other.json",
-    srcs = ["example/ara_com_config_other.json"],
+    name = "mw_com_config_other.json",
+    srcs = ["example/mw_com_config_other.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_invalid_trace_config_path.json",
-    srcs = ["example/ara_com_config_invalid_trace_config_path.json"],
+    name = "mw_com_config_invalid_trace_config_path.json",
+    srcs = ["example/mw_com_config_invalid_trace_config_path.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_disabled_trace_config.json",
-    srcs = ["example/ara_com_config_disabled_trace_config.json"],
+    name = "mw_com_config_disabled_trace_config.json",
+    srcs = ["example/mw_com_config_disabled_trace_config.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_valid_trace_config.json",
+    name = "mw_com_config_valid_trace_config.json",
     srcs = [
-        "example/ara_com_config_valid_trace_config.json",
-        "example/ara_com_config_valid_trace_config_external.json",
+        "example/mw_com_config_valid_trace_config.json",
+        "example/mw_com_config_valid_trace_config_external.json",
     ],
     visibility = ["//visibility:public"],
 )

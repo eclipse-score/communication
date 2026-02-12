@@ -148,7 +148,7 @@ TEST_F(RuntimeTestExternalJsonFixture, ResolveInstanceIdsIsThreadSafe)
     constexpr std::size_t number_of_calls_per_thread{10U};
 
     // Given a runtime initialised with the path to a configuration file
-    auto json_path = get_path("ara_com_config.json");
+    auto json_path = get_path("mw_com_config.json");
     score::StringLiteral test_args[] = {"dummyname", "-service_instance_manifest", json_path.c_str()};
     const std::int32_t num_test_args{3};
     InitializeRuntime(num_test_args, test_args);

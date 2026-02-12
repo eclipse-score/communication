@@ -4,7 +4,7 @@ Following document contains a short documentation, how to configure a `mw::com` 
 
 ### Central JSON File per App
 
-The configuration is a json file, which has to adhere the following [schema](./ara_com_config_schema.json).
+The configuration is a json file, which has to adhere the following [schema](./mw_com_config_schema.json).
 Typically, the file is expected to be named `mw_com_config.json` and being located in the applications `/etc` directory.
 If these rules are followed, the configuration is automatically detected and loaded by the `mw::com::Runtime`.
 
@@ -14,7 +14,7 @@ by a call to `mw::com::runtime::InitializeRuntime(argc, argv)`, where `argv` nee
 
 ### Useful example
 
-An example configuration is located [here](./example/ara_com_config.json). In several parts of this documentation, we
+An example configuration is located [here](./example/mw_com_config.json). In several parts of this documentation, we
 reference to snippets of this example configuration, to illustrate things.
 
 ### What is configured

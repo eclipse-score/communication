@@ -20,7 +20,7 @@ related switches, but also switches on the more detailed level of events and fie
 
 ### Global config properties
 
-Our existing [`mw_com_config.json`](../../impl/configuration/ara_com_config_schema.json) gets extended with the following
+Our existing [`mw_com_config.json`](../../impl/configuration/mw_com_config_schema.json) gets extended with the following
 property:
 
 ```javascript

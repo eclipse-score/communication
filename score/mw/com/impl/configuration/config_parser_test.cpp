@@ -75,7 +75,7 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const auto config = score::mw::com::impl::configuration::Parse(get_path("ara_com_config.json"));
+    const auto config = score::mw::com::impl::configuration::Parse(get_path("mw_com_config.json"));
 
     const auto deployments =
         config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
