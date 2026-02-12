@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_OFFERED_STATE_MACHINE_H
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
 namespace score::mw::com::impl::lola

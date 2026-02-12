@@ -1,29 +1,27 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Developer <developer@eclipse.org>
 Date: Mon, 6 Jan 2026 12:00:00 +0000
-Subject: [PATCH] Export interprocess_notification target for external use
+Subject: [PATCH] Export targets for external use
 
-The interprocess_notification target in score/os/utils/interprocess is
-currently restricted to internal test packages only. This patch makes it
-available to external consumers who depend on score_baselibs.
+The try_atomic_add in score/language/safecpp/safe_atomics is currently
+restricted. This patch makes it available to external consumers.
 
-This is required by score_communication tests that need inter-process
-synchronization primitives.
+This is required by score_communication that depends on score_baselibs.
 ---
- score/os/utils/interprocess/BUILD | 1 +
+ score/language/safecpp/safe_atomics/BUILD | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/score/os/utils/interprocess/BUILD b/score/os/utils/interprocess/BUILD
+diff --git a/score/language/safecpp/safe_atomics/BUILD b/score/language/safecpp/safe_atomics/BUILD
 index 1234567..abcdefg 100644
---- a/score/os/utils/interprocess/BUILD
-+++ b/score/os/utils/interprocess/BUILD
-@@ -51,6 +51,7 @@ cc_library(
+--- a/score/language/safecpp/safe_atomics/BUILD
++++ b/score/language/safecpp/safe_atomics/BUILD
+@@ -20,6 +20,7 @@ cc_library(
+     tags = ["FFI"],
      visibility = [
-         "//platform/aas/mw/com/test:__subpackages__",
-         "@score_baselibs//score/analysis/tracing/test:__subpackages__",
+         "@score_baselibs//score/language/safecpp/safe_math:__pkg__",
 +        "//visibility:public",
      ],
      deps = [
-         ":interprocess_conditional_variable",
+         ":error",
 -- 
 2.40.0
