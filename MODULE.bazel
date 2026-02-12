@@ -193,6 +193,14 @@ pip.parse(
 )
 use_repo(pip, "score_communication_pip")
 
+pip.parse(
+    hub_name = "codeql_coding_standards_pip_hub",
+    python_version = "3.12",
+    requirements_lock = "//third_party/codeql:requirements_lock.txt",
+)
+use_repo(pip, "codeql_coding_standards_pip_hub")
+
+
 # TRLC dependency for requirements traceability
 bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
 git_override(
@@ -258,3 +266,21 @@ use_repo(apt, "ubuntu24_04")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 
 bazel_dep(name = "score_tooling", version = "1.0.4")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "codeql_bundle",
+    build_file = "//third_party/codeql:codeql.BUILD",
+    sha256 = "",
+    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.23.6/codeql-bundle-linux64.tar.gz",
+)
+
+git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "codeql_coding_standards",
+    build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
+    remote = "https://github.com/github/codeql-coding-standards.git",
+    tag = "v2.52.0",
+)

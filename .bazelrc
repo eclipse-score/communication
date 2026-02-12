@@ -79,5 +79,13 @@ test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 
 import quality/sanitizer/sanitizer.bazelrc
 
+common:codeql --platform_suffix=codeql
+common:codeql --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+common:codeql --sandbox_writable_path=/var/tmp
+common:codeql --nouse_action_cache
+common:codeql --noremote_accept_cached
+common:codeql --noremote_upload_local_results
+common:codeql --disk_cache=
+
 # Use native sphinx_build_binary instead of the wrapper
 build --//score/mw/com/doc/sphinx/utils:use_native_sphinx_build
