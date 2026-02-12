@@ -229,7 +229,7 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     }
     if (size > static_cast<std::uint16_t>(posix_receive_buffer_.size()))
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
 
     io[0].iov_base = posix_receive_buffer_.data();

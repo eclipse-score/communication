@@ -77,7 +77,7 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection
 
     if (message.size() > server.max_reply_size_)
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
 
     reply_message_.message.assign(message.begin(), message.end());
@@ -97,12 +97,12 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection
 
     if (message.size() > server.max_notify_size_)
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
 
     if (notify_pool_.empty())
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
     }
 
     auto& notify_message = notify_pool_.front();
