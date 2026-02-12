@@ -338,7 +338,7 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, AllocateInArgs_QueueFullError)
     EXPECT_EQ(method_in_arg_ptr_tuple_2.error(), ComErrc::kCallQueueFull);
 }
 
-TYPED_TEST(ProxyMethodWithInArgsTestFixture, AllocateInArgs_BindingError)
+TYPED_TEST(ProxyMethodWithInArgsTestFixture, AllocateInArgs_BindingErrorPropagation)
 {
     this->GivenAValidProxyMethod();
 
@@ -347,9 +347,11 @@ TYPED_TEST(ProxyMethodWithInArgsTestFixture, AllocateInArgs_BindingError)
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // When calling Allocate()
-    // Then the program terminates (An allocation failure from the binding is unexpected here as we already checked
-    // for available queue slots on binding independent level)
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = this->unit_->Allocate());
+    auto allocate_result = this->unit_->Allocate();
+
+    // Then the error from the binding is propagated (e.g., when a method is disabled/not subscribed)
+    ASSERT_FALSE(allocate_result.has_value());
+    EXPECT_EQ(allocate_result.error(), ComErrc::kBindingFailure);
 }
 
 TYPED_TEST(ProxyMethodWithInArgsTestFixture, CallOperator_WithCopy)
@@ -494,6 +496,40 @@ TEST_F(ProxyMethodWithReturnOnlyFixture, CallOperator_ReturnsReturnTypePointerPo
     EXPECT_EQ(method_in_arg_ptr.value().GetQueuePosition(), 0);
     auto* const pointed_to_address = reinterpret_cast<std::byte*>(method_in_arg_ptr.value().get());
     EXPECT_EQ(pointed_to_address, return_buffer_start_address);
+}
+
+TEST_F(ProxyMethodWithInArgsAndReturnFixture, CallOperator_AllocateReturnType_BindingErrorPropagation)
+{
+    this->GivenAValidProxyMethod();
+
+    // Expect that AllocateReturnType is called and returns an error (e.g., method disabled/not subscribed)
+    EXPECT_CALL(this->proxy_method_binding_mock_, AllocateReturnType(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When call operator is called on the ProxyMethod
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method(kDummyArg1, kDummyArg2, kDummyArg3);
+
+    // Then the error from the binding is propagated
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyMethodWithReturnOnlyFixture, CallOperator_AllocateReturnType_BindingErrorPropagation)
+{
+    this->GivenAValidProxyMethod();
+
+    // Expect that AllocateReturnType is called and returns an error (e.g., method disabled/not subscribed)
+    EXPECT_CALL(this->proxy_method_binding_mock_, AllocateReturnType(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When call operator is called on the ProxyMethod
+    auto& proxy_method = *(this->unit_);
+    auto call_result = proxy_method();
+
+    // Then the error from the binding is propagated
+    ASSERT_FALSE(call_result.has_value());
+    EXPECT_EQ(call_result.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(ProxyMethodWithInArgsAndReturnFixture, ProxyMethodView_ReturnsTypeErasedInArgs)
