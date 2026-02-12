@@ -35,8 +35,14 @@ score::cpp::span<std::byte> GetElement(const std::size_t position,
                                 const std::size_t queue_size)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(position < queue_size);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(queue_storage.size() == type_info.Size() * queue_size);
 
     const auto element_offset = type_info.Size() * position;
+
+    // In our architecture we have a one-to-one mapping between pointers and integral values.
+    // The preconditions above guarantee that element_address will always point inside queue_storage.
+    // Therefore, casting between integers and pointers is well-defined in this case.
+    // NOLINTNEXTLINE(score-banned-function) see above
     auto* const element_address = memory::shared::AddOffsetToPointer(queue_storage.data(), element_offset);
 
     return score::cpp::span{element_address, type_info.Size()};
