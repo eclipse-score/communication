@@ -182,7 +182,8 @@ SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonBase& skeleton_base,
 
 template <typename SampleDataType>
 SkeletonEvent<SampleDataType>::SkeletonEvent(SkeletonEvent&& other) noexcept
-    : SkeletonEventBase(std::move(other)), skeleton_event_mock_{std::move(other.skeleton_event_mock_)}
+    : SkeletonEventBase(std::move(static_cast<SkeletonEventBase&&>(other))),
+      skeleton_event_mock_{std::move(other.skeleton_event_mock_)}
 {
     // Since the address of this event has changed, we need update the address stored in the parent skeleton.
     SkeletonBaseView base_skeleton_view{skeleton_base_.get()};
