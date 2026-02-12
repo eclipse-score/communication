@@ -136,8 +136,10 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
 
     const auto queue_position = queue_position_result.value();
     auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(allocated_return_type_storage.has_value(),
-                           "ProxyMethod::operator(): AllocateReturnType failed unexpectedly.");
+    if (!allocated_return_type_storage.has_value())
+    {
+        return Unexpected(allocated_return_type_storage.error());
+    }
     auto call_result = binding_->DoCall(queue_position);
     if (!call_result.has_value())
     {

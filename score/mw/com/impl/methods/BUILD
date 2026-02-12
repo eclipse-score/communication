@@ -77,7 +77,6 @@ cc_library(
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
