@@ -87,7 +87,7 @@ pkg_application(
     ],
     visibility = [
         "//platform/aas/test/mw/com:__pkg__",
-        "//pqr/abc/abc-lmn/config/ipnext/isoc/os/hardware/hypervisor:__subpackages__",
+        "//pqr/abc/abc-lmn/config/iproject/coreos/hardware/hypervisor:__subpackages__",
         "//score/mw/com/test/bigdata:__subpackages__",
     ],
 )
