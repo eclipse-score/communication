@@ -151,9 +151,7 @@ single_version_override(
 bazel_dep(name = "score_baselibs", version = "0.2.2")
 git_override(
     module_name = "score_baselibs",
-    commit = "ffd1c812213c66a436ed982632f6942528b58be8",
-    patches = ["//:fix-visibility-issue.patch"],
-    patch_strip = 1,
+    commit = "ba99dfcb2a1cf69108a2d9eb9fe3cf6ba5aa0832",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
