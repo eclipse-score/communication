@@ -51,8 +51,8 @@ cc_library(
         "@score_baselibs//score/os/utils/acl",
     ] + select({
         ":QNX_AND_USE_TYPED_SHMD": [
-            "//platform/aas/intc/typedmemd/code/clientlib:typedmemd_clientlib",
-            "//platform/aas/intc/typedmemd/code/clientlib:typedmemd_clientlib_interface",
+            # clientlib target removed
+            # clientlib interface target removed
             "@score_baselibs//score/os/qnx:mman",
         ],
         "//conditions:default": [],
@@ -76,10 +76,10 @@ cc_test(
         "@score_baselibs//score/memory:__pkg__",
     ],
     deps = [
-        "//platform/aas/intc/typedmemd/code/clientlib/mock:typedsharedmemory_mock",
-        "@googletest//:gtest_main",
+        # clientlib mock target removed
         "@score_baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@score_baselibs//score/os/mocklib/qnx:mman_mock",
+        "@googletest//:gtest_main",
     ],
 )
 
