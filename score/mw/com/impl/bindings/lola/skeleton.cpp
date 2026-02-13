@@ -1072,7 +1072,7 @@ IMessagePassingService::AllowedConsumerUids Skeleton::GetAllowedConsumers(const 
     const auto allowed_consumer_list_it = allowed_consumers.find(asil_level);
     if (allowed_consumer_list_it == allowed_consumers.cend())
     {
-        // If strict_permissions is false, then an empty allowed_cunsumers list means that anyone is an allowed
+        // If strict_permissions is false, then an empty allowed_consumers list means that anyone is an allowed
         // consumer. Otherwise, it means that noone is an allowed consumer.
         if (strict_permissions)
         {

@@ -170,10 +170,10 @@ bool IsMethodErrorRecoverable(const score::result::Error error)
 
     // We static cast each individual Method error code to the base integer type to avoid coverity warnings about static
     // casting the generic error code (from *error) to a specific error code (i.e. MethodErrc)
-    if ((error_code == static_cast<result::ErrorCode>(MethodErrc::kSkeletonAlreadyDestroyed) ||
-         (error_code == static_cast<result::ErrorCode>(MethodErrc::kUnknownProxy)) ||
-         (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotSubscribed)) ||
-         (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotOffered))))
+    if ((error_code == static_cast<result::ErrorCode>(MethodErrc::kSkeletonAlreadyDestroyed)) ||
+        (error_code == static_cast<result::ErrorCode>(MethodErrc::kUnknownProxy)) ||
+        (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotSubscribed)) ||
+        (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotOffered)))
     {
         return true;
     }
@@ -633,7 +633,7 @@ score::ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodLoca
 
     if (allowed_proxy_uids.has_value() && allowed_proxy_uids->count(proxy_uid) == 0U)
     {
-        mw::log::LogDebug("lola") << "Could not invoke subscribe service method handler because uid of proxy calling "
+        mw::log::LogError("lola") << "Could not invoke subscribe service method handler because uid of proxy calling "
                                      "subscribe is not in allowed_consumers list.";
         return MakeUnexpected(MethodErrc::kUnknownProxy);
     }
@@ -680,7 +680,7 @@ score::ResultBlank MessagePassingServiceInstance::CallServiceMethodLocally(
     auto invocation_result = std::invoke(method_call_handler_copy, queue_position);
     if (!(invocation_result.has_value()))
     {
-        mw::log::LogDebug("lola") << "Invocation of method call handler failed as scope has been destroyed: "
+        mw::log::LogError("lola") << "Invocation of method call handler failed as scope has been destroyed: "
                                      "SkeletonMethod has already been destroyed.";
         return MakeUnexpected(MethodErrc::kSkeletonAlreadyDestroyed);
     }
@@ -1136,12 +1136,12 @@ ResultBlank MessagePassingServiceInstance::RegisterMethodCallHandler(
     if (handler_it == call_method_handlers_.cend())
     {
         score::cpp::ignore = call_method_handlers_.insert(
-            {proxy_method_instance_identifier, {std::move(method_call_callback), std::move(allowed_proxy_uid)}});
+            {proxy_method_instance_identifier, {std::move(method_call_callback), allowed_proxy_uid}});
     }
     else
     {
         handler_it->second.first = std::move(method_call_callback);
-        handler_it->second.second = std::move(allowed_proxy_uid);
+        handler_it->second.second = allowed_proxy_uid;
     }
 
     return {};
