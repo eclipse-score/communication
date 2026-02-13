@@ -39,8 +39,8 @@ SkeletonMethod::SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_
     : in_args_type_erased_info_{},
       return_type_type_erased_info_{},
       type_erased_callback_{},
-      asil_level_{skeleton.GetInstanceQualityType()},
-      registration_guards_{}
+      registration_guards_{},
+      registration_guards_mutex_{}
 {
     skeleton.RegisterMethod(element_fq_id.element_id_, *this);
 }
@@ -95,12 +95,22 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
     {
         return MakeUnexpected<Blank>(registration_result.error());
     }
+
+    const std::lock_guard lock{registration_guards_mutex_};
     registration_guards_.insert({proxy_method_instance_identifier, std::move(registration_result).value()});
     return {};
 }
 
+void SkeletonMethod::OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+{
+    const std::lock_guard lock{registration_guards_mutex_};
+    const auto num_elements_erased = registration_guards_.erase(proxy_method_instance_identifier);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(num_elements_erased != 0U);
+}
+
 void SkeletonMethod::UnregisterMethodCallHandlers()
 {
+    const std::lock_guard lock{registration_guards_mutex_};
     registration_guards_.clear();
 }
 

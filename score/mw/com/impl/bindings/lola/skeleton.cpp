@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -446,6 +447,19 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
             tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback);
     }
 
+    // Unregister any MethodCallHandlers that were registered by the SkeletonMethods and destroy registration guards
+    // which will destroy any registered ServiceMethodSubscribedHandlers. Expiring the scopes below will try to acquire
+    // a write lock on a mutex, while any calls to handlers will try to acquire a read lock. Therefore, if handlers can
+    // still be called while calling Expire(), then it's possible that the Expire() call will be blocked for a longer
+    // period of time (in case we get new handler calls) depending on thread/mutex scheduling. Therefore, we first
+    // unregister all handlers and then expire the scopes.
+    method_subscription_registration_guard_qm_.reset();
+    method_subscription_registration_guard_asil_b_.reset();
+    for (auto& skeleton_method : skeleton_methods_)
+    {
+        skeleton_method.second.get().UnregisterMethodCallHandlers();
+    }
+
     // Clean up method resources
     // Expiring the method subscribed handler scope will wait until any current subscription calls are finished and will
     // block any new subscription calls once it returns.
@@ -455,18 +469,10 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     // new handlers from being called once it returns.
     method_call_handler_scope_.Expire();
 
-    // Destroy our pointers to all opened shared memory regions
+    // Destroy our pointers to all opened shared memory regions. We can call this without locking a mutex since
+    // OnServiceMethodsSubscribed (in which method_resources_ is also modified) cannot be called after its scope
+    // (on_service_method_subscribed_handler_scope_) is expired above.
     method_resources_.Clear();
-
-    // Unregister any MethodCallHandlers that were registered by the SkeletonMethods
-    for (auto& skeleton_method : skeleton_methods_)
-    {
-        skeleton_method.second.get().UnregisterMethodCallHandlers();
-    }
-
-    // Destroy registration guards which will destroy any registered ServiceMethodSubscribedHandlers
-    method_subscription_registration_guard_qm_.reset();
-    method_subscription_registration_guard_asil_b_.reset();
 
     memory::shared::ExclusiveFlockMutex service_instance_usage_mutex{*service_instance_usage_marker_file_};
     std::unique_lock<memory::shared::ExclusiveFlockMutex> service_instance_usage_lock{service_instance_usage_mutex,
@@ -1015,9 +1021,9 @@ void Skeleton::InitializeSharedMemoryForControl(
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                                 uid_t proxy_uid,
+                                                 const uid_t proxy_uid,
                                                  const QualityType asil_level,
-                                                 pid_t proxy_pid)
+                                                 const pid_t proxy_pid)
 {
     // Note. we currently call the entirety of the funcitonality within OnServiceMethodsSubscribed within the mutex. We
     // potentially could optimise this and call some functionality outside of the mutex. However, we haven't currenlty
@@ -1050,9 +1056,27 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         method_resources_.InsertAndCleanUpOldRegions(proxy_instance_identifier, proxy_pid, opened_shm_region);
 
     auto& method_data = GetMethodData(*(resource_it->second));
-    auto& method_call_queues = method_data.method_call_queues_;
-    for (auto& [method_id, type_erased_call_queue] : method_call_queues)
+
+    const auto [subscription_result, method_ids_to_unsubscribe] =
+        SubscribeMethods(method_data, proxy_instance_identifier, proxy_uid, asil_level);
+    if (!(subscription_result.has_value()))
     {
+        UnsubscribeMethods(method_ids_to_unsubscribe, proxy_instance_identifier);
+        return subscription_result;
+    }
+    return {};
+}
+
+auto Skeleton::SubscribeMethods(const MethodData& method_data,
+                                const ProxyInstanceIdentifier proxy_instance_identifier,
+                                const uid_t proxy_uid,
+                                const QualityType asil_level) -> std::pair<score::ResultBlank, MethodIdsToUnsubscribe>
+{
+    const auto& method_call_queues = method_data.method_call_queues_;
+    for (std::size_t method_idx = 0U; method_idx != method_call_queues.size(); method_idx++)
+    {
+        auto& [method_id, type_erased_call_queue] = method_call_queues[method_idx];
+
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
             skeleton_methods_.count(method_id) != 0U,
             "Each method that was stored in shared memory by the proxy must be registered with the Skeleton!");
@@ -1069,14 +1093,32 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         if (!(result.has_value()))
         {
             score::mw::log::LogError("lola")
-                << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod: ProxyInstanceCounter["
-                << proxy_method_instance_identifier.proxy_instance_identifier.proxy_instance_counter << "] / ["
-                << proxy_method_instance_identifier.proxy_instance_identifier.process_identifier << "] / ["
-                << proxy_method_instance_identifier.method_id << "] failed!";
-            return result;
+                << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod: ProxyMethodInstanceIdentifier:"
+                << proxy_method_instance_identifier << "] failed!";
+
+            // If subscription failed for any of the methods, then subscription fails for the entire Proxy. Therefore,
+            // we can unsubscribe the methods that were already successfully subscribed.
+            std::vector<LolaMethodId> method_ids_to_unsubscribe{};
+            for (std::size_t registered_method_idx = 0U; registered_method_idx < method_idx; ++registered_method_idx)
+            {
+                method_ids_to_unsubscribe.push_back(method_call_queues[registered_method_idx].first);
+            }
+
+            return {result, method_ids_to_unsubscribe};
         }
     }
     return {};
+}
+
+void Skeleton::UnsubscribeMethods(const std::vector<LolaMethodId>& method_ids,
+                                  const ProxyInstanceIdentifier& proxy_instance_identifier)
+{
+    for (const auto& method_id : method_ids)
+    {
+        auto& skeleton_method = skeleton_methods_.at(method_id);
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
+        skeleton_method.get().OnProxyMethodUnsubscribe(proxy_method_instance_identifier);
+    }
 }
 
 IMessagePassingService::AllowedConsumerUids Skeleton::GetAllowedConsumers(const QualityType asil_level) const

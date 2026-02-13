@@ -1148,19 +1148,23 @@ ResultBlank MessagePassingServiceInstance::RegisterMethodCallHandler(
 }
 
 void MessagePassingServiceInstance::UnregisterOnServiceMethodSubscribedHandler(
-    SkeletonInstanceIdentifier skeleton_instance_identifier)
+    const SkeletonInstanceIdentifier skeleton_instance_identifier)
 {
     std::unique_lock<std::shared_mutex> write_lock(subscribe_service_method_handlers_mutex_);
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(subscribe_service_method_handlers_.count(skeleton_instance_identifier) != 0U);
-    score::cpp::ignore = subscribe_service_method_handlers_.erase(skeleton_instance_identifier);
+    const auto num_elements_erased = subscribe_service_method_handlers_.erase(skeleton_instance_identifier);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        num_elements_erased != 0U,
+        "Function must only be called when a subscribe service method handler was successfully registered!");
 }
 
 void MessagePassingServiceInstance::UnregisterMethodCallHandler(
-    ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
 {
     std::unique_lock<std::shared_mutex> write_lock(call_method_handlers_mutex_);
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(call_method_handlers_.count(proxy_method_instance_identifier) != 0U);
-    score::cpp::ignore = call_method_handlers_.erase(proxy_method_instance_identifier);
+    const auto num_elements_erased = call_method_handlers_.erase(proxy_method_instance_identifier);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        num_elements_erased != 0U,
+        "Function must only be called when a method call handler was successfully registered!");
 }
 
 void MessagePassingServiceInstance::NotifyOutdatedNodeId(const pid_t outdated_node_id,

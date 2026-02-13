@@ -220,6 +220,17 @@ class Skeleton final : public SkeletonBinding
                                            const QualityType asil_level,
                                            const pid_t proxy_pid);
 
+    using MethodIdsToUnsubscribe = std::vector<LolaMethodId>;
+    /// TODO: If SubscribeMethods fails, we want to get the error so that it can be propagated. We also want to return
+    /// MethodIdsToUnsubscribe so that these methods can be unsubscribed. Can this be done in a better way?
+    std::pair<score::ResultBlank, MethodIdsToUnsubscribe> SubscribeMethods(
+        const MethodData& method_data,
+        const ProxyInstanceIdentifier proxy_instance_identifier,
+        const uid_t proxy_uid,
+        const QualityType asil_level);
+    void UnsubscribeMethods(const std::vector<LolaMethodId>& method_ids,
+                            const ProxyInstanceIdentifier& proxy_instance_identifier);
+
     static MethodData& GetMethodData(const memory::shared::ManagedMemoryResource& resource);
 
     /// \brief Gets the set of allowed proxy consumer IDs from the configuration
@@ -258,10 +269,12 @@ class Skeleton final : public SkeletonBinding
     MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
 
-    /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler on destruction
+    /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler/RegisterMethodCallHandler on
+    /// destruction
     ///
-    /// Each guard corresponds to the ServiceMethodSubscribedHandler which was registered in Skeleton::PrepareOffer()
-    /// (in case any methods were registered). The guard objects will be destroyed in Skeleton::PrepareStopOffer()
+    /// Each guard corresponds to the method subscription / method call handler which was registered in
+    /// Skeleton::PrepareOffer() (in case any methods were registered). The guard objects will be destroyed in
+    /// Skeleton::PrepareStopOffer()
     MethodSubscriptionRegistrationGuard method_subscription_registration_guard_qm_;
     MethodSubscriptionRegistrationGuard method_subscription_registration_guard_asil_b_;
 

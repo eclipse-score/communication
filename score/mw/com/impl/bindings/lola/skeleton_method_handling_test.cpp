@@ -1023,5 +1023,60 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilBWillNotCallUnregis
     EXPECT_TRUE(scoped_handler_result_2.has_value());
 }
 
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingWillUnregisterRegisteredMethodCallHandlersOnSubscriptionError)
+{
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Expecting that RegisterMethodCallHandler will be called for each method which fails on the second call
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_, _, _))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // Expecting that UnregisterMethodCallHandler will be called only for the method which was successfully registered
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_))
+        .Times(0);
+
+    // When calling the registered method subscribed handler
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                   proxy_instance_identifier_qm_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   kDummyPid);
+    EXPECT_TRUE(scoped_handler_result.has_value());
+}
+
+TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
+       CallingAsilBWillUnregisterRegisteredMethodCallHandlersOnSubscriptionError)
+{
+    GivenAnAsilBSkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Expecting that RegisterMethodCallHandler will be called for each method which fails on the second call
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_B, foo_proxy_method_identifier_b_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_B, dumb_proxy_method_identifier_b_, _, _))
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // Expecting that UnregisterMethodCallHandler will be called only for the method which was successfully registered
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_B, foo_proxy_method_identifier_b_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_B, dumb_proxy_method_identifier_b_))
+        .Times(0);
+
+    // When calling the registered method subscribed handler
+    ASSERT_TRUE(captured_method_subscribed_handler_b_.has_value());
+    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_b_.value(),
+                                                   proxy_instance_identifier_b_,
+                                                   test::kAllowedQmMethodConsumer,
+                                                   kDummyPid);
+    EXPECT_TRUE(scoped_handler_result.has_value());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

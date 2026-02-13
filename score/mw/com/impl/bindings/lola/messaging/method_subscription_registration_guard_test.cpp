@@ -26,7 +26,8 @@ namespace
 using namespace ::testing;
 
 const QualityType kAsilLevel{QualityType::kASIL_B};
-const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier{LolaServiceId{12}, LolaServiceInstanceId::InstanceId{22}};
+const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier{LolaServiceId{12U},
+                                                             LolaServiceInstanceId::InstanceId{22U}};
 
 class MethodSubscriptionRegistrationGuardFixture : public ::testing::Test
 {

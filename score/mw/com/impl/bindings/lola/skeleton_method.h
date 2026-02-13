@@ -53,6 +53,8 @@ class SkeletonMethod : public SkeletonMethodBinding
         uid_t allowed_proxy_uid,
         const QualityType asil_level);
 
+    void OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
+
     bool IsRegistered() const;
 
     void UnregisterMethodCallHandlers();
@@ -63,8 +65,8 @@ class SkeletonMethod : public SkeletonMethodBinding
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
-    QualityType asil_level_;
     std::unordered_map<ProxyMethodInstanceIdentifier, MethodCallRegistrationGuard> registration_guards_;
+    std::mutex registration_guards_mutex_;
 };
 
 }  // namespace score::mw::com::impl::lola

@@ -304,10 +304,12 @@ class IMessagePassingService
   private:
     /// \brief Unregister handler that was registered with RegisterOnServiceMethodSubscribedHandler
     ///
-    /// The corresponding handler will no longer be able to be called. This function is private and will only be called
-    /// by MethodSubscriptionRegistrationGuardFactory on destruction.
+    /// Removes the handler associated with the provided skeleton_instance_identifier from the internal handler map.
+    /// After this call completes, the corresponding handler will no longer be able to be called. However, any currently
+    /// executing handlers will continue. This function is private and will only be called by
+    /// MethodSubscriptionRegistrationGuardFactory on destruction.
     ///
-    /// Precondition: Shall only be called after RegisterOnServiceMethodSubscribedHandler was successfully called.
+    /// \pre Shall only be called after RegisterOnServiceMethodSubscribedHandler was successfully called.
     ///
     /// \param asil_level ASIL level of method.
     /// \param skeleton_instance_identifier to identify which registered ServiceMethodSubscribedHandler to unregister
@@ -317,10 +319,12 @@ class IMessagePassingService
 
     /// \brief Unregister handler that was registered with RegisterMethodCallHandler
     ///
-    /// The corresponding handler will no longer be able to be called. This function is private and will only be called
-    /// by MethodCallRegistrationGuardFactory on destruction.
+    /// Removes the handler associated with the provided skeleton_instance_identifier from the internal handler map.
+    /// After this call completes, the corresponding handler will no longer be able to be called. However, any currently
+    /// executing handlers will continue. This function is private and will only be called by
+    /// MethodCallRegistrationGuardFactory on destruction.
     ///
-    /// Precondition: Shall only be called after RegisterMethodCallHandler was successfully called.
+    /// \pre Shall only be called after RegisterMethodCallHandler was successfully called.
     ///
     /// \param asil_level ASIL level of method.
     /// \param proxy_method_instance_identifier to identify which registered MethodCallHandler to unregister

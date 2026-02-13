@@ -368,6 +368,62 @@ TEST_F(SkeletonMethodUnregisterHandlersFixture, CallingWillUnregisterAllHandlers
     unit_->UnregisterMethodCallHandlers();
 }
 
+using SkeletonMethodOnProxyMethodUnsubscribedFixture = SkeletonMethodFixture;
+TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingWillUnregisterHandlerCorrespondingToProvidedIdentifier)
+{
+    const ProxyInstanceIdentifier proxy_instance_identifier_2{kDummyProxyInstanceCounter + 1U,
+                                                              kDummyApplicationId + 1U};
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2{proxy_instance_identifier_2,
+                                                                           element_fq_id_.element_id_};
+    GivenASkeletonMethod().WithARegisteredCallback();
+
+    // Expecting that RegisterMethodCallHandler will be called on message passing for each call to
+    // OnProxyMethodSubscribeFinished
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_QM, proxy_method_instance_identifier_, _, _));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(QualityType::kASIL_B, proxy_method_instance_identifier_2, _, _));
+
+    // And expecting that UnregisterMethodCallHandler will only be called for the handler corresponding to
+    // proxy_method_instance_identifier_
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, proxy_method_instance_identifier_));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_B, proxy_method_instance_identifier_2))
+        .Times(0);
+
+    // given that OnProxyMethodSubscribeFinished is called twice
+    const auto result = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                              kValidInArgStorage,
+                                                              kValidReturnStorage,
+                                                              proxy_method_instance_identifier_,
+                                                              method_call_handler_scope_,
+                                                              kAllowedProxyUid,
+                                                              QualityType::kASIL_QM);
+    EXPECT_TRUE(result.has_value());
+
+    const auto result_2 = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                                kValidInArgStorage,
+                                                                kValidReturnStorage,
+                                                                proxy_method_instance_identifier_2,
+                                                                method_call_handler_scope_,
+                                                                kAllowedProxyUid,
+                                                                QualityType::kASIL_B);
+    EXPECT_TRUE(result_2.has_value());
+
+    // When calling OnProxyMethodUnsubscribe with proxy_method_instance_identifier_
+    unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_);
+}
+
+TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingBeforeSubscribingTerminates)
+{
+    GivenASkeletonMethod().WithARegisteredCallback();
+
+    // When calling OnProxyMethodUnsubscribe with proxy_method_instance_identifier_ which was never subscribed
+    // Then the program terminates
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_));
+}
+
 using SkeletonMethodCallFixture = SkeletonMethodFixture;
 TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndStorageDispatchesToRegisteredCallbackWithValidInArgStorage)
 {

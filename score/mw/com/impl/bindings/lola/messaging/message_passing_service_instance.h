@@ -89,9 +89,10 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                           IMessagePassingService::MethodCallHandler method_call_callback,
                                           const uid_t allowed_proxy_uid) override;
 
-    void UnregisterOnServiceMethodSubscribedHandler(SkeletonInstanceIdentifier skeleton_instance_identifier) override;
+    void UnregisterOnServiceMethodSubscribedHandler(
+        const SkeletonInstanceIdentifier skeleton_instance_identifier) override;
 
-    void UnregisterMethodCallHandler(ProxyMethodInstanceIdentifier proxy_method_instance_identifier) override;
+    void UnregisterMethodCallHandler(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier) override;
 
     void NotifyOutdatedNodeId(const pid_t outdated_node_id, const pid_t target_node_id) noexcept override;
 
