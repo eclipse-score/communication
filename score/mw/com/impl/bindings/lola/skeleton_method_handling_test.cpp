@@ -204,7 +204,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillRegisterServiceMethodSubscri
     // Expecting that RegisterOnServiceMethodSubscribedHandler is called on message passing which returns a valid
     // result
     EXPECT_CALL(message_passing_mock_, RegisterOnServiceMethodSubscribedHandler(skeleton_instance_identifier_, _))
-        .WillOnce(Return(score::cpp::blank{}));
+        .WillOnce(Return(score::ResultBlank{}));
 
     // When calling PrepareOffer
     const auto result = skeleton_->PrepareOffer(

@@ -55,15 +55,15 @@ void SetupGenericTraceApiMocking(GenericTraceApiMockContext& context) noexcept
     ON_CALL(context.generic_trace_api_mock, RegisterTraceDoneCB(trace_client_id, _))
         .WillByDefault(Invoke([&context](TraceClientId, TraceDoneCallBackType callback) {
             context.stored_trace_done_cb = std::move(callback);
-            return score::Result<Blank>{};
+            return score::ResultBlank{};
         }));
     ON_CALL(context.generic_trace_api_mock, Trace(trace_client_id, _, An<ShmDataChunkList&>(), _))
         .WillByDefault(Invoke(
             [&context](TraceClientId, const MetaInfoVariants::Type&, ShmDataChunkList&, TraceContextId context_id) {
                 context.last_trace_context_id = context_id;
-                return score::Result<Blank>{};
+                return score::ResultBlank{};
             }));
-    ON_CALL(context.generic_trace_api_mock, Trace(trace_client_id, _, _)).WillByDefault(Return(score::Result<Blank>{}));
+    ON_CALL(context.generic_trace_api_mock, Trace(trace_client_id, _, _)).WillByDefault(Return(score::ResultBlank{}));
 
     score::memory::shared::SharedMemoryFactory::SetTypedMemoryProvider(context.typed_memory_mock);
     // Our mock-function for AllocateNamedTypedMemory does the same thing the normal/not-typed-mem allocation does.

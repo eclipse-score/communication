@@ -76,7 +76,7 @@ class ProxyEventBaseFixture : public ::testing::Test
         service_element_ =
             std::make_unique<ServiceElementType>(empty_proxy_, std::move(mock_service_element_binding_ptr), kEventName);
 
-        ON_CALL(*mock_service_element_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(*mock_service_element_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::ResultBlank{}));
     }
 
     DummyProxy empty_proxy_{std::make_unique<mock_binding::Proxy>(),
@@ -361,7 +361,7 @@ class AServiceElement : public ::testing::Test
             std::make_unique<ServiceElementType>(empty_proxy_, std::move(mock_service_element_binding_ptr), kEventName);
         ASSERT_NE(service_element_, nullptr);
 
-        ON_CALL(*mock_service_element_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(*mock_service_element_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::ResultBlank{}));
     }
 
     AServiceElement& WithAReceiveHandler()
@@ -378,7 +378,7 @@ class AServiceElement : public ::testing::Test
         ON_CALL(*this->mock_service_element_binding_, SetReceiveHandler(_))
             .WillByDefault(Invoke([this](std::weak_ptr<ScopedEventReceiveHandler> handler) -> ResultBlank {
                 event_receive_handler_promise_->set_value(std::move(handler));
-                return score::cpp::blank{};
+                return ResultBlank{};
             }));
 
         return *this;
@@ -430,7 +430,7 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerThenItWillDispatchToTheBin
     // Given a Service Element, that is connected to a mock binding
 
     // Expecting that the receive-handler is forwarded to the binding
-    EXPECT_CALL(*this->mock_service_element_binding_, SetReceiveHandler(_)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*this->mock_service_element_binding_, SetReceiveHandler(_)).WillOnce(Return(score::ResultBlank{}));
 
     // When setting a receive-handler
     score::cpp::ignore = this->service_element_->SetReceiveHandler(EventReceiveHandler{});
@@ -466,7 +466,7 @@ TYPED_TEST(AServiceElement, WhenSettingAReceiveHandlerTwiceThenItWillDispatchToT
     // Expecting that the receive-handler is forwarded to the binding twice
     EXPECT_CALL(*this->mock_service_element_binding_, SetReceiveHandler(_))
         .Times(2)
-        .WillRepeatedly(Return(score::cpp::blank{}));
+        .WillRepeatedly(Return(score::ResultBlank{}));
 
     // When setting a receive-handler twice
     score::cpp::ignore = this->service_element_->SetReceiveHandler(EventReceiveHandler{});
@@ -531,7 +531,7 @@ TYPED_TEST(AServiceElement, WhenUnsettingAReceiveHandlerAfterSettingThenItWillDi
     this->WithAReceiveHandler();
 
     // Expecting that the receive-handler is unset
-    EXPECT_CALL(*this->mock_service_element_binding_, UnsetReceiveHandler()).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*this->mock_service_element_binding_, UnsetReceiveHandler()).WillOnce(Return(score::ResultBlank{}));
 
     // and un-setting the receive-handler
     score::cpp::ignore = this->service_element_->UnsetReceiveHandler();
@@ -701,7 +701,7 @@ TYPED_TEST(ProxyEventBaseSubscribeFixture, CallingSubscribeTwiceWithSameMaxSampl
     // Expect that Subscribe is called on the binding only once
     EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kNotSubscribed));
-    EXPECT_CALL(*this->mock_service_element_binding_, Subscribe(7)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*this->mock_service_element_binding_, Subscribe(7)).WillOnce(Return(score::ResultBlank{}));
     EXPECT_CALL(*this->mock_service_element_binding_, GetSubscriptionState())
         .WillOnce(Return(SubscriptionState::kSubscriptionPending));
 
@@ -1047,7 +1047,7 @@ TEST(ProxyEventBaseTest, MoveConstructingProxyEventDoesNotCrash)
 
     // Expect that Subscribe is called on the binding only once
     EXPECT_CALL(mock_proxy_event_binding, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
-    EXPECT_CALL(mock_proxy_event_binding, Subscribe(7)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(mock_proxy_event_binding, Subscribe(7)).WillOnce(Return(score::ResultBlank{}));
 
     // When calling subscribe
     const auto subscribe_result = dummy_event_2.Subscribe(7U);
@@ -1077,7 +1077,7 @@ TEST(ProxyEventBaseTest, MoveAssigningProxyEventDoesNotCrash)
 
     // Expect that Subscribe is called on the binding only once
     EXPECT_CALL(mock_proxy_event_binding, GetSubscriptionState()).WillOnce(Return(SubscriptionState::kNotSubscribed));
-    EXPECT_CALL(mock_proxy_event_binding, Subscribe(7)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(mock_proxy_event_binding, Subscribe(7)).WillOnce(Return(score::ResultBlank{}));
 
     // When calling subscribe
     const auto subscribe_result = dummy_event_2.Subscribe(7U);

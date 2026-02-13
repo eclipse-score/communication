@@ -190,7 +190,7 @@ ResultBlank SkeletonField<SampleDataType>::Update(const FieldType& sample_value)
     if (!was_prepare_offer_called_)
     {
         initial_field_value_ = std::make_unique<FieldType>(sample_value);
-        return Blank{};
+        return ResultBlank{};
     }
     return UpdateImpl(sample_value);
 }
@@ -248,7 +248,7 @@ ResultBlank SkeletonField<SampleDataType>::DoDeferredUpdate() noexcept
 
     // If the Update call succeeded, then we can delete the initial value
     initial_field_value_.reset();
-    return Blank{};
+    return ResultBlank{};
 }
 
 template <typename SampleDataType>

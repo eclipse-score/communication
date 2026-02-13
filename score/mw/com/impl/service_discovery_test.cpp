@@ -368,11 +368,11 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
 
     // Expecting that StartFindService will be called on each instance, with the last one returning an error
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle2), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle2), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[2].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle3), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle3), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[3].GetEnrichedInstanceIdentifier()))
         .WillOnce(DoAll(SaveArg<0>(&handle4), Return(Unexpected{ComErrc::kBindingFailure})));
 
@@ -420,7 +420,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
 
     // Expecting that StartFindService will be called on each instance, with the second one returning an error
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
         .WillOnce(DoAll(SaveArg<0>(&handle2), Return(Unexpected{ComErrc::kBindingFailure})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[2].GetEnrichedInstanceIdentifier()))
