@@ -236,7 +236,7 @@ cc_library(
 cc_library(
     name = "message_passing_service_mock",
     testonly = True,
-    srcs = [],
+    srcs = ["message_passing_service_mock.cpp"],
     hdrs = ["message_passing_service_mock.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
