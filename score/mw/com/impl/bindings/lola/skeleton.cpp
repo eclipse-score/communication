@@ -293,9 +293,9 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       on_service_methods_subscribed_mutex_{},
       method_resources_{},
       skeleton_methods_{},
-      method_call_handler_scope_{},
       was_old_shm_region_reopened_{false},
       filesystem_{std::move(filesystem)},
+      method_call_handler_scope_{},
       on_service_method_subscribed_handler_scope_{}
 {
 }
@@ -442,8 +442,12 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     }
 
     // Clean up method resources
+    // Expiring the method subscribed handler scope will wait until any current subscription calls are finished and will
+    // block any new subscription calls once it returns.
+    on_service_method_subscribed_handler_scope_.Expire();
+
     // Expiring the method call handler scope will wait until all current method calls are finished and will block any
-    // new handlers from being called.
+    // new handlers from being called once it returns.
     method_call_handler_scope_.Expire();
 
     // Destroy our pointers to all opened shared memory regions

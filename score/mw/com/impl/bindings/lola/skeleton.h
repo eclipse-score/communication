@@ -256,15 +256,20 @@ class Skeleton final : public SkeletonBinding
     MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
 
-    /// \brief Scope that is passed to the method call handler that is registered for each ProxyMethod
-    ///
-    /// This scope will be manually expired in PrepareStopOffer.
-    safecpp::Scope<> method_call_handler_scope_;
-
     bool was_old_shm_region_reopened_;
 
     score::filesystem::Filesystem filesystem_;
 
+    /// \brief Scope that is passed to the MethodCallHandler handler that is registered for each ProxyMethod
+    ///
+    /// This scope will be manually expired in PrepareStopOffer which will prevent any ProxyMethod from calling a
+    /// method.
+    safecpp::Scope<> method_call_handler_scope_;
+
+    /// \brief Scope that is passed to the ServiceMethodSubscribedHandler
+    ///
+    /// This scope will be manually expired in PrepareStopOffer which will prevent any Proxy from subscribing to this
+    /// method.
     safecpp::Scope<> on_service_method_subscribed_handler_scope_;
 };
 

@@ -386,15 +386,15 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCall
             return {};
         })));
 
-    // and given that PrepareStopOffer was called
-    skeleton_->PrepareStopOffer({});
-
     // and given that the registered method subscribed handler is called
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
                               proxy_instance_identifier_qm_,
                               test::kAllowedQmMethodConsumer,
                               kDummyPid);
+
+    // and given that PrepareStopOffer was called
+    skeleton_->PrepareStopOffer({});
 
     // When calling the method call handlers
     const auto method_call_handler_result_1 = std::invoke(method_call_handler_1.value(), 0U);
@@ -403,6 +403,24 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCall
     // Then both call results will contain errors indicating that the scope has expired
     EXPECT_FALSE(method_call_handler_result_1.has_value());
     EXPECT_FALSE(method_call_handler_result_2.has_value());
+}
+
+TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfSubscribeMethodHandler)
+{
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // and given that PrepareStopOffer was called
+    skeleton_->PrepareStopOffer({});
+
+    // When calling a ServiceMethodSubscribedHandler
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto subscribe_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                      proxy_instance_identifier_qm_,
+                                                      test::kAllowedQmMethodConsumer,
+                                                      kDummyPid);
+
+    // Then the result will contain an error indicating that the scope has expired
+    EXPECT_FALSE(subscribe_handler_result.has_value());
 }
 
 TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDestroysPointerToSharedMemory)
