@@ -20,6 +20,9 @@
 #include "score/mw/com/impl/subscription_state.h"
 #include "score/mw/com/impl/tracing/i_tracing_runtime.h"
 
+#include "score/memory/shared/pointer_arithmetic_util.h"
+#include "score/language/safecpp/safe_math/safe_math.h"
+
 #include "score/result/result.h"
 #include "score/mw/log/logging.h"
 
@@ -64,7 +67,8 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     ProxyEvent(Proxy& parent, const ElementFqId element_fq_id, const std::string_view event_name)
         : ProxyEventBinding<SampleType>{},
           proxy_event_common_{parent, element_fq_id, event_name},
-          samples_{parent.GetEventDataStorage<SampleType>(element_fq_id)}
+          samples_{parent.GetEventDataStorage<SampleType>(element_fq_id)},
+          meta_info_{parent.GetEventMetaInfo(element_fq_id)}
     {
     }
 
@@ -127,6 +131,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
 
     ProxyEventCommon proxy_event_common_;
     const EventDataStorage<SampleType>& samples_;
+    const EventMetaInfo& meta_info_;
 };
 
 template <typename SampleType>
@@ -187,14 +192,34 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(transaction_log_index.has_value(),
                                  "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
 
+    // Retrieve Meta Info to support Generic Skeleton (Runtime Alignment)
+    const std::size_t sample_size = meta_info_.data_type_info_.size;
+    const std::size_t sample_alignment = meta_info_.data_type_info_.alignment;
+
+    // Calculate stride manually to handle runtime alignment requirements
+    const std::size_t aligned_stride =
+        memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
+
+    // Get Base Pointer as VOID* then UINT8* for byte-level arithmetic
+    const void* base_ptr_void = static_cast<const void*>(samples_.data());
+    const std::uint8_t* base_ptr_u8 = static_cast<const std::uint8_t*>(base_ptr_void);
+
     for (auto slot_indicator_it = slot_indicators.begin; slot_indicator_it != slot_indicators.end; ++slot_indicator_it)
     {
-        const SampleType& sample_data{samples_.at(static_cast<std::size_t>(slot_indicator_it->GetIndex()))};
+        // Calculate Offset: Index * Stride
+        const std::size_t offset = safe_math::Multiply(aligned_stride, static_cast<std::size_t>(slot_indicator_it->GetIndex())).value();
+
+        // Get Slot Address as VOID*
+        const void* slot_address_void = static_cast<const void*>(base_ptr_u8 + offset);
+
+        // Safe STATIC_CAST to SampleType* (Allowed because we originated from a correctly aligned void*)
+        const SampleType* sample_data_ptr = static_cast<const SampleType*>(slot_address_void);
+
         const EventSlotStatus event_slot_status{slot_indicator_it->GetSlot().load()};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
         SamplePtr<SampleType> sample{
-            &sample_data, event_control.data_control, *slot_indicator_it, transaction_log_index.value()};
+            sample_data_ptr, event_control.data_control, *slot_indicator_it, transaction_log_index.value()};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));

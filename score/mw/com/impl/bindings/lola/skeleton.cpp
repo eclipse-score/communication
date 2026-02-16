@@ -969,13 +969,19 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     size_t sample_size,
     size_t sample_alignment) noexcept
 {   
+    // Calculate the total size required, respecting alignment padding between elements
     const auto aligned_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
     const auto total_data_size = aligned_size * element_properties.number_of_slots;
 
-    // 1. Construct the Vector Object (Typed Proxy needs this)
+    // We pass 'sample_alignment' to the Allocator. Even though T is uint8_t (align 1),
+    // the allocator will force the underlying memory block to start at an address 
+    // aligned to 'sample_alignment'.
     auto* vector_ptr = storage_resource_->construct<EventDataStorage<std::uint8_t>>(
         total_data_size, 
-        memory::shared::PolymorphicOffsetPtrAllocator<std::uint8_t>(storage_resource_->getMemoryResourceProxy())
+        memory::shared::PolymorphicOffsetPtrAllocator<std::uint8_t>(
+            storage_resource_->getMemoryResourceProxy(),
+            sample_alignment 
+        )
     );
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(vector_ptr != nullptr, 

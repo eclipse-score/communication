@@ -37,12 +37,6 @@ that any deployment update affecting a `LoLa` application needs an application r
 
 ## Architecture enhancements for GenericSkeleton support
 
-The main addition to the architecture for the interaction between a service providing instance (skeleton) and a service
-consuming instance (proxy) is, that there now is some additional meta-data needed in the `lola::ServiceDataStorage`,
-which resides in the shared-memory object containing the service instance specific data. This `lola::ServiceDataStorage`
-is already described in the design details of our data layout in the shared memory
-here
-
 Before introduction of `GenericSkeleton` support, the skeleton side constructed in the shared-memory object for **Data** an
 instance of `lola::ServiceDataStorage`, which is a map between an event-identifier and a slot-vector of event-data for
 the given event-identifier.
@@ -53,12 +47,7 @@ this slot-vector, since the event datatype is known to them at compile-time. So 
 * access therefore the vector elements as `SampleType`
 
 `GenericSkeleton`s don't know the exact type (size/layout) at compile time. However, provided with runtime meta-info (size/alignment), they must allocate and describe the slot-vector in shared memory so that consumers (Generic Proxies) can find and interpret it. So this
-information has now additionally provided by the skeleton. So we extend `lola::ServiceDataStorage` with an additional
-meta-data section:
-
-I.e. beside the given map for the event data slots a second map is provided, which gives the meta-info for each event
-provided by the service:
-`score::memory::shared::Map<ElementFqId, EventMetaInfo> events_metainfo_`
+information has now additionally provided by the skeleton.
 
 ### Meta-Info
 
@@ -96,7 +85,9 @@ specification) class (see Sys-Req-13525992), derived from
 `impl::SkeletonBase` (like `DummySkeleton` example) 
 
 ### Creation and Configuration
-Runtime instantiation is handled via the static `GenericSkeleton::Create` method, which accepts `GenericSkeletonCreateParams`. This structure allows users to define the service elements dynamically without compile-time type information.
+Unlike strongly typed skeletons, a `GenericSkeleton` is instantiated dynamically at runtime. Because it lacks compile-time type information, the user must provide the necessary meta-information (such as memory size and alignment) for each service element (events and fields) during the creation phase.
+
+This configuration is passed via the `GenericSkeletonCreateParams` struct, which accepts spans of element configurations.
 
 ```cpp
 struct EventInfo {
@@ -107,6 +98,53 @@ struct EventInfo {
 struct GenericSkeletonCreateParams {
     score::cpp::span<const EventInfo> events{};
 };
+```
+#### Adding Events
+To add an event to a Generic Skeleton, you must populate an `EventInfo` struct. The `EventInfo` requires:
+1.  **`name`**: The exact string name of the event as defined in the deployment configuration (e.g., `mw_com_config.json`).
+2.  **`data_type_meta_info`**: A `DataTypeMetaInfo` struct containing the `sizeof()` and `alignof()` the payload data type. This is crucial for the middleware to allocate appropriately sized shared memory slots.
+
+These `EventInfo` structs are then collected into a span and passed to the `GenericSkeleton::Create` method.
+
+**Example: Adding an Event to a Generic Skeleton**
+
+```cpp
+#include "score/mw/com/impl/generic_skeleton.h"
+#include "score/mw/com/impl/data_type_meta_info.h"
+#include <vector>
+
+// 1. Define the event name and calculate its memory requirements
+const auto event_name = "map_api_lanes_stamped";
+const score::mw::com::impl::DataTypeMetaInfo size_info{
+    sizeof(MapApiLanesStamped), 
+    alignof(MapApiLanesStamped)
+};
+
+// 2. Populate the EventInfo struct
+const std::vector<score::mw::com::impl::EventInfo> events_vec = {
+    {event_name, size_info}
+};
+
+// 3. Assign the events to the creation parameters
+score::mw::com::impl::GenericSkeletonCreateParams create_params;
+create_params.events = events_vec;
+
+// 4. Create the Generic Skeleton
+auto create_result = score::mw::com::impl::GenericSkeleton::Create(
+    instance_specifier, 
+    create_params
+);
+
+if (create_result.has_value()) {
+    auto& skeleton = create_result.value();
+    
+    // 5. Retrieve the event by name to use it
+    auto event_it = skeleton.GetEvents().find(event_name);
+    if (event_it != skeleton.GetEvents().cend()) {
+        auto& generic_event = event_it->second;
+        // Proceed with skeleton.OfferService() and generic_event.Send(...)
+    }
+}
 ```
 
 The `GenericSkeleton`contains one member `events_`, which is a map of
