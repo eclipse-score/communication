@@ -22,11 +22,14 @@ on:
     types: [checks_requested]
   workflow_call:
 jobs:
-    build_and_test_host:
+    build_and_test:
       strategy:
         fail-fast: false
         matrix:
-          toolchain: ["@llvm_toolchain//:cc-toolchain-x86_64-linux", "@gcc_toolchain//:host_gcc_12"]
+          param:
+            - "" # The default configuration
+            - "--extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux"
+            - "--config=linux_x86_64_score_gcc_12_2_0_posix"
       runs-on: ubuntu-24.04
       permissions:
         contents: read
@@ -44,7 +47,7 @@ jobs:
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel build communication targets
           run: |
-            bazel build --extra_toolchains=${{ matrix.toolchain }} //...
+            bazel build ${{ matrix.param }} //...
         - name: Bazel test communication targets
           run: |
-            bazel test --extra_toolchains=${{ matrix.toolchain }} //... --build_tests_only
+            bazel test ${{ matrix.param }} //... --build_tests_only
