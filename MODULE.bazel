@@ -129,6 +129,7 @@ download_archive(
 )
 
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
+bazel_dep(name = "flatbuffers", version = "25.2.10")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_doxygen", version = "2.5.0")
 bazel_dep(name = "score_docs_as_code", version = "3.0.0")

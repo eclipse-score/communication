@@ -1,0 +1,110 @@
+{
+    "service_types": [
+        {
+            "service_type_name": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "service_id": 1234,
+                    "events": [
+                        {
+                            "event_name": "CurrentPressureFrontLeft",
+                            "event_id": 20
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "field_name": "CurrentTemperatureFrontLeft",
+                            "field_id": 30
+                        }
+                    ],
+                    "methods": [
+                        {
+                            "method_name": "SetPressure",
+                            "method_id": 40
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "service_instances": [
+        {
+            "instance_specifier": "abc/abc/TirePressurePort",
+            "service_type_name": "/bmw/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                    "instance_id": 1234,
+                    "asil_level": "B",
+                    "binding": "SHM",
+                    "shm_size": 10000,
+                    "control_asil_b_shm_size": 20000,
+                    "control_qm_shm_size": 30000,
+                    "events": [
+                        {
+                            "event_name": "CurrentPressureFrontLeft",
+                            "number_of_sample_slots": 50,
+                            "max_subscribers": 5,
+                            "number_of_ipc_tracing_slots": 0
+                        }
+                    ],
+                    "fields": [
+                        {
+                            "field_name": "CurrentTemperatureFrontLeft",
+                            "number_of_sample_slots": 60,
+                            "max_subscribers": 6,
+                            "number_of_ipc_tracing_slots": 7
+                        }
+                    ],
+                    "methods": [
+                        {
+                            "method_name": "SetPressure",
+                            "queue_size": 20
+                        }
+                    ],
+                    "allowed_consumer": {
+                        "qm": [
+                            42,
+                            43
+                        ],
+                        "b": [
+                            54,
+                            55
+                        ]
+                    },
+                    "allowed_provider": {
+                        "qm": [
+                            15
+                        ],
+                        "b": [
+                            15
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "global": {
+        "asil_level": "B",
+        "application_id": 1234,
+        "queue_size": {
+            "qm_receiver": 8,
+            "b_receiver": 5,
+            "b_sender": 12
+        },
+        "shm_size_calc_mode": "SIMULATION"
+    },
+    "tracing": {
+        "enable": true,
+        "application_instance_id": "ara_com_example",
+        "trace_filter_config_path": "./mw_com_trace_filter.json"
+    }
+}
