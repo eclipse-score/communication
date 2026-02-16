@@ -596,9 +596,7 @@ TEST_F(ProxyMethodWithInArgsAndReturnFixture, CallOperator_DoCallError_AfterSucc
     this->GivenAValidProxyMethod();
 
     // Expecting that AllocateReturnType succeeds but DoCall fails
-    EXPECT_CALL(this->proxy_method_binding_mock_, AllocateReturnType(0U))
-        .WillOnce(Return(score::Result<score::cpp::span<std::byte>>{
-            score::cpp::span{this->method_return_type_buffer_.data(), this->method_return_type_buffer_.size()}}));
+    EXPECT_CALL(this->proxy_method_binding_mock_, AllocateReturnType(0U));
     EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U))
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
@@ -650,9 +648,7 @@ TEST_F(ProxyMethodWithReturnOnlyFixture, CallOperator_DoCallError_AfterSuccessfu
     this->GivenAValidProxyMethod();
 
     // Expecting that AllocateReturnType succeeds but DoCall fails
-    EXPECT_CALL(this->proxy_method_binding_mock_, AllocateReturnType(0U))
-        .WillOnce(Return(score::Result<score::cpp::span<std::byte>>{
-            score::cpp::span{this->method_return_type_buffer_.data(), this->method_return_type_buffer_.size()}}));
+    EXPECT_CALL(this->proxy_method_binding_mock_, AllocateReturnType(0U));
     EXPECT_CALL(this->proxy_method_binding_mock_, DoCall(0U))
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
