@@ -32,7 +32,6 @@ common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_
 #   * If you are applicable for "Free for non commercial use" see here: https://www.qnx.com/products/everywhere/
 # * The credentials for this account stored in your ~/.netrc (machine qnx.com)
 # * A license stored under `/opt/score_qnx/license/licenses`
-common:qnx_x86_64 --host_platform=@score_bazel_platforms//:x86_64-linux
 common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_x86_64
 common:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
@@ -40,7 +39,6 @@ common:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocen
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_x86_64 --sandbox_writable_path=/var/tmp
 
-common:qnx_arm64 --host_platform=@score_bazel_platforms//:x86_64-linux
 common:qnx_arm64 --platforms=@score_bazel_platforms//:aarch64-qnx-sdp_8.0.0-posix
 common:qnx_arm64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_aarch64
 common:qnx_arm64 --extra_toolchains=@score_qcc_aarch64_toolchain//:aarch64-qnx-sdp_8.0.0
