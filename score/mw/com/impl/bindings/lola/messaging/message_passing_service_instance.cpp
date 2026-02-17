@@ -618,7 +618,9 @@ score::ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodLoca
 {
     // A copy of the handler is made under lock and called outside the lock to allow calling multiple handlers at once
     // and to also allow registering a new method call handler for the same ProxyInstanceIdentifier while an old
-    // call is still running.
+    // call is still running. The handler is the map may also be unregistered once the mutex is released (while the copy
+    // of the handler still exists). The handler will still be called in this case unless the handler's scope has
+    // expired. The scope of the handler ensures. that it doesn't access any expired resources.
     std::shared_lock<std::shared_mutex> read_lock{subscribe_service_method_handlers_mutex_};
     auto method_subscribed_handler_it = subscribe_service_method_handlers_.find(skeleton_instance_identifier);
     if (method_subscribed_handler_it == subscribe_service_method_handlers_.cend())
@@ -656,7 +658,9 @@ score::ResultBlank MessagePassingServiceInstance::CallServiceMethodLocally(
 {
     // A copy of the handler is made under lock and called outside the lock to allow calling multiple handlers at once
     // and to also allow registering a new method call handler for the same ProxyInstanceIdentifier while an old
-    // call is still running.
+    // call is still running. The handler is the map may also be unregistered once the mutex is released (while the copy
+    // of the handler still exists). The handler will still be called in this case unless the handler's scope has
+    // expired. The scope of the handler ensures. that it doesn't access any expired resources.
     std::shared_lock<std::shared_mutex> read_lock{call_method_handlers_mutex_};
     auto method_call_handler_it = call_method_handlers_.find(proxy_method_instance_identifier);
     if (method_call_handler_it == call_method_handlers_.cend())
