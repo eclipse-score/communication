@@ -736,7 +736,8 @@ int EventSenderReceiver::RunAsSkeletonCheckEventSlots(const score::mw::com::Inst
 int EventSenderReceiver::RunAsSkeletonCheckValuesCreatedFromConfig(
     const score::mw::com::InstanceSpecifier& instance_specifier,
     const std::string& shared_memory_path,
-    score::os::InterprocessNotification& interprocess_notification,
+    score::os::InterprocessNotification& interprocess_notification_from_proxy,
+    score::os::InterprocessNotification& interprocess_notification_to_proxy,
     score::cpp::stop_source stop_source)
 {
     TestDestructor test_destructor(stop_source);
@@ -770,8 +771,10 @@ int EventSenderReceiver::RunAsSkeletonCheckValuesCreatedFromConfig(
         return EXIT_FAILURE;
     }
 
+    interprocess_notification_to_proxy.notify();
+
     // Wait until proxy has finished before exiting.
-    if (!interprocess_notification.waitWithAbort(stop_token))
+    if (!interprocess_notification_from_proxy.waitWithAbort(stop_token))
     {
         // Abort happened
         std::cerr << "Request stop on stop token. Exiting.\n";
@@ -790,13 +793,21 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
     const score::mw::com::impl::lola::ElementFqId map_api_lanes_element_fq_id_from_config,
     const score::mw::com::impl::lola::ElementFqId dummy_data_element_fq_id_from_config,
     const std::string& shared_memory_path,
-    score::os::InterprocessNotification& interprocess_notification,
+    score::os::InterprocessNotification& interprocess_notification_from_skeleton,
+    score::os::InterprocessNotification& interprocess_notification_to_skeleton,
     score::cpp::stop_token stop_token)
 {
     // create special mmap mock to intercept/catch shm_open calls
     MmanMock mman_mock{};
     // activate our mock BEFORE instantiating BigDataProxy, which will lead to opening/mapping shm.
     os::Mman::set_testing_instance(mman_mock);
+
+    if (!interprocess_notification_from_skeleton.waitWithAbort(stop_token))
+    {
+        // Abort happened
+        std::cerr << "Request stop on stop token. Exiting.\n";
+        return EXIT_FAILURE;
+    }
 
     auto handle_result = GetHandleFromSpecifier(instance_specifier, stop_token);
     if (!handle_result.has_value())
@@ -852,7 +863,7 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
     std::cout << "and terminating, bye bye\n";
 
     // Tell the skeleton that the proxy has finished.
-    interprocess_notification.notify();
+    interprocess_notification_to_skeleton.notify();
 
     return EXIT_SUCCESS;
 }

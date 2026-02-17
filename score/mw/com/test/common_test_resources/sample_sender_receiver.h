@@ -48,7 +48,8 @@ class EventSenderReceiver
 
     int RunAsSkeletonCheckValuesCreatedFromConfig(const score::mw::com::InstanceSpecifier& instance_specifier,
                                                   const std::string& shared_memory_path,
-                                                  score::os::InterprocessNotification& interprocess_notification,
+                                                  score::os::InterprocessNotification& interprocess_notification_from_proxy,
+                                                  score::os::InterprocessNotification& interprocess_notification_to_proxy,
                                                   score::cpp::stop_source stop_source);
 
     int RunAsSkeletonWaitForProxy(const score::mw::com::InstanceSpecifier& instance_specifier,
@@ -79,7 +80,8 @@ class EventSenderReceiver
         const score::mw::com::impl::lola::ElementFqId map_api_lanes_element_fq_id_from_config,
         const score::mw::com::impl::lola::ElementFqId dummy_data_element_fq_id_from_config,
         const std::string& shared_memory_path,
-        score::os::InterprocessNotification& interprocess_notification,
+        score::os::InterprocessNotification& interprocess_notification_from_skeleton,
+        score::os::InterprocessNotification& interprocess_notification_to_skeleton,
         score::cpp::stop_token stop_token);
 
     int RunAsProxyCheckSubscribeHandler(const score::mw::com::InstanceSpecifier& instance_specifier,
