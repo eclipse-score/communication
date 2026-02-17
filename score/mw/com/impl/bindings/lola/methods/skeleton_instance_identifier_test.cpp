@@ -14,6 +14,7 @@
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
@@ -98,6 +99,20 @@ TEST(SkeletonInstanceIdentifierHashTest, ObjectsWithDifferentApplicationIdAndUni
 
     // Then the hash results are different
     EXPECT_NE(hash_result0, hash_result1);
+}
+
+TEST(SkeletonInstanceIdentifierHashTest, OperatorStreamOutputsExpectedString)
+{
+    // Given a SkeletonInstanceIdentifier
+    const SkeletonInstanceIdentifier unit{kDummyServiceId, kDummyInstanceId};
+    testing::internal::CaptureStdout();
+
+    // When streaming the SkeletonInstanceIdentifier to a log
+    score::mw::log::LogFatal("test") << unit;
+    std::string output = testing::internal::GetCapturedStdout();
+
+    // Then the output should contain the expected string
+    EXPECT_THAT(output, ::testing::HasSubstr("Service ID: 10 . Instance ID: 15"));
 }
 
 }  // namespace

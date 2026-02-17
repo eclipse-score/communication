@@ -13,8 +13,11 @@
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
-
 #include "score/mw/com/impl/configuration/lola_method_id.h"
+
+#include "score/mw/log/logging.h"
+
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
@@ -123,6 +126,22 @@ TEST(ProxyMethodInstanceIdentifierTest,
 
     // Then the hash results are different
     EXPECT_NE(hash_result0, hash_result1);
+}
+
+TEST(ProxyMethodInstanceIdentifierTest, OperatorStreamOutputsExpectedString)
+{
+    // Given a ProxyMethodInstanceIdentifier
+    const ProxyMethodInstanceIdentifier unit{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
+    testing::internal::CaptureStdout();
+
+    // When streaming the ProxyMethodInstanceIdentifier to a log
+    score::mw::log::LogFatal("test") << unit;
+    std::string output = testing::internal::GetCapturedStdout();
+
+    // Then the output should contain the expected string
+    EXPECT_THAT(output,
+                ::testing::HasSubstr(
+                    "ProxyInstanceIdentifier: Application ID: 10 . Proxy Instance Counter: 15 . Method ID: 20"));
 }
 
 }  // namespace
