@@ -30,3 +30,4 @@ packages:
   - "bash"
   - "coreutils" # for commands like `ls`
   - "libatomic1"
+  - "libstdc++6"
