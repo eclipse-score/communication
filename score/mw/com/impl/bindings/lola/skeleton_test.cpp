@@ -1066,6 +1066,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     RecordProperty("Description", "Checks that the event meta info for an event is published by the Skeleton.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
+    RecordProperty("Priority", "2");
 
     /// \brief only locally used complex SampleType/event-data-type
     struct VeryComplexType
