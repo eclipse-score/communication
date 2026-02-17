@@ -21,7 +21,8 @@
 # This configuration installs Bazel and runs the full build pipeline on Read the Docs.
 # Generated artifacts (Doxygen XML, API RST files, README) are created during the build.
 
-version: 1
+# Required version 2 for all modern Read the Docs builds
+version: 2
 
 # Version control settings (optional - RTD will build all active versions by default)
 # To control which branches/tags are built, configure in RTD dashboard: Admin → Versions
