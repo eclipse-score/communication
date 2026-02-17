@@ -703,6 +703,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":memory_resource_proxy",
+        ":shared_memory_test_resources",
         "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],

@@ -29,6 +29,9 @@ namespace test
 class ManagedMemoryResourceTestAttorney;
 }  // namespace test
 
+template <typename T>
+class PolymorphicOffsetPtrAllocator;
+
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
 // shall be declared in one and only one file.".
 // The forward declaration of MemoryResourceProxy is necessary to avoid cyclic dependencies and to ensure that the
@@ -60,16 +63,6 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
   public:
     ManagedMemoryResource() noexcept = default;
     ~ManagedMemoryResource() noexcept override = default;
-
-    /**
-     * We need to return a raw pointer, since we need to convert this
-     * pointer into an OffsetPtr if it shall be stored in shared memory.
-     * @return MemoryResourceProxy* that identifies _this_ memory_resource.
-     */
-
-    /// \todo: getMemoryResourceProxy should not return a non const pointer and the method should also be marked const.
-    /// This issue will be investigated and fixed in Ticket-146625"
-    virtual const MemoryResourceProxy* getMemoryResourceProxy() noexcept = 0;
 
     /**
      * @brief Construct T allocating underlying MemoryResource
@@ -144,6 +137,13 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
     // This is for testing only
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class test::ManagedMemoryResourceTestAttorney;
+
+    // PolymorphicOffsetPtrAllocator template is a friend to access getMemoryResourceProxy() in its constructor
+    // that accepts a ManagedMemoryResource reference.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    template <typename T>
+    friend class PolymorphicOffsetPtrAllocator;
+
     // We make MemoryResourceRegistry a friend since it needs to access private internals of ManagedMemoryResource which
     // we do not want to expose to the user via the public interface of ManagedMemoryResource.
     // coverity[autosar_cpp14_a11_3_1_violation]
@@ -156,6 +156,16 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
      * @return void* past-the-end address of memory resource
      */
     virtual const void* getEndAddress() const noexcept = 0;
+
+    /**
+     * We need to return a raw pointer, since we need to convert this
+     * pointer into an OffsetPtr if it shall be stored in shared memory.
+     * @return MemoryResourceProxy* that identifies _this_ memory_resource.
+     */
+
+    /// \todo: getMemoryResourceProxy should not return a non const pointer and the method should also be marked const.
+    /// This issue will be investigated and fixed in Ticket-146625"
+    virtual const MemoryResourceProxy* getMemoryResourceProxy() noexcept = 0;
 };
 
 }  // namespace score::memory::shared

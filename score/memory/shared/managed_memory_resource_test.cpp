@@ -13,6 +13,7 @@
 #include "managed_memory_resource.h"
 
 #include "fake/my_memory_resource.h"
+#include "shared_memory_test_resources.h"
 
 #include "gtest/gtest.h"
 
@@ -24,7 +25,8 @@ namespace score::memory::shared::test
 TEST(ManagedMemoryResource, offersToGetMemoryResourceManager)
 {
     std::unique_ptr<ManagedMemoryResource> unit = std::make_unique<MyMemoryResource>();
-    EXPECT_NE(unit->getMemoryResourceProxy(), nullptr);
+    ManagedMemoryResourceTestAttorney attorney(*unit);
+    EXPECT_NE(attorney.getMemoryResourceProxy(), nullptr);
 }
 
 TEST(ManagedMemoryResource, CanDestructImplByParentClass)

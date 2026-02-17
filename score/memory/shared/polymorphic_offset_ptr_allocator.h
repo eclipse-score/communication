@@ -45,7 +45,9 @@ class PolymorphicOffsetPtrAllocator
 
     // Non-explicit constructor is good enough for maintaining required implicit conversion
     // NOLINTNEXTLINE(google-explicit-constructor): Tolerated, discard explicit.
-    PolymorphicOffsetPtrAllocator(const MemoryResourceProxy* const proxy) noexcept : proxy_{proxy} {}
+    PolymorphicOffsetPtrAllocator(ManagedMemoryResource& resource) noexcept : proxy_{resource.getMemoryResourceProxy()}
+    {
+    }
 
     template <typename U>
     // Non-explicit constructor is good enough for maintaining required implicit conversion.

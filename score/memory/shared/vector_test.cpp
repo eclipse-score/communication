@@ -25,7 +25,7 @@ TEST(Vector, OuterVectorAllocatesMemoryOnProvidedResource)
 {
     // Given a Vector of Vectors including integers
     test::MyMemoryResource memory{};
-    score::memory::shared::Vector<score::memory::shared::Vector<std::uint8_t>> unit{memory.getMemoryResourceProxy()};
+    score::memory::shared::Vector<score::memory::shared::Vector<std::uint8_t>> unit{memory};
     auto before_allocating_vector = memory.getAllocatedMemory();
 
     // When allocating a new inner vector
@@ -40,7 +40,7 @@ TEST(Vector, InnerVectorAllocatesMemoryOnProvidedResource)
 {
     // Given a Vector of Vectors including integers
     test::MyMemoryResource memory{};
-    score::memory::shared::Vector<score::memory::shared::Vector<std::uint8_t>> unit{memory.getMemoryResourceProxy()};
+    score::memory::shared::Vector<score::memory::shared::Vector<std::uint8_t>> unit{memory};
     unit.resize(1);
     auto before_allocating_integer = memory.getAllocatedMemory();
 
@@ -55,7 +55,7 @@ TEST(Vector, PositiveComparisonOfStdVector)
 {
     // Given a pmr::vector and a std::vector with the same content
     test::MyMemoryResource memory{};
-    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory.getMemoryResourceProxy()};
+    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory};
     std::vector<std::uint8_t> other{1U, 2U, 3U};
 
     // When comparing them
@@ -69,7 +69,7 @@ TEST(Vector, NegativeComparisonOfStdVector)
 {
     // Given a pmr::vector and a std::vector with different content
     test::MyMemoryResource memory{};
-    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory.getMemoryResourceProxy()};
+    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory};
     std::vector<std::uint8_t> other{1U, 3U, 3U};
 
     // When comparing them
@@ -83,7 +83,7 @@ TEST(Vector, PositiveComparisonOfStdVectorReverse)
 {
     // Given a pmr::vector and a std::vector with the same content
     test::MyMemoryResource memory{};
-    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory.getMemoryResourceProxy()};
+    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory};
     std::vector<std::uint8_t> other{1U, 2U, 3U};
 
     // When comparing them
@@ -97,7 +97,7 @@ TEST(Vector, NegativeComparisonOfStdVectorReverse)
 {
     // Given a pmr::vector and a std::vector with different content
     test::MyMemoryResource memory{};
-    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory.getMemoryResourceProxy()};
+    score::memory::shared::Vector<std::uint8_t> unit{{1U, 2U, 3U}, memory};
     std::vector<std::uint8_t> other{1U, 3U, 3U};
 
     // When comparing them

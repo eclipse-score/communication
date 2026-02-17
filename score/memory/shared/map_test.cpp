@@ -26,7 +26,7 @@ TEST(Map, AllocatesMemoryOnProvidedResource)
 {
     // Given a Map of int to int, ensure that the Map uses the allocator to get its memory
     test::MyMemoryResource memory{};
-    Map<int, int> unit{memory.getMemoryResourceProxy()};
+    Map<int, int> unit{memory};
     auto before_allocating_vector = memory.getAllocatedMemory();
 
     // When inserting an element
@@ -41,7 +41,7 @@ TEST(Map, InnerVectorAllocatesMemoryOnProvidedResource)
 {
     // Given a Map of a Vector
     test::MyMemoryResource memory{};
-    Map<int, Vector<std::uint8_t>> unit{memory.getMemoryResourceProxy()};
+    Map<int, Vector<std::uint8_t>> unit{memory};
     auto before_allocating_vector = memory.getAllocatedMemory();
 
     // When constructing a Vector within the Map
@@ -55,7 +55,7 @@ TEST(Map, InnerVectorAllocatesMemoryOnProvidedResourceByDefaultConstruction)
 {
     // Given a Map of a Vector
     test::MyMemoryResource memory{};
-    Map<int, Vector<std::uint8_t>> unit{memory.getMemoryResourceProxy()};
+    Map<int, Vector<std::uint8_t>> unit{memory};
     auto before_allocating_vector = memory.getAllocatedMemory();
 
     // When default constructing the Vector
@@ -69,7 +69,7 @@ TEST(Map, UserConstructedVectorCanBeUsed)
 {
     // Given a Map of a Vector
     test::MyMemoryResource memory{};
-    Map<int, Vector<std::uint8_t>> unit{memory.getMemoryResourceProxy()};
+    Map<int, Vector<std::uint8_t>> unit{memory};
     auto before_allocating_vector = memory.getAllocatedMemory();
 
     // When the user constructs a Vector by using the same allocator
@@ -83,7 +83,7 @@ TEST(Map, MapInMapAllocatesMemoryFromCorrectRessource)
 {
     // Given a Map of a Map
     test::MyMemoryResource memory{};
-    Map<int, Map<int, int>> unit{memory.getMemoryResourceProxy()};
+    Map<int, Map<int, int>> unit{memory};
     auto before_allocating_vector = memory.getAllocatedMemory();
 
     // When implicit constructing the inner map

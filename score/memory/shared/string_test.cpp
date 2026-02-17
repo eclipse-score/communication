@@ -34,7 +34,7 @@ TEST(StringTest, StringUsesProvidedMemoryResource)
 {
     // Given a string that is associated with our memory resource
     test::MyMemoryResource memory{};
-    PolymorphicOffsetPtrAllocator<String> allocator{memory.getMemoryResourceProxy()};
+    PolymorphicOffsetPtrAllocator<String> allocator{memory};
     String unit{allocator};
     EXPECT_EQ(memory.getAllocatedMemory(), 0U);  // A default-constructed string shall not allocate any data yet.
 
@@ -48,7 +48,7 @@ TEST(StringTest, StringUsesProvidedMemoryResource)
 TEST(StringTest, CompareStringToStdString)
 {
     test::MyMemoryResource memory{};
-    PolymorphicOffsetPtrAllocator<String> allocator{memory.getMemoryResourceProxy()};
+    PolymorphicOffsetPtrAllocator<String> allocator{memory};
     String my_string{"OÖKuzidaskjiksoaddszfkjdfdskjkjdskmlkjdnfmgbjhtknfgbiuhte", allocator};
     const std::size_t after_first_allocation{memory.getAllocatedMemory()};
     EXPECT_GT(after_first_allocation, 0U);
@@ -70,7 +70,7 @@ TEST(StringTest, CompareStringToStdString)
 TEST(StringTest, OutputOperatorOverload)
 {
     test::MyMemoryResource memory{};
-    PolymorphicOffsetPtrAllocator<String> allocator{memory.getMemoryResourceProxy()};
+    PolymorphicOffsetPtrAllocator<String> allocator{memory};
     String my_string{"OÖKuzidaskjiksoaddszfkjdfdskjkjdskmlkjdnfmgbjhtknfgbiuhte", allocator};
 
     std::ostringstream out_stream;
@@ -82,7 +82,7 @@ TEST(StringTest, OutputOperatorOverload)
 TEST(StringTest, InputOperatorOverload)
 {
     test::MyMemoryResource memory{};
-    PolymorphicOffsetPtrAllocator<String> allocator{memory.getMemoryResourceProxy()};
+    PolymorphicOffsetPtrAllocator<String> allocator{memory};
     String my_string{"", allocator};
 
     const char* const test_string{"OÖKuzidaskjiksoaddszfkjdfdskjkjdskmlkjdnfmgbjhtknfgbiuhte"};

@@ -121,11 +121,11 @@ class "score::memory::shared::PolymorphicOffsetPtrAllocator<T:class>" as Polymor
 {
   - proxy: offset_ptr<MemoryResourceProxy>
   --
-  + PolymorphicOffsetPtrAllocator(MemoryResourceProxy* proxy)
+  + PolymorphicOffsetPtrAllocator(ManagedMemoryResource&)
   + PolymorphicOffsetPtrAllocator()
   + allocate( std::size_t n ): offset_ptr<T>
   + deallocate(offset_ptr<T> p, std::size_t n ): void
-  + getMemoryResourceProxy(): offset_ptr<MemoryResourceProxy>
+  - getMemoryResourceProxy(): offset_ptr<MemoryResourceProxy>
   --
   Notes:
   This data type shall apply requirements

@@ -16,6 +16,7 @@
 #include "fake/my_memory_resource.h"
 #include "memory_resource_registry.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
+#include "score/memory/shared/shared_memory_test_resources.h"
 
 #include "gtest/gtest.h"
 #include <cstddef>
@@ -147,7 +148,8 @@ TEST_F(BoundCheckedMemoryResourceProxyTest, AllocationIsPossibleWhenProxyInBound
 {
     // Given a registered memory resource and its respective MemoryResourceProxy
     // When allocating memory on the MemoryResourceProxy
-    MemoryResourceProxy* proxy = memoryResource.getMemoryResourceProxy();
+    ManagedMemoryResourceTestAttorney attorney(memoryResource);
+    const MemoryResourceProxy* proxy = attorney.getMemoryResourceProxy();
 
     // Align the memory since that will be done before allocating the new memory
     const auto initial_number_allocated_bytes = memoryResource.getAllocatedMemory();

@@ -66,7 +66,8 @@ TEST_F(SharedMemoryResourceAllocateTest, AssociatedMemoryResourceProxyForwardsCa
 
     // When allocating memory through its associated MemoryResourceProxy
     // That we don't receive a nullptr
-    EXPECT_NE(resource->getMemoryResourceProxy()->allocate(5U, 1U), nullptr);
+    ManagedMemoryResourceTestAttorney attorney(*resource);
+    EXPECT_NE(attorney.getMemoryResourceProxy()->allocate(5U, 1U), nullptr);
     EXPECT_EQ(controlBlock->alreadyAllocatedBytes, 5U);
 }
 
@@ -239,7 +240,8 @@ TEST_F(SharedMemoryResourceAllocateDeathTest, AllocatingBlockLargerThanAllocated
 
     // When allocating a memory block that is larger than the allocated shared memory segment
     // Then the program terminates
-    EXPECT_DEATH(resource->getMemoryResourceProxy()->allocate(TestValues::some_share_memory_size + 1), ".*");
+    ManagedMemoryResourceTestAttorney attorney(*resource);
+    EXPECT_DEATH(attorney.getMemoryResourceProxy()->allocate(TestValues::some_share_memory_size + 1), ".*");
 }
 
 TEST_F(SharedMemoryResourceAllocateDeathTest, AllocatingMultipleBlocksLargerThanAllocatedSharedMemoryCausesTermination)
@@ -273,14 +275,16 @@ TEST_F(SharedMemoryResourceAllocateDeathTest, AllocatingMultipleBlocksLargerThan
 
     // When allocating a memory block smaller than the allocated shared memory segment
     const auto memory_to_allocate = (TestValues::some_share_memory_size / 2);
-    EXPECT_NE(resource->getMemoryResourceProxy()->allocate(TestValues::some_share_memory_size / 2), nullptr);
+    ManagedMemoryResourceTestAttorney attorney1(*resource);
+    EXPECT_NE(attorney1.getMemoryResourceProxy()->allocate(TestValues::some_share_memory_size / 2), nullptr);
 
     // and then allocating another memory block such that the total memory block allocated is larger than the allocated
     // shared memory segment
     const auto remaining_memory = TestValues::some_share_memory_size - memory_to_allocate;
 
     // Then the program terminates
-    EXPECT_DEATH(resource->getMemoryResourceProxy()->allocate(remaining_memory + 1), ".*");
+    ManagedMemoryResourceTestAttorney attorney2(*resource);
+    EXPECT_DEATH(attorney2.getMemoryResourceProxy()->allocate(remaining_memory + 1), ".*");
 }
 
 }  // namespace score::memory::shared::test

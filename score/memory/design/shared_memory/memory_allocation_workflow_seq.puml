@@ -54,12 +54,8 @@ deactivate Resource
 
 Factory --> Instance: instance
 
-Instance -> Resource: getMemoryResourceProxy()
-activate Resource
-Resource --> Instance: MemoryResourceProxy*
-deactivate Resource
-
-Instance -> Allocator: instantiate(MemoryResourceProxy*)
+Instance -> Allocator: instantiate(Resource)
+activate Allocator
 activate Allocator
 Instance -> Allocator: allocate(Bytes)
 Allocator -> Proxy: allocate(Bytes)

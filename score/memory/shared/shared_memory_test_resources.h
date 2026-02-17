@@ -65,6 +65,8 @@ class ManagedMemoryResourceTestAttorney
 
     const void* getEndAddress() const noexcept;
 
+    const MemoryResourceProxy* getMemoryResourceProxy() const noexcept;
+
   private:
     ManagedMemoryResource& resource_;
 };

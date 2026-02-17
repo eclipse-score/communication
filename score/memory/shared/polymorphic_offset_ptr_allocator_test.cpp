@@ -32,7 +32,7 @@ TEST(PolymorphicOffsetPtrAllocator, AllocatesAndDeallocatesMemory)
 {
     MyMemoryResource resource{};
 
-    std::vector<std::uint64_t, PolymorphicOffsetPtrAllocator<std::uint64_t>> unit(resource.getMemoryResourceProxy());
+    std::vector<std::uint64_t, PolymorphicOffsetPtrAllocator<std::uint64_t>> unit(resource);
     unit.emplace_back(42U);
     unit.emplace_back(43U);
 }
@@ -46,47 +46,9 @@ TEST(PolymorphicOffsetPtrAllocator, SupportsRebinding)
                        std::hash<std::uint64_t>,
                        std::equal_to<std::uint64_t>,
                        PolymorphicOffsetPtrAllocator<std::pair<const std::uint64_t, std::uint64_t>>>
-        unit(resource.getMemoryResourceProxy());
+        unit(resource);
 
     unit.insert({42U, 0U});
-}
-
-TEST(PolymorphicOffsetPtrAllocator, AllocatorsPointingToMemoryResourceProxiesWithSameIdsComparisonOperators)
-{
-    MemoryResourceProxy proxy1{0U};
-    MemoryResourceProxy proxy2{0U};
-
-    PolymorphicOffsetPtrAllocator<std::uint64_t> allocator1{&proxy1};
-    PolymorphicOffsetPtrAllocator<std::uint64_t> allocator2{&proxy2};
-
-    EXPECT_TRUE(allocator1 == allocator1);
-    EXPECT_TRUE(allocator1 == allocator2);
-    EXPECT_FALSE(allocator1 != allocator2);
-}
-
-TEST(PolymorphicOffsetPtrAllocator, AllocatorsPointingToMemoryResourceProxiesWithDifferentIdsComparisonOperators)
-{
-    MemoryResourceProxy proxy1{0U};
-    MemoryResourceProxy proxy2{1U};
-
-    PolymorphicOffsetPtrAllocator<std::uint64_t> allocator1{&proxy1};
-    PolymorphicOffsetPtrAllocator<std::uint64_t> allocator2{&proxy2};
-
-    EXPECT_FALSE(allocator1 == allocator2);
-    EXPECT_TRUE(allocator1 != allocator2);
-}
-
-TEST(PolymorphicOffsetPtrAllocator, AllocatorsWithOneNullPtrMemoryResourceProxiesComparisonOperators)
-{
-    MemoryResourceProxy proxy1{0U};
-
-    PolymorphicOffsetPtrAllocator<std::uint64_t> allocator1{&proxy1};
-    PolymorphicOffsetPtrAllocator<std::uint64_t> allocator2;
-
-    EXPECT_FALSE(allocator1 == allocator2);
-    EXPECT_FALSE(allocator2 == allocator1);
-    EXPECT_TRUE(allocator1 != allocator2);
-    EXPECT_TRUE(allocator2 != allocator1);
 }
 
 TEST(PolymorphicOffsetPtrAllocator, AllocatorsWithNullPtrMemoryResourceProxiesComparisonOperators)
