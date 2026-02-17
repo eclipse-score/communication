@@ -127,7 +127,8 @@ class ConfigParser
     score::mw::com::impl::ServiceTypeDeployment type_deployment_{score::cpp::blank{}};
 };
 
-const std::string kInterprocessNotificationShmPath{"/lock"};
+const std::string kInterprocessNotificationFromSkeletonToProxyShmPath{"/lock_skeleton_to_proxy"};
+const std::string kInterprocessNotificationFromProxyToSkeletonShmPath{"/lock_proxy_to_skeleton"};
 
 }  // namespace
 
@@ -198,48 +199,78 @@ int main(int argc, const char** argv)
     if (mode == "send" || mode == "skeleton")
     {
         std::cout << "Creating interprocess notification ...";
-        auto interprocess_notification_result =
-            score::mw::com::test::SharedMemoryObjectCreator<score::os::InterprocessNotification>::CreateObject(
-                kInterprocessNotificationShmPath);
-        if (!interprocess_notification_result.has_value())
+        auto interprocess_notification_proxy_to_skeleton_result =
+            score::mw::com::test::SharedMemoryObjectCreator<score::os::InterprocessNotification>::CreateOrOpenObject(
+                kInterprocessNotificationFromProxyToSkeletonShmPath);
+        if (!interprocess_notification_proxy_to_skeleton_result.has_value())
         {
             std::stringstream ss;
             ss << "Creating interprocess notification object on skeleton side failed:"
-               << interprocess_notification_result.error().ToString();
+               << interprocess_notification_proxy_to_skeleton_result.error().ToString();
             std::cout << ss.str() << std::endl;
             return EXIT_FAILURE;
         }
-
         const score::mw::com::test::SharedMemoryObjectGuard<score::os::InterprocessNotification>
-            interprocess_notification_guard{interprocess_notification_result.value()};
+            interprocess_notification_proxy_to_skeleton_guard{interprocess_notification_proxy_to_skeleton_result.value()};
+
+        auto interprocess_notification_skeleton_to_proxy_result =
+            score::mw::com::test::SharedMemoryObjectCreator<score::os::InterprocessNotification>::CreateOrOpenObject(
+                kInterprocessNotificationFromSkeletonToProxyShmPath);
+        if (!interprocess_notification_skeleton_to_proxy_result.has_value())
+        {
+            std::stringstream ss;
+            ss << "Creating interprocess notification object on skeleton side failed:"
+               << interprocess_notification_skeleton_to_proxy_result.error().ToString();
+            std::cout << ss.str() << std::endl;
+            return EXIT_FAILURE;
+        }
+        const score::mw::com::test::SharedMemoryObjectGuard<score::os::InterprocessNotification>
+            interprocess_notification_skeleton_to_proxy_guard{interprocess_notification_skeleton_to_proxy_result.value()};
+
         return event_sender_receiver.RunAsSkeletonCheckValuesCreatedFromConfig(
             instance_specifier,
             shared_memory_path.value(),
-            interprocess_notification_result.value().GetObject(),
+            interprocess_notification_proxy_to_skeleton_result.value().GetObject(),
+            interprocess_notification_skeleton_to_proxy_result.value().GetObject(),
             stop_source);
     }
     else if (mode == "recv" || mode == "proxy")
     {
-        auto interprocess_notification_result =
+        auto interprocess_notification_proxy_to_skeleton_result =
             score::mw::com::test::SharedMemoryObjectCreator<score::os::InterprocessNotification>::CreateOrOpenObject(
-                kInterprocessNotificationShmPath);
-        if (!interprocess_notification_result.has_value())
+                kInterprocessNotificationFromProxyToSkeletonShmPath);
+        if (!interprocess_notification_proxy_to_skeleton_result.has_value())
         {
             std::stringstream ss;
-            ss << "Creating or opening interprocess notification object on proxy side failed:"
-               << interprocess_notification_result.error().ToString();
+            ss << "Creating interprocess notification object on proxy side failed:"
+               << interprocess_notification_proxy_to_skeleton_result.error().ToString();
             std::cout << ss.str() << std::endl;
             return EXIT_FAILURE;
         }
-
         const score::mw::com::test::SharedMemoryObjectGuard<score::os::InterprocessNotification>
-            interprocess_notification_guard{interprocess_notification_result.value()};
+            interprocess_notification_proxy_to_skeleton_guard{interprocess_notification_proxy_to_skeleton_result.value()};
+
+        auto interprocess_notification_skeleton_to_proxy_result =
+            score::mw::com::test::SharedMemoryObjectCreator<score::os::InterprocessNotification>::CreateOrOpenObject(
+                kInterprocessNotificationFromSkeletonToProxyShmPath);
+        if (!interprocess_notification_skeleton_to_proxy_result.has_value())
+        {
+            std::stringstream ss;
+            ss << "Creating interprocess notification object on proxy side failed:"
+               << interprocess_notification_skeleton_to_proxy_result.error().ToString();
+            std::cout << ss.str() << std::endl;
+            return EXIT_FAILURE;
+        }
+        const score::mw::com::test::SharedMemoryObjectGuard<score::os::InterprocessNotification>
+            interprocess_notification_skeleton_to_proxy_guard{interprocess_notification_skeleton_to_proxy_result.value()};
+
         return event_sender_receiver.RunAsProxyCheckValuesCreatedFromConfig(
             instance_specifier,
             map_api_lanes_element_fq_id.value(),
             dummy_element_fq_id.value(),
             shared_memory_name.value(),
-            interprocess_notification_result.value().GetObject(),
+            interprocess_notification_skeleton_to_proxy_result.value().GetObject(),
+            interprocess_notification_proxy_to_skeleton_result.value().GetObject(),
             stop_token);
     }
     else
