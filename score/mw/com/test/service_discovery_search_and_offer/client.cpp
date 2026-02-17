@@ -38,7 +38,7 @@ int run_client(const score::cpp::stop_token& stop_token)
     using score::mw::com::test::TestDataProxy;
     ProxyObserver<TestDataProxy> proxy_observer(kInstanceSpecifierString);
 
-    const auto find_service_handle_result = proxy_observer.StartServiceDiscovery(kNumberOfOfferedServices, stop_token);
+    const auto find_service_handle_result = proxy_observer.StartServiceDiscovery(kNumberOfOfferedServices);
     if (!find_service_handle_result.has_value())
     {
         std::cerr << "unable to start service discovery" << find_service_handle_result.error().Message() << std::endl;

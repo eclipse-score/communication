@@ -26,6 +26,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -237,14 +238,20 @@ int run_receiver(SharedState& shared_state,
             return -4;
         }
 
-        Result<ServiceHandleContainer<DataProxy::HandleType>> handles_result =
-            DataProxy::FindService(std::move(instance_specifier_result).value());
+        std::promise<std::vector<DataProxy::HandleType>> service_discovery_promise{};
+        auto service_discovery_future = service_discovery_promise.get_future();
+        auto handles_result = DataProxy::StartFindService(
+            [moved_service_discovery_promise = std::move(service_discovery_promise)](auto handles, auto handle) mutable {
+                moved_service_discovery_promise.set_value(handles);
+                DataProxy::StopFindService(handle);
+            },
+            std::move(instance_specifier_result).value());
         if (!handles_result.has_value())
         {
             std::cerr << "FindService returned an error, terminating!\n";
             return -4;
         }
-        handles = std::move(handles_result.value());
+        handles = std::move(service_discovery_future.get());
         if (handles.empty())
         {
             // If we didn't find a service yet (because the sender is still busy spawning clients), we back off
