@@ -122,8 +122,8 @@ const std::optional<DataTypeSizeInfo> kEmptyReturnTypeTypeErasedDataInfo{};
 const DataTypeSizeInfo kValidInArgsTypeErasedDataInfo{16U, 16U};
 const DataTypeSizeInfo kValidReturnTypeTypeErasedDataInfo{32U, 8U};
 
-const DataTypeSizeInfo kValidInArgsTypeErasedDataInfo2{24U, 8U};
-const DataTypeSizeInfo kValidReturnTypeTypeErasedDataInfo2{32U, 16U};
+const DataTypeSizeInfo kValidInArgsTypeErasedDataInfo1{24U, 8U};
+const DataTypeSizeInfo kValidReturnTypeTypeErasedDataInfo1{32U, 16U};
 
 const TypeErasedCallQueue::TypeErasedElementInfo kEmptyTypeErasedInfo{{}, {}, 0};
 const ServiceHandleContainer<HandleType> kEmptyServiceHandleContainer{};
@@ -288,7 +288,7 @@ TEST_F(ProxyMethodHandlingFixture, CreatesMethodCallQueueForEachMethodInShm)
               kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
          {kDummyMethodId1,
           TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo2, kValidReturnTypeTypeErasedDataInfo2, kDummyQueueSize2}}});
+              kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
@@ -310,7 +310,7 @@ TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm
               kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize0}},
          {kDummyMethodId1,
           TypeErasedCallQueue::TypeErasedElementInfo{
-              kValidInArgsTypeErasedDataInfo2, kValidReturnTypeTypeErasedDataInfo2, kDummyQueueSize2}}});
+              kValidInArgsTypeErasedDataInfo1, kValidReturnTypeTypeErasedDataInfo1, kDummyQueueSize1}}});
 
     // When calling SetupMethods with the name of the registered ProxyMethod
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});

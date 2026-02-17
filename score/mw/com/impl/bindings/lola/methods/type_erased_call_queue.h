@@ -56,14 +56,23 @@ class TypeErasedCallQueue final
     auto GetTypeErasedElementInfo() const -> const TypeErasedElementInfo&;
 
   private:
-    std::pair<memory::shared::OffsetPtr<std::byte>, memory::shared::OffsetPtr<std::byte>> AllocateQueue() const;
+    struct OffsetPtrSpan
+    {
+        memory::shared::OffsetPtr<std::byte> data;
+        std::size_t size;
+    };
+
+    using InArgQueueSpan = OffsetPtrSpan;
+    using ReturnQueueSpan = OffsetPtrSpan;
+
+    std::pair<InArgQueueSpan, ReturnQueueSpan> AllocateQueue() const;
 
     const memory::shared::MemoryResourceProxy& resource_proxy_;
 
     TypeErasedElementInfo type_erased_element_info_;
 
-    memory::shared::OffsetPtr<std::byte> in_args_queue_start_address_;
-    memory::shared::OffsetPtr<std::byte> return_queue_start_address_;
+    InArgQueueSpan in_args_queue_start_address_;
+    ReturnQueueSpan return_queue_start_address_;
 };
 
 // Helper functions to get the storage pointer to a position in the queue of InArgValues / ReturnValues

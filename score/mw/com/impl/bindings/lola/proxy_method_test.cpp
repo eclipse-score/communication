@@ -57,8 +57,13 @@ const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithReturnOnly{
     kValidReturnSizeInfo,
     10U};
 
-const std::optional<score::cpp::span<std::byte>> kValidInArgStorage{score::cpp::span<std::byte>{}};
-const std::optional<score::cpp::span<std::byte>> kValidReturnStorage{score::cpp::span<std::byte>{}};
+constexpr auto InArgsQueueStorageSize = kValidInArgSizeInfo.Size() * kDummyQueueSize;
+constexpr auto ReturnQueueStorageSize = kValidReturnSizeInfo.Size() * kDummyQueueSize;
+
+std::array<std::byte, InArgsQueueStorageSize> InArgsData{};
+std::array<std::byte, ReturnQueueStorageSize> ReturnData{};
+const std::optional<score::cpp::span<std::byte>> kValidInArgStorage{{InArgsData.data(), InArgsData.size()}};
+const std::optional<score::cpp::span<std::byte>> kValidReturnStorage{{ReturnData.data(), ReturnData.size()}};
 
 const std::optional<score::cpp::span<std::byte>> kEmptyInArgStorage{};
 const std::optional<score::cpp::span<std::byte>> kEmptyReturnStorage{};

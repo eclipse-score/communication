@@ -45,32 +45,37 @@ using namespace ::testing;
 constexpr LolaMethodId kDummyMethodId{123U};
 constexpr LolaServiceId kDummyServiceId{123U};
 constexpr LolaServiceInstanceId::InstanceId kDummyInstanceId{456U};
-constexpr LolaMethodInstanceDeployment::QueueSize kDummyQueueSize{5U};
-constexpr ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{5U};
+constexpr LolaMethodInstanceDeployment::QueueSize kDummyQueueSize{12U};
+constexpr LolaMethodInstanceDeployment::QueueSize kDummyQueuePosition{kDummyQueueSize / 2};
+constexpr ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{6U};
 
 constexpr memory::DataTypeSizeInfo kValidInArgSizeInfo{sizeof(std::uint32_t), alignof(std::uint32_t)};
 constexpr memory::DataTypeSizeInfo kValidReturnSizeInfo{sizeof(std::uint64_t), alignof(std::uint64_t)};
 const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithInArgsAndReturn{kValidInArgSizeInfo,
                                                                                     kValidReturnSizeInfo,
-                                                                                    10U};
+                                                                                    kDummyQueueSize};
 const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithInArgsOnly{
     kValidInArgSizeInfo,
     std::optional<memory::DataTypeSizeInfo>{},
-    10U};
+    kDummyQueueSize};
 const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithReturnOnly{
     std::optional<memory::DataTypeSizeInfo>{},
     kValidReturnSizeInfo,
-    10U};
+    kDummyQueueSize};
 const TypeErasedCallQueue::TypeErasedElementInfo kTypeErasedInfoWithNoInArgsOrReturn{
     std::optional<memory::DataTypeSizeInfo>{},
     std::optional<memory::DataTypeSizeInfo>{},
-    10U};
+    kDummyQueueSize};
 
 const uid_t kAllowedProxyUid{10};
 const auto kAsilLevel{QualityType::kASIL_QM};
 
-const std::optional<score::cpp::span<std::byte>> kValidInArgStorage{score::cpp::span<std::byte>{}};
-const std::optional<score::cpp::span<std::byte>> kValidReturnStorage{score::cpp::span<std::byte>{}};
+constexpr auto InArgsQueueStorageSize = kValidInArgSizeInfo.Size() * kDummyQueueSize;
+constexpr auto ReturnQueueStorageSize = kValidReturnSizeInfo.Size() * kDummyQueueSize;
+std::array<std::byte, InArgsQueueStorageSize> InArgsData{};
+std::array<std::byte, ReturnQueueStorageSize> ReturnData{};
+const std::optional<score::cpp::span<std::byte>> kValidInArgStorage{{InArgsData.data(), InArgsData.size()}};
+const std::optional<score::cpp::span<std::byte>> kValidReturnStorage{{ReturnData.data(), ReturnData.size()}};
 
 const std::optional<score::cpp::span<std::byte>> kEmptyInArgStorage{};
 const std::optional<score::cpp::span<std::byte>> kEmptyReturnStorage{};
@@ -199,7 +204,7 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersRegisteredC
         .WillOnce(WithArgs<0, 1, 2>(Invoke([this](auto asil_level,
                                                   auto proxy_method_instance_identifier,
                                                   auto method_call_handler) -> Result<MethodCallRegistrationGuard> {
-            std::invoke(method_call_handler, kDummyQueueSize);
+            std::invoke(method_call_handler, kDummyQueuePosition);
             return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
                                                               asil_level,
                                                               proxy_method_instance_identifier,
@@ -448,7 +453,7 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndStorageDispatchesTo
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
     ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
+    std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition);
 }
 
 TEST_F(SkeletonMethodCallFixture,
@@ -475,7 +480,7 @@ TEST_F(SkeletonMethodCallFixture,
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
     ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
+    std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition);
 }
 
 TEST_F(SkeletonMethodCallFixture,
@@ -503,7 +508,7 @@ TEST_F(SkeletonMethodCallFixture,
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
     ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
+    std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition);
 }
 
 TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToRegisteredCallbackWithNoValidStorages)
@@ -529,7 +534,7 @@ TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToR
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
     ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
+    std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition);
 }
 
 TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndNoValidStorageTerminates)
@@ -550,7 +555,7 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndNoValidStorageTermi
     // to call the method)
     // Then the program terminates
     ASSERT_TRUE(captured_method_call_handler_.has_value());
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(std::invoke(captured_method_call_handler_.value(), kDummyQueueSize));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition));
 }
 
 TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeErasedCallback)
@@ -566,7 +571,6 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
                                                         method_call_handler_scope_,
                                                         kAllowedProxyUid,
                                                         kAsilLevel);
-
     // and given that the method call handler scope has expired
     method_call_handler_scope_.Expire();
 
@@ -576,7 +580,7 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
     ASSERT_TRUE(captured_method_call_handler_.has_value());
-    std::invoke(captured_method_call_handler_.value(), kDummyQueueSize);
+    std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition);
 }
 
 using SkeletonMethodIsRegisteredFixture = SkeletonMethodFixture;
