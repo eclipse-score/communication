@@ -16,7 +16,7 @@ common --@score_logging//score/mw/log/detail/flags:KUse_Stub_Implementation_Only
 common --@score_logging//score/mw/log/flags:KRemote_Logging=False
 common --@score_baselibs//score/json:base_library=nlohmann
 common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
-common --//score/mw/com/flags:tracing_library=stub
+common --//score/mw/com/flags:tracing_library=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
 common --extra_toolchains=@gcc_toolchain//:host_gcc_12
 common --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
 build --incompatible_strict_action_env
