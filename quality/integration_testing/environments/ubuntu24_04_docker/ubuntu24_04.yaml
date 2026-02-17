@@ -27,6 +27,6 @@ archs:
   - "amd64"
 
 packages:
-  - "libatomic1"
   - "bash"
   - "coreutils" # for commands like `ls`
+  - "libatomic1"
