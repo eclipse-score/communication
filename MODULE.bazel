@@ -78,9 +78,6 @@ llvm.toolchain(
         "-latomic",
     ]},
     llvm_version = "19.1.7",
-    # Use libstdc++ instead of libc++ because libc++ doesn't support fancy pointers
-    # (like offset pointers) in std::basic_string, which is required for shared memory allocators
-    stdlib = {"": "stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")
 
