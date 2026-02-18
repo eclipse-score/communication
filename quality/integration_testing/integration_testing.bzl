@@ -41,8 +41,16 @@ def integration_test(name, srcs, filesystem, **kwargs):
             "@platforms//cpu:x86_64": "amd64",
         }),
         os = "linux",
+        env = select({
+            "//quality/sanitizer/flags:none": None,
+            "//quality/sanitizer/flags:any_sanitizer": "//quality/sanitizer:absolute_env",
+        }),
         tars = [
             filesystem,
+        ] + select({
+            "//quality/sanitizer/flags:none": [],
+            "//quality/sanitizer/flags:any_sanitizer": ["//quality/sanitizer:suppressions_pkg"],
+        }) + [
             "@ubuntu24_04//:ubuntu24_04",
         ],
         target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
