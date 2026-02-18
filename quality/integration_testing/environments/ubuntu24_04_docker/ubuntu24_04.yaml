@@ -28,6 +28,7 @@ archs:
 
 packages:
   - "bash"
+  - "binutils" # provides addr2line, required for backtraces in sanitizers
   - "coreutils" # for commands like `ls`
   - "libatomic1"
   - "libstdc++6"
