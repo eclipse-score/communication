@@ -24,6 +24,7 @@
 #include "score/os/mocklib/qnx/mock_timer.h"
 #include "score/os/mocklib/sys_uio_mock.h"
 #include "score/os/mocklib/unistdmock.h"
+#include "score/os/utils/mocklib/signalmock.h"
 
 #include <future>
 #include <unordered_map>
@@ -448,6 +449,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
         SetupResource(dispatch_);
         SetupResource(fcntl_);
         SetupResource(iofunc_);
+        SetupResource(signal_);
         SetupResource(timer_);
         SetupResource(sysuio_);
         SetupResource(unistd_);
@@ -467,6 +469,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
                 dispatch_.MoveOwnership(),
                 fcntl_.MoveOwnership(),
                 iofunc_.MoveOwnership(),
+                signal_.MoveOwnership(),
                 timer_.MoveOwnership(),
                 sysuio_.MoveOwnership(),
                 unistd_.MoveOwnership()};
@@ -487,6 +490,10 @@ class ResourceManagerFixtureBase : public ::testing::Test
         EXPECT_CALL(*dispatch_, dispatch_context_alloc).Times(1).WillOnce(Return(kFakeContextPtr));
         EXPECT_CALL(*timer_, TimerCreate).Times(1).WillOnce(Return(kFakeTimerId));
         EXPECT_CALL(*iofunc_, iofunc_func_init).Times(1);
+        EXPECT_CALL(*signal_, SigEmptySet).Times(1);
+        EXPECT_CALL(*signal_, AddTerminationSignal).Times(1);
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_BLOCK, _, _)).Times(1);
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_SETMASK, _)).Times(1);
     }
 
     void ExpectEngineThreadRunning()
@@ -573,6 +580,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
     mock_ptr<score::os::MockDispatch> dispatch_;
     mock_ptr<score::os::FcntlMock> fcntl_;
     mock_ptr<score::os::MockIoFunc> iofunc_;
+    mock_ptr<score::os::SignalMock> signal_;
     mock_ptr<score::os::qnx::MockTimer> timer_;
     mock_ptr<score::os::SysUioMock> sysuio_;
     mock_ptr<score::os::UnistdMock> unistd_;

@@ -19,11 +19,13 @@
 #include <iostream>
 
 #include <sys/siginfo.h>
+
 namespace score::message_passing
 {
 
 namespace
 {
+
 struct select_msg_t
 {
     _io_msg hdr;
@@ -153,22 +155,28 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
 
     SetupResourceManagerCallbacks();
 
-    LogDebug(logger_, "QnxDispatchEngine thread-start ", this);
+    sigset_t new_set;
+    sigset_t old_set;
+    score::cpp::ignore = os_resources_.signal->SigEmptySet(new_set);
+    score::cpp::ignore = os_resources_.signal->AddTerminationSignal(new_set);
+    IfUnexpectedTerminate(  // NOLINTNEXTLINE(score-banned-function) in case we start before lifecycle does the same
+        os_resources_.signal->PthreadSigMask(SIG_BLOCK, new_set, old_set),
+        "Unable to assign sigmask to new thread");
 
-    // Suppress "AUTOSAR C++14 A8-5-3" rule finding: "A variable of type auto shall not be initialized using {} or
-    // ={} braced initialization.". (Ticket-219101)
-    // coverity[autosar_cpp14_a8_5_3_violation: FALSE] False positive: the variable is not declared with 'auto'.
-    std::lock_guard acquire{thread_mutex_};  // postpone thread start till we assign thread_
-    thread_ = std::thread([this]() noexcept {
-        {
-            // Suppress "AUTOSAR C++14 A8-5-3" rule finding: "A variable of type auto shall not be initialized using {}
-            // or ={} braced initialization.". (Ticket-219101)
-            // coverity[autosar_cpp14_a8_5_3_violation: FALSE] False positive: the variable is not declared with 'auto'.
-            std::lock_guard release{thread_mutex_};
-        }
-        LogDebug(logger_, "QnxDispatchEngine thread-start-sync ", this);
-        RunOnThread();
-    });
+    {
+        LogDebug(logger_, "QnxDispatchEngine thread-start ", this);
+        std::lock_guard acquire(thread_mutex_);  // postpone thread start till we assign thread_
+        thread_ = std::thread([this]() noexcept {
+            {
+                std::lock_guard release(thread_mutex_);
+            }
+            LogDebug(logger_, "QnxDispatchEngine thread-start-sync ", this);
+            RunOnThread();
+        });
+    }
+
+    // NOLINTNEXTLINE(score-banned-function) restore the previous state
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_SETMASK, old_set);
 }
 
 // Note 'C++14 A8-4-10':

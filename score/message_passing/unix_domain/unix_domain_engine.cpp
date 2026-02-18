@@ -31,13 +31,21 @@ UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_reso
       posix_receive_buffer_{memory_resource}
 {
     os_resources_.unistd->pipe(pipe_fds_.data());
-    std::lock_guard acquire{thread_mutex_};  // postpone thread start till we assign thread_
-    thread_ = std::thread([this]() noexcept {
-        {
-            std::lock_guard release{thread_mutex_};
-        }
-        RunOnThread();
-    });
+    sigset_t new_set;
+    sigset_t old_set;
+    score::cpp::ignore = os_resources_.signal->SigEmptySet(new_set);
+    score::cpp::ignore = os_resources_.signal->AddTerminationSignal(new_set);
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_BLOCK, new_set, old_set);
+    {
+        std::lock_guard acquire{thread_mutex_};  // postpone thread start till we assign thread_
+        thread_ = std::thread([this]() noexcept {
+            {
+                std::lock_guard release{thread_mutex_};
+            }
+            RunOnThread();
+        });
+    }
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_SETMASK, old_set);
 }
 
 UnixDomainEngine::~UnixDomainEngine() noexcept

@@ -28,6 +28,7 @@
 #include "score/os/qnx/timer_impl.h"
 #include "score/os/sys_uio.h"
 #include "score/os/unistd.h"
+#include "score/os/utils/signal_impl.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -66,6 +67,9 @@ class QnxDispatchEngine final : public ISharedResourceEngine
         // coverity[autosar_cpp14_m11_0_1_violation]
         // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::IoFunc> iofunc{};
+        // coverity[autosar_cpp14_m11_0_1_violation]
+        // coverity[autosar_cpp14_a9_6_1_violation]
+        score::cpp::pmr::unique_ptr<score::os::Signal> signal{};
         // coverity[autosar_cpp14_m11_0_1_violation]
         // coverity[autosar_cpp14_a9_6_1_violation]
         score::cpp::pmr::unique_ptr<score::os::qnx::Timer> timer{};
@@ -180,6 +184,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
                 score::os::Dispatch::Default(memory_resource),
                 score::os::Fcntl::Default(memory_resource),
                 score::os::IoFunc::Default(memory_resource),
+                score::cpp::pmr::make_unique<score::os::SignalImpl>(memory_resource),
                 score::cpp::pmr::make_unique<score::os::qnx::TimerImpl>(memory_resource),
                 score::os::SysUio::Default(memory_resource),
                 score::os::Unistd::Default(memory_resource)};

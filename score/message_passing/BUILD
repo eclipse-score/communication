@@ -156,6 +156,7 @@ cc_library(
         "@score_baselibs//score/os:socket",
         "@score_baselibs//score/os:sys_poll",
         "@score_baselibs//score/os:unistd",
+        "@score_baselibs//score/os/utils:signal",
     ],
 )
 
@@ -216,6 +217,7 @@ cc_library(
         "@score_baselibs//score/os/qnx:dispatch",
         "@score_baselibs//score/os/qnx:iofunc",
         "@score_baselibs//score/os/qnx:timer",
+        "@score_baselibs//score/os/utils:signal",
     ],
 )
 
@@ -298,6 +300,7 @@ cc_gtest_unit_test(
         "@score_baselibs//score/os/mocklib/qnx:dispatch_mock",
         "@score_baselibs//score/os/mocklib/qnx:iofunc_mock",
         "@score_baselibs//score/os/mocklib/qnx:timer_mock",
+        "@score_baselibs//score/os/utils/mocklib:signal_mock",
     ],
 )
 
