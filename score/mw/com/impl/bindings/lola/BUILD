@@ -910,8 +910,10 @@ cc_test(
     ],
 )
 
-cc_unit_test(
+cc_test(
     name = "skeleton_method_handling_test",
+    # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
+    timeout = "moderate",
     srcs = [
         "skeleton_method_handling_test.cpp",
     ],
@@ -919,6 +921,7 @@ cc_unit_test(
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
+    tags = ["unit"],
     deps = [
         ":skeleton",
         "//score/mw/com/impl:binding_type",
