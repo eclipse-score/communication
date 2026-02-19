@@ -155,27 +155,33 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
 
     SetupResourceManagerCallbacks();
 
+    // Normally, during the application lifecycle initialization, LifeCycleManager blocks the SIGTERM on the main
+    // thread and creates a separate thread that catches all the SIGTERM signals coming to the process. The other
+    // threads created after that will inherit the sigmask of the main thread with SIGTERM blocked.
+    // However, LifeCycleManager starts using Logging before it blocks SIGTERM on the main thread. When this happens,
+    // Logging will initialize Message Passing, which will create the Message Passing background thread with a sigmask
+    // inherited without SIGTERM being blocked yet.
+    // Thus, we need to mask SIGTERM for this thread specifically, to let the LifeCycleManager desicated SIGTERM
+    // thread do its job.
     sigset_t new_set;
     sigset_t old_set;
+    // the signal functions below, used with the parameters below, can only return EOK
     score::cpp::ignore = os_resources_.signal->SigEmptySet(new_set);
     score::cpp::ignore = os_resources_.signal->AddTerminationSignal(new_set);
-    IfUnexpectedTerminate(  // NOLINTNEXTLINE(score-banned-function) in case we start before lifecycle does the same
-        os_resources_.signal->PthreadSigMask(SIG_BLOCK, new_set, old_set),
-        "Unable to assign sigmask to new thread");
-
+    // NOLINTNEXTLINE(score-banned-function) by design of LifeCycleManager. Also see Ticket-101432
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_BLOCK, new_set, old_set);
     {
         LogDebug(logger_, "QnxDispatchEngine thread-start ", this);
-        std::lock_guard acquire(thread_mutex_);  // postpone thread start till we assign thread_
+        std::lock_guard acquire(thread_mutex_);  // postpone RunOnThread() till we assign thread_
         thread_ = std::thread([this]() noexcept {
             {
-                std::lock_guard release(thread_mutex_);
+                std::lock_guard release(thread_mutex_);  // guarantees that this->thread_ is already assigned
             }
             LogDebug(logger_, "QnxDispatchEngine thread-start-sync ", this);
             RunOnThread();
         });
     }
-
-    // NOLINTNEXTLINE(score-banned-function) restore the previous state
+    // NOLINTNEXTLINE(score-banned-function) by design of LifeCycleManager. Also see Ticket-101432
     score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_SETMASK, old_set);
 }
 
