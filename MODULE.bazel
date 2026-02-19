@@ -154,7 +154,7 @@ single_version_override(
 bazel_dep(name = "score_baselibs", version = "0.2.2")
 git_override(
     module_name = "score_baselibs",
-    commit = "ba99dfcb2a1cf69108a2d9eb9fe3cf6ba5aa0832",
+    commit = "6951cd2a3045fb7a053acf203833a17704c22ccf",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
