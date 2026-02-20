@@ -43,7 +43,7 @@ void TransactionLogSet::TransactionLogNode::Reset() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!transaction_log_.ContainsTransactions(),
                            "Cannot Reset TransactionLog as it still contains some old transactions.");
-    needs_rollback_ = false;
+    needs_rollback_.GetUnderlying() = false;
     Release();
 }
 

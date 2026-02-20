@@ -103,7 +103,7 @@ class TransactionLogSet
 
         void MarkNeedsRollback(const bool needs_rollback) noexcept
         {
-            needs_rollback_ = needs_rollback;
+            needs_rollback_.GetUnderlying() = needs_rollback;
         }
 
         TransactionLogId GetTransactionLogId() const noexcept
@@ -131,7 +131,7 @@ class TransactionLogSet
         ///
         /// Will be set on Proxy::Create by the first Proxy in the same process with the same transaction_log_id. Will
         /// be cleared once Rollback is called on transaction_log.
-        bool needs_rollback_;
+        CopyableAtomic<bool> needs_rollback_;
 
         /// \brief Expresses, who (which proxy process) currently owns this transaction log. An (initially set) value
         ///        of kInvalidTransactionLogId means, that it is not yet owned by anybody.
