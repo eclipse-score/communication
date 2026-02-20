@@ -44,6 +44,12 @@ namespace
 
 using std::string_view_literals::operator""sv;
 
+// TM: Repeated key definitions in many other files
+// binding_service_type_deployment_impl.h
+// config_parser.cpp
+// lola_service_instance_deployment.cpp
+// someip_service_instance_deployment.cpp
+// tracing_filter_config_parser.cpp
 constexpr auto kServiceInstancesKey = "serviceInstances"sv;
 constexpr auto kInstanceSpecifierKey = "instanceSpecifier"sv;
 constexpr auto kServiceTypeNameKey = "serviceTypeName"sv;
@@ -73,10 +79,10 @@ constexpr auto kEventMaxSubscribersKey = "maxSubscribers"sv;
 constexpr auto kEventEnforceMaxSamplesKey = "enforceMaxSamples"sv;
 constexpr auto kEventMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
 constexpr auto kMaxConcurrentAllocationsDefault = static_cast<std::uint8_t>(1U);
-constexpr auto kFieldNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
+constexpr auto kFieldNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;  //TM: duplicate of kEventNumberOfSampleSlotsKey, Line 71
 constexpr auto kFieldMaxSubscribersKey = "maxSubscribers"sv;
 constexpr auto kFieldEnforceMaxSamplesKey = "enforceMaxSamples"sv;
-constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;
+constexpr auto kFieldMaxConcurrentAllocationsKey = "maxConcurrentAllocations"sv;    //TM: duplicate of kEventMaxConcurrentAllocationsKey, Line 75
 constexpr auto kLolaShmSizeKey = "shm-size"sv;
 constexpr auto kLolaControlAsilBShmSizeKey = "control-asil-b-shm-size"sv;
 constexpr auto kLolaControlQmShmSizeKey = "control-qm-shm-size"sv;
@@ -456,7 +462,7 @@ auto ParseLolaFieldInstanceDeployment(const score::json::Object& json_map, LolaS
 
         const auto number_of_sample_slots =
             deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SampleSlotCountType>(
-                kFieldNumberOfSampleSlotsKey);
+                kFieldNumberOfSampleSlotsKey);  // different handling than Events which xor-ing with numberOfSampleSlots (using GetNumberOfSampleSlots()) Line 405
         const auto max_subscribers =
             deployment_parser.RetrieveJsonElement<LolaFieldInstanceDeployment::SubscriberCountType>(
                 kFieldMaxSubscribersKey);
@@ -488,7 +494,7 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
     {
         return;
     }
-
+    // TM: missing methodId
     const auto methods_list_result = methods->second.As<score::json::List>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(methods_list_result.has_value(), "Configuration corrupted, check with json schema");
     const auto& methods_list = methods_list_result.value().get();
@@ -931,7 +937,7 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> Lol
         score::mw::log::LogFatal("lola") << "Configuration should contain at least one event, field, or method.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
-    if (!AreEventFieldAndMethodIdsUnique(lola))
+    if (!AreEventFieldAndMethodIdsUnique(lola)) 
     {
         score::mw::log::LogFatal("lola") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
@@ -1064,7 +1070,7 @@ auto ParseSenderQueueSize(const score::json::Object& global_config_map) -> score
         auto queue_size_obj = queue_size->second.As<json::Object>();
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(queue_size_obj.has_value(), "Configuration corrupted, check with json schema");
         const auto& queue_size_map = queue_size_obj.value().get();
-        const auto& asil_tx_queue_size = queue_size_map.find("B-sender");
+        const auto& asil_tx_queue_size = queue_size_map.find("B-sender");   //TM: No QM-sender
         if (asil_tx_queue_size != queue_size_map.cend())
         {
             return score::ResultToAmpOptionalOrElse(asil_tx_queue_size->second.As<std::int32_t>(), [](const auto&) {
@@ -1296,7 +1302,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
             const auto& serviceTypeDeployment =
                 std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
             const auto search = serviceTypeDeployment.events_.find(eventInstanceElement.first);
-            if (search == serviceTypeDeployment.events_.cend())
+            if (search == serviceTypeDeployment.events_.cend()) // TM: there was no check for name duplication during parsing, only ids
             {
                 ::score::mw::log::LogFatal("lola")
                     << "Service instance " << service_instance.first << "event" << eventInstanceElement.first
