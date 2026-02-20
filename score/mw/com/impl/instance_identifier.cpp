@@ -96,6 +96,7 @@ InstanceIdentifier::InstanceIdentifier(const json::Object& json_object, std::str
     ServiceTypeDeployment type_deployment{GetValueFromJson<json::Object>(json_object, kServiceTypeDeploymentKey)};
 
     auto service_identifier_type = instance_deployment.service_;
+    // TM: is this a DeadCode Constructor? What is its use?
     const auto* const type_deployment_ptr =
         configuration_->AddServiceTypeDeployment(std::move(service_identifier_type), std::move(type_deployment));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_deployment_ptr != nullptr,
@@ -123,6 +124,7 @@ InstanceIdentifier::InstanceIdentifier(const ServiceInstanceDeployment& deployme
 {
 }
 
+// TM: What are the use cases of all Serialize() functions
 auto InstanceIdentifier::Serialize() const noexcept -> json::Object
 {
     json::Object json_object{};
