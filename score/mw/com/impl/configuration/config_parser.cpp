@@ -494,7 +494,6 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
     {
         return;
     }
-    // TM: missing methodId
     const auto methods_list_result = methods->second.As<score::json::List>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(methods_list_result.has_value(), "Configuration corrupted, check with json schema");
     const auto& methods_list = methods_list_result.value().get();
@@ -675,7 +674,7 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
                                          "Configuration corrupted, check with json schema");
             const auto& bindingValue = bindingValue_result.value().get();
             if (bindingValue == kSomeIpBinding)
-            {
+            {   // TM: Here it logs fatal and aborts, while in 974 ParseServiceTypeDeployment() it just skips it
                 score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which can not be parsed.";
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
