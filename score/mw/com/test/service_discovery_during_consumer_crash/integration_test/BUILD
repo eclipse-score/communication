@@ -23,6 +23,8 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_service_discovery_during_consumer_crash.py"],
     filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )
 
 pkg_tar(

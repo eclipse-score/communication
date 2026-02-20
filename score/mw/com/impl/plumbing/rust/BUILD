@@ -51,6 +51,8 @@ rust_test(
         "//score/mw/com/impl/plumbing/rust/test_support:test_helper_size_ffi_rs",
         "//score/mw/com/impl/plumbing/rust/test_support:test_utils_rs",
     ],
+    # Disabled for thread sanitizer because of detected race (Ticket-246891)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )
 
 rust_test(
@@ -63,4 +65,6 @@ rust_test(
         "//score/mw/com/impl/plumbing/rust/test_support:test_utils_rs",
         "@crate_index//:libc",
     ],
+    # Disabled for thread sanitizer because of detected race (Ticket-246891)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )
