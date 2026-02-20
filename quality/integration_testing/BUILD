@@ -13,7 +13,7 @@
 
 # This is not a `py_library`, since we need it as "main" in a `py_test`
 exports_files(
-    ["main.py"],
+    ["main.py", "pytest.toml"],
 )
 
 filegroup(

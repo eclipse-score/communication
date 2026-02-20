@@ -23,6 +23,7 @@ def _extend_list_in_kwargs(kwargs, key, values):
 
 def integration_test(name, srcs, filesystem, **kwargs):
     pytest_bootstrap = Label("//quality/integration_testing:main.py")
+    pytest_toml = Label("//quality/integration_testing:pytest.toml")
     image_name = "_image_{}".format(name)
     image_tarball = "_image_{}_tarball".format(name)
     repo_tag = "{}:latest".format(name)
@@ -114,6 +115,18 @@ def integration_test(name, srcs, filesystem, **kwargs):
     if "timeout" not in kwargs:
         kwargs["timeout"] = "short"
 
+    _extend_list_in_kwargs(
+        kwargs,
+        "data",
+        [pytest_toml],
+    )
+
+    _extend_list_in_kwargs(
+        kwargs,
+        "target_compatible_with",
+        LINUX_TARGET_COMPATIBLE_WITH,
+    )
+
     py_test(
         name = "_test_internal_docker_{}".format(name),
         srcs = [
@@ -121,10 +134,10 @@ def integration_test(name, srcs, filesystem, **kwargs):
         ] + srcs,
         main = pytest_bootstrap,
         deps = [
+            requirement("bazel-runfiles"),
             requirement("pytest"),
             "//quality/integration_testing/environments/ubuntu24_04_docker:docker",
         ],
-        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
         tags = ["manual"],
         **kwargs
     )
@@ -136,10 +149,10 @@ def integration_test(name, srcs, filesystem, **kwargs):
         ] + srcs,
         main = pytest_bootstrap,
         deps = [
+            requirement("bazel-runfiles"),
             requirement("pytest"),
             "//quality/integration_testing/environments/qnx8_qemu:qemu",
         ],
-        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
         tags = ["manual"],
         **kwargs
     )

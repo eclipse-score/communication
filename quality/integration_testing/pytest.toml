@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-bazel-runfiles==1.8.4
-docker==7.1.0
-pytest==8.4.1
+
+[pytest]
+
+log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
