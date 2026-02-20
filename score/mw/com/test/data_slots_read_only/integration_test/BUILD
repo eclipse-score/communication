@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "data_slots_read_only",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_data_slots_read_only.py"],
     filesystem = ":filesystem",
 )

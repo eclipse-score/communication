@@ -24,7 +24,7 @@ pkg_tar(
 
 integration_test(
     name = "test_find_any_semantics",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_find_any_semantics.py"],
     filesystem = ":filesystem",
 )

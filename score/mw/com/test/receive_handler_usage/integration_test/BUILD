@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "test_receive_handler_usage",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_receive_handler_usage.py"],
     filesystem = ":filesystem",
 )

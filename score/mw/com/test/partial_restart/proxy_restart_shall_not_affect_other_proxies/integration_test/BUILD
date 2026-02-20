@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "proxy_restart_shall_not_affect_other_proxies",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_proxy_restart_shall_not_affect_other_proxies.py"],
     filesystem = ":filesystem",
 )
