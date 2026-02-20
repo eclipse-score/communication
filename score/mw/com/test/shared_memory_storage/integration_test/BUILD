@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "shared_memory_storage",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_shared_memory_storage.py"],
     filesystem = ":filesystem",
 )

@@ -23,6 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "test_field_initial_value",
+    timeout = "moderate",
     srcs = [
         "test_field_initial_value.py",
     ],

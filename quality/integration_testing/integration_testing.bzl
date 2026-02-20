@@ -106,6 +106,14 @@ def integration_test(name, srcs, filesystem, **kwargs):
         }),
     )
 
+    # Tests spin up docker or qemu which requires a significant amount of system resources.
+    if "size" not in kwargs:
+        kwargs["size"] = "enormous"
+
+    # While we require a significant amount of system resources, the tests are still short.
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = "short"
+
     py_test(
         name = "_test_internal_docker_{}".format(name),
         srcs = [

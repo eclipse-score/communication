@@ -23,7 +23,6 @@ pkg_tar(
 
 integration_test(
     name = "provider_restart",
-    size = "small",
     srcs = ["test_provider_restart.py"],
     filesystem = ":filesystem",
 )

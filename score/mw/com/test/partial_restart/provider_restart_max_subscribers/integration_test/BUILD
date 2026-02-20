@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "provider_restart_max_subscribers",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_provider_restart_max_subscribers.py"],
     filesystem = ":filesystem",
 )

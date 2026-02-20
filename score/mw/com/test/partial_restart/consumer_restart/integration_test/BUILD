@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "consumer_restart",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_consumer_restart.py"],
     filesystem = ":filesystem",
 )

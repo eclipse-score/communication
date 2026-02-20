@@ -20,7 +20,7 @@ load("//quality/integration_testing:integration_testing.bzl", "integration_test"
 
 integration_test(
     name = "service_discovery_during_consumer_crash",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_service_discovery_during_consumer_crash.py"],
     filesystem = ":filesystem",
 )

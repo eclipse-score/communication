@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "multiple_proxies",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_multiple_proxies.py"],
     filesystem = ":filesystem",
 )
