@@ -309,6 +309,6 @@ git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "g
 git_repository(
     name = "codeql_coding_standards",
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
+    commit = "781f1eecfa2fc9970fb08447588a0b4d19a7908d",
     remote = "https://github.com/github/codeql-coding-standards.git",
-    tag = "v2.52.0",
 )
