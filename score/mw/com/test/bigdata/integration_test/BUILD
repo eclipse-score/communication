@@ -22,7 +22,7 @@ pkg_tar(
 
 integration_test(
     name = "test_bigdata_exchange",
-    size = "small",
+    timeout = "moderate",
     srcs = [
         "test_bigdata.py",
     ],

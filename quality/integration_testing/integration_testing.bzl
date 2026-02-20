@@ -23,6 +23,7 @@ def _extend_list_in_kwargs(kwargs, key, values):
 
 def integration_test(name, srcs, filesystem, **kwargs):
     pytest_bootstrap = Label("//quality/integration_testing:main.py")
+    pytest_toml = Label("//quality/integration_testing:pytest.toml")
     image_name = "_image_{}".format(name)
     image_tarball = "_image_{}_tarball".format(name)
     repo_tag = "{}:latest".format(name)
@@ -41,8 +42,16 @@ def integration_test(name, srcs, filesystem, **kwargs):
             "@platforms//cpu:x86_64": "amd64",
         }),
         os = "linux",
+        env = select({
+            "//quality/sanitizer/flags:none": None,
+            "//quality/sanitizer/flags:any_sanitizer": "//quality/sanitizer:absolute_env",
+        }),
         tars = [
             filesystem,
+        ] + select({
+            "//quality/sanitizer/flags:none": [],
+            "//quality/sanitizer/flags:any_sanitizer": ["//quality/sanitizer:suppressions_pkg"],
+        }) + [
             "@ubuntu24_04//:ubuntu24_04",
         ],
         target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
@@ -98,6 +107,26 @@ def integration_test(name, srcs, filesystem, **kwargs):
         }),
     )
 
+    # Tests spin up docker or qemu which requires a significant amount of system resources.
+    if "size" not in kwargs:
+        kwargs["size"] = "enormous"
+
+    # While we require a significant amount of system resources, the tests are still short.
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = "short"
+
+    _extend_list_in_kwargs(
+        kwargs,
+        "data",
+        [pytest_toml],
+    )
+
+    _extend_list_in_kwargs(
+        kwargs,
+        "target_compatible_with",
+        LINUX_TARGET_COMPATIBLE_WITH,
+    )
+
     py_test(
         name = "_test_internal_docker_{}".format(name),
         srcs = [
@@ -105,10 +134,10 @@ def integration_test(name, srcs, filesystem, **kwargs):
         ] + srcs,
         main = pytest_bootstrap,
         deps = [
+            requirement("bazel-runfiles"),
             requirement("pytest"),
             "//quality/integration_testing/environments/ubuntu24_04_docker:docker",
         ],
-        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
         tags = ["manual"],
         **kwargs
     )
@@ -120,10 +149,10 @@ def integration_test(name, srcs, filesystem, **kwargs):
         ] + srcs,
         main = pytest_bootstrap,
         deps = [
+            requirement("bazel-runfiles"),
             requirement("pytest"),
             "//quality/integration_testing/environments/qnx8_qemu:qemu",
         ],
-        target_compatible_with = LINUX_TARGET_COMPATIBLE_WITH,
         tags = ["manual"],
         **kwargs
     )

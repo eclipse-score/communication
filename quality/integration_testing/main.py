@@ -14,15 +14,9 @@ import os
 import sys
 import pytest
 import logging
+from runfiles import Runfiles
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG,  # Capture all levels DEBUG and above
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()  # Also log to console
-    ]
-)
 
 
 def get_output_dir():
@@ -59,4 +53,9 @@ if __name__ == "__main__":
     # This is the common main function, that is used by _all_ integration tests.
     args = sys.argv[1:]
     args += [f"--junitxml={os.path.join(get_output_dir(), 'integration-testing-results.xml')}"]
+
+    r = Runfiles.Create()
+    ini_path = r.Rlocation("_main/quality/integration_testing/pytest.toml")
+    args += ["-c", ini_path]
+
     sys.exit(pytest.main(args))

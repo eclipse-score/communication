@@ -22,7 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
-#include <vector>
+#include <unordered_map>
 
 namespace score::mw::com::test
 {
@@ -50,10 +50,10 @@ class ProxyObserver
         }
     }
 
-    Result<FindServiceHandle> StartServiceDiscovery(std::size_t required_number_of_services,
-                                                    const score::cpp::stop_token& stop_token) noexcept
+    Result<FindServiceHandle> StartServiceDiscovery(std::size_t required_number_of_services) noexcept
     {
-        auto callback = [this, required_number_of_services, &stop_token](auto service_handle_container, auto) noexcept {
+        auto callback = [this, required_number_of_services](auto service_handle_container,
+                                                                         auto find_service_handle) noexcept {
             std::cout << "handler called" << std::endl;
             for (auto& handle : service_handle_container)
             {
@@ -61,7 +61,7 @@ class ProxyObserver
                 if (lola_proxy_result.has_value())
                 {
                     std::cout << "successfully created lola proxy" << std::endl;
-                    proxies_.push_back(std::move(lola_proxy_result.value()));
+                    proxies_.insert({handle, std::move(lola_proxy_result.value())});
                 }
                 else
                 {
@@ -72,8 +72,8 @@ class ProxyObserver
             {
                 std::cout << "Requested number of proxies created" << std::endl;
                 promise_.SetValue();
+                Proxy::StopFindService(find_service_handle);
             }
-            stop_token.stop_requested();
         };
 
         handle_ = Proxy::StartFindService(callback, instance_specifier_result_.value());
@@ -95,7 +95,7 @@ class ProxyObserver
 
   private:
     score::Result<score::mw::com::impl::InstanceSpecifier> instance_specifier_result_;
-    std::vector<Proxy> proxies_{};
+    std::unordered_map<typename Proxy::HandleType, Proxy> proxies_{};
     concurrency::InterruptiblePromise<void> promise_{};
     // handle has deleted default constructor
     Result<FindServiceHandle> handle_ = MakeUnexpected(score::mw::com::impl::ComErrc::kUnsetFailure);

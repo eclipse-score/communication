@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "check_number_of_allocations",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_check_number_of_allocations.py"],
     filesystem = ":filesystem",
 )

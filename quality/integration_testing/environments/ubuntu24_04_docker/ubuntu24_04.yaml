@@ -27,6 +27,8 @@ archs:
   - "amd64"
 
 packages:
-  - "libatomic1"
   - "bash"
+  - "binutils" # provides addr2line, required for backtraces in sanitizers
   - "coreutils" # for commands like `ls`
+  - "libatomic1"
+  - "libstdc++6"

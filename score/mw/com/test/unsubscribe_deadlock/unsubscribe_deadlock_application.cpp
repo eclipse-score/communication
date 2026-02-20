@@ -22,8 +22,10 @@
 
 #include <score/jthread.hpp>
 #include <score/stop_token.hpp>
+
 #include <atomic>
 #include <chrono>
+#include <future>
 #include <iostream>
 #include <thread>
 
@@ -54,7 +56,14 @@ void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_sp
 
 score::Result<score::mw::com::test::BigDataProxy> CreateProxy(const score::mw::com::InstanceSpecifier& instance_specifier)
 {
-    auto handles_result = score::mw::com::test::BigDataProxy::FindService(instance_specifier);
+    std::promise<std::vector<score::mw::com::test::BigDataProxy::HandleType>> service_discovery_promise{};
+    auto service_discovery_future = service_discovery_promise.get_future();
+    auto handles_result = score::mw::com::test::BigDataProxy::StartFindService(
+        [moved_service_discovery_promise = std::move(service_discovery_promise)](auto handles, auto handle) mutable {
+            moved_service_discovery_promise.set_value(handles);
+            score::mw::com::test::BigDataProxy::StopFindService(handle);
+        },
+        std::move(instance_specifier));
     if (!handles_result.has_value())
     {
         std::cerr << "Error finding service for instance specifier" << instance_specifier.ToString() << ": "
@@ -62,7 +71,8 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(const score::mw::c
         return score::MakeUnexpected<score::mw::com::test::BigDataProxy>(handles_result.error());
     }
 
-    if (handles_result.value().empty())
+    const auto handles = service_discovery_future.get();
+    if (handles.empty())
     {
         std::cerr << "NO instance found for instance specifier" << instance_specifier.ToString()
                   << " although service instance has been successfully offered! Terminating!" << std::endl;
@@ -70,7 +80,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(const score::mw::c
             score::mw::com::impl::MakeError(score::mw::com::impl::ComErrc::kServiceNotAvailable));
     }
 
-    return score::mw::com::test::BigDataProxy::Create(handles_result.value().front());
+    return score::mw::com::test::BigDataProxy::Create(handles.front());
 }
 
 /**
