@@ -26,4 +26,6 @@ integration_test(
     timeout = "moderate",
     srcs = ["test_consumer_restart.py"],
     filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )
