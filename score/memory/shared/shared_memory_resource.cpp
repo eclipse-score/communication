@@ -813,7 +813,6 @@ auto SharedMemoryResource::IsShmInTypedMemory() const noexcept -> bool
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: part of the public API
 auto SharedMemoryResource::do_deallocate(void*, std::size_t, std::size_t) -> void
 {
-    std::lock_guard<score::os::InterprocessMutex> lock(this->control_block_->mutex);
     /**
      * For the proof of concept we agreed to use a monotonic allocation algorithm.
      * Thus, no deallocation will be performed.
