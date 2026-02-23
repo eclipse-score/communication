@@ -126,8 +126,8 @@ auto ParseInstanceSpecifier(const score::json::Object& json_map) -> InstanceSpec
 
     auto string_result = instanceSpecifierJson->second.As<std::string>();
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(string_result.has_value(), "Configuration corrupted, check with json schema");
-    auto instance_specifier_name = string_result.value().get();
-    const auto instance_specifier_result = InstanceSpecifier::Create(std::move(instance_specifier_name));
+    const auto& instance_specifier_name = string_result.value().get();
+    const auto instance_specifier_result = InstanceSpecifier::Create(std::string{instance_specifier_name});
     if (!instance_specifier_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Invalid InstanceSpecifier.";
