@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,19 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("//quality/integration_testing:integration_testing.bzl", "integration_test")
+[pytest]
 
-pkg_tar(
-    name = "filesystem",
-    deps = [
-        "//score/mw/com/test/data_slots_read_only:data_slots_read_only-pkg",
-    ],
-)
-
-integration_test(
-    name = "data_slots_read_only",
-    timeout = "moderate",
-    srcs = ["test_data_slots_read_only.py"],
-    filesystem = ":filesystem",
-)
+log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

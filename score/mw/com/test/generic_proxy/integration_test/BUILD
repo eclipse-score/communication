@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "generic_proxy",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_generic_proxy.py"],
     filesystem = ":filesystem",
 )

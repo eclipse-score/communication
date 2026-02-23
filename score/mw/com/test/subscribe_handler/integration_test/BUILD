@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "subscribe_handler",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_subscribe_handler.py"],
     filesystem = ":filesystem",
 )

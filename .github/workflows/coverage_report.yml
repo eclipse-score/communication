@@ -13,18 +13,21 @@
 name: Coverage Report
 
 on:
+  pull_request:
+    types: [ opened, reopened, synchronize ]
   workflow_call:
-    inputs:
-      release_tag:
-        description: 'Release tag to upload artifacts to'
-        required: true
-        type: string
+    outputs:
+      artifact-name:
+        description: 'Name of the coverage report artifact'
+        value: ${{ jobs.coverage-report.outputs.artifact-name }}
 
 jobs:
   coverage-report:
     runs-on: ubuntu-24.04
     permissions:
       contents: write # required to upload release assets
+    outputs:
+      artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
 
     steps:
       - name: Checkout Repository
@@ -66,18 +69,18 @@ jobs:
           mkdir -p artifacts
           find bazel-testlogs/score/ -name 'test.xml' -print0 | xargs -0 -I{} cp --parents {} artifacts/
           cp -r cpp_coverage artifacts/
-          zip -r ${{ github.event.repository.name }}_coverage_report.zip artifacts/
+          zip -r ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip artifacts/
         shell: bash
+
+      - name: Set artifact name
+        id: set-artifact-name
+        run: |
+          echo "artifact-name=${{ github.event.repository.name }}_coverage_report_${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.repository.name }}_coverage_report.zip
-          path: ${{ github.event.repository.name }}_coverage_report.zip
+          name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+          path: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip
 
-      - name: Upload coverage report to existing draft release
-        run: |
-          # Upload the file to the existing release
-          gh release upload "${{ inputs.release_tag }}" "${{ github.event.repository.name }}_coverage_report.zip"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

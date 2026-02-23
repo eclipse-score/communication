@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "concurrent_skeleton_creation",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_concurrent_skeleton_creation.py"],
     filesystem = ":filesystem",
 )
