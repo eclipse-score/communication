@@ -162,9 +162,11 @@ download_file(
 )
 
 bazel_dep(name = "rules_cc", version = "0.1.1")
-bazel_dep(name = "aspect_rules_lint", version = "1.13.0")
-bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
-bazel_dep(name = "google_benchmark", version = "1.9.4")
+
+bazel_dep(name = "aspect_rules_lint", version = "1.13.0", dev_dependency = True)
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
+bazel_dep(name = "google_benchmark", version = "1.9.4", dev_dependency = True)
+
 bazel_dep(name = "rules_rust", version = "0.61.0")
 git_override(
     module_name = "rules_rust",
@@ -172,7 +174,8 @@ git_override(
     remote = "https://github.com/eclipse-score/rules_rust.git",
 )
 
-bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2", dev_dependency = True)
+
 bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "crate_index")
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
@@ -196,8 +199,9 @@ download_archive(
 
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
-bazel_dep(name = "rules_doxygen", version = "2.5.0")
-bazel_dep(name = "score_docs_as_code", version = "3.0.1")
+
+bazel_dep(name = "rules_doxygen", version = "2.5.0", dev_dependency = True)
+bazel_dep(name = "score_docs_as_code", version = "3.0.1", dev_dependency = True)
 
 # Force score_docs_as_code to 3.0.1 to resolve compatibility conflict between score_logging and score_baselibs
 single_version_override(
@@ -222,7 +226,7 @@ doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_ex
 use_repo(doxygen_extension, "doxygen")
 
 # Python 3.12 toolchain for Bazel
-bazel_dep(name = "rules_python", version = "1.5.1")
+bazel_dep(name = "rules_python", version = "1.5.1", dev_dependency = True)
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
@@ -264,7 +268,8 @@ pip.parse(
 use_repo(pip, "lobster_dependencies")
 
 bazel_dep(name = "score_bazel_platforms", version = "0.1.1")
-bazel_dep(name = "rules_oci", version = "1.8.0")
+
+bazel_dep(name = "rules_oci", version = "1.8.0", dev_dependency = True)
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
@@ -276,7 +281,7 @@ oci.pull(
 )
 use_repo(oci, "ubuntu_24_04")
 
-bazel_dep(name = "rules_distroless", version = "0.6.1")
+bazel_dep(name = "rules_distroless", version = "0.6.1", dev_dependency = True)
 
 apt = use_extension(
     "@rules_distroless//apt:extensions.bzl",
@@ -290,7 +295,8 @@ apt.install(
 )
 use_repo(apt, "ubuntu24_04")
 
-bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_pkg", version = "1.1.0", dev_dependency = True)
+
 bazel_dep(name = "score_tooling", version = "1.1.2")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
