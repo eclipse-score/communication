@@ -161,25 +161,21 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_cc", version = "0.1.5")
 
-bazel_dep(name = "aspect_rules_lint", version = "1.13.0", dev_dependency = True)
+bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
-bazel_dep(name = "google_benchmark", version = "1.9.4", dev_dependency = True)
+bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 
-bazel_dep(name = "rules_rust", version = "0.61.0")
-git_override(
-    module_name = "rules_rust",
-    commit = "5fc56523d4ff4659f841f43092ba82e6df246edd",  # Fix for QNX x86_64 toolchain
-    remote = "https://github.com/eclipse-score/rules_rust.git",
-)
+bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
-bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
 
 bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "crate_index")
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
-bazel_dep(name = "download_utils", version = "1.0.1")
+
+bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
 
@@ -200,7 +196,7 @@ download_archive(
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 
-bazel_dep(name = "rules_doxygen", version = "2.5.0", dev_dependency = True)
+bazel_dep(name = "rules_doxygen", version = "2.6.1", dev_dependency = True)
 bazel_dep(name = "score_docs_as_code", version = "3.0.1", dev_dependency = True)
 
 # Force score_docs_as_code to 3.0.1 to resolve compatibility conflict between score_logging and score_baselibs
@@ -281,7 +277,7 @@ oci.pull(
 )
 use_repo(oci, "ubuntu_24_04")
 
-bazel_dep(name = "rules_distroless", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 
 apt = use_extension(
     "@rules_distroless//apt:extensions.bzl",
@@ -295,7 +291,7 @@ apt.install(
 )
 use_repo(apt, "ubuntu24_04")
 
-bazel_dep(name = "rules_pkg", version = "1.1.0", dev_dependency = True)
+bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 
 bazel_dep(name = "score_tooling", version = "1.1.2")
 
