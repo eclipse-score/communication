@@ -49,10 +49,9 @@
 use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
-pub mod reloc;
 use containers::fixed_capacity::FixedCapacityQueue;
-pub use reloc::Reloc;
 use std::path::Path;
+use crate::Reloc;
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
 #[derive(Debug)]

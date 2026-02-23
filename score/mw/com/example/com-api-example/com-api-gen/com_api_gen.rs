@@ -31,14 +31,14 @@ impl CommData for Exhaust {
     const ID: &'static str = "Exhaust";
 }
 
-// Example interface definition using the interface macro
+// Example interface definition using the interface macro with a custom UID for the interface.
 // This will generate the following types and trait implementations:
-// - VehicleInterface struct with INTERFACE_ID = "Vehicle"
+// - VehicleInterface struct with INTERFACE_ID = "VehicleInterface"
 // - VehicleConsumer<R>, VehicleProducer<R>, VehicleOfferedProducer<R> with appropriate trait
 //   implementations for the Vehicle interface.
 // The macro invocation defines an interface named "Vehicle" with two events: "left_tire" and "exhaust".
 // The generated code will include:
-// - VehicleInterface struct with INTERFACE_ID = "Vehicle"
+// - VehicleInterface struct with INTERFACE_ID = "VehicleInterface"
 // - VehicleConsumer<R> struct that implements Consumer trait for subscribing to "left_tire"
 //   and "exhaust" events.
 // - VehicleProducer<R> struct that implements Producer trait for producing "left_tire" and
@@ -46,7 +46,7 @@ impl CommData for Exhaust {
 // - VehicleOfferedProducer<R> struct that implements OfferedProducer trait for offering
 //   "left_tire" and "exhaust" events.
 interface!(
-    interface Vehicle {
+    interface Vehicle, "VehicleInterface", {
         left_tire: Event<Tire>,
         exhaust: Event<Exhaust>,
      }

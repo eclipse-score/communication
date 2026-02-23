@@ -15,12 +15,14 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 rust_library(
     name = "com-api-concept",
     srcs = [
+        "lib.rs",
         "com_api_concept.rs",
         "reloc.rs",
+        "interface_macros.rs",
     ],
-    crate_root = "com_api_concept.rs",
     proc_macro_deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept-macros",
+        "@crate_index//:paste",
     ],
     visibility = [
         "//visibility:public",  # platform_only

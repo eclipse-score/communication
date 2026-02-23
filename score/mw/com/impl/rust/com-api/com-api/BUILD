@@ -22,7 +22,6 @@ rust_library(
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept",
-        "//score/mw/com/impl/rust/com-api/com-api-concept-macros:com-api-interface-macros",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
         "//score/mw/com/impl/rust/com-api/com-api-runtime-mock",
     ],

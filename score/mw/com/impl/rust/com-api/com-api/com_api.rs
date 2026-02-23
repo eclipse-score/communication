@@ -21,6 +21,5 @@ pub use com_api_concept::{
     InstanceSpecifier, Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder,
     ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer,
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
+    interface, interface_common, interface_consumer, interface_producer,
 };
-
-pub use com_api_concept_interface_macros::interface;
