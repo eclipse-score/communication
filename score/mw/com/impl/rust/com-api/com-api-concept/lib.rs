@@ -16,9 +16,9 @@
 /// The interface macro generates the necessary types and trait implementations for defining communication interfaces,
 /// while the Reloc type provides a safe abstraction for moving data across thread or process boundaries without violating Rust's ownership rules.
 
-pub use paste::paste;
 mod com_api_concept;
 mod interface_macros;
 mod reloc;
+pub use paste::paste;
 pub use com_api_concept::*;
 pub use reloc::Reloc;
