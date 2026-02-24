@@ -13,6 +13,7 @@
 #ifndef SCORE_LIB_MEMORY_SHARED_TYPEDSHM_UTILS_TYPED_MEMORY_UTILS_H
 #define SCORE_LIB_MEMORY_SHARED_TYPEDSHM_UTILS_TYPED_MEMORY_UTILS_H
 
+#include <sys/types.h>
 #include <optional>
 
 namespace score::memory::shared
