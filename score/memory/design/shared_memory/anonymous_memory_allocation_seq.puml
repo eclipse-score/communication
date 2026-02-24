@@ -1,4 +1,4 @@
-@startuml anonymous_memory_allocation_sequence
+@startuml anonymous_memory_allocation_seq
 ' Sequence diagram for anonymous memory allocation
 
 participant InstanceP1 as Instance

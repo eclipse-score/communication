@@ -1,4 +1,4 @@
-@startuml named_memory_allocation_sequence
+@startuml named_memory_allocation_seq
 ' Sequence diagram for named memory allocation
 
 

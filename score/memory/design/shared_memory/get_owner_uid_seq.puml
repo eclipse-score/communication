@@ -1,4 +1,4 @@
-@startuml GetOwnerUid
+@startuml get_owner_uid_seq
 
 participant SharedMemoryResource
 participant "os::Stat" as os

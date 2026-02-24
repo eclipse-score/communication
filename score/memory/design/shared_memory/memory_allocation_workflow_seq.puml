@@ -1,4 +1,4 @@
-@startuml memory_allocation_workflow_sequence
+@startuml memory_allocation_workflow_seq
 ' Sequence diagram for memory allocation workflow
 
 participant InstanceP1 as Instance

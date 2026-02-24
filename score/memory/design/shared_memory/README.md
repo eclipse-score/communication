@@ -10,9 +10,9 @@ which is necessary to fulfill the [Basic Architectural thoughts](../../../../mw/
 In fact, the usage of shared memory or its allocators shall be fully transparent for a user of the `ara`-API.
 
 ## Shared Memory based allocation
-The following section gives a textual reasoning and explanation of the class diagram that can be seen [here](memory_allocation.uxf).
+The following section gives a textual reasoning and explanation of the class diagram that can be seen [here](./generated/svg/memory_allocation.svg).
 
-<img alt="Memory Allocation" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/baselibs/refs/heads/main/score/memory/design/shared_memory/memory_allocation.puml">
+![Memory Allocation](./generated/svg/memory_allocation.svg)
 
 Further also some [guidance](#guidance-for-data-types-in-shared-memory) is given, which data types can be stored
 in shared memory.
@@ -61,11 +61,11 @@ The idea behind the `MemoryResourceProxy` is, that it builds up a non-virtual cl
 in shared memory and identifies a specific `ManagedMemoryResource` using a process-specific global instance of `MemoryResourceRegistry`.
 One can think of it as a custom shared memory safe implementation of a v-table. In order for this to work, on construction
 of a memory resource, it needs to register itself at the `MemoryResourceRegistry`. Then, when returning the `MemoryResourceProxy`
-it needs to be constructed with the same identifier. This workflow is further illustrated in [Memory Allocation Workflow](memory_allocation_workflow.puml).
+it needs to be constructed with the same identifier. This workflow is further illustrated in [Memory Allocation Workflow](./generated/svg//memory_allocation_workflow_seq.svg).
 On a second process, that did not create the shared memory, the workflow would look the same, with the only difference,
 that the `MemoryResourceProxy` is not created, but rather reinterpreted from the shared memory region.
 
-<img alt="Memory Allocation" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/baselibs/refs/heads/main/score/memory/design/shared_memory/memory_allocation_workflow.puml">
+![Memory Allocation](./generated/svg/memory_allocation_workflow_seq.svg)
 
 The key idea of this `MemoryResourceRegistry` concept is, that the keys used for registering a `ManagedMemoryResource` into
 the registry (and being the essential part of the proxy) is globally (across all processes) unique and deterministic.
@@ -273,7 +273,7 @@ The underlying `shm_open()` call uses the `O_EXCL` and `O_CREAT` flags, ensuring
 
 From a safety standpoint, `ASIL-B` applications should avoid creating shared memory objects with `world-readable` or `world-writable` permissions in order to reduce security risks. For more details check [Access Control concepts](broken_link_a/ui/api/v1/download/contentBrowsing/ipnext-platform-documentation/master/html/features/dac/README.html)
 
-<img alt="Named memory allocation" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/baselibs/refs/heads/main/score/memory/design/shared_memory/named_memory_allocation.puml">
+![Named memory allocation](./generated/svg/named_memory_allocation_seq.svg)
 
 ### Anonymous Shared Memory
 Anonymous shared memory created with `SharedMemoryFactory::CreateAnonymous(...)` does not have a representation in the file system. In fact, there is no way for a random process to identify an anonymous shared memory object. Thus, there are no corresponding implementations of `SharedMemoryFactory::Open(...)` and `SharedMemoryFactory::CreateOrOpen(...)`. To share an anonymous shared memory object with another process it must be actively shared at runtime by:
@@ -289,7 +289,7 @@ underlying `shm_open()` call is made with `mode` argument based on the`permissio
 Anonymous Shared Memory objects are created without `SHM_CREATE_HANDLE_OPT_NOFD`, such that the user is able to create further `shm_handle_t` for other processes.
 These objects are then sealed by calling `shm_ctl()` with `SHMCTL_SEAL` flag to prevents the object's layout (e.g., its size and backing memory) and attributes from being modified. So that no process (including the object's creator) can modify the layout or change any attributes.
 
-<img alt="Anonymous memory allocation" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/baselibs/refs/heads/main/score/memory/design/shared_memory/anonymous_memory_allocation.puml">
+![Anonymous memory allocation](./generated/svg/anonymous_memory_allocation_seq.svg)
 
 ## Memory Management Algorithm
 The allocated shared memory needs to be managed in some way. Meaning, freed memory needs to be reused before
@@ -364,4 +364,4 @@ This solution of querying the `typed_memory_daemon` for the creator UID was chos
 
 The complete sequence to find the owner is:
 
-<img alt="GetOwnerUid sequence" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/baselibs/refs/heads/main/score/memory/design/shared_memory/get_owner_uid_seq.puml">
+![GetOwnerUid sequence](./generated/svg/get_owner_uid_seq.svg)
