@@ -969,6 +969,18 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     size_t sample_size,
     size_t sample_alignment) noexcept
 {
+
+    // Guard against over-aligned types (Short-term solution protection)
+    if (sample_alignment > alignof(std::max_align_t))
+    {
+        score::mw::log::LogFatal("Skeleton") 
+            << "Requested sample alignment (" << sample_alignment 
+            << ") exceeds max_align_t (" << alignof(std::max_align_t) 
+            << "). Safe shared memory layout cannot be guaranteed.";
+            
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_alignment <= alignof(std::max_align_t),"Requested sample alignment exceeds maximum supported alignment.");
+    }
+    
     // Calculate the aligned size for a single sample to ensure proper padding between slots
     const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
     const auto total_data_size_bytes = aligned_sample_size * element_properties.number_of_slots;

@@ -119,6 +119,54 @@ TEST_F(GenericSkeletonTest, CreateWithInstanceSpecifierResolvesIdentifier)
     ASSERT_TRUE(result.has_value());
 }
 
+TEST_F(GenericSkeletonTest, CreateWithUnresolvedInstanceSpecifierFails)
+{
+    RecordProperty("Description", "Checks that GenericSkeleton returns kInstanceIDCouldNotBeResolved when InstanceSpecifier cannot be resolved.");
+    RecordProperty("TestType", "Requirements-based test");
+
+    // Given a valid string specifier
+    auto instance_specifier = InstanceSpecifier::Create(std::string("path/to/unknown/service")).value();
+    
+    // Expect the Runtime to attempt to resolve it, but simulate failure by returning an empty vector
+    EXPECT_CALL(runtime_mock_guard_.runtime_mock_, resolve(instance_specifier))
+        .WillOnce(Return(std::vector<InstanceIdentifier>{}));
+
+    // When creating the skeleton
+    GenericSkeletonCreateParams params;
+    auto result = GenericSkeleton::Create(instance_specifier, params);
+
+    // Then creation fails with the expected error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kInstanceIDCouldNotBeResolved);
+}
+
+TEST_F(GenericSkeletonTest, CreateFailsIfEventBindingCannotBeCreated)
+{
+    RecordProperty("Description", "Checks that creation fails if the GenericSkeletonEventBindingFactory returns an error for any event.");
+    RecordProperty("TestType", "Requirements-based test");
+    
+    // 1. Given an identifier and configuration with one valid event
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifierWithEvent();
+    const std::string event_name = "test_event"; 
+    
+    std::vector<EventInfo> event_storage;
+    event_storage.push_back({event_name, {16, 8}});
+
+    GenericSkeletonCreateParams params;
+    params.events = event_storage;
+
+    // 2. Expect the Event Binding Factory to be called, but force it to FAIL
+    // We simulate an internal failure by returning MakeUnexpected
+    EXPECT_CALL(generic_skeleton_event_binding_factory_mock_, Create(_, event_name, _))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // 3. When creating the skeleton
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // 4. Then creation fails and correctly propagates the kBindingFailure error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
 
 TEST_F(GenericSkeletonTest, CreateWithEventsInitializesEventBindings)
 {
