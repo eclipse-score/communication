@@ -22,10 +22,10 @@
 namespace score::memory::shared
 {
 
-// TODO: Currently we cannot use the wrapper around std::basic_string in QNX due to a bug in LLVM which prevents using a
-//  pointer type (i.e. OffsetPtr) in the allocator which is not trivially constructible. Therefore, BasicString cannot
-//  currently be used when building for QNX. If a BasicString is instantiated when building for QNX, it will throw a
-//  compiler error.
+// TODO: Ticket-54614 - Currently we cannot use the wrapper around std::basic_string in QNX due to a bug in LLVM which
+//  prevents using a pointer type (i.e. OffsetPtr) in the allocator which is not trivially constructible. Therefore,
+//  BasicString cannot currently be used when building for QNX. If a BasicString is instantiated when building for QNX,
+//  it will throw a compiler error.
 
 // LCOV_EXCL_START As described above, this wrapper cannot be used in QNX due to a bug. Therefore, we cannot test the
 // code in QNX (only on host).
