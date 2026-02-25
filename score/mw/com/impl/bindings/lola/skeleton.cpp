@@ -980,7 +980,7 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
             
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_alignment <= alignof(std::max_align_t),"Requested sample alignment exceeds maximum supported alignment.");
     }
-    
+
     // Calculate the aligned size for a single sample to ensure proper padding between slots
     const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
     const auto total_data_size_bytes = aligned_sample_size * element_properties.number_of_slots;
@@ -1010,7 +1010,7 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
+    return {score::memory::shared::OffsetPtr<void>(data_storage), CreateEventControlComposite(element_fq_id, element_properties)};
 }
 std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> Skeleton::RegisterGeneric(
     const ElementFqId element_fq_id,
