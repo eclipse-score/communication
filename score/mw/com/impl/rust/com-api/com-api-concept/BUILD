@@ -44,3 +44,12 @@ rust_doc_test(
     crate = ":com-api-concept",
     deps = ["//score/mw/com/impl/rust/com-api/com-api",],
 )
+
+rust_test(
+    name = "com-api-concept-macros-unit-tests",
+    srcs = ["interface_macros.rs"],
+    proc_macro_deps = [
+        "@crate_index//:paste",
+    ],
+    deps = ["//score/mw/com/impl/rust/com-api/com-api",],
+)

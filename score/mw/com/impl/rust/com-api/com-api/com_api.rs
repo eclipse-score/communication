@@ -23,3 +23,6 @@ pub use com_api_concept::{
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
     interface, interface_common, interface_consumer, interface_producer,
 };
+
+#[doc(hidden)]
+pub use com_api_concept::paste;

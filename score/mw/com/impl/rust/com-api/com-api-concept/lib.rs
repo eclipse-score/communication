@@ -19,6 +19,7 @@
 mod com_api_concept;
 mod interface_macros;
 mod reloc;
-pub use paste::paste;
+#[doc(hidden)]
+pub use paste;
 pub use com_api_concept::*;
 pub use reloc::Reloc;

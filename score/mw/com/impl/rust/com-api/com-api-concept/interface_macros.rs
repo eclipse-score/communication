@@ -11,6 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+#[doc(hidden)]
+#[allow(unused_imports)]
+pub use paste;
+
 /// Main interface macro that generates Consumer, Producer, and OfferedProducer types
 /// along with all necessary trait implementations.
 ///
@@ -101,7 +105,7 @@ macro_rules! interface {
 macro_rules! interface_common {
     // Default: auto ID = module path + type name
     ($id:ident) => {
-        $crate::paste! {
+        $crate::paste::paste!  {
             pub struct [<$id Interface>] {}
             impl com_api::Interface for [<$id Interface>] {
                 const INTERFACE_ID: &'static str =
@@ -113,7 +117,7 @@ macro_rules! interface_common {
     };
     // Explicit ID override
     ($id:ident, $uid:expr) => {
-        $crate::paste! {
+        $crate::paste::paste!  {
             pub struct [<$id Interface>] {}
             impl com_api::Interface for [<$id Interface>] {
                 const INTERFACE_ID: &'static str = $uid;
@@ -130,7 +134,7 @@ macro_rules! interface_common {
 #[macro_export]
 macro_rules! interface_consumer {
     ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
-        $crate::paste! {
+        $crate::paste::paste!  {
             pub struct [<$id Consumer>]<R: com_api::Runtime + ?Sized> {
                 $(
                     pub $event_name: R::Subscriber<$event_type>,
@@ -159,7 +163,7 @@ macro_rules! interface_consumer {
 #[macro_export]
 macro_rules! interface_producer {
     ($id:ident, $($event_name:ident, Event<$event_type:ty>),+$(,)?) => {
-        $crate::paste! {
+        $crate::paste::paste!  {
             pub struct [<$id Producer>]<R: com_api::Runtime + ?Sized> {
                 _runtime: core::marker::PhantomData<R>,
                 instance_info: R::ProviderInfo,
@@ -624,4 +628,403 @@ mod tests {
     /// This will fail to compile because the `interface_producer!` macro does not support Field definitions and will produce a compile-time error indicating that Field definitions are not supported.
     #[cfg(doctest)]
     fn interface_producer_macro_with_Field() {}
+
+}
+
+#[cfg(test)]
+#[allow(dead_code)]
+#[allow(unused_imports)]
+mod validation_tests {
+    use crate::paste;
+
+    #[test]
+    fn test_interface_type_name_vehicle() {
+        mod test_module {
+            use com_api::{CommData, Reloc, ProviderInfo, Subscriber, Publisher};
+            
+            #[derive(Debug, Reloc)]
+            #[repr(C)]
+            pub struct Tire { pub pressure: f32 }
+            impl CommData for Tire {
+                const ID: &'static str = "Tire";
+            }
+            
+            crate::interface!(
+                interface Vehicle {
+                    left_tire: Event<Tire>,
+                }
+            );
+            
+            pub fn validate() {
+                let actual = std::any::type_name::<VehicleInterface>();
+                // Extract only the last part of the type name (the original type)
+                let type_name_only = actual.split("::").last().unwrap_or("");
+                let expected = "VehicleInterface";
+                assert_eq!(type_name_only, expected, "Type name mismatch for VehicleInterface");
+
+                //id validation
+                let interface_id = <VehicleInterface as com_api::Interface>::INTERFACE_ID;
+                let expected_id = concat!(module_path!(), "::", "Vehicle");
+                assert_eq!(interface_id, expected_id, "Interface ID mismatch for VehicleInterface");
+
+                //wrong id validation
+                let wrong_id = "SomeInterfaceID";
+                assert_ne!(interface_id, wrong_id, "Interface ID should not match the wrong ID");
+
+                //wrong type name validation
+                let wrong_type_name = "SomeInterface";
+                assert_ne!(type_name_only, wrong_type_name, "Type name should not match the wrong type name");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_consumer_type_name() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Consumer, ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Tire { pub pressure: f32 }
+            impl CommData for Tire {
+                const ID: &'static str = "Tire";
+            }
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Exhaust { pub temp: f32 }
+            impl CommData for Exhaust {
+                const ID: &'static str = "Exhaust";
+            }
+            
+            crate::interface!(
+                interface Vehicle {
+                    left_tire: Event<Tire>,
+                    exhaust: Event<Exhaust>,
+                }
+            );
+            
+            pub fn validate() {
+                let actual = std::any::type_name::<VehicleConsumer<LolaRuntime>>();
+                // Extract type name before generic parameters
+                let type_name_only = actual.split('<').next()
+                    .and_then(|s| s.split("::").last())
+                    .unwrap_or("");
+                let expected = "VehicleConsumer";
+                assert_eq!(type_name_only, expected, "Type name mismatch for VehicleConsumer");
+
+                // Verify struct fields exist
+                assert!(std::mem::size_of::<VehicleConsumer<LolaRuntime>>() > 0,
+                    "VehicleConsumer should have struct fields");
+
+                //wrong type name validation
+                let wrong_type_name = "SomeConsumer";
+                assert_ne!(type_name_only, wrong_type_name, "Type name should not match the wrong type name");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_producer_type_name() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Producer, ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Tire { pub pressure: f32 }
+            impl CommData for Tire {
+                const ID: &'static str = "Tire";
+            }
+            
+            crate::interface!(
+                interface Engine {
+                    rpm: Event<Tire>,
+                }
+            );
+            
+            pub fn validate() {
+                let actual = std::any::type_name::<EngineProducer<LolaRuntime>>();
+                // Extract type name before generic parameters
+                let type_name_only = actual.split('<').next()
+                    .and_then(|s| s.split("::").last())
+                    .unwrap_or("");
+                let expected = "EngineProducer";
+                assert_eq!(type_name_only, expected, "Type name mismatch for EngineProducer");
+
+                //wrong type name validation
+                let wrong_type_name = "SomeProducer";
+                assert_ne!(type_name_only, wrong_type_name, "Type name should not match the wrong type name");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_offered_producer_type_name() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Producer, OfferedProducer ,ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Tire { pub pressure: f32 }
+            impl CommData for Tire {
+                const ID: &'static str = "Tire";
+            }
+            
+            crate::interface!(
+                interface Transmission {
+                    gear: Event<Tire>,
+                }
+            );
+            
+            pub fn validate() {
+                let actual = std::any::type_name::<TransmissionOfferedProducer<LolaRuntime>>();
+                // Extract type name before generic parameters
+                let type_name_only = actual.split('<').next()
+                    .and_then(|s| s.split("::").last())
+                    .unwrap_or("");
+                let expected = "TransmissionOfferedProducer";
+                assert_eq!(type_name_only, expected, "Type name mismatch for TransmissionOfferedProducer");
+
+                //wrong type name validation
+                let wrong_type_name = "SomeOfferedProducer";
+                assert_ne!(type_name_only, wrong_type_name, "Type name should not match the wrong type name");
+
+                // Verify struct fields exist for publishers
+                assert!(std::mem::size_of::<TransmissionOfferedProducer<LolaRuntime>>() > 0,
+                    "TransmissionOfferedProducer should have publisher fields");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_with_custom_id_validation() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Producer, ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime, Interface};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Tire { pub pressure: f32 }
+            impl CommData for Tire {
+                const ID: &'static str = "Tire";
+            }
+            
+            crate::interface!(
+                interface Battery, "com.example.Battery", {
+                    voltage: Event<Tire>,
+                }
+            );
+            
+            pub fn validate() {
+                let interface_id = <BatteryInterface as Interface>::INTERFACE_ID;
+                let expected_id = "com.example.Battery";
+                assert_eq!(interface_id, expected_id, 
+                    "Custom interface ID should match provided UID");
+
+                let actual_type = std::any::type_name::<BatteryInterface>();
+                let type_name_only = actual_type.split("::").last().unwrap_or("");
+                assert_eq!(type_name_only, "BatteryInterface",
+                    "Type name should still be BatteryInterface regardless of custom ID");
+
+                //wrong type name validation
+                let wrong_type_name = "SomeInterface";
+                assert_ne!(type_name_only, wrong_type_name, "Type name should not match the wrong type name");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_with_multiple_events_validation() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Producer, ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime, Interface};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Event1Data { pub value: i32 }
+            impl CommData for Event1Data {
+                const ID: &'static str = "Event1Data";
+            }
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Event2Data { pub value: f64 }
+            impl CommData for Event2Data {
+                const ID: &'static str = "Event2Data";
+            }
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Event3Data { pub value: bool }
+            impl CommData for Event3Data {
+                const ID: &'static str = "Event3Data";
+            }
+            
+            crate::interface!(
+                interface MultiEvent {
+                    event_one: Event<Event1Data>,
+                    event_two: Event<Event2Data>,
+                    event_three: Event<Event3Data>,
+                }
+            );
+            
+            pub fn validate() {
+                // Validate interface
+                let interface_id = <MultiEventInterface as Interface>::INTERFACE_ID;
+                assert!(interface_id.contains("MultiEvent"),
+                    "Interface ID should contain MultiEvent");
+
+                // Validate Consumer with multiple event subscribers
+                let consumer_type = std::any::type_name::<MultiEventConsumer<LolaRuntime>>();
+                assert!(consumer_type.contains("MultiEventConsumer"),
+                    "MultiEventConsumer type should be generated");
+
+                // Validate Producer with multiple event publishers
+                let producer_type = std::any::type_name::<MultiEventProducer<LolaRuntime>>();
+                assert!(producer_type.contains("MultiEventProducer"),
+                    "MultiEventProducer type should be generated");
+
+                // Validate OfferedProducer
+                let offered_type = std::any::type_name::<MultiEventOfferedProducer<LolaRuntime>>();
+                assert!(offered_type.contains("MultiEventOfferedProducer"),
+                    "MultiEventOfferedProducer type should be generated");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_type_consistency_across_traits() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Producer, ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime, Interface};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Tire { pub pressure: f32 }
+            impl CommData for Tire {
+                const ID: &'static str = "Tire";
+            }
+            
+            crate::interface!(
+                interface Suspension {
+                    travel: Event<Tire>,
+                }
+            );
+            
+            pub fn validate() {
+                // Verify that Consumer and Producer reference the same Interface type
+                let interface_id = <SuspensionInterface as Interface>::INTERFACE_ID;
+                
+                // Type names should be consistent
+                let suspension_interface_type = std::any::type_name::<SuspensionInterface>();
+                let consumer_type = std::any::type_name::<SuspensionConsumer<LolaRuntime>>();
+                let producer_type = std::any::type_name::<SuspensionProducer<LolaRuntime>>();
+                let offered_type = std::any::type_name::<SuspensionOfferedProducer<LolaRuntime>>();
+
+                assert!(suspension_interface_type.contains("SuspensionInterface"),
+                    "Interface type name should contain SuspensionInterface");
+                assert!(consumer_type.contains("SuspensionConsumer"),
+                    "Consumer type name should contain SuspensionConsumer");
+                assert!(producer_type.contains("SuspensionProducer"),
+                    "Producer type name should contain SuspensionProducer");
+                assert!(offered_type.contains("SuspensionOfferedProducer"),
+                    "OfferedProducer type name should contain SuspensionOfferedProducer");
+
+                // All should be in the same module scope
+                assert_eq!(interface_id, concat!(module_path!(), "::", "Suspension"),
+                    "Interface ID should be auto-generated from module path and interface name");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_invalid_id_mismatch() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Producer, ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime, Interface};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Tire { pub pressure: f32 }
+            impl CommData for Tire {
+                const ID: &'static str = "Tire";
+            }
+            
+            crate::interface!(
+                interface Cooling {
+                    temperature: Event<Tire>,
+                }
+            );
+            
+            pub fn validate() {
+                let interface_id = <CoolingInterface as Interface>::INTERFACE_ID;
+                let wrong_id = "WrongCoolingID";
+                
+                assert_ne!(interface_id, wrong_id,
+                    "Interface ID should not match incorrect ID");
+                
+                let wrong_type = "CoolingProducer";
+                let actual_type = std::any::type_name::<CoolingInterface>();
+                let type_name_only = actual_type.split("::").last().unwrap_or("");
+                
+                assert_ne!(type_name_only, wrong_type,
+                    "CoolingInterface type name should not match CoolingProducer");
+            }
+        }
+        test_module::validate();
+    }
+
+    #[test]
+    fn test_interface_naming_convention_validation() {
+        mod test_module {
+            use com_api::{CommData, Reloc, Producer, ProviderInfo, Subscriber, Publisher, LolaRuntimeImpl as LolaRuntime, Interface};
+            
+            #[derive(Debug, Reloc, Clone)]
+            #[repr(C)]
+            pub struct Data { pub value: u32 }
+            impl CommData for Data {
+                const ID: &'static str = "Data";
+            }
+            
+            crate::interface!(
+                interface ABS {
+                    status: Event<Data>,
+                }
+            );
+            
+            pub fn validate() {
+                // Verify naming conventions for all generated types
+                let interface = std::any::type_name::<ABSInterface>();
+                let consumer = std::any::type_name::<ABSConsumer<LolaRuntime>>();
+                let producer = std::any::type_name::<ABSProducer<LolaRuntime>>();
+                let offered = std::any::type_name::<ABSOfferedProducer<LolaRuntime>>();
+
+                // Extract type names before generic parameters and module path
+                let interface_name = interface.split("::").last().unwrap_or("");
+                let consumer_name = consumer.split('<').next()
+                    .and_then(|s| s.split("::").last())
+                    .unwrap_or("");
+                let producer_name = producer.split('<').next()
+                    .and_then(|s| s.split("::").last())
+                    .unwrap_or("");
+                let offered_name = offered.split('<').next()
+                    .and_then(|s| s.split("::").last())
+                    .unwrap_or("");
+
+                // Validate naming pattern: {InterfaceName}{Suffix}
+                assert_eq!(interface_name, "ABSInterface", 
+                    "Interface should follow pattern {{Name}}Interface");
+                assert_eq!(consumer_name, "ABSConsumer", 
+                    "Consumer should follow pattern {{Name}}Consumer");
+                assert_eq!(producer_name, "ABSProducer", 
+                    "Producer should follow pattern {{Name}}Producer");
+                assert_eq!(offered_name, "ABSOfferedProducer", 
+                    "OfferedProducer should follow pattern {{Name}}OfferedProducer");
+            }
+        }
+        test_module::validate();
+    }
 }
