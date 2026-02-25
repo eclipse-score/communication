@@ -54,12 +54,12 @@ class "score::memory::shared::ManagedMemoryResource" as ManagedMemoryResource
 {
   -subresources: std::map<std::uint64_t, SubResource>
   --
-  +getMemoryResourceProxy(): MemoryResourceProxy*
+  -getMemoryResourceProxy(): MemoryResourceProxy*
   +construct<T*>(args...):T*
   +destruct<T*>(T*): void
   +getBaseAddress() = 0: void*
   +getUsableBaseAddress() = 0: void*
-  +getEndAddress() = 0: void*
+  -getEndAddress() = 0: void*
 
 
 }
@@ -70,10 +70,10 @@ class "score::memory::shared::SharedMemoryResource" as SharedMemoryResource
   base: void*
   --
   # SharedMemoryResource(StringLiteral, ...)
-  + getMemoryResourceProxy(): MemoryResourceProxy*
+  - getMemoryResourceProxy(): MemoryResourceProxy*
   + getBaseAddress(): void*
   + getUsableBaseAddress(): void*
-  + getEndAddress(): void*
+  - getEndAddress(): void*
   + getPath(): std::string*
 
   - do_allocate(std::size_t bytes, std::size_t alignment): void*
