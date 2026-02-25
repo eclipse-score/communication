@@ -14,6 +14,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 
 package(default_visibility = [
     "@score_baselibs//score/memory:__subpackages__",
@@ -204,4 +205,12 @@ cc_unit_test_suites_for_host_and_qnx(
     visibility = [
         "//visibility:public",
     ],
+)
+
+clang_tidy_extra_checks(
+    name = "clang_tidy_extra_checks",
+    extra_features = [
+        "spp_code_style_check_header_guards",
+    ],
+    tidy_config_file = ".clang-tidy-extra",
 )

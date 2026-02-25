@@ -86,4 +86,4 @@ class LazySplitStringView final
 
 }  // namespace score::memory
 
-#endif  // SCORE_LIB_MEMORY_STRING_LITERAL_H
+#endif  // SCORE_LIB_MEMORY_SPLIT_STRING_VIEW_H

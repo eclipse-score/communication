@@ -160,4 +160,4 @@ class ManagedMemoryResource : public ::score::cpp::pmr::memory_resource
 
 }  // namespace score::memory::shared
 
-#endif  // SCORE_LIB_MEMORY_SHARED_MANAGEDMEMORYRESOURCE_H
+#endif  // SCORE_LIB_MEMORY_SHARED_MANAGED_MEMORY_RESOURCE_H
