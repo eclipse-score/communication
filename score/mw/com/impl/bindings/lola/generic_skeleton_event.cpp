@@ -92,14 +92,18 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
 
     if (slot.IsValidQM() || slot.IsValidAsilB())
     {
-        void* base_ptr = data_storage_.get<std::uint8_t>();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(base_ptr != nullptr);
+        //  Get the actual CONTAINER object (using the max_align_t type we allocated it with!)
+        using StorageType = lola::EventDataStorage<std::max_align_t>;
+        StorageType* storage_ptr = data_storage_.get<StorageType>(); 
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(storage_ptr != nullptr);
 
+        std::uint8_t* byte_ptr = reinterpret_cast<std::uint8_t*>(storage_ptr->data());
+
+        // Calculate the exact slot spacing based on alignment padding
         const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
-        std::uint8_t* byte_ptr = static_cast<std::uint8_t*>(base_ptr);
-        std::uint64_t offset = static_cast<std::uint64_t>(slot.GetIndex()) * aligned_size;
-
+        std::size_t offset = static_cast<std::size_t>(slot.GetIndex()) * aligned_size;
         void* data_ptr = byte_ptr + offset;   
+        
         auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
         return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
     }

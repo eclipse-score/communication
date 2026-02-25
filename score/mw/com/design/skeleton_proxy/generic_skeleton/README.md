@@ -1,185 +1,86 @@
-# Support for Generic Skeletons
+# Generic Skeleton
 
-## Introduction
+A `GenericSkeleton` is a provider-side (skeleton) object that can be configured at runtime to offer any service. Unlike standard, code-generated skeletons, it is not tied to a specific service interface at compile-time.
 
-Generic skeletons are skeletons, which are not generated based on compile-time info about types used within the service
-interface. Instead, they are skeletons, which can be instantiated at runtime and be connected to any service consuming
-instance (proxy) just based on deployment information.
+It operates on raw data , making it ideal for applications that need to handle data without understanding its structure, such as:
+*   **Gateways/Bridges**: Forwarding data between different communication protocols.
 
-Since such generic skeletons are loosely typed (don't have the strong type info of the services event/field/service-method
-data-types), they provide a different C++ API opposed to normal (strongly typed) skeletons.
+## How to Use a Generic Skeleton
 
-The use cases for such restricted generic skeletons are typically for dynamically providing "raw data" in terms of blobs
-from service providers. Interpreting the blob data semantically is obviously hard to accomplish.
-If this is needed (normal use case) one should use the normal/strongly typed skeletons.
+Using a `GenericSkeleton` requires two steps: defining the service in the deployment configuration and creating the skeleton instance with its runtime configuration.
 
+### 1. Prerequisite: Deployment Configuration
 
-## LoLa supported feature set for Generic Skeletons
+The service instance must be defined in the `mw_com_config.json` file, just like any other service.
 
-Since `LoLa`s support for fields is restricted to only the event-functionality of fields, we will in a 1st step **only**
-implement event specific functionality for the `Generic Skeleton`.
+### 2. Creating and Using the Skeleton
 
-This comprises the following items:
-* `GenericSkeleton` class: We will provide a class `GenericSkeleton`, but opposed to the concept (linked above) **not** in
-  the `ara::com`, but in the `mw::com` namespace.
-* This `GenericSkeleton` class will (in relation to the concept) **only** provide a public method `GetEvents()`, which
-  returns a `GenericSkeleton::EventMap` (which is a stripped down `std::map`)
-* this map returned by `GetEvents()` will only contain all the events mentioned in the service deployment. Later (when
-  our fields get extended with get/set method functionality).
-* This `GenericSkeleton` will be based on the signatures of our current `LoLa` typed skeleton class:
-  * base skeleton interface
-  * skeleton event interface
+A `GenericSkeleton` is created by providing it with metadata about the service elements (e.g., events, fields) it will offer. This metadata, including memory size and alignment for each element, is passed via the `GenericSkeletonCreateParams` struct.
 
-There will be **no** changes done on `LoLa` configuration approach. This means the `LoLa` configuration (deployment of
-service instances) is processed once at startup. The deployment information of a service instance, to which a
-`GenericSkeleton` shall offer, needs to be provided in the `LoLa` configuration at application startup. This means,
-that any deployment update affecting a `LoLa` application needs an application restart to become effective.
+The following example demonstrates how to create a generic skeleton that provides a single event.
 
-## Architecture enhancements for GenericSkeleton support
-
-Before introduction of `GenericSkeleton` support, the skeleton side constructed in the shared-memory object for **Data** an
-instance of `lola::ServiceDataStorage`, which is a map between an event-identifier and a slot-vector of event-data for
-the given event-identifier.
-When strongly typed skeletons offer to this shared-memory object for data, they exactly know the type (size/layout) of
-this slot-vector, since the event datatype is known to them at compile-time. So they are able to:
-* cast the slot-vector of event-data, which is held within the map as a `OffsetPtr<void>` to the correctly typed vector
-  (`score::memory::shared::Vector<SampleType>`)
-* access therefore the vector elements as `SampleType`
-
-`GenericSkeleton`s don't know the exact type (size/layout) at compile time. However, provided with runtime meta-info (size/alignment), they must allocate and describe the slot-vector in shared memory so that consumers (Generic Proxies) can find and interpret it. So this
-information has now additionally provided by the skeleton.
-
-### Meta-Info
-
-The `lola::EventMetaInfo` is displayed in the class diagram for shared-mem data.
-It contains meta-info of the events data type in the form of `lola::DataTypeMetaInfo` and an `OffsetPtr` to the
-location, where the event-slot vector is stored. With this combined information a `GenericProxy`, which just knows the
-deployment info (essentially the `ElementFqId` of the event) is able to access events in the event-slot vector in its raw
-form (as a byte array).
-
-The `lola::DataTypeMetaInfo` contains the following members:
-* `fingerprint_` : unique fingerprint for the data type. This is a preparation/placeholder for an upcoming feature,
- which will allow doing a runtime check at the proxy side during connection to the service provider, whether provider
- and consumer side are based on the same C++ interface definition.
-* `size_of_` : the result of `sizeof()` operator on the data type (in case of event/field: `SampleType`)
-* `align_of_` : the result of `alignof()` operator on the data type (in case of event/field: `SampleType`)
-
-### initialization of `lola::EventMetaInfo`
-
-The map containing the meta-information gets initialized by the skeleton instance together with the setup/creation of
-the vectors containing the sample slots via `RegisterGeneric` (or the internal `CreateEventDataFromOpenedSharedMemory` helper).
-```cpp
-std::pair<score::memory::shared::OffsetPtr<void>,EventDataControlComposite> 
-lola::Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
-                                const SkeletonEventProperties& element_properties,
-                                const size_t sample_size,
-                                const size_t sample_alignment)
-```
-This happens during initial offering-phase of a service instance, before potential consumers/proxies are able to access
-the shared-memory object. `GenericSkeleton`s will utilize this mechanism to register their events.
-
-## GenericSkeleton class
-
-As shown in the class diagram, below, the `mw::com::impl::GenericSkeleton` is **not** a generated (from some interface
-specification) class (see Sys-Req-13525992), derived from
-`impl::SkeletonBase` (like `DummySkeleton` example) 
-
-### Creation and Configuration
-Unlike strongly typed skeletons, a `GenericSkeleton` is instantiated dynamically at runtime. Because it lacks compile-time type information, the user must provide the necessary meta-information (such as memory size and alignment) for each service element (events and fields) during the creation phase.
-
-This configuration is passed via the `GenericSkeletonCreateParams` struct, which accepts spans of element configurations.
-
-```cpp
-struct EventInfo {
-    std::string_view name;
-    DataTypeMetaInfo data_type_meta_info; // contains size and alignment
-};
-
-struct GenericSkeletonCreateParams {
-    score::cpp::span<const EventInfo> events{};
-};
-```
-#### Adding Events
-To add an event to a Generic Skeleton, you must populate an `EventInfo` struct. The `EventInfo` requires:
-1.  **`name`**: The exact string name of the event as defined in the deployment configuration (e.g., `mw_com_config.json`).
-2.  **`data_type_meta_info`**: A `DataTypeMetaInfo` struct containing the `sizeof()` and `alignof()` the payload data type. This is crucial for the middleware to allocate appropriately sized shared memory slots.
-
-These `EventInfo` structs are then collected into a span and passed to the `GenericSkeleton::Create` method.
-
-**Example: Adding an Event to a Generic Skeleton**
+**Example: Creating a Generic Skeleton with an Event**
 
 ```cpp
 #include "score/mw/com/impl/generic_skeleton.h"
 #include "score/mw/com/impl/data_type_meta_info.h"
 #include <vector>
 
-// 1. Define the event name and calculate its memory requirements
+// The service instance specifier, as defined in mw_com_config.json
+// const score::mw::com::InstanceSpecifier instance_specifier = ...;
+
+// 1. Define the metadata for the event.
+// The name must match the service definition.
 const auto event_name = "map_api_lanes_stamped";
-const score::mw::com::impl::DataTypeMetaInfo size_info{
+// The middleware needs the size and alignment for memory allocation.
+const score::mw::com::impl::DataTypeMetaInfo event_meta_info{
     sizeof(MapApiLanesStamped), 
     alignof(MapApiLanesStamped)
 };
 
-// 2. Populate the EventInfo struct
-const std::vector<score::mw::com::impl::EventInfo> events_vec = {
-    {event_name, size_info}
+// 2. Collect all event definitions.
+const std::vector<score::mw::com::impl::EventInfo> events = {
+    {event_name, event_meta_info}
 };
 
-// 3. Assign the events to the creation parameters
+// 3. Populate the creation parameters.
+// Similar spans can be provided for fields and methods if they were supported.
 score::mw::com::impl::GenericSkeletonCreateParams create_params;
-create_params.events = events_vec;
+create_params.events = events;
 
-// 4. Create the Generic Skeleton
+// 4. Create the Generic Skeleton instance.
 auto create_result = score::mw::com::impl::GenericSkeleton::Create(
     instance_specifier, 
     create_params
 );
 
-if (create_result.has_value()) {
-    auto& skeleton = create_result.value();
-    
-    // 5. Retrieve the event by name to use it
-    auto event_it = skeleton.GetEvents().find(event_name);
-    if (event_it != skeleton.GetEvents().cend()) {
-        auto& generic_event = event_it->second;
-        // Proceed with skeleton.OfferService() and generic_event.Send(...)
+if (!create_result.has_value()) {
+    // Handle creation error
+    return;
+}
+auto& skeleton = create_result.value();
+
+// 5. Offer the service.
+skeleton.OfferService();
+
+// 6. Retrieve the event by name to send data.
+auto event_it = skeleton.GetEvents().find(event_name);
+if (event_it != skeleton.GetEvents().cend()) {
+    // Get a non-const reference to the event to call non-const methods.
+    auto& generic_event = const_cast<score::mw::com::impl::GenericSkeletonEvent&>(event_it->second);
+
+    // Allocate a sample from the middleware. The size is known from the metadata
+    auto allocate_result = generic_event.Allocate();
+    if (allocate_result.has_value()) {
+        auto sample = std::move(allocate_result.value());
+        
+        // Get the raw pointer from the smart pointer for populating the data.
+        auto* typed_sample = static_cast<MapApiLanesStamped*>(sample.Get());
+        
+        // ... populate the typed_sample ...
+
+        // Send the sample.
+        generic_event.Send(std::move(sample));
     }
 }
 ```
-
-The `GenericSkeleton`contains one member `events_`, which is a map of
-`impl::GenericSkeletonEvent` in the form of `mw::com::EventMap`.
-
-<img alt="GENERIC_SKELETON_MODEL" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/skeleton_proxy/generic_skeleton/generic_skeleton_model.puml">
-
-Classes drawn with yellow background are extensions of the class diagram to support `GenericSkeleton` functionality beside
-"normal" skeletons.
-While there is a new `impl::GenericSkeleton` in the binding **independent** area, we currently do not need to reflect it in
-the binding specific part as `impl::SkeletonBinding` (and therefore `lola::Skeleton` implementing `impl::SkeletonBinding`)
-doesn't need any extensions for `GenericSkeleton` functionality.
-On the level below the skeleton (skeleton-event level) this looks different. In the binding independent part we introduced the
-non-templated class `impl::GenericSkeletonEvent` beside the existing class template `impl::SkeletonEvent<SampleType>`.
-Both derive from `impl::SkeletonEventBase`, which contains all the `SampleType` agnostic/independent signatures/
-implementations a skeleton-event needs to have.
-The methods `Send()` and `Allocate()` are `SampleType` specific (via their arguments, which depend on the `SampleType`).
-Therefore, they aren't contained in `impl::SkeletonEventBase` but specifically implemented in `impl::GenericSkeletonEvent` and
-`impl::SkeletonEvent<SampleType>`.
-
-We have a similar setup on the binding side: `impl::GenericSkeletonEventBinding` has been introduced beside
-`impl::SkeletonEventBinding<SampleType>` as abstract classes/interface definitions for "normal", respectively generic
-skeleton-event bindings.
-Their common abstract base class `impl::SkeletonEventBindingBase` aggregates all interfaces, which are `SampleType`
-agnostic and are common to both skeleton-event bindings.
-
-On `LoLa` implementation level for the skeleton-event binding, we added `lola::GenericSkeletonEvent` beside
-`lola::SkeletonEvent<SampleType>`.
-To factor out common code/implementations for all signatures, which are `SampleType` agnostic and common to both
-`lola::GenericSkeletonEvent` and `lola::SkeletonEvent<SampleType>`
-the class `lola::SkeletonEventCommon` has been
-introduced, which implements this common code. I.e. instances of `lola::GenericSkeletonEvent` and `lola::SkeletonEvent<SampleType>`
-create such an instance and dispatch the corresponding methods to it. We decided to go for this composite/dispatch
-approach instead of introducing a common base class to `lola::GenericSkeletonEvent` and `lola::SkeletonEvent<SampleType>`,
-which provides/implements those signatures as this would have meant, that `lola::GenericSkeletonEvent` and
-`lola::SkeletonEvent<SampleType>` had multi-inheritance (from this base class and their corresponding interface)!
-Even if this hadn't been problematic (in terms of potential diamond pattern), we would have to explicitly argue/analyse
-it due to the `ASIL-B` nature of our code base and the general avoidance pattern of multi-inheritance.

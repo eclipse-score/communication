@@ -968,48 +968,38 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     const SkeletonEventProperties& element_properties,
     size_t sample_size,
     size_t sample_alignment) noexcept
-{   
-    // Calculate the total size required, respecting alignment padding between elements
-    const auto aligned_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
-    const auto total_data_size = aligned_size * element_properties.number_of_slots;
+{
+    // Calculate the aligned size for a single sample to ensure proper padding between slots
+    const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
+    const auto total_data_size_bytes = aligned_sample_size * element_properties.number_of_slots;
 
-    // We pass 'sample_alignment' to the Allocator. Even though T is uint8_t (align 1),
-    // the allocator will force the underlying memory block to start at an address 
-    // aligned to 'sample_alignment'.
-    auto* vector_ptr = storage_resource_->construct<EventDataStorage<std::uint8_t>>(
-        total_data_size, 
-        memory::shared::PolymorphicOffsetPtrAllocator<std::uint8_t>(
-            storage_resource_->getMemoryResourceProxy(),
-            sample_alignment 
-        )
-    );
+    // Convert total bytes to the number of std::max_align_t elements needed (round up)
+    const size_t num_max_align_elements = 
+        (total_data_size_bytes + sizeof(std::max_align_t) - 1) / sizeof(std::max_align_t);
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(vector_ptr != nullptr, 
-        "Failed to construct Generic Vector in Shared Memory");
-
-    // 2. Register the VECTOR OBJECT in the Data Map (for Typed Proxy)
-    void* vector_obj_void = static_cast<void*>(vector_ptr);
+    auto* data_storage = storage_resource_->construct<EventDataStorage<std::max_align_t>>(
+        num_max_align_elements,
+        memory::shared::PolymorphicOffsetPtrAllocator<std::max_align_t>(storage_resource_->getMemoryResourceProxy()));
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
                                                          std::forward_as_tuple(element_fq_id),
-                                                         std::forward_as_tuple(vector_obj_void));
-    
+                                                         std::forward_as_tuple(data_storage));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
                                                "Couldn't register/emplace event-storage in data-section.");
 
-    // 3. Get the RAW DATA POINTER (The actual buffer inside the vector)
-    void* raw_data_ptr = static_cast<void*>(vector_ptr->data());
-    const impl::DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
+
+    const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
+    void* const event_data_raw_array = data_storage->data();
+    
     auto inserted_meta_info = storage_->events_metainfo_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(element_fq_id),
-        std::forward_as_tuple(sample_meta_info, raw_data_ptr));
+        std::forward_as_tuple(sample_meta_info, event_data_raw_array));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {raw_data_ptr, CreateEventControlComposite(element_fq_id, element_properties)};
+    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
 }
-
 std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> Skeleton::RegisterGeneric(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
