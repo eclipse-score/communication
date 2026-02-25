@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
@@ -38,6 +39,20 @@
 
 namespace score::mw::com::impl::lola
 {
+
+class ProxyTestAttorney
+{
+  public:
+    /// \brief Inject a proxy instance counter which is incremented every time a proxy is created within a process
+    ///
+    /// We need to inject a custom value here to check what happens when the counter overflows. Technically, we could
+    /// test this via the public interface by creating 65536 proxies (i.e. 1 more than the max value of std::uin16_t).
+    /// However, this is impractical in a unit test and so we resort to this "hack" of manually injecting a value.
+    static void InjectProxyInstanceCounter(ProxyInstanceIdentifier::ProxyInstanceCounter new_counter)
+    {
+        Proxy::current_proxy_instance_counter_ = new_counter;
+    }
+};
 
 namespace
 {
@@ -207,6 +222,38 @@ TEST_F(ProxyCreationFixture, ProxyCreationSucceedsWhenSharedLockOnUsageMarkerFil
 
     // Then a valid proxy is created
     EXPECT_NE(proxy_, nullptr);
+}
+
+TEST_F(ProxyCreationFixture, ProxyCreationReturnsNullPtrWhenProxyInstanceCounterOverflows)
+{
+    class InjectedInstanceCounterGuard
+    {
+      public:
+        InjectedInstanceCounterGuard(ProxyInstanceIdentifier::ProxyInstanceCounter new_proxy_instance_counter)
+        {
+            ProxyTestAttorney::InjectProxyInstanceCounter(new_proxy_instance_counter);
+        }
+
+        ~InjectedInstanceCounterGuard()
+        {
+            ProxyTestAttorney::InjectProxyInstanceCounter(0U);
+        }
+
+        InjectedInstanceCounterGuard(const InjectedInstanceCounterGuard&) = delete;
+        InjectedInstanceCounterGuard& operator=(const InjectedInstanceCounterGuard&) = delete;
+        InjectedInstanceCounterGuard(InjectedInstanceCounterGuard&&) = delete;
+        InjectedInstanceCounterGuard& operator=(InjectedInstanceCounterGuard&&) = delete;
+    };
+    // Given that the proxy instance counter (which is incremented every time a proxy is created) is already at the max
+    // possible value i.e. creating another proxy would overflow the counter
+    const auto max_proxy_instance_counter = std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max();
+    InjectedInstanceCounterGuard proxy_instance_counter_guard{max_proxy_instance_counter};
+
+    // When creating a proxy
+    const auto proxy_result = Proxy::Create(make_HandleType(identifier_));
+
+    // Then the result will be a nullptr
+    EXPECT_EQ(proxy_result, nullptr);
 }
 
 using ProxyCreationDeathTest = ProxyCreationFixture;

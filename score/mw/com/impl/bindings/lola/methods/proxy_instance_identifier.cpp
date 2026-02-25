@@ -21,4 +21,11 @@ bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifie
             (lhs.proxy_instance_counter == rhs.proxy_instance_counter));
 }
 
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyInstanceIdentifier& value) noexcept
+{
+    stream << "Application ID:" << value.process_identifier
+           << ". Proxy Instance Counter:" << value.proxy_instance_counter;
+    return stream;
+}
+
 }  // namespace score::mw::com::impl::lola

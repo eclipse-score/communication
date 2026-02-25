@@ -772,7 +772,7 @@ TEST_F(RegisterWithGenericTraceApiFixture, Registration_OK)
     // and expect, that it calls then RegisterTraceDoneCB at the GenericTraceAPI with the trace client id, which has
     // been returned by the RegisterClient call
     EXPECT_CALL(*generic_trace_api_mock_.get(), RegisterTraceDoneCB(trace_client_id_, _))
-        .WillOnce(Return(score::Result<Blank>{}));
+        .WillOnce(Return(score::ResultBlank{}));
 
     // expect the UuT to return true, when we call RegisterWithGenericTraceApi on it
     EXPECT_TRUE(tracing_runtime_.RegisterWithGenericTraceApi());
@@ -825,7 +825,7 @@ class TraceDoneCallbackFixture : public RegisterWithGenericTraceApiFixture
                 Invoke([this](auto trace_done_callback) -> analysis::tracing::RegisterTraceDoneCallBackResult {
                     trace_done_callback_ = std::move(trace_done_callback);
                     static_cast<void>(trace_done_callback);
-                    return score::Result<Blank>{};
+                    return score::ResultBlank{};
                 })));
     }
 

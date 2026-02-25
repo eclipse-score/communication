@@ -1,0 +1,5 @@
+packs:
+  - codeql/misra-cpp-coding-standards@2.52.0
+query-filters:
+  - exclude:
+      tags: exclude-from-incremental

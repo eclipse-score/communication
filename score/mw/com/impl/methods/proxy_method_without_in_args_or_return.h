@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
 
 #include "score/memory/data_type_size_info.h"
@@ -42,11 +43,34 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     friend class ProxyMethodView;
 
   public:
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
+        : ProxyMethodBase(proxy_base,
+                          ProxyMethodBindingFactory<void()>::Create(proxy_base.GetHandle(),
+                                                                    ProxyBaseView{proxy_base}.GetBinding(),
+                                                                    method_name),
+                          method_name)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
         : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name)
     {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
     }
 
     ~ProxyMethod() final = default;
@@ -74,41 +98,6 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     static constexpr std::optional<memory::DataTypeSizeInfo> type_erased_return_type_{};
 };
 
-ProxyMethod<void()>::ProxyMethod(ProxyMethod&& other) noexcept : ProxyMethodBase(std::move(other))
-{
-    // Since the address of this method has changed, we need update the address stored in the parent proxy.
-    ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
-}
-
-auto ProxyMethod<void()>::operator=(ProxyMethod&& other) noexcept -> ProxyMethod<void()>&
-{
-    if (this != &other)
-    {
-        ProxyMethod::operator=(std::move(other));
-
-        // Since the address of this method has changed, we need update the address stored in the parent proxy.
-        ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
-    }
-    return *this;
-}
-
-score::ResultBlank ProxyMethod<void()>::operator()()
-{
-    auto queue_position = detail::DetermineNextAvailableQueueSlot(is_return_type_ptr_active_);
-    if (!queue_position.has_value())
-    {
-        return Unexpected(queue_position.error());
-    }
-    auto call_result = binding_->DoCall(queue_position.value());
-    if (!call_result.has_value())
-    {
-        return Unexpected(call_result.error());
-    }
-
-    return {};
-}
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITHOUT_IN_ARGS_OR_RETURN_H

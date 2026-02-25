@@ -12,8 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/performance_benchmarks/common_test_resources/shared_memory_object_creator.h"
 
-#include "score/language/safecpp/string_view/null_termination_check.h"
-
 #include "score/os/stat.h"
 
 #include <chrono>
@@ -35,15 +33,10 @@ constexpr std::string_view kSharedMemoryPathPrefix = "/dev/shmem/";
 constexpr std::string_view kSharedMemoryPathPrefix = "/dev/shm/";
 #endif
 
-bool DoesFileExist(const std::string_view file_path) noexcept
+bool DoesFileExist(const std::string& file_path) noexcept
 {
     ::score::os::StatBuffer buffer{};
-    // NOTE: Below use of `safecpp::GetPtrToNullTerminatedUnderlyingBufferOf()` will emit a deprecation warning here
-    //       since it is used in conjunction with `std::string_view`. Thus, it must get fixed appropriately instead!
-    //       For examples about how to achieve that, see
-    //       broken_link_g/swh/safe-posix-platform/blob/master/score/language/safecpp/string_view/README.md
-    const auto result =
-        ::score::os::Stat::instance().stat(safecpp::GetPtrToNullTerminatedUnderlyingBufferOf(file_path), buffer);
+    const auto result = ::score::os::Stat::instance().stat(file_path.c_str(), buffer);
     if (!result.has_value())
     {
         if (result.error() != os::Error::Code::kNoSuchFileOrDirectory)
@@ -77,10 +70,10 @@ bool WaitForFreeLockFile(const std::string& lock_file_path) noexcept
     static_assert(maxRetryCount <= std::numeric_limits<decltype(retryCount)>::max(),
                   "Counter `retryCount` cannot hold maxRetryCount.");
 
-    bool lockFileExists = DoesFileExist(lock_file_path.c_str());
+    bool lockFileExists = DoesFileExist(lock_file_path);
     while (lockFileExists && (retryCount < maxRetryCount))
     {
-        lockFileExists = DoesFileExist(lock_file_path.c_str());
+        lockFileExists = DoesFileExist(lock_file_path);
         retryCount++;
         std::this_thread::sleep_for(retryAfter);
     }

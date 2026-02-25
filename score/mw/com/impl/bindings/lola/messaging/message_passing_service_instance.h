@@ -13,20 +13,21 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGE_PASSING_SERVICE_INSTANCE_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGE_PASSING_SERVICE_INSTANCE_H
 
-#include "score/language/safecpp/scoped_function/scope.h"
-#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
-#include "score/mw/com/impl/bindings/lola/messaging/message_passing_client_cache.h"
-
-#include "score/message_passing/i_client_factory.h"
-#include "score/message_passing/i_server.h"
-#include "score/message_passing/i_server_factory.h"
 #include "score/mw/com/impl/bindings/lola/messaging/asil_specific_cfg.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service_instance.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_client_cache.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
+
+#include "score/language/safecpp/scoped_function/scope.h"
+#include "score/message_passing/i_client_factory.h"
+#include "score/message_passing/i_server.h"
+#include "score/message_passing/i_server_factory.h"
 
 // TODO: PMR
 #include "score/concurrency/thread_pool.h"
+
 #include <score/span.hpp>
 
 // TODO: PMR
@@ -79,6 +80,20 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                      const IMessagePassingService::HandlerRegistrationNoType registration_no,
                                      const pid_t target_node_id) noexcept override;
 
+    ResultBlank RegisterOnServiceMethodSubscribedHandler(
+        const SkeletonInstanceIdentifier skeleton_instance_identifier,
+        IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
+        IMessagePassingService::AllowedConsumerUids allowed_proxy_uids) override;
+
+    ResultBlank RegisterMethodCallHandler(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+                                          IMessagePassingService::MethodCallHandler method_call_callback,
+                                          const uid_t allowed_proxy_uid) override;
+
+    void UnregisterOnServiceMethodSubscribedHandler(
+        const SkeletonInstanceIdentifier skeleton_instance_identifier) override;
+
+    void UnregisterMethodCallHandler(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier) override;
+
     void NotifyOutdatedNodeId(const pid_t outdated_node_id, const pid_t target_node_id) noexcept override;
 
     /// \brief Registers a callback for event notification existence changes.
@@ -100,6 +115,14 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     /// \param event_id The event to stop monitoring.
     void UnregisterEventNotificationExistenceChangedCallback(const ElementFqId event_id) noexcept override;
 
+    ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                       const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                       const pid_t target_node_id) override;
+
+    ResultBlank CallMethod(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                           const std::size_t queue_position,
+                           const pid_t target_node_id) override;
+
   private:
     enum class MessageType : std::uint8_t
     {
@@ -108,6 +131,12 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
         kNotifyEvent,                //< event update notification message sent by skeleton_events
         kOutdatedNodeId,  //< outdated node id message (sent from a LoLa process in the role as consumer to the
                           // producer)
+    };
+
+    enum class MessageWithReplyType : std::uint8_t
+    {
+        kSubscribeServiceMethod = 1U,
+        kCallMethod,
     };
 
     struct RegisteredNotificationHandler
@@ -141,17 +170,33 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     using EventUpdateNotifierMapType = std::unordered_map<ElementFqId, std::vector<RegisteredNotificationHandler>>;
     using EventUpdateNodeIdMapType = std::unordered_map<ElementFqId, std::set<pid_t>>;
     using EventUpdateRegistrationCountMapType = std::unordered_map<ElementFqId, NodeCounter>;
+
+    using SubscribeServiceMethodMapType = std::unordered_map<
+        SkeletonInstanceIdentifier,
+        std::pair<IMessagePassingService::ServiceMethodSubscribedHandler, IMessagePassingService::AllowedConsumerUids>>;
+    using CallMethodMapType =
+        std::unordered_map<ProxyMethodInstanceIdentifier, std::pair<IMessagePassingService::MethodCallHandler, uid_t>>;
+
     /// \brief tmp buffer for copying ids under lock.
     /// \todo Make its size configurable?
     using NodeIdTmpBufferType = std::array<pid_t, NodeIdTmpBufferSize>;
 
+    message_passing::MessageCallback CreateSendMessageWithReplyCallback();
+
     void MessageCallback(const pid_t sender_pid, const score::cpp::span<const std::uint8_t> message) noexcept;
+    score::ResultBlank MessageCallbackWithReply(const uid_t sender_uid,
+                                              const pid_t sender_pid,
+                                              const score::cpp::span<const std::uint8_t> message);
     void HandleNotifyEventMsg(const score::cpp::span<const std::uint8_t> payload, const pid_t sender_node_id) noexcept;
     void HandleRegisterNotificationMsg(const score::cpp::span<const std::uint8_t> payload,
                                        const pid_t sender_node_id) noexcept;
     void HandleUnregisterNotificationMsg(const score::cpp::span<const std::uint8_t> payload,
                                          const pid_t sender_node_id) noexcept;
     void HandleOutdatedNodeIdMsg(const score::cpp::span<const std::uint8_t> payload, const pid_t sender_node_id) noexcept;
+    score::ResultBlank HandleSubscribeServiceMethodMsg(const score::cpp::span<const std::uint8_t> payload,
+                                                     const uid_t sender_uid,
+                                                     const pid_t sender_node_id);
+    score::ResultBlank HandleCallMethodMsg(const score::cpp::span<const std::uint8_t> payload, const uid_t sender_uid);
 
     std::uint32_t NotifyEventLocally(const ElementFqId event_id) noexcept;
     void NotifyEventRemote(const ElementFqId event_id) noexcept;
@@ -160,6 +205,27 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                                            const IMessagePassingService::HandlerRegistrationNoType registration_no,
                                            const pid_t target_node_id) noexcept;
     void SendRegisterEventNotificationMessage(const ElementFqId event_id, const pid_t target_node_id) noexcept;
+
+    score::ResultBlank CallSubscribeServiceMethodLocally(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                                       const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                       const uid_t proxy_uid,
+                                                       const pid_t proxy_pid);
+    score::ResultBlank CallServiceMethodLocally(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                                              const std::size_t queue_position,
+                                              const uid_t proxy_uid);
+
+    ResultBlank CallSubscribeServiceMethodRemotely(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                                   const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                   const pid_t target_node_id);
+    ResultBlank CallServiceMethodRemotely(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                                          const std::size_t queue_position,
+                                          const pid_t target_node_id);
+
+    /// \brief Function to convert ClientQualityType to a QualityType
+    ///
+    /// (which encodes the client's QualityType plus whether the current process is an ASIL-B process communicating with
+    /// a QM client)
+    QualityType GetPartnerQualityType() const;
 
     score::cpp::pmr::unique_ptr<score::message_passing::IServer> server_;
 
@@ -231,6 +297,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     }
 
     std::atomic<IMessagePassingService::HandlerRegistrationNoType> cur_registration_no_;
+    ClientQualityType asil_level_;
     MessagePassingClientCache client_cache_;
 
     // TODO: refactor for PMR/static
@@ -271,6 +338,14 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
 
     std::shared_mutex event_update_remote_registrations_mutex_;
 
+    SubscribeServiceMethodMapType subscribe_service_method_handlers_;
+
+    std::shared_mutex subscribe_service_method_handlers_mutex_;
+
+    CallMethodMapType call_method_handlers_;
+
+    std::shared_mutex call_method_handlers_mutex_;
+
     /// \brief executor for processing local event update notification.
     /// \detail local update notification leads to a user provided receive handler callout, whose
     ///         runtime is unknown, so we decouple with worker threads.
@@ -280,6 +355,9 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     /// \details When the scope is reset when object is destroyed, the scoped function becomes invalid
     ///          and will not execute, preventing race conditions during destruction
     score::safecpp::Scope<> message_callback_scope_;  // scope should always be the last attribute.
+
+    pid_t self_pid_;
+    uid_t self_uid_;
 };
 
 }  // namespace score::mw::com::impl::lola

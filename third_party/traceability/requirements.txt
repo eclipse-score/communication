@@ -15,3 +15,10 @@
 bigtree<1.0.0,>=0.30.0
 pydot>=1.4.0
 pyparsing>=3.0.0
+
+# Sphinx documentation dependencies
+sphinx == 9.1.0
+breathe == 4.36.0
+myst-parser == 5.0.0
+pydata-sphinx-theme == 0.16.1
+sphinx-rtd-theme == 3.1.0

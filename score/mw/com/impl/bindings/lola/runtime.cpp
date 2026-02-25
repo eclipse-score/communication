@@ -115,7 +115,6 @@ AsilSpecificCfg Runtime::GetMessagePassingCfg(const QualityType asil_level) cons
         score::mw::log::LogFatal("lola")
             << __func__ << __LINE__
             << "Invalid call to GetMessagePassingCfg with asil_level B although app/process is configured for QM only.";
-        /* Terminate call tolerated.See Assumptions of Use in mw/com/design/README.md*/
         std::terminate();
     }
     std::set<uid_t> aggregated_allowed_users;

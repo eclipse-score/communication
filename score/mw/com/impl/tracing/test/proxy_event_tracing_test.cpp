@@ -102,7 +102,7 @@ class ProxyEventTracingFixture : public ::testing::Test
         // Expecting that a ProxyEvent binding is created
         ExpectProxyServiceElementBindingCreation(proxy_service_element_binding_factory_mock_guard_);
 
-        ON_CALL(*mock_proxy_event_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(*mock_proxy_event_binding_, SetReceiveHandler(_)).WillByDefault(Return(score::ResultBlank{}));
     }
 
     void CreateProxy()

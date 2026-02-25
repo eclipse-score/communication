@@ -14,9 +14,16 @@
 #define SCORE_MW_COM_IMPL_TRAITS_H
 
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/flag_owner.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/methods/proxy_method.h"
+#include "score/mw/com/impl/methods/proxy_method_with_in_args.h"
+#include "score/mw/com/impl/methods/proxy_method_with_in_args_and_return.h"
+#include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
+#include "score/mw/com/impl/methods/proxy_method_without_in_args_or_return.h"
+#include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/plumbing/proxy_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -96,6 +103,9 @@ class ProxyWrapperClassTestView;
 ///     typename Trait::template Field<DataType1> struct_field_1_{*this, field_name_0};
 ///     typename Trait::template Field<DataType2> struct_field_2_{*this, field_name_1};
 ///
+///     typename Trait::template Method<DataType1> struct_method_1_{*this, method_name_0};
+///     typename Trait::template Method<DataType2> struct_method_2_{*this, method_name_1};
+///
 /// };
 ///
 /// It is then possible to interpret this interface as proxy or skeleton as `using TheProxy = AsProxy<TheInterface>`.
@@ -119,6 +129,9 @@ class ProxyTrait
 
     template <typename SampleType>
     using Field = ProxyField<SampleType>;
+
+    template <typename MethodSignature>
+    using Method = ProxyMethod<MethodSignature>;
 };
 
 /**
@@ -139,6 +152,9 @@ class SkeletonTrait
 
     template <typename SampleType>
     using Field = SkeletonField<SampleType>;
+
+    template <typename MethodSignature>
+    using Method = SkeletonMethod<MethodSignature>;
 };
 
 template <template <class> class Interface, class Trait>
@@ -148,6 +164,10 @@ template <template <class> class Interface, class Trait>
 // NOLINTNEXTLINE(score-struct-usage-compliance): Tolerated.
 class SkeletonWrapperClass : public Interface<Trait>
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a read only view to the private members of this class inside the impl
+    // module.
+    // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonWrapperClassTestView<SkeletonWrapperClass>;
 
   public:
@@ -157,13 +177,9 @@ class SkeletonWrapperClass : public Interface<Trait>
      * \details Creates a skeleton wrapper by resolving the instance specifier to an instance identifier,
      *          then creating the skeleton binding and validating all service element bindings.
      * \param specifier The instance specifier identifying the service instance.
-     * \param mode legacy parameter, only kept for backwards compatibility. Default value is kEvent, which should never
-     * change.
      * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
      */
-    static Result<SkeletonWrapperClass> Create(
-        const InstanceSpecifier& specifier,
-        MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept
+    static Result<SkeletonWrapperClass> Create(const InstanceSpecifier& specifier) noexcept
     {
         if (instance_specifier_creation_results_.has_value())
         {
@@ -173,10 +189,10 @@ class SkeletonWrapperClass : public Interface<Trait>
         const auto instance_identifier_result = GetInstanceIdentifier(specifier);
         if (!instance_identifier_result.has_value())
         {
-            score::mw::log::LogFatal("lola") << "Failed to resolve instance identifier from instance specifier";
-            std::terminate();
+            score::mw::log::LogError("lola") << "Failed to resolve instance identifier from instance specifier";
+            return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
         }
-        return Create(instance_identifier_result.value(), mode);
+        return Create(instance_identifier_result.value());
     }
 
     /**
@@ -185,12 +201,9 @@ class SkeletonWrapperClass : public Interface<Trait>
      * \details Creates a skeleton wrapper by creating the skeleton binding for the given instance identifier
      *          and validating all service element bindings.
      * \param instance_identifier The instance identifier uniquely identifying the service instance.
-     * \param mode The method call processing mode for the skeleton (default: kEvent).
      * \return On success, returns a SkeletonWrapperClass instance. On failure, returns an error code.
      */
-    static Result<SkeletonWrapperClass> Create(
-        const InstanceIdentifier& instance_identifier,
-        MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept
+    static Result<SkeletonWrapperClass> Create(const InstanceIdentifier& instance_identifier) noexcept
     {
         if (instance_specifier_creation_results_.has_value())
         {
@@ -199,7 +212,7 @@ class SkeletonWrapperClass : public Interface<Trait>
         }
 
         auto skeleton_binding = SkeletonBindingFactory::Create(instance_identifier);
-        SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding), mode);
+        SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding));
         if (!skeleton_wrapper.AreBindingsValid())
         {
             ::score::mw::log::LogError("lola") << "Could not create SkeletonWrapperClass as Skeleton binding or service "
@@ -210,11 +223,42 @@ class SkeletonWrapperClass : public Interface<Trait>
         return skeleton_wrapper;
     }
 
+    ~SkeletonWrapperClass()
+    {
+        if (is_service_owner_.IsSet())
+        {
+            this->StopOfferService();
+        }
+    }
+
+    SkeletonWrapperClass(const SkeletonWrapperClass&) = delete;
+    SkeletonWrapperClass& operator=(const SkeletonWrapperClass&) = delete;
+
+    SkeletonWrapperClass(SkeletonWrapperClass&& other) noexcept
+        : Interface<Trait>{std::move(static_cast<Interface<Trait>&&>(other))},
+          is_service_owner_{std::move(other.is_service_owner_)}
+    {
+    }
+
+    SkeletonWrapperClass& operator=(SkeletonWrapperClass&& other) noexcept
+    {
+        if (&other != this)
+        {
+            if (is_service_owner_.IsSet())
+            {
+                this->StopOfferService();
+            }
+
+            Interface<Trait>::operator=(std::move(static_cast<Interface<Trait>&&>(other)));
+            is_service_owner_ = std::move(other.is_service_owner_);
+        }
+        return *this;
+    }
+
   private:
     explicit SkeletonWrapperClass(const InstanceIdentifier& instance_id,
-                                  std::unique_ptr<SkeletonBinding> skeleton_binding,
-                                  MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent)
-        : Interface<Trait>{std::move(skeleton_binding), instance_id, mode}
+                                  std::unique_ptr<SkeletonBinding> skeleton_binding)
+        : Interface<Trait>{std::move(skeleton_binding), instance_id}
     {
     }
 
@@ -237,6 +281,12 @@ class SkeletonWrapperClass : public Interface<Trait>
         instance_specifier_creation_results_;
     static std::optional<std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonWrapperClass>>>>
         instance_identifier_creation_results_;
+
+    /// \brief Flag which is checked before calling StopFindService in the destructor of this class
+    ///
+    /// This flag is always set for a Skeleton except when a Skeleton is moved. In this case, this flag will be cleared
+    /// in the moved-from class so that that object doesn't call StopFindService on destruction.
+    FlagOwner is_service_owner_{true};
 };
 template <template <class> class Interface, class Trait>
 std::optional<std::unordered_map<InstanceSpecifier, std::queue<Result<SkeletonWrapperClass<Interface, Trait>>>>>
@@ -248,18 +298,22 @@ std::optional<std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonW
 template <template <class> class Interface, class Trait>
 class ProxyWrapperClass : public Interface<Trait>
 {
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision. This class provides a read only view to the private members of this class inside the impl
+    // module.
+    // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyWrapperClassTestView<ProxyWrapperClass>;
 
   public:
-    /**
-     * \api
-     * \brief Create a proxy instance from a service handle.
-     * \details Exception-less proxy constructor that creates a proxy wrapper by creating the proxy binding
-     *          for the given service handle and validating all service element bindings.
-     * \param instance_handle The handle identifying the service instance to connect to.
-     * \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
-     */
-    static Result<ProxyWrapperClass> Create(HandleType instance_handle) noexcept
+    /// \api
+    /// \brief Create a proxy instance from a service handle.
+    /// \details Exception-less proxy constructor that creates a proxy wrapper by creating the proxy binding
+    ///          for the given service handle and validating all service element bindings.
+    /// \param instance_handle The handle identifying the service instance to connect to.
+    /// \param enabled_method_names The handle identifying the service instance to connect to.
+    /// \return On success, returns a ProxyWrapperClass instance. On failure, returns an error code.
+    static Result<ProxyWrapperClass> Create(const HandleType instance_handle,
+                                            const std::vector<std::string_view>& enabled_method_names = {}) noexcept
     {
         if (creation_results_.has_value())
         {
@@ -267,7 +321,9 @@ class ProxyWrapperClass : public Interface<Trait>
         }
 
         auto proxy_binding = ProxyBindingFactory::Create(instance_handle);
+
         ProxyWrapperClass proxy_wrapper(instance_handle, std::move(proxy_binding));
+
         if (!proxy_wrapper.AreBindingsValid())
         {
             ::score::mw::log::LogError("lola")
@@ -275,6 +331,14 @@ class ProxyWrapperClass : public Interface<Trait>
                    "bindings could not be created.";
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
+
+        const auto setup_methods_result = proxy_wrapper.SetupMethods(enabled_method_names);
+        if (!(setup_methods_result.has_value()))
+        {
+            ::score::mw::log::LogError("lola") << "Could not setup methods on Proxy side";
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+
         return proxy_wrapper;
     }
 

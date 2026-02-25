@@ -13,6 +13,8 @@
 #include "score/message_passing/client_connection.h"
 
 #include "score/message_passing/client_server_communication.h"
+#include "score/message_passing/log/log.h"
+#include "score/message_passing/log/log_on_timeout.h"
 #include "score/message_passing/non_allocating_future/non_allocating_future.h"
 
 #include <score/utility.hpp>
@@ -34,6 +36,8 @@ namespace
 constexpr std::int32_t kConnectRetryMsStart = 50;
 constexpr std::int32_t kConnectRetryT = 3;  // new_delay = prev_delay * (1 + 1/T)
 constexpr std::int32_t kConnectRetryMsMax = 5000;
+
+constexpr std::chrono::milliseconds kConnectIpcWarningDelay{20};
 }  // namespace
 
 ClientConnection::ClientConnection(std::shared_ptr<ISharedResourceEngine> engine,
@@ -109,7 +113,7 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::Send(score::cpp::
 {
     if (message.size() > max_send_size_)
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
     if (state_ != State::kReady)
     {
@@ -126,7 +130,7 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::Send(score::cpp::
         {
             if (!TryQueueMessage(message, ReplyCallback{}))
             {
-                return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+                return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
             }
             ArmSendQueueUnderLock();
         }
@@ -139,7 +143,7 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::Send(score::cpp::
     {
         if (!TryQueueMessage(message, ReplyCallback{}))
         {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
         }
     }
     return {};
@@ -155,7 +159,7 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
     }
     if (message.size() > max_send_size_)
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
     if (state_ != State::kReady)
     {
@@ -174,7 +178,7 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
         const auto reply_message = message_expected.value();
         if (reply_message.size() > reply.size())
         {
-            future.UpdateValueMarkReady(score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM)));
+            future.UpdateValueMarkReady(score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE)));
             return;
         }
         // NOLINTBEGIN(bugprone-suspicious-stringview-data-usage) `reply`'s buffer size got checked above
@@ -197,7 +201,7 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
         // coverity[autosar_cpp14_a5_1_4_violation]
         if (!TryQueueMessage(message, std::move(callback)))
         {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
         }
     }
     else
@@ -233,7 +237,7 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
 {
     if (message.size() > max_send_size_)
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
     if (state_ != State::kReady)
     {
@@ -244,7 +248,7 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
     {
         if (!TryQueueMessage(message, std::move(callback)))
         {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
         }
         return {};
     }
@@ -252,7 +256,7 @@ score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
     {
         if (!TryQueueMessage(message, std::move(callback)))
         {
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+            return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOBUFS));
         }
         ArmSendQueueUnderLock();
     }
@@ -324,14 +328,7 @@ void ClientConnection::DoRestart() noexcept
     stop_reason_ = StopReason::kNone;
     ProcessStateChange(State::kStarting);
 
-    // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
-    // function or it shall be preceded by &".
-    // We deviate from this rule (which is also gone in Misra C++23).
-    // Passing std::endl to std::cerr is the idiomatic way to print an error in C++.
-    std::cerr << "ClientConnection::DoRestart " << engine_->IsOnCallbackThread() << " " << identifier_
-              << " "
-              // coverity[autosar_cpp14_m8_4_4_violation]
-              << std::endl;
+    LogInfo(engine_->GetLogger(), "ClientConnection::DoRestart ", engine_->IsOnCallbackThread(), " ", identifier_);
 
     connect_retry_ms_ = kConnectRetryMsStart;
     if (client_config_.sync_first_connect)
@@ -356,26 +353,20 @@ void ClientConnection::TryConnect() noexcept
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(((stop_reason_ == StopReason::kNone) && (state_ == State::kStarting)) ||
                    ((state_ == State::kStopping) && (stop_reason_ == StopReason::kUserRequested)));
 
-    // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
-    // function or it shall be preceded by &".
-    // We deviate from this rule (which is also gone in Misra C++23).
-    // Passing std::endl to std::cerr is the idiomatic way to print an error in C++.
-    // coverity[autosar_cpp14_m8_4_4_violation]
-    std::cerr << "TryOpenClientConnection " << identifier_ << std::endl;
+    auto& logger = engine_->GetLogger();
+
+    LogInfo(logger, "TryOpenClientConnection ", identifier_);
+    LogWarnOnTimeout delay_guard(
+        logger, kConnectIpcWarningDelay, "TryOpenClientConnection", std::string_view{identifier_});
     auto fd_expected = engine_->TryOpenClientConnection(identifier_);
+    delay_guard.release();
     if (!fd_expected.has_value())
     {
         auto error = fd_expected.error();
         auto os_code = error.GetOsDependentErrorCode();
         if (((os_code != EAGAIN) && (os_code != ECONNREFUSED)) && (os_code != ENOENT))
         {
-            // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
-            // function or it shall be preceded by &".
-            // We deviate from this rule (which is also gone in Misra C++23).
-            // Passing std::endl to std::cerr is the idiomatic way to print an error in C++.
-            // coverity[autosar_cpp14_m8_4_4_violation]
-            std::cerr << "TryOpenClientConnection " << identifier_ << " non-retry OS error code " << os_code
-                      << std::endl;
+            LogError(logger, "TryOpenClientConnection ", identifier_, " non-retry OS error code ", os_code);
             StopReason stop_reason = os_code == EACCES ? StopReason::kPermission : StopReason::kIoError;
             if (TrySetStopReason(stop_reason))
             {
@@ -446,6 +437,12 @@ IClientConnection::StopReason ClientConnection::ProcessInputEvent() noexcept
     if (!message_expected.has_value())
     {
         auto os_code = message_expected.error().GetOsDependentErrorCode();
+        if (os_code == EAGAIN)
+        {
+            // cam happen due to notificaion intended to older connection, but shall be rare
+            LogWarn(engine_->GetLogger(), "ProcessInputEvent ", identifier_, " spurious wake-up");
+            return StopReason::kNone;
+        }
         return os_code == EPIPE ? StopReason::kClosedByPeer : StopReason::kIoError;
     }
     auto message = message_expected.value();
@@ -594,12 +591,7 @@ void ClientConnection::SwitchToStopState() noexcept
 
 bool ClientConnection::TrySetStopReason(const StopReason stop_reason) noexcept
 {
-    // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
-    // function or it shall be preceded by &".
-    // We deviate from this rule (which is also gone in Misra C++23).
-    // Passing std::endl to std::cerr is the idiomatic way to print an error in C++.
-    // coverity[autosar_cpp14_m8_4_4_violation]
-    std::cerr << "TrySetStopReason " << static_cast<std::uint32_t>(score::cpp::to_underlying(stop_reason)) << std::endl;
+    LogInfo(engine_->GetLogger(), "TrySetStopReason ", score::cpp::to_underlying(stop_reason));
 
     // can happen via 2 paths: from callback thread and from Stop() call; if happens concurrently, the later attempt
     // needs to be ignored and its consequent attempt to switch to stop state needs to be suppressed
@@ -632,12 +624,8 @@ void ClientConnection::ProcessStateChangeToStopped() noexcept
 
 void ClientConnection::ProcessStateChange(const State state) noexcept
 {
-    // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
-    // function or it shall be preceded by &".
-    // We deviate from this rule (which is also gone in Misra C++23).
-    // Passing std::endl to std::cerr is the idiomatic way to print an error in C++.
-    // coverity[autosar_cpp14_m8_4_4_violation]
-    std::cerr << "ProcessStateChange " << static_cast<std::uint32_t>(score::cpp::to_underlying(state)) << std::endl;
+    LogInfo(engine_->GetLogger(), "ProcessStateChange ", score::cpp::to_underlying(state));
+
     if (state != State::kStopped)
     {
         state_ = state;

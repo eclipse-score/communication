@@ -1,0 +1,152 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/score/mw/com/test/small",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 8265,
+                    "events": [
+                        {
+                            "eventName": "simple_event",
+                            "eventId": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "serviceTypeName": "/bmw/adp/DummyServiceType",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 6433,
+                    "events": []
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "partial_restart/small_but_great0",
+            "serviceTypeName": "/score/mw/com/test/small",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "simple_event",
+                            "numberOfSampleSlots": 5,
+                            "maxSubscribers": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "partial_restart/small_but_great1",
+            "serviceTypeName": "/score/mw/com/test/small",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "simple_event",
+                            "numberOfSampleSlots": 5,
+                            "maxSubscribers": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "partial_restart/small_but_great2",
+            "serviceTypeName": "/score/mw/com/test/small",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "simple_event",
+                            "numberOfSampleSlots": 5,
+                            "maxSubscribers": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "partial_restart/small_but_great3",
+            "serviceTypeName": "/score/mw/com/test/small",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "simple_event",
+                            "numberOfSampleSlots": 5,
+                            "maxSubscribers": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "instanceSpecifier": "partial_restart/small_but_great4",
+            "serviceTypeName": "/score/mw/com/test/small",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "simple_event",
+                            "numberOfSampleSlots": 5,
+                            "maxSubscribers": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "global": {
+        "asil-level": "B"
+    }
+}

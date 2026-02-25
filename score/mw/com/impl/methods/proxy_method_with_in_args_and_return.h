@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/util/type_erased_storage.h"
 
@@ -51,12 +52,37 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     friend class ProxyMethodView;
 
   public:
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
+        : ProxyMethodBase(
+              proxy_base,
+              ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                         ProxyBaseView{proxy_base}.GetBinding(),
+                                                                         method_name),
+              method_name),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
         : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name),
-          are_in_arg_ptrs_active_{kCallQueueSize}
+          are_in_arg_ptrs_active_(kCallQueueSize)
     {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
     }
 
     ~ProxyMethod() final = default;
@@ -111,7 +137,8 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
 };
 
 template <typename ReturnType, typename... ArgTypes>
-ProxyMethod<ReturnType(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept : ProxyMethodBase(std::move(other))
+ProxyMethod<ReturnType(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
+    : ProxyMethodBase(std::move(other)), are_in_arg_ptrs_active_{std::move(other.are_in_arg_ptrs_active_)}
 {
     // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
@@ -124,7 +151,8 @@ auto ProxyMethod<ReturnType(ArgTypes...)>::operator=(ProxyMethod&& other) noexce
 {
     if (this != &other)
     {
-        ProxyMethod::operator=(std::move(other));
+        ProxyMethodBase::operator=(std::move(other));
+        are_in_arg_ptrs_active_ = std::move(other.are_in_arg_ptrs_active_);
 
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};
@@ -159,15 +187,28 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
 {
     auto queue_position = detail::GetCommonQueuePosition(args...);
     auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(allocated_return_type_storage.has_value(),
-                           "ProxyMethod::operator(): AllocateReturnType failed unexpectedly.");
+    if (!allocated_return_type_storage.has_value())
+    {
+        return Unexpected(allocated_return_type_storage.error());
+    }
     auto call_result = binding_->DoCall(queue_position);
     if (!call_result.has_value())
     {
         return Unexpected(call_result.error());
     }
 
+    // reinterpret_cast is fine because we are casting back to the original type of this type-erased buffer.
+    // This object might be created by a different process but we require both processes to be compiled by the same
+    // compiler and compiler options, thus we are sure that the data can be interpreted correctly.
+    //  See AoU:
+    //  21206172
+    //  ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
+    //
+    // Additionally, we require the types to be trivially copyable.
+    // 5835098
+    // ScoreReq.AoU OnlyLoLaSupportedTypes
     return MethodReturnTypePtr<ReturnType>{
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast]) see above
         *(reinterpret_cast<ReturnType*>(allocated_return_type_storage.value().data())),
         is_return_type_ptr_active_[queue_position],
         queue_position};

@@ -11,20 +11,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 validate_json_schema_test(
-    name = "validate_ara_com_config_schema",
-    json = "example/ara_com_config.json",
-    schema = ":ara_com_config_schema",
+    name = "validate_mw_com_config_schema",
+    json = "example/mw_com_config.json",
+    schema = ":mw_com_config_schema",
     tags = ["lint"],
 )
 
 filegroup(
-    name = "ara_com_config_schema",
-    srcs = ["ara_com_config_schema.json"],
+    name = "mw_com_config_schema",
+    srcs = ["mw_com_config_schema.json"],
     visibility = [
         "//score/mw/com:__subpackages__",
         "//score/mw/com/impl/configuration/test:__subpackages__",
@@ -50,7 +51,7 @@ cc_library(
         ":quality_type",
         ":service_type_deployment",
         ":someip_service_instance_deployment",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -81,7 +82,7 @@ cc_library(
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl/tracing/configuration:service_element_identifier",
         "//score/mw/com/impl/tracing/configuration:tracing_config",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -90,7 +91,7 @@ cc_library(
     srcs = ["global_configuration.cpp"],
     hdrs = ["global_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -106,7 +107,7 @@ cc_library(
     srcs = ["tracing_configuration.cpp"],
     hdrs = ["tracing_configuration.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -139,7 +140,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         ":configuration_common_resources",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
@@ -403,7 +404,7 @@ cc_library(
     deps = [
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -432,28 +433,32 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_gtest_unit_test(
     name = "config_parser_test",
-    size = "small",
-    timeout = "long",
     srcs = ["config_parser_test.cpp"],
-    data = ["example/ara_com_config.json"],
+    data = ["example/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
     ],
-    tags = ["unit"],
     deps = [
         ":config_parser",
-        "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
 cc_gtest_unit_test(
     name = "config_parser_methods_test",
     srcs = ["config_parser_methods_test.cpp"],
-    data = ["example/ara_com_config.json"],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [":config_parser"],
+    data = ["example/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":config_parser",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
 )
 
 cc_test(
@@ -484,7 +489,7 @@ cc_gtest_unit_test(
 cc_gtest_unit_test(
     name = "configuration_test",
     srcs = ["configuration_test.cpp"],
-    data = ["example/ara_com_config.json"],
+    data = ["example/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":config_parser",
@@ -702,34 +707,34 @@ cc_unit_test_suites_for_host_and_qnx(
 )
 
 filegroup(
-    name = "ara_com_config.json",
-    srcs = ["example/ara_com_config.json"],
+    name = "mw_com_config.json",
+    srcs = ["example/mw_com_config.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_other.json",
-    srcs = ["example/ara_com_config_other.json"],
+    name = "mw_com_config_other.json",
+    srcs = ["example/mw_com_config_other.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_invalid_trace_config_path.json",
-    srcs = ["example/ara_com_config_invalid_trace_config_path.json"],
+    name = "mw_com_config_invalid_trace_config_path.json",
+    srcs = ["example/mw_com_config_invalid_trace_config_path.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_disabled_trace_config.json",
-    srcs = ["example/ara_com_config_disabled_trace_config.json"],
+    name = "mw_com_config_disabled_trace_config.json",
+    srcs = ["example/mw_com_config_disabled_trace_config.json"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "ara_com_config_valid_trace_config.json",
+    name = "mw_com_config_valid_trace_config.json",
     srcs = [
-        "example/ara_com_config_valid_trace_config.json",
-        "example/ara_com_config_valid_trace_config_external.json",
+        "example/mw_com_config_valid_trace_config.json",
+        "example/mw_com_config_valid_trace_config_external.json",
     ],
     visibility = ["//visibility:public"],
 )

@@ -66,6 +66,25 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
         return lola_service_type_deployment;
     }
 
+    SkeletonTestMockedSharedMemoryFixture& GivenASkeletonWithTwoMethods()
+    {
+        const auto instance_identifier =
+            make_InstanceIdentifier(test::kValidInstanceDeploymentWithMethods, test::kValidMinimalTypeDeployment);
+
+        InitialiseSkeleton(instance_identifier);
+
+        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_method_fq_id_);
+        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_method_fq_id_);
+
+        return *this;
+    }
+
+    const ElementFqId fooo_method_fq_id_{10U, test::kFooMethodId, 3U, ServiceElementType::METHOD};
+    const ElementFqId dumb_method_fq_id_{1U, test::kDumbMethodId, 2U, ServiceElementType::METHOD};
+
+    std::unique_ptr<SkeletonMethod> fooo_method_{nullptr};
+    std::unique_ptr<SkeletonMethod> dumb_method_{nullptr};
+
     SkeletonBinding::SkeletonEventBindings events_{};
     SkeletonBinding::SkeletonFieldBindings fields_{};
 
@@ -83,6 +102,36 @@ TEST_F(SkeletonTestMockedSharedMemoryFixture, GetBindingType)
 
     // expect, that it returns BindingType::kLoLa, when asked about its binding type
     EXPECT_EQ(skeleton_->GetBindingType(), BindingType::kLoLa);
+}
+
+TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredSucceedsWhenAllMethodsAreRegistered)
+{
+    GivenASkeletonWithTwoMethods();
+
+    // When a callback is registered to both methods
+    auto fooo_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
+    auto dumb_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {
+        std::cout << "bla\n";
+    };
+
+    fooo_method_->RegisterHandler(fooo_callback);
+    dumb_method_->RegisterHandler(dumb_callback);
+
+    // Then VerifyAllMethodsRegistered succeeds
+    EXPECT_EQ(skeleton_->VerifyAllMethodsRegistered(), true);
+}
+
+TEST_F(SkeletonTestMockedSharedMemoryFixture, VerifyAllMethodsRegisteredFailsWhenNotAllMethodsAreRegistered)
+{
+    GivenASkeletonWithTwoMethods();
+
+    // When one of the methods does not have a callback registered
+    auto fooo_callback = [](std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>) {};
+
+    fooo_method_->RegisterHandler(fooo_callback);
+
+    // Then VerifyAllMethodsRegistered fails with kBindingFailure
+    EXPECT_EQ(skeleton_->VerifyAllMethodsRegistered(), false);
 }
 
 TEST_F(SkeletonTestMockedSharedMemoryFixture, StopOfferCallsUnregisterShmObjectTraceCallback)
@@ -1017,6 +1066,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     RecordProperty("Description", "Checks that the event meta info for an event is published by the Skeleton.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
+    RecordProperty("Priority", "2");
 
     /// \brief only locally used complex SampleType/event-data-type
     struct VeryComplexType

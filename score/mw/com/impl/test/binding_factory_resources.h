@@ -24,12 +24,16 @@
 #include "score/mw/com/impl/plumbing/proxy_event_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory_mock.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_mock.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory_mock.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory_mock.h"
 
 #include <memory>
 #include <unordered_map>
@@ -101,6 +105,22 @@ class ProxyFieldBindingFactoryMockGuard
     ::testing::NiceMock<ProxyFieldBindingFactoryMock<SampleType>> factory_mock_;
 };
 
+template <typename MethodType>
+class ProxyMethodBindingFactoryMockGuard
+{
+  public:
+    ProxyMethodBindingFactoryMockGuard() noexcept
+    {
+        ProxyMethodBindingFactory<MethodType>::InjectMockBinding(&factory_mock_);
+    }
+    ~ProxyMethodBindingFactoryMockGuard() noexcept
+    {
+        ProxyMethodBindingFactory<MethodType>::InjectMockBinding(nullptr);
+    }
+
+    ::testing::NiceMock<ProxyMethodBindingFactoryMock> factory_mock_;
+};
+
 class SkeletonBindingFactoryMockGuard
 {
   public:
@@ -146,6 +166,21 @@ class SkeletonFieldBindingFactoryMockGuard
     }
 
     ::testing::NiceMock<SkeletonFieldBindingFactoryMock<SampleType>> factory_mock_;
+};
+
+class SkeletonMethodBindingFactoryMockGuard
+{
+  public:
+    SkeletonMethodBindingFactoryMockGuard() noexcept
+    {
+        SkeletonMethodBindingFactory::InjectMockBinding(&factory_mock_);
+    }
+    ~SkeletonMethodBindingFactoryMockGuard() noexcept
+    {
+        SkeletonMethodBindingFactory::InjectMockBinding(nullptr);
+    }
+
+    ::testing::NiceMock<SkeletonMethodBindingFactoryMock> factory_mock_;
 };
 
 }  // namespace score::mw::com::impl

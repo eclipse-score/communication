@@ -75,8 +75,7 @@ class GenericSkeleton : public SkeletonBase
 /// - On error, no partially-created elements are left behind.
 [[nodiscard]] static Result<GenericSkeleton> Create(
     const InstanceIdentifier& identifier,
-    const GenericSkeletonCreateParams& in,
-    MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept;
+    const GenericSkeletonCreateParams& in) noexcept;
 
 /// @brief Same as Create(InstanceIdentifier, ...) but resolves the specifier first. 
 /// @param specifier The instance specifier.
@@ -85,8 +84,7 @@ class GenericSkeleton : public SkeletonBase
 /// @return A GenericSkeleton or an error.
  [[nodiscard]] static Result<GenericSkeleton> Create(
     const InstanceSpecifier& specifier,
-    const GenericSkeletonCreateParams& in,
-    MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent) noexcept;
+    const GenericSkeletonCreateParams& in) noexcept;
 
 /// @brief Returns a const reference to the name-keyed map of events.
 /// @note The returned reference is valid as long as the GenericSkeleton lives. 
@@ -105,7 +103,7 @@ class GenericSkeleton : public SkeletonBase
 void StopOfferService() noexcept;
   private:
     // Private constructor, only callable by static Create methods.
-    GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding, MethodCallProcessingMode mode);
+    GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding);
 
     /// @brief This map owns all GenericSkeletonEvent instances.
     EventMap events_;

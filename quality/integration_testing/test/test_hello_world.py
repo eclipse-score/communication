@@ -19,3 +19,8 @@ def test_hello_world_via_binary_execution(sut):
     exit_code, output = sut.execute("/example-app")
     assert 0 == exit_code
     assert "Hello!" in output
+
+def test_hello_world_as_process(sut):
+    with sut.start_process('/example-app2') as example_2:
+        with sut.start_process("/example-app") as example:
+            example.wait_for_exit() == 0

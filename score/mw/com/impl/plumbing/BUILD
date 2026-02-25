@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -29,6 +29,85 @@ cc_library(
         ":sample_ptr",
         ":skeleton_binding_factory",
         "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_method_binding_factory",
+    srcs = ["skeleton_method_binding_factory.cpp"],
+    hdrs = ["skeleton_method_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "skeleton_method_binding_factory_impl",
+        ":i_skeleton_method_binding_factory",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "i_skeleton_method_binding_factory",
+    srcs = ["i_skeleton_method_binding_factory.cpp"],
+    hdrs = ["i_skeleton_method_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:skeleton_base",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_method_binding_factory_impl",
+    srcs = ["skeleton_method_binding_factory_impl.cpp"],
+    hdrs = ["skeleton_method_binding_factory_impl.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["//score/mw/com/impl/bindings/lola"],
+    tags = ["FFI"],
+    deps = [
+        ":i_skeleton_method_binding_factory",
+        ":skeleton_service_element_binding_factory_impl",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "skeleton_method_binding_factory_mock",
+    testonly = True,
+    srcs = ["skeleton_method_binding_factory_mock.cpp"],
+    hdrs = ["skeleton_method_binding_factory_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_skeleton_method_binding_factory",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "skeleton_method_binding_factory_test",
+    srcs = [
+        "skeleton_method_binding_factory_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":skeleton_method_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
@@ -95,6 +174,23 @@ cc_library(
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:proxy_base",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
+    name = "i_proxy_method_binding_factory",
+    srcs = ["i_proxy_method_binding_factory.cpp"],
+    hdrs = ["i_proxy_method_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl/methods:proxy_method_binding",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -212,6 +308,23 @@ cc_library(
 )
 
 cc_library(
+    name = "proxy_method_binding_factory_impl",
+    srcs = ["proxy_method_binding_factory_impl.cpp"],
+    hdrs = ["proxy_method_binding_factory_impl.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["//score/mw/com/impl/bindings/lola"],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/plumbing:__subpackages__",
+    ],
+    deps = [
+        ":i_proxy_method_binding_factory",
+        ":proxy_service_element_binding_factory_impl",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "skeleton_binding_factory_impl",
     srcs = ["skeleton_binding_factory_impl.cpp"],
     hdrs = ["skeleton_binding_factory_impl.h"],
@@ -220,7 +333,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
         "//score/mw/com/impl/bindings/lola:shm_path_builder",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     deps = [
@@ -313,6 +426,22 @@ cc_library(
 )
 
 cc_library(
+    name = "proxy_method_binding_factory",
+    srcs = ["proxy_method_binding_factory.cpp"],
+    hdrs = ["proxy_method_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_proxy_method_binding_factory",
+        ":proxy_method_binding_factory_impl",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "skeleton_binding_factory",
     srcs = ["skeleton_binding_factory.cpp"],
     hdrs = ["skeleton_binding_factory.h"],
@@ -397,6 +526,21 @@ cc_library(
     ],
     deps = [
         ":i_proxy_field_binding_factory",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "proxy_method_binding_factory_mock",
+    testonly = True,
+    srcs = ["proxy_method_binding_factory_mock.cpp"],
+    hdrs = ["proxy_method_binding_factory_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":i_proxy_method_binding_factory",
         "@googletest//:gtest",
     ],
 )
@@ -599,14 +743,30 @@ cc_library(
 )
 
 cc_gtest_unit_test(
-    name = "proxy_service_element_binding_factory_test",
+    name = "proxy_method_binding_factory_test",
     srcs = [
-        "proxy_service_element_binding_factory_test.cpp",
+        "proxy_method_binding_factory_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":proxy_method_binding_factory",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "proxy_event_field_binding_factory_test",
+    srcs = [
+        "proxy_event_field_binding_factory_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":proxy_event_binding_factory",
-        ":proxy_field_binding_factory",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:dummy_instance_identifier_builder",
@@ -713,8 +873,8 @@ cc_test(
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os/mocklib:fcntl_mock",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -722,8 +882,10 @@ cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
         ":proxy_event_binding_factory_test",
+        ":proxy_method_binding_factory_test",
         ":proxy_field_binding_factory_test",
-        ":proxy_service_element_binding_factory_test",
+        ":proxy_event_field_binding_factory_test",
+        ":skeleton_method_binding_factory_test",
         ":binding_runtime_factory_test",
         ":skeleton_event_binding_factory_test",
         ":skeleton_field_binding_factory_test",
@@ -733,13 +895,4 @@ cc_unit_test_suites_for_host_and_qnx(
     visibility = [
         "//score/mw/com/impl:__subpackages__",
     ],
-)
-
-rust_library(
-    name = "sample_ptr_rs",
-    srcs = ["sample_ptr.rs"],
-    visibility = [
-        "//score/mw/com:__subpackages__",
-    ],
-    deps = ["@crate_index//:libc"],
 )

@@ -14,7 +14,10 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_IMESSAGEPASSINGSERVICE_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
@@ -31,6 +34,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <set>
 
 namespace score::mw::com::impl::lola
 {
@@ -40,6 +45,9 @@ namespace score::mw::com::impl::lola
 ///          and register for/notify for event updates.
 class IMessagePassingService
 {
+    friend class MethodSubscriptionRegistrationGuardFactory;
+    friend class MethodCallRegistrationGuardFactory;
+
   public:
     using HandlerRegistrationNoType = std::uint32_t;
 
@@ -70,19 +78,13 @@ class IMessagePassingService
     ///        referring to consumers of the event/field shared memory region that the Skeleton creates. However, for
     ///        methods, the proxy whose UID must be checked is actually the provider of the shared memory region). It's
     ///        also used in the allowed_provider list when opening the shared memory region.
-    /// \param asil_level (QM or Asil-B) of the Proxy instance which subscribed to the method. This is required so that
-    ///        the Skeleton can check the correct allowed_consumer list (since there's a different list for QM and
-    ///        ASIL-B).
     /// \param proxy_pid PID of the proxy process which is used to determine whether the call to
     ///        SubscribeServiceMethod by a proxy is being called after the proxy process restarted and recreated
     ///        the methods shared memory region. If it is being called after a restart, then the Skeleton needs to open
     ///        the new shared memory region and close all methods shared memory regions that were in the process that
     ///        restarted.
-    using ServiceMethodSubscribedHandler =
-        safecpp::CopyableScopedFunction<score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier,
-                                                         uid_t proxy_uid,
-                                                         QualityType asil_level,
-                                                         pid_t proxy_pid)>;
+    using ServiceMethodSubscribedHandler = safecpp::CopyableScopedFunction<
+        score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier, uid_t proxy_uid, pid_t proxy_pid)>;
 
     /// \brief Handler which will be called when the proxy process sends a message that it has called a method.
     ///
@@ -99,6 +101,13 @@ class IMessagePassingService
     /// Only one copy of the handler will ever be called at one time, so the provided handler does not need to
     /// ensure it can safely be called concurrently.
     using MethodCallHandler = safecpp::CopyableScopedFunction<void(std::size_t queue_position)>;
+
+    /// \brief Allowed consumer uids which define which processes can subscribe to and call service methods.
+    ///
+    /// If the optional is empty, is indicates that any uid is allowed.
+    /// If the optional is filled, then all allowed uids are listed in the set. An empty set indicates that no uids are
+    /// allowed.
+    using AllowedConsumerUids = std::optional<std::set<uid_t>>;
 
     IMessagePassingService() noexcept = default;
 
@@ -172,28 +181,50 @@ class IMessagePassingService
     /// IMessagePassingService per process, the incoming message must identify which Skeleton's handler should be
     /// called.
     ///
+    /// \param asil_level ASIL level of method.
     /// \param skeleton_instance_identifier to identify which ServiceMethodSubscribedHandler to call when
-    /// SubscribeServiceMethod is called on the Proxy side
+    ///        SubscribeServiceMethod is called on the Proxy side
     /// \param subscribed_callback callback that will be called when SubscribeServiceMethod is called
-    virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
-        SkeletonInstanceIdentifier skeleton_instance_identifier,
-        ServiceMethodSubscribedHandler subscribed_callback) = 0;
+    /// \param allowed_proxy_uids set of uids of processes containing proxies which are allowed to register to this
+    ///        method. This will be derived from the allowed_consumer set in the mw/com configuration using the
+    ///        asil_level provided to this function (i.e. the ASIL-level of the particular MessagePassingServiceInstance
+    ///        on which we'll register the handler). If an empty optional is provided, it means all uids are allowed. A
+    ///        set of uids is provided because different Proxy instances will be able to subscribe via this registered
+    ///        handler.
+    virtual Result<MethodSubscriptionRegistrationGuard> RegisterOnServiceMethodSubscribedHandler(
+        const QualityType asil_level,
+        const SkeletonInstanceIdentifier skeleton_instance_identifier,
+        ServiceMethodSubscribedHandler subscribed_callback,
+        AllowedConsumerUids allowed_proxy_uids) = 0;
 
-    /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a Proxy.
+    /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a ProxyMethod.
     ///
-    /// When a user calls a method on a Proxy, it will put the InArgs in shared memory (if there are any) and then send
-    /// a notification to the Skeleton via CallMethod. The registered MethodCallCallback in the Skeleton process will
-    /// then be called which calls the actual method and puts the return value in shared memory (if there is one).
+    /// When a user calls a method on a ProxyMethod, it will put the InArgs in shared memory (if there are any) and then
+    /// send a notification to the Skeleton via CallMethod. The registered MethodCallCallback in the Skeleton process
+    /// will then be called which calls the actual method and puts the return value in shared memory (if there is one).
     ///
     /// A Skeleton opens a shared memory region for each connected Proxy which contains a method. The provided
-    /// ProxyInstanceIdentifier is required to identify which of the connected proxies the provided callback corresponds
-    /// to.
+    /// ProxyMethodInstanceIdentifier is required to identify which of the connected ProxyMethods the provided callback
+    /// corresponds to.
     ///
-    /// \param proxy_instance_identifier to identify which MethodCallHandler to call when CallMethod is called on the
-    /// Proxy side
+    /// Each MethodCallHandler stores pointers to the InArg and Return storage in the specific shared memory region
+    /// created by the Proxy. For this reason, we need to register a method call handler per ProxyMethod, not per
+    /// SkeletonMethod (i.e. because a SkeletonMethod will register different handlers per connected ProxyMethod). Note:
+    /// This handler is NOT the user provided handler, but a wrapper around it. We only have one user provided handler
+    /// per SkeletonMethod.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param proxy_method_instance_identifier to identify which MethodCallHandler to call when CallMethod is called on
+    /// the Proxy side
     /// \param method_call_callback callback that will be called when CallMethod is called
-    virtual ResultBlank RegisterMethodCallHandler(ProxyInstanceIdentifier proxy_instance_identifier,
-                                                  MethodCallHandler method_call_callback) = 0;
+    /// \param allowed_proxy_uid The uid of the proxy process which can call the registered handler. Since we register a
+    ///        method call handler per ProxyMethod, we can restrict the caller of the handler to the ProxyMethod who
+    ///        registered it.
+    virtual Result<MethodCallRegistrationGuard> RegisterMethodCallHandler(
+        const QualityType asil_level,
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+        MethodCallHandler method_call_callback,
+        const uid_t allowed_proxy_uid) = 0;
 
     /// \brief Notify given target_node_id about outdated_node_id being an old/not to be used node identifier.
     /// \details This is used by LoLa proxy instances during creation, when they detect, that they are re-starting
@@ -241,20 +272,64 @@ class IMessagePassingService
     /// The provided SkeletonInstanceIdentifier is required so that MessagePassingService can find the correct
     /// ServiceMethodSubscribed handler corresponding to the correct Skeleton.
     ///
+    /// \param asil_level See arguments documentation for ServiceMethodSubscribedHandler.
     /// \param skeleton_instance_identifier identification of the Skeleton corresponding to the Proxy which is calling
     /// this method.
-    virtual ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier) = 0;
+    /// \param proxy_instance_identifier See arguments documentation for ServiceMethodSubscribedHandler.
+    /// \param target_node_id Since this function is called by the Proxy process, target_node_id is the PID of the
+    ///        Skeleton process which the subscribe call is sent to (i.e. which contains the corresponding Skeleton)
+    virtual ResultBlank SubscribeServiceMethod(const QualityType asil_level,
+                                               const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                               const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                               const pid_t target_node_id) = 0;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response
     /// will be returned
     ///
     /// A Skeleton opens a shared memory region for each connected Proxy which contains a method. The provided
-    /// ProxyInstanceIdentifier is required to identify which of the connected proxies has called the method.
+    /// ProxyInstanceIdentifier is required to identify which of the connected ProxyMethods has called the method.
     ///
-    /// \param proxy_instance_identifier identification of the specific Proxy which is calling this method.
-    virtual ResultBlank CallMethod(const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                   std::size_t queue_position) = 0;
+    /// \param asil_level ASIL level of method.
+    /// \param proxy_method_instance_identifier identification of the specific ProxyMethod which is calling this method.
+    /// \param queue_position The position in the queue of method calls in shared memory relating to the current method
+    ///        call. Until asynchronous method calls are supported, this will always be 0.
+    /// \param target_node_id Since this function is called by the Proxy process, target_node_id is the PID of the
+    ///        Skeleton process which the method call is sent to (i.e. which contains the corresponding Skeleton)
+    virtual ResultBlank CallMethod(const QualityType asil_level,
+                                   const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                                   const std::size_t queue_position,
+                                   const pid_t target_node_id) = 0;
+
+  private:
+    /// \brief Unregister handler that was registered with RegisterOnServiceMethodSubscribedHandler
+    ///
+    /// Removes the handler associated with the provided skeleton_instance_identifier from the internal handler map.
+    /// After this call completes, the corresponding handler will no longer be able to be called. However, any currently
+    /// executing handlers will continue. This function is private and will only be called by
+    /// MethodSubscriptionRegistrationGuardFactory on destruction.
+    ///
+    /// \pre Shall only be called after RegisterOnServiceMethodSubscribedHandler was successfully called.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param skeleton_instance_identifier to identify which registered ServiceMethodSubscribedHandler to unregister
+    virtual void UnregisterOnServiceMethodSubscribedHandler(
+        const QualityType asil_level,
+        SkeletonInstanceIdentifier skeleton_instance_identifier) = 0;
+
+    /// \brief Unregister handler that was registered with RegisterMethodCallHandler
+    ///
+    /// Removes the handler associated with the provided skeleton_instance_identifier from the internal handler map.
+    /// After this call completes, the corresponding handler will no longer be able to be called. However, any currently
+    /// executing handlers will continue. This function is private and will only be called by
+    /// MethodCallRegistrationGuardFactory on destruction.
+    ///
+    /// \pre Shall only be called after RegisterMethodCallHandler was successfully called.
+    ///
+    /// \param asil_level ASIL level of method.
+    /// \param proxy_method_instance_identifier to identify which registered MethodCallHandler to unregister
+    virtual void UnregisterMethodCallHandler(const QualityType asil_level,
+                                             ProxyMethodInstanceIdentifier proxy_method_instance_identifier) = 0;
 };
 
 }  // namespace score::mw::com::impl::lola

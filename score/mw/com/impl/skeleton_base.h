@@ -42,17 +42,6 @@ class SkeletonEventBase;
 class SkeletonFieldBase;
 class SkeletonMethodBase;
 
-/// \api
-/// \brief Defines the processing modes for the service implementation side.
-///
-/// \requirement SWS_CM_00301
-enum class MethodCallProcessingMode : std::uint8_t
-{
-    kPoll,
-    kEvent,
-    kEventSingleThread
-};
-
 /// \brief Parent class for all generated skeletons. Only the generated skeletons will be user facing. But in order to
 /// reduce code duplication, we encapsulate the common logic in here.
 class SkeletonBase
@@ -68,14 +57,9 @@ class SkeletonBase
     ///
     /// \param skeleton_binding The SkeletonBinding which is created using SkeletonBindingFactory.
     /// \param instance_id The instance identifier which uniquely identifies this Skeleton instance.
-    /// \param mode As a default argument, this is the mode of the service implementation for processing service method
-    /// invocations with kEvent as default value. See [SWS_CM_00301] for the type definition and [SWS_CM_00198] for more
-    /// details on the behavior
-    SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding,
-                 InstanceIdentifier instance_id,
-                 MethodCallProcessingMode mode = MethodCallProcessingMode::kEvent);
+    SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, InstanceIdentifier instance_id);
 
-    virtual ~SkeletonBase();
+    virtual ~SkeletonBase() = default;
 
     /// \brief A Skeleton shall not be copyable
     /// \requirement SWS_CM_00134
@@ -123,10 +107,6 @@ class SkeletonBase
     InstanceIdentifier instance_id_;
 
     ISkeletonBase* skeleton_mock_;
-
-    /// \brief Perform required clean up operations when a SkeletonBase object is destroyed or overwritten (by the
-    /// move assignment operator)
-    void Cleanup();
 
     [[nodiscard]] score::ResultBlank OfferServiceEvents() const noexcept;
     [[nodiscard]] score::ResultBlank OfferServiceFields() const noexcept;
@@ -225,6 +205,11 @@ class SkeletonBaseView
     const SkeletonBase::SkeletonMethods& GetMethods() const noexcept
     {
         return skeleton_base_.methods_;
+    }
+
+    bool AreBindingsValid() const
+    {
+        return skeleton_base_.AreBindingsValid();
     }
 
   private:

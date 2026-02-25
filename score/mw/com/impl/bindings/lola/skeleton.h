@@ -13,13 +13,15 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_H
 
-#include "score/memory/shared/managed_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
@@ -51,6 +53,7 @@
 #include <sys/types.h>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -152,7 +155,17 @@ class Skeleton final : public SkeletonBinding
     ///          an assert/termination.
     void DisconnectQmConsumers();
 
+    /// \brief Function allowing a SkeletonMethod to register itself with its parent skeleton.
+    ///
+    /// This registration is required so that the Skeleton can access its owned methods.
+    ///
+    /// Synchronisation: This registration must be done in the constructor of the SkeletonMethod which is guaranteed to
+    /// be called during construction of the full Skeleton created by the user. Therefore, the map of skeleton methods
+    /// will not be modified after this construction phase and so can be used in any function (except for the
+    /// constructor of Skeleton) without locking a mutex.
     void RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method);
+
+    bool VerifyAllMethodsRegistered() const override;
 
   private:
     ResultBlank OpenExistingSharedMemory(
@@ -238,12 +251,23 @@ class Skeleton final : public SkeletonBinding
     ResultBlank OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
                                            const uid_t proxy_uid,
                                            const QualityType asil_level,
-                                           pid_t proxy_pid);
+                                           const pid_t proxy_pid);
+
+    using MethodIdsToUnsubscribe = std::vector<LolaMethodId>;
+    /// TODO: If SubscribeMethods fails, we want to get the error so that it can be propagated. We also want to return
+    /// MethodIdsToUnsubscribe so that these methods can be unsubscribed. Can this be done in a better way?
+    std::pair<score::ResultBlank, MethodIdsToUnsubscribe> SubscribeMethods(
+        const MethodData& method_data,
+        const ProxyInstanceIdentifier proxy_instance_identifier,
+        const uid_t proxy_uid,
+        const QualityType asil_level);
+    void UnsubscribeMethods(const std::vector<LolaMethodId>& method_ids,
+                            const ProxyInstanceIdentifier& proxy_instance_identifier);
+
     static MethodData& GetMethodData(const memory::shared::ManagedMemoryResource& resource);
 
-        /// \brief Checks whether the Proxy which sent a notification to the Skeleton that it subscribed to a method is in
-    /// the allowed_consumers list in the configuration.
-    bool IsProxyInAllowedConsumerList(const uid_t proxy_uid, const QualityType asil_level) const;
+    /// \brief Gets the set of allowed proxy consumer IDs from the configuration
+    IMessagePassingService::AllowedConsumerUids GetAllowedConsumers(const QualityType asil_level) const;
 
     InstanceIdentifier identifier_;
     const LolaServiceInstanceDeployment& lola_service_instance_deployment_;
@@ -269,14 +293,38 @@ class Skeleton final : public SkeletonBinding
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::ExclusiveFlockMutex>>
         service_instance_existence_flock_mutex_and_lock_;
 
-    std::unordered_map<ProxyInstanceIdentifier, std::shared_ptr<memory::shared::ManagedMemoryResource>>
-        method_resources_;
+    /// \brief Mutex to synchronise calls to OnServiceMethodsSubscribed
+    ///
+    /// OnServiceMethodsSubscribed can be called by the message passing concurrently, since different Proxies could
+    /// subscribe at the same time or a single Proxy may send the same message multiple times (See
+    /// platform/aas/docs/features/ipc/lola/method/README.md for details).
+    std::mutex on_service_methods_subscribed_mutex_;
+    MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
+
+    /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler/RegisterMethodCallHandler on
+    /// destruction
+    ///
+    /// Each guard corresponds to the method subscription / method call handler which was registered in
+    /// Skeleton::PrepareOffer() (in case any methods were registered). The guard objects will be destroyed in
+    /// Skeleton::PrepareStopOffer()
+    MethodSubscriptionRegistrationGuard method_subscription_registration_guard_qm_;
+    MethodSubscriptionRegistrationGuard method_subscription_registration_guard_asil_b_;
 
     bool was_old_shm_region_reopened_;
 
     score::filesystem::Filesystem filesystem_;
 
+    /// \brief Scope that is passed to the MethodCallHandler handler that is registered for each ProxyMethod
+    ///
+    /// This scope will be manually expired in PrepareStopOffer which will prevent any ProxyMethod from calling a
+    /// method.
+    safecpp::Scope<> method_call_handler_scope_;
+
+    /// \brief Scope that is passed to the ServiceMethodSubscribedHandler
+    ///
+    /// This scope will be manually expired in PrepareStopOffer which will prevent any Proxy from subscribing to this
+    /// method.
     safecpp::Scope<> on_service_method_subscribed_handler_scope_;
 };
 

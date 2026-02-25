@@ -107,7 +107,7 @@ int main(const int argc, const char** argv)
     score::mw::com::EventSenderReceiver event_sender_receiver{};
 
     const auto instance_specifier_result =
-        score::mw::com::InstanceSpecifier::Create(std::string{"xpad/cp60/MapApiLanesStamped"});
+        score::mw::com::InstanceSpecifier::Create(std::string{"score/cp60/MapApiLanesStamped"});
     if (!instance_specifier_result.has_value())
     {
         std::cerr << "Invalid instance specifier, terminating." << std::endl;

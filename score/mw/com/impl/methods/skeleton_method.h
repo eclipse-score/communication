@@ -15,10 +15,12 @@
 #include "score/result/result.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
+#include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/util/type_erased_storage.h"
 
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -50,6 +52,16 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
   public:
     using MethodType = ReturnType(ArgTypes...);
 
+    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name)
+        : SkeletonMethod(
+              skeleton_base,
+              method_name,
+              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
+                                                   method_name))
+    {
+    }
+
     /// \brief testonly constructor, which allows for direct injection of a mock binding
     SkeletonMethod(SkeletonBase& skeleton_base,
                    const std::string_view method_name,
@@ -63,11 +75,11 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     SkeletonMethod(SkeletonMethod&& other) noexcept;
     SkeletonMethod& operator=(SkeletonMethod&& other) & noexcept;
 
-    /// \brief Register a callback with the binding, which will be executed by the binding when the Proxy calls this
+    /// \brief Register a handler with the binding, which will be executed by the binding when the Proxy calls this
     /// method.
     /// \return score::cpp::blank on success and ComErrc code specified by the binding on failiure
     template <typename Callable>
-    ResultBlank Register(Callable&& callback);
+    ResultBlank RegisterHandler(Callable&& callback);
 
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
 };
@@ -111,7 +123,7 @@ void SkeletonMethod<ReturnType(ArgTypes...)>::UpdateSkeletonReference(SkeletonBa
 
 template <typename ReturnType, typename... ArgTypes>
 template <typename Callable>
-ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::Register(Callable&& callback)
+ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback)
 {
     static_assert(std::is_rvalue_reference_v<decltype(callback)>,
                   "Callbeck provided to register has to be an rvalue reference");
@@ -124,9 +136,9 @@ ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::Register(Callable&& callbac
         return std::invoke(callable, (*ptrs)...);
     };
 
-    SkeletonMethodBinding::TypeErasedCallback type_erased_callable =
-        [callable_invoker = std::move(callable_invoker)](std::optional<score::cpp::span<std::byte>> type_erased_result,
-                                                         std::optional<score::cpp::span<std::byte>> type_erased_in_args) {
+    SkeletonMethodBinding::TypeErasedHandler type_erased_callable =
+        [callable_invoker = std::move(callable_invoker)](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
+                                                         std::optional<score::cpp::span<std::byte>> type_erased_return) {
             using InArgPtrTuple = std::tuple<ArgTypes*...>;
             InArgPtrTuple typed_in_arg_ptrs{};
 
@@ -142,10 +154,10 @@ ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::Register(Callable&& callbac
             constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
             if constexpr (is_return_type_not_void)
             {
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_result.has_value(),
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_return.has_value(),
                                        "ReturnType is non void. Thus, type_erased_result needs to have a value!");
                 ReturnType res = std::apply(callable_invoker, std::forward<InArgPtrTuple>(typed_in_arg_ptrs));
-                SerializeArgs<ReturnType>(type_erased_result.value(), res);
+                SerializeArgs<ReturnType>(type_erased_return.value(), res);
             }
             else
             {
@@ -153,7 +165,7 @@ ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::Register(Callable&& callbac
             }
         };
 
-    return binding_->Register(std::move(type_erased_callable));
+    return binding_->RegisterHandler(std::move(type_erased_callable));
 }
 
 }  // namespace score::mw::com::impl

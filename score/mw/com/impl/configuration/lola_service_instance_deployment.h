@@ -53,6 +53,10 @@ class LolaServiceInstanceDeployment
         std::unordered_map<QualityType, std::vector<uid_t>> allowed_consumer = {},
         std::unordered_map<QualityType, std::vector<uid_t>> allowed_provider = {}) noexcept;
 
+    // Finding States that: A project shall not contain instances of non-volatile variables being given values that are
+    // not subsequently used.
+    // Since the goal of the serializationVersion is to be used in the future, we decide to ignore this warning.
+    // coverity[autosar_cpp14_a0_1_1_violation]
     constexpr static std::uint32_t serializationVersion{1U};
     // Note the struct is not compliant to POD type containing non-POD member.
     // The struct is used as a config storage obtained by performing the parsing json object.

@@ -17,6 +17,7 @@
 
 namespace score::mw::com::impl
 {
+
 /**
  * \api
  * \brief Error codes for the mw::com API
@@ -26,7 +27,8 @@ namespace score::mw::com::impl
  */
 enum class ComErrc : score::result::ErrorCode
 {
-    kServiceNotAvailable = 1,
+    kInvalid,
+    kServiceNotAvailable,
     kMaxSamplesReached,
     kBindingFailure,
     kGrantEnforcementError,
@@ -42,7 +44,6 @@ enum class ComErrc : score::result::ErrorCode
     kCommunicationStackError,
     kMaxSampleCountNotRealizable,
     kMaxSubscribersExceeded,
-    kWrongMethodCallProcessingMode,
     kErroneousFileHandle,
     kCouldNotExecute,
     kInvalidInstanceIdentifierString,
@@ -59,6 +60,7 @@ enum class ComErrc : score::result::ErrorCode
     kInvalidHandle,
     kCallQueueFull,
     kServiceElementAlreadyExists,
+    kNumEnumElements
 };
 
 /**
@@ -153,9 +155,6 @@ class ComErrorDomain final : public score::result::ErrorDomain
             case static_cast<score::result::ErrorCode>(ComErrc::kMaxSubscribersExceeded):
                 return "Subscriber count exceeded";
             // coverity[autosar_cpp14_m6_4_5_violation]
-            case static_cast<score::result::ErrorCode>(ComErrc::kWrongMethodCallProcessingMode):
-                return "Wrong processing mode passed to constructor method call.";
-            // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kErroneousFileHandle):
                 return "The FileHandle returned from FindServce is corrupt/service not available.";
             // coverity[autosar_cpp14_m6_4_5_violation]
@@ -204,6 +203,11 @@ class ComErrorDomain final : public score::result::ErrorDomain
             case static_cast<score::result::ErrorCode>(ComErrc::kServiceElementAlreadyExists):
                 return "A service element (event, field, method) with the same name already exists.";
             // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(ComErrc::kInvalid):
+            case static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements):
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false,
+                                       "kNumEnumElements/kInvalid are not valid states for the enum! They're just used "
+                                       "for verifying the value of an enum during serialization / deserialization!");
             default:
                 return "unknown future error";
         }

@@ -20,7 +20,7 @@ The initial implementation of the message passing library showed some shortcomin
 
 ## General approach
 
-We are going to implement the same interface with generally the same functionality using several different underlying transport mechanisms (in particular, native IPC messaging on QNX, as being ASIL qualified, and Unix Domain Sockets on Linux, as being available for testing on host). As different transport mechanisms introduce different service discovery namespaces, in order to reduce confusion, it might be worth to make sure that only one transport mechanism (QNX native messaging) is used on target, for both ASIL and QM communications.
+We are going to implement a uniform interface with generally the same functionality using several different underlying transport mechanisms (in particular, native IPC messaging on QNX, as being ASIL qualified, and Unix Domain Sockets on Linux, as being available for testing on host). As different transport mechanisms introduce different service discovery namespaces, in order to reduce confusion, it might be worth to make sure that only one transport mechanism (QNX native messaging) is used on target, for both ASIL and QM communications.
 
 (We don't use POSIX mqueue anymore for Linux, as it is unidirectional, doesn't support sessions, hard to clean up, and requires elevated privileges for longer queues. As we need sessions, we will be using Unix Domain Sockets of a type that supports sessions, ideally SOCK_SEQPACKET, or, if we need wider POSIX compatibility, SOCK_STREAM with our own packetizer on top of it)
 
@@ -68,7 +68,7 @@ One possible extensions of the library functionality that might be interesting t
 
 It is expected that in some use cases, a user will want to create multiple similar *Client Connections* to multiple *Servers*. Such connections may share their resources (in particular, the background thread and the OSAL wrappers). To make the creation of multiple connections possible, we introduce a *Client Factory* object. It is responsible for encapsulating the particular OS-dependent transport mechanism implementation, its configuration parameters, and the various shared resources needed for the implementation, such as the background thread, the command queue for the background thread, the memory resource for PMR-aware parts of the implementation, and so on. It can also be useful for providing a mock implementation for testing purposes.
 
-The *Client Factory* object is the exclusive owner of the resources it encapsulates. It cannot be destructed by the pointer to its base class. The destruction of the actual *Client Factory* object as a blocking operation that ensures that all the remaining *Client Connection* objects transition into the *Stopped* state with no ability to restart, and that all the shared resources used by them are deallocated.
+The *Client Factory* object and the *Client Connection* objects produced by it are shared owners of the resources the *Client Factory* encapsulates. The shared resources will not be deallocated until both the *Client Factory* and all the *Client Connection* objects are destructed.
 
 ## Message Passing server
 
@@ -176,7 +176,7 @@ The support for such a couple of callbacks can be implemented later and is not i
 
 The following are the questions the QNX support, answers to whose can simplify the implementation (or even the design):
 
-* Can we postpone `io_open()` by using the `_RESMGR_NOREPLY` return code? Doing that will allow us to serialize clients' `open()` calls into a single Resource Manager thread, so we can already refuse a connection based on the result of the user-provided callback, without allocating an OCB for it.
+* Can we postpone `io_open()` by using the `_RESMGR_NOREPLY` return code? Doing that will allow us to serialize clients' `open()` calls into a single Resource Manager thread, so we can already refuse a connection based on the result of the user-provided callback, without allocating an OCB for it. --- Yes, it is possible. `ctp->rcvid` of the `_io_open()` call needs to be saved; either `MsgError()` or `MsgReply()` with manually crafted `_io_connect_ftype_reply` may be needed for this receive id later. Also,`unblock` in `resmgr_connect_funcs_t` may be needed to handle unblocking RECEIVE-blocked `open()` call.
 
 * Is there a possibility of closing the connection (freeing the OCB and sending the wake-up pulse to the corresponding client-side `select`) just by the server-side Resource Manager functionality, without relying on the ability of the clients to cooperate? That would simplify our `RequestDisconnect()` implementation and make its functionality not reliant on good behavior of the corresponding client.
 

@@ -27,10 +27,10 @@ rust_binary(
 rust_test(
     name = "com-api-example-test",
     crate = ":com-api-example",
+    data = ["etc/config.json"],
     tags = ["manual"],
     deps = [
-        "//score/mw/com/example/com-api-example/com-api-gen",
-        "//score/mw/com/impl/rust/com-api/com-api",
+        ":com-api-example",
         "@crate_index//:tokio",
     ],
 )

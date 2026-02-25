@@ -103,9 +103,6 @@ TEST_F(SkeletonEventBaseFixture, PrepareOfferDispatchesToBinding)
     // When offering the event
     const auto result = skeleton_event_->PrepareOffer();
 
-    // and that PrepareStopOffer() is called on destruction
-    EXPECT_CALL(*mock_event_binding_, PrepareStopOffer());
-
     // and that the result is blank
     EXPECT_TRUE(result.has_value());
 }
@@ -158,129 +155,6 @@ TEST_F(SkeletonEventBaseFixture, PrepareStopOfferIsNotCalledIfEventWasNotOffered
     skeleton_event_->PrepareStopOffer();
 
     // Or when destroying the event
-}
-
-TEST_F(SkeletonEventBaseFixture, MovingConstructingSkeletonEventBaseDoesNotCallPrepareStopOffer)
-{
-    bool is_prepare_stop_offer_called{false};
-    {
-        // Given a constructed SkeletonEvent with a valid mock binding
-        MyDummyEvent skeleton_event{};
-        mock_event_binding_ = skeleton_event.GetMockBinding();
-
-        // Expecting that PrepareOffer() is called on the binding
-        EXPECT_CALL(*mock_event_binding_, PrepareOffer());
-
-        // When offering the event
-        skeleton_event.PrepareOffer();
-
-        // Expecting that PrepareStopOffer() is called on the binding
-        EXPECT_CALL(*mock_event_binding_, PrepareStopOffer())
-            .WillOnce(Invoke([&is_prepare_stop_offer_called]() -> ResultBlank {
-                is_prepare_stop_offer_called = true;
-                return {};
-            }));
-
-        // When move constructing the second event from the first event
-        MyDummyEvent skeleton_event_2{std::move(skeleton_event)};
-
-        // not when the move constructor is called
-        EXPECT_FALSE(is_prepare_stop_offer_called);
-    }
-    // but only when the skeleton is destroyed
-    EXPECT_TRUE(is_prepare_stop_offer_called);
-}
-
-TEST(SkeletonEventBaseTests, MovingAssigningOfferedSkeletonEventBaseCallsPrepareStopOffer)
-{
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding{nullptr};
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding2{nullptr};
-
-    bool is_prepare_stop_offer_called{false};
-    bool is_prepare_stop_offer_called2{false};
-
-    {
-        // Given a constructed SkeletonEvent with a valid mock binding
-        MyDummyEvent skeleton_event{};
-        mock_event_binding = skeleton_event.GetMockBinding();
-
-        // Expecting that PrepareOffer() is called on the binding
-        EXPECT_CALL(*mock_event_binding, PrepareOffer());
-
-        // When offering the event
-        skeleton_event.PrepareOffer();
-
-        // and given a second SkeletonEvent with a valid mock binding
-        MyDummyEvent skeleton_event2{};
-        mock_event_binding2 = skeleton_event2.GetMockBinding();
-
-        // Expecting that PrepareOffer() is called on the second binding
-        EXPECT_CALL(*mock_event_binding2, PrepareOffer());
-
-        // When offering the second event
-        skeleton_event2.PrepareOffer();
-
-        // and expecting that PrepareStopOffer() is called on both bindings
-        EXPECT_CALL(*mock_event_binding, PrepareStopOffer())
-            .WillOnce(Invoke([&is_prepare_stop_offer_called]() -> ResultBlank {
-                is_prepare_stop_offer_called = true;
-                return {};
-            }));
-        EXPECT_CALL(*mock_event_binding2, PrepareStopOffer())
-            .WillOnce(Invoke([&is_prepare_stop_offer_called2]() -> ResultBlank {
-                is_prepare_stop_offer_called2 = true;
-                return {};
-            }));
-
-        // When move assigning the second event to the first event
-        skeleton_event = std::move(skeleton_event2);
-
-        // Then PrepareStopOffer() is called on the first event's binding
-        EXPECT_TRUE(is_prepare_stop_offer_called);
-        EXPECT_FALSE(is_prepare_stop_offer_called2);
-    }
-    // and PrepareStopOffer() is called on the second event's binding on destruction
-    EXPECT_TRUE(is_prepare_stop_offer_called);
-    EXPECT_TRUE(is_prepare_stop_offer_called2);
-}
-
-TEST(SkeletonEventBaseTests, MovingAssigningUnOfferedSkeletonEventBaseDoesNotCallPrepareStopOffer)
-{
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding{nullptr};
-    StrictMock<mock_binding::SkeletonEventBase>* mock_event_binding2{nullptr};
-
-    bool is_prepare_stop_offer_called2{false};
-
-    {
-        // Given a constructed SkeletonEvent with a valid mock binding
-        MyDummyEvent skeleton_event{};
-        mock_event_binding = skeleton_event.GetMockBinding();
-
-        // and given a second SkeletonEvent with a valid mock binding
-        MyDummyEvent skeleton_event2{};
-        mock_event_binding2 = skeleton_event2.GetMockBinding();
-
-        // Expecting that PrepareOffer() is called on the second binding
-        EXPECT_CALL(*mock_event_binding2, PrepareOffer());
-
-        // When offering the second event
-        skeleton_event2.PrepareOffer();
-
-        // and expecting that PrepareStopOffer() is only called on the offered event's binding
-        EXPECT_CALL(*mock_event_binding, PrepareStopOffer()).Times(0);
-        EXPECT_CALL(*mock_event_binding2, PrepareStopOffer())
-            .WillOnce(Invoke([&is_prepare_stop_offer_called2]() -> ResultBlank {
-                is_prepare_stop_offer_called2 = true;
-                return {};
-            }));
-
-        // When move assigning the second event to the first event
-        skeleton_event = std::move(skeleton_event2);
-
-        // Then PrepareStopOffer() is not called on the first event's binding
-    }
-    // and PrepareStopOffer() is called on the second event's binding on destruction
-    EXPECT_TRUE(is_prepare_stop_offer_called2);
 }
 
 }  // namespace

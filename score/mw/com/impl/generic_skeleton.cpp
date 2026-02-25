@@ -55,8 +55,7 @@ std::string_view GetEventName(const InstanceIdentifier& identifier, std::string_
 
 Result<GenericSkeleton> GenericSkeleton::Create(
     const InstanceSpecifier& specifier,
-    const GenericSkeletonCreateParams& in,
-    MethodCallProcessingMode mode) noexcept
+    const GenericSkeletonCreateParams& in) noexcept
 {
     const auto instance_identifier_result = GetInstanceIdentifier(specifier);
 
@@ -66,13 +65,12 @@ Result<GenericSkeleton> GenericSkeleton::Create(
         return MakeUnexpected(ComErrc::kInstanceIDCouldNotBeResolved);
     }
 
-    return Create(instance_identifier_result.value(), in, mode); 
+    return Create(instance_identifier_result.value(), in); 
 }
 
 Result<GenericSkeleton> GenericSkeleton::Create(
     const InstanceIdentifier& identifier,
-    const GenericSkeletonCreateParams& in,
-    MethodCallProcessingMode mode) noexcept
+    const GenericSkeletonCreateParams& in) noexcept
 {
     auto binding = SkeletonBindingFactory::Create(identifier);
     if (!binding)
@@ -83,7 +81,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(
     }
 
     // 1. Create the Skeleton (Private Constructor)
-    GenericSkeleton skeleton(identifier, std::move(binding), mode);
+    GenericSkeleton skeleton(identifier, std::move(binding));
 
     // 2. Create events directly in the map
     for (const auto& info : in.events)
@@ -147,9 +145,8 @@ void GenericSkeleton::StopOfferService() noexcept
 }
 
 GenericSkeleton::GenericSkeleton(const InstanceIdentifier& identifier,
-                                 std::unique_ptr<SkeletonBinding> binding,
-                                 MethodCallProcessingMode mode)
-    : SkeletonBase(std::move(binding), identifier, mode)
+                                 std::unique_ptr<SkeletonBinding> binding)
+    : SkeletonBase(std::move(binding), identifier)
 {
 }
 

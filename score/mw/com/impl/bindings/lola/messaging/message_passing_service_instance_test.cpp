@@ -49,7 +49,12 @@ class MessagePassingServiceInstanceTest : public ::testing::Test
         ON_CALL(server_factory_mock_, Create(::testing::_, ::testing::_))
             .WillByDefault(::testing::Return(::testing::ByMove(std::move(server_mock_))));
 
-        ON_CALL(*client_connection_mock_, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
+        auto client_connection_mock_facade = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
+            score::cpp::pmr::new_delete_resource(), client_connection_mock_);
+        ON_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+            .WillByDefault(::testing::Return(::testing::ByMove(std::move(client_connection_mock_facade))));
+
+        ON_CALL(client_connection_mock_, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
 
         ON_CALL(*server_connection_mock_, GetClientIdentity()).WillByDefault(::testing::ReturnRef(client_identity_));
         ON_CALL(*server_connection_mock_, GetUserData()).WillByDefault(::testing::ReturnRef(user_data_));
@@ -94,8 +99,7 @@ class MessagePassingServiceInstanceTest : public ::testing::Test
     AsilSpecificCfg asil_cfg_{};
     ClientQualityType quality_type_{ClientQualityType::kASIL_B};
 
-    score::cpp::pmr::unique_ptr<::testing::NiceMock<ClientConnectionMock>> client_connection_mock_{
-        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource())};
+    ::testing::NiceMock<ClientConnectionMock> client_connection_mock_{};
     score::cpp::pmr::unique_ptr<::testing::NiceMock<ServerConnectionMock>> server_connection_mock_{
         score::cpp::pmr::make_unique<::testing::NiceMock<ServerConnectionMock>>(score::cpp::pmr::new_delete_resource())};
 
@@ -155,7 +159,7 @@ TEST_F(MessagePassingServiceInstanceTest, ConnectCallbackReturnsClientPid)
     EXPECT_EQ(std::get<uintptr_t>(pid_result.value()), client_identity_.pid);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DisconnectCallbackSuccesfullyExecuted)
+TEST_F(MessagePassingServiceInstanceTest, DisconnectCallbackSuccessfullyExecuted)
 {
     // Just a placeholder due to disconnect callback being empty
     MessagePassingServiceInstance instance{
@@ -164,40 +168,8 @@ TEST_F(MessagePassingServiceInstanceTest, DisconnectCallbackSuccesfullyExecuted)
     disconnect_callback_(*server_connection_mock_);
 }
 
-// received_send_message_with_reply
-TEST_F(MessagePassingServiceInstanceTest, MessageWithReplyIsSuccesfullyExecutedWhenValidPidIsPassed)
-{
-    // Given message passing instance
-    MessagePassingServiceInstance instance{
-        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
-
-    // Expect GetUserData to be called twice and return valid pid
-    EXPECT_CALL(*server_connection_mock_, GetUserData())
-        .WillOnce(::testing::ReturnRef(user_data_))
-        .WillOnce(::testing::ReturnRef(user_data_));
-
-    // When received_send_message_with_reply callback is executed
-    received_send_message_with_reply_callback_(*server_connection_mock_, {});
-}
-
-TEST_F(MessagePassingServiceInstanceDeathTest, MessageWithReplyTerminatesWhenInvalidPidIsPassed)
-{
-    // Given message passing instance
-    MessagePassingServiceInstance instance{
-        quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
-
-    // Expect GetUserData to be called twice and return pid > pid_t::max()
-    // we can't set .WillOnce() twice since gtest uses fork() for death tests
-    user_data_.emplace<uintptr_t>(static_cast<uintptr_t>(std::numeric_limits<pid_t>::max()) + 1);
-    EXPECT_CALL(*server_connection_mock_, GetUserData()).WillRepeatedly(::testing::ReturnRef(user_data_));
-
-    // When received_send_message_with_reply callback is executed
-    // Expect termination
-    EXPECT_DEATH({ received_send_message_with_reply_callback_(*server_connection_mock_, {}); }, ".*");
-}
-
 // received_send_message
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingAnEmptyMessage)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingAnEmptyMessage)
 {
     // Given message passing instance
     MessagePassingServiceInstance instance{
@@ -208,7 +180,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingAnEmptyMes
     received_send_message_callback_(*server_connection_mock_, {});
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingMessageOfInvalidType)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingMessageOfInvalidType)
 {
     // Given message passing instance
     MessagePassingServiceInstance instance{
@@ -220,7 +192,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingMessageOfI
 }
 
 // incorrect length
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingRegisterEventNotifierWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingRegisterEventNotifierWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -229,7 +201,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingRegisterEv
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier, false));
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingUnegisterEventNotifierWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingUnregisterEventNotifierWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -238,7 +210,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingUnegisterE
                                     Serialize(event_id_, MessageType::kUnregisterEventNotifier, false));
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingNotifyEventWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingNotifyEventWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -246,7 +218,7 @@ TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingNotifyEven
     received_send_message_callback_(*server_connection_mock_, Serialize(event_id_, MessageType::kNotifyEvent, false));
 }
 
-TEST_F(MessagePassingServiceInstanceTest, DoesntTerminateUponReceivingOutdatedNodeIdWithWrongLengthPayload)
+TEST_F(MessagePassingServiceInstanceTest, DoesNotTerminateUponReceivingOutdatedNodeIdWithWrongLengthPayload)
 {
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
@@ -279,7 +251,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyCallsRegisteredHandl
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntTerminateUponEncounteringDestroyedHandler)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesNotTerminateUponEncounteringDestroyedHandler)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -295,7 +267,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntTerminateUponE
     (*executor_task_)(stop_token_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntCallUnregisteredHandler)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesNotCallUnregisteredHandler)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -315,7 +287,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventLocallyDoesntCallUnregister
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterEventNotificationCalledWithNonExistingHandlerRegistrationDoesntAffectExistingRegistrations)
+       UnregisterEventNotificationCalledWithNonExistingHandlerRegistrationDoesNotAffectExistingRegistrations)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -342,7 +314,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventDoesntPostNotifyEventLocallyIfNothingRegisteredForTheEvent)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventDoesNotPostNotifyEventLocallyIfNothingRegisteredForTheEvent)
 {
     // Given service instance with no registered handlers
     MessagePassingServiceInstance instance{
@@ -395,19 +367,15 @@ TEST_F(MessagePassingServiceInstanceTest, RegisterEventNotificationRemoteSendsRe
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When handler being registered with pid != local_pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       RegisterEventNotificationRemoteDoesnTermianteWhenFailsToSendRegistrationMessage)
+       RegisterEventNotificationRemoteDoesNotTerminateWhenFailsToSendRegistrationMessage)
 {
     RecordProperty("Verifies", "SCR-5899276");
     RecordProperty("Description", "Register Event notification callback.");
@@ -420,12 +388,8 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called and return an error
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When handler being registered with pid != local_pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -445,12 +409,8 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When handler being registered with pid != local_pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -488,13 +448,9 @@ TEST_F(MessagePassingServiceInstanceTest,
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration and once upon unregistration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .Times(2)
         .WillRepeatedly(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered with pid != local_pid
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -504,20 +460,16 @@ TEST_F(MessagePassingServiceInstanceTest,
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterEventNotificationRemoteDoesnTerminateUponUnregistrationMessageSendFailure)
+       UnregisterEventNotificationRemoteDoesNotTerminateUponUnregistrationMessageSendFailure)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called twice: on registration and unregistration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered for event with pid != local_pid
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -526,19 +478,15 @@ TEST_F(MessagePassingServiceInstanceTest,
     instance.UnregisterEventNotification(event_id_, registration_no, remote_pid_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesntUndergisterOnPidMismatch)
+TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesNotUnregisterOnPidMismatch)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered with pid != local_pid
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -548,19 +496,15 @@ TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesn
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterEventNotificationRemoteDoesntSendMessageUponUnregisteringNonLastHandler)
+       UnregisterEventNotificationRemoteDoesNotSendMessageUponUnregisteringNonLastHandler)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given handler being registered with pid != local_pid twice
     auto registration_no = instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -570,7 +514,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     instance.UnregisterEventNotification(event_id_, registration_no, remote_pid_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesntUnregisterLocalRegistations)  // TODO
+TEST_F(MessagePassingServiceInstanceTest, UnregisterEventNotificationRemoteDoesNotUnregisterLocalRegistrations)  // TODO
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -604,12 +548,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClients)
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyEvent() for the same event is called
     instance.NotifyEvent(event_id_);
@@ -646,18 +586,14 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClientsRegist
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyEvent() for the same event is called
     instance.NotifyEvent(event_id_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntTerminateOnSendFail)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesNotTerminateOnSendFail)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -668,12 +604,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntTerminateOnSend
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // and client connection that returns an error on Send()
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyEvent() for the same event is called
     // Expect it to not terminate
@@ -720,7 +652,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClientsExceed
 }
 
 // unregister message
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntNotifyUnregisteredClient)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesNotNotifyUnregisteredClient)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -742,7 +674,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteDoesntNotifyUnregiste
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       UnregisterMessageForNonExistingRegistrationDoesntAffectTheExistingRegistrations)
+       UnregisterMessageForNonExistingRegistrationDoesNotAffectTheExistingRegistrations)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -753,11 +685,7 @@ TEST_F(MessagePassingServiceInstanceTest,
                                     Serialize(event_id_, MessageType::kRegisterEventNotifier));
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_)).Times(1);
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_)).Times(1);
 
     // When unregister event notifier message is received for different event
     ++event_id_.element_id_;
@@ -769,7 +697,7 @@ TEST_F(MessagePassingServiceInstanceTest,
     instance.NotifyEvent(event_id_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, MultipleUnregistrationsForTheSameClientDontLeadToTermination)
+TEST_F(MessagePassingServiceInstanceTest, MultipleUnregistrationsForTheSameClientDoNotLeadToTermination)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -816,18 +744,14 @@ TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdMsgRemovesOutdated
     instance.NotifyEvent(event_id_);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdCalledWithUnregisteredPidDoesntAffectOtherRegistrations)
+TEST_F(MessagePassingServiceInstanceTest, HandleOutdatedNodeIdCalledWithUnregisteredPidDoesNotAffectOtherRegistrations)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_)).Times(1);
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_)).Times(1);
 
     // Given notification is registered
     received_send_message_callback_(*server_connection_mock_,
@@ -863,12 +787,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageCallsRegisteredHandl
         });
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // when handler being registered for event
     instance.RegisterEventNotification(event_id_, handler, remote_pid_);
@@ -880,7 +800,7 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageCallsRegisteredHandl
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageDoesntCallHandlerForDifferentEvent)
+TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageDoesNotCallHandlerForDifferentEvent)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -894,12 +814,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventMessageDoesntCallHandlerFor
         });
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // when handler being registered for event
     instance.RegisterEventNotification(event_id_, handler, remote_pid_);
@@ -930,7 +846,7 @@ TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationDoesNotRegi
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       ReregisterEventNotificationDoesntAffectLocalRegistrationsWhenCalledWithRemotePid)
+       ReregisterEventNotificationDoesNotAffectLocalRegistrationsWhenCalledWithRemotePid)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -957,7 +873,7 @@ TEST_F(MessagePassingServiceInstanceTest,
 }
 
 TEST_F(MessagePassingServiceInstanceTest,
-       ReregisterEventNotificationDoesntAffectLocalRegistrationsWhenCalledWithLocalPid)
+       ReregisterEventNotificationDoesNotAffectLocalRegistrationsWhenCalledWithLocalPid)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
@@ -983,19 +899,15 @@ TEST_F(MessagePassingServiceInstanceTest,
     EXPECT_TRUE(handler_called);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationForTheSameEventPidCombinationDoesntSendMessage)
+TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationForTheSameEventPidCombinationDoesNotSendMessage)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called once upon first registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // Given event notification being registered for remote pid
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
@@ -1032,7 +944,7 @@ TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationWithDiffere
 TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeCreatesClientAndSendsMessage)
 {
     RecordProperty("Verifies", "SCR-5898962, SCR-5899276, SCR-5899282");
-    RecordProperty("Description", "Outdated Nodie Id notification is exchanged via message-passing");
+    RecordProperty("Description", "Outdated Node Id notification is exchanged via message-passing");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -1042,30 +954,22 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeCreatesClientAndSend
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyOutdatedNodeId() is called for a previously unused target_node_id
     instance.NotifyOutdatedNodeId(remote_pid_, remote_pid_ + 2);
 }
 
-TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeDoesntTerminateOnFailedSend)
+TEST_F(MessagePassingServiceInstanceTest, NotifyOutdatedNodeDoesNotTerminateOnFailedSend)
 {
     // Given service instance
     MessagePassingServiceInstance instance{
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Expect client connection Send() to be called
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
-
-    // and client factory mock to return the client connection mock
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When NotifyOutdatedNodeId() is called for a previously unused target_node_id
     instance.NotifyOutdatedNodeId(remote_pid_, remote_pid_ + 2);
@@ -1119,10 +1023,8 @@ TEST_F(MessagePassingServiceInstanceTest, RegisterCallbackWithExistingRemoteHand
         quality_type_, asil_cfg_, server_factory_mock_, client_factory_mock_, executor_mock_};
 
     // Setup client connection mock for remote registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);
 
@@ -1312,10 +1214,8 @@ TEST_F(MessagePassingServiceInstanceTest, RemoteHandlerRegistrationInvokesCallba
     });
 
     // Setup client connection mock for remote registration
-    EXPECT_CALL(*client_connection_mock_, Send(::testing::_))
+    EXPECT_CALL(client_connection_mock_, Send(::testing::_))
         .WillOnce(testing::Return(score::cpp::expected_blank<score::os::Error>{}));
-    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
 
     // When registering first remote handler
     instance.RegisterEventNotification(event_id_, {}, remote_pid_);

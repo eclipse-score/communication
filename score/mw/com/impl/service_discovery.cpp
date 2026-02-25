@@ -348,8 +348,8 @@ Result<ServiceHandleContainer<HandleType>> ServiceDiscovery::FindService(Instanc
     const auto instance_identifiers = runtime_.resolve(instance_specifier);
     if (instance_identifiers.size() == static_cast<std::size_t>(0U))
     {
-        score::mw::log::LogFatal("lola") << "Failed to resolve instance identifier from instance specifier";
-        std::terminate();
+        score::mw::log::LogError("lola") << "Failed to resolve instance identifier from instance specifier";
+        return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
     }
 
     bool are_only_errors_received{true};

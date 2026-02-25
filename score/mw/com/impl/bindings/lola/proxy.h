@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/offered_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
@@ -123,7 +124,8 @@ class Proxy : public ProxyBinding
           std::optional<memory::shared::LockFile> service_instance_usage_marker_file,
           std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
               service_instance_usage_flock_mutex_and_lock,
-          score::filesystem::Filesystem filesystem) noexcept;
+          score::filesystem::Filesystem filesystem,
+          ProxyInstanceIdentifier::ProxyInstanceCounter proxy_instance_counter) noexcept;
 
     /// Returns the address of the control structure, for the given event ID.
     ///
@@ -193,7 +195,7 @@ class Proxy : public ProxyBinding
   private:
     static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
 
-    void ServiceAvailabilityChangeHandler(const bool is_service_available) noexcept;
+    void ServiceAvailabilityChangeHandler(const bool is_service_available);
     void InitializeSharedMemoryForMethods(
         memory::shared::ManagedMemoryResource& memory_resource,
         const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& method_data,
@@ -225,15 +227,29 @@ class Proxy : public ProxyBinding
     /// currently registered Proxy service elements.
     std::mutex proxy_event_registration_mutex_;
     bool is_service_instance_available_;
-    std::unique_ptr<FindServiceGuard> find_service_guard_;
     std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
         service_instance_usage_flock_mutex_and_lock_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<ProxyMethod>> proxy_methods_;
     MethodData* method_data_;
     ProxyInstanceIdentifier proxy_instance_identifier_;
+    OfferedStateMachine offered_state_machine_;
+
+    /// Flag which is set once the proxy methods are fully setup in Proxy::SetupMethods(). This is checked in the
+    /// ServiceAvailabilityChangeHandler so that it doesn't send a notification to the Skeleton before the shared memory
+    /// has been setup. See platform/aas/docs/features/ipc/lola/method/README.md for details about the full methods
+    /// logic related to proxy autoreconnect.
+    ///
+    /// We use an atomic instead of a mutex because we don't care if SubscribeServiceMethod is called multiple times
+    /// concurrently on IMessagePassingService, as long as the shared memory has been setup. The Skeleton side will
+    /// simply ignore any duplicate messages.
+    std::atomic<bool> are_proxy_methods_setup_;
 
     score::filesystem::Filesystem filesystem_;
+
+    // We make find_service_guard_ the last member variable since it registers a handler which accesses member variables
+    // of this class, so they should be initialised first.
+    std::unique_ptr<FindServiceGuard> find_service_guard_;
 };
 
 template <typename EventSampleType>

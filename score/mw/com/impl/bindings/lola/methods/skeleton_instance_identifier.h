@@ -16,6 +16,8 @@
 #include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 
+#include "score/mw/log/logging.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -36,6 +38,8 @@ struct SkeletonInstanceIdentifier
 
 bool operator==(const SkeletonInstanceIdentifier& lhs, const SkeletonInstanceIdentifier& rhs) noexcept;
 
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const SkeletonInstanceIdentifier& value) noexcept;
+
 }  // namespace score::mw::com::impl::lola
 
 namespace std
@@ -54,9 +58,9 @@ class hash<score::mw::com::impl::lola::SkeletonInstanceIdentifier>
 
         constexpr auto instance_id_bit_width =
             std::numeric_limits<decltype(skeleton_instance_identifier.instance_id)>::digits;
-        return std::hash<std::uint64_t>{}(
-            (static_cast<std::uint64_t>(skeleton_instance_identifier.service_id) << instance_id_bit_width) |
-            static_cast<std::uint64_t>(skeleton_instance_identifier.instance_id));
+        return std::hash<std::uint64_t>{}((static_cast<std::uint64_t>(skeleton_instance_identifier.service_id)
+                                           << static_cast<std::uint64_t>(instance_id_bit_width)) |
+                                          static_cast<std::uint64_t>(skeleton_instance_identifier.instance_id));
     }
 };
 

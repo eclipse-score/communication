@@ -152,7 +152,7 @@ fn main() {
     );
     mw_com::initialize(Some(&args.service_instance_manifest));
 
-    let instance_specifier = mw_com::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
+    let instance_specifier = mw_com::InstanceSpecifier::try_from("score/cp60/MapApiLanesStamped")
         .expect("Instance specifier creation failed");
 
     match args.mode {

@@ -91,10 +91,10 @@ class SingleTestPerProcessFixture : public ::testing::Test
 
   protected:
     InstanceSpecifier tire_pressure_port_{InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value()};
-    std::string config_with_tire_pressure_port_{get_path("ara_com_config.json")};
+    std::string config_with_tire_pressure_port_{get_path("mw_com_config.json")};
     InstanceSpecifier tire_pressure_port_other_{
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePortOther"}).value()};
-    std::string config_with_tire_pressure_port_other_{get_path("ara_com_config_other.json")};
+    std::string config_with_tire_pressure_port_other_{get_path("mw_com_config_other.json")};
     bool tested_in_separate_process_{false};
 
   private:
@@ -315,7 +315,7 @@ TEST_F(RuntimeTest, TracingIsDisabledWhenTraceFilterConfigPathIsInvalid)
     TestInSeparateProcess([]() {
         // Given a configuration file which contains a TraceFilterConfigPath that does not point to a valid tracing
         // configuration
-        WithConfigAtDefaultPath(get_path("ara_com_config_invalid_trace_config_path.json"));
+        WithConfigAtDefaultPath(get_path("mw_com_config_invalid_trace_config_path.json"));
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();
@@ -329,7 +329,7 @@ TEST_F(RuntimeTest, TracingRuntimeIsDisabledWhenTracingDisabledInConfig)
 {
     TestInSeparateProcess([]() {
         // Given a configuration with valid and disabled tracing configuration
-        WithConfigAtDefaultPath(get_path("ara_com_config_disabled_trace_config.json"));
+        WithConfigAtDefaultPath(get_path("mw_com_config_disabled_trace_config.json"));
 
         // When implicitly default-initializing the runtime
         score::cpp::ignore = Runtime::getInstance();
@@ -343,9 +343,9 @@ TEST_F(RuntimeTest, TracingRuntimeIsCreatedIfConfiguredCorrectly)
 {
     TestInSeparateProcess([]() {
         // Given a configuration with valid and enabled tracing configuration
-        auto default_path = get_path("ara_com_config_valid_trace_config.json");
+        auto default_path = get_path("mw_com_config_valid_trace_config.json");
         auto json_path = default_path.find("external") != std::string::npos
-                             ? get_path("ara_com_config_valid_trace_config_external.json")
+                             ? get_path("mw_com_config_valid_trace_config_external.json")
                              : default_path;
         WithConfigAtDefaultPath(json_path);
 

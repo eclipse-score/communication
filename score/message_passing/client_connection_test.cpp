@@ -50,6 +50,7 @@ class ClientConnectionTest : public ::testing::Test
         resource_ = score::cpp::pmr::get_default_resource();
         engine_ = score::cpp::pmr::make_shared<StrictMock<SharedResourceEngineMock>>(resource_);
         EXPECT_CALL(*engine_, GetMemoryResource()).WillRepeatedly(Return(resource_));
+        EXPECT_CALL(*engine_, GetLogger()).Times(AtLeast(0)).WillRepeatedly(ReturnRef(logger_));
         EXPECT_CALL(*engine_, IsOnCallbackThread()).Times(AtLeast(0)).WillRepeatedly([&]() -> bool {
             return on_callback_thread_;
         });
@@ -107,7 +108,19 @@ class ClientConnectionTest : public ::testing::Test
 
     void AtTryOpenCall_Return(score::cpp::expected<std::int32_t, score::os::Error> result)
     {
-        EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_})).WillOnce(Return(result));
+        if (connection_delay_ms_ == 0)
+        {
+            EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
+                .WillOnce(Return(result));
+        }
+        else
+        {
+            EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
+                .WillOnce([result, this](auto) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds{connection_delay_ms_});
+                    return result;
+                });
+        }
     }
 
     void ExpectCleanUpOwner(detail::ClientConnection& connection)
@@ -295,6 +308,7 @@ class ClientConnectionTest : public ::testing::Test
     constexpr static std::uint32_t kMaxNotifySize = 12U;
 
     score::cpp::pmr::memory_resource* resource_{};
+    LoggingCallback logger_{};
     std::shared_ptr<StrictMock<SharedResourceEngineMock>> engine_{};
     const std::string service_identifier_{"test_identifier"};
     const ServiceProtocolConfig protocol_config_{service_identifier_, kMaxSendSize, kMaxReplySize, kMaxNotifySize};
@@ -306,6 +320,7 @@ class ClientConnectionTest : public ::testing::Test
     ISharedResourceEngine::PosixEndpointEntry* posix_endpoint_{};
     std::atomic<bool> on_callback_thread_{false};  // only atomic for tsan and sleep synchronization
     std::thread background_thread_{};
+    std::int32_t connection_delay_ms_{0};
 };
 
 TEST_F(ClientConnectionTest, Constructed)
@@ -499,6 +514,28 @@ TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenExplicitlyS
     StopCurrentConnection(connection);
 }
 
+TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptWithDelayThenExplicitlyStopping)
+{
+    std::int32_t counter{0};
+    logger_ = [&counter](LogSeverity severity, LogItems items) -> void {
+        if ((severity == LogSeverity::kWarn) && (items.size() > 1) &&
+            std::holds_alternative<std::string_view>(items[0]) &&
+            std::get<std::string_view>(items[0]) == std::string_view{"Time exceeded by "})
+        {
+            ++counter;
+        }
+    };
+    connection_delay_ms_ = 100;
+
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    EXPECT_EQ(counter, 1);
+    logger_ = LoggingCallback{};
+
+    StopCurrentConnection(connection);
+}
+
 TEST_F(ClientConnectionTest, SuccessfullySyncConnectingAtFirstAttemptThenExplicitlyStopping)
 {
     client_config_.sync_first_connect = true;
@@ -537,6 +574,18 @@ TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenFirstReadDi
     InvokeEndpointInput();
     EXPECT_EQ(connection.GetState(), State::kStopped);
     EXPECT_EQ(connection.GetStopReason(), StopReason::kClosedByPeer);
+}
+
+TEST_F(ClientConnectionTest, SuccessfullyConnectingAtFirstAttemptThenSpuriousReadGetsIgnored)
+{
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    AtProtocolReceive_Return(0, score::cpp::make_unexpected(score::os::Error::createFromErrno(EAGAIN)));
+    InvokeEndpointInput();
+    EXPECT_EQ(connection.GetState(), State::kReady);
+
+    StopCurrentConnection(connection);
 }
 
 TEST_F(ClientConnectionTest, NotConnectedSendNotReady)
@@ -580,15 +629,15 @@ TEST_F(ClientConnectionTest, SendTooLarge)
 
     auto send_result = connection.Send(send_buffer);
     EXPECT_FALSE(send_result);
-    EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), EMSGSIZE);
 
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
     EXPECT_FALSE(send_wait_reply_result);
-    EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), EMSGSIZE);
 
     auto send_with_callback_result = connection.SendWithCallback(send_buffer, IClientConnection::ReplyCallback{});
     EXPECT_FALSE(send_with_callback_result);
-    EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), EMSGSIZE);
 
     StopCurrentConnection(connection);
 }
@@ -642,7 +691,7 @@ TEST_F(ClientConnectionTest, GivenTrulyAsyncWhenSendIsCalledItIsQueued)
     // third send shall fail as we only have two slots in the send queue
     send_result = connection.Send(send_buffer);
     EXPECT_FALSE(send_result);
-    EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
     // both queued messages shall be sent by the same command, as they have no receive callbacks
     EXPECT_CALL(*engine_, SendProtocolMessage).Times(2);
@@ -666,7 +715,7 @@ TEST_F(ClientConnectionTest, SendIsNotQueuedIfTrulyAsyncButNoSlots)
     std::array<std::uint8_t, kMaxSendSize> send_buffer;
     auto send_result = connection.Send(send_buffer);
     EXPECT_FALSE(send_result);
-    EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
     StopCurrentConnection(connection);
 }
@@ -754,7 +803,7 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenCannotQueueMessage)
     // second send shall fail as we only have one slot in the send queue
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
     EXPECT_FALSE(send_wait_reply_result);
-    EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
     EXPECT_CALL(*engine_, SendProtocolMessage);
     InvokeSendQueueCommand();
@@ -815,7 +864,7 @@ TEST_F(ClientConnectionTest, SendWaitReplyFailsWhenReceiveTooLong)
 
     auto send_wait_reply_result = connection.SendWaitReply(send_buffer, reply_buffer);
     EXPECT_FALSE(send_wait_reply_result);
-    EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_wait_reply_result.error().GetOsDependentErrorCode(), EMSGSIZE);
 
     StopCurrentConnection(connection);
 }
@@ -856,7 +905,7 @@ TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessage)
     // second send shall fail as we only have one slot in the send queue
     send_with_callback_result = connection.SendWithCallback(send_buffer, [](auto&&) {});
     EXPECT_FALSE(send_with_callback_result);
-    EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
     StopCurrentConnection(connection);
 }
@@ -873,7 +922,7 @@ TEST_F(ClientConnectionTest, SendWithCallbackFailsWhenCannotQueueMessageTrulyAsy
 
     // first send shall fail
     auto send_with_callback_result = connection.SendWithCallback(send_buffer, [](auto&&) {});
-    EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), ENOMEM);
+    EXPECT_EQ(send_with_callback_result.error().GetOsDependentErrorCode(), ENOBUFS);
 
     StopCurrentConnection(connection);
 }

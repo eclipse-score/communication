@@ -1,0 +1,36 @@
+--- /dev/null
++++ /doxygen/Doxyfile.template
+@@ -534,7 +534,7 @@
+ # normally produced when WARNINGS is set to YES.
+ # The default value is: NO.
+
+-EXTRACT_ALL            = NO
++EXTRACT_ALL            = YES
+
+ # If the EXTRACT_PRIVATE tag is set to YES, all private members of a class will
+ # be included in the documentation.
+@@ -1111,7 +1111,7 @@
+ # Note that the wildcards are matched against the file with absolute path, so to
+ # exclude all test directories for example use the pattern */test/*
+
+-EXCLUDE_PATTERNS       =
++EXCLUDE_PATTERNS       = "*/external/*"
+
+ # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
+ # (namespaces, classes, functions, etc.) that should be excluded from the
+@@ -2353,7 +2353,7 @@
+ # captures the structure of the code including all documentation.
+ # The default value is: NO.
+
+-GENERATE_XML           = NO
++GENERATE_XML           = YES
+
+ # The XML_OUTPUT tag is used to specify where the XML pages will be put. If a
+ # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
+@@ -2993,3 +2993,6 @@
+ # {{ADDITIONAL PARAMETERS}}
+
+ # {{OUTPUT DIRECTORY}}
++
++ALIASES += "thread-safe=\xrefitem thread_safe \"Thread safe\" \"Thread safe entities\""
++ALIASES += "api=\xrefitem api \"Feature API\" \"Public API\""

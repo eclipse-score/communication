@@ -164,7 +164,7 @@ class SamplePtr final
 
   private:
     template <typename BindingSamplePtrType>
-    SamplePtr(BindingSamplePtrType&& binding_sample_ptr)
+    explicit SamplePtr(BindingSamplePtrType&& binding_sample_ptr)
         : binding_sample_ptr_{std::forward<BindingSamplePtrType>(binding_sample_ptr)}, reference_guard_{}
     {
     }
@@ -173,6 +173,10 @@ class SamplePtr final
     SampleReferenceGuard reference_guard_;
 
     template <typename SamplePtrType>
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
+    // Design decision: Friend class required to access private constructor.
+    // This way more implementation details can be hidden from the user.
+    // coverity[autosar_cpp14_a11_3_1_violation]
     friend SamplePtr<SamplePtrType> MakeFakeSamplePtr(std::unique_ptr<SamplePtrType> fake_sample_ptr);
 };
 

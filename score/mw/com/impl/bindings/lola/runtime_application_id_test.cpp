@@ -63,7 +63,7 @@ TEST_F(LolaRuntimeApplicationIdTest, GetApplicationIdFallsBackToProcessUidWhenNo
 {
     // Given a configuration without an explicit applicationID
     const uid_t process_uid = 999;  // This remains uid_t as it mocks the OS call
-    EXPECT_CALL(*unistd_mock_guard_, getuid()).WillOnce(Return(process_uid));
+    ON_CALL(*unistd_mock_guard_, getuid()).WillByDefault(Return(process_uid));
     Configuration config({}, {}, {}, {});
 
     // When the LoLa Runtime is constructed

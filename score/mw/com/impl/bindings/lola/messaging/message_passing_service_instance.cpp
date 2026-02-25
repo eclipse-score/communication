@@ -11,18 +11,27 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance.h"
+
+#include "score/mw/com/impl/bindings/lola/messaging/client_quality_type.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
+#include "score/mw/com/impl/bindings/lola/methods/method_error.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/error_serializer.h"
+
+#include "score/language/safecpp/safe_math/safe_math.h"
 #include "score/language/safecpp/scoped_function/move_only_scoped_function.h"
 #include "score/message_passing/i_client_factory.h"
 #include "score/message_passing/i_server_connection.h"
 #include "score/message_passing/i_server_factory.h"
 #include "score/message_passing/service_protocol_config.h"
-#include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
-
-#include "score/language/safecpp/safe_math/safe_math.h"
-
 #include "score/os/errno_logging.h"
 #include "score/os/unistd.h"
-
+#include "score/result/error.h"
+#include "score/result/result.h"
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
@@ -31,10 +40,11 @@
 #include <sys/types.h>
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cstdint>
 #include <cstring>
 #include <exception>
-#include <limits>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -45,10 +55,28 @@
 #include <variant>
 #include <vector>
 
+namespace score::mw::com::impl::lola
+{
 namespace
 {
 
-constexpr std::uint32_t kMaxSendSize{9U};
+struct SubscribeServiceMethodUnserializedPayload
+{
+    SkeletonInstanceIdentifier skeleton_instance_identifier;
+    ProxyInstanceIdentifier proxy_instance_identifier;
+};
+
+struct MethodCallUnserializedPayload
+{
+    ProxyMethodInstanceIdentifier proxy_method_instance_identifier;
+    std::size_t queue_position;
+};
+
+using MethodUnserializedReply = score::ResultBlank;
+using MethodReplyPayload = ErrorSerializer<MethodErrc>::SerializedErrorType;
+
+constexpr std::uint32_t kMaxSendSize{32U};
+constexpr std::uint32_t kMaxReplySize{32U};
 
 // TODO: make proper serialization
 template <typename T>
@@ -66,13 +94,38 @@ bool DeserializeFromPayload(const score::cpp::span<const std::uint8_t> payload, 
     // Suppress "AUTOSAR C++14 A12-0-2" The rule states: "Bitwise operations and operations that assume data
     // representation in memory shall not be performed on objects."
     // False-positive: trivially-copyable object
-    // Suppress "AUTOSAR C++14 A0-1-2": The return value of memcpy is not needed since it returns a void* to its
-    // destination (which is &t)
     // coverity[autosar_cpp14_a12_0_2_violation : FALSE]
-    // coverity[autosar_cpp14_a0_1_2_violation]
-    std::memcpy(&t, payload.data(), payload.size());
+    score::cpp::ignore = std::memcpy(&t, payload.data(), payload.size());
     // NOLINTEND(score-banned-function) deserialization of trivially copyable
     return true;
+}
+
+/// \brief Function which deserializes a reply payload which is received when calling SendWaitReply in CallMethod or
+/// SubscribeServiceMethod.
+/// \return The outer result returns an error if SendWaitReply itself returned an error. The inner ResultBlank contains
+/// the result encoded in the message itself.
+score::Result<MethodUnserializedReply> DeserializeFromMethodReplyPayload(
+    const score::cpp::span<const std::uint8_t> payload) noexcept
+{
+    static_assert(std::is_trivially_copyable_v<MethodReplyPayload>);
+    static_assert(sizeof(MethodReplyPayload) <= kMaxSendSize);
+
+    if (sizeof(MethodReplyPayload) != payload.size())
+    {
+        score::mw::log::LogError("lola") << "Wrong payload size, got " << payload.size() << ", expected "
+                                       << sizeof(MethodReplyPayload);
+        return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
+    }
+
+    MethodReplyPayload method_payload{};
+    // NOLINTBEGIN(score-banned-function) We are copying a buffer into a serialized integer type (which is trivially
+    // copyable) into an integer. We check via an assert that the output integer fits the serialized integer. The
+    // destination address is stack variable so cannot overlap with the provided payload buffer.
+    score::cpp::ignore = std::memcpy(&method_payload, payload.data(), payload.size());
+    // NOLINTEND(score-banned-function) deserialization of trivially copyable
+
+    const auto reported_result = ErrorSerializer<MethodErrc>::Deserialize(method_payload);
+    return MethodUnserializedReply{reported_result};
 }
 
 // TODO: make proper serialization
@@ -85,18 +138,58 @@ auto SerializeToMessage(const std::uint8_t message_id, const T& t) noexcept -> s
     std::array<std::uint8_t, sizeof(T) + 1> out{};
     out[0] = message_id;
     // NOLINTBEGIN(score-banned-function) serialization of trivially copyable
-    // Suppress "AUTOSAR C++14 A0-1-2": The return value of memcpy is not needed since it returns a void* to its
-    // destination (which is &out)
-    // coverity[autosar_cpp14_a0_1_2_violation]
-    std::memcpy(&out[1], &t, sizeof(T));
+    score::cpp::ignore = std::memcpy(&out[1], &t, sizeof(T));
     // NOLINTEND(score-banned-function) deserialization of trivially copyable
     return out;
 }
 
-}  // namespace
-
-namespace score::mw::com::impl::lola
+auto SerializeToMethodReplyMessage(score::ResultBlank reply_result) noexcept
+    -> std::array<std::uint8_t, sizeof(MethodReplyPayload)>
 {
+    static_assert(std::is_trivially_copyable_v<MethodReplyPayload>);
+    static_assert(sizeof(MethodReplyPayload) <= kMaxReplySize);
+
+    const MethodReplyPayload serialized_com_errc =
+        reply_result.has_value() ? ErrorSerializer<MethodErrc>::SerializeSuccess()
+                                 : ErrorSerializer<MethodErrc>::SerializeError(static_cast<MethodErrc>(
+                                       *reply_result.error()));  /// TODO: Use proper error casting
+
+    std::array<std::uint8_t, sizeof(MethodReplyPayload)> out{};
+
+    // NOLINTBEGIN(score-banned-function) We are copying an integer type which is trivially copyable and the destination
+    // array is clearly sized to fit the integer which is copied in. The source and destination addresses are both stack
+    // variables so cannot be overlapping.
+    score::cpp::ignore = std::memcpy(out.data(), &serialized_com_errc, sizeof(MethodReplyPayload));
+    // NOLINTEND(score-banned-function) deserialization of trivially copyable
+    return out;
+}
+
+bool IsMethodErrorRecoverable(const score::result::Error error)
+{
+    const auto error_code = *error;
+
+    // We static cast each individual Method error code to the base integer type to avoid coverity warnings about static
+    // casting the generic error code (from *error) to a specific error code (i.e. MethodErrc)
+    if ((error_code == static_cast<result::ErrorCode>(MethodErrc::kSkeletonAlreadyDestroyed)) ||
+        (error_code == static_cast<result::ErrorCode>(MethodErrc::kUnknownProxy)) ||
+        (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotSubscribed)) ||
+        (error_code == static_cast<result::ErrorCode>(MethodErrc::kNotOffered)))
+    {
+        return true;
+    }
+    else if ((error_code == static_cast<result::ErrorCode>(MethodErrc::kUnexpectedMessage)) ||
+             (error_code == static_cast<result::ErrorCode>(MethodErrc::kUnexpectedMessageSize)) ||
+             (error_code == static_cast<result::ErrorCode>(MethodErrc::kMessagePassingError)))
+    {
+        return false;
+    }
+    else
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(false, "Provided error is not part of subset relating to methods.");
+    }
+}
+
+}  // namespace
 
 MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQualityType asil_level,
                                                              AsilSpecificCfg /*config*/,
@@ -105,15 +198,29 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQuality
                                                              score::concurrency::Executor& local_event_executor) noexcept
     : IMessagePassingServiceInstance(),
       cur_registration_no_{0U},
+      asil_level_{asil_level},
       client_cache_{asil_level, client_factory},
+      event_update_handlers_{},
+      event_update_handlers_mutex_{},
+      handler_status_change_callbacks_{},
+      handler_status_change_callbacks_mutex_{},
+      event_update_interested_nodes_{},
+      event_update_interested_nodes_mutex_{},
+      event_update_remote_registrations_{},
+      event_update_remote_registrations_mutex_{},
+      subscribe_service_method_handlers_{},
+      subscribe_service_method_handlers_mutex_{},
+      call_method_handlers_{},
+      call_method_handlers_mutex_{},
       executor_{local_event_executor},
-      message_callback_scope_{}
+      message_callback_scope_{},
+      self_pid_{os::Unistd::instance().getpid()},
+      self_uid_{os::Unistd::instance().getuid()}
 {
     // TODO: PMR
 
-    auto node_identifier = score::os::Unistd::instance().getpid();
-    auto service_identifier = MessagePassingClientCache::CreateMessagePassingName(asil_level, node_identifier);
-    score::message_passing::ServiceProtocolConfig protocol_config{service_identifier, kMaxSendSize, 0U, 0U};
+    auto service_identifier = MessagePassingClientCache::CreateMessagePassingName(asil_level, self_pid_);
+    score::message_passing::ServiceProtocolConfig protocol_config{service_identifier, kMaxSendSize, kMaxReplySize, 0U};
     score::message_passing::IServerFactory::ServerConfig server_config{};
     server_ = server_factory.Create(protocol_config, server_config);
 
@@ -158,29 +265,7 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQuality
 
         return {};
     };
-
-    auto received_send_message_with_reply_callback =
-        // Suppress autosar_cpp14_a15_5_3_violation: False Positive
-        // Rationale: Passing an argument by reference cannot throw
-        // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-        [](score::message_passing::IServerConnection& connection,
-           score::cpp::span<const std::uint8_t> /*message*/) noexcept -> score::cpp::blank {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(std::holds_alternative<std::uintptr_t>(connection.GetUserData()),
-                               "Message Passing: UserData does not contain a uintptr_t");
-        // Suppress "AUTOSAR C++14 A15-5-3" The rule states: "Implicit call of std::terminate()"
-        // Before accessing the variant with std::get it is checked that the variant holds the alternative unitptr_t
-        // coverity[autosar_cpp14_a15_5_3_violation]
-        auto UserDataUintPtr = std::get<std::uintptr_t>(connection.GetUserData());
-
-        const auto client_pid = score::safe_math::Cast<pid_t>(UserDataUintPtr);
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(client_pid.has_value(),
-                                     "Message Passing : Message Passing: PID is bigger than pid_t::max()");
-
-        score::mw::log::LogError("lola") << "MessagePassingService: Unexpected request from client "
-                                       << client_pid.value();
-
-        return {};
-    };
+    auto received_send_message_with_reply_callback = CreateSendMessageWithReplyCallback();
 
     // Suppress "AUTOSAR C++14 A5-1-4" rule finding: "A lambda expression object shall not outlive any of its
     // reference-captured objects.".
@@ -189,13 +274,86 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQuality
                                           disconnect_callback,
                                           // coverity[autosar_cpp14_a5_1_4_violation]
                                           received_send_message_callback,
-                                          received_send_message_with_reply_callback);
+                                          std::move(received_send_message_with_reply_callback));
     if (!result.has_value())
     {
         score::mw::log::LogFatal("lola") << "MessagePassingService: Failed to start listening on " << service_identifier
                                        << " with following error: " << result.error();
         std::terminate();
     }
+}
+
+message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessageWithReplyCallback()
+{
+    auto message_callback_with_reply_scoped_function = std::make_shared<
+        score::safecpp::MoveOnlyScopedFunction<score::ResultBlank(uid_t, pid_t, score::cpp::span<const std::uint8_t>)>>(
+        message_callback_scope_,
+        [this](uid_t sender_uid, pid_t sender_pid, score::cpp::span<const std::uint8_t> message) noexcept -> score::ResultBlank {
+            return this->MessageCallbackWithReply(sender_uid, sender_pid, message);
+        });
+
+    // Note. When received_send_message_with_reply_callback returns an error, the message passing connection with the
+    // client will be disconnected. Therefore, we only return an error from the callback when the error is unrecoverable
+    // (e.g. an issue with message passing itself). Any recoverable errors are sent back to the client in the reply
+    // message and handled there.
+    auto received_send_message_with_reply_callback =
+        [message_callback_with_reply_scoped_function = std::move(message_callback_with_reply_scoped_function)](
+            score::message_passing::IServerConnection& connection,
+            score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::expected_blank<score::os::Error> {
+        const auto client_identity = connection.GetClientIdentity();
+        const pid_t client_pid = client_identity.pid;
+        const auto client_uid = client_identity.uid;
+
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(message_callback_with_reply_scoped_function != nullptr,
+                                     "Message callback with reply callable was not properly constructed");
+        auto function_invocation_result =
+            std::invoke(*message_callback_with_reply_scoped_function, client_uid, client_pid, message);
+        if (!(function_invocation_result.has_value()))
+        {
+            score::mw::log::LogError("lola")
+                << "Calling message_callback_with_reply_scoped_function failed because scope expired" << client_pid;
+            const auto reply = SerializeToMethodReplyMessage(MakeUnexpected(MethodErrc::kSkeletonAlreadyDestroyed));
+            const auto reply_result = connection.Reply(reply);
+            if (!(reply_result.has_value()))
+            {
+                score::mw::log::LogError("lola") << "Failed to send reply after failing to process method due to scope "
+                                                  "expiring. Disconnecting from client.";
+                return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
+            }
+        }
+
+        const auto& message_handling_result = function_invocation_result.value();
+        const auto did_message_handling_fail_unrecoverable =
+            !(message_handling_result.has_value()) && (!IsMethodErrorRecoverable(message_handling_result.error()));
+
+        // If we received an unrecoverable error then we log here and return an error after attempting to send a reply.
+        // We log since an unrecoverable error may indicate that message passing is broken, so we can't rely on the
+        // caller receiving an informative error message. We log here in case the message reply fails which will return
+        // early from this function to ensure that we log both error messages in that case.
+        if (did_message_handling_fail_unrecoverable)
+        {
+            score::mw::log::LogError("lola")
+                << "Handling message with reply failed with unrecoverable error:" << message_handling_result.error()
+                << ". Disconnecting from client.";
+        }
+
+        const auto reply = SerializeToMethodReplyMessage(message_handling_result);
+        const auto reply_result = connection.Reply(reply);
+        if (!(reply_result.has_value()))
+        {
+            score::mw::log::LogError("lola")
+                << "Failed to send reply after successfully processing message with reply. Disconnecting from client.";
+            return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
+        }
+
+        if (did_message_handling_fail_unrecoverable)
+        {
+            return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
+        }
+
+        return {};
+    };
+    return received_send_message_with_reply_callback;
 }
 
 void MessagePassingServiceInstance::MessageCallback(const pid_t sender_pid,
@@ -226,6 +384,37 @@ void MessagePassingServiceInstance::MessageCallback(const pid_t sender_pid,
                 << "MessagePassingService: Unsupported MessageType received from " << sender_pid;
             break;
     }
+}
+
+score::ResultBlank MessagePassingServiceInstance::MessageCallbackWithReply(const uid_t sender_uid,
+                                                                         const pid_t sender_pid,
+                                                                         const score::cpp::span<const std::uint8_t> message)
+{
+    if (message.size() < 1U)
+    {
+        score::mw::log::LogError("lola") << "MessagePassingService: Empty message received from " << sender_pid;
+        return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
+    }
+    const auto payload = message.subspan(1U);
+    switch (message.front())
+    {
+        case score::cpp::to_underlying(MessageWithReplyType::kSubscribeServiceMethod):
+        {
+            return HandleSubscribeServiceMethodMsg(payload, sender_uid, sender_pid);
+        }
+        case score::cpp::to_underlying(MessageWithReplyType::kCallMethod):
+        {
+            return HandleCallMethodMsg(payload, sender_uid);
+        }
+        default:
+        {
+            score::mw::log::LogError("lola")
+                << "MessagePassingService: Unsupported MessageWithReplyType received from " << sender_pid;
+            break;
+        }
+    }
+
+    return MakeUnexpected(MethodErrc::kUnexpectedMessage);
 }
 
 void MessagePassingServiceInstance::HandleNotifyEventMsg(const score::cpp::span<const std::uint8_t> payload,
@@ -388,6 +577,190 @@ void MessagePassingServiceInstance::HandleOutdatedNodeIdMsg(const score::cpp::sp
     }
 
     client_cache_.RemoveMessagePassingClient(pid_to_unregister);
+}
+
+score::ResultBlank MessagePassingServiceInstance::HandleSubscribeServiceMethodMsg(
+    const score::cpp::span<const std::uint8_t> payload,
+    const uid_t sender_uid,
+    const pid_t sender_node_id)
+{
+    SubscribeServiceMethodUnserializedPayload unserialized_payload{};
+    if (!DeserializeFromPayload(payload, unserialized_payload))
+    {
+        return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
+    }
+
+    return CallSubscribeServiceMethodLocally(unserialized_payload.skeleton_instance_identifier,
+                                             unserialized_payload.proxy_instance_identifier,
+                                             sender_uid,
+                                             sender_node_id);
+}
+
+score::ResultBlank MessagePassingServiceInstance::HandleCallMethodMsg(const score::cpp::span<const std::uint8_t> payload,
+                                                                    const uid_t sender_uid)
+{
+    // TODO: make proper serialization
+    MethodCallUnserializedPayload unserialized_payload{};
+    if (!DeserializeFromPayload(payload, unserialized_payload))
+    {
+        return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
+    }
+
+    return CallServiceMethodLocally(
+        unserialized_payload.proxy_method_instance_identifier, unserialized_payload.queue_position, sender_uid);
+}
+
+score::ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodLocally(
+    const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    const ProxyInstanceIdentifier& proxy_instance_identifier,
+    const uid_t proxy_uid,
+    const pid_t proxy_pid)
+{
+    // A copy of the handler is made under lock and called outside the lock to allow calling multiple handlers at once
+    // and to also allow registering a new method call handler for the same ProxyInstanceIdentifier while an old
+    // call is still running. The handler is the map may also be unregistered once the mutex is released (while the copy
+    // of the handler still exists). The handler will still be called in this case unless the handler's scope has
+    // expired. The scope of the handler ensures. that it doesn't access any expired resources.
+    std::shared_lock<std::shared_mutex> read_lock{subscribe_service_method_handlers_mutex_};
+    auto method_subscribed_handler_it = subscribe_service_method_handlers_.find(skeleton_instance_identifier);
+    if (method_subscribed_handler_it == subscribe_service_method_handlers_.cend())
+    {
+        // This can occur if a ProxyMethod calls subscribe method with an invalid/corrupted SkeletonInstanceIdentifier.
+        mw::log::LogError("lola") << "Subscribe method handler has not been registered for this SkeletonMethod!";
+        return MakeUnexpected(MethodErrc::kNotOffered);
+    }
+
+    auto [method_subscribed_handler_copy, allowed_proxy_uids] = method_subscribed_handler_it->second;
+    read_lock.unlock();
+
+    if (allowed_proxy_uids.has_value() && allowed_proxy_uids->count(proxy_uid) == 0U)
+    {
+        mw::log::LogError("lola") << "Could not invoke subscribe service method handler because uid of proxy calling "
+                                     "subscribe is not in allowed_consumers list.";
+        return MakeUnexpected(MethodErrc::kUnknownProxy);
+    }
+    const auto invocation_result =
+        std::invoke(method_subscribed_handler_copy, proxy_instance_identifier, proxy_uid, proxy_pid);
+    if (!(invocation_result.has_value()))
+    {
+        mw::log::LogError("lola")
+            << "Invocation of subscribe service method handler failed as scope has been destroyed: "
+               "SkeletonMethod has already been destroyed.";
+        return MakeUnexpected(MethodErrc::kSkeletonAlreadyDestroyed);
+    }
+    return invocation_result.value();
+}
+
+score::ResultBlank MessagePassingServiceInstance::CallServiceMethodLocally(
+    const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+    const std::size_t queue_position,
+    const uid_t proxy_uid)
+{
+    // A copy of the handler is made under lock and called outside the lock to allow calling multiple handlers at once
+    // and to also allow registering a new method call handler for the same ProxyInstanceIdentifier while an old
+    // call is still running. The handler is the map may also be unregistered once the mutex is released (while the copy
+    // of the handler still exists). The handler will still be called in this case unless the handler's scope has
+    // expired. The scope of the handler ensures. that it doesn't access any expired resources.
+    std::shared_lock<std::shared_mutex> read_lock{call_method_handlers_mutex_};
+    auto method_call_handler_it = call_method_handlers_.find(proxy_method_instance_identifier);
+    if (method_call_handler_it == call_method_handlers_.cend())
+    {
+        // This can occur if calling a method when the skeleton has crashed and restarted but the proxy hasn't yet
+        // re-subscribed (so the method call handler has not yet been registered). It can also occur if a ProxyMethod
+        // calls the method with an invalid/corrupted ProxyMethodInstanceIdentifier.
+        mw::log::LogError("lola") << "Method call handler has not been registered for this ProxyMethod!";
+        return MakeUnexpected(MethodErrc::kNotSubscribed);
+    }
+
+    auto [method_call_handler_copy, allowed_proxy_uid] = method_call_handler_it->second;
+    read_lock.unlock();
+
+    if (allowed_proxy_uid != proxy_uid)
+    {
+        mw::log::LogError("lola") << "Could not invoke method call handler because uid of proxy calling method is "
+                                     "not the same one that registered the handler.";
+        return MakeUnexpected(MethodErrc::kUnknownProxy);
+    }
+    auto invocation_result = std::invoke(method_call_handler_copy, queue_position);
+    if (!(invocation_result.has_value()))
+    {
+        mw::log::LogError("lola") << "Invocation of method call handler failed as scope has been destroyed: "
+                                     "SkeletonMethod has already been destroyed.";
+        return MakeUnexpected(MethodErrc::kSkeletonAlreadyDestroyed);
+    }
+    return {};
+}
+
+ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodRemotely(
+    const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    const ProxyInstanceIdentifier& proxy_instance_identifier,
+    const pid_t target_node_id)
+{
+    SubscribeServiceMethodUnserializedPayload unserialized_payload{skeleton_instance_identifier,
+                                                                   proxy_instance_identifier};
+    const auto message =
+        SerializeToMessage(score::cpp::to_underlying(MessageWithReplyType::kSubscribeServiceMethod), unserialized_payload);
+    auto sender = client_cache_.GetMessagePassingClient(target_node_id);
+
+    std::array<std::uint8_t, sizeof(MethodReplyPayload)> reply{};
+    score::cpp::span<std::uint8_t> reply_buffer{reply.data(), reply.size()};
+    const auto method_reply_result = sender->SendWaitReply(message, reply_buffer);
+    if (!method_reply_result.has_value())
+    {
+        score::mw::log::LogError("lola")
+            << "MessagePassingServiceInstance: Sending SubscribeServiceMethodMessage to node_id " << target_node_id
+            << " failed with error: " << method_reply_result.error();
+        return MakeUnexpected(MethodErrc::kMessagePassingError);
+    }
+
+    const auto deserialization_result = DeserializeFromMethodReplyPayload(method_reply_result.value());
+    if (!(deserialization_result.has_value()))
+    {
+        score::mw::log::LogError("lola")
+            << "MessagePassingService: Parsing SubscribeServiceMethodMessage reply from node_id " << target_node_id
+            << "failed during deserialization";
+        return MakeUnexpected<Blank>(deserialization_result.error());
+    }
+    return deserialization_result.value();
+}
+
+ResultBlank MessagePassingServiceInstance::CallServiceMethodRemotely(
+    const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+    const std::size_t queue_position,
+    const pid_t target_node_id)
+{
+    const MethodCallUnserializedPayload unserialized_payload{proxy_method_instance_identifier, queue_position};
+    const auto message =
+        SerializeToMessage(score::cpp::to_underlying(MessageWithReplyType::kCallMethod), unserialized_payload);
+    auto sender = client_cache_.GetMessagePassingClient(target_node_id);
+
+    std::array<std::uint8_t, sizeof(MethodReplyPayload)> reply{};
+    score::cpp::span<std::uint8_t> reply_buffer{reply.data(), reply.size()};
+    const auto send_wait_reply_result = sender->SendWaitReply(message, reply_buffer);
+    if (!(send_wait_reply_result.has_value()))
+    {
+        score::mw::log::LogError("lola") << "MessagePassingService: Sending CallServiceMethodMessage to node_id "
+                                       << target_node_id << " failed with error: " << send_wait_reply_result.error();
+        return MakeUnexpected(MethodErrc::kMessagePassingError);
+    }
+    const auto reply_payload = send_wait_reply_result.value();
+
+    const auto method_call_deserialization_result = DeserializeFromMethodReplyPayload(reply_payload);
+    if (!(method_call_deserialization_result.has_value()))
+    {
+        score::mw::log::LogError("lola") << "MessagePassingService: Parsing CallServiceMethodMessage reply from node_id "
+                                       << target_node_id << "failed during deserialization";
+        return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
+    }
+    const auto method_call_result = method_call_deserialization_result.value();
+
+    if (!(method_call_result.has_value()))
+    {
+        score::mw::log::LogError("lola") << "MessagePassingService: CallServiceMethodMessage reply from node_id "
+                                       << target_node_id << "returned failure";
+        return MakeUnexpected<Blank>(method_call_result.error());
+    }
+    return {};
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
@@ -593,7 +966,7 @@ IMessagePassingService::HandlerRegistrationNoType MessagePassingServiceInstance:
 
     write_lock.unlock();
 
-    if (target_node_id != score::os::Unistd::instance().getpid())
+    if (target_node_id != self_pid_)
     {
         RegisterEventNotificationRemote(event_id, target_node_id);
     }
@@ -629,7 +1002,7 @@ void MessagePassingServiceInstance::ReregisterEventNotification(const ElementFqI
     read_lock.unlock();
 
     // we only do re-register activity, if it is a remote node
-    const auto is_target_remote_node = (target_node_id != score::os::Unistd::instance().getpid());
+    const auto is_target_remote_node = (target_node_id != self_pid_);
     if (is_target_remote_node)
     {
         std::unique_lock<std::shared_mutex> remote_reg_write_lock(event_update_remote_registrations_mutex_);
@@ -717,7 +1090,7 @@ void MessagePassingServiceInstance::UnregisterEventNotification(
         return;
     }
 
-    if (target_node_id != score::os::Unistd::instance().getpid())
+    if (target_node_id != self_pid_)
     {
         UnregisterEventNotificationRemote(event_id, registration_no, target_node_id);
     }
@@ -733,6 +1106,69 @@ void MessagePassingServiceInstance::UnregisterEventNotification(
             callback_search->second(false);  // No handlers remain
         }
     }
+}
+
+ResultBlank MessagePassingServiceInstance::RegisterOnServiceMethodSubscribedHandler(
+    const SkeletonInstanceIdentifier skeleton_instance_identifier,
+    IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
+    IMessagePassingService::AllowedConsumerUids allowed_proxy_uids)
+{
+    std::unique_lock<std::shared_mutex> write_lock(subscribe_service_method_handlers_mutex_);
+    const auto [existing_element, was_inserted] = subscribe_service_method_handlers_.insert(
+        {skeleton_instance_identifier, {std::move(subscribed_callback), std::move(allowed_proxy_uids)}});
+
+    if (!was_inserted)
+    {
+        score::mw::log::LogError("lola") << "MessagePassingService: Failed to register OnServiceMethodSubscribedHandler "
+                                          "since it could not be inserted into map.";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    return {};
+}
+
+ResultBlank MessagePassingServiceInstance::RegisterMethodCallHandler(
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+    IMessagePassingService::MethodCallHandler method_call_callback,
+    const uid_t allowed_proxy_uid)
+{
+    std::unique_lock<std::shared_mutex> write_lock(call_method_handlers_mutex_);
+
+    /// TODO: Add in a comment explaining that we need to overwrite handlers here in case the Proxy has restarted and
+    /// needs to register NEW method call handlers with pointers in the NEW shared memory region.
+    const auto handler_it = call_method_handlers_.find(proxy_method_instance_identifier);
+    if (handler_it == call_method_handlers_.cend())
+    {
+        score::cpp::ignore = call_method_handlers_.insert(
+            {proxy_method_instance_identifier, {std::move(method_call_callback), allowed_proxy_uid}});
+    }
+    else
+    {
+        handler_it->second.first = std::move(method_call_callback);
+        handler_it->second.second = allowed_proxy_uid;
+    }
+
+    return {};
+}
+
+void MessagePassingServiceInstance::UnregisterOnServiceMethodSubscribedHandler(
+    const SkeletonInstanceIdentifier skeleton_instance_identifier)
+{
+    std::unique_lock<std::shared_mutex> write_lock(subscribe_service_method_handlers_mutex_);
+    const auto num_elements_erased = subscribe_service_method_handlers_.erase(skeleton_instance_identifier);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        num_elements_erased != 0U,
+        "Function must only be called when a subscribe service method handler was successfully registered!");
+}
+
+void MessagePassingServiceInstance::UnregisterMethodCallHandler(
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier)
+{
+    std::unique_lock<std::shared_mutex> write_lock(call_method_handlers_mutex_);
+    const auto num_elements_erased = call_method_handlers_.erase(proxy_method_instance_identifier);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        num_elements_erased != 0U,
+        "Function must only be called when a method call handler was successfully registered!");
 }
 
 void MessagePassingServiceInstance::NotifyOutdatedNodeId(const pid_t outdated_node_id,
@@ -925,6 +1361,75 @@ void MessagePassingServiceInstance::UnregisterEventNotificationExistenceChangedC
         score::mw::log::LogWarn("lola")
             << "MessagePassingService: UnregisterEventNotificationExistenceChangedCallback called for event "
             << event_id.ToString() << " but no callback was registered";
+    }
+}
+
+QualityType MessagePassingServiceInstance::GetPartnerQualityType() const
+{
+    switch (asil_level_)
+    {
+        case ClientQualityType::kASIL_QM:
+            return QualityType::kASIL_QM;
+        case ClientQualityType::kASIL_B:
+            return QualityType::kASIL_B;
+        case ClientQualityType::kASIL_QMfromB:
+            return QualityType::kASIL_QM;
+        default:
+            std::terminate();
+    }
+}
+
+ResultBlank MessagePassingServiceInstance::SubscribeServiceMethod(
+    const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+    const ProxyInstanceIdentifier& proxy_instance_identifier,
+    const pid_t target_node_id)
+{
+    const auto are_skeleton_and_proxy_in_same_process = (target_node_id == self_pid_);
+    if (are_skeleton_and_proxy_in_same_process)
+    {
+        const auto result = CallSubscribeServiceMethodLocally(
+            skeleton_instance_identifier, proxy_instance_identifier, self_uid_, target_node_id);
+        if (!(result.has_value()))
+        {
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        return {};
+    }
+    else
+    {
+        const auto result =
+            CallSubscribeServiceMethodRemotely(skeleton_instance_identifier, proxy_instance_identifier, target_node_id);
+        if (!(result.has_value()))
+        {
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        return {};
+    }
+}
+
+ResultBlank MessagePassingServiceInstance::CallMethod(
+    const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+    std::size_t queue_position,
+    const pid_t target_node_id)
+{
+    const auto are_skeleton_and_proxy_in_same_process = (target_node_id == self_pid_);
+    if (are_skeleton_and_proxy_in_same_process)
+    {
+        const auto result = CallServiceMethodLocally(proxy_method_instance_identifier, queue_position, self_uid_);
+        if (!(result.has_value()))
+        {
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        return {};
+    }
+    else
+    {
+        const auto result = CallServiceMethodRemotely(proxy_method_instance_identifier, queue_position, target_node_id);
+        if (!(result.has_value()))
+        {
+            return MakeUnexpected(ComErrc::kBindingFailure);
+        }
+        return {};
     }
 }
 

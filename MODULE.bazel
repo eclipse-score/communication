@@ -78,6 +78,9 @@ llvm.toolchain(
         "-latomic",
     ]},
     llvm_version = "19.1.7",
+    # Use libstdc++ instead of libc++ because libc++ doesn't support fancy pointers
+    # (like offset pointers) in std::basic_string, which is required for shared memory allocators
+    stdlib = {"": "stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")
 
@@ -92,6 +95,7 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
+bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "aspect_rules_lint", version = "1.13.0")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "google_benchmark", version = "1.9.4")
@@ -105,9 +109,10 @@ git_override(
 )
 
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
-bazel_dep(name = "score_crates", version = "0.0.5", repo_name = "crate_index")
+bazel_dep(name = "score_crates", version = "0.0.6", repo_name = "crate_index")
 
 bazel_dep(name = "boost.program_options", version = "1.87.0")
+bazel_dep(name = "boost.interprocess", version = "1.87.0")
 bazel_dep(name = "download_utils", version = "1.0.1")
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
@@ -129,7 +134,42 @@ download_archive(
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_doxygen", version = "2.5.0")
+bazel_dep(name = "score_docs_as_code", version = "3.0.0")
+
+# Force score_docs_as_code to 3.0.0 to resolve compatibility conflict between score_logging and score_baselibs
+single_version_override(
+    module_name = "score_docs_as_code",
+    version = "3.0.0",
+)
+
+# Apply patch to fix Doxyfile template for our use cases
+single_version_override(
+    module_name = "rules_doxygen",
+    patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
+    patch_strip = 1,
+)
+
+# Apply patch to fix visibility issue with interprocess_notification target
 bazel_dep(name = "score_baselibs", version = "0.2.2")
+git_override(
+    module_name = "score_baselibs",
+    commit = "6951cd2a3045fb7a053acf203833a17704c22ccf",
+    remote = "https://github.com/eclipse-score/baselibs.git",
+)
+
+bazel_dep(name = "score_logging", version = "0.0.4")
+git_override(
+    module_name = "score_logging",
+    commit = "d5267a5d89ca7462bec29c49d3b295a10ee834c3",
+    remote = "https://github.com/eclipse-score/logging.git",
+)
+
+bazel_dep(name = "score_baselibs_rust", version = "0.0.1")
+git_override(
+    module_name = "score_baselibs_rust",
+    commit = "9ee64ac85f2a990ef75b2858253ee44bfc1a7ab7",
+    remote = "https://github.com/eclipse-score/baselibs_rust.git",
+)
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension")
@@ -152,8 +192,16 @@ pip.parse(
 )
 use_repo(pip, "score_communication_pip")
 
+pip.parse(
+    hub_name = "codeql_coding_standards_pip_hub",
+    python_version = "3.12",
+    requirements_lock = "//third_party/codeql:requirements_lock.txt",
+)
+use_repo(pip, "codeql_coding_standards_pip_hub")
+
+
 # TRLC dependency for requirements traceability
-bazel_dep(name = "trlc", version = "0.0.0")
+bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "trlc",
     commit = "a4f7e95210d8093ba208b91cbc5b681eae8d502b",  # trlc-2.0.3 release
@@ -187,7 +235,7 @@ use_repo(toolchains_qnx, "toolchains_qnx_sdp")
 use_repo(toolchains_qnx, "toolchains_qnx_ifs")
 use_repo(toolchains_qnx, "toolchains_qnx_qcc")
 
-bazel_dep(name = "score_bazel_platforms", version = "0.0.3")
+bazel_dep(name = "score_bazel_platforms", version = "0.0.4")
 bazel_dep(name = "rules_oci", version = "1.8.0")
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
@@ -217,3 +265,21 @@ use_repo(apt, "ubuntu24_04")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 
 bazel_dep(name = "score_tooling", version = "1.0.4")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "codeql_bundle",
+    build_file = "//third_party/codeql:codeql.BUILD",
+    sha256 = "",
+    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.23.6/codeql-bundle-linux64.tar.gz",
+)
+
+git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "codeql_coding_standards",
+    build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
+    remote = "https://github.com/github/codeql-coding-standards.git",
+    tag = "v2.52.0",
+)

@@ -10,6 +10,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
+load("@rules_python//python:defs.bzl", "py_binary")
+
 py_binary(
     name = "config_generator",
     srcs = [

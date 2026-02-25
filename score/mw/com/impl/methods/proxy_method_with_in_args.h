@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/util/type_erased_storage.h"
 
@@ -48,12 +49,28 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     friend class ProxyMethodView;
 
   public:
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
+        : ProxyMethod(proxy_base,
+                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                           ProxyBaseView{proxy_base}.GetBinding(),
+                                                                           method_name),
+                      method_name)
+    {
+    }
+
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
         : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name),
-          are_in_arg_ptrs_active_{kCallQueueSize}
+          are_in_arg_ptrs_active_(kCallQueueSize)
     {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+        proxy_base_view.RegisterMethod(method_name_, *this);
     }
 
     ~ProxyMethod() final = default;
@@ -105,7 +122,8 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 };
 
 template <typename... ArgTypes>
-ProxyMethod<void(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept : ProxyMethodBase(std::move(other))
+ProxyMethod<void(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
+    : ProxyMethodBase(std::move(other)), are_in_arg_ptrs_active_{std::move(other.are_in_arg_ptrs_active_)}
 {
     // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
@@ -117,7 +135,8 @@ auto ProxyMethod<void(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept -> 
 {
     if (this != &other)
     {
-        ProxyMethod::operator=(std::move(other));
+        ProxyMethodBase::operator=(std::move(other));
+        are_in_arg_ptrs_active_ = std::move(other.are_in_arg_ptrs_active_);
 
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};

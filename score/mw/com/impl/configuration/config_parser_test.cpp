@@ -14,6 +14,8 @@
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 
+#include <score/assert_support.hpp>
+
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
@@ -65,8 +67,6 @@ class ConfigParserFixture : public ::testing::Test
     std::pair<const ServiceIdentifierType*, const ServiceVersionType*> found_service_type_{&si_, &sv_};
 };
 
-using ConfigParserFixtureDeathTest = ConfigParserFixture;
-
 TEST_F(ConfigParserFixture, ParseExampleJson)
 {
     RecordProperty("Verifies", "SCR-21803701, SCR-21803702, SCR-5898925, SCR-5899090, SCR-5899184, SCR-7088394");
@@ -75,7 +75,7 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    const auto config = score::mw::com::impl::configuration::Parse(get_path("ara_com_config.json"));
+    const auto config = score::mw::com::impl::configuration::Parse(get_path("mw_com_config.json"));
 
     const auto deployments =
         config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
@@ -133,17 +133,17 @@ TEST_F(ConfigParserFixture, ParseExampleJson)
     EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), ShmSizeCalculationMode::kSimulation);
 }
 
-TEST(ConfigParserDeathTest, InvalidPathWillDie)
+TEST_F(ConfigParserFixture, InvalidPathWillDie)
 {
     // Given an invalid path that doesn't point to a JSON file
     std::string invalid_path{"my_invalid_path_to_nowhere"};
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(invalid_path)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(invalid_path)));
 }
 
-TEST(ConfigParserDeathTest, NoServiceInstanceWillDie)
+TEST_F(ConfigParserFixture, NoServiceInstanceWillDie)
 {
     // Given a JSON without necessary attribute `serviceInstances`
     auto j2 = R"(
@@ -153,10 +153,10 @@ TEST(ConfigParserDeathTest, NoServiceInstanceWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoServiceNameInInstanceWillDie)
+TEST_F(ConfigParserFixture, NoServiceNameInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `serviceName`
     auto j2 = R"(
@@ -178,10 +178,10 @@ TEST(ConfigParserDeathTest, NoServiceNameInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoServiceTypesWillDie)
+TEST_F(ConfigParserFixture, NoServiceTypesWillDie)
 {
     // Given a JSON without necessary attribute `serviceTypes`
     auto j2 = R"(
@@ -191,10 +191,10 @@ TEST(ConfigParserDeathTest, NoServiceTypesWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoServiceNameForServiceType)
+TEST_F(ConfigParserFixture, NoServiceNameForServiceType)
 {
     // Given a JSON without necessary attribute `serviceTypeName`
     auto j2 = R"(
@@ -218,10 +218,10 @@ TEST(ConfigParserDeathTest, NoServiceNameForServiceType)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoVersionForServiceTypeDeployment)
+TEST_F(ConfigParserFixture, NoVersionForServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `version`
     auto j2 = R"(
@@ -243,10 +243,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoVersionForServiceTypeDeployment)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoBindingsForServiceTypeDeployment)
+TEST_F(ConfigParserFixture, NoBindingsForServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `bindings`
     auto j2 = R"(
@@ -266,10 +266,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoBindingsForServiceTypeDeployment)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoBindingIdentifierInServiceTypeDeployment)
+TEST_F(ConfigParserFixture, NoBindingIdentifierInServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `binding`
     auto j2 = R"(
@@ -294,10 +294,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoBindingIdentifierInServiceTypeDeployment)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoServiceIdInServiceTypeDeployment)
+TEST_F(ConfigParserFixture, NoServiceIdInServiceTypeDeployment)
 {
     // Given a JSON without necessary attribute `serviceId`
     auto j2 = R"(
@@ -322,10 +322,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoServiceIdInServiceTypeDeployment)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, UnknownBindingIdentifierInServiceTypeDeployment)
+TEST_F(ConfigParserFixture, UnknownBindingIdentifierInServiceTypeDeployment)
 {
     // Given a JSON with an unknown binding identifier
     auto j2 = R"(
@@ -351,10 +351,10 @@ TEST_F(ConfigParserFixtureDeathTest, UnknownBindingIdentifierInServiceTypeDeploy
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoEventsOrFieldsWillCauseTermination)
+TEST_F(ConfigParserFixture, NoEventsOrFieldsWillCauseTermination)
 {
     // Given a JSON without any events or fields
     auto j2 = R"(
@@ -380,10 +380,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoEventsOrFieldsWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoEventNameWillCauseTermination)
+TEST_F(ConfigParserFixture, NoEventNameWillCauseTermination)
 {
     // Given a JSON with a missing event name
     auto j2 = R"(
@@ -413,10 +413,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoEventNameWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoFieldNameWillCauseTermination)
+TEST_F(ConfigParserFixture, NoFieldNameWillCauseTermination)
 {
     // Given a JSON with a missing field name
     auto j2 = R"(
@@ -446,10 +446,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoFieldNameWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoEventIdWillCauseTermination)
+TEST_F(ConfigParserFixture, NoEventIdWillCauseTermination)
 {
     // Given a JSON with a missing event id
     auto j2 = R"(
@@ -481,10 +481,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoEventIdWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoFieldIdWillCauseTermination)
+TEST_F(ConfigParserFixture, NoFieldIdWillCauseTermination)
 {
     // Given a JSON with a missing field id
     auto j2 = R"(
@@ -514,10 +514,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoFieldIdWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, WrongPermissionValueWillCauseTermination)
+TEST_F(ConfigParserFixture, WrongPermissionValueWillCauseTermination)
 {
     // Given a JSON with an invalid permission in permission-check attribute
     auto j2 = R"(
@@ -587,10 +587,10 @@ TEST_F(ConfigParserFixtureDeathTest, WrongPermissionValueWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, DuplicateEventTypeDeploymentWillCauseTermination)
+TEST_F(ConfigParserFixture, DuplicateEventTypeDeploymentWillCauseTermination)
 {
     // Given a JSON with an duplicate LoLa event type deployment (duplicate eventName)
     auto j2 = R"(
@@ -627,10 +627,10 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateEventTypeDeploymentWillCauseTermin
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, DuplicateFieldTypeDeploymentWillCauseTermination)
+TEST_F(ConfigParserFixture, DuplicateFieldTypeDeploymentWillCauseTermination)
 {
     // Given a JSON with an duplicate LoLa field type deployment (duplicate fieldName)
     auto j2 = R"(
@@ -667,10 +667,10 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateFieldTypeDeploymentWillCauseTermin
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceTypeDeploymentWillCauseTermination)
+TEST_F(ConfigParserFixture, DuplicateServiceTypeDeploymentWillCauseTermination)
 {
     // Given a JSON with a duplicate service type deployment (duplicate serviceTypeName/version)
     auto j2 = R"(
@@ -713,10 +713,10 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceTypeDeploymentWillCauseTerm
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoInstanceSpecifierInInstanceWillDie)
+TEST_F(ConfigParserFixture, NoInstanceSpecifierInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `instanceSpecifier`
     auto j2 = R"(
@@ -741,10 +741,10 @@ TEST(ConfigParserDeathTest, NoInstanceSpecifierInInstanceWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, ServiceInstanceReferencesUnknownServiceTypeWillDie)
+TEST_F(ConfigParserFixture, ServiceInstanceReferencesUnknownServiceTypeWillDie)
 {
     // Given a JSON, where a service instance references via serviceTypeName an unknown/not configured service type.
     auto j2 = R"(
@@ -780,10 +780,10 @@ TEST(ConfigParserDeathTest, ServiceInstanceReferencesUnknownServiceTypeWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, ServiceInstanceEventReferencesUnknownServiceTypeEventWillDie)
+TEST_F(ConfigParserFixture, ServiceInstanceEventReferencesUnknownServiceTypeEventWillDie)
 {
     // Given a JSON, where a service instance event has a name, which doesn't exist in the serviceType it references.
     auto j2 = R"(
@@ -846,10 +846,10 @@ TEST(ConfigParserDeathTest, ServiceInstanceEventReferencesUnknownServiceTypeEven
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoVersionInInstanceWillDie)
+TEST_F(ConfigParserFixture, NoVersionInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `version`
     auto j2 = R"(
@@ -874,10 +874,10 @@ TEST(ConfigParserDeathTest, NoVersionInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoVersionDetailsInInstanceWillDie)
+TEST_F(ConfigParserFixture, NoVersionDetailsInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `major`
     auto j2 = R"(
@@ -905,10 +905,10 @@ TEST(ConfigParserDeathTest, NoVersionDetailsInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoDeploymentInstancesInInstanceWillDie)
+TEST_F(ConfigParserFixture, NoDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `instances`
     auto j2 = R"(
@@ -937,10 +937,10 @@ TEST(ConfigParserDeathTest, NoDeploymentInstancesInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, EmptyDeploymentInstancesInInstanceWillDie)
+TEST_F(ConfigParserFixture, EmptyDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without elements in array `instances`.
     auto j2 = R"(
@@ -971,10 +971,10 @@ TEST(ConfigParserDeathTest, EmptyDeploymentInstancesInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, UnknownDeploymentInstancesInInstanceWillDie)
+TEST_F(ConfigParserFixture, UnknownDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON with an unknown binding "HappyHippo" in an instance deployment.
     auto j2 = R"(
@@ -1009,10 +1009,10 @@ TEST(ConfigParserDeathTest, UnknownDeploymentInstancesInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, DuplicateServiceInstanceWillDie)
+TEST_F(ConfigParserFixture, DuplicateServiceInstanceWillDie)
 {
     // Given a JSON with two service instances with same instanceSpecifier
     auto j2 = R"(
@@ -1061,10 +1061,10 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoAsilInDeploymentInstancesInInstanceWillDie)
+TEST_F(ConfigParserFixture, NoAsilInDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `asil-level`
     auto j2 = R"(
@@ -1098,10 +1098,10 @@ TEST(ConfigParserDeathTest, NoAsilInDeploymentInstancesInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoBindingInfoInDeploymentInstancesInInstanceWillDie)
+TEST_F(ConfigParserFixture, NoBindingInfoInDeploymentInstancesInInstanceWillDie)
 {
     // Given a JSON without necessary attribute `binding`
     auto j2 = R"(
@@ -1135,10 +1135,10 @@ TEST(ConfigParserDeathTest, NoBindingInfoInDeploymentInstancesInInstanceWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaEventWithoutNameCausesTermination)
+TEST_F(ConfigParserFixture, LolaEventWithoutNameCausesTermination)
 {
     // Given a JSON without necessary attribute `name` for an event for Shm-Binding Info
     auto j2 = R"(
@@ -1178,10 +1178,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventWithoutNameCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaFieldWithoutNameCausesTermination)
+TEST_F(ConfigParserFixture, LolaFieldWithoutNameCausesTermination)
 {
     // Given a JSON without necessary attribute `name` for a field for Shm-Binding Info
     auto j2 = R"(
@@ -1221,10 +1221,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldWithoutNameCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaEventNameDuplicateCausesTermination)
+TEST_F(ConfigParserFixture, LolaEventNameDuplicateCausesTermination)
 {
     // Given a JSON where a LoLa event has been duplicated
     auto j2 = R"(
@@ -1260,10 +1260,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventNameDuplicateCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaEventIdDuplicateCausesTermination)
+TEST_F(ConfigParserFixture, LolaEventIdDuplicateCausesTermination)
 {
     // Given a JSON where a LoLa event id has been duplicated
     auto j2 = R"(
@@ -1324,10 +1324,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventIdDuplicateCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaFieldNameDuplicateCausesTermination)
+TEST_F(ConfigParserFixture, LolaFieldNameDuplicateCausesTermination)
 {
     // Given a JSON where a LoLa field has been duplicated
     auto j2 = R"(
@@ -1363,10 +1363,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldNameDuplicateCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaFieldIdDuplicateCausesTermination)
+TEST_F(ConfigParserFixture, LolaFieldIdDuplicateCausesTermination)
 {
     // Given a JSON where a LoLa event id has been duplicated
     auto j2 = R"(
@@ -1426,10 +1426,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaFieldIdDuplicateCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaMatchingEventAndFieldIdsIsNotAllowed)
+TEST_F(ConfigParserFixture, LolaMatchingEventAndFieldIdsIsNotAllowed)
 {
     // Given a JSON where a LoLa field has been duplicated
     auto j2 = R"(
@@ -1466,10 +1466,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaMatchingEventAndFieldIdsIsNotAllowed)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectEventNameCausesTermination)
+TEST_F(ConfigParserFixture, LolaIncorrectEventNameCausesTermination)
 {
     // Given a JSON where a LoLa event name is incorrect, not 'EventName'
     auto j2 = R"(
@@ -1511,10 +1511,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectEventNameCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectFieldNameCausesTermination)
+TEST_F(ConfigParserFixture, LolaIncorrectFieldNameCausesTermination)
 {
     // Given a JSON where a LoLa field name is incorrect, not 'fieldName'
     auto j2 = R"(
@@ -1556,10 +1556,10 @@ TEST_F(ConfigParserFixtureDeathTest, LolaIncorrectFieldNameCausesTermination)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, LolaEventMaxSamplesAndNumberOfSampleSlotsCausesTermination)
+TEST_F(ConfigParserFixture, LolaEventMaxSamplesAndNumberOfSampleSlotsCausesTermination)
 {
     // Given a JSON where a LoLa event has both properties configured maxSamples (deprecated) and numberOfSampleSlots
     auto j2 = R"(
@@ -1604,7 +1604,7 @@ TEST_F(ConfigParserFixtureDeathTest, LolaEventMaxSamplesAndNumberOfSampleSlotsCa
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
 TEST(ConfigParser, NoEventMaxSubscribersLeavesValueOptional)
@@ -1746,7 +1746,18 @@ TEST(ConfigParser, NoSHMInstanceIdLeavesValueOptional)
               "major": 12,
               "minor": 34
           },
-          "bindings": []
+          "bindings": [
+              {
+                  "binding": "SHM",
+                  "serviceId": 1234,
+                  "events": [
+                      {
+                          "eventName": "CurrentPressureFrontLeft",
+                          "eventId": 20
+                      }
+                  ]
+              }
+          ]
         }
     ],
     "serviceInstances": [
@@ -2269,7 +2280,7 @@ TEST_P(InvalidProcessAsil, DieOnInvalidAsil)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-value"  // Comming from gtest, try removing when gtest 1.12 or higher
 #endif
-    EXPECT_DEATH(Configuration{configuration::Parse(std::move(json))}, ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{score::mw::com::impl::configuration::Parse(std::move(json))});
 #if defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
@@ -2332,7 +2343,7 @@ TEST_P(InvalidMsgQueueSizeFixture, DieOnInvalidMessageQueueSize)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-value"  // Comming from gtest, try removing when gtest 1.12 or higher
 #endif
-    EXPECT_DEATH(Configuration{configuration::Parse(std::move(json))}, ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{configuration::Parse(std::move(json))});
 #if defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
@@ -2416,7 +2427,7 @@ TEST(ConfigParser, WrongQualityTypeForAllowedUsersWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
 TEST(ConfigParser, InvalidQualityTypeForAllowedConsumersWillDie)
@@ -2460,7 +2471,7 @@ TEST(ConfigParser, InvalidQualityTypeForAllowedConsumersWillDie)
 )"_json;
     // When parsing the JSON
     // Then the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
 TEST(ConfigParser, TerminateOnParsingSomeIP)
@@ -2514,7 +2525,7 @@ TEST(ConfigParser, TerminateOnParsingSomeIP)
 
     // When parsing such a configuration
     // Fail and abort
-    EXPECT_EXIT(configuration::Parse(std::move(json).value()), ::testing::KilledBySignal(SIGABRT), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(json).value()));
 }
 
 class ShmSizeCalcMode : public ::testing::TestWithParam<std::tuple<std::string, ShmSizeCalculationMode>>
@@ -2700,7 +2711,7 @@ TEST(ConfigParserTracing, ParsingTerminatesIfApplicationInstanceIdentifierProper
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
 TEST(ConfigParserTracing, ParsingSucceedsIfTraceFilterConfigPathPropertyExistsWhenTracingSectionIsPresent)
@@ -3336,10 +3347,10 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, FailParsingAJsonContainingNumb
     auto config_json = generate_config_json(instance_specifier_str, field_name_str, "256");
 
     // Then Expect parsing to fail
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(config_json)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(config_json)));
 }
 
-TEST(ConfigParserDeathTest, DuplicateServiceInstanceEventsWillDie)
+TEST_F(ConfigParserFixture, DuplicateServiceInstanceEventsWillDie)
 {
     // Given a JSON with duplicate event
     auto j2 = R"(
@@ -3395,10 +3406,10 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceEventsWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceEventsWillNotDie)
+TEST_F(ConfigParserFixture, NoDuplicateServiceInstanceEventsWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON without duplicate event
@@ -3453,10 +3464,10 @@ TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceEventsWillNotDie)
 
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, DuplicateServiceInstanceFieldWillDie)
+TEST_F(ConfigParserFixture, DuplicateServiceInstanceFieldWillDie)
 {
     // Given a JSON with duplicate Field
     auto j2 = R"(
@@ -3512,10 +3523,10 @@ TEST(ConfigParserDeathTest, DuplicateServiceInstanceFieldWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceFieldWillNotDie)
+TEST_F(ConfigParserFixture, NoDuplicateServiceInstanceFieldWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON without duplicate Field
@@ -3570,10 +3581,10 @@ TEST(ConfigParserDeathTest, NoDuplicateServiceInstanceFieldWillNotDie)
 
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichDoesNotCorrespondToAServiceTypeFieldWillDie)
+TEST_F(ConfigParserFixture, SpecifyingServiceInstanceFieldWhichDoesNotCorrespondToAServiceTypeFieldWillDie)
 {
     // Given a JSON with unknown field
     auto j2 = R"(
@@ -3626,10 +3637,10 @@ TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichDoesNotCorrespond
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichCorrespondToAServiceTypeFieldWillNotDie)
+TEST_F(ConfigParserFixture, SpecifyingServiceInstanceFieldWhichCorrespondToAServiceTypeFieldWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON with known field
@@ -3683,10 +3694,10 @@ TEST(ConfigParserDeathTest, SpecifyingServiceInstanceFieldWhichCorrespondToAServ
 
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, UnknownShmSizeCalcModeKeyWillDie)
+TEST_F(ConfigParserFixture, UnknownShmSizeCalcModeKeyWillDie)
 {
     // Given a JSON with invalid shm size calcMode key
     auto j2 = R"(
@@ -3751,10 +3762,10 @@ TEST(ConfigParserDeathTest, UnknownShmSizeCalcModeKeyWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, KnownShmSizeCalcModeKeyWillNotDie)
+TEST_F(ConfigParserFixture, KnownShmSizeCalcModeKeyWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON with valid shm size calcMode key
@@ -3820,10 +3831,10 @@ TEST(ConfigParserDeathTest, KnownShmSizeCalcModeKeyWillNotDie)
 
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, WithoutServiceinstancesWillDie)
+TEST_F(ConfigParserFixture, WithoutServiceinstancesWillDie)
 {
     // Given a JSON without necessary service instance
     auto j2 = R"(
@@ -3843,10 +3854,10 @@ TEST(ConfigParserDeathTest, WithoutServiceinstancesWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, WithServiceinstancesWillNotDie)
+TEST_F(ConfigParserFixture, WithServiceinstancesWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON with necessary service instance
@@ -3872,10 +3883,10 @@ TEST(ConfigParserDeathTest, WithServiceinstancesWillNotDie)
 
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, EmptyInstanceSpecifierWillDie)
+TEST_F(ConfigParserFixture, EmptyInstanceSpecifierWillDie)
 {
     // configuration is the same as the test below and is testing the positive case.
     // Given a JSON with empty instance specifier
@@ -3933,10 +3944,10 @@ TEST(ConfigParserDeathTest, EmptyInstanceSpecifierWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, KnownInstanceSpecifierWillNotDie)
+TEST_F(ConfigParserFixture, KnownInstanceSpecifierWillNotDie)
 {
     // Given a JSON with known instance specifier
     auto j2 = R"(
@@ -3992,10 +4003,10 @@ TEST(ConfigParserDeathTest, KnownInstanceSpecifierWillNotDie)
 
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserDeathTest, InvalidServiceInstanceSpecifierWillDie)
+TEST_F(ConfigParserFixture, InvalidServiceInstanceSpecifierWillDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON with invalid instance specifier
@@ -4052,10 +4063,10 @@ TEST(ConfigParserDeathTest, InvalidServiceInstanceSpecifierWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoServiceTypeFieldsOrEventsWillDie)
+TEST_F(ConfigParserFixture, NoServiceTypeFieldsOrEventsWillDie)
 {
     // Given a JSON with no service type fields or events
     auto j2 = R"(
@@ -4101,10 +4112,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoServiceTypeFieldsOrEventsWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, WithServiceTypeFieldsOrEventsWillNotDie)
+TEST_F(ConfigParserFixture, WithServiceTypeFieldsOrEventsWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON with service type fields or events
@@ -4161,10 +4172,10 @@ TEST_F(ConfigParserFixtureDeathTest, WithServiceTypeFieldsOrEventsWillNotDie)
 )"_json;
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceInstancesWillDie)
+TEST_F(ConfigParserFixture, DuplicateServiceInstancesWillDie)
 {
     // Given a JSON with duplicate instances
     auto j2 = R"(
@@ -4230,10 +4241,10 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceInstancesWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoDuplicateServiceInstancesWillNotDie)
+TEST_F(ConfigParserFixture, NoDuplicateServiceInstancesWillNotDie)
 {
     // configuration is the same as the test above and is testing the positive case.
     // Given a JSON without duplicate instances
@@ -4286,10 +4297,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoDuplicateServiceInstancesWillNotDie)
 )"_json;
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeVersionWillDie)
+TEST_F(ConfigParserFixture, MissingServiceTypeVersionWillDie)
 {
     // Given a JSON with duplicate instances
     auto j2 = R"(
@@ -4337,10 +4348,10 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeVersionWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMajorVersionWillDie)
+TEST_F(ConfigParserFixture, MissingServiceTypeMajorVersionWillDie)
 {
     // Given a JSON with duplicate instances
     auto j2 = R"(
@@ -4391,10 +4402,10 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMajorVersionWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMinorVersionWillDie)
+TEST_F(ConfigParserFixture, MissingServiceTypeMinorVersionWillDie)
 {
     // Given a JSON with duplicate instances
     auto j2 = R"(
@@ -4445,10 +4456,10 @@ TEST_F(ConfigParserFixtureDeathTest, MissingServiceTypeMinorVersionWillDie)
 )"_json;
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParserTest, ValidServiceTypeVersionWillNotDie)
+TEST_F(ConfigParserFixture, ValidServiceTypeVersionWillNotDie)
 {
     // configuration is the same as the two tests above and is testing the positive case.
     // Given a JSON without duplicate event
@@ -4503,7 +4514,211 @@ TEST(ConfigParserTest, ValidServiceTypeVersionWillNotDie)
 
     // When parsing the JSON
     // That the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedServiceInstancesStructureCausesTermination)
+{
+    // Given a malformed JSON where serviceInstances is not an array
+    auto malformed_config = R"({
+        "serviceTypes": [],
+        "serviceInstances": "not_an_array"
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedInstanceSpecifierCausesTermination)
+{
+    // Given a malformed JSON where instance specifier is a number instead of a string
+    auto malformed_config = R"({
+        "serviceTypes": [{
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "bindings": []
+        }],
+        "serviceInstances": [{
+            "instanceSpecifier": 123,
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "instances": []
+        }]
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedServiceTypeNameCausesTermination)
+{
+    // Given a malformed JSON where service type name is a number instead of a string
+    auto malformed_config = R"({
+        "serviceTypes": [{
+            "serviceTypeName": 123,
+            "version": {"major": 1, "minor": 0},
+            "bindings": []
+        }],
+        "serviceInstances": []
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedVersionObjectCausesTermination)
+{
+    // Given a malformed JSON where version is a string instead of an object
+    auto malformed_config = R"({
+        "serviceTypes": [{
+            "serviceTypeName": "/test/service",
+            "version": "not_an_object",
+            "bindings": []
+        }],
+        "serviceInstances": []
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedDeploymentInstanceCausesTermination)
+{
+    // Given a malformed JSON where instances is an array of strings instead of objects
+    auto malformed_config = R"({
+        "serviceTypes": [{
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "bindings": []
+        }],
+        "serviceInstances": [{
+            "instanceSpecifier": "/test/instance",
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "instances": ["not_an_object"]
+        }]
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(malformed_config)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedAsilLevelCausesTermination)
+{
+    // Given a malformed JSON where asil level is a number instead of a string
+    auto config_with_invalid_asil = R"({
+        "serviceTypes": [{
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
+        }],
+        "serviceInstances": [{
+            "instanceSpecifier": "/test/instance",
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "instances": [{
+                "instanceId": 1,
+                "asil-level": 123,
+                "binding": "SHM"
+            }]
+        }]
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_asil)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedShmSizeCalcModeHandledGracefully)
+{
+    // Given a malformed JSON where shm-size-calc-mode is a number instead of a string
+    auto config_with_invalid_shm_mode = R"({
+        "serviceTypes": [{
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
+        }],
+        "serviceInstances": [{
+            "instanceSpecifier": "/test/instance",
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "instances": [{
+                "instanceId": 1,
+                "binding": "SHM",
+                "shm-size-calc-mode": 123
+            }]
+        }]
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_shm_mode)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedAllowedUserHandledGracefully)
+{
+    // Given a malformed JSON where allowedConsumer is a string instead of an object
+    auto config_with_invalid_allowed_user = R"({
+        "serviceTypes": [{
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
+        }],
+        "serviceInstances": [{
+            "instanceSpecifier": "/test/instance",
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "instances": [{
+                "instanceId": 1,
+                "binding": "SHM",
+                "allowedConsumer": "not_an_object"
+            }]
+        }]
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_allowed_user)); });
+}
+
+TEST_F(ConfigParserFixture, ParseWithMalformedPermissionChecksHandledGracefully)
+{
+    // Given a malformed JSON where permission-checks is a number instead of an object
+    auto config_with_invalid_permissions = R"({
+        "serviceTypes": [{
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "bindings": [{"binding": "SHM", "serviceId": 1, "events": [], "fields": [], "methods": []}]
+        }],
+        "serviceInstances": [{
+            "instanceSpecifier": "/test/instance",
+            "serviceTypeName": "/test/service",
+            "version": {"major": 1, "minor": 0},
+            "instances": [{
+                "instanceId": 1,
+                "binding": "SHM",
+                "permission-checks": 123
+            }]
+        }]
+    })"_json;
+
+    // When parsing the JSON
+    // Then it shall issue a contract violation
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_permissions)); });
 }
 
 }  // namespace

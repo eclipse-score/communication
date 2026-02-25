@@ -2,21 +2,8 @@
 
 ## Overview
 
-Currently, there are two different components/libraries located under this git repo location:
-
-- `LoLa`/`mw::com`: A high-level communication middleware as a partial implementation of the Adaptive AUTOSAR
-  Communication Management specification. Also known as `ara::com` (as this is the related namespace in AUTOSAR).
-- `Message Passing`: A low-level message-passing implementation, which is also used by `LoLa`/`mw::com`, but is
-  independent and therefore can be used stand-alone.
-
-The related directory structure actually needs some clean-up (see ticket
-[Ticket-97144](broken_link_j/Ticket-97144)), as the `Message Passing` library has a clear/distinct
-location under `/mw/com/message_passing`, while the `LoLa`/`mw::com` library already has its public API parts directly
-under `/mw/com`, and its implementation and design folders are also located directly under `/mw/com`, which lacks a
-clear separation between `LoLa`/`mw::com` and `Message Passing`.
-
-Here only `LoLa`/`mw::com` will be described. `Message Passing` is described in its own
-[README.md](message_passing/design/README.md).
+`LoLa`/`mw::com`: A high-level communication middleware as a partial implementation of the Adaptive AUTOSAR
+Communication Management specification. Also known as `ara::com` (as this is the related namespace in AUTOSAR).
 
 ## General introduction
 

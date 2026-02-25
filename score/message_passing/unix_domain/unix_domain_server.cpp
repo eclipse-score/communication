@@ -78,7 +78,7 @@ score::cpp::expected_blank<score::os::Error> UnixDomainServer::ServerConnection:
 {
     if (message.size() > server_.max_reply_size_)
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
     return server_.engine_->SendProtocolMessage(endpoint_.fd, score::cpp::to_underlying(ServerToClient::REPLY), message);
 }
@@ -88,7 +88,7 @@ score::cpp::expected_blank<score::os::Error> UnixDomainServer::ServerConnection:
 {
     if (message.size() > server_.max_notify_size_)
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
     return server_.engine_->SendProtocolMessage(endpoint_.fd, score::cpp::to_underlying(ServerToClient::NOTIFY), message);
 }

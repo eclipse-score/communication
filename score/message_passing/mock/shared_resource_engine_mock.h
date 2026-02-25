@@ -26,6 +26,7 @@ class SharedResourceEngineMock : public ISharedResourceEngine
 {
   public:
     MOCK_METHOD(score::cpp::pmr::memory_resource*, GetMemoryResource, (), (noexcept, override));
+    MOCK_METHOD(LoggingCallback&, GetLogger, (), (noexcept, override));
     MOCK_METHOD(bool, IsOnCallbackThread, (), (const, noexcept, override));
     MOCK_METHOD((score::cpp::expected<std::int32_t, score::os::Error>),
                 TryOpenClientConnection,

@@ -264,6 +264,7 @@ TEST_F(GenericSkeletonTest, OfferServicePropagatesToBindingAndDiscovery)
     auto skeleton = GenericSkeleton::Create(identifier, {}).value();
 
     // Expecting OfferService to trigger binding and discovery
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*skeleton_binding_mock_, PrepareOffer(_, _, _)).WillOnce(Return(score::Blank{}));
     EXPECT_CALL(service_discovery_mock_, OfferService(identifier)).WillOnce(Return(score::Blank{}));
 
@@ -285,6 +286,7 @@ TEST_F(GenericSkeletonTest, StopOfferServicePropagatesToBindingAndDiscovery)
     auto skeleton = GenericSkeleton::Create(identifier, {}).value();
 
     // And given the service is already Offered
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*skeleton_binding_mock_, PrepareOffer(_, _, _)).WillOnce(Return(score::Blank{}));
     EXPECT_CALL(service_discovery_mock_, OfferService(identifier)).WillOnce(Return(score::Blank{}));
     ASSERT_TRUE(skeleton.OfferService().has_value());
@@ -310,6 +312,7 @@ TEST_F(GenericSkeletonTest, OfferServiceReturnsErrorIfBindingFails)
     auto skeleton = GenericSkeleton::Create(identifier, {}).value();
 
     // Expecting Binding to fail
+    EXPECT_CALL(*skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillRepeatedly(Return(true));
     EXPECT_CALL(*skeleton_binding_mock_, PrepareOffer(_, _, _))
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 

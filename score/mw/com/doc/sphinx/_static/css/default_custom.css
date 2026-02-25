@@ -1,0 +1,610 @@
+/* Docs-as-Code Theme for SCORE Communication
+ * Based on Eclipse SCORE purple theme
+ */
+
+/* ============================================================================
+ * Base Configuration
+ * ============================================================================ */
+html {
+    --pst-font-size-base: 17px;
+    scroll-behavior: smooth;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+/* ============================================================================
+ * Eclipse SCORE Color System (Light Mode)
+ * The base color is PURPLE (#7c4daa)
+ * ============================================================================ */
+html[data-theme="light"] {
+    /* Search Box background color. */
+    --bs-btn-hover-bg: #a382c5;
+    /* Menu svg items */
+    --pst-color-muted: #FFF;
+    /* Text color within cards (same background as page header) */
+    --sd-color-card-text: #a382c5;
+    /* Link color + menu items on hover color */
+    --pst-color-primary: #7c4daa;
+    /* Page Header */
+    --pst-color-secondary: #2D1942;
+    --pst-color-accent: #9DE0AD;
+    --pst-color-target: #E5FCC2;
+    --pst-color-on-surface: #594F4F;
+    --pst-color-on-background: var(--pst-color-secondary);
+    --pst-color-text-muted: #FFFFFF;
+    --pst-color-table-row-zebra-high-bg: #e6e7e8;
+    --pst-color-table-row-hover-bg: var(--pst-color-secondary);
+
+    /* Sphinx Design Colors */
+    --sd-color-primary: #7c4daa;
+    --sd-color-primary-highlight: #9a6bc2;
+    --sd-color-primary-bg: rgba(124, 77, 170, 0.1);
+
+    /* Link Colors */
+    --pst-color-link: #7c4daa;
+    --pst-color-link-hover: #9a6bc2;
+}
+
+/* ============================================================================
+ * Dark Mode Color System
+ * ============================================================================ */
+html[data-theme="dark"] {
+    /* Link color */
+    --pst-color-primary: #FFFFFF;
+    /* Link color on hover */
+    --pst-color-link-hover: #FFFFFF;
+    /* Page Header */
+    --pst-color-secondary: #2D1942;
+    --pst-color-accent: #9DE0AD;
+    --pst-color-target: #E5FCC2;
+    --pst-color-on-surface: #594F4F;
+    --pst-color-on-background: var(--pst-color-secondary);
+    --pst-color-text-muted: #FFFFFF;
+    --pst-color-table-row-zebra-high-bg: #20242b;
+    --pst-color-table-row-hover-bg: var(--pst-color-secondary);
+}
+
+/* Content area size */
+.bd-main .bd-content .bd-article-container {
+    max-width: 100%;  /* default is 60em */
+}
+
+/* Whole page size */
+.bd-page-width {
+    max-width: 100rem;  /* default is 88rem */
+}
+
+/* ============================================================================
+ * Navigation Styles
+ * ============================================================================ */
+/* Search box in navbar/header - always light background with dark text */
+.bd-header input.search-input,
+.bd-header .search-button-field,
+.bd-header input[type="search"],
+.navbar input.search-input,
+.navbar .search-button-field,
+.navbar input[type="search"] {
+    color: #333333 ;
+    background-color: #ffffff ;
+    border: none ;
+}
+
+.bd-header input.search-input::placeholder,
+.bd-header .search-button-field::placeholder,
+.bd-header input[type="search"]::placeholder,
+.navbar input.search-input::placeholder,
+.navbar .search-button-field::placeholder,
+.navbar input[type="search"]::placeholder {
+    color: #666666 ;
+}
+
+/* Search box input field - light theme (in content area) */
+html[data-theme="light"] input.search-input,
+html[data-theme="light"] .search-button-field,
+html[data-theme="light"] input[type="search"] {
+    color: #333333 ;
+    background-color: #ffffff ;
+}
+
+html[data-theme="light"] input.search-input::placeholder,
+html[data-theme="light"] .search-button-field::placeholder,
+html[data-theme="light"] input[type="search"]::placeholder {
+    color: #666666 ;
+}
+
+/* Search box input field - dark theme (in content area) */
+html[data-theme="dark"] input.search-input,
+html[data-theme="dark"] .search-button-field,
+html[data-theme="dark"] input[type="search"] {
+    color: #e0e0e0 ;
+    background-color: #2d2d2d ;
+}
+
+html[data-theme="dark"] input.search-input::placeholder,
+html[data-theme="dark"] .search-button-field::placeholder,
+html[data-theme="dark"] input[type="search"]::placeholder {
+    color: #999999 ;
+}
+
+.search-button-field {
+    color: var(--pst-color-primary);
+}
+
+html .pst-navbar-icon:hover {
+    border-bottom: 1px solid var(--pst-color-primary) ;
+    color: var(--pst-color-primary) ;
+}
+
+.bd-header ul.navbar-nav > li.nav-item.current > .nav-link {
+    border-bottom: 1px solid var(--pst-color-primary);
+}
+
+/* Version Switcher Button */
+button.btn.version-switcher__button {
+    color: #FFF;
+}
+
+/* Version Switcher Menu */
+.version-switcher__menu a.list-group-item {
+    color: #FFF;
+}
+
+/* Primary navigation styles */
+.navbar-brand {
+    color: #FFFFFF ;
+    font-weight: 600;
+}
+
+/* Logo title text visibility fix for Sphinx 7.2.6+ / pydata-sphinx-theme 0.16+ */
+.logo__title {
+    color: #FFFFFF !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    display: block !important;
+    line-height: normal !important;
+}
+
+.navbar-nav .nav-link {
+    color: #FFFFFF ;
+    transition: color 0.2s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #e8d4f5 !important;
+}
+
+/* Header/Banner text colors */
+.bd-header {
+    background-color: var(--pst-color-secondary);
+    color: #FFFFFF;
+}
+
+.bd-header * {
+    color: #FFFFFF ;
+}
+
+/* Override for search input - must come after the wildcard rule above */
+/* Light theme search box - light background with dark/purple text */
+html[data-theme="light"] .bd-header input,
+html[data-theme="light"] .bd-header input.search-input,
+html[data-theme="light"] .bd-header input[type="search"],
+html[data-theme="light"] .bd-header .search-button-field input,
+html[data-theme="light"] .bd-header .search-button__button,
+html[data-theme="light"] .bd-header button.search-button__button,
+html[data-theme="light"] .bd-header .search-button,
+html[data-theme="light"] .navbar input,
+html[data-theme="light"] .navbar input.search-input,
+html[data-theme="light"] .navbar input[type="search"] {
+    color: #7c4daa;
+    background-color: #ffffff;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Hover effect for light theme search box */
+html[data-theme="light"] .bd-header .search-button__button:hover,
+html[data-theme="light"] .bd-header button.search-button__button:hover {
+    background-color: #e8d4f5 !important;
+    color: #7c4daa !important;
+}
+
+/* Light theme - search button text and icon - force same color as text */
+html[data-theme="light"] .bd-header .search-button__default-text,
+html[data-theme="light"] .bd-header .search-button__kbd-shortcut,
+html[data-theme="light"] .navbar .search-button__default-text,
+html[data-theme="light"] .navbar .search-button__kbd-shortcut {
+    color: #7c4daa;
+}
+
+/* Light theme - SVG icon - must match text color */
+html[data-theme="light"] .bd-header .search-button svg,
+html[data-theme="light"] .bd-header .search-button svg *,
+html[data-theme="light"] .bd-header .search-button svg path,
+html[data-theme="light"] .bd-header .search-button svg circle,
+html[data-theme="light"] .navbar .search-button svg,
+html[data-theme="light"] .navbar .search-button svg *,
+html[data-theme="light"] .navbar .search-button svg path,
+html[data-theme="light"] .navbar .search-button svg circle {
+    color: #7c4daa;
+    fill: none;
+    stroke: #7c4daa;
+    stroke-width: 2;
+}
+
+/* Dark theme search box - gray background with white text */
+html[data-theme="dark"] .bd-header input,
+html[data-theme="dark"] .bd-header input.search-input,
+html[data-theme="dark"] .bd-header input[type="search"],
+html[data-theme="dark"] .bd-header .search-button-field input,
+html[data-theme="dark"] .bd-header .search-button__button,
+html[data-theme="dark"] .bd-header button.search-button__button,
+html[data-theme="dark"] .bd-header .search-button,
+html[data-theme="dark"] .navbar input,
+html[data-theme="dark"] .navbar input.search-input,
+html[data-theme="dark"] .navbar input[type="search"] {
+    color: #ffffff;
+    background-color: #4a4a4a;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Hover effect for dark theme search box */
+html[data-theme="dark"] .bd-header .search-button__button:hover,
+html[data-theme="dark"] .bd-header button.search-button__button:hover {
+    background-color: #d4c0e8 !important;
+    color: #2D1942 !important;
+}
+
+/* Dark theme - search button text and icon */
+html[data-theme="dark"] .bd-header .search-button__default-text,
+html[data-theme="dark"] .bd-header .search-button__kbd-shortcut,
+html[data-theme="dark"] .navbar .search-button__default-text,
+html[data-theme="dark"] .navbar .search-button__kbd-shortcut {
+    color: #ffffff;
+}
+
+/* Dark theme - SVG icon - must match text color */
+html[data-theme="dark"] .bd-header .search-button svg,
+html[data-theme="dark"] .bd-header .search-button svg *,
+html[data-theme="dark"] .bd-header .search-button svg path,
+html[data-theme="dark"] .bd-header .search-button svg circle,
+html[data-theme="dark"] .navbar .search-button svg,
+html[data-theme="dark"] .navbar .search-button svg *,
+html[data-theme="dark"] .navbar .search-button svg path,
+html[data-theme="dark"] .navbar .search-button svg circle {
+    color: #ffffff;
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 2;
+}
+
+.bd-header a {
+    color: #FFFFFF ;
+}
+
+.bd-header a:hover {
+    color: #9DE0AD ;
+}
+
+/* ============================================================================
+ * Right Sidebar - "On this page" Navigation
+ * ============================================================================ */
+/* Main sidebar container */
+.bd-toc {
+    color: #333333;
+}
+
+/* All links in the table of contents */
+.bd-toc .nav-link,
+.bd-sidebar-secondary .nav-link,
+.bd-links .nav-link {
+    color: #333333;
+}
+
+.bd-toc .nav-link:hover,
+.bd-sidebar-secondary .nav-link:hover,
+.bd-links .nav-link:hover {
+    color: #7c4daa;
+}
+
+.bd-toc .nav-link.active,
+.bd-sidebar-secondary .nav-link.active,
+.bd-links .nav-link.active {
+    color: #7c4daa;
+    border-left-color: #7c4daa;
+}
+
+/* "On this page" heading and other headings */
+.bd-toc .bd-toc-title,
+.bd-sidebar-secondary .bd-toc-title,
+.bd-sidebar-secondary h2,
+.bd-sidebar-secondary h3 {
+    color: #333333;
+}
+
+/* Ensure all secondary sidebar text is visible */
+.bd-sidebar-secondary,
+.bd-sidebar-secondary * {
+    color: #333333;
+}
+
+/* Override any white text in sidebar */
+.bd-sidebar-secondary a,
+.bd-sidebar-secondary a.reference,
+.bd-sidebar-secondary a.reference.internal {
+    color: #333333;
+}
+
+.bd-sidebar-secondary a:hover,
+.bd-sidebar-secondary a.reference:hover,
+.bd-sidebar-secondary a.reference.internal:hover {
+    color: #7c4daa;
+}
+
+/* Section Navigation caption */
+.bd-sidebar-secondary .caption,
+.bd-sidebar-secondary p.caption {
+    color: #333333;
+    font-weight: 600;
+}
+
+/* Section Navigation title and all content */
+.bd-links__title,
+p.bd-links__title {
+    color: #333333;
+    font-weight: 600;
+}
+
+/* Section Navigation links */
+.bd-sidenav a,
+.bd-sidenav a.reference,
+.bd-sidenav a.reference.internal,
+.bd-sidenav .toctree-l1 a,
+.bd-toc-item a {
+    color: #333333;
+}
+
+.bd-sidenav a:hover,
+.bd-sidenav a.reference:hover,
+.bd-sidenav a.reference.internal:hover,
+.bd-sidenav .toctree-l1 a:hover,
+.bd-toc-item a:hover {
+    color: #7c4daa;
+}
+
+/* Caption text span */
+.caption-text,
+span.caption-text {
+    color: #333333;
+}
+
+/* All navigation items */
+.navbar-nav,
+.navbar-nav * {
+    color: inherit;
+}
+
+/* bd-docs-nav Section Navigation - comprehensive targeting */
+.bd-docs-nav,
+.bd-docs-nav *,
+.bd-docs-nav.bd-links,
+.bd-docs-nav.bd-links *,
+nav.bd-docs-nav,
+nav.bd-docs-nav * {
+    color: #333333;
+}
+
+.bd-docs-nav a,
+.bd-docs-nav a.reference,
+.bd-docs-nav a.reference.internal,
+nav.bd-docs-nav a,
+nav.bd-docs-nav a.reference,
+nav.bd-docs-nav a.reference.internal {
+    color: #333333;
+    text-decoration: none;
+}
+
+.bd-docs-nav a:hover,
+.bd-docs-nav a.reference:hover,
+.bd-docs-nav a.reference.internal:hover,
+nav.bd-docs-nav a:hover,
+nav.bd-docs-nav a.reference:hover,
+nav.bd-docs-nav a.reference.internal:hover {
+    color: #7c4daa;
+    text-decoration: underline;
+}
+
+/* Dark mode - Left sidebar (Section Navigation) */
+html[data-theme="dark"] .bd-docs-nav,
+html[data-theme="dark"] .bd-docs-nav *,
+html[data-theme="dark"] nav.bd-docs-nav,
+html[data-theme="dark"] nav.bd-docs-nav * {
+    color: #c0c0c0 !important;
+}
+
+html[data-theme="dark"] .bd-docs-nav a,
+html[data-theme="dark"] .bd-docs-nav a.reference,
+html[data-theme="dark"] .bd-docs-nav a.reference.internal,
+html[data-theme="dark"] nav.bd-docs-nav a,
+html[data-theme="dark"] nav.bd-docs-nav a.reference,
+html[data-theme="dark"] nav.bd-docs-nav a.reference.internal {
+    color: #c0c0c0 !important;
+}
+
+html[data-theme="dark"] .bd-docs-nav a:hover,
+html[data-theme="dark"] .bd-docs-nav a.reference:hover,
+html[data-theme="dark"] .bd-docs-nav a.reference.internal:hover,
+html[data-theme="dark"] nav.bd-docs-nav a:hover,
+html[data-theme="dark"] nav.bd-docs-nav a.reference:hover,
+html[data-theme="dark"] nav.bd-docs-nav a.reference.internal:hover {
+    color: #e8d4f5 !important;
+}
+
+/* Dark mode - Right sidebar (On this page) */
+html[data-theme="dark"] .bd-toc,
+html[data-theme="dark"] .bd-sidebar-secondary,
+html[data-theme="dark"] .bd-sidebar-secondary * {
+    color: #c0c0c0 !important;
+}
+
+html[data-theme="dark"] .bd-toc .nav-link,
+html[data-theme="dark"] .bd-sidebar-secondary .nav-link,
+html[data-theme="dark"] .bd-sidebar-secondary a,
+html[data-theme="dark"] .bd-sidebar-secondary a.reference,
+html[data-theme="dark"] .bd-sidebar-secondary a.reference.internal {
+    color: #c0c0c0 !important;
+}
+
+html[data-theme="dark"] .bd-toc .nav-link:hover,
+html[data-theme="dark"] .bd-sidebar-secondary .nav-link:hover,
+html[data-theme="dark"] .bd-sidebar-secondary a:hover,
+html[data-theme="dark"] .bd-sidebar-secondary a.reference:hover,
+html[data-theme="dark"] .bd-sidebar-secondary a.reference.internal:hover {
+    color: #e8d4f5 !important;
+}
+
+html[data-theme="dark"] .bd-toc .bd-toc-title,
+html[data-theme="dark"] .bd-sidebar-secondary .bd-toc-title,
+html[data-theme="dark"] .bd-sidebar-secondary h2,
+html[data-theme="dark"] .bd-sidebar-secondary h3 {
+    color: #e0e0e0 !important;
+}
+
+/* ============================================================================
+ * Typography
+ * ============================================================================ */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+}
+
+/* Text selection colors */
+::selection {
+    background-color: #7c4daa;
+    color: #ffffff;
+}
+
+::-moz-selection {
+    background-color: #7c4daa;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] ::selection {
+    background-color: #9a6bc2;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] ::-moz-selection {
+    background-color: #9a6bc2;
+    color: #ffffff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.25;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ============================================================================
+ * Code Blocks
+ * ============================================================================ */
+div.highlight {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+code {
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+
+/* ============================================================================
+ * Admonition Styles (Note, Warning, etc.)
+ * ============================================================================ */
+/* Note admonition - light blue background */
+.admonition.note,
+div.admonition.note {
+    background-color: #e7f3ff ;
+    border-left: 4px solid #2196F3;
+}
+
+.admonition.note .admonition-title {
+    background-color: #d0e8ff ;
+    color: #0d47a1 ;
+}
+
+.admonition.note p,
+.admonition.note ul,
+.admonition.note ol {
+    color: #1a1a1a ;
+}
+
+/* Warning admonition - light orange/amber background */
+.admonition.warning,
+div.admonition.warning {
+    background-color: #fff8e1 ;
+    border-left: 4px solid #ff9800;
+}
+
+.admonition.warning .admonition-title {
+    background-color: #ffecb3 ;
+    color: #e65100 ;
+}
+
+.admonition.warning p,
+.admonition.warning ul,
+.admonition.warning ol {
+    color: #1a1a1a ;
+}
+
+/* General admonition text styling */
+.admonition p,
+.admonition ul,
+.admonition ol,
+.admonition li {
+    color: #1a1a1a ;
+}
+
+/* Dark mode adjustments for admonitions */
+html[data-theme="dark"] .admonition.note {
+    background-color: #1a2332 ;
+}
+
+html[data-theme="dark"] .admonition.note .admonition-title {
+    background-color: #243447 ;
+    color: #90caf9 ;
+}
+
+html[data-theme="dark"] .admonition.note p,
+html[data-theme="dark"] .admonition.note ul,
+html[data-theme="dark"] .admonition.note ol {
+    color: #e0e0e0 ;
+}
+
+html[data-theme="dark"] .admonition.warning {
+    background-color: #2d2416 ;
+}
+
+html[data-theme="dark"] .admonition.warning .admonition-title {
+    background-color: #3d3020 ;
+    color: #ffb74d ;
+}
+
+html[data-theme="dark"] .admonition.warning p,
+html[data-theme="dark"] .admonition.warning ul,
+html[data-theme="dark"] .admonition.warning ol {
+    color: #e0e0e0 ;
+}
+
+/* ============================================================================
+ * Responsive Design
+ * ============================================================================ */
+@media (max-width: 768px) {
+    html {
+        --pst-font-size-base: 15px;
+    }
+}

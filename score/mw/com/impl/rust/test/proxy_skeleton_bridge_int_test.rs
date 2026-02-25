@@ -74,7 +74,7 @@ fn test_skeleton_offer_service_integration() {
         println!("[Skeleton Thread] Creating instance specifier...");
         // Create instance specifier
         let instance_specifier =
-            proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
+            proxy_bridge_rs::InstanceSpecifier::try_from("score/cp60/MapApiLanesStamped")
                 .expect("Instance specifier creation failed");
 
         println!("[Skeleton Thread] Creating skeleton...");
@@ -139,7 +139,7 @@ fn test_proxy_subscribe_integration() {
 
         println!("[Proxy Thread] Creating instance specifier...");
         let instance_specifier =
-            proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
+            proxy_bridge_rs::InstanceSpecifier::try_from("score/cp60/MapApiLanesStamped")
                 .expect("Instance specifier creation failed");
         // taking start time
         let start_time = std::time::Instant::now();
@@ -240,7 +240,7 @@ fn test_proxy_subscribe_with_handler_integration() {
 
         println!("[Handler Thread] Creating instance specifier...");
         let instance_specifier =
-            proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
+            proxy_bridge_rs::InstanceSpecifier::try_from("score/cp60/MapApiLanesStamped")
                 .expect("Instance specifier creation failed");
         // taking start time
         let start_time = std::time::Instant::now();
@@ -356,7 +356,7 @@ fn test_multiple_proxies_subscribe_integration() {
 
             println!("[Proxy Thread] Creating instance specifier...");
             let instance_specifier =
-                proxy_bridge_rs::InstanceSpecifier::try_from("xpad/cp60/MapApiLanesStamped")
+                proxy_bridge_rs::InstanceSpecifier::try_from("score/cp60/MapApiLanesStamped")
                     .expect("Instance specifier creation failed");
             // taking start time
             let start_time = std::time::Instant::now();

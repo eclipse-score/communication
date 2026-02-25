@@ -366,6 +366,7 @@ TEST_F(SkeletonEventSingleSlotComponentTestFixture, SendByValueFreesSampleAlloca
         "Sends an event sample by Copy and verifies that the Sample Allocatee Ptr that gets allocated is destroyed.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
+    RecordProperty("Priority", "2");
 
     // When offering the event
     const auto prepare_offer_result = skeleton_event_.PrepareOffer();

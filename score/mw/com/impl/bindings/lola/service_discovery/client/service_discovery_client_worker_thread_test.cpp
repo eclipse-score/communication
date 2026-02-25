@@ -310,7 +310,7 @@ TEST_F(ServiceDiscoveryClientWorkerThreadDeathTest, DeletingServiceSearchDirecto
             // Expecting that a watch is added by StartFindService on the service directory which returns a watch
             // descriptor
             const auto expected_service_directory_path = GenerateExpectedServiceDirectoryPath(kServiceId).Native();
-            EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_service_directory_path, _))
+            EXPECT_CALL(inotify_instance_mock_, AddWatch(safecpp::zstring_view{expected_service_directory_path}, _))
                 .WillOnce(Return(os::InotifyWatchDescriptor{watch_descriptor}));
 
             // Expecting that INotify::Read() will be called which returns a vector containing a delete event
@@ -359,7 +359,7 @@ TEST_F(ServiceDiscoveryClientWorkerThreadFixture, WorkerThreadIgnoresDeletionEve
     // descriptor
     const auto expected_instance_directory_path =
         GenerateExpectedInstanceDirectoryPath(kServiceId, kConfigStoreQm1.lola_instance_id_.value().GetId()).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path, _))
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(safecpp::zstring_view{expected_instance_directory_path}, _))
         .WillOnce(Return(os::InotifyWatchDescriptor{watch_descriptor}));
 
     // Expecting that INotify::Read() will be called which returns a vector containing a delete event
@@ -410,13 +410,13 @@ TEST_F(ServiceDiscoveryClientWorkerThreadFixture,
     // Expecting that a watch is added by StartFindService on the service directory which returns a watch
     // descriptor
     const auto expected_service_directory_path = GenerateExpectedServiceDirectoryPath(kServiceId).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_service_directory_path, _))
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(safecpp::zstring_view{expected_service_directory_path}, _))
         .WillOnce(Return(os::InotifyWatchDescriptor{watch_descriptor}));
 
     // and that a watch is added on the instance directory when the inotify creation event is received
     const auto expected_instance_directory_path =
         GenerateExpectedInstanceDirectoryPath(kServiceId, instance_id).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path, _))
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(safecpp::zstring_view{expected_instance_directory_path}, _))
         .WillOnce(Return(os::InotifyWatchDescriptor{watch_descriptor}));
 
     // and that INotify::Read() will be called which returns a vector containing a creation event with a name from which
@@ -471,7 +471,7 @@ TEST_F(ServiceDiscoveryClientWorkerThreadFixture,
     // but that a watch is added by StartFindService on the service directory which returns a watch
     // descriptor
     const auto expected_service_directory_path = GenerateExpectedServiceDirectoryPath(kServiceId).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_service_directory_path, _))
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(safecpp::zstring_view{expected_service_directory_path}, _))
         .WillOnce(Return(os::InotifyWatchDescriptor{watch_descriptor}))
         .RetiresOnSaturation();
 
@@ -642,7 +642,7 @@ TEST_F(ServiceDiscoveryClientWorkerThreadFixture, RemovingFlagFileCorrespondingT
     // descriptor
     const auto expected_instance_directory_path =
         GenerateExpectedInstanceDirectoryPath(kServiceId, kConfigStoreQm1.lola_instance_id_.value().GetId()).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path, _))
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(safecpp::zstring_view{expected_instance_directory_path}, _))
         .WillOnce(Return(os::InotifyWatchDescriptor{watch_descriptor}));
 
     // Expecting that INotify::Read() will be called which returns a vector containing a creation and delete event for
@@ -695,7 +695,7 @@ TEST_F(ServiceDiscoveryClientWorkerThreadFixture, RemovingAsilBFlagFileCorrespon
     // descriptor
     const auto expected_instance_directory_path =
         GenerateExpectedInstanceDirectoryPath(kServiceId, kConfigStoreAsilB.lola_instance_id_.value().GetId()).Native();
-    EXPECT_CALL(inotify_instance_mock_, AddWatch(expected_instance_directory_path, _))
+    EXPECT_CALL(inotify_instance_mock_, AddWatch(safecpp::zstring_view{expected_instance_directory_path}, _))
         .WillOnce(Return(os::InotifyWatchDescriptor{watch_descriptor}));
 
     // Expecting that INotify::Read() will be called which returns a vector containing a creation and delete event for

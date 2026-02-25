@@ -19,7 +19,7 @@ namespace score::mw::com::impl
 namespace
 {
 
-class ComErrorTest : public ::testing::Test
+class ComErrorMessageForFixture : public ::testing::Test
 {
   protected:
     void testErrorMessage(ComErrc errorCode, std::string_view expectedErrorOutput)
@@ -31,172 +31,184 @@ class ComErrorTest : public ::testing::Test
     ComErrorDomain ComErrorDomainDummy{};
 };
 
-TEST_F(ComErrorTest, MessageForServiceNotAvailable)
+TEST_F(ComErrorMessageForFixture, MessageForServiceNotAvailable)
 {
     testErrorMessage(ComErrc::kServiceNotAvailable, "Service is not available.");
 }
 
-TEST_F(ComErrorTest, MessageForMaxSamplesReached)
+TEST_F(ComErrorMessageForFixture, MessageForMaxSamplesReached)
 {
     testErrorMessage(ComErrc::kMaxSamplesReached, "Application holds more SamplePtrs than commited in Subscribe().");
 }
 
-TEST_F(ComErrorTest, MessageForBindingFailure)
+TEST_F(ComErrorMessageForFixture, MessageForBindingFailure)
 {
     testErrorMessage(ComErrc::kBindingFailure, "Local failure has been detected by the binding.");
 }
 
-TEST_F(ComErrorTest, MessageForGrantEnforcementError)
+TEST_F(ComErrorMessageForFixture, MessageForGrantEnforcementError)
 {
     testErrorMessage(ComErrc::kGrantEnforcementError, "Request was refused by Grant enforcement layer.");
 }
 
-TEST_F(ComErrorTest, MessageForPeerIsUnreachable)
+TEST_F(ComErrorMessageForFixture, MessageForPeerIsUnreachable)
 {
     testErrorMessage(ComErrc::kPeerIsUnreachable, "TLS handshake fail.");
 }
 
-TEST_F(ComErrorTest, MessageForFieldValueIsNotValid)
+TEST_F(ComErrorMessageForFixture, MessageForFieldValueIsNotValid)
 {
     testErrorMessage(ComErrc::kFieldValueIsNotValid, "Field Value is not valid.");
 }
 
-TEST_F(ComErrorTest, MessageForSetHandlerNotSet)
+TEST_F(ComErrorMessageForFixture, MessageForSetHandlerNotSet)
 {
     testErrorMessage(ComErrc::kSetHandlerNotSet, "SetHandler has not been registered.");
 }
 
-TEST_F(ComErrorTest, MessageForUnsetFailure)
+TEST_F(ComErrorMessageForFixture, MessageForUnsetFailure)
 {
     testErrorMessage(ComErrc::kUnsetFailure, "Failure has been detected by unset operation.");
 }
 
-TEST_F(ComErrorTest, MessageForSampleAllocationFailure)
+TEST_F(ComErrorMessageForFixture, MessageForSampleAllocationFailure)
 {
     testErrorMessage(ComErrc::kSampleAllocationFailure, "Not Sufficient memory resources can be allocated.");
 }
 
-TEST_F(ComErrorTest, MessageForIllegalUseOfAllocate)
+TEST_F(ComErrorMessageForFixture, MessageForIllegalUseOfAllocate)
 {
     testErrorMessage(
         ComErrc::kIllegalUseOfAllocate,
         "The allocation was illegally done via custom allocator (i.e., not via shared memory allocation).");
 }
 
-TEST_F(ComErrorTest, MessageForServiceNotOffered)
+TEST_F(ComErrorMessageForFixture, MessageForServiceNotOffered)
 {
     testErrorMessage(ComErrc::kServiceNotOffered, "Service not offered.");
 }
 
-TEST_F(ComErrorTest, MessageForCommunicationLinkError)
+TEST_F(ComErrorMessageForFixture, MessageForCommunicationLinkError)
 {
     testErrorMessage(ComErrc::kCommunicationLinkError, "Communication link is broken.");
 }
 
-TEST_F(ComErrorTest, MessageForNoClients)
+TEST_F(ComErrorMessageForFixture, MessageForNoClients)
 {
     testErrorMessage(ComErrc::kNoClients, "No clients connected.");
 }
 
-TEST_F(ComErrorTest, MessageForCommunicationStackError)
+TEST_F(ComErrorMessageForFixture, MessageForCommunicationStackError)
 {
     testErrorMessage(
         ComErrc::kCommunicationStackError,
         "Communication Stack Error, e.g. network stack, network binding, or communication framework reports an error");
 }
 
-TEST_F(ComErrorTest, MessageForMaxSampleCountNotRealizable)
+TEST_F(ComErrorMessageForFixture, MessageForMaxSampleCountNotRealizable)
 {
     testErrorMessage(ComErrc::kMaxSampleCountNotRealizable, "Provided maxSampleCount not realizable.");
 }
 
-TEST_F(ComErrorTest, MessageForMaxSubscribersExceeded)
+TEST_F(ComErrorMessageForFixture, MessageForMaxSubscribersExceeded)
 {
     testErrorMessage(ComErrc::kMaxSubscribersExceeded, "Subscriber count exceeded");
 }
 
-TEST_F(ComErrorTest, MessageForWrongMethodCallProcessingMode)
-{
-    testErrorMessage(ComErrc::kWrongMethodCallProcessingMode,
-                     "Wrong processing mode passed to constructor method call.");
-}
-
-TEST_F(ComErrorTest, MessageForErroneousFileHandle)
+TEST_F(ComErrorMessageForFixture, MessageForErroneousFileHandle)
 {
     testErrorMessage(ComErrc::kErroneousFileHandle,
                      "The FileHandle returned from FindServce is corrupt/service not available.");
 }
 
-TEST_F(ComErrorTest, MessageForCouldNotExecute)
+TEST_F(ComErrorMessageForFixture, MessageForCouldNotExecute)
 {
     testErrorMessage(ComErrc::kCouldNotExecute, "Command could not be executed in provided Execution Context.");
 }
 
-TEST_F(ComErrorTest, MessageForInvalidInstanceIdentifierString)
+TEST_F(ComErrorMessageForFixture, MessageForInvalidInstanceIdentifierString)
 {
     testErrorMessage(ComErrc::kInvalidInstanceIdentifierString, "Invalid instance identifier format of string.");
 }
 
-TEST_F(ComErrorTest, MessageForInvalidBindingInformation)
+TEST_F(ComErrorMessageForFixture, MessageForInvalidBindingInformation)
 {
     testErrorMessage(ComErrc::kInvalidBindingInformation, "Internal error: Binding information invalid.");
 }
 
-TEST_F(ComErrorTest, MessageForEventNotExisting)
+TEST_F(ComErrorMessageForFixture, MessageForEventNotExisting)
 {
     testErrorMessage(ComErrc::kEventNotExisting, "Requested event does not exist on sender side.");
 }
 
-TEST_F(ComErrorTest, MessageForNotSubscribed)
+TEST_F(ComErrorMessageForFixture, MessageForNotSubscribed)
 {
     testErrorMessage(ComErrc::kNotSubscribed, "Request invalid: event proxy is not subscribed to the event.");
 }
 
-TEST_F(ComErrorTest, MessageForInvalidConfiguration)
+TEST_F(ComErrorMessageForFixture, MessageForInvalidConfiguration)
 {
     testErrorMessage(ComErrc::kInvalidConfiguration, "Invalid configuration.");
 }
 
-TEST_F(ComErrorTest, MessageForInvalidMetaModelShortname)
+TEST_F(ComErrorMessageForFixture, MessageForInvalidMetaModelShortname)
 {
     testErrorMessage(ComErrc::kInvalidMetaModelShortname,
                      "Meta model short name does not adhere to naming requirements.");
 }
 
-TEST_F(ComErrorTest, MessageForServiceInstanceAlreadyOffered)
+TEST_F(ComErrorMessageForFixture, MessageForServiceInstanceAlreadyOffered)
 {
     testErrorMessage(ComErrc::kServiceInstanceAlreadyOffered, "Service instance is already offered");
 }
 
-TEST_F(ComErrorTest, MessageForCouldNotRestartProxy)
+TEST_F(ComErrorMessageForFixture, MessageForCouldNotRestartProxy)
 {
     testErrorMessage(ComErrc::kCouldNotRestartProxy, "Could not recreate proxy after previous crash.");
 }
 
-TEST_F(ComErrorTest, MessageForNotOffered)
+TEST_F(ComErrorMessageForFixture, MessageForNotOffered)
 {
     testErrorMessage(ComErrc::kNotOffered, "Skeleton Event / Field has not been offered yet.");
 }
 
-TEST_F(ComErrorTest, MessageForInstanceIDCouldNotBeResolved)
+TEST_F(ComErrorMessageForFixture, MessageForInstanceIDCouldNotBeResolved)
 {
     testErrorMessage(ComErrc::kInstanceIDCouldNotBeResolved,
                      "Runtime could not resolve a valid InstanceIdentifier from the provided InstanceSpecifier.");
 }
 
-TEST_F(ComErrorTest, MessageForFindServiceHandlerFailure)
+TEST_F(ComErrorMessageForFixture, MessageForFindServiceHandlerFailure)
 {
     testErrorMessage(ComErrc::kFindServiceHandlerFailure, "StartFindService failed to register handler.");
 }
 
-TEST_F(ComErrorTest, MessageForInvalidHandleFailure)
+TEST_F(ComErrorMessageForFixture, MessageForInvalidHandleFailure)
 {
     testErrorMessage(ComErrc::kInvalidHandle, "StopFindService was called with invalid FindServiceHandle.");
 }
 
-TEST_F(ComErrorTest, MessageForDefault)
+TEST_F(ComErrorMessageForFixture, MessageForCallQueueFull)
 {
-    testErrorMessage(static_cast<ComErrc>(0), "unknown future error");
+    testErrorMessage(ComErrc::kCallQueueFull, "Call queue of service method is already full.");
+}
+
+using ComErrorMessageForDeathTest = ComErrorMessageForFixture;
+TEST_F(ComErrorMessageForDeathTest, MessageForkInvalidTerminates)
+{
+    // When calling MessageFor with the code kInvalid
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kInvalid)),
+                 ".*");
+}
+
+TEST_F(ComErrorMessageForDeathTest, MessageForNumEnumElements)
+{
+    // When calling MessageFor with the code kNumEnumElements
+    // Then the program terminates
+    EXPECT_DEATH(
+        score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements)),
+        ".*");
 }
 
 }  // namespace

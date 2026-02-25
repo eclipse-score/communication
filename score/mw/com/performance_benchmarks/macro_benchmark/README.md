@@ -120,4 +120,4 @@ Both service and client apps take two positional arguments the first is the path
 is the path to the `mw::com` service instance manifest (i.e. `mw_com_config.json`). Examples of these files can be found in
 the config/ subfolder, together with their respective schemas, which document and explain their structure. **Note**:
 since `mw_com_config.json` is more general than this benchmark, its schema is located in
-`mw/com/impl/configuration/ara_com_config_schema.json`.
+`mw/com/impl/configuration/mw_com_config_schema.json`.
