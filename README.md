@@ -120,7 +120,7 @@ communication/
 ### For Users
 - [User Guide](score/mw/com/README.md) - Getting started with the API
 - [API Reference](score/mw/com/design/README.md) - Detailed API documentation
-- [Examples](score/mw/com/example/) - Code examples and tutorials
+- [Examples](examples/) - Code examples and tutorials
 
 ### For Developers
 - [Architecture Guide](score/mw/com/design/README.md) - System architecture overview
