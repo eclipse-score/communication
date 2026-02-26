@@ -24,8 +24,6 @@ on:
 jobs:
   coverage-report:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write # required to upload release assets
     outputs:
       artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
 
