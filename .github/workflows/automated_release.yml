@@ -132,7 +132,7 @@ jobs:
 
   delete-release-on-failure:
     runs-on: ubuntu-24.04
-    needs: create-draft-release
+    needs: finalize-release
     if: ${{ failure() || cancelled() }}
     permissions:
       contents: write
