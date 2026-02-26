@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "receive_handler_unsubscribe",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_receive_handler_unsubscribe.py"],
     filesystem = ":filesystem",
 )

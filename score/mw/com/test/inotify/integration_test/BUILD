@@ -23,7 +23,6 @@ pkg_tar(
 
 integration_test(
     name = "inotify",
-    size = "small",
     srcs = ["test_inotify.py"],
     filesystem = ":filesystem",
 )

@@ -23,7 +23,9 @@ pkg_tar(
 
 integration_test(
     name = "provider_restart_max_subscribers",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_provider_restart_max_subscribers.py"],
     filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )

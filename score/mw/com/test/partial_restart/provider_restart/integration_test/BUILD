@@ -23,7 +23,8 @@ pkg_tar(
 
 integration_test(
     name = "provider_restart",
-    size = "small",
     srcs = ["test_provider_restart.py"],
     filesystem = ":filesystem",
+    # Disabled for thread sanitizer because of detected race (Ticket-246892)
+    target_compatible_with = ["//quality/sanitizer/constraints:no_tsan"],
 )

@@ -24,6 +24,8 @@ on:
 jobs:
     build_and_test_tsan:
       runs-on: ubuntu-24.04
+      permissions:
+        contents: read
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2

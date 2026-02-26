@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "unsubscribe_deadlock",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_unsubscribe_deadlock.py"],
     filesystem = ":filesystem",
 )

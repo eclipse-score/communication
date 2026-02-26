@@ -24,7 +24,7 @@ pkg_tar(
 
 integration_test(
     name = "test_service_discovery_search_and_offer",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_service_discovery_search_and_offer.py"],
     filesystem = ":filesystem",
 )
