@@ -51,7 +51,7 @@ Params ParseCommandLineArguments(const int argc, const char** argv)
         "Number of cycles that are executed before determining success or failure. 0 indicates no limit.");
     options.add_options()("mode,m",
                           po::value<std::string>(),
-                          "Set to either send/skeleton or recv/proxy to determine the role of the process");
+                          "Set to: send/skeleton (typed skeleton), gen_skeleton (generic skeleton) or recv/proxy to determine the role of the process");
     options.add_options()("cycle-time,t", po::value<std::size_t>(), "Cycle time in milliseconds for sending/polling");
     options.add_options()(
         "service_instance_manifest,s", po::value<std::string>(), "Path to the com configuration file");
@@ -118,6 +118,10 @@ int main(const int argc, const char** argv)
     if (mode == "send" || mode == "skeleton")
     {
         return event_sender_receiver.RunAsSkeleton(instance_specifier, cycle_time, cycles);
+    }
+    else if (mode == "gen_skeleton")
+    {
+        return event_sender_receiver.RunAsGenericSkeleton(instance_specifier, cycle_time, cycles);
     }
     else if (mode == "recv" || mode == "proxy")
     {

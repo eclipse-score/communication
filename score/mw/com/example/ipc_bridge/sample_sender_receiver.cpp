@@ -13,6 +13,7 @@
 #include "sample_sender_receiver.h"
 #include "score/mw/com/impl/generic_proxy.h"
 #include "score/mw/com/impl/generic_proxy_event.h"
+#include "score/mw/com/impl/generic_skeleton.h"
 #include "score/mw/com/impl/handle_type.h"
 
 #include "score/concurrency/notification.h"
@@ -30,6 +31,7 @@
 #include <thread>
 #include <type_traits>
 #include <utility>
+#include <vector> 
 
 using namespace std::chrono_literals;
 
@@ -268,6 +270,36 @@ Result<SampleAllocateePtr<MapApiLanesStamped>> PrepareMapLaneSample(IpcBridgeSke
     return sample;
 }
 
+Result<SampleAllocateePtr<void>> PrepareMapLaneSample(impl::GenericSkeletonEvent& event,
+                                                      const std::size_t cycle)
+{
+    const std::default_random_engine::result_type seed{static_cast<std::default_random_engine::result_type>(
+        std::chrono::steady_clock::now().time_since_epoch().count())};
+    std::default_random_engine rng{seed};
+
+    auto sample_result = event.Allocate();
+
+    if (!sample_result.has_value())
+    {
+        return sample_result;
+    }
+    auto sample = std::move(sample_result).value();
+    auto* typed_sample = static_cast<MapApiLanesStamped*>(sample.Get());
+    typed_sample->hash_value = START_HASH;
+    typed_sample->x = static_cast<std::uint32_t>(cycle);
+
+    std::cout << ToString("Sending sample: ", typed_sample->x, "\n");
+    for (MapApiLaneData& lane : typed_sample->lanes)    {
+        for (LaneIdType& successor : lane.successor_lanes)
+        {
+            successor = std::uniform_int_distribution<std::size_t>()(rng);
+        }
+
+        HashArray(lane.successor_lanes, typed_sample->hash_value);
+    }
+    return sample;
+}
+
 }  // namespace
 
 template <typename ProxyType, typename ProxyEventType>
@@ -435,6 +467,70 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
         {
             std::lock_guard lock{event_sending_mutex_};
             skeleton.map_api_lanes_stamped_.Send(std::move(sample));
+            event_published_ = true;
+        }
+        std::this_thread::sleep_for(cycle_time);
+    }
+
+    std::cout << "Stop offering service...";
+    skeleton.StopOfferService();
+    std::cout << "and terminating, bye bye\n";
+
+    return EXIT_SUCCESS;
+}
+
+int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier,
+                                              const std::chrono::milliseconds cycle_time,
+                                              const std::size_t num_cycles)
+{
+    const auto event_name = "map_api_lanes_stamped";
+    
+    const impl::DataTypeMetaInfo size_info{sizeof(MapApiLanesStamped), alignof(MapApiLanesStamped)};
+
+   impl::GenericSkeletonCreateParams create_params;
+    // Use a temporary vector to construct the span
+    const std::vector<impl::EventInfo> events_vec = {
+        {event_name, size_info}
+    };
+    create_params.events = events_vec;
+    // create_params.fields = {}; // No fields yet
+
+    auto create_result = impl::GenericSkeleton::Create(instance_specifier, create_params);
+    
+    if (!create_result.has_value())
+    {
+        std::cerr << "Unable to construct skeleton: " << create_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+    auto& skeleton = create_result.value();
+
+    // Retrieve event using its name
+    auto event_it = skeleton.GetEvents().find(event_name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != skeleton.GetEvents().cend(), "Event not found in GenericSkeleton");
+    
+    auto& event = const_cast<impl::GenericSkeletonEvent&>(event_it->second);
+
+    const auto offer_result = skeleton.OfferService();
+    if (!offer_result.has_value())
+    {
+        std::cerr << "Unable to offer service for skeleton: " << offer_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
+    std::cout << "Starting to send data\n";
+
+    for (std::size_t cycle = 0U; cycle < num_cycles || num_cycles == 0U; ++cycle)
+    {
+        auto sample_result = PrepareMapLaneSample(event, cycle);
+        if (!sample_result.has_value())
+        {
+            std::cerr << "No sample received. Exiting.\n";
+            return EXIT_FAILURE;
+        }
+        auto sample = std::move(sample_result).value();
+
+        {
+            std::lock_guard lock{event_sending_mutex_};
+            event.Send(std::move(sample));
             event_published_ = true;
         }
         std::this_thread::sleep_for(cycle_time);

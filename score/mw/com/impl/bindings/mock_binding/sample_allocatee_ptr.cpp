@@ -10,4 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/data_type_meta_info.h"
+#include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"

@@ -10,5 +10,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" 
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H
+
+#include <cstddef>
+#include <cstdint>
+
+namespace score::mw::com::impl
+{
+
+/// \brief Meta-info of a data type exchanged via mw::com/LoLa. I.e. can be the data type of an event/filed/method arg.
+struct DataTypeMetaInfo
+{
+    //@todo -> std::uint64_t fingerprint
+    std::size_t size;
+    std::size_t alignment;
+};
+
+}  // namespace score::mw::com::impl
+
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_DATA_TYPE_META_INFO_H

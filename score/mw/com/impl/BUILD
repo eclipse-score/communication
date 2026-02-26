@@ -31,6 +31,7 @@ cc_library(
         ":generic_proxy_event",
         ":proxy_event",
         ":proxy_field",
+        ":generic_skeleton",
         ":skeleton_event",
         ":skeleton_field",
         ":traits",
@@ -108,6 +109,84 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
         "@score_logging//score/mw/log",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton",
+    srcs = ["generic_skeleton.cpp"],
+    hdrs = ["generic_skeleton.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":error",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory",
+        "//score/mw/com/impl/plumbing",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":generic_skeleton_event",
+        ":instance_identifier",
+        ":instance_specifier",
+        ":runtime",
+        ":skeleton_base", 
+        ":skeleton_binding", 
+        ":data_type_meta_info", 
+        ":service_element_map",
+        "@score_baselibs//score/result",
+        
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton_event",
+    srcs = ["generic_skeleton_event.cpp"],
+    hdrs = ["generic_skeleton_event.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
+        ":generic_skeleton_event_binding",
+        ":skeleton_base",
+        ":skeleton_event_base", 
+        ":skeleton_event_binding", 
+        ":data_type_meta_info", 
+        "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton_event_binding",
+    hdrs = [
+        "generic_skeleton_event_binding.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl/bindings/lola:__pkg__",
+        "//score/mw/com/impl/bindings/mock_binding:__pkg__",
+        "//score/mw/com/impl/plumbing:__pkg__",
+    ],
+    deps = [
+        ":skeleton_event_binding",
+        "@score_baselibs//score/result",
+    ],
+)
+
+cc_library(
+    name = "data_type_meta_info",
+    hdrs = ["data_type_meta_info.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__pkg__",
+        "//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -384,6 +463,8 @@ cc_library(
     ],
     deps = [
         ":binding_type",
+        ":generic_skeleton_event_binding",
+        ":data_type_meta_info", 
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:i_shared_memory_resource",
@@ -669,6 +750,20 @@ cc_library(
     deps = [
         ":runtime_interfaces",
         "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "i_generic_skeleton_event_binding_factory",
+    hdrs = ["i_generic_skeleton_event_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":generic_skeleton_event_binding",
+        ":skeleton_base",
     ],
 )
 
@@ -1005,6 +1100,40 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "generic_skeleton_test",
+    srcs = ["generic_skeleton_test.cpp"],
+    deps = [
+        ":generic_skeleton",
+        ":runtime_mock",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:generic_skeleton_event",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory",
+        ":service_discovery_client_mock",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "generic_skeleton_event_test",
+    srcs = ["generic_skeleton_event_test.cpp",
+            "service_discovery_client_mock.h"],
+    deps = [
+        ":generic_skeleton",
+        ":generic_skeleton_event",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:generic_skeleton_event",
+         "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory", 
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "traits_test",
     srcs = [
         "traits_test.cpp",
@@ -1136,6 +1265,8 @@ cc_unit_test_suites_for_host_and_qnx(
         ":com_error_test",
         ":flag_owner_test",
         ":find_service_handle_test",
+        ":generic_skeleton_test",
+        ":generic_skeleton_event_test",
         ":generic_proxy_test",
         ":proxy_field_test",
         ":runtime_test",

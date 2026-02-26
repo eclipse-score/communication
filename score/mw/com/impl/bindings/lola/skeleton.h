@@ -110,6 +110,20 @@ class Skeleton final : public SkeletonBinding
         return BindingType::kLoLa;
     };
 
+    /// \brief Enables dynamic registration of Generic (type-erased) Events at the Skeleton.
+    /// \param element_fq_id The full qualified ID of the element (event) that shall be registered.
+    /// \param element_properties Properties of the element (e.g. number of slots, max subscribers).
+    /// \param sample_size The size of a single data sample in bytes.
+    /// \param sample_alignment The alignment requirement of the data sample in bytes.
+    /// \return A pair containing:
+    ///         - An OffsetPtr to the allocated data storage (void*).
+    ///         - The EventDataControlComposite for managing the event's control data.
+    std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> RegisterGeneric(
+        const ElementFqId element_fq_id,
+        const SkeletonEventProperties& element_properties,
+        const size_t sample_size,
+        const size_t sample_alignment) noexcept;
+
     /// \brief Enables dynamic registration of Events at the Skeleton.
     /// \tparam SampleType The type of the event
     /// \param element_fq_id The full qualified of the element (event or field) that shall be registered
@@ -181,6 +195,25 @@ class Skeleton final : public SkeletonBinding
     std::pair<EventDataStorage<SampleType>*, EventDataControlComposite> CreateEventDataFromOpenedSharedMemory(
         const ElementFqId element_fq_id,
         const SkeletonEventProperties& element_properties);
+
+    /// \brief Creates the control structures (QM and optional ASIL-B) for an event.
+    /// \param element_fq_id The full qualified ID of the element.
+    /// \param element_properties Properties of the event.
+    /// \return The EventDataControlComposite containing pointers to the control structures.
+    EventDataControlComposite CreateEventControlComposite(const ElementFqId element_fq_id,
+                                                          const SkeletonEventProperties& element_properties) noexcept;
+
+    /// \brief Creates shared memory storage for a generic (type-erased) event.
+    /// \param element_fq_id The full qualified ID of the element.
+    /// \param element_properties Properties of the event.
+    /// \param sample_size The size of a single data sample.
+    /// \param sample_alignment The alignment of the data sample.
+    /// \return A pair containing the data storage pointer (void*) and the control composite.
+    std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
+    CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
+                                          const SkeletonEventProperties& element_properties,
+                                          size_t sample_size,
+                                          size_t sample_alignment) noexcept;
 
     class ShmResourceStorageSizes
     {
@@ -433,44 +466,7 @@ auto Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_f
                                            std::forward_as_tuple(sample_meta_info, event_data_raw_array));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second, "Couldn't register/emplace event-meta-info in data-section.");
 
-    auto control_qm =
-        control_qm_->event_controls_.emplace(std::piecewise_construct,
-                                             std::forward_as_tuple(element_fq_id),
-                                             std::forward_as_tuple(element_properties.number_of_slots,
-                                                                   element_properties.max_subscribers,
-                                                                   element_properties.enforce_max_samples,
-                                                                   control_qm_resource_->getMemoryResourceProxy()));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second, "Couldn't register/emplace event-meta-info in data-section.");
-
-    EventDataControl* control_asil_result{nullptr};
-    if (control_asil_resource_ != nullptr)
-    {
-        auto iterator = control_asil_b_->event_controls_.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(element_fq_id),
-            std::forward_as_tuple(element_properties.number_of_slots,
-                                  element_properties.max_subscribers,
-                                  element_properties.enforce_max_samples,
-                                  control_asil_resource_->getMemoryResourceProxy()));
-
-        // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:
-        // A function shall not return a reference or a pointer to an automatic variable (including parameters), defined
-        // within the function.
-        // Suppress "AUTOSAR C++14 M7-5-2": The address of an object with automatic storage shall not be assigned to
-        // another object that may persist after the first object has ceased to exist.
-        // The result pointer is still valid outside this method until Skeleton object (as a holder) is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        control_asil_result = &iterator.first->second.data_control;
-    }
-    // clang-format off
-    // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
-    // coverity[autosar_cpp14_m7_5_1_violation]
-    // coverity[autosar_cpp14_m7_5_2_violation]
-    // coverity[autosar_cpp14_a3_8_1_violation]
-    return {typed_event_data_storage_ptr, EventDataControlComposite{&control_qm.first->second.data_control, control_asil_result}};
-    // clang-format on
+    return {typed_event_data_storage_ptr, CreateEventControlComposite(element_fq_id, element_properties)};
 }
 
 }  // namespace score::mw::com::impl::lola

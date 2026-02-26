@@ -28,6 +28,7 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_common.h" 
 
 #include "score/mw/log/logging.h"
 
@@ -63,12 +64,12 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonEventAttorney;
 
-  public:
+  public: 
     using typename SkeletonEventBinding<SampleType>::SendTraceCallback;
     using typename SkeletonEventBindingBase::SubscribeTraceCallback;
     using typename SkeletonEventBindingBase::UnsubscribeTraceCallback;
 
-    SkeletonEvent(Skeleton& parent,
+     SkeletonEvent(Skeleton& parent,
                   const ElementFqId event_fqn,
                   const std::string_view event_name,
                   const SkeletonEventProperties properties,
@@ -95,48 +96,27 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     void PrepareStopOffer() noexcept override;
 
-    BindingType GetBindingType() const noexcept override
-    {
-        return BindingType::kLoLa;
+    BindingType GetBindingType() const noexcept override 
+    { 
+        return BindingType::kLoLa; 
     }
 
-    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
-    {
-        skeleton_event_tracing_data_ = tracing_data;
+    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override 
+    { 
+        event_shared_impl_.GetTracingData() = tracing_data; 
     }
 
-    ElementFqId GetElementFQId() const noexcept
-    {
-        return event_fqn_;
-    };
-
-  private:
-    Skeleton& parent_;
-    const ElementFqId event_fqn_;
+  
+  private: 
     const std::string_view event_name_;
     const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
-    std::optional<EventDataControlComposite> event_data_control_composite_;
+    score::cpp::optional<EventDataControlComposite> event_data_control_composite_;
     EventSlotStatus::EventTimeStamp current_timestamp_;
     bool qm_disconnect_;
-    impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data_;
 
-    /// \brief Atomic flags indicating whether any receive handlers are currently registered for this event
-    ///        at each quality level (QM and ASIL-B).
-    /// \details These flags are updated via callbacks from MessagePassingServiceInstance when handler
-    ///          registration status changes. They allow Send() to skip the NotifyEvent() call when no
-    ///          handlers are registered for a specific quality level, avoiding unnecessary lock overhead
-    ///          in the main path. Uses memory_order_relaxed as the flags are optimisation hints - false
-    ///          positives (thinking handlers exist when they don't) are harmless, and false negatives
-    ///          (missing handlers) are prevented by the callback mechanism.
-    std::atomic<bool> qm_event_update_notifications_registered_{false};
-    std::atomic<bool> asil_b_event_update_notifications_registered_{false};
+    SkeletonEventCommon event_shared_impl_; 
 
-    /// \brief optional RAII guards for tracing transaction log registration/un-registration and cleanup of "pending"
-    /// type erased sample pointers which are created in PrepareOffer() and destroyed in PrepareStopoffer() - optional
-    /// as only needed when tracing is enabled and when they haven't been cleaned up via a call to PrepareStopoffer().
-    std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_;
-    std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_;
 };
 
 template <typename SampleType>
@@ -146,17 +126,13 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          const SkeletonEventProperties properties,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
-      parent_{parent},
-      event_fqn_{event_fqn},
       event_name_{event_name},
       event_properties_{properties},
       event_data_storage_{nullptr},
-      event_data_control_composite_{std::nullopt},
+      event_data_control_composite_{score::cpp::nullopt},
       current_timestamp_{1U},
       qm_disconnect_{false},
-      skeleton_event_tracing_data_{skeleton_event_tracing_data},
-      transaction_log_registration_guard_{},
-      type_erased_sample_ptrs_guard_{}
+      event_shared_impl_(parent, event_fqn, event_data_control_composite_, current_timestamp_, skeleton_event_tracing_data)
 {
 }
 
@@ -207,18 +183,17 @@ ResultBlank SkeletonEvent<SampleType>::Send(impl::SampleAllocateePtr<SampleType>
     // This avoids the expensive lock operation in the common case where no handlers are registered.
     // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
     // handler registration, the next Send() will pick it up.
-    if (qm_event_update_notifications_registered_.load() && !qm_disconnect_)
+    if (event_shared_impl_.IsQmNotificationsRegistered() && !qm_disconnect_)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_QM, event_fqn_);
+            .NotifyEvent(QualityType::kASIL_QM, event_shared_impl_.GetElementFQId());
     }
-    if (asil_b_event_update_notifications_registered_.load() &&
-        parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    if (event_shared_impl_.IsAsilBNotificationsRegistered() && event_shared_impl_.GetParent().GetInstanceQualityType() == QualityType::kASIL_B)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_B, event_fqn_);
+            .NotifyEvent(QualityType::kASIL_B, event_shared_impl_.GetElementFQId());
     }
     return {};
 }
@@ -245,10 +220,10 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     if (!qm_disconnect_ && event_data_control_composite_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
     {
         qm_disconnect_ = true;
-        score::mw::log::LogWarn("lola")
+        score::mw::log::LogWarn("lola") 
             << __func__ << __LINE__
-            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << event_fqn_;
-        parent_.DisconnectQmConsumers();
+            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << event_shared_impl_.GetElementFQId();
+        event_shared_impl_.GetParent().DisconnectQmConsumers();
     }
 
     if (slot.IsValidQM() || slot.IsValidAsilB())
@@ -280,46 +255,14 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
+
     std::tie(event_data_storage_, event_data_control_composite_) =
-        parent_.Register<SampleType>(event_fqn_, event_properties_);
+        event_shared_impl_.GetParent().template Register<SampleType>(event_shared_impl_.GetElementFQId(), event_properties_);
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                            "Defensive programming as event_data_control_composite_ is set by Register above.");
-    current_timestamp_ = event_data_control_composite_.value().GetLatestTimestamp();
 
-    const bool tracing_for_skeleton_event_enabled =
-        skeleton_event_tracing_data_.enable_send || skeleton_event_tracing_data_.enable_send_with_allocate;
-    // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
-    // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
-    // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in
-    // Ticket-188259).
-    if (tracing_for_skeleton_event_enabled)
-    {
-        // LCOV_EXCL_BR_STOP
-        score::cpp::ignore = transaction_log_registration_guard_.emplace(
-            TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
-        score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
-    }
-
-    // Register callbacks to be notified when event notification existence changes.
-    // This allows us to optimise the Send() path by skipping NotifyEvent() when no handlers are registered.
-    // Separate callbacks for QM and ASIL-B update their respective atomic flags for lock-free access.
-    GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-        .GetLolaMessaging()
-        .RegisterEventNotificationExistenceChangedCallback(
-            QualityType::kASIL_QM, event_fqn_, [this](const bool has_handlers) noexcept {
-                qm_event_update_notifications_registered_.store(has_handlers);
-            });
-
-    if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .RegisterEventNotificationExistenceChangedCallback(
-                QualityType::kASIL_B, event_fqn_, [this](const bool has_handlers) noexcept {
-                    asil_b_event_update_notifications_registered_.store(has_handlers);
-                });
-    }
+    event_shared_impl_.PrepareOfferCommon();
 
     return {};
 }
@@ -333,27 +276,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void SkeletonEvent<SampleType>::PrepareStopOffer() noexcept
 {
-    // Unregister event notification existence changed callbacks
-    GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-        .GetLolaMessaging()
-        .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_QM, event_fqn_);
-
-    if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_B, event_fqn_);
-    }
-
-    // Reset the flags to indicate no handlers are registered
-    qm_event_update_notifications_registered_.store(false);
-    asil_b_event_update_notifications_registered_.store(false);
-
-    type_erased_sample_ptrs_guard_.reset();
-    if (event_data_control_composite_.has_value())
-    {
-        transaction_log_registration_guard_.reset();
-    }
+    event_shared_impl_.PrepareStopOfferCommon();
 }
 
 }  // namespace score::mw::com::impl::lola

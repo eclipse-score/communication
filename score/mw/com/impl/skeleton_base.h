@@ -70,7 +70,7 @@ class SkeletonBase
      * \api
      * \brief Offer the respective service to other applications
      * \return On failure, returns an error code according to the SW Component Requirements SCR-17434118 and
-     *         SCR-566325.
+     * SCR-566325.
      */
     [[nodiscard]] ResultBlank OfferService() noexcept;
 

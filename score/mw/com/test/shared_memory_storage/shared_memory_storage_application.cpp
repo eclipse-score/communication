@@ -37,6 +37,37 @@
 #include <ostream>
 #include <string>
 
+
+namespace score::mw::com::impl::lola
+{
+    // The Attorney uses the friend declaration to access private SkeletonEvent members
+    template <typename SampleType>
+    class SkeletonEventAttorney
+    {
+    public:
+        static ElementFqId GetElementFQId(const SkeletonEvent<SampleType>& event) noexcept
+        {
+            // Access the private event_shared_impl_ and call its public GetElementFQId()
+            return event.event_shared_impl_.GetElementFQId();
+        }
+    };
+} // namespace score::mw::com::impl::lola
+
+// Overload for SkeletonEvent (uses Attorney to bypass private access)
+template <typename SampleType>
+score::mw::com::impl::lola::ElementFqId ExtractId(const score::mw::com::impl::lola::SkeletonEvent<SampleType>* binding)
+{
+    return score::mw::com::impl::lola::SkeletonEventAttorney<SampleType>::GetElementFQId(*binding);
+}
+
+// Overload for ProxyEvent (method is still public)
+template <typename BindingType>
+score::mw::com::impl::lola::ElementFqId ExtractId(const BindingType* binding)
+{
+    return binding->GetElementFQId();
+}
+
+
 namespace
 {
 
@@ -57,7 +88,7 @@ score::cpp::optional<score::mw::com::impl::lola::ElementFqId> GetElementFqId(Ser
     {
         return {};
     }
-    return map_api_lanes_stamped_binding->GetElementFQId();
+    return ExtractId(map_api_lanes_stamped_binding);
 }
 
 template <typename ServiceType, typename ServiceViewType, typename LolaServiceType, typename LolaServiceAttorneyType>
