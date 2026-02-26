@@ -133,6 +133,41 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     EXPECT_EQ(allocate_result.error(), ComErrc::kBindingFailure);
 }
 
+TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCalls)
+{
+    RecordProperty("Description", "Checks that multiple calls to Allocate() return unique memory pointers.");
+    RecordProperty("TestType", "Unit Test");
+
+    const bool enforce_max_samples{true};
+    const size_t num_allocations = 3;
+    ASSERT_LE(num_allocations, max_samples_);
+
+    // Given an offered event
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    skeleton_event_->PrepareOffer();
+
+    // When allocating multiple samples without sending them
+    std::vector<impl::SampleAllocateePtr<test::TestSampleType>> allocated_pointers;
+    std::vector<void*> raw_pointers;
+
+    for (size_t i = 0; i < num_allocations; ++i)
+    {
+        auto alloc_result = skeleton_event_->Allocate();
+        ASSERT_TRUE(alloc_result.has_value()) << "Allocation " << i << " failed";
+        
+        // Store the raw pointer to check for uniqueness
+        raw_pointers.push_back(alloc_result.value().Get());
+
+        // Keep the SampleAllocateePtr alive to keep the slot busy
+        allocated_pointers.push_back(std::move(alloc_result.value()));
+    }
+
+    // Then all allocated raw pointers should be unique
+    std::sort(raw_pointers.begin(), raw_pointers.end());
+    auto it = std::unique(raw_pointers.begin(), raw_pointers.end());
+    EXPECT_EQ(it, raw_pointers.end()) << "Duplicate memory addresses were allocated.";
+}
+
 using SkeletonEventPrepareOfferFixture = SkeletonEventFixture;
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeProvided)
 {
@@ -316,6 +351,53 @@ TEST_F(SkeletonEventPrepareStopOfferFixture, StopOfferSkeletonEvent)
 
     // When stop offering a skeleton event
     skeleton_event_->PrepareStopOffer();
+}
+
+using SkeletonEventTimestampFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
+{
+    // GIVEN a skeleton event that is offered
+    const bool enforce_max_samples{true};
+    impl::tracing::SkeletonEventTracingData tracing_data{};
+    InitialiseSkeletonEvent(
+        fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples, tracing_data);
+
+    skeleton_event_->PrepareOffer();
+
+    // WHEN we allocate and send a first sample
+    auto first_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(first_allocated_slot_result.has_value());
+    auto first_allocated_slot = std::move(first_allocated_slot_result).value();
+
+    const impl::SampleAllocateePtrView<test::TestSampleType> first_view{first_allocated_slot};
+    auto* first_lola_ptr = first_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
+    auto first_slot_indicator = first_lola_ptr->GetReferencedSlot();
+
+    auto first_send_result = skeleton_event_->Send(std::move(first_allocated_slot), score::cpp::nullopt);
+    ASSERT_TRUE(first_send_result.has_value());
+
+    // THEN its timestamp should be a valid, non-zero value
+    const EventSlotStatus first_final_slot_status{first_slot_indicator.GetSlotQM().load()};
+    // AND the first timestamp should be 2, as it's the first one after initialization.
+    const auto first_timestamp = first_final_slot_status.GetTimeStamp();
+    EXPECT_EQ(first_timestamp, 2U);
+
+    // AND WHEN we allocate and send a second sample
+    auto second_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(second_allocated_slot_result.has_value());
+    auto second_allocated_slot = std::move(second_allocated_slot_result).value();
+
+    const impl::SampleAllocateePtrView<test::TestSampleType> second_view{second_allocated_slot};
+    auto* second_lola_ptr = second_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
+    auto second_slot_indicator = second_lola_ptr->GetReferencedSlot();
+    auto second_send_result = skeleton_event_->Send(std::move(second_allocated_slot), score::cpp::nullopt);
+    ASSERT_TRUE(second_send_result.has_value());
+
+    // THEN its timestamp should be exactly one greater than the first one
+    const EventSlotStatus second_final_slot_status{second_slot_indicator.GetSlotQM().load()};
+    const auto second_timestamp = second_final_slot_status.GetTimeStamp();
+    EXPECT_EQ(second_timestamp, first_timestamp + 1U)
+        << "The second timestamp should be exactly one greater than the first.";
 }
 
 }  // namespace

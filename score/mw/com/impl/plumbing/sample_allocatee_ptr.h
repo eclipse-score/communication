@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_SAMPLE_ALLOCATEE_PTR_H
 
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"
 
 #include <score/blank.hpp>
 #include <score/overload.hpp>
@@ -23,6 +24,7 @@
 #include <memory>
 #include <utility>
 #include <variant>
+#include <type_traits> 
 
 namespace score::mw::com::impl
 {
@@ -94,16 +96,25 @@ class SampleAllocateePtr
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     explicit operator bool() const noexcept;
 
+    // -------------------------------------------------------------------------
+    // [CRITICAL UPDATE] Declarations MUST be templates to support SFINAE
+    // This allows disabling these operators when SampleType is void.
+    // -------------------------------------------------------------------------
+    
+    /// \brief operator* - Enabled via SFINAE only if SampleType is NOT void
     /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
     /// terminate.
     // Suppress "AUTOSAR C++14 A15-5-3" rule finding: See rationale above (fix in Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    typename std::add_lvalue_reference<SampleType>::type operator*() const noexcept(noexcept(*std::declval<pointer>()));
+    template <typename T = SampleType, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+    typename std::add_lvalue_reference<SampleType>::type operator*() const noexcept;
 
+    /// \brief operator-> - Enabled via SFINAE only if SampleType is NOT void
     /// \brief operator* and operator-> provide access to the object owned by *this. If no object is hold, will
     /// terminate.
     // Suppress "AUTOSAR C++14 A15-5-3" rule finding: See rationale above (fix in Ticket-173043)
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+    template <typename T = SampleType, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
     pointer operator->() const noexcept;
 
   private:
@@ -132,9 +143,10 @@ class SampleAllocateePtr
     template <typename T>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SampleAllocateePtrMutableView;
-
+    
     // We don't use the pimpl idiom because it would require dynamic memory allocation (that we want to avoid)
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, std::unique_ptr<SampleType>> internal_;
+    // Stores either the LoLa pointer or the Mock Binding pointer (which handles void safely)
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>> internal_;
 };
 
 template <typename SampleType>
@@ -172,8 +184,8 @@ void SampleAllocateePtr<SampleType>::reset() noexcept
             internal_ptr.reset();
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](std::unique_ptr<SampleType>& internal_ptr) noexcept -> void {
-            internal_ptr.reset(nullptr);
+        [](mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> void {
+            internal_ptr.reset(nullptr); 
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> void {});
@@ -208,7 +220,7 @@ auto SampleAllocateePtr<SampleType>::Get() const noexcept -> pointer
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
+        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
             return internal_ptr.get();
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
@@ -236,7 +248,7 @@ SampleAllocateePtr<SampleType>::operator bool() const noexcept
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> bool {
+        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> bool {
             return static_cast<bool>(internal_ptr);
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
@@ -248,8 +260,8 @@ SampleAllocateePtr<SampleType>::operator bool() const noexcept
 }
 
 template <typename SampleType>
-typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleType>::operator*() const
-    noexcept(noexcept(*std::declval<pointer>()))
+template <typename T, typename std::enable_if<!std::is_void<T>::value, int>::type>
+typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleType>::operator*() const noexcept
 {
     using ReturnType = typename std::add_lvalue_reference<SampleType>::type;
 
@@ -268,7 +280,7 @@ typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleTy
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
+        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
             return *internal_ptr;
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
@@ -280,6 +292,7 @@ typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleTy
 }
 
 template <typename SampleType>
+template <typename T, typename std::enable_if<!std::is_void<T>::value, int>::type>
 auto SampleAllocateePtr<SampleType>::operator->() const noexcept -> pointer
 {
     using ReturnType = pointer;
@@ -299,7 +312,7 @@ auto SampleAllocateePtr<SampleType>::operator->() const noexcept -> pointer
         // This is a false positive, we here using lvalue reference.
         // coverity[autosar_cpp14_a8_4_12_violation : FALSE]
         // coverity[autosar_cpp14_a7_1_7_violation]
-        [](const std::unique_ptr<SampleType>& internal_ptr) noexcept -> ReturnType {
+        [](const mock_binding::SampleAllocateePtr<SampleType>& internal_ptr) noexcept -> ReturnType {
             return internal_ptr.get();
         },
         // coverity[autosar_cpp14_a7_1_7_violation]
@@ -329,7 +342,7 @@ bool operator!=(const SampleAllocateePtr<T1>& lhs, const SampleAllocateePtr<T2>&
 template <class T>
 void swap(SampleAllocateePtr<T>& lhs, SampleAllocateePtr<T>& rhs) noexcept
 {
-    lhs.swap(rhs);
+    lhs.Swap(rhs);
 }
 
 /// \brief Helper function to create a SampleAllocateePtr within the middleware (not to be used by the user)
@@ -337,108 +350,6 @@ template <typename T>
 auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<typename T::element_type>
 {
     return SampleAllocateePtr<typename T::element_type>{std::move(ptr)};
-}
-
-/// \brief Template specialization of SampleAllocateePtr for void.
-template <>
-class SampleAllocateePtr<void>
-{
-  public:
-    using pointer = void*;
-    using element_type = void;
-
-    constexpr SampleAllocateePtr() noexcept : SampleAllocateePtr(score::cpp::blank{}) {}
-    constexpr explicit SampleAllocateePtr(std::nullptr_t) noexcept : SampleAllocateePtr() {}
-
-    SampleAllocateePtr(const SampleAllocateePtr<void>&) = delete;
-    SampleAllocateePtr& operator=(const SampleAllocateePtr<void>&) & = delete;
-
-    SampleAllocateePtr(SampleAllocateePtr<void>&& other) noexcept : SampleAllocateePtr()
-    {
-        this->Swap(other);
-    }
-
-    SampleAllocateePtr& operator=(SampleAllocateePtr<void>&& other) & noexcept
-    {
-        this->Swap(other);
-        return *this;
-    }
-
-    SampleAllocateePtr& operator=(std::nullptr_t) noexcept
-    {
-        reset();
-        return *this;
-    }
-
-    ~SampleAllocateePtr() noexcept = default;
-
-    void reset() noexcept
-    {
-        auto visitor = score::cpp::overload(
-            [](lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> void { internal_ptr.reset(); },
-            [](const score::cpp::blank&) noexcept -> void {});
-        std::visit(visitor, internal_);
-    }
-
-    void Swap(SampleAllocateePtr<void>& other) noexcept
-    {
-        using std::swap;
-        swap(internal_, other.internal_);
-    }
-
-    pointer Get() const noexcept
-    {
-        auto visitor = score::cpp::overload(
-            [](const lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> pointer { return internal_ptr.get(); },
-            [](const score::cpp::blank&) noexcept -> pointer { return nullptr; });
-        return std::visit(visitor, internal_);
-    }
-
-    explicit operator bool() const noexcept
-    {
-        auto visitor = score::cpp::overload(
-            [](const lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> bool {
-                return static_cast<bool>(internal_ptr);
-            },
-            [](const score::cpp::blank&) noexcept -> bool { return false; });
-        return std::visit(visitor, internal_);
-    }
-
-    // operator* is intentionally omitted for void specialization.
-
-    pointer operator->() const noexcept
-    {
-        auto visitor = score::cpp::overload(
-            [](const lola::SampleAllocateePtr<void>& internal_ptr) noexcept -> pointer { return internal_ptr.get(); },
-            [](const score::cpp::blank&) noexcept -> pointer {
-                std::terminate();
-                return nullptr;
-            });
-        return std::visit(visitor, internal_);
-    }
-
-  private:
-    template <typename T>
-    constexpr explicit SampleAllocateePtr(T ptr) : internal_{std::move(ptr)}
-    {
-    }
-
-    template <typename T>
-    friend auto MakeSampleAllocateePtr(T ptr) noexcept -> SampleAllocateePtr<typename T::element_type>;
-
-    template <typename T>
-    friend class SampleAllocateePtrView;
-
-    template <typename T>
-    friend class SampleAllocateePtrMutableView;
-
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr<void>> internal_;
-};
-
-template <>
-inline void swap(SampleAllocateePtr<void>& lhs, SampleAllocateePtr<void>& rhs) noexcept
-{
-    lhs.Swap(rhs);
 }
 
 /// \brief SampleAllocateePtr is user facing, in order to interact with its internals we provide a view towards it
@@ -456,7 +367,7 @@ class SampleAllocateePtrView
         return std::get_if<T>(&ptr_.internal_);
     }
 
-    const std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, std::unique_ptr<SampleType>>&
+    const std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>>&
     GetUnderlyingVariant() const noexcept
     {
         return ptr_.internal_;
@@ -473,7 +384,7 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, std::unique_ptr<SampleType>>&
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr<SampleType>, mock_binding::SampleAllocateePtr<SampleType>>&
     GetUnderlyingVariant() noexcept
     {
         // Suppress "AUTOSAR C++14 A9-3-1", The rule states: "Member functions shall not return non-const “raw” pointers

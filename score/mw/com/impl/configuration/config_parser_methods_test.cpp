@@ -14,6 +14,9 @@
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 
+#include <score/assert_support.hpp>
+#include <score/utility.hpp>
+
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
@@ -55,9 +58,7 @@ class ConfigParserFixture : public ::testing::Test
     std::pair<const ServiceIdentifierType*, const ServiceVersionType*> found_service_type_{&si_, &sv_};
 };
 
-using ConfigParserFixtureDeathTest = ConfigParserFixture;
-
-TEST_F(ConfigParserFixtureDeathTest, NoMethodNameWillCauseTermination)
+TEST_F(ConfigParserFixture, NoMethodNameWillCauseTermination)
 {
     // Given a JSON with a missing method name
     auto j2 = R"(
@@ -88,10 +89,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoMethodNameWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, ValidMethodNameWillNotCauseTermination)
+TEST_F(ConfigParserFixture, ValidMethodNameWillNotCauseTermination)
 {
     // Given a JSON with a valid method name
     auto j2 = R"(
@@ -125,10 +126,10 @@ TEST_F(ConfigParserFixtureDeathTest, ValidMethodNameWillNotCauseTermination)
 
     // When parsing the JSON
     // Then parsing succeeds without termination
-    EXPECT_NO_THROW(score::mw::com::impl::configuration::Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoMethodIdWillCauseTermination)
+TEST_F(ConfigParserFixture, NoMethodIdWillCauseTermination)
 {
     // Given a JSON with a missing method id
     auto j2 = R"(
@@ -161,10 +162,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoMethodIdWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, ValidMethodIdWillNotCauseTermination)
+TEST_F(ConfigParserFixture, ValidMethodIdWillNotCauseTermination)
 {
     // Given a JSON with a valid method id
     auto j2 = R"(
@@ -198,10 +199,10 @@ TEST_F(ConfigParserFixtureDeathTest, ValidMethodIdWillNotCauseTermination)
 
     // When parsing the JSON
     // Then parsing succeeds without termination
-    EXPECT_NO_THROW(score::mw::com::impl::configuration::Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, DuplicateMethodTypeDeploymentWillCauseTermination)
+TEST_F(ConfigParserFixture, DuplicateMethodTypeDeploymentWillCauseTermination)
 {
     // Given a JSON with a duplicate LoLa method type deployment (duplicate methodName)
     auto j2 = R"(
@@ -239,10 +240,10 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateMethodTypeDeploymentWillCauseTermi
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoDuplicateMethodTypeDeploymentWillNotCauseTermination)
+TEST_F(ConfigParserFixture, NoDuplicateMethodTypeDeploymentWillNotCauseTermination)
 {
     // Given a JSON with no duplicate LoLa method type deployment (unique methodNames)
     auto j2 = R"(
@@ -280,10 +281,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoDuplicateMethodTypeDeploymentWillNotCause
 
     // When parsing the JSON
     // Then parsing succeeds without termination
-    EXPECT_NO_THROW(score::mw::com::impl::configuration::Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, DuplicateMethodIdWillCauseTermination)
+TEST_F(ConfigParserFixture, DuplicateMethodIdWillCauseTermination)
 {
     // Given a JSON with duplicate method IDs
     auto j2 = R"(
@@ -321,10 +322,10 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateMethodIdWillCauseTermination)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoDuplicateMethodIdWillNotCauseTermination)
+TEST_F(ConfigParserFixture, NoDuplicateMethodIdWillNotCauseTermination)
 {
     // Given a JSON with no duplicate method IDs
     auto j2 = R"(
@@ -362,10 +363,10 @@ TEST_F(ConfigParserFixtureDeathTest, NoDuplicateMethodIdWillNotCauseTermination)
 
     // When parsing the JSON
     // Then parsing succeeds without termination
-    EXPECT_NO_THROW(score::mw::com::impl::configuration::Parse(std::move(j2)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceInstanceMethodsWillDie)
+TEST_F(ConfigParserFixture, DuplicateServiceInstanceMethodsWillDie)
 {
     // Given a JSON with duplicate method instance deployments
     auto j2 = R"(
@@ -427,10 +428,10 @@ TEST_F(ConfigParserFixtureDeathTest, DuplicateServiceInstanceMethodsWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    EXPECT_DEATH(score::mw::com::impl::configuration::Parse(std::move(j2)), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST_F(ConfigParserFixtureDeathTest, NoDuplicateServiceInstanceMethodsWillNotDie)
+TEST_F(ConfigParserFixture, NoDuplicateServiceInstanceMethodsWillNotDie)
 {
     // Given a JSON without duplicate method instance deployments
     auto j2 = R"(
@@ -496,7 +497,7 @@ TEST_F(ConfigParserFixtureDeathTest, NoDuplicateServiceInstanceMethodsWillNotDie
 
     // When parsing the JSON
     // Then the application will not terminate
-    score::mw::com::impl::configuration::Parse(std::move(j2));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_NOT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
 TEST_F(ConfigParserFixture, MethodQueueSizeIsNulloptWhenNotProvided)

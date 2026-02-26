@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -24,6 +25,9 @@ cc_library(
     srcs = ["proxy_bridge.cpp"],
     hdrs = ["proxy_bridge.h"],
     features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
     deps = [
         "//score/mw/com:runtime",
         "//score/mw/com:runtime_configuration",
@@ -57,7 +61,7 @@ cc_library(
     deprecation = "Please change your dependency to //score/mw/com/impl/rust:bridge_macros",
     visibility = [
         "//visibility:public",  # platform_only
-        # "@ddad//platform/aas:__subpackages__",
+        # "@xyz//platform/aas:__subpackages__",
     ],
     deps = [":bridge_macros"],
 )
@@ -70,7 +74,7 @@ rust_library(
     ],
     deps = [
         ":proxy_bridge_cpp",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
         "@crate_index//:arrayvec",
         "@crate_index//:futures",
     ],
@@ -97,7 +101,7 @@ rust_library(
         ":common",
         ":proxy_bridge_rs",
         ":skeleton_bridge_rs",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
+        "//score/mw/com/impl/plumbing/rust:sample_ptr_rs",
     ],
 )
 
@@ -112,31 +116,5 @@ rust_library(
         ":macros",
         ":proxy_bridge_rs",
         ":skeleton_bridge_rs",
-    ],
-)
-
-cc_library(
-    name = "registry_bridge_macro_cpp",
-    srcs = ["registry_bridge_macro.cpp"],
-    hdrs = ["registry_bridge_macro.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":proxy_bridge_cpp",
-    ],
-)
-
-rust_library(
-    name = "generic_bridge_ffi_rs",
-    srcs = ["generic_bridge_ffi.rs"],
-    visibility = [
-        "//score/mw/com:__subpackages__",
-    ],
-    deps = [
-        ":proxy_bridge_rs",
-        ":registry_bridge_macro_cpp",
-        "//score/mw/com/impl/plumbing:sample_ptr_rs",
     ],
 )

@@ -23,7 +23,6 @@ This document contains examples of each mw::com user facing API.
 | [`InstanceSpecifier::ToString()`](#example-2-using-instancespecifier-for-application-port-identification) |
 | [`FindServiceHandle`](#example-3-using-findservicehandle-for-service-discovery-management) |
 | [`FindServiceHandler`](#example-4-using-findservicehandler-for-service-discovery-callbacks) |
-| [`MethodCallProcessingMode`](#example-5-using-methodcallprocessingmode-for-service-implementation-control) |
 | [`SubscriptionState`](#example-6-using-subscriptionstate-for-event-subscription-management) |
 | [`SamplePtr`](#example-7-using-sampleptr-for-receiving-event-data) |
 | [`SampleAllocateePtr`](#example-8-using-sampleallocateeptr-for-sending-event-data) |
@@ -530,14 +529,6 @@ void SetupServiceDiscovery(ServiceProxy& proxy) {
 
 </details>
 
----
-
-### Example 5: Using `MethodCallProcessingMode` for Service Implementation Control
-
-> [!WARNING]
-> Do not use!
-
->This Enum is non-functional and was implemented for compatibility reasons with `ara::com` standard. Since we do not maintain this compatibility anymore, we have no use for this API and will deprecate and remove it in the future.
 ---
 
 ### Example 6: Using `SubscriptionState` for Event Subscription Management

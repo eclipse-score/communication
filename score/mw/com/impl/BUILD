@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -48,7 +49,7 @@ cc_library(
         ":error",
         "//score/mw/com/impl/plumbing",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -82,7 +83,7 @@ cc_library(
         ":proxy_base",
         ":proxy_event_base",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -106,8 +107,8 @@ cc_library(
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -130,10 +131,12 @@ cc_library(
         ":instance_identifier",
         ":instance_specifier",
         ":runtime",
-        ":skeleton_base",
-        ":skeleton_binding",
-        ":size_info",
+        ":skeleton_base", 
+        ":skeleton_binding", 
+        ":data_type_meta_info", 
+        ":service_element_map",
         "@score_baselibs//score/result",
+        
     ],
 )
 
@@ -150,9 +153,9 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:generic_skeleton_event",
         ":generic_skeleton_event_binding",
         ":skeleton_base",
-        ":skeleton_event_base",
-        ":skeleton_event_binding",
-        ":size_info",
+        ":skeleton_event_base", 
+        ":skeleton_event_binding", 
+        ":data_type_meta_info", 
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "@score_baselibs//score/result",
     ],
@@ -177,8 +180,8 @@ cc_library(
 )
 
 cc_library(
-    name = "size_info",
-    hdrs = ["size_info.h"],
+    name = "data_type_meta_info",
+    hdrs = ["data_type_meta_info.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
@@ -206,8 +209,8 @@ cc_library(
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -227,8 +230,8 @@ cc_library(
         "//score/mw/com/impl/plumbing:field",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -242,12 +245,14 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        ":flag_owner",
         ":proxy_base",
         ":proxy_event",
         ":proxy_field",
         ":skeleton_base",
         ":skeleton_event",
         ":skeleton_field",
+        "//score/mw/com/impl/methods:proxy_method",
         "//score/mw/com/impl/methods:skeleton_method",
         "//score/mw/com/impl/plumbing:event",
     ],
@@ -321,8 +326,8 @@ cc_library(
         ":error",
         ":skeleton_event_base",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -357,7 +362,7 @@ cc_library(
     srcs = ["find_service_handle.cpp"],
     hdrs = ["find_service_handle.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
@@ -459,7 +464,7 @@ cc_library(
     deps = [
         ":binding_type",
         ":generic_skeleton_event_binding",
-        ":size_info",
+        ":data_type_meta_info", 
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:i_shared_memory_resource",
@@ -643,8 +648,8 @@ cc_library(
     ],
     deps = [
         ":error",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -673,7 +678,7 @@ cc_library(
     hdrs = ["service_element_type.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -745,6 +750,20 @@ cc_library(
     deps = [
         ":runtime_interfaces",
         "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "i_generic_skeleton_event_binding_factory",
+    hdrs = ["i_generic_skeleton_event_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":generic_skeleton_event_binding",
+        ":skeleton_base",
     ],
 )
 
@@ -859,7 +878,7 @@ cc_library(
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:types",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -900,16 +919,34 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "error_serializer",
+    srcs = ["error_serializer.cpp"],
+    hdrs = ["error_serializer.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":error",
+        "//score/mw/com/impl/bindings/lola/methods:method_error",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "@score_baselibs//score/result",
+    ],
+)
+
 cc_test(
     name = "unit_test_runtime_single_exec",
     timeout = "moderate",
     srcs = ["runtime_single_exec_test.cpp"],
     data = [
-        "//score/mw/com/impl/configuration:ara_com_config.json",
-        "//score/mw/com/impl/configuration:ara_com_config_disabled_trace_config.json",
-        "//score/mw/com/impl/configuration:ara_com_config_invalid_trace_config_path.json",
-        "//score/mw/com/impl/configuration:ara_com_config_other.json",
-        "//score/mw/com/impl/configuration:ara_com_config_valid_trace_config.json",
+        "//score/mw/com/impl/configuration:mw_com_config.json",
+        "//score/mw/com/impl/configuration:mw_com_config_disabled_trace_config.json",
+        "//score/mw/com/impl/configuration:mw_com_config_invalid_trace_config_path.json",
+        "//score/mw/com/impl/configuration:mw_com_config_other.json",
+        "//score/mw/com/impl/configuration:mw_com_config_valid_trace_config.json",
         "//score/mw/com/impl/tracing/configuration:comtrace_filter_config_small.json",
     ],
     features = [
@@ -921,7 +958,7 @@ cc_test(
         ":runtime",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -935,7 +972,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -976,8 +1013,8 @@ cc_gtest_unit_test(
     srcs = ["service_element_type_test.cpp"],
     deps = [
         ":service_element_type",
-        "@score_baselibs//score/mw/log",
-        #"@score_baselibs//score/mw/log/test/fake_recorder_environment:auto_register_fake_recorder_env",
+        "@score_logging//score/mw/log",
+        #"@score_logging//score/mw/log/test/fake_recorder_environment:auto_register_fake_recorder_env",
     ],
 )
 
@@ -1002,7 +1039,7 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -1011,8 +1048,8 @@ cc_gtest_unit_test(
     srcs = ["find_service_handle_test.cpp"],
     deps = [
         ":find_service_handle",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -1044,6 +1081,10 @@ cc_gtest_unit_test(
 cc_gtest_unit_test(
     name = "proxy_base_test",
     srcs = ["proxy_base_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         ":error",
         ":impl",
@@ -1053,7 +1094,42 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "generic_skeleton_test",
+    srcs = ["generic_skeleton_test.cpp"],
+    deps = [
+        ":generic_skeleton",
+        ":runtime_mock",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:generic_skeleton_event",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory",
+        ":service_discovery_client_mock",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "generic_skeleton_event_test",
+    srcs = ["generic_skeleton_event_test.cpp",
+            "service_discovery_client_mock.h"],
+    deps = [
+        ":generic_skeleton",
+        ":generic_skeleton_event",
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding:generic_skeleton_event",
+         "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory", 
+        "//score/mw/com/impl/plumbing:generic_skeleton_event_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+        "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
 
@@ -1078,12 +1154,59 @@ cc_gtest_unit_test(
     ],
 )
 
+cc_gtest_unit_test(
+    name = "skeleton_base_test",
+    srcs = [
+        "skeleton_base_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":service_discovery_mock",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:binding_factory_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "com_error_test",
+    srcs = [
+        "com_error_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":error",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "error_serializer_test",
+    srcs = [
+        "error_serializer_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":error",
+        ":error_serializer",
+        "//score/mw/com/impl/bindings/lola/methods:method_error",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
+    ],
+)
+
 cc_test(
     name = "unit_test",
     # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
     timeout = "moderate",
     srcs = [
-        "com_error_test.cpp",
         "enriched_instance_identifier_test.cpp",
         "generic_proxy_event_test.cpp",
         "handle_type_test.cpp",
@@ -1094,7 +1217,6 @@ cc_test(
         "proxy_event_binding_base_test.cpp",
         "proxy_event_test.cpp",
         "service_element_map_test.cpp",
-        "skeleton_base_test.cpp",
         "skeleton_binding_test.cpp",
         "skeleton_event_base_test.cpp",
         "skeleton_event_binding_test.cpp",
@@ -1140,15 +1262,20 @@ cc_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
+        ":com_error_test",
         ":flag_owner_test",
         ":find_service_handle_test",
+        ":generic_skeleton_test",
+        ":generic_skeleton_event_test",
         ":generic_proxy_test",
         ":proxy_field_test",
         ":runtime_test",
         ":proxy_base_test",
         ":sample_reference_tracker_test",
+        ":error_serializer_test",
         ":service_discovery_test",
         ":service_element_type_test",
+        ":skeleton_base_test",
         ":unit_test",
         ":traits_test",
         ":unit_test_runtime_single_exec",

@@ -21,8 +21,8 @@
 namespace score::mw::com::impl::configuration
 {
 
-Configuration Parse(const std::string_view path) noexcept;
-Configuration Parse(score::json::Any json) noexcept;
+Configuration Parse(const std::string_view path);
+Configuration Parse(score::json::Any json);
 
 }  // namespace score::mw::com::impl::configuration
 

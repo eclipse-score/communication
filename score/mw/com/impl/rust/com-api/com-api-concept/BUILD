@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
@@ -19,10 +20,15 @@ rust_library(
         "reloc.rs",
     ],
     crate_root = "com_api_concept.rs",
+    proc_macro_deps = [
+        "//score/mw/com/impl/rust/com-api/com-api-concept-macros",
+    ],
     visibility = [
         "//visibility:public",  # platform_only
     ],
-    deps = [],
+    deps = [
+        "@score_baselibs_rust//src/containers",
+    ],
 )
 
 rust_test(

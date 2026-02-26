@@ -11,28 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-
-string_flag(
+# Other options:
+# "@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation"
+# "@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation"
+label_flag(
     name = "tracing_library",
-    build_setting_default = "real",
-    values = [
-        "real",
-        "stub",
-    ],
-)
-
-config_setting(
-    name = "tracing_library_real",
-    flag_values = {":tracing_library": "real"},
-    visibility = [
-        "//score/mw/com/impl/tracing:__subpackages__",
-    ],
-)
-
-config_setting(
-    name = "tracing_library_stub",
-    flag_values = {":tracing_library": "stub"},
+    build_setting_default = "@score_baselibs//score/analysis/tracing/generic_trace_library",
     visibility = [
         "//score/mw/com/impl/tracing:__subpackages__",
     ],

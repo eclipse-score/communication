@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
@@ -63,7 +64,7 @@ cc_library(
     srcs = ["tracing_filter_config.cpp"],
     hdrs = ["tracing_filter_config.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
@@ -82,7 +83,7 @@ cc_library(
     srcs = ["tracing_filter_config_mock.cpp"],
     hdrs = ["tracing_filter_config_mock.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":i_tracing_filter_config",
@@ -95,7 +96,7 @@ cc_library(
     srcs = ["tracing_config.cpp"],
     hdrs = ["tracing_config.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__pkg__",
@@ -112,7 +113,7 @@ cc_library(
     deps = [
         ":hash_helper_utility",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -127,7 +128,7 @@ cc_library(
         ":hash_helper_for_service_element_and_se_view",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -142,7 +143,7 @@ cc_library(
         ":hash_helper_for_service_element_and_se_view",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -152,7 +153,7 @@ cc_library(
     hdrs = ["service_element_instance_identifier_view.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
@@ -175,7 +176,7 @@ cc_library(
     deps = [
         ":hash_helper_utility",
         ":service_element_identifier_view",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -221,7 +222,7 @@ cc_library(
     hdrs = ["tracing_filter_config_parser.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],

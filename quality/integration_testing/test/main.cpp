@@ -11,9 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include <iostream>
+#include <fstream>
 
 int main()
 {
     std::cout << "Hello!\n";
+    // We create a file to signal to `main2.cpp` that it can continue.
+    std::ofstream{"/tmp/Hello.txt"};
     return 0;
 }

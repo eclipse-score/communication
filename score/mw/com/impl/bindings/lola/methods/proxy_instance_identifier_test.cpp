@@ -14,6 +14,7 @@
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
@@ -98,6 +99,20 @@ TEST(ProxyInstanceIdentifierHashTest,
 
     // Then the hash results are different
     EXPECT_NE(hash_result0, hash_result1);
+}
+
+TEST(ProxyInstanceIdentifierTest, OperatorStreamOutputsExpectedString)
+{
+    // Given a ProxyInstanceIdentifier
+    const ProxyInstanceIdentifier unit{kDummyProcessIdentifier, kDummyProxyInstanceCounter};
+    testing::internal::CaptureStdout();
+
+    // When streaming the ProxyInstanceIdentifier to a log
+    score::mw::log::LogFatal("test") << unit;
+    std::string output = testing::internal::GetCapturedStdout();
+
+    // Then the output should contain the expected string
+    EXPECT_THAT(output, ::testing::HasSubstr("Application ID: 10 . Proxy Instance Counter: 15"));
 }
 
 }  // namespace

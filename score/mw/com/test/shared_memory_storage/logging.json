@@ -1,0 +1,8 @@
+{
+  "appId": "SMST",
+  "appDesc": "shared_memory_storage",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole",
+  "dynamicDatarouterIdentifiers" : true
+}

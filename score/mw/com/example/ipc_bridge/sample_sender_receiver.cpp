@@ -31,6 +31,7 @@
 #include <thread>
 #include <type_traits>
 #include <utility>
+#include <vector> 
 
 using namespace std::chrono_literals;
 
@@ -482,7 +483,20 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
                                               const std::chrono::milliseconds cycle_time,
                                               const std::size_t num_cycles)
 {
-    auto create_result = impl::GenericSkeleton::Create(instance_specifier);
+    const auto event_name = "map_api_lanes_stamped";
+    
+    const impl::DataTypeMetaInfo size_info{sizeof(MapApiLanesStamped), alignof(MapApiLanesStamped)};
+
+   impl::GenericSkeletonCreateParams create_params;
+    // Use a temporary vector to construct the span
+    const std::vector<impl::EventInfo> events_vec = {
+        {event_name, size_info}
+    };
+    create_params.events = events_vec;
+    // create_params.fields = {}; // No fields yet
+
+    auto create_result = impl::GenericSkeleton::Create(instance_specifier, create_params);
+    
     if (!create_result.has_value())
     {
         std::cerr << "Unable to construct skeleton: " << create_result.error() << ", bailing!\n";
@@ -490,15 +504,11 @@ int EventSenderReceiver::RunAsGenericSkeleton(const score::mw::com::InstanceSpec
     }
     auto& skeleton = create_result.value();
 
-    const auto event_name = "map_api_lanes_stamped";
-    const SizeInfo size_info{sizeof(MapApiLanesStamped), alignof(MapApiLanesStamped)};
-    auto event_result = skeleton.AddEvent(event_name, size_info);
-    if (!event_result.has_value())
-    {
-        std::cerr << "Unable to add event to skeleton: " << event_result.error() << ", bailing!\n";
-        return EXIT_FAILURE;
-    }
-    auto& event = *event_result.value();
+    // Retrieve event using its name
+    auto event_it = skeleton.GetEvents().find(event_name);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_it != skeleton.GetEvents().cend(), "Event not found in GenericSkeleton");
+    
+    auto& event = const_cast<impl::GenericSkeletonEvent&>(event_it->second);
 
     const auto offer_result = skeleton.OfferService();
     if (!offer_result.has_value())

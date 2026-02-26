@@ -145,7 +145,7 @@ def create_service_mw_com_config(base_mw_com_config_json: dict, asil_level: str,
 def main():
     # NOTE: at this point we expect that the joined_config.json
     # has been validated against the joined_benchmark_config_schema.json and
-    # base_mw_com_config_path has been validated against ara_com_config_schema.json
+    # base_mw_com_config_path has been validated against mw_com_config_schema.json
     joined_config_json_path = str(sys.argv[1])
     base_mw_com_config_path = str(sys.argv[2])
     out_dir = str(sys.argv[3])

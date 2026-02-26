@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test")
 load("@score_baselibs//third_party/itf:py_unittest_qnx_test.bzl", "py_unittest_qnx_test")
 
@@ -24,6 +25,7 @@ py_unittest_qnx_test(
         ":unix_domain_test",
     ],
     test_suites = [
+        "@score_communication//score/message_passing/log:unit_test_suite_qnx",
         "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_qnx",
     ],
     visibility = ["//score/message_passing:__pkg__"],
@@ -36,18 +38,34 @@ test_suite(
         ":qnx_resource_path_test",
         ":timed_command_queue_test",
         ":unix_domain_test",
+        "@score_communication//score/message_passing/log:unit_test_suite_host",
         "@score_communication//score/message_passing/non_allocating_future:unit_test_suite_host",
     ],
     visibility = ["//score/message_passing:__pkg__"],
 )
 
-alias(
+cc_library(
     name = "message_passing",
-    actual = select({
-        "@platforms//os:qnx": ":message_passing_qnx_dispatch",
-        "//conditions:default": ":message_passing_unix_domain",
+    hdrs = [
+        "client_factory.h",
+        "engine.h",
+        "server_factory.h",
+    ],
+    features = [
+        "treat_warnings_as_errors",
+        "strict_warnings",
+        "additional_warnings",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+        "@score_logging//score/datarouter:__subpackages__",
+        "@score_logging//score/mw/log/detail/data_router:__subpackages__",
+    ],
+    deps = select({
+        "@platforms//os:qnx": [":message_passing_qnx_dispatch"],
+        "//conditions:default": [":message_passing_unix_domain"],
     }),
-    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -67,7 +85,6 @@ cc_library(
         "service_protocol_config.h",
         "timed_command_queue_entry.h",
     ],
-    deprecation = "DEPRECATED: use @score_communication//score/message_passing:message_passing instead",
     features = [
         "treat_warnings_as_errors",
         "strict_warnings",
@@ -81,6 +98,7 @@ cc_library(
         "@score_baselibs//score/containers:intrusivelist",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/os:errno",
+        "@score_communication//score/message_passing/log",
     ],
 )
 
@@ -138,6 +156,7 @@ cc_library(
         "@score_baselibs//score/os:socket",
         "@score_baselibs//score/os:sys_poll",
         "@score_baselibs//score/os:unistd",
+        "@score_baselibs//score/os/utils:signal",
     ],
 )
 
@@ -184,9 +203,9 @@ cc_library(
     ],
     tags = ["FFI"],
     visibility = [
-        "//platform/aas/pas/logging:__subpackages__",
         "//score/mw/com/impl:__subpackages__",
-        "@score_baselibs//score/mw/log/detail/data_router:__subpackages__",
+        "@score_logging//score/datarouter:__subpackages__",
+        "@score_logging//score/mw/log/detail/data_router:__subpackages__",
     ],
     deps = [
         ":message_passing_common",
@@ -198,6 +217,7 @@ cc_library(
         "@score_baselibs//score/os/qnx:dispatch",
         "@score_baselibs//score/os/qnx:iofunc",
         "@score_baselibs//score/os/qnx:timer",
+        "@score_baselibs//score/os/utils:signal",
     ],
 )
 
@@ -280,6 +300,7 @@ cc_gtest_unit_test(
         "@score_baselibs//score/os/mocklib/qnx:dispatch_mock",
         "@score_baselibs//score/os/mocklib/qnx:iofunc_mock",
         "@score_baselibs//score/os/mocklib/qnx:timer_mock",
+        "@score_baselibs//score/os/utils/mocklib:signal_mock",
     ],
 )
 

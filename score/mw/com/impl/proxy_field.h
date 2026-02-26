@@ -28,6 +28,7 @@
 #include <cstddef>
 #include <memory>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -142,11 +143,16 @@ class ProxyField final : public ProxyFieldBase
     // pass a pointer to it to ProxyFieldBase, so we must ensure that it doesn't move when the ProxyField is moved to
     // avoid dangling references.
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
+
+    static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
+                  "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
+                  "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
 };
 
 template <typename FieldType>
 ProxyField<FieldType>::ProxyField(ProxyField&& other) noexcept
-    : ProxyFieldBase(std::move(other)), proxy_event_dispatch_(std::move(other.proxy_event_dispatch_))
+    : ProxyFieldBase(std::move(static_cast<ProxyFieldBase&&>(other))),
+      proxy_event_dispatch_(std::move(other.proxy_event_dispatch_))
 {
     // Since the address of this field has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};

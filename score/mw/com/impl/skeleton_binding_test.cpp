@@ -34,6 +34,10 @@ class MySkeleton final : public SkeletonBinding
     {
         return BindingType::kFake;
     };
+    bool VerifyAllMethodsRegistered() const override
+    {
+        return true;
+    }
 };
 
 TEST(SkeletonBindingTest, SkeletonBindingShouldNotBeCopyable)

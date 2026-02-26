@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -45,7 +46,7 @@ cc_library(
     hdrs = ["skeleton_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "//score/mw/com/impl/bindings/lola:__subpackages__",
+        "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl:runtime_mock",

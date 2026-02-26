@@ -20,6 +20,7 @@
 
 #include "score/os/errno.h"
 
+#include "score/message_passing/log/logging_callback.h"
 #include "score/message_passing/timed_command_queue_entry.h"
 
 namespace score
@@ -33,6 +34,8 @@ class ISharedResourceEngine
     virtual ~ISharedResourceEngine() noexcept = default;
 
     virtual score::cpp::pmr::memory_resource* GetMemoryResource() noexcept = 0;
+
+    virtual const LoggingCallback& GetLogger() noexcept = 0;
 
     virtual bool IsOnCallbackThread() const noexcept = 0;
 

@@ -17,38 +17,75 @@ module(
 
 bazel_dep(name = "platforms", version = "1.0.0")
 
-bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency = True)
+bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 
-gcc = use_extension(
-    "@score_toolchains_gcc//extentions:gcc.bzl",
-    "gcc",
+gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
+gcc_toolchains.toolchain(
+    name = "gcc_toolchain_x86_64",
+    extra_ldflags = [
+        "-lstdc++",
+        "-lrt",
+        "-latomic",
+    ],
+    gcc_version = "15.2.0",
+    target_arch = "x86_64",
+)
+use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
+
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.3.0", dev_dependency = True)
+git_override(
+    module_name = "score_bazel_cpp_toolchains",
+    commit = "79982259df6dfa9d82cc458163a6d9b08bd24471",
+    remote = "https://github.com/eclipse-score/bazel_cpp_toolchains.git",
+)
+
+score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
+score_gcc.toolchain(
+    name = "score_gcc_x86_64_toolchain",
+    target_cpu = "x86_64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
+score_gcc.toolchain(
+    name = "score_qcc_x86_64_toolchain",
+    sdp_version = "8.0.0",
+    target_cpu = "x86_64",
+    target_os = "qnx",
+    use_default_package = True,
+    version = "12.2.0",
+)
+score_gcc.toolchain(
+    name = "score_qcc_aarch64_toolchain",
+    sdp_version = "8.0.0",
+    target_cpu = "aarch64",
+    target_os = "qnx",
+    use_default_package = True,
+    version = "12.2.0",
+)
+use_repo(
+    score_gcc,
+    "score_gcc_x86_64_toolchain",
+    "score_qcc_aarch64_toolchain",
+    "score_qcc_x86_64_toolchain",
+)
+
+# For the moment we still need the old toolchain for ifs generation.
+# Migrate once rules_imagefs is ready to be used (https://github.com/eclipse-score/rules_imagefs/pull/1).
+bazel_dep(name = "score_toolchains_qnx", version = "0.0.7", dev_dependency = True)
+
+toolchains_qnx = use_extension(
+    "@score_toolchains_qnx//:extensions.bzl",
+    "toolchains_qnx",
     dev_dependency = True,
 )
-gcc.toolchain(
-    sha256 = "457f5f20f57528033cb840d708b507050d711ae93e009388847e113b11bf3600",
-    strip_prefix = "x86_64-unknown-linux-gnu",
-    url = "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/0.0.1/x86_64-unknown-linux-gnu_gcc12.tar.gz",
+toolchains_qnx.sdp(
+    sha256 = "f2e0cb21c6baddbcb65f6a70610ce498e7685de8ea2e0f1648f01b327f6bac63",
+    strip_prefix = "installation",
+    url = "https://www.qnx.com/download/download/79858/installation.tgz",
 )
-
-# TODO to be moved to toolchain. https://github.com/eclipse-score/toolchains_gcc/issues/11
-gcc.extra_features(
-    features = [
-        "minimal_warnings",
-        "treat_warnings_as_errors",
-    ],
-)
-gcc.warning_flags(
-    minimal_warnings = [
-        "-Wall",
-        "-Wno-error=deprecated-declarations",
-    ],
-    strict_warnings = [
-        "-Wextra",
-        "-Wpedantic",
-    ],
-    treat_warnings_as_errors = ["-Werror"],
-)
-use_repo(gcc, "gcc_toolchain", "gcc_toolchain_gcc")
+use_repo(toolchains_qnx, "toolchains_qnx_ifs")
 
 bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
@@ -81,6 +118,38 @@ llvm.toolchain(
 )
 use_repo(llvm, "llvm_toolchain")
 
+bazel_dep(name = "score_toolchains_rust", version = "0.7.0", dev_dependency = True)
+
+gcc_ferrocene = use_extension(
+    "@score_toolchains_rust//extensions:ferrocene_toolchain_ext.bzl",
+    "ferrocene_toolchain_ext",
+    dev_dependency = True,
+)
+gcc_ferrocene.toolchain(
+    name = "ferrocene_x86_64_unknown_linux_gnu_llvm",
+    coverage_tools_sha256 = "497958e925bc94833ea226d68f6d5ba38bd890f571c73e230141d2923e30dd94",
+    coverage_tools_strip_prefix = "779fbed05ae9e9fe2a04137929d99cc9b3d516fd/x86_64-unknown-linux-gnu",
+    coverage_tools_url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/coverage-tools-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    extra_rustc_flags = [
+        "-Clink-arg=-Wl,--no-as-needed",
+        "-Clink-arg=-lc++",
+        "-Clink-arg=-lm",
+        "-Clink-arg=-lc",
+    ],
+    sha256 = "4c08b41eaafd39cff66333ca4d4646a5331c780050b8b9a8447353fcd301dddc",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_triple = "x86_64-unknown-linux-gnu",
+    url = "https://github.com/eclipse-score/ferrocene_toolchain_builder/releases/download/1.0.1/ferrocene-779fbed05ae9e9fe2a04137929d99cc9b3d516fd-x86_64-unknown-linux-gnu.tar.gz",
+)
+use_repo(
+    gcc_ferrocene,
+    "ferrocene_x86_64_unknown_linux_gnu_llvm",
+)
+
 # We use here a pre-compiled fully static and hermetic clang_format binary
 # and not the one provided by llvm_toolchain, because the one from llvm_toolchain is not fully hermetic (and different version for now)
 download_file = use_repo_rule("@download_utils//download/file:defs.bzl", "download_file")
@@ -92,23 +161,21 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "aspect_rules_lint", version = "1.13.0")
-bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
-bazel_dep(name = "google_benchmark", version = "1.9.4")
-bazel_dep(name = "rules_rust", version = "0.61.0")
-bazel_dep(name = "score_toolchains_rust", version = "0.2.0", dev_dependency = True)
+bazel_dep(name = "rules_cc", version = "0.1.5")
 
-git_override(
-    module_name = "score_toolchains_rust",
-    commit = "f3cc7820d47683bc356963f9aa6aeae80475f933",
-    remote = "https://github.com/eclipse-score/toolchains_rust.git",  # Replace with actual repository URL
-)
+bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
+bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 
-bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
-bazel_dep(name = "score_crates", version = "0.0.5", repo_name = "crate_index")
+bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
+
+bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "crate_index")
 bazel_dep(name = "boost.program_options", version = "1.87.0")
-bazel_dep(name = "download_utils", version = "1.0.1")
+bazel_dep(name = "boost.interprocess", version = "1.87.0")
+
+bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
 
@@ -128,15 +195,34 @@ download_archive(
 
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
-bazel_dep(name = "rules_doxygen", version = "2.5.0")
-bazel_dep(name = "score_baselibs", version = "0.2.2")
+
+bazel_dep(name = "rules_doxygen", version = "2.6.1", dev_dependency = True)
+bazel_dep(name = "score_docs_as_code", version = "3.0.1", dev_dependency = True)
+
+# Force score_docs_as_code to 3.0.1 to resolve compatibility conflict between score_logging and score_baselibs
+single_version_override(
+    module_name = "score_docs_as_code",
+    version = "3.0.1",
+)
+
+# Apply patch to fix Doxyfile template for our use cases
+single_version_override(
+    module_name = "rules_doxygen",
+    patch_strip = 1,
+    patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
+)
+
+# Apply patch to fix visibility issue with interprocess_notification target
+bazel_dep(name = "score_baselibs", version = "0.2.4")
+bazel_dep(name = "score_logging", version = "0.1.0")
+bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension")
 use_repo(doxygen_extension, "doxygen")
 
 # Python 3.12 toolchain for Bazel
-bazel_dep(name = "rules_python", version = "1.5.1")
+bazel_dep(name = "rules_python", version = "1.5.1", dev_dependency = True)
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
@@ -151,9 +237,15 @@ pip.parse(
     requirements_lock = "//:requirements_lock.txt",
 )
 use_repo(pip, "score_communication_pip")
+pip.parse(
+    hub_name = "codeql_coding_standards_pip_hub",
+    python_version = "3.12",
+    requirements_lock = "//third_party/codeql:requirements_lock.txt",
+)
+use_repo(pip, "codeql_coding_standards_pip_hub")
 
 # TRLC dependency for requirements traceability
-bazel_dep(name = "trlc", version = "0.0.0")
+bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
 git_override(
     module_name = "trlc",
     commit = "a4f7e95210d8093ba208b91cbc5b681eae8d502b",  # trlc-2.0.3 release
@@ -171,24 +263,9 @@ pip.parse(
 )
 use_repo(pip, "lobster_dependencies")
 
-bazel_dep(name = "score_toolchains_qnx", version = "0.0.6", dev_dependency = True)
+bazel_dep(name = "score_bazel_platforms", version = "0.1.1")
 
-toolchains_qnx = use_extension(
-    "@score_toolchains_qnx//:extensions.bzl",
-    "toolchains_qnx",
-    dev_dependency = True,
-)
-toolchains_qnx.sdp(
-    sha256 = "f2e0cb21c6baddbcb65f6a70610ce498e7685de8ea2e0f1648f01b327f6bac63",
-    strip_prefix = "installation",
-    url = "https://www.qnx.com/download/download/79858/installation.tgz",
-)
-use_repo(toolchains_qnx, "toolchains_qnx_sdp")
-use_repo(toolchains_qnx, "toolchains_qnx_ifs")
-use_repo(toolchains_qnx, "toolchains_qnx_qcc")
-
-bazel_dep(name = "score_bazel_platforms", version = "0.0.3")
-bazel_dep(name = "rules_oci", version = "1.8.0")
+bazel_dep(name = "rules_oci", version = "1.8.0", dev_dependency = True)
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
@@ -200,7 +277,7 @@ oci.pull(
 )
 use_repo(oci, "ubuntu_24_04")
 
-bazel_dep(name = "rules_distroless", version = "0.6.1")
+bazel_dep(name = "rules_distroless", version = "0.6.2", dev_dependency = True)
 
 apt = use_extension(
     "@rules_distroless//apt:extensions.bzl",
@@ -214,6 +291,24 @@ apt.install(
 )
 use_repo(apt, "ubuntu24_04")
 
-bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 
-bazel_dep(name = "score_tooling", version = "1.0.4")
+bazel_dep(name = "score_tooling", version = "1.1.2")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "codeql_bundle",
+    build_file = "//third_party/codeql:codeql.BUILD",
+    sha256 = "",
+    url = "https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.23.6/codeql-bundle-linux64.tar.gz",
+)
+
+git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "codeql_coding_standards",
+    build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
+    commit = "781f1eecfa2fc9970fb08447588a0b4d19a7908d",
+    remote = "https://github.com/github/codeql-coding-standards.git",
+)

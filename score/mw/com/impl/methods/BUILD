@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -71,10 +72,10 @@ cc_library(
         ":proxy_method_binding",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl/plumbing:proxy_method_binding_factory",
         "//score/mw/com/impl/util:type_erased_storage",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
     ],
 )
@@ -120,6 +121,7 @@ cc_unit_test(
         ":proxy_method",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/plumbing:proxy_method_binding_factory_mock",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
@@ -154,6 +156,7 @@ cc_library(
         ":skeleton_method_binding",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:skeleton_base",
+        "//score/mw/com/impl/plumbing:skeleton_method_binding_factory",
         "@score_baselibs//score/result",
     ],
 )
@@ -182,6 +185,7 @@ cc_gtest_unit_test(
     deps = [
         ":skeleton_method",
         "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/plumbing:skeleton_method_binding_factory_mock",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -208,5 +212,5 @@ cc_unit_test_suites_for_host_and_qnx(
         "skeleton_method_base_test",
         "skeleton_method_test",
     ],
-    visibility = ["//score/mw/com:__pkg__"],
+    visibility = ["//score/mw/com/impl:__pkg__"],
 )

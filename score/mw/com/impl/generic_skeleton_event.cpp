@@ -12,9 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/generic_skeleton_event.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
-#include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/skeleton_base.h"
+#include "score/mw/com/impl/com_error.h" 
 
 #include <functional>
 
@@ -22,8 +22,8 @@ namespace score::mw::com::impl
 {
 
 GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
-                                             const std::string_view event_name,
-                                             std::unique_ptr<GenericSkeletonEventBinding> binding)
+                                           const std::string_view event_name,
+                                           std::unique_ptr<GenericSkeletonEventBinding> binding)
     : SkeletonEventBase(skeleton_base, event_name, std::move(binding))
 {
     SkeletonBaseView{skeleton_base}.RegisterEvent(event_name, *this);
@@ -32,10 +32,14 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     {
         const SkeletonBaseView skeleton_base_view{skeleton_base};
         const auto& instance_identifier = skeleton_base_view.GetAssociatedInstanceIdentifier();
-        const auto binding_type = binding_->GetBindingType();
-        auto tracing_data =
-            tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
-        binding_->SetSkeletonEventTracingData(tracing_data);
+        auto* const binding_ptr = static_cast<GenericSkeletonEventBinding*>(binding_.get());
+        if (binding_ptr)
+        {
+             const auto binding_type = binding_ptr->GetBindingType();
+             auto tracing_data =
+                 tracing::GenerateSkeletonTracingStructFromEventConfig(instance_identifier, binding_type, event_name);
+             binding_ptr->SetSkeletonEventTracingData(tracing_data);
+        }
     }
 }
 
@@ -48,13 +52,12 @@ Result<score::Blank> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample)
         return MakeUnexpected(ComErrc::kNotOffered);
     }
 
-    auto* const lola_sample_ptr = SampleAllocateePtrView<void>{sample}.As<lola::SampleAllocateePtr<void>>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(lola_sample_ptr != nullptr);
-
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(binding_ != nullptr, "Binding is not initialized!");
     auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
     
-    const auto send_result = binding->Send(lola_sample_ptr->GetReferencedSlot());
+
+    const auto send_result = binding->Send(std::move(sample));
+
     if (!send_result.has_value())
     {
         score::mw::log::LogError("lola") << "GenericSkeletonEvent::Send failed: " << send_result.error().Message()
@@ -73,7 +76,10 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
         return MakeUnexpected(ComErrc::kNotOffered);
     }
     auto* const binding = static_cast<GenericSkeletonEventBinding*>(binding_.get());
-    auto result = binding->Allocate(); // This now returns a Result<lola::SampleAllocateePtr<void>>
+    
+
+    auto result = binding->Allocate(); 
+
     if (!result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonEvent::Allocate failed: " << result.error().Message()
@@ -81,12 +87,13 @@ Result<SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 
         return MakeUnexpected<SampleAllocateePtr<void>>(ComErrc::kSampleAllocationFailure);
     }
-    return MakeSampleAllocateePtr(std::move(result.value()));
+    return result;
 }
 
-SizeInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
+DataTypeMetaInfo GenericSkeletonEvent::GetSizeInfo() const noexcept
 {
     const auto* const binding = static_cast<const GenericSkeletonEventBinding*>(binding_.get());
+    if (!binding) return {};
     const auto size_info_pair = binding->GetSizeInfo();
     return {size_info_pair.first, size_info_pair.second};
 }

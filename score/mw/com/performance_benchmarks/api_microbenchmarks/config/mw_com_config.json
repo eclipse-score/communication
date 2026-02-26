@@ -1,50 +1,50 @@
 {
-  "serviceTypes": [
-    {
-      "serviceTypeName": "/score/mw/com/test/TestInterface",
-      "version": {
-        "major": 1,
-        "minor": 0
-      },
-      "bindings": [
+    "serviceTypes": [
         {
-          "binding": "SHM",
-          "serviceId": 3429,
-          "events": [
-            {
-              "eventName": "test_event",
-              "eventId": 1
-            }
-          ]
+            "serviceTypeName": "/score/mw/com/test/TestInterface",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 3429,
+                    "events": [
+                        {
+                            "eventName": "test_event",
+                            "eventId": 1
+                        }
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  ],
-  "serviceInstances": [
-    {
-      "instanceSpecifier": "test/lolabenchmark",
-      "serviceTypeName": "/score/mw/com/test/TestInterface",
-      "version": {
-        "major": 1,
-        "minor": 0
-      },
-      "instances": [
+    ],
+    "serviceInstances": [
         {
-          "instanceId": 1,
-          "asil-level": "B",
-          "binding": "SHM",
-          "events": [
-            {
-              "eventName": "test_event",
-              "numberOfSampleSlots": 100,
-              "maxSubscribers": 20
-            }
-          ]
+            "instanceSpecifier": "test/lolabenchmark",
+            "serviceTypeName": "/score/mw/com/test/TestInterface",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "B",
+                    "binding": "SHM",
+                    "events": [
+                        {
+                            "eventName": "test_event",
+                            "numberOfSampleSlots": 100,
+                            "maxSubscribers": 20
+                        }
+                    ]
+                }
+            ]
         }
-      ]
+    ],
+    "global": {
+        "asil-level": "B"
     }
-  ],
-  "global": {
-      "asil-level": "B"
-  }
 }

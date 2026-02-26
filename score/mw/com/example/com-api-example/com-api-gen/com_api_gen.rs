@@ -12,26 +12,30 @@
  ********************************************************************************/
 
 use com_api::{
-    Consumer, Interface, OfferedProducer, Producer, Publisher, Reloc, Runtime, Subscriber, TypeInfo,
+    CommData, Consumer, Interface, OfferedProducer, Producer, ProviderInfo, Publisher, Reloc,
+    Runtime, Subscriber,
 };
 
-#[derive(Debug)]
-pub struct Tire {}
-unsafe impl Reloc for Tire {}
-impl TypeInfo for Tire {
+#[derive(Debug, Reloc)]
+#[repr(C)]
+pub struct Tire {
+    pub pressure: f32,
+}
+
+impl CommData for Tire {
     const ID: &'static str = "Tire";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Reloc)]
+#[repr(C)]
 pub struct Exhaust {}
-unsafe impl Reloc for Exhaust {}
-impl TypeInfo for Exhaust {
+
+impl CommData for Exhaust {
     const ID: &'static str = "Exhaust";
 }
 
 pub struct VehicleInterface {}
 
-/// Generic
 impl Interface for VehicleInterface {
     const INTERFACE_ID: &'static str = "VehicleInterface";
     type Consumer<R: Runtime + ?Sized> = VehicleConsumer<R>;
@@ -66,13 +70,17 @@ impl<R: Runtime + ?Sized> Producer<R> for VehicleProducer<R> {
     type OfferedProducer = VehicleOfferedProducer<R>;
 
     fn offer(self) -> com_api::Result<Self::OfferedProducer> {
-        Ok(VehicleOfferedProducer {
+        let vehicle_offered_producer = VehicleOfferedProducer {
             left_tire: R::Publisher::new("left_tire", self.instance_info.clone())
                 .expect("Failed to create publisher"),
             exhaust: R::Publisher::new("exhaust", self.instance_info.clone())
                 .expect("Failed to create publisher"),
-            instance_info: self.instance_info,
-        })
+            instance_info: self.instance_info.clone(),
+        };
+        // Offer the service instance to make it discoverable
+        // this is called after skeleton created using producer_builder API
+        self.instance_info.offer_service()?;
+        Ok(vehicle_offered_producer)
     }
 
     fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
@@ -93,10 +101,13 @@ impl<R: Runtime + ?Sized> OfferedProducer<R> for VehicleOfferedProducer<R> {
     type Interface = VehicleInterface;
     type Producer = VehicleProducer<R>;
 
-    fn unoffer(self) -> Self::Producer {
-        VehicleProducer {
+    fn unoffer(self) -> com_api::Result<Self::Producer> {
+        let vehicle_producer = VehicleProducer {
             _runtime: std::marker::PhantomData,
-            instance_info: self.instance_info,
-        }
+            instance_info: self.instance_info.clone(),
+        };
+        // Stop offering the service instance to withdraw it from system availability
+        self.instance_info.stop_offer_service()?;
+        Ok(vehicle_producer)
     }
 }

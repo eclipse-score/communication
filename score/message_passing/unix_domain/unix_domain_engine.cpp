@@ -21,22 +21,41 @@ namespace score
 namespace message_passing
 {
 
-UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource) noexcept
+UnixDomainEngine::UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource, LoggingCallback logger) noexcept
     : memory_resource_{memory_resource},
       os_resources_{GetDefaultOsResources(memory_resource)},
+      logger_{std::move(logger)},
       quit_flag_{false},
       poll_fds_{memory_resource},
       poll_endpoints_{memory_resource},
       posix_receive_buffer_{memory_resource}
 {
     os_resources_.unistd->pipe(pipe_fds_.data());
-    std::lock_guard acquire{thread_mutex_};  // postpone thread start till we assign thread_
-    thread_ = std::thread([this]() noexcept {
-        {
-            std::lock_guard release{thread_mutex_};
-        }
-        RunOnThread();
-    });
+
+    // Normally, during the application lifecycle initialization, LifeCycleManager blocks the SIGTERM on the main
+    // thread and creates a separate thread that catches all the SIGTERM signals coming to the process. The other
+    // threads created after that will inherit the sigmask of the main thread with SIGTERM blocked.
+    // However, LifeCycleManager starts using Logging before it blocks SIGTERM on the main thread. When this happens,
+    // Logging will initialize Message Passing, which will create the Message Passing background thread with a sigmask
+    // inherited without SIGTERM being blocked yet.
+    // Thus, we need to mask SIGTERM for this thread specifically, to let the LifeCycleManager desicated SIGTERM
+    // thread do its job.
+    sigset_t new_set;
+    sigset_t old_set;
+    // the signal functions below, used with the parameters below, can only return EOK
+    score::cpp::ignore = os_resources_.signal->SigEmptySet(new_set);
+    score::cpp::ignore = os_resources_.signal->AddTerminationSignal(new_set);
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_BLOCK, new_set, old_set);
+    {
+        std::lock_guard acquire{thread_mutex_};  // postpone RunOnThread() till we assign thread_
+        thread_ = std::thread([this]() noexcept {
+            {
+                std::lock_guard release{thread_mutex_};  // guarantees that this->thread_ is already assigned
+            }
+            RunOnThread();
+        });
+    }
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_SETMASK, old_set);
 }
 
 UnixDomainEngine::~UnixDomainEngine() noexcept
@@ -228,7 +247,7 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Uni
     }
     if (size > static_cast<std::uint16_t>(posix_receive_buffer_.size()))
     {
-        return score::cpp::make_unexpected(score::os::Error::createFromErrno(ENOMEM));
+        return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
     }
 
     io[0].iov_base = posix_receive_buffer_.data();

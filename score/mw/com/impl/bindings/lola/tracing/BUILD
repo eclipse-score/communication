@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -35,7 +36,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
         "@score_baselibs//score/memory/shared:i_shared_memory_resource",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 

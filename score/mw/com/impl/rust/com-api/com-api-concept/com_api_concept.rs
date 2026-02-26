@@ -50,8 +50,8 @@ use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 pub mod reloc;
+use containers::fixed_capacity::FixedCapacityQueue;
 pub use reloc::Reloc;
-use std::collections::VecDeque;
 use std::path::Path;
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
@@ -97,16 +97,16 @@ pub trait Runtime {
     type ServiceDiscovery<I: Interface>: ServiceDiscovery<I, Self>;
 
     /// `Subscriber<T>` types for Manages subscriptions to event notifications
-    type Subscriber<T: Reloc + Send + Debug + TypeInfo>: Subscriber<T, Self>;
+    type Subscriber<T: CommData>: Subscriber<T, Self>;
 
     /// `ProducerBuilder<I>` types for Constructs producer instances for offering services
     type ProducerBuilder<I: Interface>: ProducerBuilder<I, Self>;
 
     /// `Publisher<T>` types for Publishes event data to subscribers
-    type Publisher<T: Reloc + Send + Debug + TypeInfo>: Publisher<T, Self>;
+    type Publisher<T: CommData>: Publisher<T, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
-    type ProviderInfo: Send + Clone;
+    type ProviderInfo: ProviderInfo + Send + Clone;
 
     /// `ConsumerInfo` types for Configuration data for service consumers instances
     type ConsumerInfo: Send + Clone;
@@ -144,6 +144,32 @@ pub trait Runtime {
     ) -> Self::ProducerBuilder<I>;
 }
 
+/// This trait contains the APIs required for producer service instance management.
+/// But this APIs are not user facing APIs, it is used internally by the runtime implementations.
+/// This trait is implemented for the ProviderInfo types of the runtimes.
+pub trait ProviderInfo {
+    /// Offer a service instance to make it discoverable and accessible by consumers.
+    /// Registers the service instance with the runtime for discovery.
+    /// This API must make service instance available to consumers.
+    ///
+    /// # Parameters
+    /// * `self` - The provider information containing configuration for the service instance
+    ///
+    /// # Returns
+    /// A 'Result' indicating success or failure of the offer operation.
+    fn offer_service(&self) -> Result<()>;
+
+    /// Stop offering a service instance, making it no longer discoverable.
+    /// Withdraw the service from system availability.
+    ///
+    /// # Parameters
+    /// * `self` - The provider information containing configuration for the service instance
+    ///
+    /// # Returns
+    /// A 'Result' indicating success or failure of the unoffer operation.
+    fn stop_offer_service(&self) -> Result<()>;
+}
+
 /// Builder for Runtime instances with configuration support.
 ///
 /// Extends the base builder pattern to support loading implementation-specific
@@ -167,6 +193,14 @@ where
     ///
     /// A mutable reference to self for method chaining.
     fn load_config(&mut self, config: &Path) -> &mut Self;
+}
+
+/// Communication data type requirements trait.
+/// Requires the data type to be relocatable between address spaces and sendable across threads.
+/// Also requires the data type to implement Debug for logging and debugging purposes.
+/// 'static' lifetime is required to ensure the data can live for the entire duration of the program.
+pub trait CommData: Reloc + Send + Debug + 'static {
+    const ID: &'static str;
 }
 
 /// Technology independent description of a service instance "location"
@@ -270,7 +304,7 @@ impl From<InstanceSpecifier> for FindServiceSpecifier {
 // TODO: C++ doesn't yet support this. Expose API to compare SamplePtr ages.
 pub trait Sample<T>: Deref<Target = T> + Send + PartialOrd + Ord + Debug
 where
-    T: Send + Reloc + Debug,
+    T: CommData,
 {
 }
 
@@ -283,18 +317,8 @@ where
 /// * `T` - The relocatable event data type
 pub trait SampleMut<T>: DerefMut<Target = T> + Debug
 where
-    T: Send + Reloc + Debug,
+    T: CommData,
 {
-    /// Sample type for immutable access
-    type Sample: Sample<T>;
-
-    /// Consume the sample into an immutable sample.
-    ///
-    /// # Returns
-    ///
-    /// A `Sample` instance providing immutable access to the data.
-    fn into_sample(self) -> Self::Sample;
-
     /// Send the sample and consume it.
     ///
     /// # Returns
@@ -318,7 +342,7 @@ where
 /// TODO: with the ambiguous `assume_init()` then?
 pub trait SampleMaybeUninit<T>: Debug + AsMut<core::mem::MaybeUninit<T>>
 where
-    T: Send + Reloc + Debug,
+    T: CommData,
 {
     /// Buffer type for mutable data after initialization
     type SampleMut: SampleMut<T>;
@@ -391,7 +415,7 @@ pub trait OfferedProducer<R: Runtime + ?Sized> {
     /// # Returns
     ///
     /// The original producer instance after withdrawal.
-    fn unoffer(self) -> Self::Producer;
+    fn unoffer(self) -> Result<Self::Producer>;
 }
 
 /// Service instance to be offered to the system.
@@ -436,7 +460,7 @@ pub trait Producer<R: Runtime + ?Sized> {
 /// * `T` - The relocatable event data type
 pub trait Publisher<T, R: Runtime + ?Sized>
 where
-    T: Reloc + Send + Debug + TypeInfo,
+    T: CommData,
 {
     /// Associated sample type for uninitialized event data
     type SampleMaybeUninit<'a>: SampleMaybeUninit<T> + 'a
@@ -579,11 +603,6 @@ pub trait ConsumerBuilder<I: Interface, R: Runtime + ?Sized>:
 {
 }
 
-/// Type information trait for unique identification of data types.
-pub trait TypeInfo {
-    const ID: &'static str;
-}
-
 /// Event subscription management interface.
 ///
 /// Establishes a subscription channel to receive publications from a specific event source.
@@ -592,7 +611,7 @@ pub trait TypeInfo {
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscriber<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
+pub trait Subscriber<T: CommData, R: Runtime + ?Sized> {
     /// Associated subscription type for receiving event samples
     type Subscription: Subscription<T, R>;
 
@@ -630,21 +649,15 @@ pub trait Subscriber<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
 /// # Type Parameters
 /// * `S`: The sample type stored in the container.
 pub struct SampleContainer<S> {
-    inner: VecDeque<S>,
-}
-
-impl<S> Default for SampleContainer<S> {
-    fn default() -> Self {
-        Self {
-            inner: VecDeque::new(),
-        }
-    }
+    inner: FixedCapacityQueue<S>,
 }
 
 impl<S> SampleContainer<S> {
     /// Creates a new, empty `SampleContainer`
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(capacity: usize) -> Self {
+        Self {
+            inner: FixedCapacityQueue::new(capacity),
+        }
     }
 
     /// Returns an iterator over references to the samples in the container.
@@ -654,10 +667,10 @@ impl<S> SampleContainer<S> {
     ///
     /// # Returns
     /// An iterator over references to the samples of type `T`.
-    pub fn iter<'a, T>(&'a self) -> impl Iterator<Item = &'a T>
+    pub fn iter<T>(&self) -> impl Iterator<Item = &T>
     where
         S: Sample<T>,
-        T: Reloc + Send + 'a + Debug,
+        T: CommData,
     {
         self.inner.iter().map(<S as Deref>::deref)
     }
@@ -681,7 +694,9 @@ impl<S> SampleContainer<S> {
     /// # Errors
     /// Returns 'Error' if container is already full.
     pub fn push_back(&mut self, new: S) -> Result<()> {
-        self.inner.push_back(new);
+        self.inner
+            .push_back(new)
+            .map_err(|_| Error::AllocateFailed)?;
         Ok(())
     }
 
@@ -697,7 +712,7 @@ impl<S> SampleContainer<S> {
     ///
     /// # Returns
     /// An `Option` containing a reference to the first sample, or `None` if the container is empty.
-    pub fn front<T: Reloc + Send + Debug + TypeInfo>(&self) -> Option<&T>
+    pub fn front<T: CommData>(&self) -> Option<&T>
     where
         S: Sample<T>,
     {
@@ -713,7 +728,7 @@ impl<S> SampleContainer<S> {
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscription<T: Reloc + Send + Debug + TypeInfo, R: Runtime + ?Sized> {
+pub trait Subscription<T: CommData, R: Runtime + ?Sized> {
     /// Associated subscriber type for managing the subscription lifecycle
     type Subscriber: Subscriber<T, R>;
     /// Associated sample type for received event data

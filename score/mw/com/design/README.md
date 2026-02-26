@@ -124,12 +124,7 @@ Our implementation of `mw::com` depends on the following components/libraries:
 * `//platform/aas/lib/filesystem`
 * `//platform/aas/lib/json:json_parser`
 * `//score/memory/shared`: Our whole shared-memory handling is implemented in this lib.
-* `//score/mw/com/message_passing`: This message passing infrastructure is currently located
-  in the same top
-  folder as our `mw::com` implementation, although it is a complete independent/standalone layer (location/structure
-  will be refactored in the future). Details of its usage can be found
-  [here](events_fields/README.md#notifications-between-skeleton-and-proxy). It also enlists the dependencies it has and
-  which therefore become transient dependencies for our `mw::com` implementation.
+* `//platform/aas/lib/message_passing` Our side-channel communication is handled in this lib
 * `//score/os/utils/acl:acl`
 * `//score/os/utils/inotify`
 * `/platform/aas/mw/log`

@@ -46,7 +46,7 @@ template <typename T,
           typename = std::enable_if_t<!std::is_arithmetic<T>::value>,
           typename = std::enable_if_t<!std::is_same<T, std::string_view>::value, bool>>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) noexcept -> const T&
+auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) -> const T&
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());
@@ -62,7 +62,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
 
 template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value, bool>>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) noexcept -> T
+auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) -> T
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT(it != json_object.end());
@@ -78,7 +78,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
 
 template <typename T, typename = std::enable_if_t<std::is_same<T, std::string_view>::value, bool>>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) noexcept -> std::string_view
+auto GetValueFromJson(const score::json::Object& json_object, std::string_view key) -> std::string_view
 {
     const auto it = json_object.find(key);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(it != json_object.end());
@@ -94,8 +94,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
 
 template <typename element_type>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, ResultToOptionalOrElse checks before accessing the variant.
-auto GetOptionalValueFromJson(const score::json::Object& json_object, std::string_view key) noexcept
-    -> std::optional<element_type>
+auto GetOptionalValueFromJson(const score::json::Object& json_object, std::string_view key) -> std::optional<element_type>
 {
 
     const auto val_candidate = json_object.find(key);
@@ -104,10 +103,10 @@ auto GetOptionalValueFromJson(const score::json::Object& json_object, std::strin
         return {};
     }
 
-    return ResultToOptionalOrElse(val_candidate->second.As<element_type>(), [key](auto) noexcept {
+    return ResultToOptionalOrElse(val_candidate->second.As<element_type>(), [key](auto) {
         score::mw::log::LogFatal("lola") << "provided key" << key
                                        << "contains a value that can not be parsed. Terminating.\n";
-        std::terminate();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     });
 }
 
@@ -154,9 +153,9 @@ template <std::size_t VariantIndex,
           typename std::enable_if<VariantIndex == std::variant_size<VariantType>::value>::type* = nullptr>
 auto DeserializeVariant(const score::json::Object& /* json_object */,
                         std::ptrdiff_t /* variant_index */,
-                        std::string_view /* json_variant_key */) noexcept -> VariantType
+                        std::string_view /* json_variant_key */) -> VariantType
 {
-    std::terminate();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
 }
 
 template <std::size_t VariantIndex,
@@ -164,7 +163,8 @@ template <std::size_t VariantIndex,
           typename std::enable_if<VariantIndex<std::variant_size<VariantType>::value>::type* = nullptr> auto
               DeserializeVariant(const score::json::Object& json_object,
                                  std::ptrdiff_t variant_index,
-                                 std::string_view json_variant_key) noexcept -> VariantType
+                                 std::string_view json_variant_key)
+                  ->VariantType
 {
     if (static_cast<std::size_t>(variant_index) == VariantIndex)
     {
@@ -179,7 +179,7 @@ template <std::size_t VariantIndex,
 }
 
 template <typename ServiceElementInstanceMapping>
-json::Object ConvertServiceElementMapToJson(const ServiceElementInstanceMapping& input_map) noexcept
+json::Object ConvertServiceElementMapToJson(const ServiceElementInstanceMapping& input_map)
 {
     json::Object service_element_instance_mapping_object{};
     for (auto it : input_map)
@@ -193,7 +193,7 @@ json::Object ConvertServiceElementMapToJson(const ServiceElementInstanceMapping&
 
 template <typename ServiceElementInstanceMapping>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, we check before accessing the variant.
-auto ConvertJsonToServiceElementMap(const json::Object& json_object, std::string_view key) noexcept
+auto ConvertJsonToServiceElementMap(const json::Object& json_object, std::string_view key)
     -> ServiceElementInstanceMapping
 {
     const auto& service_element_json = GetValueFromJson<json::Object>(json_object, key);

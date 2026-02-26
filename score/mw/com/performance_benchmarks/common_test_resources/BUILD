@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 # ToDo: Ticket-213780: These targets are duplicated from mw/com/test/common_test_resources since that folder is not open
@@ -25,9 +26,6 @@ cc_library(
         "shared_memory_object_creator.h",
     ],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        "@score_baselibs//score/language/safecpp/string_view:null_termination_check",
-    ],
     visibility = [
         "//score/mw/com/performance_benchmarks:__subpackages__",
     ],

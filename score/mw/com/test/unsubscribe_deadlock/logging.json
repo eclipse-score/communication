@@ -1,0 +1,8 @@
+{
+    "appId": "UNDE",
+    "appDesc": "unsubscribe_deadlock",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kConsole",
+    "dynamicDatarouterIdentifiers": true
+}

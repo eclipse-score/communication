@@ -1,0 +1,8 @@
+{
+    "appId": "ALLOTEST",
+    "appDesc": "checkNumberOfAllocationsTest",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kRemote|kConsole",
+    "dynamicDatarouterIdentifiers": true
+}

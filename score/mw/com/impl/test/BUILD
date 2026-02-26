@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
@@ -26,9 +27,11 @@ cc_library(
         "//score/mw/com/impl/plumbing:proxy_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:proxy_method_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_event_binding_factory_mock",
         "//score/mw/com/impl/plumbing:skeleton_field_binding_factory_mock",
+        "//score/mw/com/impl/plumbing:skeleton_method_binding_factory_mock",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

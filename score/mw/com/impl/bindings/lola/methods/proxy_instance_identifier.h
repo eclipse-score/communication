@@ -15,6 +15,8 @@
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
 
+#include "score/mw/log/logging.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -23,7 +25,9 @@
 namespace score::mw::com::impl::lola
 {
 
-/// \brief Struct containing the information that is required to uniquely identifer a Proxy instance.
+/// \brief Struct containing the information that is required by a Skeleton instance to uniquely identify a Proxy
+/// instance that is connected to it. I.e. with the assumption that the service ID and instance ID is already known by
+/// the Skeleton.
 ///
 /// There may be multiple Proxy instances with the same service ID and instance ID in the same process or in different
 /// processes. Therefore, in order to uniquely identifer a Proxy instance, we use Application ID (which uniquely
@@ -40,6 +44,8 @@ struct ProxyInstanceIdentifier
 };
 
 bool operator==(const ProxyInstanceIdentifier& lhs, const ProxyInstanceIdentifier& rhs) noexcept;
+
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyInstanceIdentifier& value) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 
@@ -61,7 +67,7 @@ class hash<score::mw::com::impl::lola::ProxyInstanceIdentifier>
         constexpr auto proxy_instance_counter_bit_width =
             std::numeric_limits<decltype(proxy_instance_identifier.proxy_instance_counter)>::digits;
         return std::hash<std::uint64_t>{}((static_cast<std::uint64_t>(proxy_instance_identifier.process_identifier)
-                                           << proxy_instance_counter_bit_width) |
+                                           << static_cast<std::uint64_t>(proxy_instance_counter_bit_width)) |
                                           static_cast<std::uint64_t>(proxy_instance_identifier.proxy_instance_counter));
     }
 };

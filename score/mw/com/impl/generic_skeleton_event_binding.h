@@ -13,11 +13,12 @@
 #pragma once
 
 #include "score/mw/com/impl/skeleton_event_binding.h"
-#include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
-#include "score/mw/com/impl/bindings/lola/control_slot_composite_indicator.h"
+
+#include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/result/result.h"
 
 #include <utility>
+#include <cstddef>
 
 namespace score::mw::com::impl
 {
@@ -25,9 +26,9 @@ namespace score::mw::com::impl
 class GenericSkeletonEventBinding : public SkeletonEventBindingBase
 {
   public:
-    virtual Result<score::Blank> Send(lola::ControlSlotCompositeIndicator control_slot_indicator) noexcept = 0;
+    virtual Result<score::Blank> Send(SampleAllocateePtr<void> sample) noexcept = 0;
 
-    virtual Result<lola::SampleAllocateePtr<void>> Allocate() noexcept = 0;
+    virtual Result<SampleAllocateePtr<void>> Allocate() noexcept = 0;
 
     virtual std::pair<size_t, size_t> GetSizeInfo() const noexcept = 0;
 };

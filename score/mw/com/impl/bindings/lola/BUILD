@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
@@ -30,7 +31,7 @@ cc_library(
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -133,7 +134,7 @@ cc_library(
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -197,21 +198,11 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        ":data_type_meta_info",
+        "//score/mw/com/impl:data_type_meta_info",
         "@score_baselibs//score/memory/shared",
     ],
 )
 
-cc_library(
-    name = "data_type_meta_info",
-    srcs = ["data_type_meta_info.cpp"],
-    hdrs = ["data_type_meta_info.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
-)
 
 cc_library(
     name = "shared_data_structures",
@@ -242,8 +233,14 @@ cc_library(
 
 cc_library(
     name = "generic_skeleton_event",
-    srcs = ["generic_skeleton_event.cpp"],
-    hdrs = ["generic_skeleton_event.h"],
+    srcs = [
+            "generic_skeleton_event.cpp",
+            "skeleton_event_common.cpp",
+        ],
+    hdrs = [
+            "generic_skeleton_event.h",
+            "skeleton_event_common.h",
+        ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
@@ -254,7 +251,6 @@ cc_library(
         ":skeleton",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:generic_skeleton_event_binding",
-        "//score/mw/com/impl:size_info",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
         ":type_erased_sample_ptrs_guard",
     ],
@@ -265,6 +261,7 @@ cc_library(
     srcs = [
         "skeleton.cpp",
         "skeleton_event.cpp",
+        "skeleton_event_common.cpp",
         "skeleton_event_properties.cpp",
         "skeleton_method.cpp",
         "generic_skeleton_event.cpp",
@@ -272,6 +269,7 @@ cc_library(
     hdrs = [
         "skeleton.h",
         "skeleton_event.h",
+        "skeleton_event_common.h",
         "skeleton_event_properties.h",
         "skeleton_method.h",
         "generic_skeleton_event.h",
@@ -296,6 +294,7 @@ cc_library(
         "//score/mw/com/impl:skeleton_binding",
         "//score/mw/com/impl:skeleton_event_binding",
         "//score/mw/com/impl/bindings/lola/methods:method_data",
+        "//score/mw/com/impl/bindings/lola/methods:method_resource_map",
         "//score/mw/com/impl/bindings/lola/methods:proxy_instance_identifier",
         "//score/mw/com/impl/bindings/lola/methods:skeleton_instance_identifier",
         "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
@@ -312,6 +311,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
         "@score_baselibs//score/memory:data_type_size_info",
         "@score_baselibs//score/memory/shared",
+        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
         "@score_baselibs//score/memory/shared:lock_file",
         "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
         "@score_baselibs//score/memory/shared/flock:exclusive_flock_mutex",
@@ -374,6 +374,7 @@ cc_library(
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
         "//score/mw/com/impl/bindings/lola/methods:method_data",
+        "//score/mw/com/impl/bindings/lola/methods:offered_state_machine",
         "//score/mw/com/impl/bindings/lola/methods:proxy_instance_identifier",
         "//score/mw/com/impl/bindings/lola/methods:type_erased_call_queue",
         "//score/mw/com/impl/configuration",
@@ -382,18 +383,19 @@ cc_library(
         "//score/mw/com/impl/tracing:i_tracing_runtime",
         "//score/mw/com/impl/util:type_erased_storage",
         "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/language/safecpp/safe_atomics:try_atomic_add",
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/memory/shared",
         "@score_baselibs//score/memory/shared:lock_file",
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/memory/shared/flock:flock_mutex_and_lock",
         "@score_baselibs//score/memory/shared/flock:shared_flock_mutex",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:errno_logging",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:glob",
         "@score_baselibs//score/os:unistd",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -410,7 +412,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -449,7 +451,7 @@ cc_library(
     srcs = ["application_id_pid_mapping.cpp"],
     hdrs = ["application_id_pid_mapping.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -466,7 +468,7 @@ cc_library(
     srcs = ["application_id_pid_mapping_entry.cpp"],
     hdrs = ["application_id_pid_mapping_entry.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/mw/log"],
+    implementation_deps = ["@score_logging//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [],
@@ -560,7 +562,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/safecpp/safe_math",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -657,7 +659,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl:error",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -685,7 +687,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -713,8 +715,8 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/lola:runtime",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -865,7 +867,7 @@ cc_unit_test(
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -929,8 +931,10 @@ cc_test(
     ],
 )
 
-cc_unit_test(
+cc_test(
     name = "skeleton_method_handling_test",
+    # TODO: Investigate why this unit tests takes more than 1 minute under memcheck (Ticket-141169)
+    timeout = "moderate",
     srcs = [
         "skeleton_method_handling_test.cpp",
     ],
@@ -938,6 +942,7 @@ cc_unit_test(
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
+    tags = ["unit"],
     deps = [
         ":skeleton",
         "//score/mw/com/impl:binding_type",
@@ -1058,7 +1063,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -1071,7 +1076,7 @@ cc_gtest_unit_test(
     deps = [
         ":event_data_storage",
         "@score_baselibs//score/containers:dynamic_array",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -1280,6 +1285,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":transaction_log",
+        "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "@score_baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )
@@ -1316,8 +1322,8 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
+        "@score_logging//score/mw/log",
     ],
 )
 

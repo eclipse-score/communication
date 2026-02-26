@@ -129,9 +129,10 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
         "All relevant configuration aspects shall be read from a JSON file and not be manipulated by the read logic.");
     RecordProperty("TestingTechnique", "Requirements-based test");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
+    RecordProperty("Priority", "2");
 
     // When parsing a json configuration file
-    const auto json_path{get_path("ara_com_config.json")};
+    const auto json_path{get_path("mw_com_config.json")};
     auto config = configuration::Parse(json_path);
 
     // Then manually generated ServiceTypes data structures using data from config file

@@ -188,6 +188,36 @@ TEST_F(TypeErasedCallQueueFixture, GetInArgValuesQueueStoragePointsToCorrectPosi
     }
 }
 
+TEST_F(TypeErasedCallQueueFixture, GetInArgValuesQueueStorageUsesInArgsSizeTimesQueueSize)
+{
+    // Given a TypeErasedElementInfo extracted from a TypeErasedCallQueue with a queue size larger than 1
+    WithAnInArgTypeInfo().GivenATypeErasedCallQueue();
+
+    // When calling GetInArgValuesQueueStorage()
+    const auto in_args_queue_storage = unit_->GetInArgValuesQueueStorage();
+    ASSERT_TRUE(in_args_queue_storage.has_value());
+
+    const auto in_args_type_erased_info = unit_->GetTypeErasedElementInfo();
+
+    // Then its size fits the InArgs kQueueSize-times
+    ASSERT_EQ(in_args_queue_storage->size(), in_args_type_erased_info.in_arg_type_info->Size() * kQueueSize);
+}
+
+TEST_F(TypeErasedCallQueueFixture, GetReturnValueQueueStorageUsesReturnSizeTimesQueueSize)
+{
+    // Given a TypeErasedElementInfo extracted from a TypeErasedCallQueue with a queue size larger than 1
+    WithAReturnTypeInfo().GivenATypeErasedCallQueue();
+
+    // When calling GetReturnValueQueueStorage()
+    const auto return_queue_storage = unit_->GetReturnValueQueueStorage();
+    ASSERT_TRUE(return_queue_storage.has_value());
+
+    const auto in_args_type_erased_info = unit_->GetTypeErasedElementInfo();
+
+    // Then its size fits the Return values kQueueSize-times
+    ASSERT_EQ(return_queue_storage->size(), in_args_type_erased_info.return_type_info->Size() * kQueueSize);
+}
+
 TEST_F(TypeErasedCallQueueFixture, GetInArgValuesQueueStoragePointsToCorrectPositionInQueueWithInArgsAndReturnTypeInfos)
 {
     WithAnInArgTypeInfo().WithAReturnTypeInfo().GivenATypeErasedCallQueue();

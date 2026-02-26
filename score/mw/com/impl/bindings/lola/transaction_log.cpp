@@ -12,6 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
 
+#include <chrono>
+#include <cstdint>
+#include <thread>
+
 #include "score/mw/com/impl/com_error.h"
 
 #include "score/mw/log/logging.h"
@@ -21,6 +25,26 @@ namespace score::mw::com::impl::lola
 
 namespace
 {
+
+// Handles race condition between concurrent SamplePtr destruction and creation for the same slot.
+// Thread A may be suspended between decrementing refcount and clearing the transaction-END bit.
+// This allows Thread A to complete its dereference transaction before proceeding.
+void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
+{
+    constexpr std::uint8_t kRetryCount = 10;
+    constexpr std::chrono::milliseconds kRetryInterval(10U);
+    for (std::uint8_t retry = 0U; retry < kRetryCount; ++retry)
+    {
+        if (!slot.GetTransactionEnd())
+        {
+            return;
+        }
+        std::this_thread::sleep_for(kRetryInterval);
+    }
+    score::mw::log::LogFatal("lola") << "ReferenceTransactionBegin: Transaction-END bit remains TRUE after "
+                                   << kRetryCount * kRetryInterval.count() << "ms; terminating";
+    std::terminate();
+}
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". std::terminate() is implicitly called from 'reference_count_slots.at()' which might throw
@@ -94,7 +118,7 @@ void TransactionLog::ReferenceTransactionBegin(SlotIndexType slot_index) noexcep
 {
     TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionEnd());
+    WaitForTransactionEndToBecomeFalse(slot);
     slot.SetTransactionBegin(true);
 }
 
@@ -107,7 +131,7 @@ void TransactionLog::ReferenceTransactionCommit(SlotIndexType slot_index) noexce
 {
     TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionEnd());
+    WaitForTransactionEndToBecomeFalse(slot);
     slot.SetTransactionEnd(true);
 }
 
@@ -120,7 +144,7 @@ void TransactionLog::ReferenceTransactionAbort(SlotIndexType slot_index) noexcep
 {
     TransactionLogSlot& slot = reference_count_slots_.at(static_cast<std::size_t>(slot_index));
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot.GetTransactionBegin());
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionEnd());
+    WaitForTransactionEndToBecomeFalse(slot);
     slot.SetTransactionBegin(false);
 }
 

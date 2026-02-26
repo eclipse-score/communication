@@ -11,13 +11,19 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/com_error.h"
+#include "score/result/result.h"
 
 namespace
 {
 constexpr score::mw::com::impl::ComErrorDomain g_comErrorDomain;
 }  // namespace
 
-score::result::Error score::mw::com::impl::MakeError(const ComErrc code, const std::string_view message)
+namespace score::mw::com::impl
+{
+
+score::result::Error MakeError(const ComErrc code, const std::string_view message)
 {
     return {static_cast<score::result::ErrorCode>(code), g_comErrorDomain, message};
 }
+
+}  // namespace score::mw::com::impl

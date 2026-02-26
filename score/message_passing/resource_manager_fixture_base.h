@@ -24,6 +24,7 @@
 #include "score/os/mocklib/qnx/mock_timer.h"
 #include "score/os/mocklib/sys_uio_mock.h"
 #include "score/os/mocklib/unistdmock.h"
+#include "score/os/utils/mocklib/signalmock.h"
 
 #include <future>
 #include <unordered_map>
@@ -118,10 +119,10 @@ class ResourceManagerMockHelper
     score::cpp::expected_blank<std::int32_t> dispatch_handler(dispatch_context_t* const /*ctp*/) noexcept
     {
         std::cerr << "dispatch_handler 0" << std::endl;
-        if (std::holds_alternative<PulseMessage>(current_message_))
+        if (std::holds_alternative<InternalPulseMessage>(current_message_))
         {
-            std::cerr << "dispatch_handler PulseMessage 0" << std::endl;
-            auto& pulse = std::get<PulseMessage>(current_message_);
+            std::cerr << "dispatch_handler InternalPulseMessage 0" << std::endl;
+            auto& pulse = std::get<InternalPulseMessage>(current_message_);
 
             message_context_t context{};
             resmgr_iomsgs_t message{};
@@ -130,7 +131,22 @@ class ResourceManagerMockHelper
 
             auto& handler = pulse_handlers_[pulse.code];
             score::cpp::ignore = handler.first(&context, pulse.code, 0, handler.second);
-            std::cerr << "dispatch_handler PulseMessage 1" << std::endl;
+            std::cerr << "dispatch_handler InternalPulseMessage 1" << std::endl;
+        }
+        if (std::holds_alternative<TestPulseMessage>(current_message_))
+        {
+            std::cerr << "dispatch_handler TestPulseMessage 0" << std::endl;
+            auto& pulse = std::get<TestPulseMessage>(current_message_);
+
+            message_context_t context{};
+            resmgr_iomsgs_t message{};
+            context.msg = &message;
+            message.pulse.value.sival_int = pulse.value;
+
+            auto& handler = pulse_handlers_[pulse.code];
+            score::cpp::ignore = handler.first(&context, pulse.code, 0, handler.second);
+            std::cerr << "dispatch_handler TestPulseMessage 1" << std::endl;
+            promises_.pulse.set_value();
         }
         else if (std::holds_alternative<IoOpenMessage>(current_message_))
         {
@@ -171,13 +187,15 @@ class ResourceManagerMockHelper
             const auto result = (*io_funcs_->read)(&context, &message, ocb_);
             promises_.read.set_value(result);
         }
-        else if (std::holds_alternative<IoNotifyMessage>(current_message_))
+        else if (std::holds_alternative<IoMsgMessage>(current_message_))
         {
+            auto& io_msg = std::get<IoMsgMessage>(current_message_);
             resmgr_context_t context{};
-            io_notify_t message{};
+            io_msg_t message{};
+            message.i.mgrid = io_msg.mgrid;
 
-            const auto result = (*io_funcs_->notify)(&context, &message, ocb_);
-            promises_.notify.set_value(result);
+            const auto result = (*io_funcs_->msg)(&context, &message, ocb_);
+            promises_.msg.set_value(result);
         }
         return {};
     }
@@ -239,25 +257,13 @@ class ResourceManagerMockHelper
         return io_read.iofunc_read_verify_result;
     }
 
-    /// Compares the passed trig value with the expected one
-    std::int32_t iofunc_notify(resmgr_context_t* const /*ctp*/,
-                               io_notify_t* const /*msg*/,
-                               iofunc_notify_t* const /*nop*/,
-                               const std::int32_t trig,
-                               const std::int32_t* const /*notifycounts*/,
-                               std::int32_t* const /*armed*/) noexcept
-    {
-        auto& io_notify = std::get<IoNotifyMessage>(current_message_);
-        return io_notify.trig == trig ? EOK : EINVAL;
-    }
-
     /// Queues a pulse event to process in dispatch loop
     score::cpp::expected_blank<score::os::Error> MsgSendPulse(const std::int32_t coid,
                                                      const std::int32_t priority,
                                                      const std::int32_t code,
                                                      const std::int32_t value) noexcept
     {
-        message_queue_.CreateSender().push(PulseMessage{code, value});
+        message_queue_.CreateSender().push(InternalPulseMessage{code, value});
         return {};
     }
 
@@ -296,26 +302,39 @@ class ResourceManagerMockHelper
         message_queue_.CreateSender().push(IoReadMessage{iofunc_read_verify_result, xtype, nbytes});
     }
 
-    /// Queues an io_notify event
-    void HelperInsertIoNotify(std::int32_t trig)
+    /// Queues an io_msg event
+    void HelperInsertIoMsg(std::uint16_t mgrid)
     {
-        message_queue_.CreateSender().push(IoNotifyMessage{trig});
+        message_queue_.CreateSender().push(IoMsgMessage{mgrid});
+    }
+
+    /// Queues a test pulse event
+    void HelperInsertPulse(std::int32_t code, std::int32_t value)
+    {
+        message_queue_.CreateSender().push(TestPulseMessage{code, value});
     }
 
     constexpr static std::int32_t kFakeResmgrServerId{1};
 
     struct Promises
     {
-        std::promise<std::int32_t> open;    ///< Fulfilled when `io_open` event has been processed
-        std::promise<std::int32_t> write;   ///< Fulfilled when `io_write` event has been processed
-        std::promise<std::int32_t> read;    ///< Fulfilled when `io_read` event has been processed
-        std::promise<std::int32_t> notify;  ///< Fulfilled when `io_notify` event has been processed
+        std::promise<std::int32_t> open;   ///< Fulfilled when `io_open` event has been processed
+        std::promise<std::int32_t> write;  ///< Fulfilled when `io_write` event has been processed
+        std::promise<std::int32_t> read;   ///< Fulfilled when `io_read` event has been processed
+        std::promise<std::int32_t> msg;    ///< Fulfilled when `io_msg` event has been processed
+        std::promise<void> pulse;          ///< Fulfilled when test pulse event has been processed
     };
 
     Promises promises_{};
 
   private:
-    struct PulseMessage
+    struct InternalPulseMessage
+    {
+        std::int32_t code;
+        std::int32_t value;
+    };
+
+    struct TestPulseMessage
     {
         std::int32_t code;
         std::int32_t value;
@@ -346,18 +365,19 @@ class ResourceManagerMockHelper
         std::size_t nbytes;
     };
 
-    struct IoNotifyMessage
+    struct IoMsgMessage
     {
-        std::int32_t trig;
+        std::uint16_t mgrid;
     };
 
     using QueueMessage = std::variant<std::monostate,
                                       ErrnoPseudoMessage,
-                                      PulseMessage,
+                                      InternalPulseMessage,
+                                      TestPulseMessage,
                                       IoOpenMessage,
                                       IoWriteMessage,
                                       IoReadMessage,
-                                      IoNotifyMessage>;
+                                      IoMsgMessage>;
 
     std::unordered_map<std::int32_t, std::pair<pulse_handler_t, void*>> pulse_handlers_{};
     const resmgr_connect_funcs_t* connect_funcs_{};
@@ -375,8 +395,50 @@ class ResourceManagerMockHelper
 class ResourceManagerFixtureBase : public ::testing::Test
 {
   protected:
+    // in order to not lose access to mocks once we move their unique_ptr to their new owner,
+    // we will save raw pointers to them. Then we can still use EXPECT_CALL() on them without UB,
+    // as long as we do it before the new owner destructs the mock.
+    template <typename T>
+    class RetainableUniquePtr
+    {
+      public:
+        RetainableUniquePtr() = default;
+        ~RetainableUniquePtr() = default;
+
+        // to avoid complicating lifetime issues, we will make this wrapper noncopyable
+        RetainableUniquePtr(const RetainableUniquePtr&) = delete;
+        RetainableUniquePtr(RetainableUniquePtr&&) = delete;
+        RetainableUniquePtr& operator=(const RetainableUniquePtr&) = delete;
+        RetainableUniquePtr& operator=(RetainableUniquePtr&&) = delete;
+
+        RetainableUniquePtr& operator=(score::cpp::pmr::unique_ptr<T>&& assigned)
+        {
+            owner_ = std::move(assigned);
+            pointer_ = owner_.get();
+            return *this;
+        }
+
+        score::cpp::pmr::unique_ptr<T>&& MoveOwnership()
+        {
+            return std::move(owner_);
+            // and retain pointer_
+        }
+
+        T& operator*()
+        {
+            return *pointer_;
+        }
+
+      private:
+        score::cpp::pmr::unique_ptr<T> owner_{};
+        T* pointer_{};
+    };
+
     template <typename Mock>
-    static void SetupResource(score::cpp::pmr::unique_ptr<Mock>& mock_ptr)
+    using mock_ptr = RetainableUniquePtr<testing::StrictMock<Mock>>;
+
+    template <typename Mock>
+    static void SetupResource(RetainableUniquePtr<Mock>& mock_ptr)
     {
         mock_ptr = score::cpp::pmr::make_unique<Mock>(score::cpp::pmr::get_default_resource());
     }
@@ -387,22 +449,30 @@ class ResourceManagerFixtureBase : public ::testing::Test
         SetupResource(dispatch_);
         SetupResource(fcntl_);
         SetupResource(iofunc_);
+        SetupResource(signal_);
         SetupResource(timer_);
         SetupResource(sysuio_);
         SetupResource(unistd_);
     }
 
-    void TearDown() override {}
+    void TearDown() override
+    {
+        if (engine_)
+        {
+            ExpectEngineDestructed();
+        }
+    }
 
     QnxDispatchEngine::OsResources MoveMockOsResources() noexcept
     {
-        return {std::move(channel_),
-                std::move(dispatch_),
-                std::move(fcntl_),
-                std::move(iofunc_),
-                std::move(timer_),
-                std::move(sysuio_),
-                std::move(unistd_)};
+        return {channel_.MoveOwnership(),
+                dispatch_.MoveOwnership(),
+                fcntl_.MoveOwnership(),
+                iofunc_.MoveOwnership(),
+                signal_.MoveOwnership(),
+                timer_.MoveOwnership(),
+                sysuio_.MoveOwnership(),
+                unistd_.MoveOwnership()};
     }
 
     void ExpectEngineConstructed()
@@ -411,7 +481,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
 
         EXPECT_CALL(*dispatch_, dispatch_create_channel).Times(1).WillOnce(Return(kFakeDispatchPtr));
         EXPECT_CALL(*dispatch_, pulse_attach)
-            .Times(2)
+            .Times(4)
             .WillRepeatedly(Invoke(&helper_, &ResourceManagerMockHelper::pulse_attach));
         EXPECT_CALL(*dispatch_, message_connect).Times(1).WillOnce(Return(kFakeCoid));
         EXPECT_CALL(*dispatch_, resmgr_attach(_, _, IsNull(), _, _, _, _, _))
@@ -420,6 +490,10 @@ class ResourceManagerFixtureBase : public ::testing::Test
         EXPECT_CALL(*dispatch_, dispatch_context_alloc).Times(1).WillOnce(Return(kFakeContextPtr));
         EXPECT_CALL(*timer_, TimerCreate).Times(1).WillOnce(Return(kFakeTimerId));
         EXPECT_CALL(*iofunc_, iofunc_func_init).Times(1);
+        EXPECT_CALL(*signal_, SigEmptySet).Times(1);
+        EXPECT_CALL(*signal_, AddTerminationSignal).Times(1);
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_BLOCK, _, _)).Times(1);
+        EXPECT_CALL(*signal_, PthreadSigMask(SIG_SETMASK, _)).Times(1);
     }
 
     void ExpectEngineThreadRunning()
@@ -441,7 +515,7 @@ class ResourceManagerFixtureBase : public ::testing::Test
     {
         EXPECT_CALL(*timer_, TimerDestroy).Times(1);
         EXPECT_CALL(*channel_, ConnectDetach).Times(1);
-        EXPECT_CALL(*dispatch_, pulse_detach).Times(2);
+        EXPECT_CALL(*dispatch_, pulse_detach).Times(4);
         EXPECT_CALL(*dispatch_, dispatch_destroy).Times(1);
         EXPECT_CALL(*dispatch_, dispatch_context_free).Times(1);
     }
@@ -487,18 +561,32 @@ class ResourceManagerFixtureBase : public ::testing::Test
             .WillOnce(Invoke(&helper_, &ResourceManagerMockHelper::iofunc_ocb_attach));
     }
 
-    template <typename Mock>
-    using mock_ptr = score::cpp::pmr::unique_ptr<testing::StrictMock<Mock>>;
+    void WithEngineRunning(LoggingCallback logger = {})
+    {
+        ExpectEngineConstructed();
+        ExpectEngineThreadRunning();
+        if (!logger.empty())
+        {
+            engine_ = std::make_shared<QnxDispatchEngine>(
+                score::cpp::pmr::get_default_resource(), MoveMockOsResources(), std::move(logger));
+        }
+        else
+        {
+            engine_ = std::make_shared<QnxDispatchEngine>(score::cpp::pmr::get_default_resource(), MoveMockOsResources());
+        }
+    }
 
     mock_ptr<score::os::MockChannel> channel_;
     mock_ptr<score::os::MockDispatch> dispatch_;
     mock_ptr<score::os::FcntlMock> fcntl_;
     mock_ptr<score::os::MockIoFunc> iofunc_;
+    mock_ptr<score::os::SignalMock> signal_;
     mock_ptr<score::os::qnx::MockTimer> timer_;
     mock_ptr<score::os::SysUioMock> sysuio_;
     mock_ptr<score::os::UnistdMock> unistd_;
 
     ResourceManagerMockHelper helper_;
+    std::shared_ptr<QnxDispatchEngine> engine_;
 
     constexpr static dispatch_t* kFakeDispatchPtr{nullptr};
     constexpr static dispatch_context_t* kFakeContextPtr{nullptr};

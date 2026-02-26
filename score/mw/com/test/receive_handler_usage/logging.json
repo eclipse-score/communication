@@ -1,0 +1,8 @@
+{
+    "appId": "RHUS",
+    "appDesc": "receive_handler_usage",
+    "logLevel": "kDebug",
+    "logLevelThresholdConsole": "kDebug",
+    "logMode": "kConsole",
+    "dynamicDatarouterIdentifiers": true
+}

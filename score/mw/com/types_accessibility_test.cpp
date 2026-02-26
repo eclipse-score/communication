@@ -32,7 +32,6 @@ TEST(TypesAccessibilityTest, TypesExistInCorrectNamespaceWithCorrectInclude)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     static_assert(std::is_enum_v<score::mw::com::SubscriptionState>, "SubscriptionState does not exist");
-    static_assert(std::is_enum_v<score::mw::com::MethodCallProcessingMode>, "MethodCallProcessingMode does not exist");
     static_assert(std::is_class_v<score::mw::com::EventReceiveHandler>, "EventReceiveHandler does not exist");
     static_assert(std::is_class_v<score::mw::com::ServiceHandleContainer<std::uint32_t>>,
                   "ServiceHandleContainer does not exist");

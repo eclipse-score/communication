@@ -11,9 +11,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
+
+# Capture README.md for Sphinx documentation at convenient location
+sphinx_docs_library(
+    name = "readme_md",
+    srcs = ["README.md"],
+    prefix = "score/mw/com/doc/sphinx/",  # Place under sphinx out folder
+    visibility = ["//score/mw/com/doc/sphinx:__pkg__"],
+)
 
 cc_library(
     name = "com_error_domain",
@@ -86,7 +96,7 @@ cc_library(
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:string_literal",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -111,7 +121,7 @@ cc_library(
 
 alias(
     name = "config_schema",
-    actual = "//score/mw/com/impl/configuration:ara_com_config_schema",
+    actual = "//score/mw/com/impl/configuration:mw_com_config_schema",
     visibility = ["//visibility:public"],
 )
 
@@ -123,7 +133,7 @@ cc_gtest_unit_test(
         "types_test.cpp",
     ],
     data = [
-        "//score/mw/com/impl/configuration:ara_com_config.json",
+        "//score/mw/com/impl/configuration:mw_com_config.json",
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
@@ -134,7 +144,7 @@ cc_gtest_unit_test(
         ":types",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl/test:runtime_mock_guard",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -156,7 +166,6 @@ cc_unit_test_suites_for_host_and_qnx(
     test_suites_from_sub_packages = [
         "//score/mw/com/impl:unit_test_suite",
         "//score/mw/com/mocking:unit_test_suite",
-        "//score/mw/com/message_passing:unit_test_suite",
         "//score/mw/com/performance_benchmarks/macro_benchmark:unit_test_suite",
         # "//score/mw/com/test/api:unit_test_suite", Remove until API tests are open sourced Ticket-196988
     ],

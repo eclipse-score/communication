@@ -245,7 +245,7 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierFixture, FindServiceShouldRet
 }
 
 using ServiceDiscoveryFindServiceInstanceSpecifierDeathTest = ServiceDiscoveryFindServiceInstanceSpecifierFixture;
-TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTerminatesIfNoInstancesCanBeResolved)
+TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceReturnsErrorIfNoInstancesCanBeResolved)
 {
     RecordProperty("ParentRequirement", "SCR-14005977, SCR-14110930, SCR-18804932");
     RecordProperty("Description", "FindService terminates if InstanceSpecifier cannot be resolved.");
@@ -261,8 +261,11 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTermina
     EXPECT_CALL(service_discovery_client_, FindService(_)).Times(0);
 
     // When finding a service instance using an instance specifier
-    // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = unit_->FindService(instance_specifier_), ".*");
+    // Then an error is returned
+    auto handles_result = unit_->FindService(instance_specifier_);
+    ASSERT_FALSE(handles_result.has_value());
+    const auto expected_error_code = ComErrc::kInvalidInstanceIdentifierString;
+    EXPECT_EQ(handles_result.error(), expected_error_code);
 }
 
 TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTerminatesIfBindingRuntimeIsNull)
@@ -365,11 +368,11 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
 
     // Expecting that StartFindService will be called on each instance, with the last one returning an error
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle2), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle2), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[2].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle3), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle3), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[3].GetEnrichedInstanceIdentifier()))
         .WillOnce(DoAll(SaveArg<0>(&handle4), Return(Unexpected{ComErrc::kBindingFailure})));
 
@@ -417,7 +420,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
 
     // Expecting that StartFindService will be called on each instance, with the second one returning an error
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::cpp::blank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::ResultBlank{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
         .WillOnce(DoAll(SaveArg<0>(&handle2), Return(Unexpected{ComErrc::kBindingFailure})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[2].GetEnrichedInstanceIdentifier()))

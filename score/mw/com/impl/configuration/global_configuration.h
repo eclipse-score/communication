@@ -30,8 +30,14 @@ class GlobalConfiguration final
     using ApplicationId = std::uint32_t;
 
     // default value for ASIL-QM and ASIL-B receive message queue sizes.
+    //
+    // False positive: This value is used in teh GlobalConfiguration constructor.
+    // coverity[autosar_cpp14_a0_1_1_violation: FALSE]
     static constexpr std::int32_t DEFAULT_MIN_NUM_MESSAGES_RX_QUEUE{10};
     // default value for ASIL-B send message queue sizes.
+    //
+    // False positive: This value is used in teh GlobalConfiguration constructor.
+    // coverity[autosar_cpp14_a0_1_1_violation: FALSE]
     static constexpr std::int32_t DEFAULT_MIN_NUM_MESSAGES_TX_QUEUE{20};
 
     GlobalConfiguration() noexcept;

@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/client_quality_type.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
 #include <sched.h>
@@ -48,6 +49,20 @@ class IMessagePassingServiceInstance
                                              const IMessagePassingService::HandlerRegistrationNoType registration_no,
                                              const pid_t target_node_id) noexcept = 0;
 
+    virtual ResultBlank RegisterOnServiceMethodSubscribedHandler(
+        const SkeletonInstanceIdentifier skeleton_instance_identifier,
+        IMessagePassingService::ServiceMethodSubscribedHandler subscribed_callback,
+        IMessagePassingService::AllowedConsumerUids allowed_proxy_uids) = 0;
+
+    virtual ResultBlank RegisterMethodCallHandler(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
+                                                  IMessagePassingService::MethodCallHandler method_call_callback,
+                                                  const uid_t allowed_proxy_uid) = 0;
+
+    virtual void UnregisterOnServiceMethodSubscribedHandler(
+        SkeletonInstanceIdentifier skeleton_instance_identifier) = 0;
+
+    virtual void UnregisterMethodCallHandler(ProxyMethodInstanceIdentifier proxy_method_instance_identifier) = 0;
+
     virtual void NotifyOutdatedNodeId(const pid_t outdated_node_id, const pid_t target_node_id) noexcept = 0;
 
     virtual void RegisterEventNotificationExistenceChangedCallback(
@@ -55,6 +70,14 @@ class IMessagePassingServiceInstance
         IMessagePassingService::HandlerStatusChangeCallback callback) noexcept = 0;
 
     virtual void UnregisterEventNotificationExistenceChangedCallback(const ElementFqId event_id) noexcept = 0;
+
+    virtual ResultBlank SubscribeServiceMethod(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                               const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                               const pid_t target_node_id) = 0;
+
+    virtual ResultBlank CallMethod(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                                   const std::size_t queue_position,
+                                   const pid_t target_node_id) = 0;
 };
 
 }  // namespace score::mw::com::impl::lola

@@ -1,7 +1,7 @@
 {
   "serviceTypes": [
     {
-      "serviceTypeName": "/bmw/adp/MapApiLanesStamped",
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
       "version": {
         "major": 1,
         "minor": 0
@@ -26,8 +26,8 @@
   ],
   "serviceInstances": [
     {
-      "instanceSpecifier": "xpad/cp60/MapApiLanesStamped",
-      "serviceTypeName": "/bmw/adp/MapApiLanesStamped",
+      "instanceSpecifier": "score/cp60/MapApiLanesStamped",
+      "serviceTypeName": "/score/adp/MapApiLanesStamped",
       "version": {
         "major": 1,
         "minor": 0

@@ -11,17 +11,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# use mw/log stub implementation by default
-common --@score_baselibs//score/mw/log/detail/flags:KUse_Stub_Implementation_Only=False
-common --@score_baselibs//score/mw/log/flags:KRemote_Logging=False
 common --@score_baselibs//score/json:base_library=nlohmann
 common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
-common --//score/mw/com/flags:tracing_library=stub
-common --extra_toolchains=@gcc_toolchain//:host_gcc_12
+common --//score/mw/com/flags:tracing_library=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
+common --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
 common --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
 build --incompatible_strict_action_env
 test --test_output=errors
 build --experimental_retain_test_configuration_across_testonly #https://github.com/bazelbuild/bazel/issues/6842
+
+common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
+common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
 
 # In order to build for QNX, you need:
 # * An account on qnx.com
@@ -29,18 +29,16 @@ build --experimental_retain_test_configuration_across_testonly #https://github.c
 #   * If you are applicable for "Free for non commercial use" see here: https://www.qnx.com/products/everywhere/
 # * The credentials for this account stored in your ~/.netrc (machine qnx.com)
 # * A license stored under `/opt/score_qnx/license/licenses`
-common:qnx_x86_64 --host_platform=@score_bazel_platforms//:x86_64-linux
-common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx8_0
+common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_x86_64
-common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_x86_64
+common:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
 common:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
 common:qnx_x86_64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_x86_64 --sandbox_writable_path=/var/tmp
 
-common:qnx_arm64 --host_platform=@score_bazel_platforms//:x86_64-linux
-common:qnx_arm64 --platforms=@score_bazel_platforms//:arm64-qnx8_0
+common:qnx_arm64 --platforms=@score_bazel_platforms//:aarch64-qnx-sdp_8.0.0-posix
 common:qnx_arm64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_aarch64
-common:qnx_arm64 --extra_toolchains=@toolchains_qnx_qcc//:qcc_aarch64
+common:qnx_arm64 --extra_toolchains=@score_qcc_aarch64_toolchain//:aarch64-qnx-sdp_8.0.0
 common:qnx_arm64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_nto_qnx800
 common:qnx_arm64 --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
 common:qnx_arm64 --sandbox_writable_path=/var/tmp
@@ -62,6 +60,7 @@ coverage --experimental_use_llvm_covmap
 coverage --combined_report=lcov
 coverage --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main
 coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 coverage --test_env=COVERAGE_GCOV_OPTIONS=-bcu
 # TODO set toolchain feature once possible
 # These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM
@@ -76,5 +75,17 @@ test:clang-tidy --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect
 test:clang-tidy --output_groups=+rules_lint_report
 # Use LLVM toolchain for clang-tidy so it can find system headers
 test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+test:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 
 import quality/sanitizer/sanitizer.bazelrc
+
+common:codeql --platform_suffix=codeql
+common:codeql --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+common:codeql --sandbox_writable_path=/var/tmp
+common:codeql --nouse_action_cache
+common:codeql --noremote_accept_cached
+common:codeql --noremote_upload_local_results
+common:codeql --disk_cache=
+
+# Use native sphinx_build_binary instead of the wrapper
+build --//score/mw/com/doc/sphinx/utils:use_native_sphinx_build

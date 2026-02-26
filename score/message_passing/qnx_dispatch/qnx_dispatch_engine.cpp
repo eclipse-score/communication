@@ -12,10 +12,13 @@
  ********************************************************************************/
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
 
+#include "score/message_passing/log/log.h"
 #include "score/message_passing/non_allocating_future/non_allocating_future.h"
 #include "score/message_passing/qnx_dispatch/qnx_resource_path.h"
 
 #include <iostream>
+
+#include <sys/siginfo.h>
 
 namespace score::message_passing
 {
@@ -23,11 +26,21 @@ namespace score::message_passing
 namespace
 {
 
+struct select_msg_t
+{
+    _io_msg hdr;
+    sigevent select_event;
+};
+
 // false-positive: vars are being used in pulse _attach _detach calls
 // coverity[autosar_cpp14_a0_1_1_violation]
 constexpr std::int32_t kTimerPulseCode = _PULSE_CODE_MINAVAIL;
 // coverity[autosar_cpp14_a0_1_1_violation]
 constexpr std::int32_t kEventPulseCode = _PULSE_CODE_MINAVAIL + 1;
+// coverity[autosar_cpp14_a0_1_1_violation]
+constexpr std::int32_t kSelectPulseCode = _PULSE_CODE_MINAVAIL + 2;
+
+constexpr std::uint16_t kIomgrStickySelect = _IOMGR_PRIVATE_BASE;
 
 template <typename T>
 // Suppress "AUTOSAR C++14 A9-5-1" rule finding: "Unions shall not be used.".
@@ -70,14 +83,18 @@ void IfUnexpectedTerminate(const score::cpp::expected<T, score::os::Error> expec
 
 }  // namespace
 
-QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource, OsResources os_resources) noexcept
+QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_resource,
+                                     OsResources os_resources,
+                                     LoggingCallback logger) noexcept
     : ISharedResourceEngine{},
       memory_resource_{memory_resource},
       os_resources_{std::move(os_resources)},
+      logger_{std::move(logger)},
       quit_flag_{false},
       thread_{},
       thread_mutex_{},
       thread_condition_{},
+      poll_endpoints_{memory_resource},
       timer_queue_{},
       posix_endpoint_list_{},
       posix_receive_buffer_{memory_resource},
@@ -97,6 +114,12 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
     IfUnexpectedTerminate(
         os_resources_.dispatch->pulse_attach(dispatch_pointer_, 0, kEventPulseCode, &EventPulseCallback, this),
         "Unable to attach event pulse code");
+    IfUnexpectedTerminate(
+        os_resources_.dispatch->pulse_attach(dispatch_pointer_, 0, kSelectPulseCode, &SelectPulseCallback, this),
+        "Unable to attach select pulse code");
+    IfUnexpectedTerminate(os_resources_.dispatch->pulse_attach(
+                              dispatch_pointer_, 0, _PULSE_CODE_COIDDEATH, &CoidDeathPulseCallback, this),
+                          "Unable to attach CoidDeath pulse code");
 
     /* resmgr_attach */
     side_channel_coid_ =
@@ -132,40 +155,40 @@ QnxDispatchEngine::QnxDispatchEngine(score::cpp::pmr::memory_resource* memory_re
 
     SetupResourceManagerCallbacks();
 
-    // Suppress "AUTOSAR C++14 A8-5-3" rule finding: "A variable of type auto shall not be initialized using {} or
-    // ={} braced initialization.". (Ticket-219101)
-    // coverity[autosar_cpp14_a8_5_3_violation: FALSE] False positive: the variable is not declared with 'auto'.
-    std::lock_guard acquire{thread_mutex_};  // postpone thread start till we assign thread_
-    thread_ = std::thread([this]() noexcept {
-        {
-            // Suppress "AUTOSAR C++14 A8-5-3" rule finding: "A variable of type auto shall not be initialized using {}
-            // or ={} braced initialization.". (Ticket-219101)
-            // coverity[autosar_cpp14_a8_5_3_violation: FALSE] False positive: the variable is not declared with 'auto'.
-            std::lock_guard release{thread_mutex_};
-        }
-        RunOnThread();
-    });
+    // Normally, during the application lifecycle initialization, LifeCycleManager blocks the SIGTERM on the main
+    // thread and creates a separate thread that catches all the SIGTERM signals coming to the process. The other
+    // threads created after that will inherit the sigmask of the main thread with SIGTERM blocked.
+    // However, LifeCycleManager starts using Logging before it blocks SIGTERM on the main thread. When this happens,
+    // Logging will initialize Message Passing, which will create the Message Passing background thread with a sigmask
+    // inherited without SIGTERM being blocked yet.
+    // Thus, we need to mask SIGTERM for this thread specifically, to let the LifeCycleManager desicated SIGTERM
+    // thread do its job.
+    sigset_t new_set;
+    sigset_t old_set;
+    // the signal functions below, used with the parameters below, can only return EOK
+    score::cpp::ignore = os_resources_.signal->SigEmptySet(new_set);
+    score::cpp::ignore = os_resources_.signal->AddTerminationSignal(new_set);
+    // NOLINTNEXTLINE(score-banned-function) by design of LifeCycleManager. Also see Ticket-101432
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_BLOCK, new_set, old_set);
+    {
+        LogDebug(logger_, "QnxDispatchEngine thread-start ", this);
+        std::lock_guard acquire(thread_mutex_);  // postpone RunOnThread() till we assign thread_
+        thread_ = std::thread([this]() noexcept {
+            {
+                std::lock_guard release(thread_mutex_);  // guarantees that this->thread_ is already assigned
+            }
+            LogDebug(logger_, "QnxDispatchEngine thread-start-sync ", this);
+            RunOnThread();
+        });
+    }
+    // NOLINTNEXTLINE(score-banned-function) by design of LifeCycleManager. Also see Ticket-101432
+    score::cpp::ignore = os_resources_.signal->PthreadSigMask(SIG_SETMASK, old_set);
 }
 
 // Note 'C++14 A8-4-10':
 // Suppress AUTOSAR C++14 A8-4-10 rule findigs: "A parameter shall be passed by reference if it can't be NULL."
 // Justification: raw pointers are used in method signatures to maintain compatibility with the QNX API,
 // which provides parameters as raw pointers.
-
-int QnxDispatchEngine::EndpointFdSelectCallback(select_context_t* /*ctp*/,
-                                                int /*fd*/,
-                                                unsigned /*flags*/,
-                                                // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-                                                void* handle) noexcept
-{
-    // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
-    // converted to an object with pointer type".
-    // QNX API
-    // coverity[autosar_cpp14_m5_2_8_violation]
-    PosixEndpointEntry& endpoint = *static_cast<PosixEndpointEntry*>(handle);
-    endpoint.input();
-    return 0;
-}
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
@@ -192,18 +215,85 @@ int QnxDispatchEngine::EventPulseCallback(message_context_t* ctp,
                                           // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
                                           void* handle) noexcept
 {
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-union-access) C API
-    // Suppress "AUTOSAR C++14 A7-2-1" rule: "An expression with enum underlying type shall only have values
-    // corresponding to the enumerators of the enumeration.".
-    // Passing the enum value unchanged through the OS API
-    // coverity[autosar_cpp14_a7_2_1_violation]
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
     const auto pulse_event = static_cast<std::int32_t>(ctp->msg->pulse.value.sival_int);
-    // NOLINTEND(cppcoreguidelines-pro-type-union-access) C API
     // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
     // converted to an object with pointer type".
     // QNX API
     // coverity[autosar_cpp14_m5_2_8_violation]
     static_cast<QnxDispatchEngine*>(handle)->ProcessPulseEvent(pulse_event);
+    return 0;
+}
+
+// coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
+int QnxDispatchEngine::SelectPulseCallback(message_context_t* ctp,
+                                           int /*code*/,
+                                           unsigned /*flags*/,
+                                           // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+                                           void* handle) noexcept
+{
+    // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
+    // converted to an object with pointer type".
+    // QNX API
+    // coverity[autosar_cpp14_m5_2_8_violation]
+    QnxDispatchEngine& self = *static_cast<QnxDispatchEngine*>(handle);
+    LogDebug(self.logger_, "QnxDispatchEngine::SelectPulseCallback ", &self);
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
+    const auto pulse_value = reinterpret_cast<std::uintptr_t>(ctp->msg->pulse.value.sival_ptr);
+    const auto nonce = static_cast<std::uint32_t>(pulse_value >> 32U);
+    const auto index = static_cast<std::uint32_t>(pulse_value & UINT32_MAX);
+    if ((index >= self.poll_endpoints_.size()) || (self.poll_endpoints_[index].nonce != nonce) ||
+        (self.poll_endpoints_[index].endpoint == nullptr))
+    {
+        LogDebug(self.logger_, "QnxDispatchEngine::SelectPulseCallback pulse obsolete ", &self);
+        // invalid or obsolete pulse; return without doing anything
+        return 0;
+    }
+    LogDebug(self.logger_, "=== Pulse input ", &self);
+    self.poll_endpoints_[index].endpoint->input();
+    return 0;
+}
+
+// coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+// coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
+// coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
+int QnxDispatchEngine::CoidDeathPulseCallback(message_context_t* ctp,
+                                              int /*code*/,
+                                              unsigned /*flags*/,
+                                              // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+                                              void* handle) noexcept
+{
+    // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
+    // converted to an object with pointer type".
+    // QNX API
+    // coverity[autosar_cpp14_m5_2_8_violation]
+    QnxDispatchEngine& self = *static_cast<QnxDispatchEngine*>(handle);
+    LogDebug(self.logger_, "QnxDispatchEngine::CoidDeathPulseCallback ", &self);
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
+    const auto coid = ctp->msg->pulse.value.sival_int;
+
+    const auto coid_expected = self.os_resources_.channel->ConnectServerInfo(0, coid, nullptr);
+    if (coid_expected.has_value() && (coid_expected.value() == coid))
+    {
+        LogDebug(self.logger_, "QnxDispatchEngine::CoidDeathPulseCallback pulse obsolete ", &self);
+        // we already got new connection with the same fd; return without doing anything
+        return 0;
+    }
+
+    const auto found =
+        std::find_if(self.poll_endpoints_.begin(), self.poll_endpoints_.end(), [coid](PollEndpoint& poll) noexcept {
+            return (poll.endpoint != nullptr) && (poll.endpoint->fd == coid);
+        });
+    if (found != self.poll_endpoints_.end())
+    {
+        LogDebug(self.logger_, "QnxDispatchEngine::CoidDeathPulseCallback crash pulse ", &self);
+        // simulate input and trigger input fault. Shall only happen on unclean disconnects
+        found->endpoint->input();
+    }
     return 0;
 }
 
@@ -213,6 +303,8 @@ QnxDispatchEngine::~QnxDispatchEngine() noexcept
     thread_.join();
     score::cpp::ignore = os_resources_.timer->TimerDestroy(timer_id_);
     score::cpp::ignore = os_resources_.channel->ConnectDetach(side_channel_coid_);
+    score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, _PULSE_CODE_COIDDEATH, 0);
+    score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, kSelectPulseCode, 0);
     score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, kEventPulseCode, 0);
     score::cpp::ignore = os_resources_.dispatch->pulse_detach(dispatch_pointer_, kTimerPulseCode, 0);
     // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
@@ -248,14 +340,69 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
         posix_receive_buffer_.resize(needed_buffer_size);
     }
 
-    score::cpp::ignore = os_resources_.dispatch->select_attach(
-        dispatch_pointer_,
-        nullptr,
-        endpoint.fd,
-        static_cast<std::uint32_t>(SELECT_FLAG_READ) | static_cast<std::uint32_t>(SELECT_FLAG_REARM),
-        &EndpointFdSelectCallback,
-        &endpoint);
     posix_endpoint_list_.push_back(endpoint);
+
+    std::size_t index = poll_endpoints_.size();
+    const auto found = std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [](PollEndpoint& poll) noexcept {
+        return poll.endpoint == 0;
+    });
+    if (found != poll_endpoints_.end())
+    {
+        index = static_cast<std::size_t>(std::distance(poll_endpoints_.begin(), found));
+        poll_endpoints_[index].endpoint = &endpoint;
+        ++poll_endpoints_[index].nonce;
+    }
+    else
+    {
+        // LCOV_EXCL_START
+        if (index == UINT32_MAX)
+        {
+            // not realistic to happen, but let's make our linters happy
+            return;
+            // - in this unrealistic situation we won't get notifications from the server,
+            // but otherwise should be "fine". Our cleanup procedures ignore non-registered entries
+        }
+        // LCOV_EXCL_STOP
+
+        poll_endpoints_.push_back(PollEndpoint{&endpoint, 0U});
+        // now at poll_endpoints_[index]
+    }
+    uintptr_t pulse_value = (static_cast<uintptr_t>(poll_endpoints_[index].nonce) << 32U) + index;
+
+    sigevent select_event{};
+    SIGEV_PULSE_INIT(&select_event, side_channel_coid_, SIGEV_PULSE_PRIO_INHERIT, kSelectPulseCode, pulse_value);
+
+    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
+    const auto register_expected = os_resources_.channel->MsgRegisterEvent(&select_event, endpoint.fd);
+    if (!register_expected.has_value())
+    {
+        LogError(logger_,
+                 "QnxDispatchEngine::RegisterPosixEndpoint ",
+                 this,
+                 " MsgRegisterEvent error ",
+                 register_expected.error().ToString());
+    }
+
+    select_msg_t select_msg{};
+
+    select_msg.hdr.type = _IO_MSG;
+    select_msg.hdr.combine_len = sizeof(select_msg.hdr);
+    select_msg.hdr.mgrid = kIomgrStickySelect;
+    select_msg.hdr.subtype = 0U;
+    select_msg.select_event = select_event;
+
+    // NOLINTBEGIN(score-banned-function) implementing FFI wrapper
+    const auto send_expected =
+        os_resources_.channel->MsgSend(endpoint.fd, &select_msg, sizeof(select_msg), nullptr, 0UL);
+    // NOLINTEND(score-banned-function) implementing FFI wrapper
+    if (!send_expected.has_value())
+    {
+        LogError(logger_,
+                 "QnxDispatchEngine::RegisterPosixEndpoint ",
+                 this,
+                 " MsgSend error ",
+                 send_expected.error().ToString());
+    }
 }
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
@@ -270,7 +417,22 @@ void QnxDispatchEngine::UnregisterPosixEndpoint(PosixEndpointEntry& endpoint) no
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 void QnxDispatchEngine::UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept
 {
-    score::cpp::ignore = os_resources_.dispatch->select_detach(dispatch_pointer_, endpoint.fd);
+    const auto found =
+        std::find_if(poll_endpoints_.begin(), poll_endpoints_.end(), [&endpoint](PollEndpoint& poll) noexcept {
+            return poll.endpoint == &endpoint;
+        });
+    if (found != poll_endpoints_.end())  // LCOV_EXCL_BR_LINE for unrealisting condition of insertion failure
+    {
+        std::size_t index = static_cast<std::size_t>(std::distance(poll_endpoints_.begin(), found));
+        uintptr_t pulse_value = (static_cast<uintptr_t>(poll_endpoints_[index].nonce) << 32U) + index;
+        poll_endpoints_[index].endpoint = nullptr;
+
+        sigevent select_event{};
+        SIGEV_PULSE_INIT(&select_event, side_channel_coid_, SIGEV_PULSE_PRIO_INHERIT, kSelectPulseCode, pulse_value);
+        // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
+        score::cpp::ignore = os_resources_.channel->MsgUnregisterEvent(&select_event);
+    }
+
     if (!endpoint.disconnect.empty())
     {
         endpoint.disconnect();
@@ -439,13 +601,13 @@ void QnxDispatchEngine::SetupResourceManagerCallbacks() noexcept
     // coverity[autosar_cpp14_m5_2_6_violation]
     connect_funcs_.open = &io_open;
     // coverity[autosar_cpp14_m5_2_6_violation]
-    io_funcs_.notify = &io_notify;
-    // coverity[autosar_cpp14_m5_2_6_violation]
     io_funcs_.write = &io_write;
     // coverity[autosar_cpp14_m5_2_6_violation]
     io_funcs_.read = &io_read;
     // coverity[autosar_cpp14_m5_2_6_violation]
     io_funcs_.close_ocb = &io_close_ocb;
+    // coverity[autosar_cpp14_m5_2_6_violation]
+    io_funcs_.msg = &io_msg;
 }
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
@@ -516,6 +678,7 @@ std::int32_t QnxDispatchEngine::io_open(resmgr_context_t* const ctp,
     ResourceManagerServer& server = ResmgrHandleToServer(handle);
     QnxDispatchEngine& self = *server.engine_;
     auto& iofunc = self.GetOsResources().iofunc;
+    LogDebug(self.logger_, "QnxDispatchEngine io-open ", &self);
 
     // the attr locks are currently not needed, but we should not forget about them in multithreaded implementation
     score::cpp::ignore = iofunc->iofunc_attr_lock(&server.attr);
@@ -666,27 +829,48 @@ std::int32_t QnxDispatchEngine::io_read(resmgr_context_t* const ctp,
     return connection.ProcessReadRequest(ctp);
 }
 
-std::int32_t QnxDispatchEngine::io_notify(resmgr_context_t* const ctp,
-                                          // coverity[autosar_cpp14_a9_5_1_violation]
-                                          io_notify_t* const msg,
-                                          // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-                                          RESMGR_OCB_T* const ocb) noexcept
+std::int32_t QnxDispatchEngine::io_msg(resmgr_context_t* const ctp,
+                                       // coverity[autosar_cpp14_a9_5_1_violation]
+                                       io_msg_t* const msg,
+                                       // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+                                       RESMGR_OCB_T* const ocb) noexcept
 {
-    QnxDispatchEngine& self = *OcbToServer(ocb).engine_;
-    auto& iofunc = self.GetOsResources().iofunc;
+    if (msg->i.mgrid != kIomgrStickySelect)
+    {
+        return ENOSYS;
+    }
 
+    QnxDispatchEngine& self = *OcbToServer(ocb).engine_;
+    auto& dispatch = self.GetOsResources().dispatch;
+    auto& channel = self.GetOsResources().channel;
+
+    LogDebug(self.logger_, "QnxDispatchEngine::io_msg ", &self);
     ResourceManagerConnection& connection = OcbToConnection(ocb);
 
-    // 'trig' will tell iofunc_notify() which conditions are currently satisfied.
-    auto trig = static_cast<std::uint32_t>(_NOTIFY_COND_OUTPUT); /* clients can always give us data */
+    select_msg_t select_msg{};
+    const auto read_expected = dispatch->resmgr_msgget(ctp, &select_msg, sizeof(select_msg), 0UL);
+    if (!read_expected.has_value())
+    {
+        LogError(self.logger_,
+                 "QnxDispatchEngine::io_msg ",
+                 &self,
+                 " resmgr_msgget error ",
+                 read_expected.error().ToString());
+        return read_expected.error().GetOsDependentErrorCode();
+    }
+    if (read_expected.value() < static_cast<std::int64_t>(sizeof(select_msg)))
+    {
+        LogError(self.logger_, "QnxDispatchEngine::io_msg ", &self, " message size too small");
+        return EBADMSG;
+    }
+
+    connection.rcvid_ = ctp->rcvid;
+    connection.select_event_ = select_msg.select_event;
     if (connection.HasSomethingToRead())
     {
-        // NOLINTNEXTLINE(hicpp-signed-bitwise): QNX API
-        trig |= static_cast<std::uint32_t>(_NOTIFY_COND_INPUT); /* we have some data available */
+        score::cpp::ignore = channel->MsgDeliverEvent(connection.rcvid_, &connection.select_event_);
     }
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    return iofunc->iofunc_notify(
-        ctp, msg, connection.notify_.data(), static_cast<std::int32_t>(trig), nullptr, nullptr);
+    return EOK;
 }
 
 std::int32_t QnxDispatchEngine::io_close_ocb(resmgr_context_t* const ctp,
@@ -696,17 +880,11 @@ std::int32_t QnxDispatchEngine::io_close_ocb(resmgr_context_t* const ctp,
 {
     QnxDispatchEngine& self = *OcbToServer(ocb).engine_;
     auto& iofunc = self.GetOsResources().iofunc;
+    auto& channel = self.GetOsResources().channel;
 
     ResourceManagerConnection& connection = OcbToConnection(ocb);
 
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    iofunc->iofunc_notify_trigger_strict(ctp, connection.notify_.data(), INT_MAX, IOFUNC_NOTIFY_INPUT);
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    iofunc->iofunc_notify_trigger_strict(ctp, connection.notify_.data(), INT_MAX, IOFUNC_NOTIFY_OUTPUT);
-    // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
-    iofunc->iofunc_notify_trigger_strict(ctp, connection.notify_.data(), INT_MAX, IOFUNC_NOTIFY_OBAND);
-
-    iofunc->iofunc_notify_remove(ctp, &connection.notify_[0]);
+    score::cpp::ignore = channel->MsgDeliverEvent(connection.rcvid_, &connection.select_event_);
 
     // the attr locks are currently not needed, but we should not forget about them in multithreaded implementation
     score::cpp::ignore = iofunc->iofunc_attr_lock(&ocb->attr->attr);

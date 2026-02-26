@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/performance_benchmarks/macro_benchmark/config_generator:config_generator_rule.bzl", "make_configs")
@@ -65,7 +67,7 @@ cc_library(
         "//score/mw/com/performance_benchmarks/common_test_resources:stop_token_sig_term_handler",
         "@boost.program_options",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -80,7 +82,7 @@ cc_library(
     deps = [
         ":common_resources",
         "@score_baselibs//score/json",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -98,7 +100,7 @@ cc_library(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:stop_token_sig_term_handler",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -138,7 +140,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_guard",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 
@@ -170,7 +172,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_guard",
-        "@score_baselibs//score/mw/log",
+        "@score_logging//score/mw/log",
     ],
 )
 

@@ -23,6 +23,7 @@
 #include "score/os/socket.h"
 #include "score/os/sys_poll.h"
 #include "score/os/unistd.h"
+#include "score/os/utils/signal_impl.h"
 
 #include <mutex>
 #include <string_view>
@@ -48,12 +49,13 @@ class UnixDomainEngine final : public ISharedResourceEngine
   public:
     struct OsResources
     {
+        score::cpp::pmr::unique_ptr<score::os::Signal> signal{};
         score::cpp::pmr::unique_ptr<score::os::Socket> socket{};
         score::cpp::pmr::unique_ptr<score::os::SysPoll> poll{};
         score::cpp::pmr::unique_ptr<score::os::Unistd> unistd{};
     };
 
-    UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource) noexcept;
+    UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource, LoggingCallback logger = GetCerrLogger()) noexcept;
     ~UnixDomainEngine() noexcept override;
 
     UnixDomainEngine(const UnixDomainEngine&) = delete;
@@ -61,7 +63,8 @@ class UnixDomainEngine final : public ISharedResourceEngine
 
     static OsResources GetDefaultOsResources(score::cpp::pmr::memory_resource* const memory_resource) noexcept
     {
-        return {score::os::Socket::Default(memory_resource),
+        return {score::cpp::pmr::make_unique<score::os::SignalImpl>(memory_resource),
+                score::os::Socket::Default(memory_resource),
                 score::os::SysPoll::Default(memory_resource),
                 score::os::Unistd::Default(memory_resource)};
     }
@@ -73,6 +76,10 @@ class UnixDomainEngine final : public ISharedResourceEngine
     OsResources& GetOsResources() noexcept
     {
         return os_resources_;
+    }
+    const LoggingCallback& GetLogger() noexcept override
+    {
+        return logger_;
     }
 
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
@@ -127,6 +134,7 @@ class UnixDomainEngine final : public ISharedResourceEngine
 
     score::cpp::pmr::memory_resource* const memory_resource_;
     OsResources os_resources_;
+    LoggingCallback logger_;
 
     std::array<std::int32_t, 2> pipe_fds_;
     bool quit_flag_;

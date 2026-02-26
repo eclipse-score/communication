@@ -17,8 +17,8 @@ pub use com_api_runtime_mock::MockRuntimeImpl;
 pub use com_api_runtime_mock::RuntimeBuilderImpl as MockRuntimeBuilderImpl;
 
 pub use com_api_concept::{
-    Builder, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, FindServiceSpecifier,
     InstanceSpecifier, Interface, OfferedProducer, PlacementDefault, Producer, ProducerBuilder,
-    Publisher, Reloc, Result, Runtime, SampleContainer, SampleMaybeUninit, SampleMut,
-    ServiceDiscovery, Subscriber, Subscription, TypeInfo,
+    ProviderInfo, Publisher, Reloc, Result, Runtime, RuntimeBuilder, SampleContainer,
+    SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };

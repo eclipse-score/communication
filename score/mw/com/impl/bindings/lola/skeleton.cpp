@@ -15,7 +15,9 @@
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/result/result.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
@@ -25,6 +27,7 @@
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
@@ -112,22 +115,6 @@ ServiceDataStorage* GetServiceDataStorageSkeletonSide(const memory::shared::Mana
     return service_data_storage;
 }
 
-std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceExistenceMarkerFile(
-    const LolaServiceInstanceId::InstanceId lola_instance_id,
-    const IPartialRestartPathBuilder& partial_restart_path_builder)
-{
-    auto service_instance_existence_marker_file_path =
-        partial_restart_path_builder.GetServiceInstanceExistenceMarkerFilePath(lola_instance_id);
-
-    // The instance existence marker file can be opened in the case that another skeleton of the same service currently
-    // exists or that a skeleton of the same service previously crashed. We cannot determine which is true until we try
-    // to flock the file. Therefore, we do not take ownership on construction and take ownership later if we can
-    // exclusively flock the file.
-    bool take_ownership{false};
-    return memory::shared::LockFile::CreateOrOpen(std::move(service_instance_existence_marker_file_path),
-                                                  take_ownership);
-}
-
 enum class ShmObjectType : std::uint8_t
 {
     kControl_QM = 0x00,
@@ -160,6 +147,22 @@ bool CreatePartialRestartDirectory(const score::filesystem::Filesystem& filesyst
     return true;
 }
 
+std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceExistenceMarkerFile(
+    const LolaServiceInstanceId::InstanceId lola_instance_id,
+    const IPartialRestartPathBuilder& partial_restart_path_builder)
+{
+    auto service_instance_existence_marker_file_path =
+        partial_restart_path_builder.GetServiceInstanceExistenceMarkerFilePath(lola_instance_id);
+
+    // The instance existence marker file can be opened in the case that another skeleton of the same service currently
+    // exists or that a skeleton of the same service previously crashed. We cannot determine which is true until we try
+    // to flock the file. Therefore, we do not take ownership on construction and take ownership later if we can
+    // exclusively flock the file.
+    bool take_ownership{false};
+    return memory::shared::LockFile::CreateOrOpen(std::move(service_instance_existence_marker_file_path),
+                                                  take_ownership);
+}
+
 std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceUsageMarkerFile(
     const LolaServiceInstanceId::InstanceId lola_instance_id,
     const IPartialRestartPathBuilder& partial_restart_path_builder)
@@ -169,9 +172,10 @@ std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceUsageMarkerFi
 
     // The instance usage marker file should be created if the skeleton is starting up for the very first time and
     // opened in all other cases.
-    // We should never take ownership of the file so that it remains in the filesystem indefinitely. This is because
-    // proxies might still have a shared lock on the file while destructing the skeleton. It is imperative to retain
-    // this knowledge between skeleton restarts.
+    // Initially, when creating/opening the usage marker file, we do not take ownership of it!
+    // Because we don't want to have automatic file-system unlinking in place, when we destroy/stop-offer the skeleton
+    // instance! We decide, whether to unlink the file or not, in the PrepareStopOffer() method of the Skeleton, based
+    // on whether there are still active proxies connected to the skeleton instance or not.
     constexpr bool take_ownership{false};
     return memory::shared::LockFile::CreateOrOpen(service_instance_usage_marker_file_path, take_ownership);
 }
@@ -289,10 +293,14 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       service_instance_existence_marker_file_{std::move(service_instance_existence_marker_file)},
       service_instance_usage_marker_file_{},
       service_instance_existence_flock_mutex_and_lock_{std::move(service_instance_existence_flock_mutex_and_lock)},
+      on_service_methods_subscribed_mutex_{},
       method_resources_{},
       skeleton_methods_{},
+      method_subscription_registration_guard_qm_{nullptr},
+      method_subscription_registration_guard_asil_b_{nullptr},
       was_old_shm_region_reopened_{false},
       filesystem_{std::move(filesystem)},
+      method_call_handler_scope_{},
       on_service_method_subscribed_handler_scope_{}
 {
 }
@@ -354,21 +362,65 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         CleanupSharedMemoryAfterCrash();
     }
 
-    // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
-    // message passing that it has finished setting up the regions.
+    // If there are no registered SkeletonMethods, then we don't need to register a method subscribed handler and can
+    // therefore exit early.
+    if (skeleton_methods_.empty())
+    {
+        return {};
+    }
+
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
     const SkeletonInstanceIdentifier skeleton_instance_identifier{lola_service_id_, lola_instance_id_};
-    return lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+
+    // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
+    // message passing that it has finished setting up the regions. We always register a handler for QM proxies and also
+    // register a handler for ASIL-B proxies if this skeleton is ASIL-B.
+    auto allowed_consumers_qm = GetAllowedConsumers(QualityType::kASIL_QM);
+    auto qm_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+        QualityType::kASIL_QM,
         skeleton_instance_identifier,
         IMessagePassingService::ServiceMethodSubscribedHandler{
             on_service_method_subscribed_handler_scope_,
             [this](const ProxyInstanceIdentifier proxy_instance_identifier,
                    const uid_t proxy_uid,
-                   const QualityType asil_level,
                    const pid_t proxy_pid) -> ResultBlank {
-                return OnServiceMethodsSubscribed(proxy_instance_identifier, proxy_uid, asil_level, proxy_pid);
-            }});
+                return OnServiceMethodsSubscribed(
+                    proxy_instance_identifier, proxy_uid, QualityType::kASIL_QM, proxy_pid);
+            }},
+        allowed_consumers_qm);
+    if (!(qm_registration_result.has_value()))
+    {
+        score::mw::log::LogError("lola") << "Could not register QM service method handler. Returning error.";
+        return MakeUnexpected<Blank>(qm_registration_result.error());
+    }
+    method_subscription_registration_guard_qm_ = std::move(qm_registration_result).value();
+
+    if (detail_skeleton::HasAsilBSupport(identifier_))
+    {
+        auto allowed_consumers_asil_b = GetAllowedConsumers(QualityType::kASIL_B);
+        auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
+            QualityType::kASIL_B,
+            skeleton_instance_identifier,
+            IMessagePassingService::ServiceMethodSubscribedHandler{
+                on_service_method_subscribed_handler_scope_,
+                [this](const ProxyInstanceIdentifier proxy_instance_identifier,
+                       const uid_t proxy_uid,
+                       const pid_t proxy_pid) -> ResultBlank {
+                    return OnServiceMethodsSubscribed(
+                        proxy_instance_identifier, proxy_uid, QualityType::kASIL_B, proxy_pid);
+                }},
+            allowed_consumers_asil_b);
+        if (!(asil_b_registration_result))
+        {
+            method_subscription_registration_guard_qm_.reset();
+            score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
+            return MakeUnexpected<Blank>(asil_b_registration_result.error());
+        }
+        method_subscription_registration_guard_asil_b_ = std::move(asil_b_registration_result).value();
+    }
+
+    return {};
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -392,10 +444,37 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
             // class shall not be used as operands to built-in and overloaded operators other than the subscript
             // operator [ ], the assignment operator =, the equality operators == and ! =, the unary & operator, and the
             // relational operators <,
-            // <=, >, >=.". The enum is not an operand, its a function parameter.
+            // <=, >, >=.". The enum is not an operand, it is a function parameter.
             // coverity[autosar_cpp14_a4_5_1_violation : FALSE]
             tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback);
     }
+
+    // Unregister any MethodCallHandlers that were registered by the SkeletonMethods and destroy registration guards
+    // which will destroy any registered ServiceMethodSubscribedHandlers. Expiring the scopes below will try to acquire
+    // a write lock on a mutex, while any calls to handlers will try to acquire a read lock. Therefore, if handlers can
+    // still be called while calling Expire(), then it's possible that the Expire() call will be blocked for a longer
+    // period of time (in case we get new handler calls) depending on thread/mutex scheduling. Therefore, we first
+    // unregister all handlers and then expire the scopes.
+    method_subscription_registration_guard_qm_.reset();
+    method_subscription_registration_guard_asil_b_.reset();
+    for (auto& skeleton_method : skeleton_methods_)
+    {
+        skeleton_method.second.get().UnregisterMethodCallHandlers();
+    }
+
+    // Clean up method resources
+    // Expiring the method subscribed handler scope will wait until any current subscription calls are finished and will
+    // block any new subscription calls once it returns.
+    on_service_method_subscribed_handler_scope_.Expire();
+
+    // Expiring the method call handler scope will wait until all current method calls are finished and will block any
+    // new handlers from being called once it returns.
+    method_call_handler_scope_.Expire();
+
+    // Destroy our pointers to all opened shared memory regions. We can call this without locking a mutex since
+    // OnServiceMethodsSubscribed (in which method_resources_ is also modified) cannot be called after its scope
+    // (on_service_method_subscribed_handler_scope_) is expired above.
+    method_resources_.Clear();
 
     memory::shared::ExclusiveFlockMutex service_instance_usage_mutex{*service_instance_usage_marker_file_};
     std::unique_lock<memory::shared::ExclusiveFlockMutex> service_instance_usage_lock{service_instance_usage_mutex,
@@ -404,13 +483,21 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     {
         score::mw::log::LogInfo("lola")
             << "Skeleton::RemoveSharedMemory(): Could not exclusively lock service instance usage "
-               "marker file indicating that some proxies are still subscribed. Will not remove shared memory.";
+               "marker file indicating that some proxies are still subscribed. Will not remove shared memory and will "
+               "keep the service-instance-usage-marker-file for future skeletons to reuse.";
         return;
     }
     else
     {
+        // Since we were able to exclusively lock the usage marker file, it means that no proxies are currently using
+        // the shared memory region.
         RemoveSharedMemory();
+        // We take ownership of the usage marker file so that it gets unlinked from the fs, when we destroy it.
+        service_instance_usage_marker_file_.value().TakeOwnership();
+        // Unlock the usage marker file before destroying it so that the destructor doesn't try to unlock an already
+        // invalid file/fd.
         service_instance_usage_lock.unlock();
+        // this effectively deletes the usage marker file from filesystem
         service_instance_usage_marker_file_.reset();
     }
 
@@ -891,8 +978,22 @@ void Skeleton::DisconnectQmConsumers()
 
 void Skeleton::RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method)
 {
-    const auto [_, was_inserted] = skeleton_methods_.insert({method_id, skeleton_method});
+    const auto [ignorable, was_inserted] = skeleton_methods_.insert({method_id, skeleton_method});
+    score::cpp::ignore = ignorable;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");
+}
+
+bool Skeleton::VerifyAllMethodsRegistered() const
+{
+    for (const auto& [ignorable, method_reference] : skeleton_methods_)
+    {
+        score::cpp::ignore = ignorable;
+        if (!method_reference.get().IsRegistered())
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -969,9 +1070,29 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     size_t sample_size,
     size_t sample_alignment) noexcept
 {
-    auto* data_storage = storage_resource_->construct<EventDataStorage<std::uint8_t>>(
-        sample_size * element_properties.number_of_slots,
-        memory::shared::PolymorphicOffsetPtrAllocator<std::uint8_t>(storage_resource_->getMemoryResourceProxy()));
+
+    // Guard against over-aligned types (Short-term solution protection)
+    if (sample_alignment > alignof(std::max_align_t))
+    {
+        score::mw::log::LogFatal("Skeleton") 
+            << "Requested sample alignment (" << sample_alignment 
+            << ") exceeds max_align_t (" << alignof(std::max_align_t) 
+            << "). Safe shared memory layout cannot be guaranteed.";
+            
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_alignment <= alignof(std::max_align_t),"Requested sample alignment exceeds maximum supported alignment.");
+    }
+
+    // Calculate the aligned size for a single sample to ensure proper padding between slots
+    const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
+    const auto total_data_size_bytes = aligned_sample_size * element_properties.number_of_slots;
+
+    // Convert total bytes to the number of std::max_align_t elements needed (round up)
+    const size_t num_max_align_elements = 
+        (total_data_size_bytes + sizeof(std::max_align_t) - 1) / sizeof(std::max_align_t);
+
+    auto* data_storage = storage_resource_->construct<EventDataStorage<std::max_align_t>>(
+        num_max_align_elements,
+        memory::shared::PolymorphicOffsetPtrAllocator<std::max_align_t>(storage_resource_->getMemoryResourceProxy()));
 
     auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
                                                          std::forward_as_tuple(element_fq_id),
@@ -979,8 +1100,10 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
                                                "Couldn't register/emplace event-storage in data-section.");
 
+
     const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
     void* const event_data_raw_array = data_storage->data();
+    
     auto inserted_meta_info = storage_->events_metainfo_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(element_fq_id),
@@ -988,9 +1111,8 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
+    return {score::memory::shared::OffsetPtr<void>(data_storage), CreateEventControlComposite(element_fq_id, element_properties)};
 }
-
 std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> Skeleton::RegisterGeneric(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
@@ -1024,49 +1146,27 @@ std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> Ske
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                                 uid_t proxy_uid,
+                                                 const uid_t proxy_uid,
                                                  const QualityType asil_level,
-                                                 pid_t /* proxy_pid */)
+                                                 const pid_t proxy_pid)
 {
+    // Note. we currently call the entirety of the funcitonality within OnServiceMethodsSubscribed within the mutex. We
+    // potentially could optimise this and call some functionality outside of the mutex. However, we haven't currenlty
+    // analysed all of the potential race conditions that could occur when all of these actions are not synchronised.
+    // So, for the moment, we leave all actions within the mutex and will optimise in future if we identify that this is
+    // a performance bottleneck.
+    std::lock_guard lock{on_service_methods_subscribed_mutex_};
+    if (method_resources_.Contains(proxy_instance_identifier, proxy_pid))
+    {
+        score::mw::log::LogDebug("lola") << "Method" << proxy_instance_identifier.process_identifier << "/"
+                                       << proxy_instance_identifier.proxy_instance_counter << "with PID:" << proxy_pid
+                                       << "already subscribed. Not re-opening shared memory region";
+        return {};
+    }
+
     const auto method_channel_shm_name =
         shm_path_builder_->GetMethodChannelShmName(lola_instance_id_, proxy_instance_identifier);
     const bool is_read_write{true};
-
-    if (!IsProxyInAllowedConsumerList(proxy_uid, asil_level))
-    {
-        score::mw::log::LogError("lola") << "Proxy UID:" << proxy_uid << "is not listed in" << ToString(asil_level)
-                                       << "allowed_consumers for method" << method_channel_shm_name;
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-
-    // If no methods contain InArgs or a Return type then no shared memory will be created. Therefore, we don't need to
-    // open it here.
-    const auto does_method_have_shm_result = filesystem_.standard->Exists(method_channel_shm_name);
-    if (!(does_method_have_shm_result.has_value()))
-    {
-        score::mw::log::LogError("lola") << "Skeleton failed to check if method shm path already exists. Exiting.";
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-
-    if (!(does_method_have_shm_result.value()))
-    {
-        for (auto& [method_id, skeleton_method] : skeleton_methods_)
-        {
-            const auto result = SkeletonMethodView{skeleton_method.get()}.OnProxyMethodSubscribeFinished(
-                std::optional<TypeErasedCallQueue::TypeErasedElementInfo>{},
-                std::optional<score::cpp::span<std::byte>>{},
-                std::optional<score::cpp::span<std::byte>>{},
-                proxy_instance_identifier);
-            if (!(result.has_value()))
-            {
-                score::mw::log::LogError("lola") << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod:"
-                                               << proxy_instance_identifier.proxy_instance_counter << "/"
-                                               << proxy_instance_identifier.process_identifier << "failed!";
-                return result;
-            }
-        }
-        return {};
-    }
 
     const std::vector<uid_t> allowed_providers{proxy_uid};
     auto opened_shm_region =
@@ -1077,50 +1177,101 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    const auto [resource_it, was_created] = method_resources_.insert({proxy_instance_identifier, opened_shm_region});
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(was_created);
+    const auto [resource_it, _] =
+        method_resources_.InsertAndCleanUpOldRegions(proxy_instance_identifier, proxy_pid, opened_shm_region);
 
     auto& method_data = GetMethodData(*(resource_it->second));
-    auto& method_call_queues = method_data.method_call_queues_;
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(method_call_queues.size() == skeleton_methods_.size());
-    for (auto& [method_id, type_erased_call_queue] : method_call_queues)
+
+    const auto [subscription_result, method_ids_to_unsubscribe] =
+        SubscribeMethods(method_data, proxy_instance_identifier, proxy_uid, asil_level);
+    if (!(subscription_result.has_value()))
     {
+        UnsubscribeMethods(method_ids_to_unsubscribe, proxy_instance_identifier);
+        return subscription_result;
+    }
+    return {};
+}
+
+auto Skeleton::SubscribeMethods(const MethodData& method_data,
+                                const ProxyInstanceIdentifier proxy_instance_identifier,
+                                const uid_t proxy_uid,
+                                const QualityType asil_level) -> std::pair<score::ResultBlank, MethodIdsToUnsubscribe>
+{
+    const auto& method_call_queues = method_data.method_call_queues_;
+    for (std::size_t method_idx = 0U; method_idx != method_call_queues.size(); method_idx++)
+    {
+        auto& [method_id, type_erased_call_queue] = method_call_queues[method_idx];
+
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            skeleton_methods_.count(method_id) != 0U,
+            "Each method that was stored in shared memory by the proxy must be registered with the Skeleton!");
         auto& skeleton_method = skeleton_methods_.at(method_id);
-        const auto result = SkeletonMethodView{skeleton_method.get()}.OnProxyMethodSubscribeFinished(
-            type_erased_call_queue.GetTypeErasedElementInfo(),
-            type_erased_call_queue.GetInArgValuesQueueStorage(),
-            type_erased_call_queue.GetReturnValueQueueStorage(),
-            proxy_instance_identifier);
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
+        const auto result =
+            skeleton_method.get().OnProxyMethodSubscribeFinished(type_erased_call_queue.GetTypeErasedElementInfo(),
+                                                                 type_erased_call_queue.GetInArgValuesQueueStorage(),
+                                                                 type_erased_call_queue.GetReturnValueQueueStorage(),
+                                                                 proxy_method_instance_identifier,
+                                                                 method_call_handler_scope_,
+                                                                 proxy_uid,
+                                                                 asil_level);
         if (!(result.has_value()))
         {
-            score::mw::log::LogError("lola") << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod:"
-                                           << proxy_instance_identifier.proxy_instance_counter << "/"
-                                           << proxy_instance_identifier.process_identifier << "failed!";
-            return result;
+            score::mw::log::LogError("lola")
+                << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod: ProxyMethodInstanceIdentifier:"
+                << proxy_method_instance_identifier << "] failed!";
+
+            // If subscription failed for any of the methods, then subscription fails for the entire Proxy. Therefore,
+            // we can unsubscribe the methods that were already successfully subscribed.
+            std::vector<LolaMethodId> method_ids_to_unsubscribe{};
+            for (std::size_t registered_method_idx = 0U; registered_method_idx < method_idx; ++registered_method_idx)
+            {
+                method_ids_to_unsubscribe.push_back(method_call_queues[registered_method_idx].first);
+            }
+
+            return {result, method_ids_to_unsubscribe};
         }
     }
     return {};
 }
 
-bool Skeleton::IsProxyInAllowedConsumerList(const uid_t proxy_uid, const QualityType asil_level) const
+void Skeleton::UnsubscribeMethods(const std::vector<LolaMethodId>& method_ids,
+                                  const ProxyInstanceIdentifier& proxy_instance_identifier)
+{
+    for (const auto& method_id : method_ids)
+    {
+        auto& skeleton_method = skeleton_methods_.at(method_id);
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
+        skeleton_method.get().OnProxyMethodUnsubscribe(proxy_method_instance_identifier);
+    }
+}
+
+IMessagePassingService::AllowedConsumerUids Skeleton::GetAllowedConsumers(const QualityType asil_level) const
 {
     const auto& lola_service_instance_deployment = GetLolaServiceInstanceDeployment(identifier_);
-    const auto& allowed_consumer = lola_service_instance_deployment.allowed_consumer_;
+    const auto& allowed_consumers = lola_service_instance_deployment.allowed_consumer_;
+    const auto strict_permissions = lola_service_instance_deployment.strict_permissions_;
 
-    // Check if there is an allowed consumer list for the specified quality (ASIL-B / QM)
-    const auto allowed_consumer_list_it = allowed_consumer.find(asil_level);
-    if (allowed_consumer_list_it == allowed_consumer.cend())
+    const auto allowed_consumer_list_it = allowed_consumers.find(asil_level);
+    if (allowed_consumer_list_it == allowed_consumers.cend())
     {
-        score::mw::log::LogDebug("lola") << "Quality type:" << ToString(asil_level)
-                                       << "does not exist in allowed_consumer list in configuration!";
-        return false;
+        // If strict_permissions is false, then an empty allowed_consumers list means that anyone is an allowed
+        // consumer. Otherwise, it means that noone is an allowed consumer.
+        if (strict_permissions)
+        {
+            score::mw::log::LogDebug("lola") << "Quality type:" << ToString(asil_level)
+                                           << "does not exist in allowed_consumer list in configuration!";
+            return std::set<uid_t>{};
+        }
+        else
+        {
+            return std::optional<std::set<uid_t>>{};
+        }
     }
 
     // Check if the proxy_uid is in the allowed consumer list for the specified quality
-    const auto& allowed_consumer_list = allowed_consumer_list_it->second;
-    return std::any_of(allowed_consumer_list.begin(), allowed_consumer_list.end(), [proxy_uid](const auto uid) {
-        return uid == proxy_uid;
-    });
+    const auto& allowed_consumer_vector = allowed_consumer_list_it->second;
+    return std::set<uid_t>{allowed_consumer_vector.begin(), allowed_consumer_vector.end()};
 }
 
 MethodData& Skeleton::GetMethodData(const memory::shared::ManagedMemoryResource& resource)

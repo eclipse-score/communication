@@ -19,15 +19,22 @@ cc_binary(
     srcs = ["main.cpp"],
 )
 
+cc_binary(
+    name = "example-app2",
+    srcs = ["main2.cpp"],
+)
+
 pkg_tar(
     name = "example-app-pkg",
     srcs = [
-        "example-app",
+        ":example-app",
+        ":example-app2",
     ],
 )
 
 integration_test(
     name = "test_hello_world",
+    timeout = "moderate",
     srcs = [
         "test_hello_world.py",
     ],

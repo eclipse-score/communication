@@ -12,6 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/traits.h"
 
+#include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
+#include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
+#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -39,8 +43,11 @@ using ::testing::ReturnRef;
 
 using TestSampleType = std::uint32_t;
 
+using TestMethodType = void();
+
 const auto kEventName{"SomeEventName"};
 const auto kFieldName{"SomeFieldName"};
+const auto kMethodName{"SomeMethodName"};
 
 const auto kInstanceSpecifier = InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value();
 
@@ -61,8 +68,8 @@ class MyInterface : public InterfaceTrait::Base
 
     typename InterfaceTrait::template Event<TestSampleType> some_event{*this, kEventName};
     typename InterfaceTrait::template Field<TestSampleType> some_field{*this, kFieldName};
+    typename InterfaceTrait::template Method<TestMethodType> some_method{*this, kMethodName};
 };
-
 using MyProxy = AsProxy<MyInterface>;
 using MySkeleton = AsSkeleton<MyInterface>;
 
@@ -89,11 +96,14 @@ class ProxyCreationFixture : public ::testing::Test
   public:
     void SetUp() override
     {
+
         auto proxy_binding_mock_ptr = std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_);
         auto proxy_event_binding_mock_ptr =
             std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_binding_mock_);
         auto proxy_field_binding_mock_ptr =
             std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_field_binding_mock_);
+        auto proxy_method_binding_mock_ptr =
+            std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_);
 
         auto& runtime_mock = runtime_mock_guard_.runtime_mock_;
         // By default the runtime configuration has no GetTracingFilterConfig
@@ -111,6 +121,13 @@ class ProxyCreationFixture : public ::testing::Test
         ON_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
             .WillByDefault(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
 
+        // By default the Create call on the ProxyMethodBindingFactory returns valid bindings.
+        ON_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName))
+            .WillByDefault(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
+
+        // By default that the proxy_binding can successfully call SetupMethods
+        ON_CALL(proxy_binding_mock_, SetupMethods(_)).WillByDefault(Return(score::ResultBlank{}));
+
         // By default the runtime configuration resolves instance identifiers
         resolved_instance_identifiers_.push_back(identifier_with_valid_binding_);
         ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
@@ -124,9 +141,11 @@ class ProxyCreationFixture : public ::testing::Test
     ProxyBindingFactoryMockGuard proxy_binding_factory_mock_guard_{};
     ProxyEventBindingFactoryMockGuard<TestSampleType> proxy_event_binding_factory_mock_guard_{};
     ProxyFieldBindingFactoryMockGuard<TestSampleType> proxy_field_binding_factory_mock_guard_{};
+    ProxyMethodBindingFactoryMockGuard<TestMethodType> proxy_method_binding_factory_mock_guard_{};
     mock_binding::Proxy proxy_binding_mock_{};
     mock_binding::ProxyEvent<TestSampleType> proxy_event_binding_mock_{};
     mock_binding::ProxyEvent<TestSampleType> proxy_field_binding_mock_{};
+    mock_binding::ProxyMethod proxy_method_binding_mock_{};
 };
 
 TEST(GeneratedProxyTest, NotCopyable)
@@ -162,11 +181,12 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
+    using EventFacade = mock_binding::ProxyEventFacade<TestSampleType>;
+
     auto proxy_binding_mock_ptr = std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_);
-    auto proxy_event_binding_mock_ptr =
-        std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_event_binding_mock_);
-    auto proxy_field_binding_mock_ptr =
-        std::make_unique<mock_binding::ProxyEventFacade<TestSampleType>>(proxy_field_binding_mock_);
+    auto proxy_event_binding_mock_ptr = std::make_unique<EventFacade>(proxy_event_binding_mock_);
+    auto proxy_field_binding_mock_ptr = std::make_unique<EventFacade>(proxy_field_binding_mock_);
+    auto proxy_method_binding_mock_ptr = std::make_unique<mock_binding::ProxyMethodFacade>(proxy_method_binding_mock_);
 
     // Expecting that valid bindings are created for the Proxy, ProxyEvent and ProxyField
     EXPECT_CALL(proxy_binding_factory_mock_guard_.factory_mock_, Create(handle_))
@@ -175,6 +195,8 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnGeneratedProxyWhenSuccessfullyCr
         .WillRepeatedly(Return(ByMove(std::move(proxy_event_binding_mock_ptr))));
     EXPECT_CALL(proxy_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, kFieldName))
         .WillRepeatedly(Return(ByMove(std::move(proxy_field_binding_mock_ptr))));
+    EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, kMethodName))
+        .WillRepeatedly(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
 
     // When creating a MyProxy
     auto dummy_proxy_result = MyProxy::Create(std::move(handle_));
@@ -246,6 +268,34 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
     // Then the result should contain an error
     ASSERT_FALSE(dummy_proxy_result.has_value());
     EXPECT_EQ(dummy_proxy_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProxyMethodBinding)
+{
+
+    // Expecting that the Create call on the ProxyMethodBindingFactory returns an invalid binding for the method.
+    EXPECT_CALL(proxy_method_binding_factory_mock_guard_.factory_mock_, Create(handle_, _, kMethodName))
+        .WillOnce(Return(ByMove(nullptr)));
+
+    // When constructing a proxy with a handle
+    const auto unit = MyProxy::Create(std::move(handle_));
+
+    // Then it is _not_ possible to construct a proxy
+    ASSERT_FALSE(unit.has_value());
+    EXPECT_EQ(unit.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyProxyBindingCanNotSuccessfullySetUpMethods)
+{
+    // Expecting that the Create call on the ProxyMethodBindingFactory returns an invalid binding for the method.
+    EXPECT_CALL(proxy_binding_mock_, SetupMethods(_)).WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When constructing a proxy with a handle
+    const auto unit = MyProxy::Create(std::move(handle_));
+
+    // Then it is _not_ possible to construct a proxy
+    ASSERT_FALSE(unit.has_value());
+    ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(GeneratedProxyCreationTestFixture, CallingSubscribeOnServiceElementsDispatchesToBindings)
@@ -401,7 +451,6 @@ TEST(GeneratedSkeletonTest, IsMoveable)
 
 class SkeletonCreationFixture : public ::testing::Test
 {
-
   public:
     void SetUp() override
     {
@@ -410,6 +459,8 @@ class SkeletonCreationFixture : public ::testing::Test
             std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
         auto skeleton_field_binding_mock_ptr =
             std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
+        auto skeleton_method_binding_mock_ptr =
+            std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_);
 
         auto& runtime_mock = runtime_mock_guard_.runtime_mock_;
         // By default the runtime configuration has no GetTracingFilterConfig
@@ -429,9 +480,22 @@ class SkeletonCreationFixture : public ::testing::Test
                 CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
             .WillByDefault(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
+        // By default the Create call on the SkeletonMethodBindingFactory returns valid bindings.
+        ON_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kMethodName))
+            .WillByDefault(Return(ByMove(std::move(skeleton_method_binding_mock_ptr))));
+
         // By default the runtime configuration resolves instance identifiers
         resolved_instance_identifiers_.push_back(identifier_with_valid_binding_);
         ON_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillByDefault(Return(resolved_instance_identifiers_));
+
+        // By default the skeleton binding will report that all methods were correctly registered
+        ON_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
+        // By default the skeleton and service element bindings will report that offer service preparation succeeded
+        ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(skeleton_event_binding_mock_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
     }
 
     std::vector<InstanceIdentifier> resolved_instance_identifiers_{};
@@ -441,9 +505,11 @@ class SkeletonCreationFixture : public ::testing::Test
     SkeletonBindingFactoryMockGuard skeleton_binding_factory_mock_guard_{};
     SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard_{};
     SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard_{};
+    SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard_{};
     mock_binding::Skeleton skeleton_binding_mock_{};
     mock_binding::SkeletonEvent<TestSampleType> skeleton_event_binding_mock_{};
     mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_{};
+    mock_binding::SkeletonMethod skeleton_method_binding_mock_{};
 };
 
 using GeneratedSkeletonCreationInstanceSpecifierTestFixture = SkeletonCreationFixture;
@@ -461,6 +527,8 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
         std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
     auto skeleton_field_binding_mock_ptr =
         std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
+    auto skeleton_method_binding_mock_ptr =
+        std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_);
 
     // Expecting that valid bindings are created for the Skeleton, SkeletonEvent and SkeletonField
     EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
@@ -471,6 +539,9 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
     EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_,
                 CreateEventBinding(identifier_with_valid_binding_, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kMethodName))
+        .WillOnce(Return(ByMove(std::move(skeleton_method_binding_mock_ptr))));
 
     // When constructing a skeleton with an InstanceSpecifier
     const auto unit = MySkeleton::Create(kInstanceSpecifier);
@@ -545,21 +616,44 @@ TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture, ReturnErrorWhenCre
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
-TEST(GeneratedSkeletonCreationInstanceSpecifierDeathTest, ConstructingFromNonexistingSpecifierTerminates)
+TEST_F(GeneratedSkeletonCreationInstanceSpecifierTestFixture,
+       ReturnErrorWhenCreatingSkeletonWithNoSkeletonMethodBinding)
 {
-    const auto constructing_from_non_existing_specifier = [] {
-        RuntimeMockGuard runtime_mock_guard{};
-        auto& runtime_mock = runtime_mock_guard.runtime_mock_;
+    RecordProperty("Verifies", "SCR-17434559");
+    RecordProperty("Description",
+                   "Checks that exception-less creation of skeleton returns a kBindingFailure on failure to create.");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-        // Given a runtime resolving no configuration
-        std::vector<InstanceIdentifier> resolved_instance_identifiers{};
-        EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
+    // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kMethodName))
+        .WillOnce(Return(ByMove(nullptr)));
 
-        // Then when constructing a skeleton with an InstanceSpecifier that doesn't correspond to an existing
-        // instance_identifier we terminate
-        score::cpp::ignore = MySkeleton::Create(kInstanceSpecifier);
-    };
-    EXPECT_DEATH(constructing_from_non_existing_specifier(), ".*");
+    // When constructing a skeleton with an InstanceSpecifier
+    const auto unit = MySkeleton::Create(kInstanceSpecifier);
+
+    // Then it is _not_ possible to construct a skeleton
+    ASSERT_FALSE(unit.has_value());
+    ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
+}
+
+TEST(GeneratedSkeletonCreationInstanceSpecifierDeathTest, ConstructingFromNonexistingSpecifierReturnsError)
+{
+    RuntimeMockGuard runtime_mock_guard{};
+    auto& runtime_mock = runtime_mock_guard.runtime_mock_;
+
+    // Given a runtime resolving no configuration
+    std::vector<InstanceIdentifier> resolved_instance_identifiers{};
+    EXPECT_CALL(runtime_mock, resolve(kInstanceSpecifier)).WillOnce(Return(resolved_instance_identifiers));
+
+    // Then when constructing a skeleton with an InstanceSpecifier that doesn't correspond to an existing
+    // instance_identifier we terminate
+    auto result = MySkeleton::Create(kInstanceSpecifier);
+
+    ASSERT_FALSE(result.has_value());
+    ASSERT_EQ(result.error(), ComErrc::kInvalidInstanceIdentifierString);
 }
 
 using GeneratedSkeletonCreationInstanceIdentifierTestFixture = SkeletonCreationFixture;
@@ -576,6 +670,8 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromE
         std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_);
     auto skeleton_field_binding_mock_ptr =
         std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_);
+    auto skeleton_method_binding_mock_ptr =
+        std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_);
 
     // Expecting that valid bindings are created for the Skeleton, SkeletonEvent and SkeletonField
     EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(identifier_with_valid_binding_))
@@ -660,6 +756,22 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromI
     ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
 }
 
+TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, ConstructingFromInvalidSkeletonMethodReturnsError)
+{
+
+    // Expecting that the Create call on the SkeletonMethodBindingFactory returns an invalid binding for the method.
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_,
+                Create(identifier_with_valid_binding_, _, kMethodName))
+        .WillOnce(Return(ByMove(nullptr)));
+
+    // When constructing a skeleton with an InstanceIdentifier
+    const auto unit = MySkeleton::Create(identifier_with_valid_binding_);
+
+    // Then it is _not_ possible to construct a skeleton
+    ASSERT_FALSE(unit.has_value());
+    ASSERT_EQ(unit.error(), ComErrc::kBindingFailure);
+}
+
 TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSkeleton)
 {
     const TestSampleType field_value{10};
@@ -672,6 +784,9 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     // and that Send is called on the event binding once for the event and once for the field
     EXPECT_CALL(skeleton_event_binding_mock_, Send(event_value, _));
     EXPECT_CALL(skeleton_field_binding_mock_, Send(field_value, _));
+
+    // and that VerifyAllMethodsRegistered returns true because there are no methods to register
+    EXPECT_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillOnce(Return(true));
 
     // And that PrepareOffer is called on the skeleton binding and event / field
     EXPECT_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _))
@@ -715,6 +830,346 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     unit.some_event.Send(event_value);
 
     // Then we don't crash
+}
+
+class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixture
+{
+  public:
+    void SetUp() override
+    {
+        SkeletonCreationFixture::SetUp();
+
+        ON_CALL(skeleton_binding_mock_, PrepareStopOffer(_)).WillByDefault(Invoke([this] {
+            skeleton_stop_offer_called_ = true;
+        }));
+        ON_CALL(skeleton_event_binding_mock_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_event_stop_offer_called_ = true;
+        }));
+        ON_CALL(skeleton_field_binding_mock_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_field_stop_offer_called_ = true;
+        }));
+
+        ON_CALL(skeleton_binding_mock_2_, PrepareStopOffer(_)).WillByDefault(Invoke([this] {
+            skeleton_stop_offer_called_2_ = true;
+        }));
+        ON_CALL(skeleton_event_binding_mock_2_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_event_stop_offer_called_2_ = true;
+        }));
+        ON_CALL(skeleton_field_binding_mock_2_, PrepareStopOffer()).WillByDefault(Invoke([this] {
+            skeleton_field_stop_offer_called_2_ = true;
+        }));
+
+        // By default the skeleton binding will report that all methods were correctly registered
+        ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
+
+        // By default the skeleton and service element bindings will report that offer service preparation succeeded
+        ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(skeleton_event_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(skeleton_field_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
+    }
+
+    MySkeleton CreateService()
+    {
+        auto skeleton_result = MySkeleton::Create(kInstanceSpecifier);
+
+        // Use EXPECT_TRUE and amp assert to inform the user of the failure while also ensuring that we don't continue
+        // (and access the skeleton_result) in case creation failed. We can't use ASSERT_TRUE since it requires the
+        // return type of the function to be void.
+        EXPECT_TRUE(skeleton_result.has_value());
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_result.has_value());
+        return std::move(skeleton_result).value();
+    }
+
+    void OfferService(MySkeleton& skeleton)
+    {
+        const TestSampleType field_value{10};
+        const auto update_result = skeleton.some_field.Update(field_value);
+        ASSERT_TRUE(update_result.has_value());
+
+        const auto offer_result = skeleton.OfferService();
+        ASSERT_TRUE(offer_result.has_value());
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& GivenASkeleton()
+    {
+        score::cpp::ignore = skeleton_.emplace(CreateService());
+
+        return *this;
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& GivenTwoSkeletons()
+    {
+        // Since the parent fixture sets the default behaviour of the factories to always return the same mock binding,
+        // we need to override that behaviour used EXPECT_CALL so that the first call to each factory will return the
+        // first bindings and the second call will return the second bindings.
+        ::testing::InSequence in_sequence{};
+        EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(_))
+            .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_))));
+        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_))));
+        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_))));
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_))));
+
+        EXPECT_CALL(skeleton_binding_factory_mock_guard_.factory_mock_, Create(_))
+            .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock_2_))));
+        EXPECT_CALL(skeleton_event_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_event_binding_mock_2_))));
+        EXPECT_CALL(skeleton_field_binding_factory_mock_guard_.factory_mock_, CreateEventBinding(_, _, _))
+            .WillOnce(Return(ByMove(
+                std::make_unique<mock_binding::SkeletonEventFacade<TestSampleType>>(skeleton_field_binding_mock_2_))));
+        EXPECT_CALL(skeleton_method_binding_factory_mock_guard_.factory_mock_, Create(_, _, _))
+            .WillOnce(
+                Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock_2_))));
+
+        score::cpp::ignore = skeleton_.emplace(CreateService());
+        score::cpp::ignore = skeleton_2_.emplace(CreateService());
+
+        return *this;
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& WhichHasBeenOffered()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_.has_value());
+        OfferService(skeleton_.value());
+
+        return *this;
+    }
+
+    GeneratedSkeletonStopOfferServiceRaiiFixture& WhichHaveBothBeenOffered()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_.has_value());
+        OfferService(skeleton_.value());
+
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(skeleton_2_.has_value());
+        OfferService(skeleton_2_.value());
+
+        return *this;
+    }
+
+    bool skeleton_stop_offer_called_{false};
+    bool skeleton_event_stop_offer_called_{false};
+    bool skeleton_field_stop_offer_called_{false};
+
+    bool skeleton_stop_offer_called_2_{false};
+    bool skeleton_event_stop_offer_called_2_{false};
+    bool skeleton_field_stop_offer_called_2_{false};
+
+    mock_binding::Skeleton skeleton_binding_mock_2_{};
+    mock_binding::SkeletonEvent<TestSampleType> skeleton_event_binding_mock_2_{};
+    mock_binding::SkeletonEvent<TestSampleType> skeleton_field_binding_mock_2_{};
+    mock_binding::SkeletonMethod skeleton_method_binding_mock_2_{};
+
+    std::optional<MySkeleton> skeleton_{};
+    std::optional<MySkeleton> skeleton_2_{};
+};
+
+using GeneratedSkeletonDestructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
+TEST_F(GeneratedSkeletonDestructionFixture, CallsStopOfferServiceOnDestructionOfOfferedService)
+{
+    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // Expecting that PrepareStopOffer is called on the skeleton binding and event / field
+    EXPECT_CALL(skeleton_binding_mock_, PrepareStopOffer(_));
+    EXPECT_CALL(skeleton_event_binding_mock_, PrepareStopOffer());
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareStopOffer());
+
+    // When destroying the Skeleton
+    skeleton_.reset();
+
+    EXPECT_TRUE(skeleton_stop_offer_called_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonDestructionFixture, DoesNotCallStopOfferServiceOnDestructionOfNotOfferedService)
+{
+    RecordProperty("Verifies", "SCR-6093144, SCR-17432457");
+    RecordProperty("Description", "Check whether the service event offering is stopped when the skeleton is destroyed");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton();
+
+    // Expecting that PrepareStopOffer is not called on the skeleton binding and event / field
+    EXPECT_CALL(skeleton_binding_mock_, PrepareStopOffer(_)).Times(0);
+    EXPECT_CALL(skeleton_event_binding_mock_, PrepareStopOffer()).Times(0);
+    EXPECT_CALL(skeleton_field_binding_mock_, PrepareStopOffer()).Times(0);
+
+    // When destroying the Skeleton
+    skeleton_.reset();
+}
+
+using GeneratedSkeletonMoveConstructionFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
+TEST_F(GeneratedSkeletonMoveConstructionFixture, MoveConstructingDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move constructible");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // When move constructing the skeleton
+    auto moved_to_skeleton{std::move(skeleton_).value()};
+
+    // Then StopOfferService should not have been called
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedToSkeletonCallsStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move constructible");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // and given a move constructed skeleton
+    std::optional<MySkeleton> moved_to_skeleton{std::move(skeleton_).value()};
+
+    // When destroying the moved-to skeleton
+    moved_to_skeleton.reset();
+
+    // Then StopOffer should have been called
+    EXPECT_TRUE(skeleton_stop_offer_called_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonMoveConstructionFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move constructible");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenASkeleton().WhichHasBeenOffered();
+
+    // and given a move constructed skeleton
+    std::optional<MySkeleton> moved_to_skeleton{std::move(skeleton_).value()};
+
+    // When destroying the moved-from skeleton
+    skeleton_.reset();
+
+    // Then StopOfferService should not have been called
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+}
+
+using GeneratedSkeletonMoveAssignmentFixture = GeneratedSkeletonStopOfferServiceRaiiFixture;
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningCallsStopOfferServiceOnMovedToSkeleton)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // When move assigning the first to the second
+    skeleton_2_.value() = std::move(skeleton_).value();
+
+    // Then only the second service should be stop offered
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+
+    EXPECT_TRUE(skeleton_stop_offer_called_2_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_2_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_2_);
+}
+
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedToSkeletonCallsStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // and given the first was move assigned to the second
+    skeleton_2_.value() = std::move(skeleton_).value();
+
+    // When destroying the moved-to skeleton
+    skeleton_2_.reset();
+
+    // Then the first service should be stop offered
+    EXPECT_TRUE(skeleton_stop_offer_called_);
+    EXPECT_TRUE(skeleton_event_stop_offer_called_);
+    EXPECT_TRUE(skeleton_field_stop_offer_called_);
+}
+
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, DestroyingMovedFromSkeletonDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // Expecting that PrepareStopOffer is called on the second skeleton's binding and event / field only once
+    EXPECT_CALL(skeleton_binding_mock_2_, PrepareStopOffer(_));
+    EXPECT_CALL(skeleton_event_binding_mock_2_, PrepareStopOffer());
+    EXPECT_CALL(skeleton_field_binding_mock_2_, PrepareStopOffer());
+
+    // and given the first was move assigned to the second
+    skeleton_2_.value() = std::move(skeleton_).value();
+
+    // When destroying the moved-from skeleton
+    skeleton_2_.reset();
+}
+
+TEST_F(GeneratedSkeletonMoveAssignmentFixture, MoveAssigningToAMovedFromSkeletonDoesNotCallStopOfferService)
+{
+    RecordProperty("Verifies", "SCR-17432438");
+    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    GivenTwoSkeletons().WhichHaveBothBeenOffered();
+
+    // and given that a new skeleton was move constructed from the first
+    auto moved_to_skeleton{std::move(skeleton_).value()};
+
+    // When move assigning the second skeleton to the first (which was already moved from and therefore no longer "owns"
+    // the first service)
+    skeleton_.value() = std::move(skeleton_2_).value();
+
+    // Then neither of the services should have been stop offered (since skeleton_ now "owns" the second service and
+    // moved_to_skeleton "owns" the first)
+    EXPECT_FALSE(skeleton_stop_offer_called_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_);
+
+    EXPECT_FALSE(skeleton_stop_offer_called_2_);
+    EXPECT_FALSE(skeleton_event_stop_offer_called_2_);
+    EXPECT_FALSE(skeleton_field_stop_offer_called_2_);
 }
 
 }  // namespace

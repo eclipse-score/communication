@@ -37,6 +37,18 @@ class MessagePassingServiceInstanceMock : public IMessagePassingServiceInstance
                 (const ElementFqId, const IMessagePassingService::HandlerRegistrationNoType, const pid_t),
                 (noexcept, override));
 
+    MOCK_METHOD(ResultBlank,
+                RegisterOnServiceMethodSubscribedHandler,
+                (SkeletonInstanceIdentifier,
+                 IMessagePassingService::ServiceMethodSubscribedHandler,
+                 IMessagePassingService::AllowedConsumerUids),
+                (override));
+
+    MOCK_METHOD(ResultBlank,
+                RegisterMethodCallHandler,
+                (ProxyMethodInstanceIdentifier, IMessagePassingService::MethodCallHandler, uid_t),
+                (override));
+
     MOCK_METHOD(void, NotifyOutdatedNodeId, (const pid_t, const pid_t), (noexcept, override));
 
     MOCK_METHOD(void,
@@ -45,6 +57,17 @@ class MessagePassingServiceInstanceMock : public IMessagePassingServiceInstance
                 (noexcept, override));
 
     MOCK_METHOD(void, UnregisterEventNotificationExistenceChangedCallback, (const ElementFqId), (noexcept, override));
+
+    MOCK_METHOD(ResultBlank,
+                SubscribeServiceMethod,
+                (const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
+                (override));
+
+    MOCK_METHOD(ResultBlank, CallMethod, (const ProxyMethodInstanceIdentifier&, std::size_t, pid_t), (override));
+
+    MOCK_METHOD(void, UnregisterOnServiceMethodSubscribedHandler, (SkeletonInstanceIdentifier), (override));
+
+    MOCK_METHOD(void, UnregisterMethodCallHandler, (ProxyMethodInstanceIdentifier), (override));
 };
 
 }  // namespace score::mw::com::impl::lola

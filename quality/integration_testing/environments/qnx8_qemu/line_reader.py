@@ -61,6 +61,7 @@ class LineReader(threading.Thread):
                 if line:
                     message = f"[{datetime.now()}] [{self.name}] - {line}"
                 if self.print_logger:
+                    line = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]|\x1b[>=<]|\x1bc', '', line)
                     self.logger.info(line)
                 if self._logfile:
                     with LineReader.log_locks[self._logfile]:
