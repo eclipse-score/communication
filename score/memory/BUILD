@@ -99,11 +99,11 @@ cc_library(
         "split_string_view.h",
     ],
     features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = [
         "@score_baselibs//score/mw/log:__subpackages__",
     ],
-    deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
 cc_library(

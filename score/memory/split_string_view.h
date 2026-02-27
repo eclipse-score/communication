@@ -13,7 +13,7 @@
 #ifndef SCORE_LIB_MEMORY_SPLIT_STRING_VIEW_H
 #define SCORE_LIB_MEMORY_SPLIT_STRING_VIEW_H
 
-#include "score/string_view.hpp"
+#include <string_view>
 
 namespace score::memory
 {
@@ -41,14 +41,14 @@ namespace score::memory
 class LazySplitStringView final
 {
   public:
-    explicit LazySplitStringView(const score::cpp::string_view source, const score::cpp::string_view::value_type seperator) noexcept;
+    explicit LazySplitStringView(const std::string_view source, const std::string_view::value_type seperator) noexcept;
 
     class Iterator
     {
       public:
         /// \brief Returns the view on the current substring
         /// \precondition *this != end()
-        score::cpp::string_view operator*() const noexcept;
+        std::string_view operator*() const noexcept;
 
         /// \brief Move this to the next substring.
         Iterator& operator++() noexcept;
@@ -57,10 +57,10 @@ class LazySplitStringView final
         friend bool operator!=(const Iterator& lhs, const Iterator& rhs) noexcept;
 
       private:
-        explicit Iterator(const LazySplitStringView&, const score::cpp::string_view::size_type start_index) noexcept;
+        explicit Iterator(const LazySplitStringView&, const std::string_view::size_type start_index) noexcept;
         const LazySplitStringView& split_view_;
-        score::cpp::string_view::size_type start_index_;
-        score::cpp::string_view::size_type seperator_index_;  // Class invariant: seperator_index_ >= start_index_
+        std::string_view::size_type start_index_;
+        std::string_view::size_type seperator_index_;  // Class invariant: seperator_index_ >= start_index_
 
         // Suppress "AUTOSAR C++14 A11-3-1" rule finding: "Friend declarations shall not be used.".
         // The 'friend' class is employed to encapsulate non-public members.
@@ -80,8 +80,8 @@ class LazySplitStringView final
     Iterator end() const noexcept;
 
   private:
-    score::cpp::string_view source_;
-    score::cpp::string_view::value_type seperator_;
+    std::string_view source_;
+    std::string_view::value_type seperator_;
 };
 
 }  // namespace score::memory

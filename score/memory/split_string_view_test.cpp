@@ -15,7 +15,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using namespace score::cpp::literals::string_view_literals;
+using std::string_view_literals::operator""sv;
 
 namespace score::memory
 {
@@ -23,14 +23,14 @@ namespace score::memory
 namespace
 {
 
-using StringSequence = std::vector<score::cpp::string_view>;
+using StringSequence = std::vector<std::string_view>;
 
 const auto kSeperator = '|';
 
 std::string Join(const StringSequence& string_sequence)
 {
     std::string result{};
-    for (score::cpp::string_view substring : string_sequence)
+    for (std::string_view substring : string_sequence)
     {
         result.append(std::string{substring.begin(), substring.size()});
         result.push_back(kSeperator);
@@ -69,44 +69,44 @@ TEST(StringSplitterTests, EmptyStringShallReturnEmptyRange)
 
 TEST(StringSplitterTests, NoSeperatorShallReturnOneItem)
 {
-    StringSequence seq{"Hello World"_sv};
+    StringSequence seq{"Hello World"sv};
     ExpectEqualSequences(GetSplitSequence(Join(seq)), seq);
 }
 
 TEST(StringSplitterTests, OneSeperatorShallReturnTwoItems)
 {
-    StringSequence seq{"Hello World"_sv, "Foobar"_sv};
+    StringSequence seq{"Hello World"sv, "Foobar"sv};
 
     ExpectEqualSequences(GetSplitSequence(Join(seq)), seq);
 }
 
 TEST(StringSplitterTests, SeperatorAtBeginShallReturnEmptyString)
 {
-    StringSequence seq{""_sv, "Hello World"_sv, "Foobar"_sv};
+    StringSequence seq{""sv, "Hello World"sv, "Foobar"sv};
 
     ExpectEqualSequences(GetSplitSequence(Join(seq)), seq);
 }
 
 TEST(StringSplitterTests, SeperatorAtEndShallBeDiscarded)
 {
-    StringSequence seq{"Hello World"_sv, "Foobar"_sv};
+    StringSequence seq{"Hello World"sv, "Foobar"sv};
 
     ExpectEqualSequences(GetSplitSequence(Join(seq) + kSeperator), seq);
 }
 
 TEST(StringSplitterTests, SeperatorOnlyStringShallReturnEmptySubstring)
 {
-    ExpectEqualSequences(GetSplitSequence(std::string{"|"}), StringSequence{""_sv});
+    ExpectEqualSequences(GetSplitSequence(std::string{"|"}), StringSequence{""sv});
 }
 
 TEST(StringSplitterTests, TwoSeperatorsShallReturnTwoEmptySubstring)
 {
-    ExpectEqualSequences(GetSplitSequence(std::string{"||"}), StringSequence{""_sv, ""_sv});
+    ExpectEqualSequences(GetSplitSequence(std::string{"||"}), StringSequence{""sv, ""sv});
 }
 
 TEST(StringSplitterTests, MultipleSeperatorsInRowShallReturnEmptySubstring)
 {
-    ExpectEqualSequences(GetSplitSequence(std::string{"Foo||Bar"}), StringSequence{"Foo"_sv, ""_sv, "Bar"_sv});
+    ExpectEqualSequences(GetSplitSequence(std::string{"Foo||Bar"}), StringSequence{"Foo"sv, ""sv, "Bar"sv});
 }
 
 }  // namespace

@@ -20,12 +20,12 @@
 namespace
 {
 
-score::cpp::string_view::size_type FindNextSeperator(score::cpp::string_view view,
-                                              const score::cpp::string_view::size_type start_index,
-                                              const score::cpp::string_view::value_type seperator) noexcept
+std::string_view::size_type FindNextSeperator(std::string_view view,
+                                              const std::string_view::size_type start_index,
+                                              const std::string_view::value_type seperator) noexcept
 {
     view.remove_prefix(start_index);
-    if (const auto pos = view.find(seperator); pos != score::cpp::string_view::npos)
+    if (const auto pos = view.find(seperator); pos != std::string_view::npos)
     {
         return start_index + pos;
     }
@@ -40,8 +40,8 @@ score::cpp::string_view::size_type FindNextSeperator(score::cpp::string_view vie
 namespace score::memory
 {
 
-LazySplitStringView::LazySplitStringView(const score::cpp::string_view source,
-                                         const score::cpp::string_view::value_type seperator) noexcept
+LazySplitStringView::LazySplitStringView(const std::string_view source,
+                                         const std::string_view::value_type seperator) noexcept
     : source_{source}, seperator_{seperator}
 {
 }
@@ -67,7 +67,7 @@ LazySplitStringView::Iterator LazySplitStringView::end() const noexcept
 }
 
 LazySplitStringView::Iterator::Iterator(const LazySplitStringView& view,
-                                        const score::cpp::string_view::size_type start_index) noexcept
+                                        const std::string_view::size_type start_index) noexcept
     : split_view_{view},
       start_index_{start_index},
       seperator_index_{FindNextSeperator(view.source_, start_index, view.seperator_)}
@@ -76,11 +76,11 @@ LazySplitStringView::Iterator::Iterator(const LazySplitStringView& view,
                        "Class invariant shall ensure seperator index shall be greater or equal than start index.");
 }
 
-score::cpp::string_view LazySplitStringView::Iterator::operator*() const noexcept
+std::string_view LazySplitStringView::Iterator::operator*() const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(seperator_index_ >= start_index_,
                        "Class invariant shall ensure seperator index shall be greater or equal than start index.");
-    score::cpp::string_view result{split_view_.source_};
+    std::string_view result{split_view_.source_};
     result.remove_suffix(result.size() - seperator_index_);
     result.remove_prefix(start_index_);
     return result;
