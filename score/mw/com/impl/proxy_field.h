@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_FIELD_H
 #define SCORE_MW_COM_IMPL_PROXY_FIELD_H
 
+#include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_event.h"
@@ -33,7 +34,6 @@
 
 namespace score::mw::com::impl
 {
-
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "An identifier with external linkage shall have
 // exactly one definition". This a forward class declaration.
 // coverity[autosar_cpp14_m3_2_3_violation]
@@ -44,7 +44,7 @@ class ProxyFieldAttorney;
 /// ProxyEvent.
 ///
 /// \tparam SampleDataType Type of data that is transferred by the event.
-template <typename SampleDataType>
+template <typename SampleDataType, const bool EnableGet = false, const bool EnableSet = false>
 class ProxyField final : public ProxyFieldBase
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -88,10 +88,12 @@ class ProxyField final : public ProxyFieldBase
 
     /// \brief A ProxyField shall not be copyable
     ProxyField(const ProxyField&) = delete;
+
     ProxyField& operator=(const ProxyField&) = delete;
 
     /// \brief A ProxyField shall be moveable
     ProxyField(ProxyField&&) noexcept;
+
     ProxyField& operator=(ProxyField&&) & noexcept;
 
     ~ProxyField() noexcept = default;
@@ -113,6 +115,18 @@ class ProxyField final : public ProxyFieldBase
     Result<std::size_t> GetNewSamples(F&& receiver, const std::size_t max_num_samples) noexcept
     {
         return proxy_event_dispatch_->GetNewSamples(std::forward<F>(receiver), max_num_samples);
+    }
+
+    template <typename T = SampleDataType, typename = std::enable_if_t<EnableGet>>
+    score::Result<MethodReturnTypePtr<T>> Get() noexcept
+    {
+        return proxy_method_get_dispatch_->operator()();
+    }
+
+    template <typename T = SampleDataType, typename = std::enable_if_t<EnableSet>>
+    score::Result<MethodReturnTypePtr<T>> Set(SampleDataType& new_field_value) noexcept
+    {
+        return proxy_method_set_dispatch_->operator()(new_field_value);
     }
 
     void InjectMock(IProxyEvent<FieldType>& proxy_event_mock)
@@ -144,13 +158,35 @@ class ProxyField final : public ProxyFieldBase
     // avoid dangling references.
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
 
+    struct empty
+    {
+    };
+
+    using ProxyGetMethodType = std::conditional_t<EnableGet, std::unique_ptr<ProxyMethod<FieldType(void)>>, empty>;
+    using ProxySetMethodType = std::conditional_t<EnableSet, std::unique_ptr<ProxyMethod<FieldType(FieldType)>>, empty>;
+
+    // Public ProxyField getter calls will be dispatched to proxy_method_get_dispatch_. The get-method signature is
+    // FieldType(void). i.e. no in-arg and FieldType return type.
+    // in case getter is disabled (EnableGet = false) the type of proxy_method_get_dispatch_ is empty
+    // When switching to C++20, we can use the [[no_unique_address]] attribute for the empty struct to avoid any
+    // memory overhead in case the getter/setter is disabled.
+    ProxyGetMethodType proxy_method_get_dispatch_;
+    // Public ProxyField setter calls will be dispatched to proxy_method_set_dispatch_. The set-method signature is
+    // FieldType(FieldType). i.e. FieldType in-arg and also FieldType return type -> which represents the new value of
+    // the field after the set call (provider side may have decided to adjust the provided value, e.g. to fit to a
+    // certain range or to apply some transformation).
+    // in case setter is disabled (EnableSet = false) the type of proxy_method_set_dispatch_ is empty
+    // When switching to C++20, we can use the [[no_unique_address]] attribute for the empty struct to avoid any
+    // memory overhead in case the getter/setter is disabled.
+    ProxySetMethodType proxy_method_set_dispatch_;
+
     static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
                   "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
 };
 
-template <typename FieldType>
-ProxyField<FieldType>::ProxyField(ProxyField&& other) noexcept
+template <typename FieldType, const bool EnableGet, const bool EnableSet>
+ProxyField<FieldType, EnableGet, EnableSet>::ProxyField(ProxyField&& other) noexcept
     : ProxyFieldBase(std::move(static_cast<ProxyFieldBase&&>(other))),
       proxy_event_dispatch_(std::move(other.proxy_event_dispatch_))
 {
@@ -159,13 +195,14 @@ ProxyField<FieldType>::ProxyField(ProxyField&& other) noexcept
     proxy_base_view.UpdateField(field_name_, *this);
 }
 
-template <typename FieldType>
+template <typename FieldType, const bool EnableGet, const bool EnableSet>
 // Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
 // or respectively copy base classes and data members of a class, without any side effects."
 // Rationale: The parent proxy stores a reference to the ProxyEvent. The address that is pointed to must be
 // updated when the ProxyField is moved. Therefore, side effects are required.
 // coverity[autosar_cpp14_a6_2_1_violation]
-auto ProxyField<FieldType>::operator=(ProxyField&& other) & noexcept -> ProxyField<FieldType>&
+auto ProxyField<FieldType, EnableGet, EnableSet>::operator=(ProxyField&& other) & noexcept
+    -> ProxyField<FieldType, EnableGet, EnableSet>&
 {
     if (this != &other)
     {
@@ -178,7 +215,6 @@ auto ProxyField<FieldType>::operator=(ProxyField&& other) & noexcept -> ProxyFie
     }
     return *this;
 }
-
 }  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_PROXY_FIELD_H
