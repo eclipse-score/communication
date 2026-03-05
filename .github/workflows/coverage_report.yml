@@ -54,13 +54,15 @@ jobs:
           bazel coverage //... --build_tests_only
 
       - name: Generate HTML Coverage Report
+        # FIXME: "--ignore-errors inconsistent" is a workaround to cope with gcov messing up hit counts because of internal data races
         run: |
           genhtml "$(bazel info output_path)/_coverage/_coverage_report.dat" \
             -o=cpp_coverage \
             --show-details \
             --legend \
             --function-coverage \
-            --branch-coverage
+            --branch-coverage \
+            --ignore-errors inconsistent
 
       - name: Create archive of test report
         run: |
