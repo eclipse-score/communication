@@ -33,6 +33,57 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "find_stop_find_test",
+    srcs = ["find_stop_find_test.cpp"],
+    data = ["etc/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":datatype",
+        "//score/mw/com",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_binary(
+    name = "find_long_running_handler_test",
+    srcs = ["find_long_running_handler_test.cpp"],
+    data = ["etc/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":datatype",
+        "//score/mw/com",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_binary(
+    name = "find_inter_stop_test",
+    srcs = ["find_inter_stop_test.cpp"],
+    data = ["etc/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":datatype",
+        "//score/mw/com",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_binary(
+    name = "find_concurrent_stop_test",
+    srcs = ["find_concurrent_stop_test.cpp"],
+    data = ["etc/mw_com_config.json"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":datatype",
+        "//score/mw/com",
+        "@score_baselibs//score/concurrency",
+        "@score_baselibs//score/mw/log",
+    ],
+)
 cc_library(
     name = "sample_sender_receiver",
     srcs = [
