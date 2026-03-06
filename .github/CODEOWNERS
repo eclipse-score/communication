@@ -4,5 +4,12 @@
 # Syntax: https://help.github.com/articles/about-codeowners/
 
 # default owners
+
+# #################################################################
+# Lead: @LittleHuba
+# -----------------------------------------------------------------
+# Team: @castler @hoe-jo @LittleHuba
+# #################################################################
+
 * @castler @hoe-jo @LittleHuba
 
