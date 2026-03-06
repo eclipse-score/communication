@@ -208,6 +208,7 @@ cc_library(
         ":proxy_event",
         ":proxy_event_binding",
         ":proxy_field_base",
+        "//score/mw/com/impl/methods:proxy_method",
         "//score/mw/com/impl/mocking:i_proxy_event",
         "//score/mw/com/impl/plumbing:field",
         "@score_baselibs//score/language/futurecpp",

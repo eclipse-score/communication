@@ -20,7 +20,6 @@
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
-#include <score/overload.hpp>
 
 #include <memory>
 #include <string_view>
