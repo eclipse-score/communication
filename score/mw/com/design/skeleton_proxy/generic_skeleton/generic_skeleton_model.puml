@@ -1,0 +1,183 @@
+@startuml generic_skeleton_model
+title "Generic Skeleton Extension"
+
+class "score::mw::com::impl::HandleType" {
+  -indentifier_: InstanceIdentifier
+  +operator==(const HandleType& other): bool
+  +operator<(const HandleType& other): bool
+  +GetInstanceId(): InstanceIdentifier&
+  +GetServiceInstanceDeployment(): ServiceInstanceDeployment&
+}
+
+class "SkeletonBindingFactory" {
+  +{static} Create(InstanceIdentifier identifier): std::unique_ptr<SkeletonBinding>
+}
+
+abstract class "score::mw::com::impl::SkeletonBase" 
+{
+  -skeleton_binding_ : std::unique_ptr<SkeletonBinding>
+  -identifier_ : InstanceIdentifier
+  +GetAssociatedInstanceIdentifier() : const InstanceIdentifier&
+  +OfferService(): ResultBlank
+  +StopOfferService(): void
+  ..
+  <u>Notes:</u>
+  SkeletonBase is not copyable but moveable
+}
+
+abstract class "SkeletonBinding" {
+  +{abstract} PrepareOffer() = 0: ResultBlank
+  +{abstract} PrepareStopOffer() = 0: void
+}
+
+class "mw::com::impl::GenericSkeleton" #yellow {
+  using EventMap = ServiceElementMap<GenericSkeletonEvent>
+  ..
+  +GenericSkeleton(const InstanceIdentifier&, std::unique_ptr<SkeletonBinding>, MethodCallProcessingMode)
+  +Create(const InstanceIdentifier&, const GenericSkeletonCreateParams&, MethodCallProcessingMode): Result<GenericSkeleton>
+  +Create(const InstanceSpecifier&, const GenericSkeletonCreateParams&, MethodCallProcessingMode): Result<GenericSkeleton>
+  +events_ : EventMap
+  +OfferService(): ResultBlank
+  +StopOfferService(): void
+}
+
+class "lola::Skeleton" {
+  +Skeleton(const InstanceIdentifier&, MethodCallProcessingMode)
+  +PrepareOffer(): ResultBlank
+  +PrepareStopOffer(): void
+  +Register(ElementFqId event_fqn, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
+  +RegisterGeneric(ElementFqId event_fqn, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
+  +DisconnectQmConsumers(): void
+  +GetInstanceQualityType(): QualityType
+  +GetSourcePid(): pid_t
+}
+
+class "mw::com::impl::SkeletonEvent<SampleType>" {
+  +Send(const SampleType&): ResultBlank
+  +Allocate(): Result<SampleAllocateePtr<SampleType>>
+}
+
+abstract class "SkeletonEventBindingBase" {
+  +{abstract} PrepareOffer() = 0: ResultBlank
+  +{abstract} PrepareStopOffer() = 0: void
+  +{abstract} GetBindingType() = 0: BindingType
+  +{abstract} SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) = 0: void
+}
+
+abstract class "SkeletonEventBinding<SampleType>" 
+{
+  +{abstract} Send(const SampleType&) = 0: ResultBlank
+  +{abstract} Allocate() = 0: Result<SampleAllocateePtr<SampleType>>
+}
+
+class "SampleAllocateePtr<SampleType>" {
+  +Get(): SampleType*
+  +operator->(): SampleType*
+  +operator*(): SampleType&
+}
+
+class "lola::SkeletonEvent<SampleType>" {
+  +SkeletonEvent(lola::Skeleton& parent, const SkeletonEventProperties& event_properties, const ElementFqId& event_fqn)
+  +Send(const SampleType&) : ResultBlank
+  +Allocate(): Result<SampleAllocateePtr<SampleType>>
+  -event_shared_impl_ : lola::SkeletonEventCommon
+}
+
+class "GenericSkeletonEventBindingFactory" {
+  +{static} Create(SkeletonBase& parent, std::string_view event_name, const DataTypeMetaInfo& size_info): Result<std::unique_ptr<GenericSkeletonEventBinding>>
+}
+
+class "ServiceElementMap" {
+  using key_type = score::cpp::stringview
+  using mapped_type = GenericSkeletonEvent
+  using value_type = std::pair<const key_type, mapped_type>
+  using const_iterator = LegacyBidirectionalIterator to const value_type
+  ..
+  +cbegin() : const_iterator
+  +cend() : const_iterator
+  +find() : const_iterator
+  +size() : std::size_t
+  +empty() : bool
+}
+
+abstract class "mw::com::impl::SkeletonEventBase" #yellow {
+  +SkeletonEventBase(SkeletonBase&, const std::string_view, std::unique_ptr<SkeletonEventBindingBase>)
+  +OfferService(): ResultBlank
+  +StopOfferService(): void
+}
+
+class "mw::com::impl::GenericSkeletonEvent" #yellow {
+  +GenericSkeletonEvent(SkeletonBase&, const std::string_view, std::unique_ptr<GenericSkeletonEventBinding>)
+  +Send(SampleAllocateePtr<void> sample): ResultBlank
+  +Allocate(): Result<SampleAllocateePtr<void>>
+  +GetSizeInfo() const : DataTypeMetaInfo
+}
+
+abstract class "GenericSkeletonEventBinding" #yellow {
+  +{abstract} Send(SampleAllocateePtr<void> sample) = 0: ResultBlank
+  +{abstract} Allocate() = 0: Result<SampleAllocateePtr<void>>
+  +{abstract} GetSizeInfo() const = 0: std::pair<size_t, size_t>
+}
+
+class "lola::SkeletonEventCommon" #yellow {
+  -parent_: lola::Skeleton&
+  -element_fq_id_: ElementFqId
+  -control_: score::cpp::optional<EventDataControlComposite>&
+  -current_timestamp_: EventSlotStatus::EventTimeStamp&
+  +SkeletonEventCommon(lola::Skeleton&, const ElementFqId&, score::cpp::optional<EventDataControlComposite>&, EventSlotStatus::EventTimeStamp&, impl::tracing::SkeletonEventTracingData)
+  +PrepareOfferCommon(): void
+  +PrepareStopOfferCommon(): void
+  +GetParent(): lola::Skeleton&
+  +GetElementFQId(): const ElementFqId&
+  +IsQmNotificationsRegistered(): bool
+  +IsAsilBNotificationsRegistered(): bool
+  +GetTracingData(): impl::tracing::SkeletonEventTracingData&
+}
+
+class "lola::GenericSkeletonEvent" #yellow {
+  +GenericSkeletonEvent(lola::Skeleton& parent, const SkeletonEventProperties& event_properties, const ElementFqId& event_fqn, const DataTypeMetaInfo& size_info, impl::tracing::SkeletonEventTracingData tracing_data)
+  +Send(score::mw::com::impl::SampleAllocateePtr<void> sample): ResultBlank
+  +Allocate(): Result<score::mw::com::impl::SampleAllocateePtr<void>>
+  +GetSizeInfo() const : std::pair<size_t, size_t>
+  +PrepareOffer(): ResultBlank
+  +PrepareStopOffer(): void
+  +GetBindingType(): BindingType
+  +SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data): void
+  +GetMaxSize() const : std::size_t
+  -event_shared_impl_ : lola::SkeletonEventCommon
+}
+
+class "DummySkeleton" <<generated>>  {
+  +DummySkeleton(const InstanceIdentifier&, MethodCallProcessingMode)
+  +DummyEvent : events::DummyEvent
+}
+
+' Relationships
+"score::mw::com::impl::SkeletonBase" *--> "SkeletonBinding"
+"score::mw::com::impl::SkeletonBase" <|-- "DummySkeleton"
+"score::mw::com::impl::SkeletonBase" <|-- "mw::com::impl::GenericSkeleton"
+"mw::com::impl::GenericSkeleton" *-- "ServiceElementMap"
+"SkeletonBindingFactory" ..> "SkeletonBinding" : creates
+"SkeletonBinding" <|-- "lola::Skeleton"
+
+"mw::com::impl::SkeletonEventBase" <|-- "mw::com::impl::SkeletonEvent<SampleType>"
+"mw::com::impl::SkeletonEventBase" <|-- "mw::com::impl::GenericSkeletonEvent"
+
+"SkeletonEventBindingBase" <|-- "SkeletonEventBinding<SampleType>"
+"SkeletonEventBindingBase" <|-- "GenericSkeletonEventBinding"
+
+"SkeletonEventBinding<SampleType>" <|-- "lola::SkeletonEvent<SampleType>"
+"GenericSkeletonEventBinding" <|-- "lola::GenericSkeletonEvent"
+
+"mw::com::impl::GenericSkeletonEvent" ..> "GenericSkeletonEventBindingFactory" : uses
+"mw::com::impl::SkeletonEvent<SampleType>" ..> "GenericSkeletonEventBindingFactory" : uses
+
+"lola::SkeletonEvent<SampleType>" *-- "lola::SkeletonEventCommon" : event_shared_impl_
+"lola::GenericSkeletonEvent" *-- "lola::SkeletonEventCommon" : event_shared_impl_
+
+"lola::SkeletonEventCommon" o-- "1" "lola::Skeleton"
+
+"DummySkeleton" *--> "mw::com::impl::SkeletonEvent<SampleType>" : "0..n"
+"mw::com::impl::GenericSkeleton" *--> "mw::com::impl::GenericSkeletonEvent" : "0..n"
+
+@enduml

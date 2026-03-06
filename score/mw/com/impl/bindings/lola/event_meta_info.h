@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_META_INFO_H
 
 #include "score/memory/shared/offset_ptr.h"
-#include "score/mw/com/impl/bindings/lola/data_type_meta_info.h"
+#include "score/mw/com/impl/data_type_meta_info.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -26,7 +26,7 @@ namespace score::mw::com::impl::lola
 class EventMetaInfo
 {
   public:
-    EventMetaInfo(const DataTypeMetaInfo data_type_info, const memory::shared::OffsetPtr<void> event_slots_raw_array)
+    EventMetaInfo(const impl::DataTypeMetaInfo data_type_info, const memory::shared::OffsetPtr<void> event_slots_raw_array)
         : data_type_info_(data_type_info), event_slots_raw_array_(event_slots_raw_array)
     {
     }
@@ -35,7 +35,7 @@ class EventMetaInfo
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    DataTypeMetaInfo data_type_info_;
+    impl::DataTypeMetaInfo data_type_info_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     memory::shared::OffsetPtr<void> event_slots_raw_array_;
 };

@@ -17,6 +17,7 @@
 #include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/service_element_type.h"
+#include "score/mw/com/impl/generic_skeleton_event_binding.h"
 
 #include <score/callback.hpp>
 #include <score/optional.hpp>

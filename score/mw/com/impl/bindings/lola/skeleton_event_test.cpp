@@ -133,6 +133,41 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     EXPECT_EQ(allocate_result.error(), ComErrc::kBindingFailure);
 }
 
+TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCalls)
+{
+    RecordProperty("Description", "Checks that multiple calls to Allocate() return unique memory pointers.");
+    RecordProperty("TestType", "Unit Test");
+
+    const bool enforce_max_samples{true};
+    const size_t num_allocations = 3;
+    ASSERT_LE(num_allocations, max_samples_);
+
+    // Given an offered event
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    skeleton_event_->PrepareOffer();
+
+    // When allocating multiple samples without sending them
+    std::vector<impl::SampleAllocateePtr<test::TestSampleType>> allocated_pointers;
+    std::vector<void*> raw_pointers;
+
+    for (size_t i = 0; i < num_allocations; ++i)
+    {
+        auto alloc_result = skeleton_event_->Allocate();
+        ASSERT_TRUE(alloc_result.has_value()) << "Allocation " << i << " failed";
+        
+        // Store the raw pointer to check for uniqueness
+        raw_pointers.push_back(alloc_result.value().Get());
+
+        // Keep the SampleAllocateePtr alive to keep the slot busy
+        allocated_pointers.push_back(std::move(alloc_result.value()));
+    }
+
+    // Then all allocated raw pointers should be unique
+    std::sort(raw_pointers.begin(), raw_pointers.end());
+    auto it = std::unique(raw_pointers.begin(), raw_pointers.end());
+    EXPECT_EQ(it, raw_pointers.end()) << "Duplicate memory addresses were allocated.";
+}
+
 using SkeletonEventPrepareOfferFixture = SkeletonEventFixture;
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeProvided)
 {

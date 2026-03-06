@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/bindings/mock_binding/sample_ptr.h"
+#include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -85,7 +86,7 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<SampleType>
         // Here we can't use a raw pointer / reference since we're using score::cpp::overload, and the function is not
         // replaceing the managed object, so this should be a const reference.
         // coverity[autosar_cpp14_a8_4_12_violation]
-        [](const std::unique_ptr<SampleType>& ptr) -> TracingData {
+        [](const mock_binding::SampleAllocateePtr<SampleType>& ptr) -> TracingData {
             return {0U, {ptr.get(), sizeof(SampleType)}};
         },
         [](const score::cpp::blank&) noexcept -> TracingData {
@@ -126,7 +127,7 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
                 lola::TransactionLogSet::kSkeletonIndexSentinel};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
         },
-        [](std::unique_ptr<SampleType>& ptr) -> TypeErasedSamplePtr {
+        [](mock_binding::SampleAllocateePtr<SampleType>& ptr) -> TypeErasedSamplePtr {
             impl::tracing::TypeErasedSamplePtr type_erased_sample_ptr{std::make_unique<SampleType>(*ptr)};
             return type_erased_sample_ptr;
         },

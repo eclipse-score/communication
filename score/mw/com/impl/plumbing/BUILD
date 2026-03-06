@@ -449,6 +449,9 @@ cc_library(
     implementation_deps = [
         "skeleton_binding_factory_impl",
     ],
+     visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
     tags = ["FFI"],
     deps = [
         ":i_skeleton_binding_factory",
@@ -588,6 +591,54 @@ cc_library(
 )
 
 cc_library(
+    name = "generic_skeleton_event_binding_factory_impl",
+    srcs = ["generic_skeleton_event_binding_factory_impl.cpp"],
+    hdrs = ["generic_skeleton_event_binding_factory_impl.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = ["//score/mw/com/impl/bindings/lola"],
+    tags = ["FFI"], # Increased visibility as it's now in score::mw::com::impl namespace
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
+        ":skeleton_service_element_binding_factory_impl",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton_event_binding_factory",
+    srcs = ["generic_skeleton_event_binding_factory.cpp"],
+    hdrs = ["generic_skeleton_event_binding_factory.h",
+            "skeleton_service_element_binding_factory_impl.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        ":generic_skeleton_event_binding_factory_impl",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+      deps = [ # Removed unnecessary dependency
+        "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
+    ],
+)
+
+cc_library(
+    name = "generic_skeleton_event_binding_factory_mock",
+    testonly = True,
+    srcs = ["generic_skeleton_event_binding_factory_mock.cpp"],
+    hdrs = ["generic_skeleton_event_binding_factory_mock.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//visibility:public",  # platform_only
+    ],
+     deps = [
+        "//score/mw/com/impl:i_generic_skeleton_event_binding_factory",
+        "@googletest//:gtest",
+    ],
+)
+cc_library(
     name = "runtime",
     srcs = [
         "binding_runtime_factory.cpp",
@@ -667,7 +718,9 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = ["//score/mw/com/impl/bindings/lola:event"],
+    deps = ["//score/mw/com/impl/bindings/lola:event",
+        "//score/mw/com/impl/bindings/mock_binding:sample_allocatee_ptr",
+        ],
 )
 
 cc_library(

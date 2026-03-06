@@ -596,8 +596,8 @@ TEST_F(ProxyGetEventMetaInfoFixture, GetEventMetaInfoWillReturnDataForEventThatW
     const auto event_meta_info = proxy_->GetEventMetaInfo(kDummyElementFqId);
 
     // Then the EventMetaInfo will contain the meta info of the SkeletonEvent type
-    EXPECT_EQ(event_meta_info.data_type_info_.size_of_, sizeof(ProxyMockedMemoryFixture::SampleType));
-    EXPECT_EQ(event_meta_info.data_type_info_.align_of_, alignof(ProxyMockedMemoryFixture::SampleType));
+    EXPECT_EQ(event_meta_info.data_type_info_.size, sizeof(ProxyMockedMemoryFixture::SampleType));
+    EXPECT_EQ(event_meta_info.data_type_info_.alignment, alignof(ProxyMockedMemoryFixture::SampleType));
 }
 
 using ProxyGetEventMetaInfoDeathTest = ProxyGetEventMetaInfoFixture;

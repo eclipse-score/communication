@@ -29,6 +29,7 @@
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/runtime.h"
@@ -217,7 +218,7 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
                                            std::unique_ptr<IPartialRestartPathBuilder> partial_restart_path_builder)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(partial_restart_path_builder != nullptr,
-                                 "Skeleton::Create: partial restart path builder pointer is Null");
+                                     "Skeleton::Create: partial restart path builder pointer is Null");
     const auto partial_restart_dir_creation_result =
         CreatePartialRestartDirectory(filesystem, *partial_restart_path_builder);
     if (!partial_restart_dir_creation_result)
@@ -230,12 +231,13 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
     const auto lola_instance_id = lola_service_instance_deployment.instance_id_.value().GetId();
     auto service_instance_existence_marker_file =
         CreateOrOpenServiceInstanceExistenceMarkerFile(lola_instance_id, *partial_restart_path_builder);
+
     if (!service_instance_existence_marker_file.has_value())
     {
         score::mw::log::LogError("lola") << "Could not create or open service instance existence marker file.";
         return nullptr;
     }
-
+    
     auto service_instance_existence_mutex_and_lock =
         std::make_unique<memory::shared::FlockMutexAndLock<memory::shared::ExclusiveFlockMutex>>(
             *service_instance_existence_marker_file);
@@ -246,7 +248,7 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
                "actively offering the same service instance.";
         return nullptr;
     }
-
+    
     const auto& lola_service_type_deployment = GetLolaServiceTypeDeployment(identifier);
     // Since we were able to flock the existence marker file, it means that either we created it or the skeleton that
     // created it previously crashed. Either way, we take ownership of the LockFile so that it's destroyed when this
@@ -1018,6 +1020,129 @@ void Skeleton::InitializeSharedMemoryForControl(
 {
     auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
     control = memory->construct<ServiceDataControl>(memory->getMemoryResourceProxy());
+}
+
+EventDataControlComposite Skeleton::CreateEventControlComposite(const ElementFqId element_fq_id,
+                                                                const SkeletonEventProperties& element_properties) noexcept
+{
+    auto control_qm = control_qm_->event_controls_.emplace(std::piecewise_construct,
+                                                           std::forward_as_tuple(element_fq_id),
+                                                           std::forward_as_tuple(element_properties.number_of_slots,
+                                                                                element_properties.max_subscribers,
+                                                                                element_properties.enforce_max_samples,
+                                                                                control_qm_resource_->getMemoryResourceProxy()));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(control_qm.second, "Couldn't register/emplace event-meta-info in data-section.");
+
+    EventDataControl* control_asil_result{nullptr};
+    if (control_asil_resource_ != nullptr)
+    {
+        auto iterator = control_asil_b_->event_controls_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(element_fq_id),
+            std::forward_as_tuple(element_properties.number_of_slots,
+            element_properties.max_subscribers,
+            element_properties.enforce_max_samples,
+            control_asil_resource_->getMemoryResourceProxy()));
+
+        // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:
+        // A function shall not return a reference or a pointer to an automatic variable (including parameters), defined
+        // within the function.
+        // Suppress "AUTOSAR C++14 M7-5-2": The address of an object with automatic storage shall not be assigned to
+        // another object that may persist after the first object has ceased to exist.
+        // The result pointer is still valid outside this method until Skeleton object (as a holder) is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]    
+        control_asil_result = &iterator.first->second.data_control;
+    }
+    // clang-format off
+    // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
+    // coverity[autosar_cpp14_m7_5_1_violation]
+    // coverity[autosar_cpp14_m7_5_2_violation]
+    // coverity[autosar_cpp14_a3_8_1_violation]
+    return EventDataControlComposite{&control_qm.first->second.data_control, control_asil_result};
+}
+
+std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> 
+Skeleton::CreateEventDataFromOpenedSharedMemory(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties,
+    size_t sample_size,
+    size_t sample_alignment) noexcept
+{
+
+    // Guard against over-aligned types (Short-term solution protection)
+    if (sample_alignment > alignof(std::max_align_t))
+    {
+        score::mw::log::LogFatal("Skeleton") 
+            << "Requested sample alignment (" << sample_alignment 
+            << ") exceeds max_align_t (" << alignof(std::max_align_t) 
+            << "). Safe shared memory layout cannot be guaranteed.";
+            
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_alignment <= alignof(std::max_align_t),"Requested sample alignment exceeds maximum supported alignment.");
+    }
+
+    // Calculate the aligned size for a single sample to ensure proper padding between slots
+    const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
+    const auto total_data_size_bytes = aligned_sample_size * element_properties.number_of_slots;
+
+    // Convert total bytes to the number of std::max_align_t elements needed (round up)
+    const size_t num_max_align_elements = 
+        (total_data_size_bytes + sizeof(std::max_align_t) - 1) / sizeof(std::max_align_t);
+
+    auto* data_storage = storage_resource_->construct<EventDataStorage<std::max_align_t>>(
+        num_max_align_elements,
+        memory::shared::PolymorphicOffsetPtrAllocator<std::max_align_t>(storage_resource_->getMemoryResourceProxy()));
+
+    auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
+                                                         std::forward_as_tuple(element_fq_id),
+                                                         std::forward_as_tuple(data_storage));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
+                                               "Couldn't register/emplace event-storage in data-section.");
+
+
+    const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
+    void* const event_data_raw_array = data_storage->data();
+    
+    auto inserted_meta_info = storage_->events_metainfo_.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(element_fq_id),
+        std::forward_as_tuple(sample_meta_info, event_data_raw_array));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
+                                               "Couldn't register/emplace event-meta-info in data-section.");
+
+    return {score::memory::shared::OffsetPtr<void>(data_storage), CreateEventControlComposite(element_fq_id, element_properties)};
+}
+std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite> Skeleton::RegisterGeneric(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties,
+    const size_t sample_size,
+    const size_t sample_alignment) noexcept
+{
+    if (was_old_shm_region_reopened_)
+    {
+        auto [data_storage, control_composite] = OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
+
+        auto& event_data_control_qm = control_composite.GetQmEventDataControl();
+        auto rollback_result = event_data_control_qm.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
+            [&event_data_control_qm](const TransactionLog::SlotIndexType slot_index) {
+                event_data_control_qm.DereferenceEventWithoutTransactionLogging(slot_index);
+            });
+        if (!rollback_result.has_value())
+        {
+            ::score::mw::log::LogWarn("lola")
+                << "SkeletonEvent: PrepareOffer failed: Could not rollback tracing consumer after "
+                   "crash. Disabling tracing.";
+            impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
+        }
+
+        return {data_storage, control_composite};
+    }
+    else
+    {
+        return CreateEventDataFromOpenedSharedMemory(
+            element_fq_id, element_properties, sample_size, sample_alignment);
+    }
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
