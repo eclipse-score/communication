@@ -24,8 +24,6 @@ on:
 jobs:
   coverage-report:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write # required to upload release assets
     outputs:
       artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
 
@@ -56,13 +54,15 @@ jobs:
           bazel coverage //... --build_tests_only
 
       - name: Generate HTML Coverage Report
+        # FIXME: "--ignore-errors category,inconsistent" is a workaround to cope with gcov messing up hit counts because of internal data races
         run: |
           genhtml "$(bazel info output_path)/_coverage/_coverage_report.dat" \
             -o=cpp_coverage \
             --show-details \
             --legend \
             --function-coverage \
-            --branch-coverage
+            --branch-coverage \
+            --ignore-errors category,inconsistent
 
       - name: Create archive of test report
         run: |
