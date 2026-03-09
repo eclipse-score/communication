@@ -13,20 +13,24 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_PROXY_FIELD_BINDING_FACTORY_IMPL_H
 #define SCORE_MW_COM_IMPL_PLUMBING_PROXY_FIELD_BINDING_FACTORY_IMPL_H
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_service_element_binding_factory_impl.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
-
-#include <score/overload.hpp>
 
 #include <memory>
 #include <string_view>
 
 namespace score::mw::com::impl
 {
+
+namespace detail
+{
+constexpr char kGetMethodName[] = "Get";
+constexpr char kSetMethodName[] = "Set";
+}  // namespace detail
 
 /// \brief Factory class that dispatches calls to the appropriate binding based on binding information in the
 /// deployment configuration.
@@ -42,11 +46,17 @@ class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory<Samp
     std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(
         ProxyBase& parent,
         const std::string_view field_name) noexcept override;
+
+    std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(ProxyBase& parent,
+                                                               const std::string_view field_name) noexcept override;
+
+    std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(ProxyBase& parent,
+                                                               const std::string_view field_name) noexcept override;
 };
 
 template <typename SampleType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall
-// not be called implicitly.". std::visit Throws std::bad_variant_access if
+// not be called implicitly". std::visit Throws std::bad_variant_access if
 // as-variant(vars_i).valueless_by_exception() is true for any variant vars_i in vars. The variant may only become
 // valueless if an exception is thrown during different stages. Since we don't throw exceptions, it's not possible
 // that the variant can return true from valueless_by_exception and therefore not possible that std::visit throws
@@ -60,6 +70,24 @@ inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyFieldBindingFactoryIm
     return CreateProxyServiceElement<ProxyEventBinding<SampleType>,
                                      lola::ProxyEvent<SampleType>,
                                      ServiceElementType::FIELD>(parent, field_name);
+}
+
+template <typename SampleType>
+inline std::unique_ptr<ProxyMethodBinding> ProxyFieldBindingFactoryImpl<SampleType>::CreateGetMethodBinding(
+    ProxyBase& parent,
+    const std::string_view field_name) noexcept
+{
+    return ProxyMethodBindingFactory<SampleType()>::Create(
+        parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), detail::kGetMethodName);
+}
+
+template <typename SampleType>
+inline std::unique_ptr<ProxyMethodBinding> ProxyFieldBindingFactoryImpl<SampleType>::CreateSetMethodBinding(
+    ProxyBase& parent,
+    const std::string_view field_name) noexcept
+{
+    return ProxyMethodBindingFactory<SampleType(SampleType)>::Create(
+        parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), detail::kSetMethodName);
 }
 
 }  // namespace score::mw::com::impl

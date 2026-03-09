@@ -170,7 +170,7 @@ TEST_F(ProxyWrapperTestClassCreateFixture, CallingFunctionsOnMockProxyDispatches
     auto& proxy_field_mock = std::get<0>(fields_tuple).mock;
     proxy.some_event.InjectMock(proxy_event_mock);
     proxy.some_event_2.InjectMock(proxy_event_mock_2);
-    proxy.some_field.InjectMock(proxy_field_mock);
+    proxy.some_field.InjectEventMock(proxy_field_mock);
 
     // Expecting that OfferService will be called on the Proxy mock and Unsubscribe on the event and field mocks
     EXPECT_CALL(proxy_event_mock, Unsubscribe());
@@ -254,7 +254,7 @@ TEST_F(ProxyWrapperTestClassFieldsOnlyCreateFixture, CallingFunctionsOnMockProxy
     // and given a mocked proxy was created
     auto proxy = ProxyWrapperClassTestView<FieldOnlyProxy>::Create(fields_tuple);
     auto& proxy_field_mock = (std::get<0>(fields_tuple).mock);
-    proxy.some_field.InjectMock(proxy_field_mock);
+    proxy.some_field.InjectEventMock(proxy_field_mock);
 
     // Expecting that Unsubscribe is called on the field
     EXPECT_CALL(proxy_field_mock, Unsubscribe());

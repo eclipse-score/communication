@@ -39,6 +39,9 @@
 namespace score::mw::com::impl
 {
 
+template <typename, bool, bool, bool>
+class ProxyField;
+
 /// \brief Partial specialization of ProxyMethod for function signatures with arguments and non-void return
 /// \tparam ReturnType return type of the method
 /// \tparam ArgTypes argument types of the method
@@ -50,6 +53,16 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     // This enables us to hide unnecessary internals from the end-user.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyMethodView;
+
+    friend class ProxyField<ReturnType, true, true, true>;
+    friend class ProxyField<ReturnType, true, true, false>;
+    friend class ProxyField<ReturnType, false, true, false>;
+    friend class ProxyField<ReturnType, false, true, true>;
+
+    // Empty struct that is used to make the non-registering ctor only accessible to ProxyField (as it is a friend).
+    struct FieldOnlyConstructorEnabler
+    {
+    };
 
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
@@ -78,6 +91,26 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
+    /// \brief Ctor for ProxyMethod that is used by ProxyField for the "dispatch method" of a field-setter. This method
+    /// does not register the method in the ProxyBase's method map, since registration in the correct field map is done
+    /// by ProxyField ctor. This is achieved by the FieldOnlyConstructorEnabler tag type, which makes clear, that this
+    /// ctor should only be used by ProxyField (this is enforced by FieldOnlyConstructorEnabler only visible to
+    /// ProxyField due to it being a friend).
+    ProxyMethod(ProxyBase& proxy_base,
+                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
+                std::string_view method_name,
+                FieldOnlyConstructorEnabler) noexcept
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
