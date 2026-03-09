@@ -33,8 +33,8 @@
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/utility.hpp>
 
@@ -100,13 +100,18 @@ class ProxyWrapperClassTestView;
 ///     typename Trait::template Event<DataType1> struct_event_1_{*this, event_name_0};
 ///     typename Trait::template Event<DataType2> struct_event_2_{*this, event_name_1};
 ///
-///     typename Trait::template Field<DataType1> struct_field_1_{*this, field_name_0};
-///     typename Trait::template Field<DataType2> struct_field_2_{*this, field_name_1};
+///     typename Trait::template Field<DataType1, enable_getter, enable_setter, enable_notifier> struct_field_1_{*this,
+///     field_name_0}; typename Trait::template Field<DataType2, enable_getter, enable_setter, enable_notifier>
+///     struct_field_2_{*this, field_name_1};
 ///
 ///     typename Trait::template Method<DataType1> struct_method_1_{*this, method_name_0};
 ///     typename Trait::template Method<DataType2> struct_method_2_{*this, method_name_1};
 ///
 /// };
+///
+/// Note: enable_getter, enable_setter and enable_notifier are bool template args and only relevant for fields. The
+/// enable_notifier template parameter is only relevant for certain bindings, e.g. the LoLa binding does not distinguish
+/// between true/false of this template parameter.
 ///
 /// It is then possible to interpret this interface as proxy or skeleton as `using TheProxy = AsProxy<TheInterface>`.
 /// It shall be noted, that the data types used, need to by PolymorphicOffsetPtrAllocator aware.
@@ -215,8 +220,9 @@ class SkeletonWrapperClass : public Interface<Trait>
         SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding));
         if (!skeleton_wrapper.AreBindingsValid())
         {
-            ::score::mw::log::LogError("lola") << "Could not create SkeletonWrapperClass as Skeleton binding or service "
-                                                "element bindings could not be created.";
+            ::score::mw::log::LogError("lola")
+                << "Could not create SkeletonWrapperClass as Skeleton binding or service "
+                   "element bindings could not be created.";
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
@@ -267,8 +273,10 @@ class SkeletonWrapperClass : public Interface<Trait>
                                       std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonWrapperClass>>>
                                           instance_identifier_creation_results)
     {
-        score::cpp::ignore = instance_specifier_creation_results_.emplace(std::move(instance_specifier_creation_results));
-        score::cpp::ignore = instance_identifier_creation_results_.emplace(std::move(instance_identifier_creation_results));
+        score::cpp::ignore =
+            instance_specifier_creation_results_.emplace(std::move(instance_specifier_creation_results));
+        score::cpp::ignore =
+            instance_identifier_creation_results_.emplace(std::move(instance_identifier_creation_results));
     }
 
     static void ClearCreationResults()

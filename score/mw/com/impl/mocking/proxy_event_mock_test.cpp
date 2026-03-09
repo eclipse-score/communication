@@ -29,7 +29,6 @@ namespace score::mw::com::impl
 {
 namespace
 {
-
 using TestSampleType = std::uint32_t;
 
 auto kDummyEventFieldName = "MyDummyEventField";
@@ -46,7 +45,14 @@ class ProxyEventFieldMockFixture : public ::testing::Test
 
     ProxyEventFieldMockFixture()
     {
-        unit_.InjectMock(proxy_service_element_mock_);
+        if constexpr (std::is_same_v<ProxyEventField, ProxyEvent<TestSampleType>>)
+        {
+            unit_.InjectMock(proxy_service_element_mock_);
+        }
+        else
+        {
+            unit_.InjectEventMock(proxy_service_element_mock_);
+        }
     }
 
     ProxyEventFieldMock proxy_service_element_mock_{};
@@ -273,6 +279,5 @@ TYPED_TEST(ProxyEventFieldMockFixture, GetNewSamplesReturnsErrorWhenMockReturnsE
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), error_code);
 }
-
 }  // namespace
 }  // namespace score::mw::com::impl
