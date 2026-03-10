@@ -21,6 +21,9 @@ on:
         description: 'Name of the coverage report artifact'
         value: ${{ jobs.coverage-report.outputs.artifact-name }}
 
+permissions:
+  contents: read
+
 jobs:
   coverage-report:
     runs-on: ubuntu-24.04
