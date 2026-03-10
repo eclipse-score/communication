@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
+#include "score/mw/com/impl/methods/skeleton_method_base.h"
 
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
@@ -116,6 +117,12 @@ class SkeletonFieldBase
     std::reference_wrapper<SkeletonBase> skeleton_base_;
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::string_view field_name_;
+
+    // Add method dispatcher for Set (optional because not all fields have it)
+    std::optional<SkeletonMethodBase*> skeleton_method_set_dispatch_;
+
+    // Configuration flag to indicate if field has setter
+    bool is_setter_ = false;
 
   private:
     /// \brief Returns whether the initial value has been saved by the user to be used by DoDeferredUpdate

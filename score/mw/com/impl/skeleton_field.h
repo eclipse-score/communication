@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field_base.h"
+#include "score/mw/com/impl/methods/skeleton_method.h"
 
 #include "score/mw/com/impl/mocking/i_skeleton_field.h"
 
@@ -92,6 +93,38 @@ class SkeletonField : public SkeletonFieldBase
         skeleton_field_mock_ = &skeleton_field_mock;
     }
 
+    // Set handler registration
+    template <typename Callable>
+    ResultBlank RegisterSetHandler(Callable&& callback) {
+        if (!is_setter_) {
+            return MakeUnexpected(ComErrc::kNotImplemented,
+                                 "Field not configured with setter");
+        }
+
+        // Wrap user callback to also call Update() after user validation
+        auto wrapped_callback = [this, user_callback = std::move(callback)]
+                                (FieldType new_value) -> Result<FieldType> {
+            // 1. Call user's validation/modification handler
+            auto result = user_callback(new_value);
+
+            if (!result.has_value()) {
+                return result;  // User rejected the value, propagate the error
+            }
+
+            // 2. User accepted (possibly modified) - update the field
+            auto update_result = this->Update(result.value());
+            if (!update_result.has_value()) {
+                return MakeUnexpected(update_result.error());
+            }
+
+            // 3. Return the actual value that was set
+            return result;
+        };
+
+        // Register with underlying method infrastructure
+        return GetTypedSetMethod()->RegisterHandler(std::move(wrapped_callback));
+    }
+
   private:
     bool IsInitialValueSaved() const noexcept override
     {
@@ -107,6 +140,18 @@ class SkeletonField : public SkeletonFieldBase
 
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
+
+    // Store unique_ptr to the actual method object
+    std::unique_ptr<SkeletonMethod<Result<FieldType>(FieldType)>> set_method_;
+
+    auto* GetTypedSetMethod() -> SkeletonMethod<Result<FieldType>(FieldType)>*
+    {
+        if (skeleton_method_set_dispatch_.has_value()) {
+            return dynamic_cast<SkeletonMethod<Result<FieldType>(FieldType)>*>(
+                skeleton_method_set_dispatch_.value());
+        }
+        return nullptr;
+    }
 };
 
 template <typename SampleDataType>
@@ -126,6 +171,21 @@ SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& parent, const std::st
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
+
+    // TODO: Get configuration from deployment/configuration system
+    // For now, assume setter is disabled by default
+    constexpr bool has_setter_config = false;  // TODO: Read from configuration
+
+    // Check configuration and create Set method if needed
+    if (has_setter_config) {
+        set_method_ = std::make_unique<
+            SkeletonMethod<Result<FieldType>(FieldType)>>(
+                parent,
+                std::string(field_name) + "_Set"  // Method name
+            );
+        skeleton_method_set_dispatch_ = set_method_.get();
+        is_setter_ = true;
+    }
 }
 
 template <typename SampleDataType>
@@ -148,13 +208,12 @@ SkeletonField<SampleDataType>::SkeletonField(SkeletonField&& other) noexcept
       // so it's still valid to access it here for moving into our own member.
       // coverity[autosar_cpp14_a12_8_3_violation] This is a false-positive.
       initial_field_value_{std::move(other.initial_field_value_)},
-      skeleton_field_mock_{other.skeleton_field_mock_}
+      skeleton_field_mock_{other.skeleton_field_mock_},
+      set_method_{std::move(other.set_method_)}
 {
     // Since the address of this event has changed, we need update the address stored in the parent skeleton.
     SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
     skeleton_base_view.UpdateField(field_name_, *this);
-}
-
 template <typename SampleDataType>
 auto SkeletonField<SampleDataType>::operator=(SkeletonField&& other) & noexcept -> SkeletonField<SampleDataType>&
 {
@@ -164,6 +223,7 @@ auto SkeletonField<SampleDataType>::operator=(SkeletonField&& other) & noexcept 
 
         initial_field_value_ = std::move(other.initial_field_value_);
         skeleton_field_mock_ = std::move(other.skeleton_field_mock_);
+        set_method_ = std::move(other.set_method_);
 
         // Since the address of this event has changed, we need update the address stored in the parent skeleton.
         SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
