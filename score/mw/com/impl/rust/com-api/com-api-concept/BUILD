@@ -43,12 +43,6 @@ rust_test(
 rust_doc_test(
     name = "com-api-concept-macros-tests",
     crate = ":com-api-concept",
-    # LIMITATION: rust_doc_test has a issue in rules_rust where it inherits crate_type="lib"
-    # from the wrapped library instead of overriding to "bin" (like rust_test does).
-    # This causes _add_native_link_flags() to skip CC native dependencies.
-    # With LLVM's strict LLD linker, this results in undefined symbol errors when
-    # the crate depends on C++ libraries. GCC masks this with broader archive scanning.
-    tags = ["manual"],
     deps = ["//score/mw/com/impl/rust/com-api/com-api"],
 )
 

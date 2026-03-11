@@ -33,8 +33,8 @@
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field.h"
 
-#include "score/mw/log/logging.h"
 #include "score/result/result.h"
+#include "score/mw/log/logging.h"
 
 #include <score/utility.hpp>
 
@@ -189,8 +189,7 @@ class SkeletonWrapperClass : public Interface<Trait>
         const auto instance_identifier_result = GetInstanceIdentifier(specifier);
         if (!instance_identifier_result.has_value())
         {
-            score::mw::log::LogError("lola")
-                << "Failed to resolve instance identifier from instance specifier:" << specifier.ToString();
+            score::mw::log::LogError("lola") << "Failed to resolve instance identifier from instance specifier";
             return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
         }
         return Create(instance_identifier_result.value());
@@ -216,9 +215,8 @@ class SkeletonWrapperClass : public Interface<Trait>
         SkeletonWrapperClass skeleton_wrapper(instance_identifier, std::move(skeleton_binding));
         if (!skeleton_wrapper.AreBindingsValid())
         {
-            ::score::mw::log::LogError("lola")
-                << "Could not create SkeletonWrapperClass as Skeleton binding or service "
-                   "element bindings could not be created.";
+            ::score::mw::log::LogError("lola") << "Could not create SkeletonWrapperClass as Skeleton binding or service "
+                                                "element bindings could not be created.";
             return MakeUnexpected(ComErrc::kBindingFailure);
         }
 
@@ -269,10 +267,8 @@ class SkeletonWrapperClass : public Interface<Trait>
                                       std::unordered_map<InstanceIdentifier, std::queue<Result<SkeletonWrapperClass>>>
                                           instance_identifier_creation_results)
     {
-        score::cpp::ignore =
-            instance_specifier_creation_results_.emplace(std::move(instance_specifier_creation_results));
-        score::cpp::ignore =
-            instance_identifier_creation_results_.emplace(std::move(instance_identifier_creation_results));
+        score::cpp::ignore = instance_specifier_creation_results_.emplace(std::move(instance_specifier_creation_results));
+        score::cpp::ignore = instance_identifier_creation_results_.emplace(std::move(instance_identifier_creation_results));
     }
 
     static void ClearCreationResults()

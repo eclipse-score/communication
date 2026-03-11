@@ -41,11 +41,10 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
 
         const auto instance_id_maybe = instance_identifier_view.GetServiceInstanceId();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance_id_maybe.has_value(),
-                                                    "Skeletons must always be configured with a valid InstanceId");
+                               "Skeletons must always be configured with a valid InstanceId");
         const auto* const lola_service_instance_id =
             std::get_if<LolaServiceInstanceId>(&(instance_id_maybe.value().binding_info_));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
-                                                    "ServiceInstanceId does not contain lola binding.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr, "ServiceInstanceId does not contain lola binding.");
 
         constexpr auto element_type{ServiceElementType::METHOD};
 

@@ -35,8 +35,7 @@ class ProxyContainer
 
     Proxy& GetProxy()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
-                                                    "Proxy was not successfully created! Cannot get it!");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr, "Proxy was not successfully created! Cannot get it!");
         return *proxy_;
     }
 

@@ -38,8 +38,7 @@ namespace score::mw::com::impl
 class ServiceInstanceDeployment
 {
   public:
-    using BindingInformation =
-        std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, score::cpp::blank>;
+    using BindingInformation = std::variant<LolaServiceInstanceDeployment, SomeIpServiceInstanceDeployment, score::cpp::blank>;
 
     explicit ServiceInstanceDeployment(const score::json::Object& json_object) noexcept;
     ServiceInstanceDeployment(const ServiceIdentifierType service,

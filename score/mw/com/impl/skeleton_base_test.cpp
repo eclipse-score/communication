@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_base.h"
 
+#include "score/result/result.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
 #include "score/mw/com/impl/com_error.h"
@@ -24,7 +25,6 @@
 #include "score/mw/com/impl/skeleton_field_base.h"
 #include "score/mw/com/impl/test/binding_factory_resources.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
-#include "score/result/result.h"
 
 #include <score/utility.hpp>
 

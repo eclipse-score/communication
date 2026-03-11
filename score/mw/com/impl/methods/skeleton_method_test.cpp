@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/methods/skeleton_method.h"
 
+#include "score/result/result.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/bindings/mock_binding/skeleton_method.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -20,7 +21,6 @@
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory_mock.h"
 #include "score/mw/com/impl/skeleton_base.h"
-#include "score/result/result.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -220,8 +220,7 @@ TEST_F(SkeletonMethodTestFixture, ACallbackWithAPointerAsStateCanBeRegistered)
 
     // And a callback with a unique_ptr as a state
     auto test_struct_p = std::make_unique<MyDataStruct>();
-    score::cpp::callback<TestMethodType> test_callback_with_state = [state = std::move(test_struct_p)](
-                                                                        int, bool b) noexcept {
+    score::cpp::callback<TestMethodType> test_callback_with_state = [state = std::move(test_struct_p)](int, bool b) noexcept {
         return state->b || b;
     };
 

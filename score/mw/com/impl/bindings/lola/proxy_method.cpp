@@ -20,8 +20,8 @@
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/mw/log/logging.h"
 #include "score/result/result.h"
+#include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
@@ -53,7 +53,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateInArgs(std::size
     if (!is_subscribed_)
     {
         score::mw::log::LogError("lola") << "Trying to allocate in args for a method that was not successfully "
-                                            "subscribed. Ensure method enabled in Proxy::Create().";
+                                          "subscribed. Ensure method enabled in Proxy::Create().";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
@@ -70,16 +70,15 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateReturnType(std::
     if (!is_subscribed_)
     {
         score::mw::log::LogError("lola") << "Trying to allocate in args for a method that was not successfully "
-                                            "subscribed. Ensure method enabled in Proxy::Create().";
+                                          "subscribed. Ensure method enabled in Proxy::Create().";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         type_erased_element_info_.return_type_info.has_value(),
         "AllocateInArgs must only be called when DataTypeSizeInfo is provided for the Return type in the constructor.");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        return_storage_.has_value(),
-        "AllocateInArgs must only be called when storage is provided for the Retun value via "
-        "SetInArgsAndReturnStorages.");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(return_storage_.has_value(),
+                                 "AllocateInArgs must only be called when storage is provided for the Retun value via "
+                                 "SetInArgsAndReturnStorages.");
     return GetReturnValueElementStorage(queue_position, return_storage_.value(), type_erased_element_info_);
 }
 
@@ -87,9 +86,8 @@ score::ResultBlank ProxyMethod::DoCall(std::size_t queue_position)
 {
     if (!is_subscribed_)
     {
-        score::mw::log::LogError("lola")
-            << "Trying to call a method that was not successfully subscribed. Ensure method "
-               "enabled in Proxy::Create().";
+        score::mw::log::LogError("lola") << "Trying to call a method that was not successfully subscribed. Ensure method "
+                                          "enabled in Proxy::Create().";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     auto& lola_message_passing = lola_runtime_.GetLolaMessaging();

@@ -142,8 +142,7 @@ score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> AllocateImpl(
     auto method_in_arg_ptr_tuple = CreateMethodInArgPtrTuple(
         deserialized_arg_pointers, in_arg_ptr_flags, queue_index, std::make_index_sequence<sizeof...(ArgTypes)>());
 
-    return score::Result<std::tuple<score::mw::com::impl::MethodInArgPtr<ArgTypes>...>>(
-        std::move(method_in_arg_ptr_tuple));
+    return score::Result<std::tuple<score::mw::com::impl::MethodInArgPtr<ArgTypes>...>>(std::move(method_in_arg_ptr_tuple));
 }
 
 /// \brief Checks, that all MethodInArgPtr arguments have the same queue_position_ and returns this common value.
@@ -168,8 +167,7 @@ std::size_t GetCommonQueuePosition(const MethodInArgPtrs&... args)
          {
              if (method_in_arg_ptr.GetQueuePosition() != expected_queue_position.value())
              {
-                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                     false, "All MethodInArgPtr arguments must have the same queue_position_");
+                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "All MethodInArgPtr arguments must have the same queue_position_");
              }
          }
      })(args),

@@ -149,8 +149,7 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
             std::cout << "EchoDisconnectCallback " << &connection << " " << client_pid << std::endl;
             ++server_connections_finished_;
         };
-        auto sent_callback = [](IServerConnection& connection,
-                                score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
+        auto sent_callback = [](IServerConnection& connection, score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
             std::cout << "EchoSentCallback " << &connection << std::endl;
             connection.Notify(message);
             return {};
@@ -174,9 +173,8 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
             FaultyConnection(ServerToClientQnxFixture& fixture) : IConnectionHandler{}, fixture_{fixture} {}
 
           private:
-            score::cpp::expected_blank<score::os::Error> OnMessageSent(
-                IServerConnection& connection,
-                score::cpp::span<const std::uint8_t> message) noexcept override
+            score::cpp::expected_blank<score::os::Error> OnMessageSent(IServerConnection& connection,
+                                                              score::cpp::span<const std::uint8_t> message) noexcept override
             {
                 std::cout << "FaultyEchoSentCallback " << &connection << std::endl;
                 EXPECT_FALSE(connection.Notify(fixture_.faulty_message));  // fails: too big
@@ -204,8 +202,7 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
 
             ServerToClientQnxFixture& fixture_;
         };
-        auto connect_callback =
-            [this](IServerConnection& connection) -> score::cpp::pmr::unique_ptr<IConnectionHandler> {
+        auto connect_callback = [this](IServerConnection& connection) -> score::cpp::pmr::unique_ptr<IConnectionHandler> {
             std::cout << "FaultyEchoConnectCallback " << &connection << std::endl;
             ++server_connections_started_;
             return score::cpp::pmr::make_unique<FaultyConnection>(score::cpp::pmr::get_default_resource(), *this);
@@ -361,8 +358,7 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
         {
             std::promise<bool> promise;
             auto reply_callback =
-                [&promise, &message](
-                    score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
+                [&promise, &message](score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
                     if (!message_expected.has_value())
                     {
                         promise.set_value(false);

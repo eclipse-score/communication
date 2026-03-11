@@ -13,6 +13,8 @@
 
 #include "score/mw/com/test/check_values_created_from_config/check_values_created_from_config_application.h"
 
+#include "score/os/utils/interprocess/interprocess_notification.h"
+#include "score/result/result.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/com_error.h"
@@ -28,11 +30,9 @@
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_creator.h"
 #include "score/mw/com/test/common_test_resources/shared_memory_object_guard.h"
-#include "score/os/utils/interprocess/interprocess_notification.h"
-#include "score/result/result.h"
 
-#include "score/mw/log/logging.h"
 #include "score/os/errno.h"
+#include "score/mw/log/logging.h"
 
 #include <exception>
 #include <future>
@@ -85,7 +85,7 @@ class ConfigParser
         if (lola_service_type_deployment == nullptr)
         {
             return score::MakeUnexpected(score::mw::com::impl::ComErrc::kInvalidBindingInformation,
-                                         "No lola type deployment available.");
+                                       "No lola type deployment available.");
         }
 
         return ElementFqId{lola_service_type_deployment->service_id_,

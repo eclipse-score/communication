@@ -68,7 +68,7 @@ struct AllocationVariant<T> {
     _index: u8,
 }
 
-#[repr(C, align(16))]
+#[repr(C)]
 pub struct SampleAllocateePtr<T> {
     _internal: AllocationVariant<T>,
 }

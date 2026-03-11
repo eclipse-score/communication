@@ -116,8 +116,7 @@ DataTypeSizeInfo CreateDataTypeSizeInfoFromTypesWrapper(Args...)
 }
 
 template <typename... Args>
-std::tuple<typename std::add_pointer<Args>::type...> DeserializeFromTypesWrapper(score::cpp::span<std::byte>& buffer,
-                                                                                 Args...)
+std::tuple<typename std::add_pointer<Args>::type...> DeserializeFromTypesWrapper(score::cpp::span<std::byte>& buffer, Args...)
 {
     return Deserialize<Args...>(buffer);
 }

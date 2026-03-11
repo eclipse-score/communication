@@ -54,10 +54,9 @@ auto MethodResourceMap::Insert(const ProxyInstanceIdentifier proxy_instance_iden
 auto MethodResourceMap::CleanUpOldRegions(const ProxyInstanceIdentifier proxy_instance_identifier,
                                           const pid_t proxy_pid) -> CleanUpResult
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        !Contains(proxy_instance_identifier, proxy_pid),
-        "Contains() should be checked before trying to insert element: The same memory region "
-        "should not be created / inserted twice.");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!Contains(proxy_instance_identifier, proxy_pid),
+                                 "Contains() should be checked before trying to insert element: The same memory region "
+                                 "should not be created / inserted twice.");
     return EraseRegionsFromCrashedProcesses(proxy_instance_identifier.application_id, proxy_pid);
 }
 
@@ -78,7 +77,7 @@ auto MethodResourceMap::EraseRegionsFromCrashedProcesses(const GlobalConfigurati
     if (old_pid != proxy_pid)
     {
         score::mw::log::LogDebug("lola") << "Removing old methods shared memory regions with ApplicationID:"
-                                         << proxy_app_id << "and PID:" << old_pid;
+                                       << proxy_app_id << "and PID:" << old_pid;
         resource_map_.erase(resources_it);
         return CleanUpResult::OLD_REGIONS_REMOVED;
     }

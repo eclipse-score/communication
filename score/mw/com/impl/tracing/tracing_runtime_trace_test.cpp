@@ -499,8 +499,7 @@ TEST_P(TracingRuntimeTraceShmParamaterisedFixture, TraceShmDataNOK_NoCachedFiled
     // runtime, which doesn't return any
     EXPECT_CALL(binding_tracing_runtime_mock_,
                 GetCachedFileDescriptorForReregisteringShmObject(dummy_service_element_instance_identifier_view_))
-        .WillOnce(
-            Return(score::cpp::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>{}));
+        .WillOnce(Return(score::cpp::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>{}));
 
     // when we call Trace on the UuT
     auto result = unit_under_test_->Trace(BindingType::kLoLa,
@@ -792,13 +791,13 @@ TEST_P(TracingRuntimeTraceInvalidTracePointTypeParamaterisedDeathTest,
     // when we call Trace on the UuT with an invalid TracePointType
     // Then the program terminates
     EXPECT_DEATH(score::cpp::ignore = unit_under_test_->Trace(BindingType::kLoLa,
-                                                              service_element_tracing_data_,
-                                                              dummy_service_element_instance_identifier_view_,
-                                                              trace_point_type_,
-                                                              dummy_data_id_,
-                                                              CreateDummySamplePtr(),
-                                                              dummy_shm_data_ptr_,
-                                                              dummy_shm_data_size_),
+                                                       service_element_tracing_data_,
+                                                       dummy_service_element_instance_identifier_view_,
+                                                       trace_point_type_,
+                                                       dummy_data_id_,
+                                                       CreateDummySamplePtr(),
+                                                       dummy_shm_data_ptr_,
+                                                       dummy_shm_data_size_),
                  ".*");
 }
 
@@ -1042,11 +1041,11 @@ TEST_P(TracingRuntimeTraceInvalidTracePointTypeParamaterisedDeathTest,
     // When calling Trace with an invalid TracePointType
     // Then the program terminates
     EXPECT_DEATH(score::cpp::ignore = unit_under_test_->Trace(BindingType::kLoLa,
-                                                              dummy_service_element_instance_identifier_view_,
-                                                              trace_point_type_,
-                                                              kEmptyDataId,
-                                                              kLocalDataPtr,
-                                                              kLocalDataSize),
+                                                       dummy_service_element_instance_identifier_view_,
+                                                       trace_point_type_,
+                                                       kEmptyDataId,
+                                                       kLocalDataPtr,
+                                                       kLocalDataSize),
                  ".*");
 }
 
@@ -1108,13 +1107,13 @@ TEST_P(TracingRuntimeShmMetaInfoFixture, ShmTraceCallMetaInfoContainsAraComMetaI
 
     // when we call Trace on the UuT
     score::cpp::ignore = unit_under_test_->Trace(BindingType::kLoLa,
-                                                 service_element_tracing_data_,
-                                                 dummy_service_element_instance_identifier_view_,
-                                                 meta_info_test_data.trace_point_type,
-                                                 dummy_data_id_,
-                                                 CreateDummySamplePtr(),
-                                                 dummy_shm_data_ptr_,
-                                                 dummy_shm_data_size_);
+                                          service_element_tracing_data_,
+                                          dummy_service_element_instance_identifier_view_,
+                                          meta_info_test_data.trace_point_type,
+                                          dummy_data_id_,
+                                          CreateDummySamplePtr(),
+                                          dummy_shm_data_ptr_,
+                                          dummy_shm_data_size_);
 }
 
 TEST_P(TracingRuntimeShmMetaInfoFixture,
@@ -1153,13 +1152,13 @@ TEST_P(TracingRuntimeShmMetaInfoFixture,
 
     // when we call Trace on the UuT
     score::cpp::ignore = unit_under_test_->Trace(BindingType::kLoLa,
-                                                 service_element_tracing_data_,
-                                                 dummy_service_element_instance_identifier_view_,
-                                                 expected_lola_trace_point_type,
-                                                 dummy_data_id_,
-                                                 CreateDummySamplePtr(),
-                                                 dummy_shm_data_ptr_,
-                                                 dummy_shm_data_size_);
+                                          service_element_tracing_data_,
+                                          dummy_service_element_instance_identifier_view_,
+                                          expected_lola_trace_point_type,
+                                          dummy_data_id_,
+                                          CreateDummySamplePtr(),
+                                          dummy_shm_data_ptr_,
+                                          dummy_shm_data_size_);
 }
 
 TEST_P(TracingRuntimeLocalMetaInfoFixture, LocalTraceCallMetaInfoContainsAraComMetaInfo)
@@ -1186,11 +1185,11 @@ TEST_P(TracingRuntimeLocalMetaInfoFixture, LocalTraceCallMetaInfoContainsAraComM
 
     // when we call Trace on the UuT
     score::cpp::ignore = unit_under_test_->Trace(BindingType::kLoLa,
-                                                 dummy_service_element_instance_identifier_view_,
-                                                 meta_info_test_data.trace_point_type,
-                                                 kEmptyDataId,
-                                                 kLocalDataPtr,
-                                                 kLocalDataSize);
+                                          dummy_service_element_instance_identifier_view_,
+                                          meta_info_test_data.trace_point_type,
+                                          kEmptyDataId,
+                                          kLocalDataPtr,
+                                          kLocalDataSize);
 }
 
 TEST_P(TracingRuntimeLocalMetaInfoFixture,
@@ -1230,11 +1229,11 @@ TEST_P(TracingRuntimeLocalMetaInfoFixture,
 
     // when we call Trace on the UuT
     score::cpp::ignore = unit_under_test_->Trace(BindingType::kLoLa,
-                                                 dummy_service_element_instance_identifier_view_,
-                                                 expected_lola_trace_point_type,
-                                                 kEmptyDataId,
-                                                 kLocalDataPtr,
-                                                 kLocalDataSize);
+                                          dummy_service_element_instance_identifier_view_,
+                                          expected_lola_trace_point_type,
+                                          kEmptyDataId,
+                                          kLocalDataPtr,
+                                          kLocalDataSize);
 }
 
 struct DataLossFlagTestData

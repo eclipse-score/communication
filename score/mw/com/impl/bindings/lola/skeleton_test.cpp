@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
@@ -21,7 +22,6 @@
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
-#include "score/result/result.h"
 
 #include "test/skeleton_test_resources.h"
 #include <gtest/gtest.h>
@@ -853,8 +853,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // when the event is registered with the skeleton
-    score::cpp::ignore =
-        skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
+    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the TransactionLog should be rollbacked during construction and removed
     EXPECT_FALSE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
@@ -892,8 +891,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // when the event is registered with the skeleton
-    score::cpp::ignore =
-        skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
+    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the Asil B TransactionLog will still exist as it was not rolled back
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b));
@@ -934,8 +932,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
     std::ignore = skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
     // when the event is registered with the skeleton
-    score::cpp::ignore =
-        skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
+    score::cpp::ignore = skeleton_->Register<test::TestSampleType>(test::kDummyElementFqId, test::kDefaultEventProperties);
 
     // Then the TransactionLog should still exist as it was not removed due to the rollback failing
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
@@ -1156,11 +1153,11 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     ASSERT_TRUE(event_foo_meta_info_ptr.has_value());
     ASSERT_TRUE(event_dumb_meta_info_ptr.has_value());
     // and they have the expected properties
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.size, sizeof(std::uint8_t));
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.alignment, alignof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.size_of_, sizeof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.align_of_, alignof(std::uint8_t));
 
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.size, sizeof(VeryComplexType));
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.alignment, alignof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.size_of_, sizeof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.align_of_, alignof(VeryComplexType));
 
     const auto GetEventSlotsArraySize = [](const std::size_t sample_size,
                                            const std::size_t sample_alignment,
@@ -1170,13 +1167,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
         return aligned_size * number_of_sample_slots;
     };
 
-    const auto foo_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
-                                                             event_foo_meta_info_ptr->data_type_info_.alignment,
+    const auto foo_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size_of_,
+                                                             event_foo_meta_info_ptr->data_type_info_.align_of_,
                                                              test::kDefaultEventProperties.number_of_slots);
     ASSERT_EQ(event_foo_meta_info_ptr->event_slots_raw_array_.get(foo_event_slots_size), foo_event_data_storage);
 
-    const auto dumb_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
-                                                              event_foo_meta_info_ptr->data_type_info_.alignment,
+    const auto dumb_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size_of_,
+                                                              event_foo_meta_info_ptr->data_type_info_.align_of_,
                                                               test::kDefaultEventProperties.number_of_slots);
     ASSERT_EQ(event_dumb_meta_info_ptr->event_slots_raw_array_.get(dumb_event_slots_size), dumb_event_data_storage);
 

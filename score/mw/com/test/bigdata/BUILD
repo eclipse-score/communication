@@ -16,11 +16,6 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
-exports_files(
-    ["logging.json"],
-    visibility = ["//score/mw/com/test:__subpackages__"],
-)
-
 cc_binary(
     name = "bigdata",
     srcs = [

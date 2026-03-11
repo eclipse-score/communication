@@ -85,22 +85,21 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
     void SetUp() override
     {
         ON_CALL(*server_mock_, StartListening(_, _, _, _))
-            .WillByDefault(WithArg<3>(Invoke(
-                [this](MessageCallback message_received_with_reply_cb) -> score::cpp::expected_blank<score::os::Error> {
+            .WillByDefault(WithArg<3>(
+                Invoke([this](MessageCallback message_received_with_reply_cb) -> score::cpp::expected_blank<score::os::Error> {
                     received_send_message_with_reply_callback_ = std::move(message_received_with_reply_cb);
                     return {};
                 })));
 
         ON_CALL(server_factory_mock_, Create(_, _)).WillByDefault(Return(ByMove(std::move(server_mock_))));
 
-        auto client_connection_mock_facade =
-            score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
-                score::cpp::pmr::new_delete_resource(), client_connection_mock_);
+        auto client_connection_mock_facade = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
+            score::cpp::pmr::new_delete_resource(), client_connection_mock_);
         ON_CALL(client_factory_mock_, Create(_, _))
             .WillByDefault(Return(ByMove(std::move(client_connection_mock_facade))));
 
         ON_CALL(client_connection_mock_, SendWaitReply(_, _))
-            .WillByDefault(Return(CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_)));
+            .WillByDefault(Return(CreateSerializedMethodReply(score::cpp::blank{}, method_reply_buffer_)));
         ON_CALL(client_connection_mock_, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
 
         ON_CALL(*unistd_mock_, getpid()).WillByDefault(Return(kLocalPid));
@@ -110,7 +109,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
             executor_task_ = std::forward<decltype(task)>(task);
         });
 
-        ON_CALL(mock_subscribe_method_handler_, Call(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(mock_subscribe_method_handler_, Call(_, _, _)).WillByDefault(Return(score::cpp::blank{}));
     }
 
     MessagePassingServiceInstanceMethodsFixture& GivenAMessagePassingServiceInstance(
@@ -261,8 +260,8 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
     ::testing::MockFunction<void(std::size_t)> mock_method_call_handler_{};
     ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier, uid_t, pid_t)> mock_subscribe_method_handler_{};
 
-    // Since an SendWaitReply returns an score::cpp::span to a message (which is essentially a pointer to a message), we
-    // need a buffer to store the message.
+    // Since an SendWaitReply returns an score::cpp::span to a message (which is essentially a pointer to a message), we need a
+    // buffer to store the message.
     std::array<std::uint8_t, sizeof(MethodReplyPayload)> method_reply_buffer_{};
 
     std::unique_ptr<ClientIdentity> client_identity_{nullptr};
@@ -352,7 +351,7 @@ TEST_F(MessagePassingServiceInstanceRemoteCallMethodTest, CallingWithOtherProces
         EXPECT_EQ(actual_payload.queue_position, kQueuePosition);
         EXPECT_EQ(actual_payload.proxy_method_instance_identifier, kProxyMethodInstanceIdentifier);
 
-        return CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_);
+        return CreateSerializedMethodReply(score::cpp::blank{}, method_reply_buffer_);
     })));
 
     // and expecting that the registered method call handler will NOT be called (which would happen when the client is
@@ -376,9 +375,8 @@ TEST_F(MessagePassingServiceInstanceRemoteCallMethodTest, CallingGetsClientWithP
         const auto expected_identifier = std::string{"LoLa_2_"} + std::to_string(kRemotePid) + "_QM";
         EXPECT_EQ(protocol_config.identifier, expected_identifier);
 
-        auto client_connection_mock_facade =
-            score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
-                score::cpp::pmr::new_delete_resource(), client_connection_mock_);
+        auto client_connection_mock_facade = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
+            score::cpp::pmr::new_delete_resource(), client_connection_mock_);
         return client_connection_mock_facade;
     })));
 
@@ -414,8 +412,8 @@ TEST_F(MessagePassingServiceInstanceRemoteCallMethodTest, ReturnsErrorWhenReplyP
     // Expecting that SendWaitReply will be called which returns a payload with an unexpected size
     std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(MethodReplyPayload) + 2U);
     EXPECT_CALL(client_connection_mock_, SendWaitReply(_, _))
-        .WillOnce(Return(
-            score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()}));
+        .WillOnce(
+            Return(score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()}));
 
     // When calling CallMethod with target_node_id equal to the PID of a different process
     const auto call_result = unit_->CallMethod(kProxyMethodInstanceIdentifier, kQueuePosition, kRemotePid);
@@ -574,7 +572,7 @@ TEST_F(MessagePassingServiceInstanceRemoteSubscribeMethodTest, CallingWithOtherP
         EXPECT_EQ(actual_payload.skeleton_instance_identifier, kSkeletonInstanceIdentifier);
         EXPECT_EQ(actual_payload.proxy_instance_identifier, kProxyInstanceIdentifier);
 
-        return CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_);
+        return CreateSerializedMethodReply(score::cpp::blank{}, method_reply_buffer_);
     })));
 
     // and expecting that the registered method subscribe handler will NOT be called (which would happen when the client
@@ -599,9 +597,8 @@ TEST_F(MessagePassingServiceInstanceRemoteSubscribeMethodTest, CallingGetsClient
         const auto expected_identifier = std::string{"LoLa_2_"} + std::to_string(kRemotePid) + "_QM";
         EXPECT_EQ(protocol_config.identifier, expected_identifier);
 
-        auto client_connection_mock_facade =
-            score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
-                score::cpp::pmr::new_delete_resource(), client_connection_mock_);
+        auto client_connection_mock_facade = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
+            score::cpp::pmr::new_delete_resource(), client_connection_mock_);
         return client_connection_mock_facade;
     })));
 
@@ -639,8 +636,8 @@ TEST_F(MessagePassingServiceInstanceRemoteSubscribeMethodTest, ReturnsErrorWhenR
     // Expecting that a CallMethod message will be sent which returns a payload with an unexpected size
     std::vector<std::uint8_t> payload_with_unexpected_size(sizeof(MethodReplyPayload) + 2U);
     EXPECT_CALL(client_connection_mock_, SendWaitReply(_, _))
-        .WillOnce(Return(
-            score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()}));
+        .WillOnce(
+            Return(score::cpp::span<std::uint8_t>{payload_with_unexpected_size.data(), payload_with_unexpected_size.size()}));
 
     // When calling SubscribeServiceMethod with target_node_id equal to the PID of a different process
     const auto call_result =
@@ -685,16 +682,15 @@ TEST_F(MessagePassingServiceInstanceRegisterMethodCallHandlerTest,
     // When registering a new method call handler
     // Then we expect a contarct violation since the previous
     // handler should have been cleand up before registering the new one
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = unit_->RegisterMethodCallHandler(
-            kProxyMethodInstanceIdentifier, scoped_method_call_handler_2, client_identity_->uid));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->RegisterMethodCallHandler(kProxyMethodInstanceIdentifier,
+                                                                                scoped_method_call_handler_2,
+                                                                                client_identity_->uid));
 }
 
 using MessagePassingServiceInstanceRegisterSubscribeHandlerTest = MessagePassingServiceInstanceMethodsFixture;
 TEST_F(MessagePassingServiceInstanceRegisterSubscribeHandlerTest, ReregisteringHandlerReturnsError)
 {
-    ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier, uid_t, pid_t)>
-        mock_subscribe_method_handler_2{};
+    ::testing::MockFunction<score::ResultBlank(ProxyInstanceIdentifier, uid_t, pid_t)> mock_subscribe_method_handler_2{};
     safecpp::Scope<> subscribe_method_handler_scope_2{};
     IMessagePassingService::ServiceMethodSubscribedHandler scoped_subscribe_method_handler_2{
         subscribe_method_handler_scope_2, mock_subscribe_method_handler_2.AsStdFunction()};
@@ -812,8 +808,7 @@ TEST_F(MessagePassingServiceInstanceHandleMessageWithReplyTest,
     this->ExpectReplyContainsSkeletonAlreadyDestroyed();
 
     // When a valid MessageWithReply message is received
-    score::cpp::ignore =
-        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 }
 
 using MessagePassingServiceInstanceHandleCallMethodMessageTest = MessagePassingServiceInstanceMethodsFixture;
@@ -889,8 +884,7 @@ TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesWithErro
 
     // When a valid MessageWithReply message is received of type kCallMethod when no method call handler has been
     // registered
-    score::cpp::ignore =
-        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 }
 
 TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, ReturnsSuccessWhenHandlerScopeAlreadyExpired)
@@ -930,8 +924,7 @@ TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesWithErro
         }));
 
     // When a valid MessageWithReply message is received of type kCallMethod
-    score::cpp::ignore =
-        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 }
 
 TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest,
@@ -965,8 +958,7 @@ TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesSuccessW
         }));
 
     // When a valid MessageWithReply message is received of type kCallMethod
-    score::cpp::ignore =
-        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 }
 
 TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, ReturnsSuccessWhenCallerUidDoesNotMatchRegisteredUid)
@@ -1011,8 +1003,7 @@ TEST_F(MessagePassingServiceInstanceHandleCallMethodMessageTest, RepliesErrorWhe
         }));
 
     // When a valid MessageWithReply message is received of type kCallMethod
-    score::cpp::ignore =
-        received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
+    score::cpp::ignore = received_send_message_with_reply_callback_(server_connection_mock_, CreateValidCallMethodMessage());
 }
 
 using MessagePassingServiceInstanceHandleSubscribeMethodMessageTest = MessagePassingServiceInstanceMethodsFixture;
@@ -1294,8 +1285,7 @@ TEST_F(MessagePassingServiceInstanceUnregisterMethodCallHandlerTest, CallingUnre
 
     // When calling UnregisterMethodCallHandler before registering a handler
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        unit_->UnregisterMethodCallHandler(kProxyMethodInstanceIdentifier));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit_->UnregisterMethodCallHandler(kProxyMethodInstanceIdentifier));
 }
 
 using MessagePassingServiceInstanceUnregisterSubscribeMethodHandlerTest = MessagePassingServiceInstanceMethodsFixture;
@@ -1325,8 +1315,7 @@ TEST_F(MessagePassingServiceInstanceUnregisterSubscribeMethodHandlerTest,
     GivenAMessagePassingServiceInstance().WithAClientInTheSameProcess();
 
     // When calling UnregisterOnServiceMethodSubscribedHandler before registering a handler
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        unit_->UnregisterOnServiceMethodSubscribedHandler(kSkeletonInstanceIdentifier));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit_->UnregisterOnServiceMethodSubscribedHandler(kSkeletonInstanceIdentifier));
 }
 
 }  // namespace

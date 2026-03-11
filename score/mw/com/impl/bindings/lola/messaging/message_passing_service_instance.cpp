@@ -28,11 +28,11 @@
 #include "score/message_passing/i_server_connection.h"
 #include "score/message_passing/i_server_factory.h"
 #include "score/message_passing/service_protocol_config.h"
-#include "score/mw/log/logging.h"
 #include "score/os/errno_logging.h"
 #include "score/os/unistd.h"
 #include "score/result/error.h"
 #include "score/result/result.h"
+#include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
@@ -113,7 +113,7 @@ score::Result<MethodUnserializedReply> DeserializeFromMethodReplyPayload(
     if (sizeof(MethodReplyPayload) != payload.size())
     {
         score::mw::log::LogError("lola") << "Wrong payload size, got " << payload.size() << ", expected "
-                                         << sizeof(MethodReplyPayload);
+                                       << sizeof(MethodReplyPayload);
         return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
     }
 
@@ -185,19 +185,17 @@ bool IsMethodErrorRecoverable(const score::result::Error error)
     }
     else
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(false,
-                                                          "Provided error is not part of subset relating to methods.");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(false, "Provided error is not part of subset relating to methods.");
     }
 }
 
 }  // namespace
 
-MessagePassingServiceInstance::MessagePassingServiceInstance(
-    const ClientQualityType asil_level,
-    AsilSpecificCfg /*config*/,
-    score::message_passing::IServerFactory& server_factory,
-    score::message_passing::IClientFactory& client_factory,
-    score::concurrency::Executor& local_event_executor) noexcept
+MessagePassingServiceInstance::MessagePassingServiceInstance(const ClientQualityType asil_level,
+                                                             AsilSpecificCfg /*config*/,
+                                                             score::message_passing::IServerFactory& server_factory,
+                                                             score::message_passing::IClientFactory& client_factory,
+                                                             score::concurrency::Executor& local_event_executor) noexcept
     : IMessagePassingServiceInstance(),
       cur_registration_no_{0U},
       asil_level_{asil_level},
@@ -237,34 +235,32 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
 
     auto message_callback_scoped_function =
         std::make_shared<score::safecpp::MoveOnlyScopedFunction<void(pid_t, score::cpp::span<const std::uint8_t>)>>(
-            message_callback_scope_,
-            [this](pid_t sender_pid, score::cpp::span<const std::uint8_t> message) noexcept -> void {
+            message_callback_scope_, [this](pid_t sender_pid, score::cpp::span<const std::uint8_t> message) noexcept -> void {
                 this->MessageCallback(sender_pid, message);
             });
     // Suppress autosar_cpp14_a15_5_3_violation: False Positive
     // Rationale: Passing an argument by reference cannot throw
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-    auto received_send_message_callback =
-        [scoped_function = message_callback_scoped_function](
-            score::message_passing::IServerConnection& connection,
-            const score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::blank {
+    auto received_send_message_callback = [scoped_function = message_callback_scoped_function](
+                                              score::message_passing::IServerConnection& connection,
+                                              const score::cpp::span<const std::uint8_t> message) noexcept -> score::cpp::blank {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(std::holds_alternative<std::uintptr_t>(connection.GetUserData()),
-                                                    "Message Passing: UserData does not contain a uintptr_t");
+                               "Message Passing: UserData does not contain a uintptr_t");
         // Suppress "AUTOSAR C++14 A15-5-3" The rule states: "Implicit call of std::terminate()"
         // Before accessing the variant with std::get it is checked that the variant holds the alternative unitptr_t
         // coverity[autosar_cpp14_a15_5_3_violation]
         auto UserDataUintPtr = std::get<std::uintptr_t>(connection.GetUserData());
 
         const auto client_pid = score::safe_math::Cast<pid_t>(UserDataUintPtr);
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            client_pid.has_value(), "Message Passing : Message Passing: PID is bigger than pid_t::max()");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(client_pid.has_value(),
+                                     "Message Passing : Message Passing: PID is bigger than pid_t::max()");
         auto executed = (*scoped_function)(client_pid.value(), message);
 
         if (!executed.has_value())
         {
             score::mw::log::LogInfo("lola") << "MessagePassingServiceInstance: Message callback scope invalidated, "
-                                               "skipping message processing for client "
-                                            << client_pid.value();
+                                             "skipping message processing for client "
+                                          << client_pid.value();
         }
 
         return {};
@@ -282,7 +278,7 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
     if (!result.has_value())
     {
         score::mw::log::LogFatal("lola") << "MessagePassingService: Failed to start listening on " << service_identifier
-                                         << " with following error: " << result.error();
+                                       << " with following error: " << result.error();
         std::terminate();
     }
 }
@@ -292,9 +288,7 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
     auto message_callback_with_reply_scoped_function = std::make_shared<
         score::safecpp::MoveOnlyScopedFunction<score::ResultBlank(uid_t, pid_t, score::cpp::span<const std::uint8_t>)>>(
         message_callback_scope_,
-        [this](uid_t sender_uid,
-               pid_t sender_pid,
-               score::cpp::span<const std::uint8_t> message) noexcept -> score::ResultBlank {
+        [this](uid_t sender_uid, pid_t sender_pid, score::cpp::span<const std::uint8_t> message) noexcept -> score::ResultBlank {
             return this->MessageCallbackWithReply(sender_uid, sender_pid, message);
         });
 
@@ -310,9 +304,8 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
         const pid_t client_pid = client_identity.pid;
         const auto client_uid = client_identity.uid;
 
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-            message_callback_with_reply_scoped_function != nullptr,
-            "Message callback with reply callable was not properly constructed");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(message_callback_with_reply_scoped_function != nullptr,
+                                     "Message callback with reply callable was not properly constructed");
         auto function_invocation_result =
             std::invoke(*message_callback_with_reply_scoped_function, client_uid, client_pid, message);
         if (!(function_invocation_result.has_value()))
@@ -324,7 +317,7 @@ message_passing::MessageCallback MessagePassingServiceInstance::CreateSendMessag
             if (!(reply_result.has_value()))
             {
                 score::mw::log::LogError("lola") << "Failed to send reply after failing to process method due to scope "
-                                                    "expiring. Disconnecting from client.";
+                                                  "expiring. Disconnecting from client.";
                 return score::cpp::make_unexpected(os::Error::createUnspecifiedError());
             }
         }
@@ -393,10 +386,9 @@ void MessagePassingServiceInstance::MessageCallback(const pid_t sender_pid,
     }
 }
 
-score::ResultBlank MessagePassingServiceInstance::MessageCallbackWithReply(
-    const uid_t sender_uid,
-    const pid_t sender_pid,
-    const score::cpp::span<const std::uint8_t> message)
+score::ResultBlank MessagePassingServiceInstance::MessageCallbackWithReply(const uid_t sender_uid,
+                                                                         const pid_t sender_pid,
+                                                                         const score::cpp::span<const std::uint8_t> message)
 {
     if (message.size() < 1U)
     {
@@ -580,8 +572,8 @@ void MessagePassingServiceInstance::HandleOutdatedNodeIdMsg(const score::cpp::sp
     if (remove_count == 0U)
     {
         score::mw::log::LogInfo("lola") << "MessagePassingService: HandleOutdatedNodeIdMsg for outdated node id:"
-                                        << pid_to_unregister << "from node" << sender_node_id
-                                        << ". No update notifications for outdated node existed.";
+                                      << pid_to_unregister << "from node" << sender_node_id
+                                      << ". No update notifications for outdated node existed.";
     }
 
     client_cache_.RemoveMessagePassingClient(pid_to_unregister);
@@ -604,9 +596,8 @@ score::ResultBlank MessagePassingServiceInstance::HandleSubscribeServiceMethodMs
                                              sender_node_id);
 }
 
-score::ResultBlank MessagePassingServiceInstance::HandleCallMethodMsg(
-    const score::cpp::span<const std::uint8_t> payload,
-    const uid_t sender_uid)
+score::ResultBlank MessagePassingServiceInstance::HandleCallMethodMsg(const score::cpp::span<const std::uint8_t> payload,
+                                                                    const uid_t sender_uid)
 {
     // TODO: make proper serialization
     MethodCallUnserializedPayload unserialized_payload{};
@@ -707,8 +698,8 @@ ResultBlank MessagePassingServiceInstance::CallSubscribeServiceMethodRemotely(
 {
     SubscribeServiceMethodUnserializedPayload unserialized_payload{skeleton_instance_identifier,
                                                                    proxy_instance_identifier};
-    const auto message = SerializeToMessage(score::cpp::to_underlying(MessageWithReplyType::kSubscribeServiceMethod),
-                                            unserialized_payload);
+    const auto message =
+        SerializeToMessage(score::cpp::to_underlying(MessageWithReplyType::kSubscribeServiceMethod), unserialized_payload);
     auto sender = client_cache_.GetMessagePassingClient(target_node_id);
 
     std::array<std::uint8_t, sizeof(MethodReplyPayload)> reply{};
@@ -749,7 +740,7 @@ ResultBlank MessagePassingServiceInstance::CallServiceMethodRemotely(
     if (!(send_wait_reply_result.has_value()))
     {
         score::mw::log::LogError("lola") << "MessagePassingService: Sending CallServiceMethodMessage to node_id "
-                                         << target_node_id << " failed with error: " << send_wait_reply_result.error();
+                                       << target_node_id << " failed with error: " << send_wait_reply_result.error();
         return MakeUnexpected(MethodErrc::kMessagePassingError);
     }
     const auto reply_payload = send_wait_reply_result.value();
@@ -757,9 +748,8 @@ ResultBlank MessagePassingServiceInstance::CallServiceMethodRemotely(
     const auto method_call_deserialization_result = DeserializeFromMethodReplyPayload(reply_payload);
     if (!(method_call_deserialization_result.has_value()))
     {
-        score::mw::log::LogError("lola")
-            << "MessagePassingService: Parsing CallServiceMethodMessage reply from node_id " << target_node_id
-            << "failed during deserialization";
+        score::mw::log::LogError("lola") << "MessagePassingService: Parsing CallServiceMethodMessage reply from node_id "
+                                       << target_node_id << "failed during deserialization";
         return MakeUnexpected(MethodErrc::kUnexpectedMessageSize);
     }
     const auto method_call_result = method_call_deserialization_result.value();
@@ -767,7 +757,7 @@ ResultBlank MessagePassingServiceInstance::CallServiceMethodRemotely(
     if (!(method_call_result.has_value()))
     {
         score::mw::log::LogError("lola") << "MessagePassingService: CallServiceMethodMessage reply from node_id "
-                                         << target_node_id << "returned failure";
+                                       << target_node_id << "returned failure";
         return MakeUnexpected<Blank>(method_call_result.error());
     }
     return {};
@@ -790,8 +780,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
         // LCOV_EXCL_START exceeds "short" limit for unit tests
         if (loop_count == 255U)
         {
-            score::mw::log::LogError("lola")
-                << "An overflow in counting the node identifiers to notifies event update.";
+            score::mw::log::LogError("lola") << "An overflow in counting the node identifiers to notifies event update.";
             break;
         }
         // LCOV_EXCL_STOP
@@ -820,9 +809,8 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
             const auto result = sender->Send(message);
             if (!result.has_value())
             {
-                score::mw::log::LogError("lola")
-                    << "MessagePassingService: Sending NotifyEventUpdateMessage to node_id " << node_identifier
-                    << " failed with error: " << result.error();
+                score::mw::log::LogError("lola") << "MessagePassingService: Sending NotifyEventUpdateMessage to node_id "
+                                               << node_identifier << " failed with error: " << result.error();
             }
         }
         if (num_ids_copied.second == true)
@@ -1008,7 +996,7 @@ void MessagePassingServiceInstance::ReregisterEventNotification(const ElementFqI
         read_lock.unlock();
         // no registered handler for given event_id -> log as error
         score::mw::log::LogError("lola") << "MessagePassingService: ReregisterEventNotification called for event_id"
-                                         << event_id.ToString() << ", which had not yet been registered!";
+                                       << event_id.ToString() << ", which had not yet been registered!";
         return;
     }
     read_lock.unlock();
@@ -1023,7 +1011,7 @@ void MessagePassingServiceInstance::ReregisterEventNotification(const ElementFqI
         {
             remote_reg_write_lock.unlock();
             score::mw::log::LogError("lola") << "MessagePassingService: ReregisterEventNotification for a remote event "
-                                             << event_id.ToString() << " without current remote registration!";
+                                           << event_id.ToString() << " without current remote registration!";
             return;
         }
         if (registration_count->second.node_id == target_node_id)
@@ -1131,9 +1119,8 @@ ResultBlank MessagePassingServiceInstance::RegisterOnServiceMethodSubscribedHand
 
     if (!was_inserted)
     {
-        score::mw::log::LogError("lola")
-            << "MessagePassingService: Failed to register OnServiceMethodSubscribedHandler "
-               "since it could not be inserted into map.";
+        score::mw::log::LogError("lola") << "MessagePassingService: Failed to register OnServiceMethodSubscribedHandler "
+                                          "since it could not be inserted into map.";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
@@ -1191,7 +1178,7 @@ void MessagePassingServiceInstance::NotifyOutdatedNodeId(const pid_t outdated_no
     if (!result.has_value())
     {
         score::mw::log::LogError("lola") << "MessagePassingService: Sending OutdatedNodeIdMessage to node_id "
-                                         << target_node_id << " failed with error: " << result.error();
+                                       << target_node_id << " failed with error: " << result.error();
     }
 }
 
@@ -1244,9 +1231,9 @@ void MessagePassingServiceInstance::UnregisterEventNotificationRemote(
     if (registration_count == event_update_remote_registrations_.end())
     {
         remote_reg_write_lock.unlock();
-        score::mw::log::LogError("lola")
-            << "MessagePassingService: UnregisterEventNotification called with register_no " << registration_no
-            << " for a remote event " << event_id.ToString() << " without current remote registration!";
+        score::mw::log::LogError("lola") << "MessagePassingService: UnregisterEventNotification called with register_no "
+                                       << registration_no << " for a remote event " << event_id.ToString()
+                                       << " without current remote registration!";
         return;
     }
     else
@@ -1282,8 +1269,7 @@ void MessagePassingServiceInstance::UnregisterEventNotificationRemote(
 
     if (send_message)
     {
-        const auto message =
-            SerializeToMessage(score::cpp::to_underlying(MessageType::kUnregisterEventNotifier), event_id);
+        const auto message = SerializeToMessage(score::cpp::to_underlying(MessageType::kUnregisterEventNotifier), event_id);
         // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function
         // shall have automatic storage duration". The object is a shared_ptr which is allocated in the heap.
         // coverity[autosar_cpp14_a18_5_8_violation]
@@ -1310,9 +1296,8 @@ void MessagePassingServiceInstance::SendRegisterEventNotificationMessage(const E
     const auto result = sender->Send(message);
     if (!result.has_value())
     {
-        score::mw::log::LogError("lola")
-            << "MessagePassingService: Sending RegisterEventNotificationMessage to node_id " << target_node_id
-            << " failed with error: " << result.error();
+        score::mw::log::LogError("lola") << "MessagePassingService: Sending RegisterEventNotificationMessage to node_id "
+                                       << target_node_id << " failed with error: " << result.error();
     }
 }
 

@@ -33,10 +33,6 @@ class EventSenderReceiver
                       const std::chrono::milliseconds cycle_time,
                       const std::size_t num_cycles);
 
-    int RunAsGenericSkeleton(const score::mw::com::InstanceSpecifier& instance_specifier,
-                             const std::chrono::milliseconds cycle_time,
-                             const std::size_t num_cycles);
-
     template <typename ProxyType = score::mw::com::IpcBridgeProxy,
               typename ProxyEventType = score::mw::com::impl::ProxyEvent<MapApiLanesStamped>>
     int RunAsProxy(const score::mw::com::InstanceSpecifier& instance_specifier,

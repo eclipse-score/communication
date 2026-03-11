@@ -80,9 +80,9 @@ TEST_F(MethodErrorMessageForDeathTest, MessageForkInvalidTerminates)
 {
     // When calling MessageFor with the code kInvalid
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore =
-                     method_error_domain_dummy_.MessageFor(static_cast<score::result::ErrorCode>(MethodErrc::kInvalid)),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = method_error_domain_dummy_.MessageFor(static_cast<score::result::ErrorCode>(MethodErrc::kInvalid)),
+        ".*");
 }
 
 TEST_F(MethodErrorMessageForDeathTest, MessageForNumEnumElements)

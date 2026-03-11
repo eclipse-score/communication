@@ -20,8 +20,8 @@
 
 #include <score/assert_support.hpp>
 
-#include <gtest/gtest.h>
 #include <score/utility.hpp>
+#include <gtest/gtest.h>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -353,9 +353,8 @@ TEST_F(TypeErasedCallQueueFixture, GetInArgValuesQueueStorageWithOutOfRangePosit
 
     // When calling GetInArgValuesElementStorage with an index which is out of the queue range
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore =
-            GetInArgValuesElementStorage(kQueueSize, in_args_queue_storage.value(), in_args_type_erased_info));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = GetInArgValuesElementStorage(
+                                     kQueueSize, in_args_queue_storage.value(), in_args_type_erased_info));
 }
 
 TEST_F(TypeErasedCallQueueFixture, GetReturnValueQueueStorageWithOutOfRangePositionTerminates)
@@ -369,9 +368,8 @@ TEST_F(TypeErasedCallQueueFixture, GetReturnValueQueueStorageWithOutOfRangePosit
 
     // When calling GetReturnValueElementStorage with an index which is out of the queue range
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::cpp::ignore = GetReturnValueElementStorage(
-            kQueueSize, return_value_queue_storage.value(), return_value_type_erased_info));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = GetReturnValueElementStorage(
+                                     kQueueSize, return_value_queue_storage.value(), return_value_type_erased_info));
 }
 
 }  // namespace

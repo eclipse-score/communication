@@ -78,19 +78,18 @@ void HashArray(const std::array<LaneIdType, 16U>& array, std::size_t& seed)
     const std::ptrdiff_t buffer_size =
         reinterpret_cast<const std::uint8_t*>(&*array.cend()) - reinterpret_cast<const std::uint8_t*>(&*array.cbegin());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(buffer_size > 0);
-    seed = score::cpp::hash_bytes_fnv1a(
-        static_cast<const void*>(array.data()), static_cast<std::size_t>(buffer_size), seed);
+    seed = score::cpp::hash_bytes_fnv1a(static_cast<const void*>(array.data()), static_cast<std::size_t>(buffer_size), seed);
 }
 
 class MmanMock : public os::Mman
 {
   public:
     score::cpp::expected<void*, os::Error> mmap(void* addr,
-                                                const std::size_t length,
-                                                const Protection protection,
-                                                const Map flags,
-                                                const std::int32_t fd,
-                                                const std::int64_t offset) const noexcept override
+                                         const std::size_t length,
+                                         const Protection protection,
+                                         const Map flags,
+                                         const std::int32_t fd,
+                                         const std::int64_t offset) const noexcept override
     {
         // mmap calls are uninteresting and are forwarded directly
         return reinterpret_cast<os::internal::MmanImpl&>(
@@ -107,8 +106,8 @@ class MmanMock : public os::Mman
     };
 
     score::cpp::expected<std::int32_t, os::Error> shm_open(const char* pathname,
-                                                           const os::Fcntl::Open oflag,
-                                                           const os::Stat::Mode mode) const noexcept override
+                                                    const os::Fcntl::Open oflag,
+                                                    const os::Stat::Mode mode) const noexcept override
     {
         // shm_open calls are INTERESTING for this test - we memorize the pathname - and then forward
         std::strcpy(last_shm_open_path_, pathname);
@@ -364,7 +363,7 @@ void ModifySampleValue(const SamplePtr<void>& sample)
 
 template <typename ProxyType = BigDataProxy>
 score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& instance_specifier,
-                                                       const score::cpp::stop_token& stop_token)
+                                                     const score::cpp::stop_token& stop_token)
 {
     std::cout << ToString(instance_specifier, ": Running as proxy, looking for services\n");
     ServiceHandleContainer<impl::HandleType> handles{};

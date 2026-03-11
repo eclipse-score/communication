@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/proxy_event_tracing.h"
 
+#include "score/result/result.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy_event.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
@@ -20,7 +21,6 @@
 #include "score/mw/com/impl/tracing/proxy_event_tracing_data.h"
 #include "score/mw/com/impl/tracing/trace_error.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
-#include "score/result/result.h"
 
 #include <gtest/gtest.h>
 #include <cstddef>

@@ -155,8 +155,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
         // coverity[autosar_cpp14_a11_3_1_violation]
         friend QnxDispatchEngine;
 
-        virtual bool ProcessInput(const std::uint8_t code,
-                                  const score::cpp::span<const std::uint8_t> message) noexcept = 0;
+        virtual bool ProcessInput(const std::uint8_t code, const score::cpp::span<const std::uint8_t> message) noexcept = 0;
         virtual void ProcessDisconnect() noexcept = 0;
         virtual bool HasSomethingToRead() noexcept = 0;
 
@@ -207,8 +206,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
 
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-    score::cpp::expected<std::int32_t, score::os::Error> TryOpenClientConnection(
-        std::string_view identifier) noexcept override;
+    score::cpp::expected<std::int32_t, score::os::Error> TryOpenClientConnection(std::string_view identifier) noexcept override;
 
     void CloseClientConnection(std::int32_t client_fd) noexcept override;
 
@@ -237,9 +235,9 @@ class QnxDispatchEngine final : public ISharedResourceEngine
         std::uint8_t& code) noexcept override;
 
     static score::cpp::expected_blank<std::int32_t> AttachConnection(resmgr_context_t* const ctp,
-                                                                     io_open_t* const msg,
-                                                                     ResourceManagerServer& server,
-                                                                     ResourceManagerConnection& connection) noexcept;
+                                                              io_open_t* const msg,
+                                                              ResourceManagerServer& server,
+                                                              ResourceManagerConnection& connection) noexcept;
 
     bool IsOnCallbackThread() const noexcept override
     {
@@ -270,7 +268,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     void SetupResourceManagerCallbacks() noexcept;
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     score::cpp::expected_blank<score::os::Error> StartServer(ResourceManagerServer& server,
-                                                             const QnxResourcePath& path) noexcept;
+                                                    const QnxResourcePath& path) noexcept;
     void StopServer(ResourceManagerServer& server) noexcept;
 
     // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used in multiple class methods

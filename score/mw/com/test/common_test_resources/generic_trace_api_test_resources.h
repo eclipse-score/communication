@@ -39,10 +39,7 @@ class TypedMemoryMock : public score::memory::shared::TypedMemory
                 (std::uint64_t),
                 (const, noexcept, override));
     MOCK_METHOD(score::cpp::expected_blank<score::os::Error>, Unlink, (std::string_view), (const, noexcept, override));
-    MOCK_METHOD((score::cpp::expected<uid_t, score::os::Error>),
-                GetCreatorUid,
-                (std::string_view),
-                (const, noexcept, override));
+    MOCK_METHOD((score::cpp::expected<uid_t, score::os::Error>), GetCreatorUid, (std::string_view), (const, noexcept, override));
 };
 
 struct GenericTraceApiMockContext

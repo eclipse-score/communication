@@ -344,8 +344,7 @@ class SkeletonEventTracingGenerateTracingStructFixture : public ::testing::TestW
   public:
     SkeletonEventTracingGenerateTracingStructFixture()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG((GetParam() == ServiceElementType::EVENT) ||
-                                            (GetParam() == ServiceElementType::FIELD));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG((GetParam() == ServiceElementType::EVENT) || (GetParam() == ServiceElementType::FIELD));
 
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetTracingFilterConfig())
             .WillByDefault(Return(&tracing_filter_config_mock_));

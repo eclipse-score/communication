@@ -189,8 +189,7 @@ SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
         .WillByDefault(Return(test::kServiceInstanceUsageFilePath));
     ON_CALL(*fcntl_mock_, open(StrEq(test::kServiceInstanceUsageFilePath), test::kCreateOrOpenFlags, _))
         .WillByDefault(Return(test::kServiceInstanceUsageFileDescriptor));
-    ON_CALL(*stat_mock_, chmod(StrEq(test::kServiceInstanceUsageFilePath), _))
-        .WillByDefault(Return(score::cpp::blank{}));
+    ON_CALL(*stat_mock_, chmod(StrEq(test::kServiceInstanceUsageFilePath), _)).WillByDefault(Return(score::cpp::blank{}));
 
     // Default behaviour for creating QM and ASIL-B shared memory resources - occurs when there is no connected proxy.
     ON_CALL(shared_memory_factory_mock_, Create(test::kControlChannelPathQm, _, _, _, false))

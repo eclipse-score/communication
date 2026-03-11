@@ -199,8 +199,19 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        "//score/mw/com/impl:data_type_meta_info",
+        ":data_type_meta_info",
         "@score_baselibs//score/memory/shared",
+    ],
+)
+
+cc_library(
+    name = "data_type_meta_info",
+    srcs = ["data_type_meta_info.cpp"],
+    hdrs = ["data_type_meta_info.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
     ],
 )
 
@@ -232,41 +243,16 @@ cc_library(
 )
 
 cc_library(
-    name = "generic_skeleton_event",
-    srcs = [
-        "generic_skeleton_event.cpp",
-    ],
-    hdrs = [
-        "generic_skeleton_event.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl:__subpackages__",
-    ],
-    deps = [
-        ":event",
-        ":skeleton",
-        ":type_erased_sample_ptrs_guard",
-        "//score/mw/com/impl:error",
-        "//score/mw/com/impl:generic_skeleton_event_binding",
-        "//score/mw/com/impl/tracing:skeleton_event_tracing",
-    ],
-)
-
-cc_library(
     name = "skeleton",
     srcs = [
         "skeleton.cpp",
         "skeleton_event.cpp",
-        "skeleton_event_common.cpp",
         "skeleton_event_properties.cpp",
         "skeleton_method.cpp",
     ],
     hdrs = [
         "skeleton.h",
         "skeleton_event.h",
-        "skeleton_event_common.h",
         "skeleton_event_properties.h",
         "skeleton_method.h",
     ],
@@ -287,8 +273,6 @@ cc_library(
         ":skeleton_instance_identifier",
         ":transaction_log_registration_guard",
         ":type_erased_sample_ptrs_guard",
-        "//score/mw/com/impl:error",
-        "//score/mw/com/impl:generic_skeleton_event_binding",
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:skeleton_binding",

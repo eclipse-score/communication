@@ -20,10 +20,6 @@
 #include "score/mw/com/impl/find_service_handle.h"
 #include "score/mw/com/impl/find_service_handler.h"
 #include "score/mw/com/impl/generic_proxy.h"
-#include "score/mw/com/impl/generic_proxy_event.h"
-#include "score/mw/com/impl/generic_skeleton.h"
-#include "score/mw/com/impl/generic_skeleton_event.h"
-#include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/skeleton_base.h"
@@ -58,10 +54,6 @@ using InstanceIdentifierContainer = std::vector<InstanceIdentifier>;
 /// \brief Handle for service discovery operations.
 /// See StartFindService() and StopFindService() for more information.
 using FindServiceHandle = ::score::mw::com::impl::FindServiceHandle;
-
-/// \api
-/// \brief Handle to a service instance.
-using HandleType = ::score::mw::com::impl::HandleType;
 
 /// \api
 /// \brief Container with handles representing currently available service instances.
@@ -107,29 +99,6 @@ using AsSkeleton = impl::AsSkeleton<T>;
 /// \api
 /// \brief A type erased proxy that can be used to read the raw data from a skeleton without knowing the SampleType
 using GenericProxy = impl::GenericProxy;
-
-/// \brief A type erased proxy event that can be used to receive data without knowing the SampleType.
-using GenericProxyEvent = impl::GenericProxyEvent;
-
-/// \api
-/// \brief A type erased skeleton that can be used to offer a service without knowing the SampleType
-using GenericSkeleton = impl::GenericSkeleton;
-
-/// \api
-/// \brief Meta information about a data type, used for generic services.
-using DataTypeMetaInfo = impl::DataTypeMetaInfo;
-
-/// \api
-/// \brief Information required to create a generic event.
-using EventInfo = impl::EventInfo;
-
-/// \api
-/// \brief Parameters for creating a GenericSkeleton.
-using GenericSkeletonServiceElementInfo = impl::GenericSkeletonServiceElementInfo;
-
-/// \api
-/// \brief A type erased skeleton event that can be used to send data without knowing the SampleType.
-using GenericSkeletonEvent = impl::GenericSkeletonEvent;
 
 }  // namespace score::mw::com
 

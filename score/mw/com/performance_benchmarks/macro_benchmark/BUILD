@@ -21,7 +21,6 @@ alias(
     name = "logging.json",
     actual = "//score/mw/com/performance_benchmarks/macro_benchmark/config:logging_json",
     visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__",
     ],
@@ -31,7 +30,6 @@ alias(
     name = "mw_com_config.json",
     actual = "//score/mw/com/performance_benchmarks/macro_benchmark/config:mw_com_config_json",
     visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__",
     ],
@@ -132,7 +130,6 @@ cc_binary(
         "aborts_upon_exception",
     ],
     visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//score/mw/com/performance_benchmarks/macro_benchmark:__subpackages__",
     ],
@@ -165,7 +162,6 @@ cc_binary(
         "aborts_upon_exception",
     ],
     visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
         "//score/mw/com/performance_benchmarks/macro_benchmark:__subpackages__",
     ],

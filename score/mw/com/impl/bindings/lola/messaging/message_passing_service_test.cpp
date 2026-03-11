@@ -39,8 +39,8 @@ class MessagePassingServiceTest : public ::testing::Test
     MessagePassingServiceTest& WithAsilBAndQmInstance()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(asil_qm_message_passing_service_instance_mock_ != nullptr &&
-                                                        asil_b_message_passing_service_instance_mock_ != nullptr,
-                                                    "Dependencies invalid");
+                                   asil_b_message_passing_service_instance_mock_ != nullptr,
+                               "Dependencies invalid");
 
         ON_CALL(*factory_, Create(ClientQualityType::kASIL_B, MatchesAsilSpecificConfig(asil_b_cfg_), _, _, _))
             .WillByDefault(Return(ByMove(std::move(asil_b_message_passing_service_instance_mock_))));
@@ -51,8 +51,7 @@ class MessagePassingServiceTest : public ::testing::Test
 
     MessagePassingServiceTest& WithAsilQmInstance()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(asil_qm_message_passing_service_instance_mock_ != nullptr,
-                                                    "Dependencies invalid");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(asil_qm_message_passing_service_instance_mock_ != nullptr, "Dependencies invalid");
 
         ON_CALL(*factory_, Create(ClientQualityType::kASIL_QM, MatchesAsilSpecificConfig(asil_qm_cfg_), _, _, _))
             .WillByDefault(Return(ByMove(std::move(asil_qm_message_passing_service_instance_mock_))));

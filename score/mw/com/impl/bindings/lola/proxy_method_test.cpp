@@ -270,8 +270,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidReturnStora
 
     // When calling AllocateReturnType
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          unit_->AllocateReturnType(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateReturnType(kDummyQueuePosition));
 }
 
 TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStorageWithReturnTypeInfoTerminates)
@@ -283,8 +282,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStora
 
     // When calling AllocateReturnType
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          unit_->AllocateReturnType(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateReturnType(kDummyQueuePosition));
 }
 
 using ProxyMethodDoCallFixture = ProxyMethodFixture;

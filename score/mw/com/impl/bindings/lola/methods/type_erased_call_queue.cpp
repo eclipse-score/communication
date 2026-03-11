@@ -30,9 +30,9 @@ namespace
 {
 
 score::cpp::span<std::byte> GetElement(const std::size_t position,
-                                       const memory::DataTypeSizeInfo& type_info,
-                                       score::cpp::span<std::byte> queue_storage,
-                                       const std::size_t queue_size)
+                                const memory::DataTypeSizeInfo& type_info,
+                                score::cpp::span<std::byte> queue_storage,
+                                const std::size_t queue_size)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(position < queue_size);
 

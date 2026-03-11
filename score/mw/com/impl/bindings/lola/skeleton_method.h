@@ -24,10 +24,10 @@
 #include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
-#include <sched.h>
 #include <score/assert.hpp>
 #include <score/callback.hpp>
 #include <score/span.hpp>
+#include <sched.h>
 
 #include <cstddef>
 #include <ctime>
@@ -63,8 +63,7 @@ class SkeletonMethod : public SkeletonMethodBinding
     void UnregisterMethodCallHandlers();
 
   private:
-    void Call(const std::optional<score::cpp::span<std::byte>> in_args,
-              const std::optional<score::cpp::span<std::byte>> return_arg);
+    void Call(const std::optional<score::cpp::span<std::byte>> in_args, const std::optional<score::cpp::span<std::byte>> return_arg);
     void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;

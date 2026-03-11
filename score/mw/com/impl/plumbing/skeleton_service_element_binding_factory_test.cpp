@@ -252,8 +252,7 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
         config_store_with_invalid_service_element_names.GetInstanceIdentifier();
 
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment),
-                 ".*");
+    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment), ".*");
 }
 
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
@@ -281,8 +280,7 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
 
     // When creating the service element binding
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment),
-                 ".*");
+    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment), ".*");
 }
 
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
@@ -310,8 +308,7 @@ TEST_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTest,
 
     // When creating the service element binding
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment),
-                 ".*");
+    EXPECT_DEATH(score::cpp::ignore = CreateServiceElementBinding(instance_identifier_invalid_instance_deployment), ".*");
 }
 
 }  // namespace
