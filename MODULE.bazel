@@ -45,6 +45,14 @@ git_override(
 
 bazel_dep(name = "score_tooling", version = "1.1.2")
 
+# Centralized sanitizer policies (ASan, TSan, UBSan, LSan)
+bazel_dep(name = "score_cpp_policies", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "score_cpp_policies",
+    commit = "a4d19af85dce4f3c6c5b6dba0e578b1f6c9dff92",  # tip of rs/swp-245137 branch
+    remote = "https://github.com/RSingh1511/score_cpp_policies.git",
+)
+
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 
