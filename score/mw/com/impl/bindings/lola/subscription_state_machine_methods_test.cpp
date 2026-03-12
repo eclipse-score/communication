@@ -52,7 +52,7 @@ class StateMachineMethodsFixture : public LolaProxyEventResources
           state_machine_{proxy_->GetQualityType(),
                          element_fq_id_,
                          kDummyPid,
-                         proxy_->GetEventControl(element_fq_id_),
+                         proxy_->GetEventControlLocal(element_fq_id_),
                          kDummyTransactionLogId}
     {
     }

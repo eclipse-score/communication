@@ -32,7 +32,7 @@ void EventDataControlCompositeAttorney::PrepareAllocateNextSlot(
     // we want, that event_data_control_composite_ returns slot_index from call to AllocateNextSlot().
     // To achieve this, we set the reference-count of all slots but slot_index to a value > 0.
     EventSlotStatus::EventTimeStamp timestamp{1};
-    const auto number_states_slots = event_data_control_composite_.asil_qm_control_->state_slots_.size();
+    const auto number_states_slots = event_data_control_composite_.asil_qm_control_local_->state_slots_.size();
     for (std::size_t index{0}; index < number_states_slots; index++)
     {
         EventSlotStatus status{};
@@ -46,11 +46,11 @@ void EventDataControlCompositeAttorney::PrepareAllocateNextSlot(
         {
             status.SetReferenceCount(1U);
         }
-        event_data_control_composite_.asil_qm_control_->state_slots_[index].store(
+        event_data_control_composite_.asil_qm_control_local_->state_slots_[index].store(
             static_cast<EventSlotStatus::value_type>(status));
-        if (event_data_control_composite_.asil_b_control_ != nullptr)
+        if (event_data_control_composite_.asil_b_control_local_ != nullptr)
         {
-            event_data_control_composite_.asil_b_control_->state_slots_[index].store(
+            event_data_control_composite_.asil_b_control_local_->state_slots_[index].store(
                 static_cast<EventSlotStatus::value_type>(status));
         }
     }
@@ -64,10 +64,10 @@ void EventDataControlCompositeAttorney::SetQmControlDisconnected(const bool expe
 std::pair<EventSlotStatus, score::cpp::optional<EventSlotStatus>> EventDataControlCompositeAttorney::GetSlotStatus(
     const SlotIndexType slot_index) const noexcept
 {
-    return {EventSlotStatus(event_data_control_composite_.asil_qm_control_->state_slots_[slot_index]),
-            event_data_control_composite_.asil_b_control_ != nullptr
+    return {EventSlotStatus(event_data_control_composite_.asil_qm_control_local_->state_slots_[slot_index]),
+            event_data_control_composite_.asil_b_control_local_ != nullptr
                 ? score::cpp::optional<EventSlotStatus>(
-                      event_data_control_composite_.asil_b_control_->state_slots_[slot_index])
+                      event_data_control_composite_.asil_b_control_local_->state_slots_[slot_index])
                 : score::cpp::optional<EventSlotStatus>{}};
 }
 

@@ -19,10 +19,10 @@
 namespace score::mw::com::impl::lola
 {
 
-SlotCollector::SlotCollector(EventDataControl& event_data_control,
+SlotCollector::SlotCollector(ProxyEventDataControlLocalView<>& event_data_control_local,
                              const std::size_t max_slots,
                              TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept
-    : event_data_control_{event_data_control},
+    : event_data_control_local_{event_data_control_local},
       last_ts_{0U},
       collected_slots_(max_slots),
       transaction_log_index_{transaction_log_index}
@@ -32,7 +32,7 @@ SlotCollector::SlotCollector(EventDataControl& event_data_control,
 
 std::size_t SlotCollector::GetNumNewSamplesAvailable() const noexcept
 {
-    return event_data_control_.get().GetNumNewEvents(last_ts_);
+    return event_data_control_local_.get().GetNumNewEvents(last_ts_);
 }
 
 SlotCollector::SlotIndicators SlotCollector::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
@@ -65,7 +65,7 @@ SlotCollector::SlotIndicatorVector::iterator SlotCollector::CollectSlots(const s
     for (std::size_t count = 0U; count < max_count; ++count)
     {
         ControlSlotIndicator slot =
-            event_data_control_.get().ReferenceNextEvent(last_ts_, transaction_log_index_, current_highest);
+            event_data_control_local_.get().ReferenceNextEvent(last_ts_, transaction_log_index_, current_highest);
         if (!(slot.IsValid()))
         {
             break;
