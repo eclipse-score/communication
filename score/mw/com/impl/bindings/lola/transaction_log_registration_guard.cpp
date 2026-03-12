@@ -16,8 +16,6 @@
 
 #include <score/assert.hpp>
 
-#include <utility>
-
 namespace score::mw::com::impl::lola
 {
 
@@ -27,28 +25,30 @@ namespace score::mw::com::impl::lola
 // std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 score::Result<TransactionLogRegistrationGuard> TransactionLogRegistrationGuard::Create(
-    EventDataControl& event_data_control,
+    ProxyEventDataControlLocalView<>& event_data_control_local,
     const TransactionLogId& transaction_log_id) noexcept
 {
-    auto transaction_log_index_result =
-        event_data_control.GetTransactionLogSet().RegisterProxyElement(transaction_log_id);
+    auto& transaction_log_set = event_data_control_local.GetTransactionLogSet();
+    auto transaction_log_index_result = transaction_log_set.RegisterProxyElement(transaction_log_id);
     if (!(transaction_log_index_result.has_value()))
     {
         return MakeUnexpected<TransactionLogRegistrationGuard>(transaction_log_index_result.error());
     }
-    return TransactionLogRegistrationGuard{event_data_control, transaction_log_index_result.value()};
+    return TransactionLogRegistrationGuard{transaction_log_set, transaction_log_index_result.value()};
 }
 
-TransactionLogRegistrationGuard TransactionLogRegistrationGuard::Create(EventDataControl& event_data_control) noexcept
+TransactionLogRegistrationGuard TransactionLogRegistrationGuard::Create(
+    SkeletonEventDataControlLocalView<>& event_data_control_local) noexcept
 {
-    auto transaction_log_index_result = event_data_control.GetTransactionLogSet().RegisterSkeletonTracingElement();
-    return TransactionLogRegistrationGuard{event_data_control, transaction_log_index_result};
+    auto& transaction_log_set = event_data_control_local.GetTransactionLogSet();
+    auto transaction_log_index_result = transaction_log_set.RegisterSkeletonTracingElement();
+    return TransactionLogRegistrationGuard{transaction_log_set, transaction_log_index_result};
 }
 
 TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
-    EventDataControl& event_data_control,
+    TransactionLogSet& transaction_log_set,
     const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept
-    : event_data_control_{event_data_control}, transaction_log_index_{transaction_log_index}
+    : transaction_log_set_{transaction_log_set}, transaction_log_index_{transaction_log_index}
 {
 }
 
@@ -56,7 +56,7 @@ TransactionLogRegistrationGuard::~TransactionLogRegistrationGuard() noexcept
 {
     if (transaction_log_index_.has_value())
     {
-        event_data_control_.get().GetTransactionLogSet().Unregister(*transaction_log_index_);
+        transaction_log_set_.get().Unregister(*transaction_log_index_);
     }
 }
 
@@ -71,7 +71,7 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(TransactionLogR
     // transaction_log_index_ is an optional of std::uint8_t which is not move-constructible.
     // coverity[autosar_cpp14_a12_8_4_violation]
     // coverity[autosar_cpp14_a18_9_2_violation]
-    : event_data_control_{other.event_data_control_}, transaction_log_index_{other.transaction_log_index_}
+    : transaction_log_set_{other.transaction_log_set_}, transaction_log_index_{other.transaction_log_index_}
 {
     // Suppress "AUTOSAR C++14 A18-9-2" rule findings. This rule stated: "Forwarding values to other functions shall
     // be done via: (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding

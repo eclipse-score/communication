@@ -40,7 +40,7 @@ class "lola::ServiceDataControl" <<Shared Memory>> {
 class "lola::EventDataControl" <<Shared Memory>> <<typedef>> {
 }
 
-class "lola::detail_event_data_control::EventDataControlImpl<>" as EventDataControlImpl <<Shared Memory>> {
+class "lola::detail_event_data_control::EventDataControl" as EventDataControl <<Shared Memory>> {
   -state_slots_: std::vector<std::atomic<EventSlotStatus::value_type>, memory::shared::PolymorphicOffsetPtrAllocator<std::atomic<EventSlotStatus::value_type>>>
   -transaction_log_set_ : TransactionLogSet
 }
@@ -156,10 +156,10 @@ lola::EventControl *-- lola::EventSubscriptionControl
 
 lola::UidPidMapping *-- "0..n" lola::UidPidMappingEntry
 
-lola::EventDataControl .> EventDataControlImpl : type
+lola::EventDataControl .> EventDataControl : type
 lola::EventSubscriptionControl .> EventSubscriptionControlImpl : type
 
-EventDataControlImpl *-- lola::TransactionLogSet
+EventDataControl *-- lola::TransactionLogSet
 lola::TransactionLogSet *-- lola::TransactionLog
 lola::TransactionLog *-- "1..n" lola::TransactionLogSlot
 

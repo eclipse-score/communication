@@ -17,9 +17,11 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/skeleton_binding.h"
@@ -149,6 +151,11 @@ class SkeletonMemoryManager final
     void InitializeSharedMemoryForControl(const QualityType asil_level,
                                           const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory);
 
+    std::pair<std::reference_wrapper<EventControl>, std::reference_wrapper<SkeletonEventControlLocalView>>
+    InsertEventInServiceDataControl(const QualityType asil_level,
+                                    ElementFqId element_fq_id,
+                                    const SkeletonEventProperties& element_properties);
+
     QualityType quality_type_;
     const IShmPathBuilder& shm_path_builder_;
     const LolaServiceInstanceDeployment& lola_service_instance_deployment_;
@@ -163,6 +170,12 @@ class SkeletonMemoryManager final
     ServiceDataStorage* storage_;
     ServiceDataControl* control_qm_;
     ServiceDataControl* control_asil_b_;
+    std::optional<SkeletonServiceDataControlLocalView> skeleton_control_qm_local_;
+    std::optional<SkeletonServiceDataControlLocalView> skeleton_control_asil_b_local_;
+
+    // Used for tracing. Only created if tracing is enabled in the current process.
+    std::optional<ProxyServiceDataControlLocalView> proxy_control_local_;
+
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_qm_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_asil_resource_;
@@ -226,12 +239,13 @@ auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqI
 
     score::cpp::ignore = find_element(storage_->events_metainfo_, element_fq_id);
     const auto event_data_storage_it = find_element(storage_->events_, element_fq_id);
-    const auto event_control_qm_it = find_element(control_qm_->event_controls_, element_fq_id);
+    const auto event_control_qm_it = find_element(skeleton_control_qm_local_->event_controls_, element_fq_id);
 
-    EventDataControl* event_data_control_asil_b{nullptr};
+    SkeletonEventDataControlLocalView<>* event_data_control_asil_b_local{nullptr};
     if (quality_type_ == QualityType::kASIL_B)
     {
-        const auto event_control_asil_b_it = find_element(control_asil_b_->event_controls_, element_fq_id);
+        const auto event_control_asil_b_it =
+            find_element(skeleton_control_asil_b_local_->event_controls_, element_fq_id);
         // Suppress "AUTOSAR C++14 M7-5-1": Functions should not return references or pointers to automatic variables
         // defined in the function.
         // Suppress "AUTOSAR C++14 M7-5-2": Should not assign an object with automatic storage to another which could
@@ -244,7 +258,7 @@ auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqI
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
-        event_data_control_asil_b = &(event_control_asil_b_it->second.data_control);
+        event_data_control_asil_b_local = &(event_control_asil_b_it->second.data_control);
     }
 
     // Suppress "AUTOSAR C++14 A5-3-2": Don't dereference null pointers.
@@ -257,6 +271,18 @@ auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqI
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event_data_storage_ptr != nullptr,
                                                 "Could not get EventDataStorage*");
 
+    ProxyEventDataControlLocalView<>* proxy_event_data_control_local{nullptr};
+    if (proxy_control_local_.has_value())
+    {
+        const auto proxy_event_control_local_it = find_element(proxy_control_local_->event_controls_, element_fq_id);
+        // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
+        // holder) is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        proxy_event_data_control_local = &(proxy_event_control_local_it->second.data_control);
+    }
+
     // Suppress "AUTOSAR C++14 A3-8-1":
     // Justification: The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even
     // returned pointer to internal state until Skeleton object is alive.
@@ -266,7 +292,9 @@ auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqI
             // coverity[autosar_cpp14_m7_5_1_violation]
             // coverity[autosar_cpp14_m7_5_2_violation]
             // coverity[autosar_cpp14_a3_8_1_violation]
-            EventDataControlComposite{&event_control_qm_it->second.data_control, event_data_control_asil_b}};
+            EventDataControlComposite{&event_control_qm_it->second.data_control,
+                                      event_data_control_asil_b_local,
+                                      proxy_event_data_control_local}};
 }
 
 }  // namespace score::mw::com::impl::lola

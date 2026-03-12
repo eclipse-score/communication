@@ -21,7 +21,9 @@
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
@@ -447,8 +449,11 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     void ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed() noexcept;
 
     ServiceDataControl CreateServiceDataControlWithEvent(ElementFqId element_fq_id, QualityType quality_type) noexcept;
-    EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
-                                                        ServiceDataControl& service_data_control) noexcept;
+    static EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
+                                                               ServiceDataControl& service_data_control) noexcept;
+    static SkeletonEventControlLocalView& GetEventControlLocalFromServiceDataControlLocal(
+        ElementFqId element_fq_id,
+        SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept;
 
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept

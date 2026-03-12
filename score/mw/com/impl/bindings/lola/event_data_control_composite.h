@@ -17,12 +17,12 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
 #include <optional>
-#include <tuple>
-#include <utility>
 
 namespace score::mw::com::impl::lola
 {
@@ -47,10 +47,13 @@ class EventDataControlComposite
 
   public:
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL use-case)
-    explicit EventDataControlComposite(EventDataControl* const asil_qm_control);
+    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>* const asil_qm_control_local,
+                                       ProxyEventDataControlLocalView<>* const proxy_control_local);
 
     /// \brief Constructs a composite which will manage QM and ASIL control at the same time
-    explicit EventDataControlComposite(EventDataControl* const asil_qm_control, EventDataControl* const asil_b_control);
+    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>* const asil_qm_control_local,
+                                       SkeletonEventDataControlLocalView<>* const asil_b_control_local,
+                                       ProxyEventDataControlLocalView<>* const proxy_control_local);
 
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
@@ -84,12 +87,16 @@ class EventDataControlComposite
     /// \return _true_ if disconnected and the composite supports QM/ASIL parts, _false_ else.
     bool IsQmControlDisconnected() const noexcept;
 
-    /// \brief Returns the (mandatory) EventDataControl for QM.
-    EventDataControl& GetQmEventDataControl() const noexcept;
+    /// \brief Returns the (mandatory) SkeletonEventDataControlLocalView for QM.
+    SkeletonEventDataControlLocalView<>& GetQmEventDataControlLocal() const noexcept;
 
-    /// \brief Returns the optional EventDataControl for ASIL-B
-    /// \return an empty optional if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
-    std::optional<EventDataControl*> GetAsilBEventDataControl() noexcept;
+    /// \brief Returns a pointer to SkeletonEventDataControlLocalView for ASIL-B
+    /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
+    SkeletonEventDataControlLocalView<>* GetAsilBEventDataControlLocal() noexcept;
+
+    /// \brief Returns a reference to ProxyEventDataControlLocalView for which is used for tracing
+    /// \pre only called if EventDataControlComposite was constructed with a valid ProxyEventDataControlLocalView
+    ProxyEventDataControlLocalView<>& GetProxyEventDataControlLocalView() noexcept;
 
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot) const noexcept;
@@ -97,8 +104,10 @@ class EventDataControlComposite
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:
-    EventDataControl* asil_qm_control_;
-    EventDataControl* asil_b_control_;
+    SkeletonEventDataControlLocalView<>* asil_qm_control_local_;
+    SkeletonEventDataControlLocalView<>* asil_b_control_local_;
+
+    ProxyEventDataControlLocalView<>* proxy_control_local_;
 
     /// \brief flag indicating, whether qm_control part shall be ignored in any public API (AllocateNextSlot(),
     /// EventReady(), Discard()()

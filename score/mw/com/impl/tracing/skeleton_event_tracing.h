@@ -113,16 +113,17 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
                 lola::SampleAllocateePtrMutableView{lola_ptr}.GetEventDataControlComposite();
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_result.has_value());
 
-            auto& event_data_control = event_data_control_composite_result->GetQmEventDataControl();
+            auto& proxy_event_data_control_local =
+                event_data_control_composite_result->GetProxyEventDataControlLocalView();
 
             auto slot_indicator = lola_ptr.GetReferencedSlot();
-            event_data_control.ReferenceSpecificEvent(slot_indicator.GetIndex(),
-                                                      lola::TransactionLogSet::kSkeletonIndexSentinel);
+            proxy_event_data_control_local.ReferenceSpecificEvent(slot_indicator.GetIndex(),
+                                                                  lola::TransactionLogSet::kSkeletonIndexSentinel);
             const auto* const managed_object = lola::SampleAllocateePtrView{lola_ptr}.GetManagedObject();
 
             lola::SamplePtr<SampleType> sample_ptr{
                 managed_object,
-                event_data_control,
+                proxy_event_data_control_local,
                 lola::ControlSlotIndicator(slot_indicator.GetIndex(), slot_indicator.GetSlotQM()),
                 lola::TransactionLogSet::kSkeletonIndexSentinel};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};

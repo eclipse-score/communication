@@ -80,6 +80,16 @@ pub struct EventDataControl {
 }
 
 #[repr(C)]
+pub struct ProxyEventDataControlLocalView {
+    _dummy: [u8; 0],
+}
+
+#[repr(C)]
+pub struct SkeletonEventDataControlLocalView {
+    _dummy: [u8; 0],
+}
+
+#[repr(C)]
 pub struct BlankBinding {
     _data: [u8; 0],
 }
