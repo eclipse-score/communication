@@ -479,7 +479,7 @@ TEST_F(EventDataControlCompositeFixture, QmConsumerViolation)
     ReadyAllSlots();
     ASSERT_FALSE(unit_->IsQmControlDisconnected());
     // and a QM consumer, which blocks/references ALL slots
-    auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
+    auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
         auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
@@ -509,7 +509,7 @@ TEST_F(EventDataControlCompositeFixture, AllocationIgnoresQMAfterContractViolati
     ReadyAllSlots();
 
     // and a QM consumer, which blocks/references ALL slots and thus already violated the contract
-    auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
+    auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
         auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
@@ -550,7 +550,7 @@ TEST_F(EventDataControlCompositeFixture, AsilBConsumerViolation)
     ReadyAllSlots();
 
     // and an ASIL-B consumer, which blocks/references ALL slots
-    auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
+    auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
         auto slot_indicator = asil_->ReferenceNextEvent(0, *transaction_log_index_asil_, upper_limit);

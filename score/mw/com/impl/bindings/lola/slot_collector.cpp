@@ -57,7 +57,7 @@ SlotCollector::SlotIndicators SlotCollector::GetNewSamplesSlotIndices(const std:
 
 SlotCollector::SlotIndicatorVector::iterator SlotCollector::CollectSlots(const std::size_t max_count) noexcept
 {
-    EventSlotStatus::EventTimeStamp current_highest = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
+    EventSlotStatus::EventTimeStamp current_highest = EventSlotStatus::TIMESTAMP_MAX;
     auto collected_slot = collected_slots_.begin();
 
     // Defensive programming: We check in the constructor that collected_slots_ must not be empty
