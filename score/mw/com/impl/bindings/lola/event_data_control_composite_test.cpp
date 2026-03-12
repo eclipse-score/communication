@@ -13,6 +13,8 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
@@ -82,34 +84,43 @@ class EventDataControlCompositeFixture : public ::testing::Test
     {
         qm_ = std::make_unique<EventDataControl>(kMaxSlots, memory_, kMaxSubscribers);
         asil_ = std::make_unique<EventDataControl>(kMaxSlots, memory_, kMaxSubscribers);
+
+        skeleton_qm_local_.emplace(*qm_);
+        skeleton_asil_local_.emplace(*asil_);
+
+        proxy_qm_local_.emplace(*qm_);
+        proxy_asil_local_.emplace(*asil_);
+
         return *this;
     }
 
     EventDataControlCompositeFixture& WithQmOnlyEventDataControl()
     {
         qm_ = std::make_unique<EventDataControl>(kMaxSlots, memory_, kMaxSubscribers);
+        skeleton_qm_local_.emplace(*qm_);
+        proxy_qm_local_.emplace(*qm_);
         return *this;
     }
 
     EventDataControlCompositeFixture& WithRealEventDataControlComposite()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT(qm_ != nullptr);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_qm_local_.has_value());
 
-        auto* const asil_control = asil_ != nullptr ? asil_.get() : nullptr;
-        unit_ = std::make_unique<EventDataControlComposite<>>(qm_.get(), asil_control);
+        auto* const asil_control = skeleton_asil_local_.has_value() ? &skeleton_asil_local_.value() : nullptr;
+        unit_ = std::make_unique<EventDataControlComposite<>>(&skeleton_qm_local_.value(), asil_control, nullptr);
         return *this;
     }
 
     EventDataControlCompositeFixture& WithMockedEventDataControlComposite()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT(qm_ != nullptr);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_qm_local_.has_value());
 
         atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
-        auto* const asil_control = asil_ != nullptr ? asil_.get() : nullptr;
-        unit_mock_ =
-            std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(qm_.get(), asil_control);
+        auto* const asil_control = skeleton_asil_local_.has_value() ? &skeleton_asil_local_.value() : nullptr;
+        unit_mock_ = std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(
+            &skeleton_qm_local_.value(), asil_control, nullptr);
 
         return *this;
     }
@@ -118,12 +129,12 @@ class EventDataControlCompositeFixture : public ::testing::Test
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(qm_ != nullptr);
         transaction_log_index_qm_ = std::make_unique<TransactionLogSet::TransactionLogIndex>(
-            qm_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdQm).value());
+            skeleton_qm_local_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdQm).value());
 
         if (asil_ != nullptr)
         {
             transaction_log_index_asil_ = std::make_unique<TransactionLogSet::TransactionLogIndex>(
-                asil_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdAsil).value());
+                skeleton_asil_local_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdAsil).value());
         }
         return *this;
     }
@@ -149,7 +160,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         for (SlotIndexType counter = 0; counter < kSlotCount; ++counter)
         {
             auto slot_indicator = slot_indicators_[counter];
-            qm_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()}, counter + 1u);
+            skeleton_qm_local_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()}, counter + 1u);
         }
     }
 
@@ -158,6 +169,11 @@ class EventDataControlCompositeFixture : public ::testing::Test
 
     std::unique_ptr<EventDataControl> asil_{nullptr};
     std::unique_ptr<EventDataControl> qm_{nullptr};
+    std::optional<SkeletonEventDataControlLocalView<>> skeleton_qm_local_{};
+    std::optional<SkeletonEventDataControlLocalView<>> skeleton_asil_local_{};
+    std::optional<ProxyEventDataControlLocalView<>> proxy_qm_local_{};
+    std::optional<ProxyEventDataControlLocalView<>> proxy_asil_local_{};
+
     std::unique_ptr<EventDataControlComposite<>> unit_{nullptr};
 
     std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
@@ -409,7 +425,8 @@ TEST_F(EventDataControlCompositeFixture, SkipsEventIfUsedInQmList)
     unit_->EventReady(slot_indicators_[2], 1);
     unit_->EventReady(slot_indicators_[4], 2);
 
-    score::cpp::ignore = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_);  // slot 4 is used in QM list
+    score::cpp::ignore =
+        proxy_qm_local_->ReferenceNextEvent(0, *transaction_log_index_qm_);  // slot 4 is used in QM list
 
     // When allocating one additional slot
     const auto allocation = unit_->AllocateNextSlot();
@@ -425,7 +442,8 @@ TEST_F(EventDataControlCompositeFixture, SkipsEventIfUsedInAsilList)
     AllocateAllSlots();
     unit_->EventReady(slot_indicators_[2], 1);
     unit_->EventReady(slot_indicators_[4], 2);
-    score::cpp::ignore = asil_->ReferenceNextEvent(0, *transaction_log_index_asil_);  // slot 4 is used in ASIL list
+    score::cpp::ignore =
+        proxy_asil_local_->ReferenceNextEvent(0, *transaction_log_index_asil_);  // slot 4 is used in ASIL list
 
     // When allocating one additional slot
     const auto allocation = unit_->AllocateNextSlot();
@@ -479,8 +497,8 @@ TEST_F(EventDataControlCompositeFixture, QmConsumerViolation)
     auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
-        auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
-        upper_limit = (*qm_)[slot_indicator.GetIndex()].GetTimeStamp();
+        auto slot_indicator = proxy_qm_local_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
+        upper_limit = (*proxy_qm_local_)[slot_indicator.GetIndex()].GetTimeStamp();
     }
 
     // When allocating one additional slot
@@ -509,8 +527,8 @@ TEST_F(EventDataControlCompositeFixture, AllocationIgnoresQMAfterContractViolati
     auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
-        auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
-        upper_limit = (*qm_)[slot_indicator.GetIndex()].GetTimeStamp();
+        auto slot_indicator = proxy_qm_local_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
+        upper_limit = (*proxy_qm_local_)[slot_indicator.GetIndex()].GetTimeStamp();
     }
     score::cpp::ignore = unit_->AllocateNextSlot();
     ASSERT_TRUE(unit_->IsQmControlDisconnected());
@@ -550,8 +568,8 @@ TEST_F(EventDataControlCompositeFixture, AsilBConsumerViolation)
     auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
-        auto slot_indicator = asil_->ReferenceNextEvent(0, *transaction_log_index_asil_, upper_limit);
-        upper_limit = (*asil_)[slot_indicator.GetIndex()].GetTimeStamp();
+        auto slot_indicator = proxy_asil_local_->ReferenceNextEvent(0, *transaction_log_index_asil_, upper_limit);
+        upper_limit = (*proxy_asil_local_)[slot_indicator.GetIndex()].GetTimeStamp();
     }
 
     // When allocating one additional slot
@@ -576,7 +594,10 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     constexpr auto MAX_SUBSCRIBERS = 10;
     EventDataControl asil{MAX_SLOTS, memory, MAX_SUBSCRIBERS};
     EventDataControl qm{MAX_SLOTS, memory, MAX_SUBSCRIBERS};
-    EventDataControlComposite unit{&qm, &asil};
+    SkeletonEventDataControlLocalView skeleton_asil_local{asil};
+    SkeletonEventDataControlLocalView skeleton_qm_local{qm};
+
+    EventDataControlComposite unit{&skeleton_qm_local, &skeleton_asil_local, nullptr};
 
     std::mutex allocated_slots_mutex{};
     std::vector<ControlSlotCompositeIndicator> allocated_slots{};
@@ -613,14 +634,16 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     };
 
     auto receiver = [&last_send_time_stamp, &qm, &asil]() {
+        ProxyEventDataControlLocalView proxy_asil_local{asil};
+        ProxyEventDataControlLocalView proxy_qm_local{qm};
         std::vector<ControlSlotIndicator> used_slots_qm{};
         std::vector<ControlSlotIndicator> used_slots_asil{};
         EventSlotStatus::EventTimeStamp start_ts{1};
 
         TransactionLogSet::TransactionLogIndex transaction_log_index_qm =
-            qm.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdQm).value();
+            proxy_qm_local.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdQm).value();
         TransactionLogSet::TransactionLogIndex transaction_log_index_asil =
-            asil.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdAsil).value();
+            proxy_asil_local.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdAsil).value();
 
         for (auto counter = 0; counter < 100; counter++)
         {
@@ -632,7 +655,7 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                 // QM List
                 if (used_slots_qm.size() < 5 && RandomTrueOrFalse())
                 {
-                    auto slot_indicator = qm.ReferenceNextEvent(start_ts, transaction_log_index_qm);
+                    auto slot_indicator = proxy_qm_local.ReferenceNextEvent(start_ts, transaction_log_index_qm);
                     if (slot_indicator.IsValid())
                     {
                         score::cpp::ignore = used_slots_qm.emplace_back(slot_indicator);
@@ -648,7 +671,7 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                         std::advance(iterator, index);
                         const auto value = *iterator;
                         score::cpp::ignore = used_slots_qm.erase(iterator);
-                        qm.DereferenceEvent(value, transaction_log_index_qm);
+                        proxy_qm_local.DereferenceEvent(value, transaction_log_index_qm);
                     }
                 }
             }
@@ -657,7 +680,7 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                 // ASIL List
                 if (used_slots_asil.size() < 5 && RandomTrueOrFalse())
                 {
-                    auto slot_indicator = asil.ReferenceNextEvent(start_ts, transaction_log_index_asil);
+                    auto slot_indicator = proxy_asil_local.ReferenceNextEvent(start_ts, transaction_log_index_asil);
                     if (slot_indicator.IsValid())
                     {
                         score::cpp::ignore = used_slots_asil.emplace_back(slot_indicator);
@@ -673,7 +696,7 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
                         std::advance(iterator, index);
                         const auto value = *iterator;
                         score::cpp::ignore = used_slots_asil.erase(iterator);
-                        asil.DereferenceEvent(value, transaction_log_index_asil);
+                        proxy_asil_local.DereferenceEvent(value, transaction_log_index_asil);
                     }
                 }
             }
@@ -707,9 +730,9 @@ TEST_F(EventDataControlCompositeFixture, GetQmEventDataControl)
     WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
 
     // When getting the QM event data control
-    auto& qm_event_data_control = unit_->GetQmEventDataControl();
+    auto& qm_event_data_control = unit_->GetQmEventDataControlLocal();
     // we can call a method on the returned control.
-    qm_event_data_control.GetNumNewEvents(0);
+    qm_event_data_control.AllocateNextSlot();
 }
 
 TEST_F(EventDataControlCompositeFixture, GetAsilBEventDataControl)
@@ -718,11 +741,11 @@ TEST_F(EventDataControlCompositeFixture, GetAsilBEventDataControl)
     WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
 
     // When getting the ASIL-B event data control
-    const auto asil_b__event_data_control = unit_->GetAsilBEventDataControl();
+    auto* const asil_b_event_data_control_local = unit_->GetAsilBEventDataControlLocal();
     // expect, that we have a value
-    EXPECT_TRUE(asil_b__event_data_control.has_value());
+    EXPECT_NE(asil_b_event_data_control_local, nullptr);
     // and expect, we can call a method on the returned control.
-    asil_b__event_data_control.value()->GetNumNewEvents(0);
+    asil_b_event_data_control_local->AllocateNextSlot();
 }
 
 TEST_F(EventDataControlCompositeFixture, GetEmptyAsilBEventDataControl)
@@ -731,9 +754,54 @@ TEST_F(EventDataControlCompositeFixture, GetEmptyAsilBEventDataControl)
     WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
 
     // When getting the ASIL-B event data control
-    const auto asil_b__event_data_control = unit_->GetAsilBEventDataControl();
+    auto* const asil_b_event_data_control = unit_->GetAsilBEventDataControlLocal();
     // expect, that we get no value
-    EXPECT_FALSE(asil_b__event_data_control.has_value());
+    EXPECT_EQ(asil_b_event_data_control, nullptr);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetProxyEventDataControlLocalView)
+{
+    // Given an EventDataControlComposite constructed with a ProxyEventDataControlLocalView
+    EventDataControl qm{kMaxSlots, memory_, kMaxSubscribers};
+    SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
+    ProxyEventDataControlLocalView<> proxy_qm_local{qm};
+    EventDataControlComposite<> unit{&skeleton_qm_local, &proxy_qm_local};
+
+    // When getting the ASIL-B event data control
+    auto& returned_proxy_qm_local = unit.GetProxyEventDataControlLocalView();
+
+    // Then the same ProxyEventDataControlLocalView that was passed to the constructor is returned
+    EXPECT_EQ(&proxy_qm_local, &returned_proxy_qm_local);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetProxyEventDataControlLocalViewWithAsilB)
+{
+    // Given an EventDataControlComposite constructed with a ProxyEventDataControlLocalView
+    EventDataControl qm{kMaxSlots, memory_, kMaxSubscribers};
+    EventDataControl asil_b{kMaxSlots, memory_, kMaxSubscribers};
+    SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
+    SkeletonEventDataControlLocalView<> skeleton_asil_b_local{asil_b};
+    ProxyEventDataControlLocalView<> proxy_qm_local{qm};
+    EventDataControlComposite<> unit{&skeleton_qm_local, &skeleton_asil_b_local, &proxy_qm_local};
+
+    // When getting the ASIL-B event data control
+    auto& returned_proxy_qm_local = unit.GetProxyEventDataControlLocalView();
+
+    // Then the same ProxyEventDataControlLocalView that was passed to the constructor is returned
+    EXPECT_EQ(&proxy_qm_local, &returned_proxy_qm_local);
+}
+
+TEST_F(EventDataControlCompositeFixture,
+       CallingGetProxyEventDataControlLocalViewWhenCompositeNotConstructedWithOneTerminates)
+{
+    // Given an EventDataControlComposite constructed without a ProxyEventDataControlLocalView
+    EventDataControl qm{kMaxSlots, memory_, kMaxSubscribers};
+    SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
+    EventDataControlComposite<> unit{&skeleton_qm_local, nullptr};
+
+    // When getting the ASIL-B event data control
+    // Then the program terminates
+    EXPECT_DEATH(score::cpp::ignore = unit.GetProxyEventDataControlLocalView(), ".*");
 }
 
 TEST(EventDataControlCompositeDeathTest, DiesOnConstructionWithNullptr)

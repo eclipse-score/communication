@@ -10,37 +10,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
 
-pub type SlotIndexType = u16;
-pub type TransactionLogIndex = u8;
+namespace score::mw::com::impl::lola
+{
 
-#[repr(C)]
-pub struct ControlSlotType {
-    _dummy: [u8; 0],
+SkeletonEventControlLocalView::SkeletonEventControlLocalView(EventControl& event_control_shared_mem) noexcept
+    : data_control{event_control_shared_mem.data_control}
+{
 }
 
-#[repr(C)]
-pub struct CxxOptional<T> {
-    _data: T,
-    _engaged: bool,
-}
-
-#[repr(C)]
-pub struct EventDataControl {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct ProxyEventDataControlLocalView {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct SkeletonEventDataControlLocalView {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct BlankBinding {
-    _data: [u8; 0],
-}
+}  // namespace score::mw::com::impl::lola

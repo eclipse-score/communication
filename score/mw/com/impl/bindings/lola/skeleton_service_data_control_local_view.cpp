@@ -10,37 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-
-pub type SlotIndexType = u16;
-pub type TransactionLogIndex = u8;
-
-#[repr(C)]
-pub struct ControlSlotType {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CxxOptional<T> {
-    _data: T,
-    _engaged: bool,
-}
-
-#[repr(C)]
-pub struct EventDataControl {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct ProxyEventDataControlLocalView {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct SkeletonEventDataControlLocalView {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct BlankBinding {
-    _data: [u8; 0],
-}
+#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"

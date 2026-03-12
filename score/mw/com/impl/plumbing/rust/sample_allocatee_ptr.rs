@@ -17,7 +17,7 @@
 use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
-use common_rs::{BlankBinding, ControlSlotType, CxxOptional, EventDataControl, SlotIndexType};
+use common_rs::{BlankBinding, ControlSlotType, CxxOptional, ProxyEventDataControlLocalView, SkeletonEventDataControlLocalView, SlotIndexType};
 
 #[repr(C)]
 struct ControlSlotCompositeIndicator {
@@ -28,8 +28,9 @@ struct ControlSlotCompositeIndicator {
 
 #[repr(C)]
 struct EventDataControlComposite {
-    _event_data_control_qm: *mut EventDataControl,
-    _event_data_control_asil_b: *mut EventDataControl,
+    _asil_qm_control_local_: *mut SkeletonEventDataControlLocalView,
+    _asil_b_control_local_: *mut SkeletonEventDataControlLocalView,
+    _proxy_control_local_: *mut ProxyEventDataControlLocalView,
     _ignore_qm_control_: bool,
 }
 
