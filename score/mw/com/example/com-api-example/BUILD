@@ -17,18 +17,29 @@ rust_binary(
     name = "com-api-example",
     srcs = ["basic-consumer-producer.rs"],
     features = ["link_std_cpp_lib"],
+    data = ["etc/config.json",
+            "etc/logging.json"],
     visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_logging//score/mw/log/rust/score_log_bridge:score_log_bridge",
     ],
+    env = {
+        "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
+    },
 )
 
 rust_test(
     name = "com-api-example-test",
     crate = ":com-api-example",
-    data = ["etc/config.json"],
+    data = ["etc/config.json",
+            "etc/logging.json"],
     tags = ["manual"],
+    env = {
+        "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
+    },
     deps = [
         ":com-api-example",
         "@score_communication_crate_index//:futures",
