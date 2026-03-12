@@ -14,6 +14,14 @@ module(name = "score_communication")
 
 bazel_dep(name = "platforms", version = "1.0.0")
 
+# Centralized sanitizer policies (ASan, TSan, UBSan, LSan)
+bazel_dep(name = "score_cpp_policies", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "score_cpp_policies",
+    commit = "d6f8104",  # tip of rs/swp-245137 branch
+    remote = "https://github.com/RSingh1511/score_cpp_policies.git",
+)
+
 bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)

@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,7 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Suppressions for the LeakSanitizer
-# See: https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer#suppressions
-# Every suppression requires a justification.
-# Suppressions that share the same justification may be organized in a single block.
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+
+# Re-package suppressions from @score_cpp_policies for integration testing
+pkg_tar(
+    name = "suppressions_pkg",
+    srcs = ["@score_cpp_policies//sanitizers:suppressions"],
+    mode = "0444",
+    package_dir = "sanitizers/suppressions",
+    visibility = ["//visibility:public"],
+)

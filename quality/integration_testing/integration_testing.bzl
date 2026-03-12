@@ -51,14 +51,14 @@ def integration_test(name, srcs, filesystem, **kwargs):
         }),
         os = "linux",
         env = select({
-            "//quality/sanitizer/flags:none": None,
-            "//quality/sanitizer/flags:any_sanitizer": "//quality/sanitizer:absolute_env",
+            "@score_cpp_policies//sanitizers/flags:none": None,
+            "@score_cpp_policies//sanitizers/flags:any_sanitizer": "@score_cpp_policies//sanitizers:absolute_env",
         }),
         tars = [
             filesystem,
         ] + select({
-            "//quality/sanitizer/flags:none": [],
-            "//quality/sanitizer/flags:any_sanitizer": ["//quality/sanitizer:suppressions_pkg"],
+            "@score_cpp_policies//sanitizers/flags:none": [],
+            "@score_cpp_policies//sanitizers/flags:any_sanitizer": ["//quality/integration_testing/sanitizer_support:suppressions_pkg"],
         }) + [
             "@ubuntu24_04//:ubuntu24_04",
         ],
@@ -166,7 +166,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
     _extend_list_in_kwargs_without_duplicates(
         kwargs,
         "target_compatible_with",
-        ["//quality/sanitizer/constraints:no_tsan"],
+        ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
     )
 
     test_as_exec(
