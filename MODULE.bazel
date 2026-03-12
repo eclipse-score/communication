@@ -184,7 +184,8 @@ bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "score_communica
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
 
-bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
+bazel_dep(name = "download_utils", version = "1.2.2")
+
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
