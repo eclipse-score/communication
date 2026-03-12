@@ -38,11 +38,11 @@ class "lola::TransactionLogSet::TransactionLogNode" {
   -transaction_log_id_: std::atomic<TransactionLogId>
 }
 
-class "lola::EventDataControlImpl" <<SharedMemory>> {
+class "lola::EventDataControl" <<SharedMemory>> {
   -SlotIndexType uint16_t
   -state_slots: std::vector<std::atomic<EventSlotStatusType::value_type>, PolymorphicOffsetAllocator<std::atomic<EventSlotStatusType::value_type> > >
   -<b>transaction_log_set_ : TransactionLogSet</b>
-  +EventDataControlImpl(MemoryResourceProxy*, SlotIndexType maxSlots)
+  +EventDataControl(MemoryResourceProxy*, SlotIndexType maxSlots)
   +AllocateNextSlot(): std::optional<SlotIndexType>
   +EventReady(SlotIndexType, EventTimestamp): void
   +Discard(SlotIndexType): void
@@ -82,7 +82,7 @@ note right of "lola::TransactionLog"
   acts like a provider/skeleton side proxy.
 end note
 
-"lola::EventDataControlImpl" *-- "lola::TransactionLogSet"
+"lola::EventDataControl" *-- "lola::TransactionLogSet"
 "lola::TransactionLogSet" *-- "lola::TransactionLog" : proxy_transaction_logs_\n0..n
 "lola::TransactionLogSet" *-- "lola::TransactionLog" : skeleton_tracing_transaction_log_\n0..1
 "lola::TransactionLog" *-- "lola::TransactionLogSlot" : 1..n

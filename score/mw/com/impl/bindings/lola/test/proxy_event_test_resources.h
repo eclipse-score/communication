@@ -19,20 +19,17 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_mocked_service_data.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
-#include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
-#include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_mock.h"
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 #include "score/mw/com/impl/tracing/i_binding_tracing_runtime.h"
 
 #include "score/filesystem/factory/filesystem_factory_fake.h"
-#include "score/filesystem/i_standard_filesystem.h"
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/memory/shared/shared_memory_factory_mock.h"
 #include "score/os/mocklib/fcntl_mock.h"
@@ -43,7 +40,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/types.h>
-#include <functional>
 #include <future>
 #include <memory>
 #include <string>
@@ -208,6 +204,8 @@ class ProxyMockedMemoryFixture : public ::testing::Test
 
     std::unique_ptr<FakeMockedServiceData> fake_data_{nullptr};
     EventControl* event_control_{nullptr};
+    std::optional<SkeletonEventControlLocalView> skeleton_event_control_local_{};
+    std::optional<ProxyEventControlLocalView> proxy_event_control_local_{};
     EventDataStorage<SampleType>* event_data_storage_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
 

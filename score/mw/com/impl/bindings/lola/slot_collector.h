@@ -13,11 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_CLIENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_CLIENT_H
 
-#include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include <functional>
+
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -46,7 +47,7 @@ class SlotCollector final
     ///
     /// \param event_data_control EventDataControl to be used for data reception.
     /// \param max_slots Maximum number of samples that will be received in one call to GetNewSamples.
-    SlotCollector(EventDataControl& event_data_control,
+    SlotCollector(ProxyEventDataControlLocalView<>& event_data_control_local,
                   const std::size_t max_slots,
                   TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
 
@@ -79,7 +80,7 @@ class SlotCollector final
     /// \return an iterator to one past the oldest collected slot (smallest timestamp).
     SlotIndicatorVector::iterator CollectSlots(const std::size_t max_count) noexcept;
 
-    std::reference_wrapper<EventDataControl> event_data_control_;
+    std::reference_wrapper<ProxyEventDataControlLocalView<>> event_data_control_local_;
     EventSlotStatus::EventTimeStamp last_ts_;
     SlotIndicatorVector
         collected_slots_;  // Pre-allocated scratchpad memory to present the events in-order to the user.

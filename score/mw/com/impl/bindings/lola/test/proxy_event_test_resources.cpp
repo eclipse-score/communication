@@ -11,9 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
-#include "score/filesystem/details/standard_filesystem.h"
-#include "score/filesystem/i_standard_filesystem.h"
-#include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
 
 #include "score/memory/shared/memory_resource_registry.h"
 
@@ -127,12 +124,17 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
 {
     std::tie(event_control_, event_data_storage_) =
         fake_data_->AddEvent<SampleType>(element_fq_id, skeleton_event_properties);
+    skeleton_event_control_local_.emplace(*event_control_);
+    proxy_event_control_local_.emplace(*event_control_);
 }
 
 LolaProxyEventResources::LolaProxyEventResources() : ProxyMockedMemoryFixture{}
 {
-    InitialiseProxyWithConstructor(identifier_);
+    // Since the Proxy caches a view on ServiceDataControl (via ProxyServiceDataControlLocalView) on construction, we
+    // have to set ensure that the ServiceDataControl is set up before creating the proxy. Therefore, we call
+    // InitialiseDummySkeletonEvent before InitialiseProxyWithConstructor.
     InitialiseDummySkeletonEvent(element_fq_id_, SkeletonEventProperties{max_num_slots_, max_subscribers_, true});
+    InitialiseProxyWithConstructor(identifier_);
 }
 
 LolaProxyEventResources::~LolaProxyEventResources()
@@ -183,11 +185,12 @@ void LolaProxyEventResources::ExpectUnregisterEventNotification(score::cpp::opti
 SlotIndexType LolaProxyEventResources::PutData(const std::uint32_t value,
                                                const EventSlotStatus::EventTimeStamp timestamp)
 {
-    auto slot_result = event_control_->data_control.AllocateNextSlot();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_event_control_local_.has_value());
+    auto slot_result = skeleton_event_control_local_->data_control.AllocateNextSlot();
     EXPECT_TRUE(slot_result.IsValid());
     auto slot_index = slot_result.GetIndex();
     event_data_storage_->at(slot_index) = value;
-    event_control_->data_control.EventReady(slot_result, timestamp);
+    skeleton_event_control_local_->data_control.EventReady(slot_result, timestamp);
     return slot_index;
 }
 

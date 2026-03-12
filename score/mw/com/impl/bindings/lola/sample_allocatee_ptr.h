@@ -230,6 +230,11 @@ class SampleAllocateePtrMutableView
         return ptr_.event_data_control_;
     }
 
+    std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() noexcept
+    {
+        return ptr_.event_data_control_;
+    }
+
   private:
     SampleAllocateePtr<SampleType>& ptr_;
 };

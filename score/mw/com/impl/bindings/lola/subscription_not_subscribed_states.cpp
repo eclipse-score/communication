@@ -36,7 +36,7 @@ namespace score::mw::com::impl::lola
 ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count) noexcept
 {
     auto transaction_log_registration_guard_result = TransactionLogRegistrationGuard::Create(
-        state_machine_.event_control_.data_control, state_machine_.transaction_log_id_);
+        state_machine_.event_control_local_.data_control, state_machine_.transaction_log_id_);
     if (!(transaction_log_registration_guard_result.has_value()))
     {
         std::stringstream ss{};
@@ -50,8 +50,8 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
         std::move(transaction_log_registration_guard_result).value());
 
     auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
-    auto& transaction_log =
-        state_machine_.event_control_.data_control.GetTransactionLogSet().GetTransactionLog(transaction_log_index);
+    auto& transaction_log = state_machine_.event_control_local_.data_control.GetTransactionLogSet().GetTransactionLog(
+        transaction_log_index);
     transaction_log.SubscribeTransactionBegin(max_sample_count);
 
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
@@ -60,7 +60,7 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
     // coverity[autosar_cpp14_a4_7_1_violation]
     const auto max_sample_count_uint16 = static_cast<std::uint16_t>(max_sample_count);
     const auto subscription_result =
-        state_machine_.event_control_.subscription_control.Subscribe(max_sample_count_uint16);
+        state_machine_.event_control_local_.subscription_control.get().Subscribe(max_sample_count_uint16);
     if (subscription_result != SubscribeResult::kSuccess)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
@@ -77,8 +77,9 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
     }
     transaction_log.SubscribeTransactionCommit();
 
-    SlotCollector slot_collector{
-        state_machine_.event_control_.data_control, static_cast<std::size_t>(max_sample_count), transaction_log_index};
+    SlotCollector slot_collector{state_machine_.event_control_local_.data_control,
+                                 static_cast<std::size_t>(max_sample_count),
+                                 transaction_log_index};
     if (state_machine_.event_receiver_handler_.has_value())
     {
         // Defer handler registration until provider is available to avoid failed registration attempts.
@@ -158,11 +159,11 @@ score::cpp::optional<TransactionLogSet::TransactionLogIndex> NotSubscribedState:
 void NotSubscribedState::OnEntry() noexcept
 {
     const auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
-    auto& transaction_log =
-        state_machine_.event_control_.data_control.GetTransactionLogSet().GetTransactionLog(transaction_log_index);
+    auto& transaction_log = state_machine_.event_control_local_.data_control.GetTransactionLogSet().GetTransactionLog(
+        transaction_log_index);
 
     transaction_log.UnsubscribeTransactionBegin();
-    state_machine_.event_control_.subscription_control.Unsubscribe(
+    state_machine_.event_control_local_.subscription_control.get().Unsubscribe(
         state_machine_.subscription_data_.max_sample_count_.value());
     transaction_log.UnsubscribeTransactionCommit();
 
