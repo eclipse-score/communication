@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ROLLBACK_EXECUTOR_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_ROLLBACK_EXECUTOR_H
 
-#include "score/mw/com/impl/bindings/lola/runtime.h"
-#include "score/mw/com/impl/bindings/lola/service_data_control.h"
+#include "score/mw/com/impl/bindings/lola/i_runtime.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -30,7 +30,7 @@ class TransactionLogRollbackExecutor
     /// \param asil_level asil level of the proxy instance owning this executor.
     /// \param provider_pid pid/node-id of the service instance provider
     /// \param transaction_log_id id of transaction logs to be rolled back.
-    TransactionLogRollbackExecutor(ServiceDataControl& service_data_control,
+    TransactionLogRollbackExecutor(ProxyServiceDataControlLocalView& service_data_control_local,
                                    const SkeletonInstanceIdentifier skeleton_instance_identifier,
                                    const QualityType asil_level,
                                    const pid_t provider_pid,
@@ -39,8 +39,8 @@ class TransactionLogRollbackExecutor
     /// \brief Does a rollback of all transaction logs (log per service element) related to service_data_control/
     ///        transaction_log_id specific to a proxy instance given in the ctor.
     /// \details Besides the pure transaction rollback, there is also some preparation needed/done once for a given
-    ///          service_data_control (independent from the number of local proxy instances referring to it). This is
-    ///          done by an internal call to #PrepareRollback
+    ///          service_data_control (independent from the number of local proxy instances referring to it). This
+    ///          is done by an internal call to #PrepareRollback
     ResultBlank RollbackTransactionLogs() noexcept;
 
   private:
@@ -57,7 +57,7 @@ class TransactionLogRollbackExecutor
     ///             "to-be-rolled-back".
     void PrepareRollback(lola::IRuntime& lola_runtime) noexcept;
 
-    ServiceDataControl& service_data_control_;
+    ProxyServiceDataControlLocalView& service_data_control_local_;
     /// asil level of the service_data_control_
     const QualityType asil_level_;
     /// pid of the provider of the service instance represented by service_data_control_

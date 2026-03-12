@@ -243,7 +243,8 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     // This suppression is unnecessary as the operands do not contain binary operators.
     // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    if (!qm_disconnect_ && event_data_control_composite_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
+    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
+        !slot.IsValidQM())
     {
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
@@ -299,7 +300,7 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     {
         // LCOV_EXCL_BR_STOP
         score::cpp::ignore = transaction_log_registration_guard_.emplace(
-            TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
+            TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControlLocal()));
         score::cpp::ignore =
             type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
     }

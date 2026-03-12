@@ -142,6 +142,7 @@ class SkeletonComponentTestFixture : public ::testing::Test
             .WillByDefault(::testing::Return(&lola_runtime_mock_));
 
         ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(ReturnRef(message_passing_service_mock_));
+        ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock_));
     }
 
     void TearDown() override
@@ -221,6 +222,7 @@ class SkeletonComponentTestFixture : public ::testing::Test
     lola::RuntimeMock lola_runtime_mock_{};
 
     MessagePassingServiceMock message_passing_service_mock_{};
+    impl::tracing::TracingRuntimeMock tracing_runtime_mock_{};
 
     mock_binding::SkeletonEvent<TestSampleType> mock_event_binding_{};
     mock_binding::SkeletonEvent<TestSampleType> mock_field_binding_{};

@@ -44,7 +44,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
           state_machine_{proxy_->GetQualityType(),
                          element_fq_id_,
                          kDummyPid,
-                         proxy_->GetEventControl(element_fq_id_),
+                         proxy_->GetEventControlLocal(element_fq_id_),
                          kDummyTransactionLogId}
     {
     }
@@ -79,7 +79,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
     score::cpp::optional<std::reference_wrapper<TransactionLog>> GetTransactionLog(
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& transaction_log_set = proxy_->GetEventControl(element_fq_id_).data_control.GetTransactionLogSet();
+        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).data_control.GetTransactionLogSet();
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
         auto result =
             std::find_if(transaction_logs.begin(), transaction_logs.end(), [&transaction_log_id](const auto& element) {
@@ -111,7 +111,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
     score::Result<TransactionLogSet::TransactionLogIndex> RegisterTransactionLog(
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& transaction_log_set = proxy_->GetEventControl(element_fq_id_).data_control.GetTransactionLogSet();
+        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).data_control.GetTransactionLogSet();
         return transaction_log_set.RegisterProxyElement(transaction_log_id);
     }
 
