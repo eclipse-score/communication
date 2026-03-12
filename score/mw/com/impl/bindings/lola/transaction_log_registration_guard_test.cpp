@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
@@ -28,14 +29,28 @@ constexpr std::size_t kMaxSlots{5U};
 constexpr std::size_t kMaxSubscribers{5U};
 const TransactionLogId kDummyTransactionLogId{10U};
 
-using TransactionLogRegistrationGuardFixture = TransactionLogSetHelperFixture;
+class TransactionLogRegistrationGuardFixture : public TransactionLogSetHelperFixture
+{
+  public:
+    TransactionLogRegistrationGuardFixture& GivenAnEventDataControl(
+        const SlotIndexType max_slots,
+        const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
+    {
+        event_data_control_.emplace(max_slots, memory_, max_subscribers);
+        proxy_event_data_control_local_.emplace(event_data_control_.value());
+        return *this;
+    }
+
+    FakeMemoryResource memory_{};
+    std::optional<EventDataControl> event_data_control_{};
+    std::optional<ProxyEventDataControlLocalView<>> proxy_event_data_control_local_{};
+};
 
 TEST_F(TransactionLogRegistrationGuardFixture, CreatingGuardWithAvailableSlotsWillReturnGuard)
 {
-    FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory, kMaxSubscribers};
-
-    auto unit = TransactionLogRegistrationGuard::Create(event_data_control, kDummyTransactionLogId);
+    GivenAnEventDataControl(kMaxSlots, kMaxSubscribers);
+    auto unit =
+        TransactionLogRegistrationGuard::Create(proxy_event_data_control_local_.value(), kDummyTransactionLogId);
     EXPECT_TRUE(unit.has_value());
 }
 
@@ -43,13 +58,13 @@ TEST_F(TransactionLogRegistrationGuardFixture, CreatingGuardWithoutAvailableSlot
 {
     constexpr std::size_t max_subscribers{1U};
 
-    FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory, max_subscribers};
-
-    auto unit = TransactionLogRegistrationGuard::Create(event_data_control, kDummyTransactionLogId);
+    GivenAnEventDataControl(kMaxSlots, max_subscribers);
+    auto unit =
+        TransactionLogRegistrationGuard::Create(proxy_event_data_control_local_.value(), kDummyTransactionLogId);
     EXPECT_TRUE(unit.has_value());
 
-    auto unit_2 = TransactionLogRegistrationGuard::Create(event_data_control, kDummyTransactionLogId);
+    auto unit_2 =
+        TransactionLogRegistrationGuard::Create(proxy_event_data_control_local_.value(), kDummyTransactionLogId);
     EXPECT_FALSE(unit_2.has_value());
 }
 
@@ -57,13 +72,14 @@ TEST_F(TransactionLogRegistrationGuardFixture, DestroyingGuardWillUnregisterLog)
 {
     const bool expect_needs_rollback{false};
 
-    FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory, kMaxSubscribers};
-    auto& transaction_log_set = event_data_control.GetTransactionLogSet();
+    GivenAnEventDataControl(kMaxSlots, kMaxSubscribers);
+    auto& transaction_log_set = proxy_event_data_control_local_->GetTransactionLogSet();
 
     {
         ExpectTransactionLogSetEmpty(transaction_log_set);
-        auto unit = TransactionLogRegistrationGuard::Create(event_data_control, kDummyTransactionLogId).value();
+        auto unit =
+            TransactionLogRegistrationGuard::Create(proxy_event_data_control_local_.value(), kDummyTransactionLogId)
+                .value();
         const auto transaction_log_index = unit.GetTransactionLogIndex();
         ExpectProxyTransactionLogExistsAtIndex(
             transaction_log_set, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
@@ -75,13 +91,14 @@ TEST_F(TransactionLogRegistrationGuardFixture, MoveConstructingGuardWillNotUnreg
 {
     const bool expect_needs_rollback{false};
 
-    FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory, kMaxSubscribers};
-    auto& transaction_log_set = event_data_control.GetTransactionLogSet();
+    GivenAnEventDataControl(kMaxSlots, kMaxSubscribers);
+    auto& transaction_log_set = proxy_event_data_control_local_->GetTransactionLogSet();
 
     {
         ExpectTransactionLogSetEmpty(transaction_log_set);
-        auto unit = TransactionLogRegistrationGuard::Create(event_data_control, kDummyTransactionLogId).value();
+        auto unit =
+            TransactionLogRegistrationGuard::Create(proxy_event_data_control_local_.value(), kDummyTransactionLogId)
+                .value();
         const auto transaction_log_index = unit.GetTransactionLogIndex();
 
         TransactionLogRegistrationGuard unit2{std::move(unit)};

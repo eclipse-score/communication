@@ -28,6 +28,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_binding.h"
@@ -51,8 +52,8 @@ namespace score::mw::com::impl::lola
 {
 
 /// \brief LoLa Skeleton implement all binding specific functionalities that are needed by a Skeleton.
-/// This includes all actions that need to be performed on Service offerings, as also the possibility to register events
-/// dynamically at this skeleton.
+/// This includes all actions that need to be performed on Service offerings, as also the possibility to register
+/// events dynamically at this skeleton.
 class Skeleton final : public SkeletonBinding
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -67,8 +68,8 @@ class Skeleton final : public SkeletonBinding
                                             std::unique_ptr<IShmPathBuilder> shm_path_builder,
                                             std::unique_ptr<IPartialRestartPathBuilder> partial_restart_path_builder);
 
-    /// \brief Construct a Skeleton instance for this specific instance with possibility of passing mock objects during
-    /// construction. It is only for testing. For production code Skeleton::Create shall be used.
+    /// \brief Construct a Skeleton instance for this specific instance with possibility of passing mock objects
+    /// during construction. It is only for testing. For production code Skeleton::Create shall be used.
     Skeleton(const InstanceIdentifier& identifier,
              const LolaServiceInstanceDeployment& lola_service_instance_deployment,
              const LolaServiceTypeDeployment& lola_service_type_deployment,
@@ -118,8 +119,8 @@ class Skeleton final : public SkeletonBinding
     /// \return The registered data structures within the Skeleton
     /// (first: where to store data, second: control data
     ///         access) If PrepareOffer created the shared memory, then will create an EventDataControl (for QM and
-    ///         optionally for ASIL B) and an EventDataStorage which will be returned. If PrepareOffer opened the shared
-    ///         memory, then the opened event data from the existing shared memory will be returned.
+    ///         optionally for ASIL B) and an EventDataStorage which will be returned. If PrepareOffer opened the
+    ///         shared memory, then the opened event data from the existing shared memory will be returned.
     template <typename SampleType>
     std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> Register(
         const ElementFqId element_fq_id,
@@ -141,10 +142,10 @@ class Skeleton final : public SkeletonBinding
     ///
     /// This registration is required so that the Skeleton can access its owned methods.
     ///
-    /// Synchronisation: This registration must be done in the constructor of the SkeletonMethod which is guaranteed to
-    /// be called during construction of the full Skeleton created by the user. Therefore, the map of skeleton methods
-    /// will not be modified after this construction phase and so can be used in any function (except for the
-    /// constructor of Skeleton) without locking a mutex.
+    /// Synchronisation: This registration must be done in the constructor of the SkeletonMethod which is guaranteed
+    /// to be called during construction of the full Skeleton created by the user. Therefore, the map of skeleton
+    /// methods will not be modified after this construction phase and so can be used in any function (except for
+    /// the constructor of Skeleton) without locking a mutex.
     void RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method);
 
     bool VerifyAllMethodsRegistered() const override;
@@ -190,13 +191,13 @@ class Skeleton final : public SkeletonBinding
     ///
     /// OnServiceMethodsSubscribed can be called by the message passing concurrently, since different Proxies could
     /// subscribe at the same time or a single Proxy may send the same message multiple times (See
-    /// platform/aas/docs/features/ipc/lola/method/README.md for details).
+    /// score/docs/features/ipc/lola/method/README.md for details).
     std::mutex on_service_methods_subscribed_mutex_;
     MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
 
-    /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler/RegisterMethodCallHandler on
-    /// destruction
+    /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler/RegisterMethodCallHandler
+    /// on destruction
     ///
     /// Each guard corresponds to the method subscription / method call handler which was registered in
     /// Skeleton::PrepareOffer() (in case any methods were registered). The guard objects will be destroyed in
@@ -216,8 +217,8 @@ class Skeleton final : public SkeletonBinding
 
     /// \brief Scope that is passed to the ServiceMethodSubscribedHandler
     ///
-    /// This scope will be manually expired in PrepareStopOffer which will prevent any Proxy from subscribing to this
-    /// method.
+    /// This scope will be manually expired in PrepareStopOffer which will prevent any Proxy from subscribing to
+    /// this method.
     safecpp::Scope<> on_service_method_subscribed_handler_scope_;
 };
 
@@ -233,10 +234,10 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
         auto [typed_event_data_storage_ptr, event_data_control_composite] =
             memory_manager_.OpenEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
 
-        auto& event_data_control_qm = event_data_control_composite.GetQmEventDataControl();
-        auto rollback_result = event_data_control_qm.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
-            [&event_data_control_qm](const TransactionLog::SlotIndexType slot_index) {
-                event_data_control_qm.DereferenceEventWithoutTransactionLogging(slot_index);
+        auto& event_data_control_qm_local = event_data_control_composite.GetQmEventDataControlLocal();
+        auto rollback_result = event_data_control_qm_local.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
+            [&event_data_control_qm_local](const TransactionLog::SlotIndexType slot_index) {
+                event_data_control_qm_local.DereferenceEventWithoutTransactionLogging(slot_index);
             });
         if (!rollback_result.has_value())
         {

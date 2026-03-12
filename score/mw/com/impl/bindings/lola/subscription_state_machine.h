@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_H
 
-#include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_helpers.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_base.h"
@@ -70,7 +70,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     SubscriptionStateMachine(const QualityType quality_type,
                              const ElementFqId element_fq_id,
                              const pid_t event_source_pid,
-                             EventControl& event_control,
+                             ProxyEventControlLocalView& event_control_local,
                              const TransactionLogId& transaction_log_id) noexcept;
 
     SubscriptionStateMachine(SubscriptionStateMachine&&) noexcept = delete;
@@ -135,7 +135,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     SubscriptionData subscription_data_;
     std::optional<std::weak_ptr<ScopedEventReceiveHandler>> event_receiver_handler_;
     EventReceiveHandlerManager event_receive_handler_manager_;
-    EventControl& event_control_;
+    ProxyEventControlLocalView& event_control_local_;
     bool provider_service_instance_is_available_;
 
     const TransactionLogId& transaction_log_id_;
