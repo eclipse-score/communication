@@ -11,28 +11,29 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
+
 #include <utility>
 
-namespace score::mw::com::impl::lola::detail_event_data_control_composite
+namespace score::mw::com::impl::lola
 {
 
 namespace
 {
+
 constexpr std::size_t MAX_MULTI_ALLOCATE_RETRY_COUNT{100U};
+
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): all members are initialized in the delegated constructor
 template <template <class> class AtomicIndirectorType>
-EventDataControlCompositeImpl<AtomicIndirectorType>::EventDataControlCompositeImpl(
-    EventDataControl* const asil_qm_control)
-    : EventDataControlCompositeImpl{asil_qm_control, nullptr}
+EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(EventDataControl* const asil_qm_control)
+    : EventDataControlComposite{asil_qm_control, nullptr}
 {
 }
 
 template <template <class> class AtomicIndirectorType>
-EventDataControlCompositeImpl<AtomicIndirectorType>::EventDataControlCompositeImpl(
-    EventDataControl* const asil_qm_control,
-    EventDataControl* const asil_b_control)
+EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(EventDataControl* const asil_qm_control,
+                                                                           EventDataControl* const asil_b_control)
     : asil_qm_control_{asil_qm_control}, asil_b_control_{asil_b_control}, ignore_qm_control_{false}
 {
     CheckForValidDataControls();
@@ -45,7 +46,7 @@ template <template <class> class AtomicIndirectorType>
 // throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto EventDataControlCompositeImpl<AtomicIndirectorType>::GetNextFreeMultiSlot() const noexcept
+auto EventDataControlComposite<AtomicIndirectorType>::GetNextFreeMultiSlot() const noexcept
     -> ControlSlotCompositeIndicator
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
@@ -120,8 +121,8 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto EventDataControlCompositeImpl<AtomicIndirectorType>::TryLockSlot(
-    ControlSlotCompositeIndicator slot_indicator) noexcept -> bool
+auto EventDataControlComposite<AtomicIndirectorType>::TryLockSlot(ControlSlotCompositeIndicator slot_indicator) noexcept
+    -> bool
 {
     auto& slot_value_qm = slot_indicator.GetSlotQM();
     auto& slot_value_asil_b = slot_indicator.GetSlotAsilB();
@@ -163,8 +164,7 @@ template <template <class> class AtomicIndirectorType>
 // have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
 // to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto EventDataControlCompositeImpl<AtomicIndirectorType>::AllocateNextMultiSlot() noexcept
-    -> ControlSlotCompositeIndicator
+auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() noexcept -> ControlSlotCompositeIndicator
 {
     // \todo we should also monitor retry counts in the multi-slot/EventDataControlComposite case, like we are doing in
     //  EventDataControl! Currently we are "blind", if we have retries, because ASIL-QM/ASIL-B consumers do influence
@@ -185,7 +185,7 @@ auto EventDataControlCompositeImpl<AtomicIndirectorType>::AllocateNextMultiSlot(
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventDataControlCompositeImpl<AtomicIndirectorType>::AllocateNextSlot() noexcept -> ControlSlotCompositeIndicator
+auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcept -> ControlSlotCompositeIndicator
 {
     if (asil_b_control_ == nullptr)
     {
@@ -233,9 +233,9 @@ auto EventDataControlCompositeImpl<AtomicIndirectorType>::AllocateNextSlot() noe
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventDataControlCompositeImpl<AtomicIndirectorType>::EventReady(
-    ControlSlotCompositeIndicator slot_indicator,
-    EventSlotStatus::EventTimeStamp time_stamp) noexcept -> void
+auto EventDataControlComposite<AtomicIndirectorType>::EventReady(ControlSlotCompositeIndicator slot_indicator,
+                                                                 EventSlotStatus::EventTimeStamp time_stamp) noexcept
+    -> void
 {
     if (asil_b_control_ != nullptr)
     {
@@ -249,7 +249,7 @@ auto EventDataControlCompositeImpl<AtomicIndirectorType>::EventReady(
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventDataControlCompositeImpl<AtomicIndirectorType>::Discard(ControlSlotCompositeIndicator slot_indicator) -> void
+auto EventDataControlComposite<AtomicIndirectorType>::Discard(ControlSlotCompositeIndicator slot_indicator) -> void
 {
     if (asil_b_control_ != nullptr)
     {
@@ -263,20 +263,19 @@ auto EventDataControlCompositeImpl<AtomicIndirectorType>::Discard(ControlSlotCom
 }
 
 template <template <class> class AtomicIndirectorType>
-bool EventDataControlCompositeImpl<AtomicIndirectorType>::IsQmControlDisconnected() const noexcept
+bool EventDataControlComposite<AtomicIndirectorType>::IsQmControlDisconnected() const noexcept
 {
     return ignore_qm_control_;
 }
 
 template <template <class> class AtomicIndirectorType>
-EventDataControl& EventDataControlCompositeImpl<AtomicIndirectorType>::GetQmEventDataControl() const noexcept
+EventDataControl& EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControl() const noexcept
 {
     return *asil_qm_control_;
 }
 
 template <template <class> class AtomicIndirectorType>
-std::optional<EventDataControl*>
-EventDataControlCompositeImpl<AtomicIndirectorType>::GetAsilBEventDataControl() noexcept
+std::optional<EventDataControl*> EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControl() noexcept
 {
     if (asil_b_control_ != nullptr)
     {
@@ -286,7 +285,7 @@ EventDataControlCompositeImpl<AtomicIndirectorType>::GetAsilBEventDataControl() 
 }
 
 template <template <class> class AtomicIndirectorType>
-EventSlotStatus::EventTimeStamp EventDataControlCompositeImpl<AtomicIndirectorType>::GetEventSlotTimestamp(
+EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetEventSlotTimestamp(
     const SlotIndexType slot) const noexcept
 {
     if (asil_b_control_ != nullptr)
@@ -304,7 +303,7 @@ EventSlotStatus::EventTimeStamp EventDataControlCompositeImpl<AtomicIndirectorTy
 }
 
 template <template <class> class AtomicIndirectorType>
-void EventDataControlCompositeImpl<AtomicIndirectorType>::CheckForValidDataControls() const noexcept
+void EventDataControlComposite<AtomicIndirectorType>::CheckForValidDataControls() const noexcept
 {
     if (asil_qm_control_ == nullptr)
     {
@@ -318,7 +317,7 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-EventSlotStatus::EventTimeStamp EventDataControlCompositeImpl<AtomicIndirectorType>::GetLatestTimestamp() const noexcept
+EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetLatestTimestamp() const noexcept
 {
     EventSlotStatus::EventTimeStamp latest_time_stamp{1U};
     EventDataControl* control = (asil_b_control_ != nullptr) ? asil_b_control_ : asil_qm_control_;
@@ -343,7 +342,7 @@ EventSlotStatus::EventTimeStamp EventDataControlCompositeImpl<AtomicIndirectorTy
     return latest_time_stamp;
 }
 
-template class EventDataControlCompositeImpl<memory::shared::AtomicIndirectorReal>;
-template class EventDataControlCompositeImpl<memory::shared::AtomicIndirectorMock>;
+template class EventDataControlComposite<memory::shared::AtomicIndirectorReal>;
+template class EventDataControlComposite<memory::shared::AtomicIndirectorMock>;
 
-}  // namespace score::mw::com::impl::lola::detail_event_data_control_composite
+}  // namespace score::mw::com::impl::lola

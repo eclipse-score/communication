@@ -24,7 +24,7 @@ namespace score::mw::com::impl::lola
 class EventDataControlCompositeAttorney
 {
   public:
-    EventDataControlCompositeAttorney(EventDataControlComposite& event_data_control_composite) noexcept;
+    EventDataControlCompositeAttorney(EventDataControlComposite<>& event_data_control_composite) noexcept;
 
     /// \brief Prepares the underlying EventDataControlComposite (its contained EventDataControls) in a way, that the
     ///        next call to AllocateNextSlot() will return the given expected_result
@@ -42,7 +42,7 @@ class EventDataControlCompositeAttorney
         const SlotIndexType slot_index) const noexcept;
 
   private:
-    EventDataControlComposite& event_data_control_composite_;
+    EventDataControlComposite<>& event_data_control_composite_;
 };
 
 class EventDataControlAttorney

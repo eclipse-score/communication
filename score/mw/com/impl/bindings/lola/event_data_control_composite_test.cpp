@@ -96,7 +96,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         SCORE_LANGUAGE_FUTURECPP_ASSERT(qm_ != nullptr);
 
         auto* const asil_control = asil_ != nullptr ? asil_.get() : nullptr;
-        unit_ = std::make_unique<EventDataControlComposite>(qm_.get(), asil_control);
+        unit_ = std::make_unique<EventDataControlComposite<>>(qm_.get(), asil_control);
         return *this;
     }
 
@@ -108,9 +108,8 @@ class EventDataControlCompositeFixture : public ::testing::Test
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
         auto* const asil_control = asil_ != nullptr ? asil_.get() : nullptr;
-        unit_mock_ = std::make_unique<
-            detail_event_data_control_composite::EventDataControlCompositeImpl<memory::shared::AtomicIndirectorMock>>(
-            qm_.get(), asil_control);
+        unit_mock_ =
+            std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(qm_.get(), asil_control);
 
         return *this;
     }
@@ -159,12 +158,10 @@ class EventDataControlCompositeFixture : public ::testing::Test
 
     std::unique_ptr<EventDataControl> asil_{nullptr};
     std::unique_ptr<EventDataControl> qm_{nullptr};
-    std::unique_ptr<EventDataControlComposite> unit_{nullptr};
+    std::unique_ptr<EventDataControlComposite<>> unit_{nullptr};
 
     std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
-    std::unique_ptr<
-        detail_event_data_control_composite::EventDataControlCompositeImpl<memory::shared::AtomicIndirectorMock>>
-        unit_mock_{nullptr};
+    std::unique_ptr<EventDataControlComposite<memory::shared::AtomicIndirectorMock>> unit_mock_{nullptr};
 
     std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_qm_{nullptr};
     std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_asil_{nullptr};

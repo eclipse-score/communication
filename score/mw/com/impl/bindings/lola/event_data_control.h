@@ -46,15 +46,12 @@ class EventDataControlAttorney;
 // coverity[autosar_cpp14_m3_2_3_violation]
 class EventDataControlCompositeAttorney;
 
-namespace detail_event_data_control_composite
-{
 // Suppress The rule AUTOSAR C++14 M3-2-3: "A type, object or function that is used in multiple translation units shall
 // be declared in one and only one file."
 // This is a forward declaration that does not vioalate this rule.
 // coverity[autosar_cpp14_m3_2_3_violation]
 template <template <class> class T>
-class EventDataControlCompositeImpl;
-}  // namespace detail_event_data_control_composite
+class EventDataControlComposite;
 
 namespace detail_event_data_control
 {
@@ -81,6 +78,14 @@ class EventDataControlImpl final
     // "EventDataControlImpl" accessing private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class lola::EventDataControlCompositeAttorney;
+
+    template <template <typename> class T>
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
+    // In order that users do not depend on implementation details, we only expose on user facing classes the bare
+    // necessary. Thus, we have friend classes that expose internals for our implementation. Design decision for better
+    // encapsulation.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class lola::EventDataControlComposite;
 
   public:
     using EventControlSlots =
@@ -232,14 +237,6 @@ class EventDataControlImpl final
     static inline std::atomic_uint_fast64_t num_ref_misses{0U};
     static inline std::atomic_uint_fast64_t num_alloc_retries{0U};
     static inline std::atomic_uint_fast64_t num_ref_retries{0U};
-
-    template <template <typename> class T>
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // In order that users do not depend on implementation details, we only expose on user facing classes the bare
-    // necessary. Thus, we have friend classes that expose internals for our implementation. Design decision for better
-    // encapsulation.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class detail_event_data_control_composite::EventDataControlCompositeImpl;
 };
 
 }  // namespace detail_event_data_control

@@ -47,7 +47,7 @@ class SkeletonEventAttorney
     {
     }
 
-    EventDataControlComposite& GetEventDataControlComposite()
+    EventDataControlComposite<>& GetEventDataControlComposite()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(skeleton_event_.event_data_control_composite_.has_value());
         return skeleton_event_.event_data_control_composite_.value();
