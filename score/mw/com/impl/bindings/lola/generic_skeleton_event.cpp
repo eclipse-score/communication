@@ -83,7 +83,7 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     }
     const auto slot = control_.value().AllocateNextSlot();
 
-    if (!qm_disconnect_ && control_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
+    if (!qm_disconnect_ && (control_->GetAsilBEventDataControlLocal() != nullptr) && !slot.IsValidQM())
     {
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")

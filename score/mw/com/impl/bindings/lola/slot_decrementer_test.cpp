@@ -14,6 +14,8 @@
 
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 
@@ -39,22 +41,23 @@ class SlotDecrementerFixture : public ::testing::Test
     {
         const auto slot_indicator = AllocateSlotAndReferenceEvent();
         control_slot_indicator_ = slot_indicator;
-        slot_decrementer_ = SlotDecrementer{&event_data_control_, slot_indicator, transaction_log_index_};
+        slot_decrementer_ = SlotDecrementer{proxy_event_data_control_local_, slot_indicator, transaction_log_index_};
         return *this;
     }
 
     ControlSlotIndicator AllocateSlotAndReferenceEvent(EventSlotStatus::EventTimeStamp timestamp = 1)
     {
         // Allocate a slot which will acquire it for writing
-        auto slot = event_data_control_.AllocateNextSlot();
+        auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
         EXPECT_TRUE(slot.IsValid());
 
         // Mark the slot as ready which allows it to be read
-        event_data_control_.EventReady(slot, timestamp);
+        skeleton_event_data_control_local_.EventReady(slot, timestamp);
 
         // Reference the slot which indicates that a consumer is currently reading it. Use timestamp - 1 to ensure that
         // we find the slot that we just marked as ready first.
-        auto current_slot_indicator = event_data_control_.ReferenceNextEvent(timestamp - 1, transaction_log_index_);
+        auto current_slot_indicator =
+            proxy_event_data_control_local_.ReferenceNextEvent(timestamp - 1, transaction_log_index_);
         EXPECT_TRUE(current_slot_indicator.IsValid());
 
         return current_slot_indicator;
@@ -62,13 +65,15 @@ class SlotDecrementerFixture : public ::testing::Test
 
     EventSlotStatus::SubscriberCount GetSlotReferenceCount(const SlotIndexType event_slot_index)
     {
-        return EventSlotStatus{event_data_control_[event_slot_index]}.GetReferenceCount();
+        return EventSlotStatus{skeleton_event_data_control_local_[event_slot_index]}.GetReferenceCount();
     }
 
     FakeMemoryResource memory_{};
     EventDataControl event_data_control_{kMaxSlots, memory_, kMaxSubscribers};
+    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
+    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
     TransactionLogSet::TransactionLogIndex transaction_log_index_{
-        event_data_control_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
+        proxy_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
 
     ControlSlotIndicator control_slot_indicator_{};
     score::cpp::optional<SlotDecrementer> slot_decrementer_{};
@@ -114,7 +119,8 @@ TEST_F(SlotDecrementerFixture, MoveAssigningWillDecrementSlotOfMovedToSlotDecrem
 
     // and a second SlotDecrementer referencing a different slot
     const auto second_slot_indicator = AllocateSlotAndReferenceEvent(2);
-    SlotDecrementer second_slot_decrementer{&event_data_control_, second_slot_indicator, transaction_log_index_};
+    SlotDecrementer second_slot_decrementer{
+        proxy_event_data_control_local_, second_slot_indicator, transaction_log_index_};
 
     // When move assigning the second SlotDecrementer to the first
     slot_decrementer_.value() = std::move(second_slot_decrementer);

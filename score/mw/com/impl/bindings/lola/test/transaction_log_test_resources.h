@@ -114,25 +114,27 @@ class TransactionLogSetHelperFixture : public ::testing::Test
 
 std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl::SubscriberCountType subscriber_count,
                                                   EventSubscriptionControl::SlotNumberType subscribed_slots);
-void AddSubscriptionToEventSubscriptionControl(EventControl& event_control,
+void AddSubscriptionToEventSubscriptionControl(ProxyEventControlLocalView& proxy_event_control_local,
                                                const EventSubscriptionControl::SubscriberCountType subscriber_count,
                                                const TransactionLog::MaxSampleCountType max_sample_count) noexcept;
 void InsertProxyTransactionLogWithValidTransactions(
-    EventControl& event_control,
+    ProxyEventControlLocalView& proxy_event_control_local,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
-void InsertSkeletonTransactionLogWithValidTransactions(EventDataControl& event_data_control) noexcept;
+void InsertSkeletonTransactionLogWithValidTransactions(
+    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local) noexcept;
 
 void InsertProxyTransactionLogWithInvalidTransactions(
-    EventControl& event_control,
+    ProxyEventControlLocalView& proxy_event_control_local,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
-void InsertSkeletonTransactionLogWithInvalidTransactions(EventDataControl& event_data_control) noexcept;
+void InsertSkeletonTransactionLogWithInvalidTransactions(
+    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local) noexcept;
 
-bool IsProxyTransactionLogIdRegistered(EventControl& event_control,
+bool IsProxyTransactionLogIdRegistered(ProxyEventControlLocalView& proxy_event_control_local,
                                        const TransactionLogId& transaction_log_id) noexcept;
-bool IsSkeletonTransactionLogRegistered(EventDataControl& event_data_control) noexcept;
-bool DoesSkeletonTransactionLogContainTransactions(EventDataControl& event_data_control) noexcept;
+bool IsSkeletonTransactionLogRegistered(
+    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local) noexcept;
 
 }  // namespace score::mw::com::impl::lola
 

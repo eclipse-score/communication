@@ -26,15 +26,22 @@ constexpr std::size_t MAX_MULTI_ALLOCATE_RETRY_COUNT{100U};
 
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): all members are initialized in the delegated constructor
 template <template <class> class AtomicIndirectorType>
-EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(EventDataControl* const asil_qm_control)
-    : EventDataControlComposite{asil_qm_control, nullptr}
+EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(
+    SkeletonEventDataControlLocalView<>* const asil_qm_control_local,
+    ProxyEventDataControlLocalView<>* const proxy_control_local)
+    : EventDataControlComposite{asil_qm_control_local, nullptr, proxy_control_local}
 {
 }
 
 template <template <class> class AtomicIndirectorType>
-EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(EventDataControl* const asil_qm_control,
-                                                                           EventDataControl* const asil_b_control)
-    : asil_qm_control_{asil_qm_control}, asil_b_control_{asil_b_control}, ignore_qm_control_{false}
+EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(
+    SkeletonEventDataControlLocalView<>* const asil_qm_control_local,
+    SkeletonEventDataControlLocalView<>* const asil_b_control_local,
+    ProxyEventDataControlLocalView<>* const proxy_control_local)
+    : asil_qm_control_local_{asil_qm_control_local},
+      asil_b_control_local_{asil_b_control_local},
+      proxy_control_local_{proxy_control_local},
+      ignore_qm_control_{false}
 {
     CheckForValidDataControls();
 }
@@ -51,8 +58,8 @@ auto EventDataControlComposite<AtomicIndirectorType>::GetNextFreeMultiSlot() con
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
     score::cpp::optional<SlotIndexType> possible_index{};
-    EventDataControl::EventControlSlots::iterator qm_slot_ptr{nullptr};
-    EventDataControl::EventControlSlots::iterator asil_b_slot_ptr{nullptr};
+    SkeletonEventDataControlLocalView<>::LocalEventControlSlots::iterator qm_slot_ptr{};
+    SkeletonEventDataControlLocalView<>::LocalEventControlSlots::iterator asil_b_slot_ptr{};
 
     // Here we are explicitly iterating via iterators/raw-pointers over the slots as it avoids unnecessary
     // bounds-checks, which index access would apply!
@@ -75,9 +82,9 @@ auto EventDataControlComposite<AtomicIndirectorType>::GetNextFreeMultiSlot() con
     for (auto [current_index, it_slots_qm, it_slots_asil_b] = std::make_tuple(
              // coverity[autosar_cpp14_a5_2_2_violation]
              std::size_t{0U},
-             asil_qm_control_->state_slots_.begin(),
-             asil_b_control_->state_slots_.begin());
-         current_index != asil_b_control_->state_slots_.size();
+             asil_qm_control_local_->state_slots_.begin(),
+             asil_b_control_local_->state_slots_.begin());
+         current_index != asil_b_control_local_->state_slots_.size();
          // coverity[autosar_cpp14_m6_5_5_violation]
          // coverity[autosar_cpp14_m5_0_15_violation]
          // coverity[autosar_cpp14_a12_8_3_violation : FALSE]
@@ -187,9 +194,9 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() no
 template <template <class> class AtomicIndirectorType>
 auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcept -> ControlSlotCompositeIndicator
 {
-    if (asil_b_control_ == nullptr)
+    if (asil_b_control_local_ == nullptr)
     {
-        auto qm_control_slot_indicator = asil_qm_control_->AllocateNextSlot();
+        auto qm_control_slot_indicator = asil_qm_control_local_->AllocateNextSlot();
         if (qm_control_slot_indicator.IsValid())
         {
             return {qm_control_slot_indicator.GetIndex(),
@@ -201,7 +208,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcep
 
     if (ignore_qm_control_)
     {
-        auto asil_b_control_slot_indicator = asil_b_control_->AllocateNextSlot();
+        auto asil_b_control_slot_indicator = asil_b_control_local_->AllocateNextSlot();
         if (asil_b_control_slot_indicator.IsValid())
         {
             return {asil_b_control_slot_indicator.GetIndex(),
@@ -220,7 +227,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcep
         // to be able to allocate a further slot ...
         ignore_qm_control_ = true;
         // fall back to allocation solely within asil_b control.
-        auto asil_b_control_slot_indicator = asil_b_control_->AllocateNextSlot();
+        auto asil_b_control_slot_indicator = asil_b_control_local_->AllocateNextSlot();
         if (asil_b_control_slot_indicator.IsValid())
         {
             return {asil_b_control_slot_indicator.GetIndex(),
@@ -237,28 +244,28 @@ auto EventDataControlComposite<AtomicIndirectorType>::EventReady(ControlSlotComp
                                                                  EventSlotStatus::EventTimeStamp time_stamp) noexcept
     -> void
 {
-    if (asil_b_control_ != nullptr)
+    if (asil_b_control_local_ != nullptr)
     {
-        asil_b_control_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotAsilB()}, time_stamp);
+        asil_b_control_local_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotAsilB()}, time_stamp);
     }
 
     if (!ignore_qm_control_)
     {
-        asil_qm_control_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()}, time_stamp);
+        asil_qm_control_local_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()}, time_stamp);
     }
 }
 
 template <template <class> class AtomicIndirectorType>
 auto EventDataControlComposite<AtomicIndirectorType>::Discard(ControlSlotCompositeIndicator slot_indicator) -> void
 {
-    if (asil_b_control_ != nullptr)
+    if (asil_b_control_local_ != nullptr)
     {
-        asil_b_control_->Discard({slot_indicator.GetIndex(), slot_indicator.GetSlotAsilB()});
+        asil_b_control_local_->Discard({slot_indicator.GetIndex(), slot_indicator.GetSlotAsilB()});
     }
 
     if (!ignore_qm_control_)
     {
-        asil_qm_control_->Discard({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()});
+        asil_qm_control_local_->Discard({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()});
     }
 }
 
@@ -269,34 +276,40 @@ bool EventDataControlComposite<AtomicIndirectorType>::IsQmControlDisconnected() 
 }
 
 template <template <class> class AtomicIndirectorType>
-EventDataControl& EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControl() const noexcept
+SkeletonEventDataControlLocalView<>& EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControlLocal()
+    const noexcept
 {
-    return *asil_qm_control_;
+    return *asil_qm_control_local_;
 }
 
 template <template <class> class AtomicIndirectorType>
-std::optional<EventDataControl*> EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControl() noexcept
+SkeletonEventDataControlLocalView<>*
+EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() noexcept
 {
-    if (asil_b_control_ != nullptr)
-    {
-        return asil_b_control_;
-    }
-    return {};
+    return asil_b_control_local_;
+}
+
+template <template <class> class AtomicIndirectorType>
+ProxyEventDataControlLocalView<>&
+EventDataControlComposite<AtomicIndirectorType>::GetProxyEventDataControlLocalView() noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_control_local_ != nullptr);
+    return *proxy_control_local_;
 }
 
 template <template <class> class AtomicIndirectorType>
 EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetEventSlotTimestamp(
     const SlotIndexType slot) const noexcept
 {
-    if (asil_b_control_ != nullptr)
+    if (asil_b_control_local_ != nullptr)
     {
-        const EventSlotStatus event_slot_status{(*asil_b_control_)[slot]};
+        const EventSlotStatus event_slot_status{(*asil_b_control_local_)[slot]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
         return sample_timestamp;
     }
     else
     {
-        const EventSlotStatus event_slot_status{(*asil_qm_control_)[slot]};
+        const EventSlotStatus event_slot_status{(*asil_qm_control_local_)[slot]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
         return sample_timestamp;
     }
@@ -305,7 +318,7 @@ EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>:
 template <template <class> class AtomicIndirectorType>
 void EventDataControlComposite<AtomicIndirectorType>::CheckForValidDataControls() const noexcept
 {
-    if (asil_qm_control_ == nullptr)
+    if (asil_qm_control_local_ == nullptr)
     {
         std::terminate();
     }
@@ -320,7 +333,8 @@ template <template <class> class AtomicIndirectorType>
 EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetLatestTimestamp() const noexcept
 {
     EventSlotStatus::EventTimeStamp latest_time_stamp{1U};
-    EventDataControl* control = (asil_b_control_ != nullptr) ? asil_b_control_ : asil_qm_control_;
+    SkeletonEventDataControlLocalView<>* control =
+        (asil_b_control_local_ != nullptr) ? asil_b_control_local_ : asil_qm_control_local_;
     for (SlotIndexType slot_index = 0U;
          // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
          // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.

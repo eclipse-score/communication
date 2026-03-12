@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
 #include <gtest/gtest.h>
@@ -29,12 +31,11 @@ using namespace ::score::memory::shared;
 class SlotCollectorWithFakeMem : public ::testing::Test
 {
   protected:
-    static SlotIndexType AllocateSlot(EventDataControl& event_data_control,
-                                      const EventSlotStatus::EventTimeStamp timestamp = 1)
+    SlotIndexType AllocateSlot(const EventSlotStatus::EventTimeStamp timestamp = 1)
     {
-        const auto slot = event_data_control.AllocateNextSlot();
+        const auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
         EXPECT_TRUE(slot.IsValid());
-        event_data_control.EventReady(slot, timestamp);
+        skeleton_event_data_control_local_.EventReady(slot, timestamp);
         return slot.GetIndex();
     }
 
@@ -42,17 +43,19 @@ class SlotCollectorWithFakeMem : public ::testing::Test
     {
         return static_cast<std::size_t>(std::distance(indices.begin, indices.end));
     }
+
     FakeMemoryResource fake_memory_resource_;
+    EventDataControl event_data_control_{5, fake_memory_resource_, kMaxSubscribers};
+    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
+    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
+    TransactionLogSet::TransactionLogIndex transaction_log_index_{
+        proxy_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
 };
 
 TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
 {
-    EventDataControl event_data_control{5, fake_memory_resource_, kMaxSubscribers};
-    const auto transaction_log_index =
-        event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
-
-    AllocateSlot(event_data_control);
-    SlotCollector slot_collector{event_data_control, 1U, transaction_log_index};
+    AllocateSlot();
+    SlotCollector slot_collector{proxy_event_data_control_local_, 1U, transaction_log_index_};
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 1);
 
     const std::size_t max_count{1};
@@ -64,19 +67,15 @@ TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
 
 TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
 {
-    EventDataControl event_data_control{4, fake_memory_resource_, kMaxSubscribers};
-    const auto transaction_log_index =
-        event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
-
     EventSlotStatus::EventTimeStamp send_time{1};
     const std::size_t num_values_to_send{3};
     for (std::size_t i = 0; i < num_values_to_send; ++i)
     {
-        AllocateSlot(event_data_control, send_time);
+        AllocateSlot(send_time);
         send_time++;
     }
 
-    SlotCollector slot_collector{event_data_control, 3U, transaction_log_index};
+    SlotCollector slot_collector{proxy_event_data_control_local_, 3U, transaction_log_index_};
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 3);
 
     const std::size_t max_count{3};
@@ -99,12 +98,9 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
 
 TEST_F(SlotCollectorWithFakeMem, DoNotReceiveEventsFromThePast)
 {
-    EventDataControl event_data_control{3, fake_memory_resource_, kMaxSubscribers};
-    const auto transaction_log_index =
-        event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
-    SlotCollector slot_collector{event_data_control, 2U, transaction_log_index};
+    SlotCollector slot_collector{proxy_event_data_control_local_, 2U, transaction_log_index_};
 
-    AllocateSlot(event_data_control, 17);
+    AllocateSlot(17);
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 1);
 
     const std::size_t max_count{37};
@@ -112,7 +108,7 @@ TEST_F(SlotCollectorWithFakeMem, DoNotReceiveEventsFromThePast)
 
     EXPECT_EQ(CalculateNumberOfCollectedSlots(slot_indices), 1);
 
-    AllocateSlot(event_data_control, 1);
+    AllocateSlot(1);
 
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 0);
     const std::size_t new_max_count{38};
@@ -124,13 +120,10 @@ using SlotCollectorWithFakeMemDeathTest = SlotCollectorWithFakeMem;
 TEST_F(SlotCollectorWithFakeMemDeathTest, CreatingSlotCollectorWith0MaxSlotsTerminates)
 {
     // Given an EventDataControl and registered TransactionLog
-    EventDataControl event_data_control{3, fake_memory_resource_, kMaxSubscribers};
-    const auto transaction_log_index =
-        event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When creating a SlotCollector with max_slots of 0
     // Then the program terminates
-    EXPECT_DEATH(SlotCollector(event_data_control, 0U, transaction_log_index), ".*");
+    EXPECT_DEATH(SlotCollector(proxy_event_data_control_local_, 0U, transaction_log_index_), ".*");
 }
 
 }  // namespace
