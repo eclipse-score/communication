@@ -221,7 +221,8 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     // This suppression is unnecessary as the operands do not contain binary operators.
     // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    if (!qm_disconnect_ && event_data_control_composite_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
+    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
+        !slot.IsValidQM())
     {
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
@@ -260,7 +261,6 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
-
     std::tie(event_data_storage_, event_data_control_composite_) =
         event_shared_impl_.GetParent().template Register<SampleType>(event_shared_impl_.GetElementFQId(),
                                                                      event_properties_);

@@ -24,16 +24,20 @@
 #include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
 #include "score/mw/com/impl/configuration/lola_event_id.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_binding.h"
@@ -186,6 +190,10 @@ class Skeleton final : public SkeletonBinding
     void InitializeSharedMemoryForData(const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory);
     void InitializeSharedMemoryForControl(const QualityType asil_level,
                                           const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory);
+    std::pair<std::reference_wrapper<EventControl>, std::reference_wrapper<SkeletonEventControlLocalView>>
+    InsertEventInServiceDataControl(const QualityType asil_level,
+                                    ElementFqId element_fq_id,
+                                    const SkeletonEventProperties& element_properties);
 
     template <typename SampleType>
     std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> OpenEventDataFromOpenedSharedMemory(
@@ -280,6 +288,12 @@ class Skeleton final : public SkeletonBinding
     ServiceDataStorage* storage_;
     ServiceDataControl* control_qm_;
     ServiceDataControl* control_asil_b_;
+    std::optional<SkeletonServiceDataControlLocalView> skeleton_control_qm_local_;
+    std::optional<SkeletonServiceDataControlLocalView> skeleton_control_asil_b_local_;
+
+    // Used for tracing
+    std::optional<ProxyServiceDataControlLocalView> proxy_control_local_;
+
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_qm_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_asil_resource_;
@@ -296,7 +310,7 @@ class Skeleton final : public SkeletonBinding
     ///
     /// OnServiceMethodsSubscribed can be called by the message passing concurrently, since different Proxies could
     /// subscribe at the same time or a single Proxy may send the same message multiple times (See
-    /// platform/aas/docs/features/ipc/lola/method/README.md for details).
+    /// score/docs/features/ipc/lola/method/README.md for details).
     std::mutex on_service_methods_subscribed_mutex_;
     MethodResourceMap method_resources_;
     std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
@@ -346,10 +360,10 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
         auto [typed_event_data_storage_ptr, event_data_control_composite] =
             OpenEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
 
-        auto& event_data_control_qm = event_data_control_composite.GetQmEventDataControl();
-        auto rollback_result = event_data_control_qm.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
-            [&event_data_control_qm](const TransactionLog::SlotIndexType slot_index) {
-                event_data_control_qm.DereferenceEventWithoutTransactionLogging(slot_index);
+        auto& event_data_control_qm_local = event_data_control_composite.GetQmEventDataControlLocal();
+        auto rollback_result = event_data_control_qm_local.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
+            [&event_data_control_qm_local](const TransactionLog::SlotIndexType slot_index) {
+                event_data_control_qm_local.DereferenceEventWithoutTransactionLogging(slot_index);
             });
         if (!rollback_result.has_value())
         {
@@ -395,22 +409,19 @@ auto Skeleton::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_
 
     score::cpp::ignore = find_element(storage_->events_metainfo_, element_fq_id);
     const auto event_data_storage_it = find_element(storage_->events_, element_fq_id);
-    const auto event_control_qm_it = find_element(control_qm_->event_controls_, element_fq_id);
+    const auto event_control_qm_it = find_element(skeleton_control_qm_local_->event_controls_, element_fq_id);
 
-    EventDataControl* event_data_control_asil_b{nullptr};
+    SkeletonEventDataControlLocalView<>* event_data_control_asil_b_local{nullptr};
     if (detail_skeleton::HasAsilBSupport(identifier_))
     {
-        const auto event_control_asil_b_it = find_element(control_asil_b_->event_controls_, element_fq_id);
-        // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:
-        // A function shall not return a reference or a pointer to an automatic variable (including parameters), defined
-        // within the function.
-        // Suppress "AUTOSAR C++14 M7-5-2": The address of an object with automatic storage shall not be assigned to
-        // another object that may persist after the first object has ceased to exist.
-        // The result pointer is still valid outside this method until Skeleton object (as a holder) is alive.
+        const auto event_control_asil_b_it =
+            find_element(skeleton_control_asil_b_local_->event_controls_, element_fq_id);
+        // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
+        // holder) is alive.
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
-        event_data_control_asil_b = &(event_control_asil_b_it->second.data_control);
+        event_data_control_asil_b_local = &(event_control_asil_b_it->second.data_control);
     }
 
     // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
@@ -423,6 +434,18 @@ auto Skeleton::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event_data_storage_ptr != nullptr,
                                                 "Could not get EventDataStorage*");
 
+    ProxyEventDataControlLocalView<>* proxy_event_data_control_local{nullptr};
+    if (proxy_control_local_.has_value())
+    {
+        const auto proxy_event_control_local_it = find_element(proxy_control_local_->event_controls_, element_fq_id);
+        // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
+        // holder) is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        proxy_event_data_control_local = &(proxy_event_control_local_it->second.data_control);
+    }
+
     // Suppress "AUTOSAR C++14 A3-8-1" rule findings. This rule declares:
     // "An object shall not be accessed outside of its lifetime"
     // The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even returned pointer
@@ -433,7 +456,9 @@ auto Skeleton::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_
             // coverity[autosar_cpp14_m7_5_1_violation]
             // coverity[autosar_cpp14_m7_5_2_violation]
             // coverity[autosar_cpp14_a3_8_1_violation]
-            EventDataControlComposite{&event_control_qm_it->second.data_control, event_data_control_asil_b}};
+            EventDataControlComposite{&event_control_qm_it->second.data_control,
+                                      event_data_control_asil_b_local,
+                                      proxy_event_data_control_local}};
 }
 
 template <typename SampleType>

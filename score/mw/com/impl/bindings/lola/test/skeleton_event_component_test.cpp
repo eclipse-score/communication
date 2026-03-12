@@ -10,6 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
@@ -143,8 +145,10 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
 
         auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
-        event_data_control.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot_indicator = event_data_control.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
+        ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_data_control};
+        proxy_event_data_control_local.GetTransactionLogSet().RegisterSkeletonTracingElement();
+        auto slot_indicator =
+            proxy_event_data_control_local.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
         EXPECT_TRUE(slot_indicator.IsValid());
         return values->at(slot_indicator.GetIndex());
     }
@@ -165,11 +169,12 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
-        const auto* event_control = &search->second;
+        auto* event_control = &search->second;
+        ProxyEventControlLocalView proxy_event_control_local{*event_control};
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {
-            if ((*event_control).data_control[i].IsInvalid())
+            if (proxy_event_control_local.data_control[i].IsInvalid())
             {
                 result++;
             }
@@ -180,11 +185,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
     void AllocateQmSlots(const std::size_t number_of_slots_to_allocate)
     {
         auto& event_data_control_composite = SkeletonEventAttorney{skeleton_event_}.GetEventDataControlComposite();
-        auto& qm_event_data_control = event_data_control_composite.GetQmEventDataControl();
+        auto& qm_event_data_control_local = event_data_control_composite.GetQmEventDataControlLocal();
 
         for (std::size_t counter = 0U; counter < number_of_slots_to_allocate; ++counter)
         {
-            score::cpp::ignore = qm_event_data_control.AllocateNextSlot();
+            score::cpp::ignore = qm_event_data_control_local.AllocateNextSlot();
         }
     }
 

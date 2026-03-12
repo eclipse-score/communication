@@ -18,7 +18,6 @@
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 
 #include "score/memory/shared/map.h"
-#include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 namespace score::mw::com::impl::lola

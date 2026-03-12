@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
+#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -333,6 +335,16 @@ EventControl& SkeletonMockedMemoryFixture::GetEventControlFromServiceDataControl
     EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
     auto& event_control = event_control_it->second;
     return event_control;
+}
+
+SkeletonEventControlLocalView& SkeletonMockedMemoryFixture::GetEventControlLocalFromServiceDataControlLocal(
+    ElementFqId element_fq_id,
+    SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept
+{
+    auto event_control_local_it = skeleton_service_data_control_local.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_local_it, skeleton_service_data_control_local.event_controls_.cend());
+    auto& event_control_local = event_control_local_it->second;
+    return event_control_local;
 }
 
 void SkeletonMockedMemoryFixture::CleanUpSkeleton()

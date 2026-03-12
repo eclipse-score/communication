@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
@@ -86,9 +87,9 @@ class ProxyEventCommon final
     {
         return event_fq_id_;
     };
-    EventControl& GetEventControl() const noexcept
+    ProxyEventControlLocalView& GetEventControl() const noexcept
     {
-        return event_control_;
+        return event_control_local_;
     };
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept;
     score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept;
@@ -110,7 +111,7 @@ class ProxyEventCommon final
     ElementFqId event_fq_id_;
     const std::string_view event_name_;
     TransactionLogId transaction_log_id_;
-    EventControl& event_control_;
+    ProxyEventControlLocalView& event_control_local_;
     SubscriptionStateMachine subscription_event_state_machine_;
 };
 
