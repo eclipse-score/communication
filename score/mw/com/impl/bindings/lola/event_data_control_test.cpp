@@ -75,11 +75,6 @@ TEST(EventDataControlTest, EventDataControlUsesADynamicArrayToRepresentSlots)
 class EventDataControlFixture : public ::testing::Test
 {
   public:
-    FakeMemoryResource memory_{};
-    std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
-    std::unique_ptr<detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock>> unit_mock_{
-        nullptr};
-
     static void SetUpTestSuite()
     {
         // we are annotating this requirement coverage for SSR-6225206 on test-suite level, as all
@@ -91,22 +86,48 @@ class EventDataControlFixture : public ::testing::Test
         RecordProperty("DerivationTechnique", "Analysis of requirements");
     }
 
-    EventDataControlFixture& WithMockedEventDataControl()
+    void TearDown() override
+    {
+        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
+    }
+
+    EventDataControlFixture& GivenARealEventDataControl(
+        const SlotIndexType max_slots,
+        const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
+    {
+        unit_ = std::make_unique<EventDataControl>(max_slots, memory_, max_subscribers);
+
+        return *this;
+    }
+
+    EventDataControlFixture& GivenAMockedEventDataControl(
+        const SlotIndexType max_slots,
+        const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
     {
         atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
         unit_mock_ =
             std::make_unique<detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock>>(
-                kMaxSlots, memory_, kMaxSubscribers);
+                max_slots, memory_, max_subscribers);
 
         return *this;
     }
 
-    void TearDown() override
+    EventDataControlFixture& WithAnAllocatedSlot(EventSlotStatus::EventTimeStamp timestamp = 1)
     {
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(unit_ != nullptr);
+        auto slot = unit_->AllocateNextSlot();
+        EXPECT_TRUE(slot.IsValid());
+        unit_->EventReady(slot, timestamp);
+        return *this;
     }
+
+    FakeMemoryResource memory_{};
+    std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
+    std::unique_ptr<detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock>> unit_mock_{
+        nullptr};
+    std::unique_ptr<EventDataControl> unit_{nullptr};
 };
 
 TEST_F(EventDataControlFixture, CanAllocateOneSlotWithoutContention)
@@ -118,10 +139,10 @@ TEST_F(EventDataControlFixture, CanAllocateOneSlotWithoutContention)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given an initialized EventDataControl structure
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
 
     // When allocating a slot
-    auto slot = unit.AllocateNextSlot();
+    auto slot = unit_->AllocateNextSlot();
 
     EXPECT_TRUE(slot.IsValid());
     // The expected (first) slot is returned
@@ -136,8 +157,7 @@ TEST_F(EventDataControlFixture, CanAllocateOneSlotWhenReferenceCountChanges)
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // Given an initialized EventDataControl structure
-    score::cpp::ignore = WithMockedEventDataControl();
+    score::cpp::ignore = GivenAMockedEventDataControl(kMaxSlots, kMaxSubscribers);
 
     // And an atomic mimicking two relevant slots where ...
     EXPECT_CALL(*atomic_mock_, load(_))
@@ -177,11 +197,11 @@ TEST_F(EventDataControlFixture, CanAllocateOneSlotWhenReferenceCountChanges)
 TEST_F(EventDataControlFixture, CanAllocateMultipleSlotWithoutContention)
 {
     // Given an initialized EventDataControl structure where already a slot is allocated
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
-    unit.AllocateNextSlot();
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
+    unit_->AllocateNextSlot();
 
     // When allocating a slot
-    const auto slot = unit.AllocateNextSlot();
+    const auto slot = unit_->AllocateNextSlot();
 
     // Then the second possible slot is returned
     EXPECT_EQ(slot.GetIndex(), 1);
@@ -190,15 +210,15 @@ TEST_F(EventDataControlFixture, CanAllocateMultipleSlotWithoutContention)
 TEST_F(EventDataControlFixture, DiscardedElementOnWritingWillBeInvalid)
 {
     // Given an initialized EventDataControl structure where already a slot is allocated
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
-    auto slot = unit.AllocateNextSlot();
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
+    auto slot = unit_->AllocateNextSlot();
 
     // When discarding that slot
-    unit.Discard(slot);
+    unit_->Discard(slot);
 
     // Then the slot is marked as invalid
     // either accessed via EventDataControl array-elem-access-op
-    EXPECT_TRUE(unit[slot.GetIndex()].IsInvalid());
+    EXPECT_TRUE((*unit_)[slot.GetIndex()].IsInvalid());
     // or via raw-pointer
     EXPECT_TRUE(EventSlotStatus(slot.GetSlot().load()).IsInvalid());
 }
@@ -206,29 +226,29 @@ TEST_F(EventDataControlFixture, DiscardedElementOnWritingWillBeInvalid)
 TEST_F(EventDataControlFixture, DiscardedElementAfterWritingIsNotTouched)
 {
     // Given an initialized EventDataControl structure where already a slot is written
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
-    const auto slot = unit.AllocateNextSlot();
-    unit.EventReady(slot, 0x42);
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
+    const auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot, 0x42);
 
     // When discarding that slot
-    unit.Discard(slot);
+    unit_->Discard(slot);
 
     // Then the slot is not touched
-    EXPECT_EQ(unit[slot.GetIndex()].GetTimeStamp(), 0x42);
-    EXPECT_EQ(unit[slot.GetIndex()].GetReferenceCount(), 0);
+    EXPECT_EQ((*unit_)[slot.GetIndex()].GetTimeStamp(), 0x42);
+    EXPECT_EQ((*unit_)[slot.GetIndex()].GetReferenceCount(), 0);
 }
 
 TEST_F(EventDataControlFixture, CanNotAllocateSlotIfAllSlotsAllocated)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
     for (auto counter = 0; counter < 5; ++counter)
     {
-        unit.AllocateNextSlot();
+        unit_->AllocateNextSlot();
     }
 
     // When trying to allocate another slot
-    const auto slot = unit.AllocateNextSlot();
+    const auto slot = unit_->AllocateNextSlot();
 
     // Then this is not possible
     EXPECT_FALSE(slot.IsValid());
@@ -237,16 +257,16 @@ TEST_F(EventDataControlFixture, CanNotAllocateSlotIfAllSlotsAllocated)
 TEST_F(EventDataControlFixture, CanAllocateSlotAfterOneSlotReady)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
     std::array<ControlSlotIndicator, 5U> slot_indicators{};
     for (auto counter = 0U; counter < 5U; ++counter)
     {
-        slot_indicators[counter] = unit.AllocateNextSlot();
+        slot_indicators[counter] = unit_->AllocateNextSlot();
     }
 
     // When trying freeing one slot and trying to allocate another one
-    unit.EventReady(slot_indicators[3], 1);
-    const auto slot = unit.AllocateNextSlot();
+    unit_->EventReady(slot_indicators[3], 1);
+    const auto slot = unit_->AllocateNextSlot();
 
     // Then the freed slot is allocated
     EXPECT_EQ(slot.GetIndex(), 3);
@@ -255,17 +275,17 @@ TEST_F(EventDataControlFixture, CanAllocateSlotAfterOneSlotReady)
 TEST_F(EventDataControlFixture, CanAllocateOldestSlotAfterOneSlotReady)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
     std::array<ControlSlotIndicator, 5U> slot_indicators{};
     for (auto counter = 0U; counter < 5U; ++counter)
     {
-        slot_indicators[counter] = unit.AllocateNextSlot();
+        slot_indicators[counter] = unit_->AllocateNextSlot();
     }
 
     // When trying freeing multiple slots and trying to allocate another one
-    unit.EventReady(slot_indicators[4], 3);
-    unit.EventReady(slot_indicators[2], 2);
-    const auto slot = unit.AllocateNextSlot();
+    unit_->EventReady(slot_indicators[4], 3);
+    unit_->EventReady(slot_indicators[2], 2);
+    const auto slot = unit_->AllocateNextSlot();
 
     // Then the oldest (lowest timestamp) slot is allocated
     EXPECT_EQ(slot.GetIndex(), 2);
@@ -278,10 +298,10 @@ TEST_F(EventDataControlFixture, CanAllocateOldestSlotAfterOneSlotReady)
 TEST_F(EventDataControlFixture, MultithreadedSlotAllocationDeallocation)
 {
     // Given an empty EventDataControl
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
 
     std::atomic<EventSlotStatus::EventTimeStamp> time_stamp{1};
-    auto fuzzer = [&unit, &time_stamp]() {
+    auto fuzzer = [this, &time_stamp]() {
         // Worker that alternates between slot allocation and deallocation, ensuring an increasing time stamp
         std::vector<ControlSlotIndicator> allocated_events{};
         bool allocate{false};
@@ -289,7 +309,7 @@ TEST_F(EventDataControlFixture, MultithreadedSlotAllocationDeallocation)
         {
             if ((allocate = !allocate))
             {
-                const auto slot = unit.AllocateNextSlot();
+                const auto slot = unit_->AllocateNextSlot();
                 if (slot.IsValid())
                 {
                     allocated_events.push_back(slot);
@@ -300,7 +320,7 @@ TEST_F(EventDataControlFixture, MultithreadedSlotAllocationDeallocation)
                 if (!allocated_events.empty())
                 {
                     const auto index = RandomNumberBetween(0, allocated_events.size() - 1);
-                    unit.EventReady(allocated_events[index], ++time_stamp);
+                    unit_->EventReady(allocated_events[index], ++time_stamp);
                 }
             }
         }
@@ -324,10 +344,11 @@ TEST_F(EventDataControlFixture, MultithreadedSlotAllocationDeallocation)
 TEST_F(EventDataControlFixture, RegisterProxyElementReturnsValidTransactionLogIndex)
 {
     // Given a EventDataControlUnit
-    EventDataControl unit{1, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(1, kMaxSubscribers);
 
     // When registering the proxy with the TransactionLogSet
-    const auto transaction_log_index_result = unit.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId);
+    const auto transaction_log_index_result =
+        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId);
 
     // Then we get a valid transaction log index
     ASSERT_TRUE(transaction_log_index_result.has_value());
@@ -337,18 +358,17 @@ TEST_F(EventDataControlFixture, RegisterProxyElementReturnsValidTransactionLogIn
 TEST_F(EventDataControlFixture, FindNextSlotBlocksAllocation)
 {
     // Given a EventDataControlUnit with one ready slot
-    EventDataControl unit{1, memory_, kMaxSubscribers};
-    auto slot = unit.AllocateNextSlot();
-    unit.EventReady(slot, 1);
+    GivenARealEventDataControl(1, kMaxSubscribers).WithAnAllocatedSlot(1);
 
-    const auto transaction_log_index = unit.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index =
+        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When finding the next slot
-    auto event = unit.ReferenceNextEvent(0, transaction_log_index);
+    auto event = unit_->ReferenceNextEvent(0, transaction_log_index);
     ASSERT_TRUE(event.IsValid());
 
     // Then we cannot allocate the slot again
-    ASSERT_FALSE(unit.AllocateNextSlot().IsValid());
+    ASSERT_FALSE(unit_->AllocateNextSlot().IsValid());
 }
 
 // Re-enable when the test is fixed in Ticket-128552
@@ -357,22 +377,20 @@ TEST_F(EventDataControlFixture, DISABLED_MultipleReceiverRefCountCheck)
     const std::size_t max_subscribers{10U};
 
     // Given an EventDataControl with one ready slot
-    EventDataControl unit{1, memory_, max_subscribers};
-    auto slot = unit.AllocateNextSlot();
-    unit.EventReady(slot, 1);
+    GivenARealEventDataControl(1, kMaxSubscribers).WithAnAllocatedSlot(1);
 
-    auto receiver_tester = [&unit]() {
+    auto receiver_tester = [this]() {
         const auto transaction_log_index =
-            unit.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+            unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
         for (auto counter = 0U; counter < 1000U; counter++)
         {
             // We can increase the ref-count
-            auto receive_slot = unit.ReferenceNextEvent(0, transaction_log_index, EventSlotStatus::TIMESTAMP_MAX);
+            auto receive_slot = unit_->ReferenceNextEvent(0, transaction_log_index, EventSlotStatus::TIMESTAMP_MAX);
             ASSERT_TRUE(receive_slot.IsValid());
-            EXPECT_EQ(unit[receive_slot.GetIndex()].GetTimeStamp(), 1);
+            EXPECT_EQ((*unit_)[receive_slot.GetIndex()].GetTimeStamp(), 1);
 
             // and decrease the ref-count
-            unit.DereferenceEvent(receive_slot, transaction_log_index);
+            unit_->DereferenceEvent(receive_slot, transaction_log_index);
         }
     };
 
@@ -388,31 +406,31 @@ TEST_F(EventDataControlFixture, DISABLED_MultipleReceiverRefCountCheck)
     }
 
     // Then the reference count is zero and we can overwrite the slot if no memory corruption or race occurred
-    ASSERT_TRUE(unit.AllocateNextSlot().IsValid());
+    ASSERT_TRUE(unit_->AllocateNextSlot().IsValid());
 }
 
 TEST_F(EventDataControlFixture, FailingToUpdateSlotValueCausesReferenceNextEventToReturnNull)
 {
     using namespace score::memory::shared;
 
-    AtomicMock<EventSlotStatus::value_type> atomic_mock;
-    AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
-
     constexpr auto max_reference_retries{100U};
 
+    GivenAMockedEventDataControl(1, kMaxSubscribers);
+
     // Given the operation to update the slot value fails max_reference_retries times
-    EXPECT_CALL(atomic_mock, compare_exchange_weak(_, _, _)).Times(max_reference_retries).WillRepeatedly(Return(false));
+    EXPECT_CALL(*atomic_mock_, compare_exchange_weak(_, _, _))
+        .Times(max_reference_retries)
+        .WillRepeatedly(Return(false));
 
     // and a EventDataControlUnit with one ready slot
-    detail_event_data_control::EventDataControlImpl<AtomicIndirectorMock> unit_mock{1, memory_, kMaxSubscribers};
-    auto slot = unit_mock.AllocateNextSlot();
-    unit_mock.EventReady(slot, 1);
+    auto slot = unit_mock_->AllocateNextSlot();
+    unit_mock_->EventReady(slot, 1);
 
     const auto transaction_log_index =
-        unit_mock.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+        unit_mock_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When finding the next slot
-    auto event = unit_mock.ReferenceNextEvent(0, transaction_log_index);
+    auto event = unit_mock_->ReferenceNextEvent(0, transaction_log_index);
 
     // No event will be found
     ASSERT_FALSE(event.IsValid());
@@ -421,44 +439,40 @@ TEST_F(EventDataControlFixture, FailingToUpdateSlotValueCausesReferenceNextEvent
 TEST_F(EventDataControlFixture, GetNumNewEvents_Zero)
 {
     // Given an EventDataControl with one ready slot
-    EventDataControl unit{1, memory_, kMaxSubscribers};
-    auto slot = unit.AllocateNextSlot();
-    unit.EventReady(slot, 1);
+    GivenARealEventDataControl(1, kMaxSubscribers);
+    auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot, 1);
 
     // When checking for new samples since timestamp 1 expect, that 0 is returned.
-    EXPECT_EQ(unit.GetNumNewEvents(1), 0);
+    EXPECT_EQ(unit_->GetNumNewEvents(1), 0);
 }
 
 TEST_F(EventDataControlFixture, GetNumNewEvents_One)
 {
     // Given an EventDataControl with one ready slot
-    EventDataControl unit{1, memory_, kMaxSubscribers};
-    auto slot = unit.AllocateNextSlot();
-    unit.EventReady(slot, 1);
+    GivenARealEventDataControl(1, kMaxSubscribers).WithAnAllocatedSlot(1);
 
     // When checking for new samples since start (timestamp 0) expect, that 1 is returned.
-    EXPECT_EQ(unit.GetNumNewEvents(0), 1);
+    EXPECT_EQ(unit_->GetNumNewEvents(0), 1);
 }
 
 TEST_F(EventDataControlFixture, GetNumNewEvents_Many)
 {
     // Given an EventDataControl with 6 ready slots
-    EventDataControl unit{6, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(6, kMaxSubscribers);
     for (unsigned int i = 1; i <= 6; i++)
     {
-        auto slot = unit.AllocateNextSlot();
-        ASSERT_TRUE(slot.IsValid());
-        unit.EventReady(slot, i);
+        WithAnAllocatedSlot(i);
     }
 
     // When checking for new samples since timestamp 0 to 6 expect, that 6 up to 0 is returned.
-    EXPECT_EQ(unit.GetNumNewEvents(0), 6);
-    EXPECT_EQ(unit.GetNumNewEvents(1), 5);
-    EXPECT_EQ(unit.GetNumNewEvents(2), 4);
-    EXPECT_EQ(unit.GetNumNewEvents(3), 3);
-    EXPECT_EQ(unit.GetNumNewEvents(4), 2);
-    EXPECT_EQ(unit.GetNumNewEvents(5), 1);
-    EXPECT_EQ(unit.GetNumNewEvents(6), 0);
+    EXPECT_EQ(unit_->GetNumNewEvents(0), 6);
+    EXPECT_EQ(unit_->GetNumNewEvents(1), 5);
+    EXPECT_EQ(unit_->GetNumNewEvents(2), 4);
+    EXPECT_EQ(unit_->GetNumNewEvents(3), 3);
+    EXPECT_EQ(unit_->GetNumNewEvents(4), 2);
+    EXPECT_EQ(unit_->GetNumNewEvents(5), 1);
+    EXPECT_EQ(unit_->GetNumNewEvents(6), 0);
 }
 
 using EventDataControlReferenceSpecificEventFixture = EventDataControlFixture;
@@ -469,22 +483,21 @@ TEST_F(EventDataControlReferenceSpecificEventFixture, ReferenceSpecificEvents)
     const std::size_t subscription_slots{6U};
 
     // Given an EventDataControl with 6 ready slots
-    EventDataControl unit{max_number_slots, memory_, kMaxSubscribers};
+    GivenARealEventDataControl(max_number_slots, kMaxSubscribers);
     for (unsigned int i = 0; i < 6; i++)
     {
-        auto slot = unit.AllocateNextSlot();
-        ASSERT_TRUE(slot.IsValid());
-        unit.EventReady(slot, i + 1);
+        WithAnAllocatedSlot(i + 1);
     }
 
-    const auto transaction_log_index = unit.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index =
+        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When explicitly referencing (ref-count-incrementing) each of them by index this is successful
     for (SlotIndexType i = 0; i < subscription_slots; i++)
     {
-        EXPECT_EQ(unit[i].GetReferenceCount(), 0U);
-        unit.ReferenceSpecificEvent(i, transaction_log_index);
-        EXPECT_EQ(unit[i].GetReferenceCount(), 1U);
+        EXPECT_EQ((*unit_)[i].GetReferenceCount(), 0U);
+        unit_->ReferenceSpecificEvent(i, transaction_log_index);
+        EXPECT_EQ((*unit_)[i].GetReferenceCount(), 1U);
     }
 }
 
@@ -492,54 +505,54 @@ using EventDataControlReferenceSpecificEventDeathTest = EventDataControlReferenc
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_StatusInvalidTerminates)
 {
     // Given an EventDataControl with one (initially invalid) slot
-    EventDataControl unit{1, memory_, kMaxSubscribers};
-    EXPECT_TRUE(unit[0].IsInvalid());
+    GivenARealEventDataControl(1, kMaxSubscribers);
+    EXPECT_TRUE((*unit_)[0].IsInvalid());
 
-    const auto transaction_log_index = unit.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index =
+        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When explicitly referencing (ref-count-incrementing) it
     // Then the program terminates
-    EXPECT_DEATH(unit.ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
+    EXPECT_DEATH(unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
 }
 
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_StatusInWritingTerminates)
 {
     // Given an EventDataControl with one in_writing slot
-    EventDataControl unit{1, memory_, kMaxSubscribers};
-    auto slot = unit.AllocateNextSlot();
+    GivenARealEventDataControl(1, kMaxSubscribers);
+    auto slot = unit_->AllocateNextSlot();
     ASSERT_TRUE(slot.IsValid());
-    EXPECT_TRUE(unit[slot.GetIndex()].IsInWriting());
+    EXPECT_TRUE((*unit_)[slot.GetIndex()].IsInWriting());
 
-    const auto transaction_log_index = unit.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index =
+        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When explicitly referencing (ref-count-incrementing) it
     // Then the program terminates
-    EXPECT_DEATH(unit.ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
+    EXPECT_DEATH(unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
 }
 
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_ReferenceCountOverFlowsTerminates)
 {
-    memory::shared::AtomicMock<EventSlotStatus::value_type> atomic_mock;
-    memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
+    GivenAMockedEventDataControl(1, kMaxSubscribers);
 
     // Expecting that incrementing the current reference count overflows (i.e. the previous value returned by fetch_add
     // was already the max possible value)
     EventSlotStatus event_slot_status_in_writing{};
     event_slot_status_in_writing.SetReferenceCount(kSlotIsInWriting);
-    ON_CALL(atomic_mock, fetch_add(_, _))
+    ON_CALL(*atomic_mock_, fetch_add(_, _))
         .WillByDefault(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing)));
 
-    // Given an EventDataControl with one slot
-    detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock> unit{
-        1, memory_, kMaxSubscribers};
-    auto slot = unit.AllocateNextSlot();
+    // and given one slot has been allocated
+    auto slot = unit_mock_->AllocateNextSlot();
     ASSERT_TRUE(slot.IsValid());
 
-    const auto transaction_log_index = unit.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+    const auto transaction_log_index =
+        unit_mock_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When explicitly referencing (ref-count-incrementing) it which would lead to the ref count overflowing
     // Then the program terminates
-    EXPECT_DEATH(unit.ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
+    EXPECT_DEATH(unit_mock_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
 }
 
 TEST_F(EventDataControlFixture, AllocatedSlotsCanBeCleanedUp)
@@ -547,40 +560,35 @@ TEST_F(EventDataControlFixture, AllocatedSlotsCanBeCleanedUp)
     RecordProperty("Description", "Tests that all allocated slots can be cleaned up at once.");
 
     // Given an initialized EventDataControl structure, with allocated slots
-    EventDataControl unit{kMaxSlots, memory_, kMaxSubscribers};
-    const auto first_slot = unit.AllocateNextSlot();
-    const auto second_slot = unit.AllocateNextSlot();
+    GivenARealEventDataControl(kMaxSlots, kMaxSubscribers);
+    const auto first_slot = unit_->AllocateNextSlot();
+    const auto second_slot = unit_->AllocateNextSlot();
 
     // When cleaning up allocations
-    unit.RemoveAllocationsForWriting();
+    unit_->RemoveAllocationsForWriting();
 
     // Then the allocated slots are no longer in writing
-    EXPECT_FALSE(unit[first_slot.GetIndex()].IsInWriting());
-    EXPECT_FALSE(unit[second_slot.GetIndex()].IsInWriting());
+    EXPECT_FALSE((*unit_)[first_slot.GetIndex()].IsInWriting());
+    EXPECT_FALSE((*unit_)[second_slot.GetIndex()].IsInWriting());
 }
 
 using EventDataControlDeathTest = EventDataControlFixture;
 TEST_F(EventDataControlDeathTest, FailingToCleanUpSlotDueToOtherThreadModifyingAtomicTerminates)
 {
-    memory::shared::AtomicMock<EventSlotStatus::value_type> atomic_mock;
-    memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
+    GivenAMockedEventDataControl(kMaxSlots, kMaxSubscribers);
 
-    // Given that load returns that the slot is in writing
+    // and given that load returns that the slot is in writing
     EventSlotStatus event_slot_status_in_writing{};
     event_slot_status_in_writing.SetReferenceCount(kSlotIsInWriting);
-    ON_CALL(atomic_mock, load(_))
+    ON_CALL(*atomic_mock_, load(_))
         .WillByDefault(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing)));
 
     // and that compare_exchange_weak returns false due to another thread modifying the atomic concurrently
-    ON_CALL(atomic_mock, compare_exchange_weak(_, _, _)).WillByDefault(Return(false));
-
-    // and given an initialized EventDataControl structure, with a single allocated slot
-    detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock> unit{
-        kMaxSlots, memory_, kMaxSubscribers};
+    ON_CALL(*atomic_mock_, compare_exchange_weak(_, _, _)).WillByDefault(Return(false));
 
     // When cleaning up allocations
     // Then the program terminates
-    EXPECT_DEATH(unit.RemoveAllocationsForWriting(), ".*");
+    EXPECT_DEATH(unit_mock_->RemoveAllocationsForWriting(), ".*");
 }
 
 struct MultiSenderMultiReceiverParams

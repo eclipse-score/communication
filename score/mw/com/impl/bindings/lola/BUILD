@@ -916,7 +916,7 @@ cc_unit_test(
 )
 
 cc_test(
-    name = "event_data_control_unit_test",
+    name = "event_data_control_test",
     size = "small",
     timeout = "long",
     srcs = [
@@ -941,7 +941,7 @@ cc_test(
 )
 
 cc_gtest_unit_test(
-    name = "event_data_control_composite_unit_test",
+    name = "event_data_control_composite_test",
     srcs = ["event_data_control_composite_test.cpp"],
     features = COMPILER_WARNING_FEATURES,
     deps = [
@@ -1417,8 +1417,8 @@ cc_unit_test_suites_for_host_and_qnx(
         ":transaction_log_slot_test",
         ":transaction_log_test",
         ":dynamic_array_bounds_checking_test",
-        ":event_data_control_unit_test",
-        ":event_data_control_composite_unit_test",
+        ":event_data_control_test",
+        ":event_data_control_composite_test",
         ":generic_proxy_event_test",
         ":partial_restart_path_builder_test",
         ":proxy_instance_identifier_test",
