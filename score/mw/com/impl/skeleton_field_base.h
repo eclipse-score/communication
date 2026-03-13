@@ -118,12 +118,6 @@ class SkeletonFieldBase
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::string_view field_name_;
 
-    // Add method dispatcher for Set (optional because not all fields have it)
-    std::optional<SkeletonMethodBase*> skeleton_method_set_dispatch_;
-
-    // Configuration flag to indicate if field has setter
-    bool is_setter_ = false;
-
   private:
     /// \brief Returns whether the initial value has been saved by the user to be used by DoDeferredUpdate
     virtual bool IsInitialValueSaved() const noexcept = 0;

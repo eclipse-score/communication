@@ -28,18 +28,49 @@
 
 #include <memory>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 namespace score::mw::com::impl
 {
 
-template <typename SampleDataType>
+namespace detail
+{
+/// Tag types for constructor overload disambiguation based on EnableSet template parameter.
+struct EnableSetOnlyTag
+{
+};
+struct EnableNeitherTag
+{
+};
+}  // namespace detail
+
+template <typename SampleDataType,
+        const bool EnableSet = false,
+        const bool EnableNotifier = false>
 class SkeletonField : public SkeletonFieldBase
 {
   public:
     using FieldType = SampleDataType;
 
-    SkeletonField(SkeletonBase& parent, const std::string_view field_name);
+    /// \brief Constructs a SkeletonField with setter enabled. Normal ctor used in production code.
+    ///
+    /// \param parent Skeleton that contains this field.
+    /// \param field_name Field name of the field.
+    /// \param detail::EnableSetOnlyTag This parameter is only used for constructor overload disambiguation and
+    /// has no semantic meaning. The tag disambiguates the setter-enabled ctor from the no-setter ctor, as
+    /// otherwise both would have the same signature.
+    template <bool ES = EnableSet, typename = std::enable_if_t<ES>>
+    SkeletonField(SkeletonBase& parent, const std::string_view field_name, detail::EnableSetOnlyTag = {});
+
+    /// \brief Constructs a SkeletonField with no setter. Normal ctor used in production code.
+    ///
+    /// \param parent Skeleton that contains this field.
+    /// \param field_name Field name of the field.
+    /// \param detail::EnableNeitherTag This parameter is only used for constructor overload disambiguation and
+    /// has no semantic meaning.
+    template <bool ES = EnableSet, typename = std::enable_if_t<!ES>>
+    SkeletonField(SkeletonBase& parent, const std::string_view field_name, detail::EnableNeitherTag = {});
 
     /// Constructor that allows to set the binding directly.
     ///
@@ -94,13 +125,11 @@ class SkeletonField : public SkeletonFieldBase
     }
 
     // Set handler registration
-    template <typename Callable>
+    // SFINAE-gated: only exists when EnableSet == true
+    template <typename Callable,
+              bool ES = EnableSet,
+              typename std::enable_if<ES, int>::type = 0>
     ResultBlank RegisterSetHandler(Callable&& callback) {
-        if (!is_setter_) {
-            return MakeUnexpected(ComErrc::kNotImplemented,
-                                 "Field not configured with setter");
-        }
-
         // Wrap user callback to also call Update() after user validation
         auto wrapped_callback = [this, user_callback = std::move(callback)]
                                 (FieldType new_value) -> Result<FieldType> {
@@ -121,8 +150,8 @@ class SkeletonField : public SkeletonFieldBase
             return result;
         };
 
-        // Register with underlying method infrastructure
-        return GetTypedSetMethod()->RegisterHandler(std::move(wrapped_callback));
+        // set_method_ is guaranteed to be unique_ptr here since RegisterSetHandler is SFINAE-gated on EnableSet=true.
+        return set_method_.get()->RegisterHandler(std::move(wrapped_callback));
     }
 
   private:
@@ -141,66 +170,117 @@ class SkeletonField : public SkeletonFieldBase
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
 
-    // Store unique_ptr to the actual method object
-    std::unique_ptr<SkeletonMethod<Result<FieldType>(FieldType)>> set_method_;
+    // Zero-cost storage: when EnableSet=false the member has type 'detail::EnableSetOnlyTag', which is a zero-size
+    // type, so it doesn't actually take up any space in the class. When EnableSet=true, the member has the actual
+    // type and stores the set method.
+    using SetMethodType = std::conditional_t<EnableSet,
+                                             std::unique_ptr<SkeletonMethod<Result<FieldType>(FieldType)>>,
+                                             detail::EnableSetOnlyTag>;
+    SetMethodType set_method_;
 
-    auto* GetTypedSetMethod() -> SkeletonMethod<Result<FieldType>(FieldType)>*
-    {
-        if (skeleton_method_set_dispatch_.has_value()) {
-            return dynamic_cast<SkeletonMethod<Result<FieldType>(FieldType)>*>(
-                skeleton_method_set_dispatch_.value());
-        }
-        return nullptr;
-    }
+    /// \brief Private delegating constructor used by the setter-enabled public ctor.
+    /// Receives already-constructed objects so that we can pass the event pointer to SkeletonFieldBase before
+    /// storing it here, mirroring the ProxyField pattern.
+    template <bool ES = EnableSet, typename = std::enable_if_t<ES>>
+    SkeletonField(SkeletonBase& parent,
+                  std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+                  std::unique_ptr<SkeletonMethod<Result<FieldType>(FieldType)>> set_method,
+                  const std::string_view field_name);
+
+    /// \brief Private delegating constructor used by the no-setter public ctor.
+    template <bool ES = EnableSet, typename = std::enable_if_t<!ES>>
+    SkeletonField(SkeletonBase& parent,
+                  std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+                  const std::string_view field_name);
 };
 
-template <typename SampleDataType>
-SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& parent, const std::string_view field_name)
-    : SkeletonFieldBase{parent,
+/// \brief Public ctor � EnableSet=true: delegates to the private ctor that also creates the set method.
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+template <bool ES, typename>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(SkeletonBase& parent,
+                                                                        const std::string_view field_name,
+                                                                        detail::EnableSetOnlyTag)
+    : SkeletonField{parent,
+                    std::make_unique<SkeletonEvent<FieldType>>(
+                        parent,
                         field_name,
-                        std::make_unique<SkeletonEvent<FieldType>>(
+                        SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
+                            SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
                             parent,
-                            field_name,
-                            SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                                SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
-                                parent,
-                                field_name),
-                            typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{})},
+                            field_name),
+                        typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+                    std::make_unique<SkeletonMethod<Result<FieldType>(FieldType)>>(
+                        parent, std::string(field_name) + "_Set"),
+                    field_name}
+{
+}
+
+/// \brief Public ctor � EnableSet=false: delegates to the private ctor with no set method.
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+template <bool ES, typename>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(SkeletonBase& parent,
+                                                                        const std::string_view field_name,
+                                                                        detail::EnableNeitherTag)
+    : SkeletonField{parent,
+                    std::make_unique<SkeletonEvent<FieldType>>(
+                        parent,
+                        field_name,
+                        SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
+                            SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
+                            parent,
+                            field_name),
+                        typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+                    field_name}
+{
+}
+
+/// \brief Testing ctor: binding is provided directly (used with mock bindings in tests).
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(SkeletonBase& skeleton_base,
+                                             const std::string_view field_name,
+                                             std::unique_ptr<SkeletonEventBinding<FieldType>> binding)
+    : SkeletonField{skeleton_base,
+                    std::make_unique<SkeletonEvent<FieldType>>(skeleton_base, field_name, std::move(binding)),
+                    field_name}
+{
+}
+
+/// \brief Private delegating ctor � setter enabled. Receives fully-constructed objects.
+/// By constructing set_method_ here and passing the event pointer to SkeletonFieldBase first,
+/// we guarantee the base class pointer is stable before we store set_method_.
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+template <bool ES, typename>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(
+    SkeletonBase& parent,
+    std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+    std::unique_ptr<SkeletonMethod<Result<FieldType>(FieldType)>> set_method,
+    const std::string_view field_name)
+    : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
+      initial_field_value_{nullptr},
+      skeleton_field_mock_{nullptr},
+      set_method_{std::move(set_method)}
+{
+    SkeletonBaseView skeleton_base_view{parent};
+    skeleton_base_view.RegisterField(field_name, *this);
+}
+
+/// \brief Private delegating ctor � no setter. Receives the already-constructed event.
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+template <bool ES, typename>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(
+    SkeletonBase& parent,
+    std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+    const std::string_view field_name)
+    : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr}
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
-
-    // TODO: Get configuration from deployment/configuration system
-    // For now, assume setter is disabled by default
-    constexpr bool has_setter_config = false;  // TODO: Read from configuration
-
-    // Check configuration and create Set method if needed
-    if (has_setter_config) {
-        set_method_ = std::make_unique<
-            SkeletonMethod<Result<FieldType>(FieldType)>>(
-                parent,
-                std::string(field_name) + "_Set"  // Method name
-            );
-        skeleton_method_set_dispatch_ = set_method_.get();
-        is_setter_ = true;
-    }
 }
 
-template <typename SampleDataType>
-SkeletonField<SampleDataType>::SkeletonField(SkeletonBase& skeleton_base,
-                                             const std::string_view field_name,
-                                             std::unique_ptr<SkeletonEventBinding<FieldType>> binding)
-    : SkeletonFieldBase{skeleton_base,
-                        field_name,
-                        std::make_unique<SkeletonEvent<FieldType>>(skeleton_base, field_name, std::move(binding))},
-      skeleton_field_mock_{nullptr}
-{
-}
-
-template <typename SampleDataType>
-SkeletonField<SampleDataType>::SkeletonField(SkeletonField&& other) noexcept
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(SkeletonField&& other) noexcept
     : SkeletonFieldBase(static_cast<SkeletonFieldBase&&>(other)),
       // known llvm bug (https://github.com/llvm/llvm-project/issues/63202)
       // This usage is safe because the previous line only moves the base class portion via static_cast.
@@ -214,8 +294,10 @@ SkeletonField<SampleDataType>::SkeletonField(SkeletonField&& other) noexcept
     // Since the address of this event has changed, we need update the address stored in the parent skeleton.
     SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
     skeleton_base_view.UpdateField(field_name_, *this);
-template <typename SampleDataType>
-auto SkeletonField<SampleDataType>::operator=(SkeletonField&& other) & noexcept -> SkeletonField<SampleDataType>&
+}
+
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+auto SkeletonField<SampleDataType, EnableSet, EnableNotifier>::operator=(SkeletonField&& other) & noexcept -> SkeletonField<SampleDataType, EnableSet, EnableNotifier>&
 {
     if (this != &other)
     {
@@ -239,8 +321,8 @@ auto SkeletonField<SampleDataType>::operator=(SkeletonField&& other) & noexcept 
 /// field cannot be set until the Skeleton has been set up via Skeleton::OfferService(). Therefore, we create a
 /// callback that will update the field value with sample_value which will be called in the first call to
 /// SkeletonFieldBase::PrepareOffer().
-template <typename SampleDataType>
-ResultBlank SkeletonField<SampleDataType>::Update(const FieldType& sample_value) noexcept
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(const FieldType& sample_value) noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
@@ -257,8 +339,8 @@ ResultBlank SkeletonField<SampleDataType>::Update(const FieldType& sample_value)
 
 /// \brief FieldType is previously allocated by middleware and provided by the user to indicate that he is finished
 /// filling the provided pointer with live data. Dispatches to SkeletonEvent::Send()
-template <typename SampleDataType>
-ResultBlank SkeletonField<SampleDataType>::Update(SampleAllocateePtr<FieldType> sample) noexcept
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(SampleAllocateePtr<FieldType> sample) noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
@@ -273,8 +355,8 @@ ResultBlank SkeletonField<SampleDataType>::Update(SampleAllocateePtr<FieldType> 
 ///
 /// This function cannot be currently called to set the initial value of a field as the shared memory must be first
 /// set up in the Skeleton::PrepareOffer() before the user can obtain / use a SampleAllocateePtr.
-template <typename SampleDataType>
-Result<SampleAllocateePtr<SampleDataType>> SkeletonField<SampleDataType>::Allocate() noexcept
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+Result<SampleAllocateePtr<SampleDataType>> SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Allocate() noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
@@ -292,12 +374,12 @@ Result<SampleAllocateePtr<SampleDataType>> SkeletonField<SampleDataType>::Alloca
     return GetTypedEvent()->Allocate();
 }
 
-template <typename SampleDataType>
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
 // Suppress "AUTOSAR C++14 A0-1-3" rule finding. This rule states: "Every function defined in an anonymous
 // namespace, or static function with internal linkage, or private member function shall be used.".
 // False-positive, method is used in the base class in PrepareOffer().
 // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
-ResultBlank SkeletonField<SampleDataType>::DoDeferredUpdate() noexcept
+ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::DoDeferredUpdate() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         initial_field_value_ != nullptr,
@@ -313,14 +395,14 @@ ResultBlank SkeletonField<SampleDataType>::DoDeferredUpdate() noexcept
     return ResultBlank{};
 }
 
-template <typename SampleDataType>
-ResultBlank SkeletonField<SampleDataType>::UpdateImpl(const FieldType& sample_value) noexcept
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::UpdateImpl(const FieldType& sample_value) noexcept
 {
     return GetTypedEvent()->Send(sample_value);
 }
 
-template <typename SampleDataType>
-auto SkeletonField<SampleDataType>::GetTypedEvent() const noexcept -> SkeletonEvent<SampleDataType>*
+template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
+auto SkeletonField<SampleDataType, EnableSet, EnableNotifier>::GetTypedEvent() const noexcept -> SkeletonEvent<SampleDataType>*
 {
     auto* const typed_event = dynamic_cast<SkeletonEvent<FieldType>*>(skeleton_event_dispatch_.get());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event != nullptr, "Downcast to SkeletonEvent<FieldType> failed!");
