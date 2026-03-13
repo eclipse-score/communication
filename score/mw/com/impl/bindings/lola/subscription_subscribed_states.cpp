@@ -20,7 +20,6 @@
 
 #include <score/assert.hpp>
 
-#include <exception>
 #include <utility>
 
 namespace score::mw::com::impl::lola

@@ -308,14 +308,6 @@ cc_library(
         "proxy_event.cpp",
         "proxy_event_common.cpp",
         "proxy_method.cpp",
-        "slot_collector.cpp",
-        "subscription_helpers.cpp",
-        "subscription_not_subscribed_states.cpp",
-        "subscription_state_base.cpp",
-        "subscription_state_machine.cpp",
-        "subscription_state_machine_states.cpp",
-        "subscription_subscribed_states.cpp",
-        "subscription_subscription_pending_states.cpp",
     ],
     hdrs = [
         "generic_proxy_event.h",
@@ -323,14 +315,6 @@ cc_library(
         "proxy_event.h",
         "proxy_event_common.h",
         "proxy_method.h",
-        "slot_collector.h",
-        "subscription_helpers.h",
-        "subscription_not_subscribed_states.h",
-        "subscription_state_base.h",
-        "subscription_state_machine.h",
-        "subscription_state_machine_states.h",
-        "subscription_subscribed_states.h",
-        "subscription_subscription_pending_states.h",
     ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
@@ -342,6 +326,8 @@ cc_library(
         ":proxy_instance_identifier",
         ":shared_data_structures",
         ":shm_path_builder",
+        ":slot_collector",
+        ":subscription_state_machine",
         ":transaction_log_id",
         ":transaction_log_registration_guard",
         ":transaction_log_rollback_executor",
@@ -422,6 +408,54 @@ cc_library(
     ],
     deps = [
         ":event_data_control",
+        ":transaction_log_set",
+    ],
+)
+
+cc_library(
+    name = "subscription_state_machine",
+    srcs = [
+        "subscription_helpers.cpp",
+        "subscription_not_subscribed_states.cpp",
+        "subscription_state_base.cpp",
+        "subscription_state_machine.cpp",
+        "subscription_state_machine_states.cpp",
+        "subscription_subscribed_states.cpp",
+        "subscription_subscription_pending_states.cpp",
+    ],
+    hdrs = [
+        "subscription_helpers.h",
+        "subscription_not_subscribed_states.h",
+        "subscription_state_base.h",
+        "subscription_state_machine.h",
+        "subscription_state_machine_states.h",
+        "subscription_subscribed_states.h",
+        "subscription_subscription_pending_states.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = [
+        ":event_control",
+        ":event_data_control",
+        ":i_runtime",
+        ":slot_collector",
+        ":transaction_log_id",
+        ":transaction_log_registration_guard",
+        "//score/mw/com/impl:runtime",
+        "//score/mw/com/impl:scoped_event_receive_handler",
+        "//score/mw/com/impl/bindings/lola/messaging:i_message_passing_service",
+    ],
+)
+
+cc_library(
+    name = "slot_collector",
+    srcs = ["slot_collector.cpp"],
+    hdrs = ["slot_collector.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = [
+        ":event_data_control",
+        ":event_slot_status",
         ":transaction_log_set",
     ],
 )
@@ -1213,7 +1247,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":proxy",
+        ":slot_collector",
         "//score/mw/com/impl/bindings/lola/test_doubles",
     ],
 )
@@ -1226,6 +1260,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":event_data_control_test_resources",
+        ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
     ],
@@ -1238,6 +1273,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
     ],
 )
@@ -1249,7 +1285,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":proxy",
+        ":subscription_state_machine",
     ],
 )
 
