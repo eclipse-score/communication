@@ -30,8 +30,8 @@ rust_library(
         "//score/mw/com/impl/rust:mw_com",
         "//score/mw/com/impl/rust/com-api/com-api-concept",
         "//score/mw/com/impl/rust/com-api/com-api-ffi-lola:bridge_ffi_rs",
-        "@score_communication_crate_index//:futures",
         "@score_baselibs_rust//src/log/score_log",
+        "@score_communication_crate_index//:futures",
     ],
 )
 
