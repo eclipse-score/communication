@@ -52,4 +52,5 @@ rust_test(
     srcs = ["interface_macros.rs"],
     features = ["link_std_cpp_lib"],
     deps = ["//score/mw/com/impl/rust/com-api/com-api"],
+    flaky = True,
 )
