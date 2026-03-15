@@ -244,6 +244,47 @@ TEST_F(SharedMemoryResourceAllocateDeathTest, AllocatingBlockLargerThanAllocated
     EXPECT_DEATH(attorney.getMemoryResourceProxy()->allocate(TestValues::some_share_memory_size + 1), ".*");
 }
 
+TEST_F(SharedMemoryResourceAllocateDeathTest, AllocationFailureLogsCorrectStartAddress)
+{
+    RecordProperty("Verifies", "SCR-6240703");
+    RecordProperty("Description", "The allocation failure log shall contain the valid allocation start address");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    InSequence sequence{};
+    constexpr std::int32_t file_descriptor = 5;
+    constexpr bool is_read_write = true;
+    constexpr bool is_death_test = true;
+
+    alignas(std::max_align_t) std::array<std::uint8_t, 300U> dataRegion{};
+    auto id = score::cpp::hash_bytes(TestValues::sharedMemorySegmentPath, strlen(TestValues::sharedMemorySegmentPath));
+    auto* const control_block_addr = new (dataRegion.data()) ControlBlock(id);
+    control_block_addr->alreadyAllocatedBytes = sizeof(ControlBlock);
+
+    // Given that the lock file does not exist
+    expectOpenLockFileReturns(TestValues::sharedMemorySegmentLockPath,
+                              score::cpp::make_unexpected(Error::createFromErrno(ENOENT)));
+
+    // That the shared memory segment is opened read only if not otherwise specified.
+    expectShmOpenReturns(TestValues::sharedMemorySegmentPath, file_descriptor, is_read_write, is_death_test);
+    expectFstatReturns(file_descriptor);
+    expectMmapReturns(dataRegion.data(), file_descriptor, is_read_write, is_death_test);
+
+    // and the memory region is safely unmapped on destruction
+    EXPECT_CALL(*mman_mock_, munmap(_, _));
+    EXPECT_CALL(*unistd_mock_, close(file_descriptor));
+
+    auto resource_result = SharedMemoryResourceTestAttorney::Open(TestValues::sharedMemorySegmentPath, is_read_write);
+    ASSERT_TRUE(resource_result.has_value());
+    auto resource = resource_result.value();
+
+    // When allocating a memory block that is larger than the allocated shared memory segment
+    // Then the program terminates and the fatal log contains a non-zero allocation start address (not nullptr)
+    ManagedMemoryResourceTestAttorney attorney(*resource);
+    EXPECT_DEATH(attorney.getMemoryResourceProxy()->allocate(TestValues::some_share_memory_size + 1), ".*");
+}
+
 TEST_F(SharedMemoryResourceAllocateDeathTest, AllocatingMultipleBlocksLargerThanAllocatedSharedMemoryCausesTermination)
 {
     InSequence sequence{};

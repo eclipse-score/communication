@@ -713,13 +713,13 @@ auto SharedMemoryResource::do_allocate(const std::size_t bytes, const std::size_
     {
         score::mw::log::LogFatal("shm")
             << "Cannot allocate shared memory block of size" << bytes << " at: ["
-            << PointerToLogValue(new_address_aligned)
+            << PointerToLogValue(allocation_start_address)
             << ":"
             // In our architecture we have a one-to-one mapping between pointers and integral values.
             // Therefore, casting between the two is well-defined.
             // The resulting pointer is used for logging and is not dereferenced.
             // NOLINTNEXTLINE(score-banned-function) see above
-            << PointerToLogValue(AddOffsetToPointer(new_address_aligned, bytes))
+            << PointerToLogValue(AddOffsetToPointer(allocation_start_address, bytes))
             << "]. Does not fit within shared memory segment: [" << PointerToLogValue(this->base_address_) << ":"
             << PointerToLogValue(this->getEndAddress()) << "]";
         std::terminate();
