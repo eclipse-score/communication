@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -45,6 +46,12 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
     Result<SampleAllocateePtr<SampleType>> Allocate() noexcept override
     {
         return MakeSampleAllocateePtr(std::make_unique<SampleType>());
+    }
+    Result<SamplePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept override
+    {
+        static_cast<void>(quality_type);
+        return SamplePtr<SampleType>{mock_binding::SamplePtr<SampleType>{std::make_unique<SampleType>()},
+                                     SampleReferenceGuard{}};
     }
     BindingType GetBindingType() const noexcept override
     {

@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_SKELETON_EVENT_H
 
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
 #include <gmock/gmock.h>
@@ -47,6 +48,10 @@ class SkeletonEvent : public SkeletonEventBinding<SampleType>
                  std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>),
                 (noexcept, override));
     MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<SampleType>>, Allocate, (), (noexcept, override));
+    MOCK_METHOD(Result<score::mw::com::impl::SamplePtr<SampleType>>,
+                GetLatestSample,
+                (const QualityType&),
+                (noexcept, override));
     MOCK_METHOD(Result<void>, PrepareOffer, (), (noexcept, override));
     MOCK_METHOD(void, PrepareStopOffer, (), (noexcept, override));
     MOCK_METHOD(std::size_t, GetMaxSize, (), (const, noexcept, override));
@@ -82,6 +87,11 @@ class SkeletonEventFacade : public SkeletonEventBinding<SampleType>
     {
         return skeleton_event_.Allocate();
     };
+    Result<score::mw::com::impl::SamplePtr<SampleType>> GetLatestSample(
+        const QualityType& quality_type) noexcept override
+    {
+        return skeleton_event_.GetLatestSample(quality_type);
+    }
     Result<void> PrepareOffer() noexcept override
     {
         return skeleton_event_.PrepareOffer();
