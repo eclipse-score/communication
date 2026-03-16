@@ -14,7 +14,9 @@
 #define SCORE_MW_COM_IMPL_SKELETON_EVENT_BINDING_H
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/result/result.h"
@@ -88,6 +90,8 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
     /// \brief Allocates memory for SampleType for the user to fill it. This is especially necessary for Zero-Copy
     /// implementations.
     virtual Result<SampleAllocateePtr<SampleType>> Allocate() noexcept = 0;
+
+    virtual Result<SamplePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept = 0;
 
     std::size_t GetMaxSize() const noexcept override
     {

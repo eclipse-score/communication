@@ -28,6 +28,8 @@
 
 namespace score::mw::com::impl::lola
 {
+template <typename SampleType>
+class SkeletonEventCommon;
 
 /// \brief View class which provides functionality for interacting with EventDataControl.
 ///
@@ -68,6 +70,13 @@ class ConsumerEventDataControlLocalView final
     ~ConsumerEventDataControlLocalView() noexcept = default;
 
     ConsumerEventDataControlLocalView(const ConsumerEventDataControlLocalView&) = delete;
+
+    // Suppress "AUTOSAR C++14 A11-3-1"
+    // SkeletonEventCommon needs controlled access to transaction-log view injection/cleanup for dual quality
+    // consumer setup.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    template <typename SampleType>
+    friend class SkeletonEventCommon;
     ConsumerEventDataControlLocalView& operator=(const ConsumerEventDataControlLocalView&) = delete;
     ConsumerEventDataControlLocalView(ConsumerEventDataControlLocalView&&) noexcept = delete;
     ConsumerEventDataControlLocalView& operator=(ConsumerEventDataControlLocalView&& other) noexcept = delete;
