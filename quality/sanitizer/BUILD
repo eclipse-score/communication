@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,15 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-
-pkg_tar(
-    name = "suppressions_pkg",
+filegroup(
+    name = "repo_suppressions",
     srcs = [
-        "@score_cpp_policies//sanitizers:suppressions",
-        "//quality/sanitizer:repo_suppressions",
+        "asan.supp",
+        "lsan.supp",
+        "tsan.supp",
+        "ubsan.supp",
     ],
-    mode = "0444",
-    package_dir = "sanitizers/suppressions",
-    visibility = ["//visibility:public"],
+    visibility = ["//quality/integration_testing/sanitizer_support:__pkg__"],
 )

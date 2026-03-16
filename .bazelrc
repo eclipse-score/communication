@@ -89,49 +89,9 @@ test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 
 # ==============================================================================
-# Sanitizer Configurations (adapted from @score_cpp_policies)
+# Sanitizer Configurations
 # ==============================================================================
-
-# Debug symbols for sanitizer stack traces  
-test:with_debug_symbols --cxxopt=-gline-tables-only
-test:with_debug_symbols --cxxopt=-gcolumn-info
-test:with_debug_symbols --strip=never
-
-# ASan + UBSan + LSan (Combined)
-build:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-build:asan_ubsan_lsan --cxxopt=-fsanitize=undefined,address,leak
-build:asan_ubsan_lsan --cxxopt=-fno-omit-frame-pointer
-build:asan_ubsan_lsan --cxxopt=-fno-common
-build:asan_ubsan_lsan --linkopt=-fsanitize=undefined,address,leak
-build:asan_ubsan_lsan --linkopt=-fsanitize-link-c++-runtime
-build:asan_ubsan_lsan --platform_suffix=asan_ubsan
-test:asan_ubsan_lsan --config=with_debug_symbols
-test:asan_ubsan_lsan --test_tag_filters=-no-asan,-no-lsan,-no-ubsan
-test:asan_ubsan_lsan --@score_cpp_policies//sanitizers/flags:sanitizer=asan_ubsan_lsan
-test:asan_ubsan_lsan --run_under=@score_cpp_policies//sanitizers:wrapper
-
-# Shortcuts for individual sanitizers
-build:asan  --config=asan_ubsan_lsan
-test:asan   --test_tag_filters=-no-asan
-build:ubsan --config=asan_ubsan_lsan
-test:ubsan  --test_tag_filters=-no-ubsan
-build:lsan  --config=asan_ubsan_lsan
-test:lsan   --test_tag_filters=-no-lsan
-
-# ThreadSanitizer
-build:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-build:tsan --cxxopt=-fsanitize=thread
-build:tsan --cxxopt=-O1
-build:tsan --linkopt=-fsanitize=thread
-build:tsan --linkopt=-fsanitize-link-c++-runtime
-build:tsan --platform_suffix=tsan
-test:tsan --config=with_debug_symbols
-test:tsan --test_tag_filters=-no-tsan
-test:tsan --@score_cpp_policies//sanitizers/flags:sanitizer=tsan
-test:tsan --run_under=@score_cpp_policies//sanitizers:wrapper
-
+import quality/sanitizer/sanitizer.bazelrc
 # ==============================================================================
 
 common:codeql --platform_suffix=codeql

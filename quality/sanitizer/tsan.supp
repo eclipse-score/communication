@@ -1,0 +1,24 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Suppressions for the ThreadSanitizer
+# See: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+# Every suppression requires a justification.
+# Suppressions that share the same justification may be organized in a single block.
+
+
+
+# These tests are already marked with target_compatible_with = [...no_tsan] but suppressions kept for documentation.
+# See: Ticket-246891
+called_from_lib:sample_ptr_test_rs
+called_from_lib:sample_allocatee_ptr_test_rs
