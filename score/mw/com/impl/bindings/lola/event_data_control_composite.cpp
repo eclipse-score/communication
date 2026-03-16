@@ -39,6 +39,54 @@ EventDataControlCompositeImpl<AtomicIndirectorType>::EventDataControlCompositeIm
 }
 
 template <template <class> class AtomicIndirectorType>
+score::cpp::optional<SlotIndexType>
+EventDataControlCompositeImpl<AtomicIndirectorType>::FindLatestReadableSlotIndex(const EventDataControl& control) const noexcept
+{
+    EventSlotStatus::EventTimeStamp latest_time_stamp{1U};
+    score::cpp::optional<SlotIndexType> latest_slot_index{};
+
+    for (SlotIndexType slot_index = 0U;
+         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead
+         // to loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
+         // coverity[autosar_cpp14_a4_7_1_violation]
+         slot_index < static_cast<SlotIndexType>(control.state_slots_.size());
+         ++slot_index)
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < control.state_slots_.size());
+        const EventSlotStatus slot{control.state_slots_[slot_index].load(std::memory_order_acquire)};
+        if (!slot.IsInvalid() && !slot.IsInWriting())
+        {
+            const auto slot_time_stamp = slot.GetTimeStamp();
+            if (latest_time_stamp < slot_time_stamp)
+            {
+                latest_time_stamp = slot_time_stamp;
+                latest_slot_index = slot_index;
+            }
+        }
+    }
+
+    return latest_slot_index;
+}
+
+template <template <class> class AtomicIndirectorType>
+bool EventDataControlCompositeImpl<AtomicIndirectorType>::TryIncreaseReferenceCount(ControlSlotType& slot) const noexcept
+{
+    EventSlotStatus slot_old{slot.load(std::memory_order_acquire)};
+    if (slot_old.IsInvalid() || slot_old.IsInWriting())
+    {
+        return false;
+    }
+
+    const auto new_refcount = static_cast<EventSlotStatus::SubscriberCount>(slot_old.GetReferenceCount() + 1U);
+    EventSlotStatus slot_new{slot_old.GetTimeStamp(), new_refcount};
+
+    auto slot_old_value = static_cast<EventSlotStatus::value_type&>(slot_old);
+    auto slot_new_value = static_cast<EventSlotStatus::value_type&>(slot_new);
+    return AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_weak(
+        slot, slot_old_value, slot_new_value, std::memory_order_acq_rel);
+}
+
+template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
 // 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
@@ -301,6 +349,53 @@ EventSlotStatus::EventTimeStamp EventDataControlCompositeImpl<AtomicIndirectorTy
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
         return sample_timestamp;
     }
+}
+
+template <template <class> class AtomicIndirectorType>
+ControlSlotCompositeIndicator EventDataControlCompositeImpl<AtomicIndirectorType>::GetLatestSlot() const noexcept
+{
+    EventDataControl* control = (asil_b_control_ != nullptr) ? asil_b_control_ : asil_qm_control_;
+
+    for (std::size_t retry_counter{0U}; retry_counter < MAX_MULTI_ALLOCATE_RETRY_COUNT; ++retry_counter)
+    {
+        const auto latest_slot_index = FindLatestReadableSlotIndex(*control);
+
+        if (!latest_slot_index.has_value())
+        {
+            return {};
+        }
+
+        const auto slot_index = latest_slot_index.value();
+
+        if (asil_b_control_ != nullptr)
+        {
+            auto& slot_qm = asil_qm_control_->state_slots_[slot_index];
+            auto& slot_asil_b = asil_b_control_->state_slots_[slot_index];
+
+            if (!TryIncreaseReferenceCount(slot_qm))
+            {
+                continue;
+            }
+
+            if (!TryIncreaseReferenceCount(slot_asil_b))
+            {
+                score::cpp::ignore = slot_qm.fetch_sub(1U, std::memory_order_acq_rel);
+                continue;
+            }
+
+            return {slot_index, slot_qm, slot_asil_b};
+        }
+
+        auto& slot_qm = asil_qm_control_->state_slots_[slot_index];
+        if (!TryIncreaseReferenceCount(slot_qm))
+        {
+            continue;
+        }
+
+        return {slot_index, slot_qm, ControlSlotCompositeIndicator::CompositeSlotTagType::QM};
+    }
+
+    return {};
 }
 
 template <template <class> class AtomicIndirectorType>
