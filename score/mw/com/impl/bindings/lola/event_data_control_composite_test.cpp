@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
 #include "score/memory/shared/atomic_indirector.h"
@@ -187,6 +188,102 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
 
     // And there was no indication of QM misbehaviour
     EXPECT_FALSE(allocation.qm_misbehaved);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsLatestReadySlot)
+{
+    // Given an EventDataControlComposite with QM-only control and two ready slots
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
+
+    auto first_slot = unit_->AllocateNextSlot();
+    auto second_slot = unit_->AllocateNextSlot();
+    unit_->EventReady(first_slot.allocated_slot_index.value(), 2U);
+    unit_->EventReady(second_slot.allocated_slot_index.value(), 3U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot(QualityType::kASIL_QM);
+
+    // Then the slot with the highest timestamp is returned
+    ASSERT_TRUE(latest_slot.allocated_slot_index.has_value());
+    EXPECT_EQ(latest_slot.allocated_slot_index.value(), second_slot.allocated_slot_index.value());
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotIncrementsReferenceCount)
+{
+    // Given an EventDataControlComposite with QM-only control and one ready slot
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
+
+    auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot.allocated_slot_index.value(), 2U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot(QualityType::kASIL_QM);
+
+    // Then the slot is referenced once
+    ASSERT_TRUE(latest_slot.allocated_slot_index.has_value());
+    const EventSlotStatus slot_status{(*skeleton_qm_local_)[latest_slot.allocated_slot_index.value()]};
+    EXPECT_EQ(slot_status.GetReferenceCount(), 1U);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotIncrementsReferenceCountInComposite)
+{
+    // Given an EventDataControlComposite with QM and ASIL-B controls and one ready slot
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+
+    auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot.allocated_slot_index.value(), 2U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot(QualityType::kASIL_QM);
+
+    // Then only the QM control part is referenced once
+    ASSERT_TRUE(latest_slot.allocated_slot_index.has_value());
+    const auto latest_index = latest_slot.allocated_slot_index.value();
+    const EventSlotStatus qm_slot_status{(*skeleton_qm_local_)[latest_index]};
+    EXPECT_EQ(qm_slot_status.GetReferenceCount(), 1U);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsLatestReadySlotForAsilBRequest)
+{
+    // Given an EventDataControlComposite with two controls and two ready slots
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+
+    auto first_slot = unit_->AllocateNextSlot();
+    unit_->EventReady(first_slot.allocated_slot_index.value(), 2U);
+
+    // When acquiring the latest slot for ASIL-B
+    const auto latest_slot = unit_->GetLatestSlot(QualityType::kASIL_B);
+
+    // Then the latest slot is returned and only ASIL-B reference count is incremented
+    ASSERT_TRUE(latest_slot.allocated_slot_index.has_value());
+    const auto latest_index = latest_slot.allocated_slot_index.value();
+
+    const EventSlotStatus asil_b_slot_status{(*skeleton_asil_local_)[latest_index]};
+    EXPECT_EQ(asil_b_slot_status.GetReferenceCount(), 1U);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsNoSlotIfNoReadableSlotExists)
+{
+    // Given an EventDataControlComposite with no ready slot
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot(QualityType::kASIL_QM);
+
+    // Then no valid slot is returned
+    EXPECT_FALSE(latest_slot.allocated_slot_index.has_value());
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsNoSlotWhenAsilBRequestedButOnlyQmExists)
+{
+    // Given an EventDataControlComposite with QM-only control
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
+
+    // When acquiring the latest slot for ASIL-B
+    const auto latest_slot = unit_->GetLatestSlot(QualityType::kASIL_B);
+
+    // Then no slot is returned
+    EXPECT_FALSE(latest_slot.allocated_slot_index.has_value());
 }
 
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
@@ -498,7 +595,6 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     memory::shared::NewDeleteDelegateMemoryResource memory{kMemoryResourceId};
 
     constexpr auto MAX_SLOTS = 100;
-    constexpr auto MAX_SUBSCRIBERS = 10;
     EventDataControl asil{MAX_SLOTS, memory};
     EventDataControl qm{MAX_SLOTS, memory};
     ProviderEventDataControlLocalView skeleton_asil_local{asil};

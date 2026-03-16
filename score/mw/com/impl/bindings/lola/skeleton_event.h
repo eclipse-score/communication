@@ -207,7 +207,8 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     // This suppression is unnecessary as the operands do not contain binary operators.
     // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    if (!event_shared_impl_.qm_disconnect_ && (event_data_control_optional->GetAsilBEventDataControlLocal() != nullptr) &&
+    if (!event_shared_impl_.qm_disconnect_ &&
+        (event_data_control_optional->GetAsilBEventDataControlLocal() != nullptr) &&
         allocated_slot_result.qm_misbehaved)
     {
         event_shared_impl_.qm_disconnect_ = true;

@@ -17,8 +17,10 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 
 #include "score/memory/shared/atomic_indirector.h"
+#include <score/optional.hpp>
 
 #include <functional>
 
@@ -109,6 +111,8 @@ class EventDataControlComposite
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot_index) const noexcept;
 
+    AllocationResult GetLatestSlot(const QualityType& quality_type) const noexcept;
+
   private:
     struct SlotWithTimeStamp
     {
@@ -127,7 +131,9 @@ class EventDataControlComposite
 
     // Algorithms that operate on multiple control blocks
     std::optional<SlotWithTimeStamp> GetNextFreeMultiSlot() const noexcept;
-
+    score::cpp::optional<SlotIndexType> FindLatestReferencedSlotIndex(
+        const ProviderEventDataControlLocalView<>& control) const noexcept;
+    bool TryIncreaseReferenceCount(ControlSlotType& slot) const noexcept;
     bool TryLockSlot(const SlotWithTimeStamp expected_slot_with_timestamp) noexcept;
     std::optional<SlotIndexType> AllocateNextMultiSlot() noexcept;
 };

@@ -34,11 +34,14 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
-    auto registration_result = event_shared_impl_.GetParent().RegisterGeneric(
-        event_shared_impl_.GetElementFQId(), event_shared_impl_.event_properties_, size_info_.size, size_info_.alignment);
+    auto registration_result = event_shared_impl_.GetParent().RegisterGeneric(event_shared_impl_.GetElementFQId(),
+                                                                              event_shared_impl_.event_properties_,
+                                                                              size_info_.size,
+                                                                              size_info_.alignment);
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
 
-    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set, registration_result.event_data_control_composite);
+    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set,
+                                          registration_result.event_data_control_composite);
     return {};
 }
 
@@ -112,8 +115,8 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     std::size_t offset = static_cast<std::size_t>(*allocated_slot_result.allocated_slot_index) * aligned_size;
     void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
-    auto lola_ptr = lola::SampleAllocateePtr<void>(
-        data_ptr, control_optional.value(), *allocated_slot_result.allocated_slot_index);
+    auto lola_ptr =
+        lola::SampleAllocateePtr<void>(data_ptr, control_optional.value(), *allocated_slot_result.allocated_slot_index);
     return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 

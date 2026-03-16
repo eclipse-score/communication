@@ -16,8 +16,8 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+#include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -35,7 +35,8 @@ SkeletonEventCommon::SkeletonEventCommon(Skeleton& parent,
 {
 }
 
-void SkeletonEventCommon::PrepareOfferCommon(TransactionLogSet& transaction_log_set, EventDataControlComposite<>& event_data_control_composite_ref) noexcept
+void SkeletonEventCommon::PrepareOfferCommon(TransactionLogSet& transaction_log_set,
+                                             EventDataControlComposite<>& event_data_control_composite_ref) noexcept
 {
     event_data_control_composite_ = event_data_control_composite_ref;
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&

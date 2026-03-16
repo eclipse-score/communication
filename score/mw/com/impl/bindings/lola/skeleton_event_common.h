@@ -68,7 +68,8 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    void PrepareOfferCommon(TransactionLogSet& transaction_log_set, EventDataControlComposite<>& event_data_control_composite_ref) noexcept;
+    void PrepareOfferCommon(TransactionLogSet& transaction_log_set,
+                            EventDataControlComposite<>& event_data_control_composite_ref) noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     // Accessors for members used by PrepareOfferCommon/PrepareStopOfferCommon

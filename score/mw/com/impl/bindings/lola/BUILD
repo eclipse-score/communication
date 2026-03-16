@@ -703,6 +703,7 @@ cc_library(
         ":event_data_control",
         ":event_slot_status",
         ":provider_event_data_control_local_view",
+        "//score/mw/com/impl/configuration:quality_type",
         "@score_baselibs//score/memory/shared:atomic_indirector",
     ],
 )
@@ -1088,6 +1089,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl:instance_specifier",
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola:event_data_control_composite",
+        "//score/mw/com/impl/configuration:quality_type",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
