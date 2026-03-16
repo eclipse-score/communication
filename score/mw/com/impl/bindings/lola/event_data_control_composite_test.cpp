@@ -184,6 +184,73 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
     EXPECT_TRUE(allocation.IsValidQmAndAsilB());
 }
 
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsLatestReadySlotForQmOnly)
+{
+    // Given an EventDataControlComposite with QM-only control and two ready slots
+    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+
+    auto first_slot = unit_->AllocateNextSlot();
+    auto second_slot = unit_->AllocateNextSlot();
+    unit_->EventReady(first_slot, 2U);
+    unit_->EventReady(second_slot, 3U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then the slot with the highest timestamp is returned
+    ASSERT_TRUE(latest_slot.IsValidQM());
+    EXPECT_EQ(latest_slot.GetIndex(), second_slot.GetIndex());
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotIncrementsReferenceCountForQmOnly)
+{
+    // Given an EventDataControlComposite with QM-only control and one ready slot
+    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+
+    auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot, 2U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then the slot is referenced once
+    ASSERT_TRUE(latest_slot.IsValidQM());
+    const EventSlotStatus slot_status{latest_slot.GetSlotQM().load(std::memory_order_acquire)};
+    EXPECT_EQ(slot_status.GetReferenceCount(), 1U);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotIncrementsReferenceCountForQmAndAsilB)
+{
+    // Given an EventDataControlComposite with QM and ASIL-B controls and one ready slot
+    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+
+    auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot, 2U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then both control parts are referenced once
+    ASSERT_TRUE(latest_slot.IsValidQmAndAsilB());
+    const EventSlotStatus qm_slot_status{latest_slot.GetSlotQM().load(std::memory_order_acquire)};
+    const EventSlotStatus asil_b_slot_status{latest_slot.GetSlotAsilB().load(std::memory_order_acquire)};
+    EXPECT_EQ(qm_slot_status.GetReferenceCount(), 1U);
+    EXPECT_EQ(asil_b_slot_status.GetReferenceCount(), 1U);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsInvalidIndicatorIfNoReadableSlotExists)
+{
+    // Given an EventDataControlComposite with no ready slot
+    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then no valid slot is returned
+    EXPECT_FALSE(latest_slot.IsValidQM());
+    EXPECT_FALSE(latest_slot.IsValidAsilB());
+}
+
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
 {
     // Given an EventDataControlComposite with zero used slots
