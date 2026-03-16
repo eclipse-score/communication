@@ -46,6 +46,10 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
     {
         return MakeSampleAllocateePtr(std::make_unique<SampleType>());
     }
+    Result<SampleType> GetLatestSample() noexcept override
+    {
+        return SampleType{};
+    }
     BindingType GetBindingType() const noexcept override
     {
         return BindingType::kFake;

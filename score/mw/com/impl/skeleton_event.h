@@ -312,6 +312,11 @@ class SkeletonEventView
         return skeleton_event_.GetTypedEventBinding();
     }
 
+    Result<SampleType> GetLatestSample() noexcept
+    {
+        return GetBinding()->GetLatestSample();
+    }
+
   private:
     SkeletonEvent<SampleType>& skeleton_event_;
 };
