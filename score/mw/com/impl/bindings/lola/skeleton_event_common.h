@@ -14,6 +14,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_COMMON_H_
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_COMMON_H_
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
@@ -110,8 +111,15 @@ class SkeletonEventCommon
         return event_data_control_composite_.value();
     }
 
-    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView()
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView(
+        QualityType quality_type = QualityType::kASIL_QM)
     {
+        if (quality_type == QualityType::kASIL_B)
+        {
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(consumer_control_local_view_asil_.has_value());
+            return consumer_control_local_view_asil_.value();
+        }
+
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(consumer_control_local_view_qm_.has_value());
         return consumer_control_local_view_qm_.value();
     }
@@ -227,6 +235,7 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
         DisableAllTracePoints(tracing_data_);
     }
 
+    EmplaceTransactionLogRegistrationGuard(event_control_qm.transaction_log_set_);
     const bool tracing_for_skeleton_event_enabled =
         tracing_data_.enable_send || tracing_data_.enable_send_with_allocate;
     // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
@@ -235,7 +244,6 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
     // Ticket-188259).
     if (tracing_for_skeleton_event_enabled)
     {
-        EmplaceTransactionLogRegistrationGuard(event_control_qm.transaction_log_set_);
         EmplaceTypeErasedSamplePtrsGuard();
     }
 
@@ -394,8 +402,28 @@ void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard(Tra
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(consumer_control_local_view_qm_.has_value(),
                                                 "ConsumerEventDataControlLocalView must be initialized.");
-    score::cpp::ignore = transaction_log_registration_guard_.emplace(
-        transaction_log_set.RegisterSkeletonTracingElement(consumer_control_local_view_qm_.value()));
+
+    if (transaction_log_registration_guard_.has_value())
+    {
+        if (consumer_control_local_view_asil_.has_value())
+        {
+            // Clear the manually injected ASIL cache before unregistering the old QM-owned log.
+            consumer_control_local_view_asil_.value().ClearTransactionLogLocalView();
+        }
+        transaction_log_registration_guard_.reset();
+    }
+
+    auto transaction_log_registration_guard =
+        transaction_log_set.RegisterSkeletonTracingElement(consumer_control_local_view_qm_.value());
+
+    if (consumer_control_local_view_asil_.has_value())
+    {
+        auto& transaction_log =
+            transaction_log_set.GetTransactionLog(transaction_log_registration_guard.GetTransactionLogIndex());
+        consumer_control_local_view_asil_.value().SetTransactionLogLocalView(transaction_log);
+    }
+
+    score::cpp::ignore = transaction_log_registration_guard_.emplace(std::move(transaction_log_registration_guard));
 }
 
 template <typename SampleType>
@@ -430,6 +458,10 @@ void SkeletonEventCommon<SampleType>::ResetGuards() noexcept
     type_erased_sample_ptrs_guard_.reset();
     if (event_data_control_composite_.has_value())
     {
+        if (consumer_control_local_view_asil_.has_value())
+        {
+            consumer_control_local_view_asil_.value().ClearTransactionLogLocalView();
+        }
         transaction_log_registration_guard_.reset();
     }
 }

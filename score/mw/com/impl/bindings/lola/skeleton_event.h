@@ -20,19 +20,25 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/bindings/lola/sample_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
+#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/mw/log/logging.h"
 
+#include "score/result/result.h"
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -86,6 +92,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
                           send_trace_callback) noexcept override;
 
     Result<impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override;
+
+    Result<impl::SamplePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept override;
 
     /// @requirement SWS_CM_00700
     Result<void> PrepareOffer() noexcept override;
@@ -177,6 +185,31 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
                                        skeleton_event_common_.GetEventDataControlComposite(),
                                        skeleton_event_common_.GetConsumerEventDataControlLocalView(),
                                        slot_index));
+}
+
+template <typename SampleType>
+Result<impl::SamplePtr<SampleType>> SkeletonEvent<SampleType>::GetLatestSample(const QualityType& quality_type) noexcept
+{
+    if (event_data_storage_ == nullptr)
+    {
+        ::score::mw::log::LogError("lola")
+            << "Tried to get latest event sample, but the event has not been offered yet!";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    auto& consumer_event_data_control_local = skeleton_event_common_.GetConsumerEventDataControlLocalView(quality_type);
+    const auto slot_result = consumer_event_data_control_local.GetLatestSlot();
+    if (!slot_result.has_value())
+    {
+        ::score::mw::log::LogError("lola") << "GetLatestSlot did not return a slot index";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    return impl::SamplePtr<SampleType>{
+        lola::SamplePtr<SampleType>{&event_data_storage_->at(static_cast<std::uint64_t>(*slot_result)),
+                                    consumer_event_data_control_local,
+                                    slot_result.value()},
+        impl::SampleReferenceGuard{}};
 }
 
 template <typename SampleType>
