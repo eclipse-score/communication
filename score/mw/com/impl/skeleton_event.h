@@ -314,6 +314,11 @@ class SkeletonEventView
         return skeleton_event_.GetTypedEventBinding();
     }
 
+    Result<SampleAllocateePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept
+    {
+        return GetBinding()->GetLatestSample(quality_type);
+    }
+
   private:
     SkeletonEvent<SampleType>& skeleton_event_;
 };

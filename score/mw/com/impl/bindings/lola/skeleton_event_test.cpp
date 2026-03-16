@@ -17,6 +17,7 @@
 
 #include "score/filesystem/filesystem.h"
 
+#include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -394,6 +395,56 @@ TEST_F(SkeletonEventPrepareStopOfferFixture, UnregisterEventNotificationExistenc
 
     // When stop offering a skeleton event
     skeleton_event_->PrepareStopOffer();
+}
+
+using SkeletonEventGetLatestSampleFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleFailsBeforePrepareOffer)
+{
+    const bool enforce_max_samples{true};
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+
+    const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    ASSERT_FALSE(latest_sample.has_value());
+    EXPECT_EQ(latest_sample.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleFailsIfNoSampleWasSent)
+{
+    const bool enforce_max_samples{true};
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    ASSERT_FALSE(latest_sample.has_value());
+    EXPECT_EQ(latest_sample.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(SkeletonEventGetLatestSampleFixture, GetLatestSampleReturnsMostRecentlySentSample)
+{
+    const bool enforce_max_samples{true};
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    std::ignore = skeleton_event_->PrepareOffer();
+
+    auto first_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(first_allocated_slot_result.has_value());
+    auto first_allocated_slot = std::move(first_allocated_slot_result).value();
+    *first_allocated_slot = static_cast<test::TestSampleType>(11U);
+    auto first_send_result = skeleton_event_->Send(std::move(first_allocated_slot), score::cpp::nullopt);
+    ASSERT_TRUE(first_send_result.has_value());
+
+    auto second_allocated_slot_result = skeleton_event_->Allocate();
+    ASSERT_TRUE(second_allocated_slot_result.has_value());
+    auto second_allocated_slot = std::move(second_allocated_slot_result).value();
+    *second_allocated_slot = static_cast<test::TestSampleType>(42U);
+    auto second_send_result = skeleton_event_->Send(std::move(second_allocated_slot), score::cpp::nullopt);
+    ASSERT_TRUE(second_send_result.has_value());
+
+    const auto latest_sample = skeleton_event_->GetLatestSample(QualityType::kASIL_QM);
+
+    ASSERT_TRUE(latest_sample.has_value());
+    EXPECT_EQ(*latest_sample.value(), static_cast<test::TestSampleType>(42U));
 }
 
 using SkeletonEventTimestampFixture = SkeletonEventFixture;

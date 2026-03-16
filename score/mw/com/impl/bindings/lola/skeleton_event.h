@@ -23,6 +23,8 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -30,10 +32,12 @@
 
 #include "score/mw/log/logging.h"
 
+#include "score/result/result.h"
 #include <score/assert.hpp>
 #include <score/optional.hpp>
 #include <score/utility.hpp>
 
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -86,6 +90,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
                      score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept override;
 
     Result<impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override;
+
+    Result<impl::SampleAllocateePtr<SampleType>> GetLatestSample(const QualityType& quality_type) noexcept override;
 
     /// @requirement SWS_CM_00700
     ResultBlank PrepareOffer() noexcept override;
@@ -197,7 +203,8 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     auto& event_data_control_optional = event_shared_impl_.event_data_control_composite_;
     if (event_data_control_optional.has_value() == false)
     {
-        ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
+        ::score::mw::log::LogError("lola")
+            << "Tried to allocate event, but the EventDataControlComposite does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     const auto allocated_slot_result = event_data_control_optional->AllocateNextSlot();
@@ -234,6 +241,31 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
         &event_data_storage_->at(static_cast<std::uint64_t>(*allocated_slot_result.allocated_slot_index)),
         event_data_control_optional.value(),
         allocated_slot_result.allocated_slot_index.value()));
+}
+
+template <typename SampleType>
+Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::GetLatestSample(
+    const QualityType& quality_type) noexcept
+{
+    auto& event_data_control_optional = event_shared_impl_.event_data_control_composite_;
+    if (!event_data_control_optional.has_value())
+    {
+        ::score::mw::log::LogError("lola")
+            << "Tried to allocate event, but the EventDataControlComposite does not exist!";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    const auto slot_result = event_data_control_optional.value().GetLatestSlot(quality_type);
+    if (!slot_result.allocated_slot_index.has_value())
+    {
+        ::score::mw::log::LogError("lola") << "GetLatestSlot did not return a slot index";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+
+    return MakeSampleAllocateePtr(SampleAllocateePtr<SampleType>(
+        &event_data_storage_->at(static_cast<std::uint64_t>(*slot_result.allocated_slot_index)),
+        event_data_control_optional.value(),
+        slot_result.allocated_slot_index.value()));
 }
 
 template <typename SampleType>
