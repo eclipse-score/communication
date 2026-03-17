@@ -17,6 +17,7 @@ rust_library(
     name = "com-api-concept",
     srcs = [
         "com_api_concept.rs",
+        "error.rs",
         "interface_macros.rs",
         "lib.rs",
         "reloc.rs",
