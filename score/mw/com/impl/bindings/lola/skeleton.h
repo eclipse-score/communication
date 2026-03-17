@@ -418,14 +418,14 @@ auto Skeleton::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_
     // The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even returned pointer
     // to internal state until Skeleton object is alive.
     // coverity[autosar_cpp14_a3_8_1_violation]
-    return {typed_event_data_storage_ptr,
-            // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
-            // coverity[autosar_cpp14_m7_5_1_violation]
-            // coverity[autosar_cpp14_m7_5_2_violation]
-            // coverity[autosar_cpp14_a3_8_1_violation]
-            EventDataControlComposite{&event_control_qm_it->second.data_control,
-                                      event_data_control_asil_b_local,
-                                      proxy_event_data_control_local}};
+    return {
+        typed_event_data_storage_ptr,
+        // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        EventDataControlComposite{
+            event_control_qm_it->second.data_control, event_data_control_asil_b_local, proxy_event_data_control_local}};
 }
 
 template <typename SampleType>
@@ -500,7 +500,7 @@ auto Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_f
     // coverity[autosar_cpp14_m7_5_2_violation]
     // coverity[autosar_cpp14_a3_8_1_violation]
     return {typed_event_data_storage_ptr,
-            EventDataControlComposite{&skeleton_event_data_control_local_qm.get().data_control,
+            EventDataControlComposite{skeleton_event_data_control_local_qm.get().data_control,
                                       control_asil_local_result,
                                       proxy_event_data_control_local}};
 }

@@ -22,6 +22,7 @@
 namespace score::mw::com::impl::lola
 {
 
+/// GTODO: Remove!!!
 /// \brief Helper class which identifies a slot in our "control slot array" using both the slot index and a raw pointer
 ///        to the element.
 /// \details We combine identification by the index of the slot and a (raw) pointer to the slot. Reasoning:
