@@ -36,8 +36,8 @@ use core::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use com_api_concept::{
-    Builder, CommData, Error, InstanceSpecifier, Interface, Producer, ProducerBuilder,
-    ProviderInfo, Result,
+    AllocationFailureReason, Builder, CommData, Error, EventFailedReason, InstanceSpecifier,
+    Interface, Producer, ProducerBuilder, ProducerCreationReason, ProviderInfo, Result,
 };
 
 use bridge_ffi_rs::*;
@@ -58,7 +58,10 @@ impl ProviderInfo for LolaProviderInfo {
         let status =
             unsafe { bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
         if !status {
-            return Err(Error::Fail);
+            return Err(Error::OfferServiceFailed(format!(
+                "Failed to offer service: {:?}",
+                self.instance_specifier
+            )));
         }
         Ok(())
     }
@@ -187,7 +190,10 @@ where
             )
         };
         if !status {
-            return Err(Error::Fail);
+            return Err(Error::SendingDataFailed(format!(
+                "Failed to send sample for event, underlying status is: {}",
+                status
+            )));
         }
         Ok(())
     }
@@ -389,7 +395,11 @@ where
                 T::ID,
             );
             if !status {
-                return Err(Error::Fail);
+                return Err(Error::MemoryAllocationFailed(
+                    AllocationFailureReason::InternalError(
+                        "Failed to allocate sample via skeleton event".to_string(),
+                    ),
+                ));
             }
             sample.assume_init()
         };
@@ -405,7 +415,11 @@ where
 
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier);
-
+        if skeleton_event.skeleton_event_ptr.is_null() {
+            return Err(Error::EventError(EventFailedReason::CreationFailed(
+                "Failed to get skeleton event for publisher".to_string(),
+            )));
+        }
         Ok(Self {
             identifier: identifier.to_string(),
             skeleton_event,
@@ -433,20 +447,35 @@ impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder
 
 impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
-        let instance_specifier_runtime =
-            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
-                .map_err(|_| Error::Fail)?;
+        let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(
+            self.instance_specifier.as_ref(),
+        )
+        .map_err(|_| {
+            Error::ProducerCreationFailed(ProducerCreationReason::InstanceSpecifierInvalid(
+                "Failed to parse instance specifier".to_string(),
+            ))
+        })?;
 
         let skeleton_handle =
             NativeSkeletonHandle::new(I::INTERFACE_ID, &instance_specifier_runtime);
-
+        if skeleton_handle.handle.is_null() {
+            return Err(Error::ProducerCreationFailed(
+                ProducerCreationReason::SkeletonCreationFailed(
+                    "Failed to create skeleton for producer".to_string(),
+                ),
+            ));
+        }
         let instance_info = LolaProviderInfo {
             instance_specifier: self.instance_specifier,
             interface_id: I::INTERFACE_ID,
             skeleton_handle: SkeletonInstanceManager(Arc::new(skeleton_handle)),
         };
 
-        I::Producer::new(instance_info).map_err(|_| Error::Fail)
+        I::Producer::new(instance_info).map_err(|_| {
+            Error::ProducerCreationFailed(ProducerCreationReason::InternalError(
+                "Failed to construct producer from instance info".to_string(),
+            ))
+        })
     }
 }
 

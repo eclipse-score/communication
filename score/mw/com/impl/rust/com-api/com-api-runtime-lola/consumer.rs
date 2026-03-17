@@ -41,8 +41,10 @@ use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::Arc;
 
 use com_api_concept::{
-    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, InstanceSpecifier,
-    Interface, Result, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
+    AsyncReceiveFailedReason, Builder, CommData, Consumer, ConsumerBuilder, ConsumerCreationReason,
+    ConsumerDescriptor, Error, InstanceSpecifier, Interface, ReceiveFailedReason, Result,
+    SampleContainer, ServiceDiscovery, ServiceDiscoveryFailedReason, SubscribeFailureReason,
+    Subscriber, Subscription,
 };
 
 use bridge_ffi_rs::*;
@@ -286,8 +288,22 @@ pub struct SubscribableImpl<T> {
 impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &'static str, instance_info: LolaConsumerInfo) -> Result<Self> {
-        let handle = instance_info.get_handle().ok_or(Error::Fail)?;
+        let handle = instance_info
+            .get_handle()
+            .ok_or(Error::ConsumerCreationFailed(
+                ConsumerCreationReason::ServiceHandleNotFound(format!(
+                    "Service handle not found for instance: {}",
+                    identifier
+                )),
+            ))?;
         let native_proxy = NativeProxyBase::new(instance_info.interface_id, handle);
+        if native_proxy.proxy.is_null() {
+            return Err(Error::ConsumerCreationFailed(
+                ConsumerCreationReason::ProxyCreationFailed(
+                    "Failed to create proxy instance".to_string(),
+                ),
+            ));
+        }
         let proxy_instance = ProxyInstanceManager(Arc::new(native_proxy));
         Ok(Self {
             identifier,
@@ -303,6 +319,14 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             self.instance_info.interface_id,
             self.identifier,
         );
+        if event_instance.proxy_event_ptr.is_null() {
+            return Err(Error::SubscribeFailed(
+                SubscribeFailureReason::EventNotAvailable(format!(
+                    "Event not available for identifier: {}",
+                    self.identifier
+                )),
+            ));
+        }
 
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
@@ -313,7 +337,12 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             )
         };
         if !status {
-            return Err(Error::Fail);
+            return Err(Error::SubscribeFailed(
+                SubscribeFailureReason::InternalError(format!(
+                    "Failed to subscribe to event: {}",
+                    self.identifier
+                )),
+            ));
         }
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
@@ -511,7 +540,14 @@ where
     ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
         async move {
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
-                return Err(Error::Fail);
+                return Err(Error::AsyncReceiveFailed(
+                    AsyncReceiveFailedReason::SampleCountOutOfBounds(
+                        format!(
+                            "Requested sample count exceeds subscription limit: requested new_samples {}, requested max_samples {}, subscription max_num_samples {}",
+                            new_samples, max_samples, self.max_num_samples
+                        )
+                    ),
+                ));
             }
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
@@ -522,7 +558,11 @@ where
                 .load(std::sync::atomic::Ordering::Relaxed)
             {
                 if let Err(_e) = self.init_async_receive(&mut event_guard) {
-                    return Err(Error::Fail);
+                    return Err(Error::AsyncReceiveFailed(
+                        AsyncReceiveFailedReason::InitializationFailed(
+                            "Failed to initialize async receive".to_string(),
+                        ),
+                    ));
                 }
                 self.async_init_status
                     .store(true, std::sync::atomic::Ordering::Relaxed);
@@ -582,10 +622,18 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     self.scratch = Some(scratch);
                     result
                 } else {
-                    Err(Error::Fail)
+                    Err(Error::AsyncReceiveFailed(
+                        AsyncReceiveFailedReason::ReceiveError(
+                            "Failed to receive sample data".to_string(),
+                        ),
+                    ))
                 }
             } else {
-                Err(Error::Fail)
+                Err(Error::AsyncReceiveFailed(
+                    AsyncReceiveFailedReason::ReceiveError(
+                        "Internal buffer not available".to_string(),
+                    ),
+                ))
             }
         };
         match samples_received {
@@ -597,7 +645,11 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     //event_guard will be dropped here, allowing new receive calls to access the
                     // proxy event
                     self.event_guard = None;
-                    return Poll::Ready(self.scratch.take().ok_or(Error::Fail));
+                    return Poll::Ready(self.scratch.take().ok_or(Error::AsyncReceiveFailed(
+                        AsyncReceiveFailedReason::ReceiveError(
+                            "Internal buffer not available".to_string(),
+                        ),
+                    )));
                 }
                 // Have some samples but not enough yet, wait for more via waker
                 Poll::Pending
@@ -658,12 +710,24 @@ where
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
-        let instance_specifier_lola =
-            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
-                .map_err(|_| Error::Fail)?;
+        let instance_specifier_lola = mw_com::InstanceSpecifier::try_from(
+            self.instance_specifier.as_ref(),
+        )
+        .map_err(|_| {
+            Error::ServiceDiscoveryFailed(ServiceDiscoveryFailedReason::InstanceSpecifierInvalid(
+                "Failed to parse instance specifier".to_string(),
+            ))
+        })?;
 
         let service_handle =
-            mw_com::proxy::find_service(instance_specifier_lola).map_err(|_| Error::Fail)?;
+            mw_com::proxy::find_service(instance_specifier_lola).map_err(|_| {
+                Error::ServiceDiscoveryFailed(ServiceDiscoveryFailedReason::ServiceNotFound(
+                    format!(
+                        "No service found matching specifier: {}",
+                        self.instance_specifier.as_ref()
+                    ),
+                ))
+            })?;
 
         let service_handle_arc = Arc::new(service_handle);
         let available_instances = (0..service_handle_arc.len())
@@ -697,8 +761,13 @@ where
 
         // Convert to Lola InstanceSpecifier early
         let instance_specifier_lola =
-            mw_com::InstanceSpecifier::try_from(instance_specifier.as_ref())
-                .map_err(|_| Error::Fail);
+            mw_com::InstanceSpecifier::try_from(instance_specifier.as_ref()).map_err(|_| {
+                Error::ServiceDiscoveryFailed(
+                    ServiceDiscoveryFailedReason::InstanceSpecifierInvalid(
+                        "Failed to parse instance specifier".to_string(),
+                    ),
+                )
+            });
 
         let waker_storage = Arc::new(futures::task::AtomicWaker::new());
 
@@ -740,7 +809,11 @@ where
             // stop_find_service is always called in Drop.
             let raw_handle = unsafe { bridge_ffi_rs::start_find_service(&fat_ptr, spec) };
             if raw_handle.is_null() {
-                Err(Error::Fail)
+                Err(Error::ServiceDiscoveryFailed(
+                    ServiceDiscoveryFailedReason::InternalError(
+                        "Failed to start service discovery".to_string(),
+                    ),
+                ))
             } else {
                 // Single authoritative source of find_handle — return value only.
                 // Callback's find_handle argument is ignored to prevent double-write.
@@ -856,7 +929,10 @@ impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
         //if InstanceSpecifier::ANY support enable by lola
         //then this API should get InstanceSpecifier from FFI Call
-        todo!()
+        panic!(
+            "InstanceSpecifier::ANY is not supported in LolaRuntimeImpl,
+        Please use FindServiceSpecifier::Specific with a valid instance specifier."
+        );
     }
 }
 
@@ -877,7 +953,12 @@ fn try_receive_samples<T: CommData + Debug>(
     max_samples: usize,
 ) -> Result<usize> {
     if max_samples > max_num_samples {
-        return Err(Error::Fail);
+        return Err(Error::ReceiveFailed(
+            ReceiveFailedReason::SampleCountOutOfBounds(format!(
+                "Requested sample count exceeds subscription limit: requested {}, max {}",
+                max_samples, max_num_samples
+            )),
+        ));
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
     let mut callback = create_sample_callback(scratch, max_samples);
@@ -897,7 +978,12 @@ fn try_receive_samples<T: CommData + Debug>(
         )
     };
     if count > max_num_samples as u32 {
-        return Err(Error::Fail);
+        return Err(Error::ReceiveFailed(
+            ReceiveFailedReason::SampleCountOutOfBounds(format!(
+                "Returned more samples than subscription limit: returned {}, max {}",
+                count, max_num_samples
+            )),
+        ));
     }
     Ok(count as usize)
 }
