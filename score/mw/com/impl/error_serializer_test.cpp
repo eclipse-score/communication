@@ -76,14 +76,16 @@ TYPED_TEST(ErrorSerializationTypedFixture, SerializeErrorTerminatesWhenPassingkI
 {
     // When calling SerializeError with kInvalid
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = ErrorSerializer<TypeParam>::SerializeError(TypeParam::kInvalid));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = ErrorSerializer<TypeParam>::SerializeError(TypeParam::kInvalid));
 }
 
 TYPED_TEST(ErrorSerializationTypedFixture, SerializeErrorTerminatesWhenPassingErrorCodeOutOfRange)
 {
     // When calling SerializeError with an error code out of range
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = ErrorSerializer<TypeParam>::SerializeError(TypeParam::kNumEnumElements));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = ErrorSerializer<TypeParam>::SerializeError(TypeParam::kNumEnumElements));
 }
 
 TYPED_TEST(ErrorSerializationTypedFixture, DeserializeReturnsValidResultWhenPassingZero)
@@ -114,7 +116,8 @@ TYPED_TEST(ErrorSerializationTypedFixture, DeserializeTerminatesWhenPassingInteg
     // Then the program terminates
     const auto serialized_value =
         static_cast<typename ErrorSerializer<TypeParam>::SerializedErrorType>(TypeParam::kNumEnumElements);
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = ErrorSerializer<TypeParam>::Deserialize(serialized_value));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          ErrorSerializer<TypeParam>::Deserialize(serialized_value));
 }
 
 }  // namespace

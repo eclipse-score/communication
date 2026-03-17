@@ -63,7 +63,8 @@ int main(int argc, const char** argv)
         // Launch threads which each contain a proxy instance and receive messages from the sender.
         for (const auto& instance_name : instance_names)
         {
-            const auto instance_specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{instance_name});
+            const auto instance_specifier_result =
+                score::mw::com::InstanceSpecifier::Create(std::string{instance_name});
             if (!instance_specifier_result.has_value())
             {
                 std::cerr << "Invalid instance specifier, terminating." << std::endl;

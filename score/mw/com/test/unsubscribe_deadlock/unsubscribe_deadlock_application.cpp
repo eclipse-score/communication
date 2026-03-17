@@ -54,7 +54,8 @@ void CreateAndOfferSkeleton(const score::mw::com::InstanceSpecifier& instance_sp
     }
 }
 
-score::Result<score::mw::com::test::BigDataProxy> CreateProxy(const score::mw::com::InstanceSpecifier& instance_specifier)
+score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
+    const score::mw::com::InstanceSpecifier& instance_specifier)
 {
     std::promise<std::vector<score::mw::com::test::BigDataProxy::HandleType>> service_discovery_promise{};
     auto service_discovery_future = service_discovery_promise.get_future();
@@ -199,8 +200,8 @@ int main(int argc, const char** argv)
     }};
 
     score::cpp::stop_callback stop_callback{stop_source.get_token(), [&notify_thread]() noexcept -> void {
-                                         notify_thread.native_handle();
-                                     }};
+                                                notify_thread.native_handle();
+                                            }};
 
     // call to Unsubscribe() will acquiring the subscription-state-machine lock and then get blocked on the
     // read-lock on receive-handler map ...

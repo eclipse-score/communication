@@ -202,7 +202,7 @@ auto GetServiceElementId(const BindingServiceTypeDeployment<EventIdType, FieldId
     // LCOV_EXCL_BR_STOP
     {
         score::mw::log::LogFatal() << service_element_type << "name \"" << service_element_name
-                                 << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
+                                   << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return service_element_id_it->second;

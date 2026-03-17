@@ -24,8 +24,8 @@
 
 #include "score/mw/com/impl/mocking/i_proxy_event.h"
 
-#include "score/result/result.h"
 #include "score/mw/log/logging.h"
+#include "score/result/result.h"
 
 #include <score/assert.hpp>
 

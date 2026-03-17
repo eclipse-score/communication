@@ -155,7 +155,8 @@ enum class DataState
 
 int run_sender(SharedState& shared_state, const std::size_t turns, const std::size_t batch_size, const bool no_wait)
 {
-    auto instance_specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{"smokeyeyes/small_but_great"});
+    auto instance_specifier_result =
+        score::mw::com::InstanceSpecifier::Create(std::string{"smokeyeyes/small_but_great"});
     if (!instance_specifier_result.has_value())
     {
         std::cerr << "Could not create instance specifier due to error " << std::move(instance_specifier_result).error()

@@ -39,12 +39,13 @@ class ProvidedServiceDecorator : public ProvidedService
     using ServiceHolder = std::unique_ptr<ServiceType>;
 
     ProvidedServiceDecorator() = default;
-    
+
     /// @brief Constructor that takes ownership of a service instance
-    explicit ProvidedServiceDecorator(ServiceType&& service) 
-        : service_(std::make_unique<ServiceType>(std::move(service))) 
-    {}
-    
+    explicit ProvidedServiceDecorator(ServiceType&& service)
+        : service_(std::make_unique<ServiceType>(std::move(service)))
+    {
+    }
+
     ~ProvidedServiceDecorator() = default;
 
     ProvidedServiceDecorator(const ProvidedServiceDecorator&) = delete;
@@ -72,13 +73,13 @@ class ProvidedServiceDecorator : public ProvidedService
     {
         return service_.get();
     }
-    
+
     /// @brief Override for polymorphic lookup (stub-specific)
     void* GetServicePtr() noexcept override
     {
         return static_cast<void*>(service_.get());
     }
-    
+
     const void* GetServicePtr() const noexcept override
     {
         return static_cast<const void*>(service_.get());

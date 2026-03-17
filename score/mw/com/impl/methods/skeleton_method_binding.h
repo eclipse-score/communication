@@ -28,7 +28,8 @@ namespace score::mw::com::impl
 class SkeletonMethodBinding
 {
   public:
-    using TypeErasedCallbackSignature = void(std::optional<score::cpp::span<std::byte>>, std::optional<score::cpp::span<std::byte>>);
+    using TypeErasedCallbackSignature = void(std::optional<score::cpp::span<std::byte>>,
+                                             std::optional<score::cpp::span<std::byte>>);
     // size of storred callback should be the base size of amp callback and a unique_ptr
     // this way the user can pass any information to the callback through the pointer.
     //

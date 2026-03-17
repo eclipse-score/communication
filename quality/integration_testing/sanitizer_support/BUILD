@@ -16,8 +16,8 @@ load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 pkg_tar(
     name = "suppressions_pkg",
     srcs = [
-        "@score_cpp_policies//sanitizers:suppressions",
         "//quality/sanitizer:repo_suppressions",
+        "@score_cpp_policies//sanitizers:suppressions",
     ],
     mode = "0444",
     package_dir = "sanitizers/suppressions",

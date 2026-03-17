@@ -35,8 +35,8 @@ class GenericProxyEventBinding : public ProxyEventBindingBase
   public:
     /// Type-erased callback used for the GetNewSamples method.
     ///
-    /// The size of 80U is chosen to allow us to store another score::cpp::callback within this callback. This is needed as we
-    /// wrap the user provided callback in order to perform tracing functionality.
+    /// The size of 80U is chosen to allow us to store another score::cpp::callback within this callback. This is needed
+    /// as we wrap the user provided callback in order to perform tracing functionality.
     using Callback = score::cpp::callback<void(SamplePtr<void>, tracing::ITracingRuntime::TracePointDataId), 80U>;
 
     /// \brief Get pending data from the event.

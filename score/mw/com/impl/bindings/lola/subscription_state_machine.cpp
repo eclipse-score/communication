@@ -123,7 +123,8 @@ const score::cpp::optional<SlotCollector>& SubscriptionStateMachine::GetSlotColl
     return GetCurrentEventState().GetSlotCollector();
 }
 
-score::cpp::optional<TransactionLogSet::TransactionLogIndex> SubscriptionStateMachine::GetTransactionLogIndex() const noexcept
+score::cpp::optional<TransactionLogSet::TransactionLogIndex> SubscriptionStateMachine::GetTransactionLogIndex()
+    const noexcept
 {
     std::lock_guard<std::mutex> lock{state_mutex_};
     return GetCurrentEventState().GetTransactionLogIndex();

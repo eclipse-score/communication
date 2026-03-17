@@ -45,7 +45,7 @@ class RustFnMutCallableBase
     explicit RustFnMutCallableBase(const FatPtr& dyn_fnmut) noexcept : ptr_{dyn_fnmut}
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(dyn_fnmut.data != nullptr,
-                               "Failed creating a RustFnMutCallable due to an invalid pointer");
+                                                    "Failed creating a RustFnMutCallable due to an invalid pointer");
     }
 
     RustFnMutCallableBase(const RustFnMutCallableBase&) = delete;
@@ -72,7 +72,8 @@ class RustFnMutCallableBase
   protected:
     void CheckValid() const noexcept
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr_.data != nullptr, "Tried to use a Rust FnMut callable without a valid pointer");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(ptr_.data != nullptr,
+                                                    "Tried to use a Rust FnMut callable without a valid pointer");
     }
 
     FatPtr ptr_;

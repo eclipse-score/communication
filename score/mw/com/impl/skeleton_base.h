@@ -147,7 +147,8 @@ class SkeletonBaseView
     {
         const auto result = skeleton_base_.methods_.emplace(method_name, method);
         const bool was_method_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted, "Method cannot be registered as it already exists.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted,
+                                                "Method cannot be registered as it already exists.");
     }
 
     // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be

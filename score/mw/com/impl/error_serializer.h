@@ -43,8 +43,8 @@ class ErrorSerializer
   public:
     /// \brief Type used to represent the error code in a serialized format.
     ///
-    /// The serialized format is score::result::ErrorCode which is generally the underlying integer type of an error code.
-    /// This ensures that the error type can always fit inside the seralized type.
+    /// The serialized format is score::result::ErrorCode which is generally the underlying integer type of an error
+    /// code. This ensures that the error type can always fit inside the seralized type.
     using SerializedErrorType = score::result::ErrorCode;
     static_assert(std::is_same_v<std::underlying_type_t<ErrorCode>, SerializedErrorType>);
 

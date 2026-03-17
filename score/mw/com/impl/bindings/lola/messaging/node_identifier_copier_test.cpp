@@ -14,9 +14,9 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 
-#include <score/assert.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <score/assert.hpp>
 #include <sys/types.h>
 #include <array>
 #include <cstddef>

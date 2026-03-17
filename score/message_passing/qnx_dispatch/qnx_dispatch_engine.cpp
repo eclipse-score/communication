@@ -612,7 +612,7 @@ void QnxDispatchEngine::SetupResourceManagerCallbacks() noexcept
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 score::cpp::expected_blank<score::os::Error> QnxDispatchEngine::StartServer(ResourceManagerServer& server,
-                                                                   const QnxResourcePath& path) noexcept
+                                                                            const QnxResourcePath& path) noexcept
 {
     // QNX defect PR# 2561573: resmgr_attach/message_attach calls are not thread-safe for the same dispatch_pointer
 
@@ -682,7 +682,8 @@ std::int32_t QnxDispatchEngine::io_open(resmgr_context_t* const ctp,
 
     // the attr locks are currently not needed, but we should not forget about them in multithreaded implementation
     score::cpp::ignore = iofunc->iofunc_attr_lock(&server.attr);
-    const score::cpp::expected_blank<std::int32_t> status = iofunc->iofunc_open(ctp, msg, &server.attr, nullptr, nullptr);
+    const score::cpp::expected_blank<std::int32_t> status =
+        iofunc->iofunc_open(ctp, msg, &server.attr, nullptr, nullptr);
     if (!status.has_value())
     {
         score::cpp::ignore = iofunc->iofunc_attr_unlock(&server.attr);
@@ -773,8 +774,8 @@ std::int32_t QnxDispatchEngine::io_write(resmgr_context_t* const ctp,
     const auto buffer = const_cast<const std::uint8_t*>(static_cast<std::uint8_t*>(static_cast<void*>(&msg[1])));
     const std::uint8_t code = buffer[0];
     // coverity[autosar_cpp14_m5_0_15_violation] see Rationale above
-    const score::cpp::span<const std::uint8_t> message = {&buffer[1],
-                                                   static_cast<score::cpp::span<std::uint8_t>::size_type>(nbytes - 1U)};
+    const score::cpp::span<const std::uint8_t> message = {
+        &buffer[1], static_cast<score::cpp::span<std::uint8_t>::size_type>(nbytes - 1U)};
     // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic) C API
 
     // TODO: close connection on false (once this functionality is demanded)

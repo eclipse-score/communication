@@ -297,7 +297,8 @@ int main(int argc, const char** argv)
             return proxy_creation_data.handle != nullptr;
         });
 
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(proxy_creation_data.handle != nullptr, "Service handle shouldn't be nullptr");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(proxy_creation_data.handle != nullptr,
+                                                "Service handle shouldn't be nullptr");
         auto handle = *proxy_creation_data.handle;
         proxy_creation_lock.unlock();
         auto proxy_result = score::mw::com::test::BigDataProxy::Create(handle);

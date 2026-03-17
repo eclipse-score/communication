@@ -16,10 +16,10 @@
 #include "score/mw/com/impl/com_error.h"
 
 #include "score/filesystem/filesystem.h"
+#include "score/mw/log/logging.h"
 #include "score/os/errno.h"
 #include "score/result/error.h"
 #include "score/result/result.h"
-#include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
 #include <score/utility.hpp>
@@ -129,7 +129,7 @@ auto FlagFileCrawler::Crawl(const EnrichedInstanceIdentifier& enriched_instance_
 
 auto FlagFileCrawler::CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept
     -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
-                              QualityAwareContainer<KnownInstancesContainer>>>
+                                QualityAwareContainer<KnownInstancesContainer>>>
 {
     constexpr auto kAddWatch = true;
     return CrawlAndWatchImpl(enriched_instance_identifier, kAddWatch);
@@ -144,7 +144,7 @@ auto FlagFileCrawler::CrawlAndWatch(const EnrichedInstanceIdentifier& enriched_i
 auto FlagFileCrawler::CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enriched_instance_identifier,
                                         const bool add_watch) noexcept
     -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
-                              QualityAwareContainer<KnownInstancesContainer>>>
+                                QualityAwareContainer<KnownInstancesContainer>>>
 {
     EnrichedInstanceIdentifier quality_unaware_enriched_instance_identifier{enriched_instance_identifier,
                                                                             QualityType::kInvalid};
@@ -161,7 +161,8 @@ auto FlagFileCrawler::CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enrich
             score::mw::log::LogError("lola") << "Could not add watch to instance identifier";
             return MakeUnexpected(ComErrc::kBindingFailure, "Could not add watch to main search directory");
         }
-        score::cpp::ignore = watch_descriptors.emplace(watch_descriptor.value(), quality_unaware_enriched_instance_identifier);
+        score::cpp::ignore =
+            watch_descriptors.emplace(watch_descriptor.value(), quality_unaware_enriched_instance_identifier);
     }
 
     std::vector<EnrichedInstanceIdentifier> quality_unaware_identifiers_to_check{};
@@ -213,7 +214,7 @@ auto FlagFileCrawler::CrawlAndWatchImpl(const EnrichedInstanceIdentifier& enrich
 auto FlagFileCrawler::CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& enriched_instance_identifier,
                                              const std::uint8_t max_number_of_retries) noexcept
     -> score::Result<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
-                              QualityAwareContainer<KnownInstancesContainer>>>
+                                QualityAwareContainer<KnownInstancesContainer>>>
 {
     constexpr std::chrono::milliseconds wait_between_retries{50U};
 
@@ -230,8 +231,8 @@ auto FlagFileCrawler::CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& e
 
         current_retry_count++;
         score::mw::log::LogWarn("lola") << "CrawlAndWatch failed with error" << crawl_and_watch_result.error()
-                                      << ". Retry attempt (" << current_retry_count << "/" << max_number_of_retries
-                                      << ").";
+                                        << ". Retry attempt (" << current_retry_count << "/" << max_number_of_retries
+                                        << ").";
         std::this_thread::sleep_for(wait_between_retries);
     }
 
@@ -239,7 +240,7 @@ auto FlagFileCrawler::CrawlAndWatchWithRetry(const EnrichedInstanceIdentifier& e
     // and the retry loop will always fill crawl_and_watch_error on CrawlAndWatch failure.
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(crawl_and_watch_error.has_value());
     score::mw::log::LogError("lola") << "CrawlAndWatch failed with error" << crawl_and_watch_error.value()
-                                   << "after all retries.";
+                                     << "after all retries.";
     return MakeUnexpected<std::tuple<std::unordered_map<os::InotifyWatchDescriptor, EnrichedInstanceIdentifier>,
                                      QualityAwareContainer<KnownInstancesContainer>>>(
         std::move(crawl_and_watch_error).value());
@@ -311,7 +312,7 @@ auto FlagFileCrawler::GatherExistingInstanceDirectories(
             enriched_instance_identifier.GetInstanceIdentifier(),
             ServiceInstanceId{LolaServiceInstanceId{instance_id_result.value().GetId()}}};
         score::cpp::ignore = enriched_instance_identifiers.emplace_back(std::move(found_enriched_instance_identifier),
-                                                                 ParseQualityTypeFromString(filename));
+                                                                        ParseQualityTypeFromString(filename));
     }
     return enriched_instance_identifiers;
 }

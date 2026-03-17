@@ -187,10 +187,10 @@ TEST(EventSubscriptionControlDeathTest, CompareExchangeBehaviour_Unsubscribe_Ret
 
         EventSubscriptionControl::SubscriberCountType max_subscribers{3};
         auto num_retries = 2 * max_subscribers;
-        detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock> unit{
-            20, 3, true};
-        EventSubscriptionControlAttorney<
-            detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock>>
+        detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock>
+            unit{20, 3, true};
+        EventSubscriptionControlAttorney<detail_event_subscription_control::EventSubscriptionControlImpl<
+            score::memory::shared::AtomicIndirectorMock>>
             attorney{unit};
 
         // Given the unit has currently one subscriber and 5 subscribed slots

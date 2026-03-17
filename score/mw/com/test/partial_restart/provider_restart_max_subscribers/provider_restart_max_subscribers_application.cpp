@@ -129,7 +129,7 @@ int DoProviderRestart(score::cpp::stop_token test_stop_token,
         [&consumer_checkpoint_control, is_proxy_connected_during_restart, test_stop_token, argc, argv]() {
             const std::size_t max_number_subscribers{3U};
             score::mw::com::test::ConsumerParameters consumer_paramaters{is_proxy_connected_during_restart,
-                                                                       max_number_subscribers};
+                                                                         max_number_subscribers};
 
             score::mw::com::test::ConsumerActions consumer_actions{
                 consumer_checkpoint_control, test_stop_token, argc, argv, consumer_paramaters};

@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_SKELETON_H
 #define SCORE_MW_COM_IMPL_BINDINGS_MOCK_BINDING_SKELETON_H
 
-#include "score/result/result.h"
 #include "score/mw/com/impl/skeleton_binding.h"
+#include "score/result/result.h"
 
 #include "gmock/gmock.h"
 

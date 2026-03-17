@@ -64,11 +64,11 @@ void EventDataControlCompositeAttorney::SetQmControlDisconnected(const bool expe
 std::pair<EventSlotStatus, score::cpp::optional<EventSlotStatus>> EventDataControlCompositeAttorney::GetSlotStatus(
     const SlotIndexType slot_index) const noexcept
 {
-    return {
-        EventSlotStatus(event_data_control_composite_.asil_qm_control_->state_slots_[slot_index]),
-        event_data_control_composite_.asil_b_control_ != nullptr
-            ? score::cpp::optional<EventSlotStatus>(event_data_control_composite_.asil_b_control_->state_slots_[slot_index])
-            : score::cpp::optional<EventSlotStatus>{}};
+    return {EventSlotStatus(event_data_control_composite_.asil_qm_control_->state_slots_[slot_index]),
+            event_data_control_composite_.asil_b_control_ != nullptr
+                ? score::cpp::optional<EventSlotStatus>(
+                      event_data_control_composite_.asil_b_control_->state_slots_[slot_index])
+                : score::cpp::optional<EventSlotStatus>{}};
 }
 
 EventDataControlAttorney::EventDataControlAttorney(EventDataControl& event_data_control) noexcept
@@ -76,7 +76,8 @@ EventDataControlAttorney::EventDataControlAttorney(EventDataControl& event_data_
 {
 }
 
-void EventDataControlAttorney::PrepareAllocateNextSlot(const score::cpp::optional<SlotIndexType> expected_result) noexcept
+void EventDataControlAttorney::PrepareAllocateNextSlot(
+    const score::cpp::optional<SlotIndexType> expected_result) noexcept
 {
     const auto slot_index =
         expected_result.has_value() ? expected_result.value() : std::numeric_limits<SlotIndexType>::max();
@@ -105,7 +106,8 @@ void EventDataControlAttorney::PrepareReferenceNextEvent(const score::cpp::optio
                                                          const EventSlotStatus::EventTimeStamp last_search_time,
                                                          const EventSlotStatus::EventTimeStamp upper_limit) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(upper_limit > last_search_time, "upper_limit needs to be larger than last_search_time");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(upper_limit > last_search_time,
+                                            "upper_limit needs to be larger than last_search_time");
     const auto number_state_slots = event_data_control_.state_slots_.size();
     // default constructed invalid status slot
     const EventSlotStatus invalid_status{};
@@ -127,7 +129,7 @@ void EventDataControlAttorney::PrepareGetNumNewEvents(const std::size_t expected
                                                       const EventSlotStatus::EventTimeStamp reference_time) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(expected_result <= event_data_control_.state_slots_.size(),
-                       "Can't expect to get more new events back, than slots exist!");
+                                            "Can't expect to get more new events back, than slots exist!");
 
     const auto number_state_slots = event_data_control_.state_slots_.size();
     // default constructed invalid status slot

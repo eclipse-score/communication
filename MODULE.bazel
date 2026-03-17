@@ -27,6 +27,9 @@ bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
 gcc_toolchains.toolchain(
     name = "gcc_toolchain_x86_64",
+    extra_cxxflags = [
+        "-fdiagnostics-color=always",  # Adds copt to always use coloring in build output
+    ],
     extra_ldflags = [
         "-lstdc++",
         "-lrt",
@@ -54,6 +57,14 @@ score_gcc.toolchain(
     version = "12.2.0",
 )
 score_gcc.toolchain(
+    name = "score_gcc_aarch64_toolchain",
+    target_cpu = "aarch64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
+score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
     sdp_version = "8.0.0",
     target_cpu = "x86_64",
@@ -71,6 +82,7 @@ score_gcc.toolchain(
 )
 use_repo(
     score_gcc,
+    "score_gcc_aarch64_toolchain",
     "score_gcc_x86_64_toolchain",
     "score_qcc_aarch64_toolchain",
     "score_qcc_x86_64_toolchain",
@@ -181,12 +193,11 @@ bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
 
 bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
-
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
+    commit = "4f28899228fb3ad0126897876f147ca15026151e",
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
-    commit = "4f28899228fb3ad0126897876f147ca15026151e"
 )
 
 download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
@@ -231,12 +242,14 @@ git_override(
     commit = "052c2f271be4239f97182b164f4903b8c88d6c72",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
+
 bazel_dep(name = "score_logging", version = "0.1.0")
 git_override(
     module_name = "score_logging",
     commit = "38e8762881d512c89ae5c2e5e5238fd791d327df",
     remote = "https://github.com/eclipse-score/logging.git",
 )
+
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 
 # Doxygen extension for documentation generation

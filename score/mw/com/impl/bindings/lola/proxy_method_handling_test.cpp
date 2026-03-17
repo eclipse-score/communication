@@ -348,10 +348,10 @@ TEST_F(ProxyMethodHandlingFixture, CreatesSharedMemoryWithUserPermissionsContain
                 EXPECT_EQ(user_permissions_map->size(), 2U);
                 EXPECT_THAT(*user_permissions_map,
                             Contains(Pair<score::os::Acl::Permission, std::vector<uid_t>>(os::Acl::Permission::kRead,
-                                                                                        {kDummyUid})));
+                                                                                          {kDummyUid})));
                 EXPECT_THAT(*user_permissions_map,
                             Contains(Pair<score::os::Acl::Permission, std::vector<uid_t>>(os::Acl::Permission::kWrite,
-                                                                                        {kDummyUid})));
+                                                                                          {kDummyUid})));
 
                 return mock_method_memory_resource_;
             })));
@@ -488,7 +488,9 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
 
     // Expecting that SubscribeServiceMethod will be called once in SetupMethods and a second time in the find service
     // handler when the service has been reoffered which succeeds
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).Times(2).WillRepeatedly(Return(score::cpp::blank{}));
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
+        .Times(2)
+        .WillRepeatedly(Return(score::cpp::blank{}));
 
     // Given that SetupMethods was called
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
@@ -881,7 +883,8 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodsThatAreNotInTheConfigurationTe
 
     // When calling SetupMethods with a ProxyMethod name which does not exist in the
     // configuration Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods({"SomeInvalidMethodName"}));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          proxy_->SetupMethods({"SomeInvalidMethodName"}));
 }
 
 TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInConfigurationTerminates)

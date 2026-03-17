@@ -807,6 +807,7 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodTerminatesOnFailiur
     ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
 
     // When we try to update the even but use a wrong name, then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateMethod("wrong_method_name", method_0_));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        ProxyBaseView{proxy_}.UpdateMethod("wrong_method_name", method_0_));
 }
 }  // namespace score::mw::com::impl

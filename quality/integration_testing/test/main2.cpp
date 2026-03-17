@@ -1,5 +1,5 @@
 /********************************************************************************
-* Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include <thread>
 #include <fstream>
+#include <thread>
 
 int main()
 {

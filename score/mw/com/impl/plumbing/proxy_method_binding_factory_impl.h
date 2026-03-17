@@ -102,13 +102,14 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
         if (parent_binding == nullptr)
         {
             score::mw::log::LogError("lola") << "Proxy Method could not be created because parent proxy "
-                                              "binding is a nullptr.";
+                                                "binding is a nullptr.";
             return nullptr;
         }
 
         const auto instance_id = parent_handle.GetInstanceId();
         const auto* const lola_service_instance_id = std::get_if<LolaServiceInstanceId>(&(instance_id.binding_info_));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr, "ServiceInstanceId does not contain lola binding.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
+                                                    "ServiceInstanceId does not contain lola binding.");
 
         constexpr auto element_type{ServiceElementType::METHOD};
 

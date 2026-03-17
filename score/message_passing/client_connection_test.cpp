@@ -349,7 +349,8 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingWhileConnecting)
     EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
         .WillOnce([this, &connection](auto&&) {
             StopConnectionInProgress(connection);
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));  // this error code would be ignored
+            return score::cpp::make_unexpected(
+                score::os::Error::createFromErrno(EIO));  // this error code would be ignored
         });
     ExpectCleanUpOwner(connection);
     InvokeConnectCommand();
@@ -366,7 +367,8 @@ TEST_F(ClientConnectionTest, TryingToSyncConnectOnceStoppingWhileConnecting)
     EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
         .WillOnce([this, &connection](auto&&) {
             StopConnectionInProgress(connection);
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));  // this error code would be ignored
+            return score::cpp::make_unexpected(
+                score::os::Error::createFromErrno(EIO));  // this error code would be ignored
         });
     ExpectCleanUpOwner(connection);
 

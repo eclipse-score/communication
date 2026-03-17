@@ -125,10 +125,10 @@ TEST_F(CommonEventTracingLocalTraceDataFixture, CallingTraceDataWillDispatchToBi
 
     // When calling TraceData with local data chunk
     score::cpp::ignore = TraceData(service_element_instance_identifier_view_,
-                            trace_point_,
-                            binding_type_,
-                            local_data_chunk_,
-                            trace_point_data_id_);
+                                   trace_point_,
+                                   binding_type_,
+                                   local_data_chunk_,
+                                   trace_point_data_id_);
 }
 
 TEST_F(CommonEventTracingLocalTraceDataFixture, CallingTraceDataWillErrorIfBindingReturnsError)
@@ -158,10 +158,10 @@ TEST_F(CommonEventTracingLocalTraceDataDeathTest, CallingTraceDataWhenTracingRun
     // When calling TraceData with local data chunk
     // Then the program terminates
     EXPECT_DEATH(score::cpp::ignore = TraceData(service_element_instance_identifier_view_,
-                                         trace_point_,
-                                         binding_type_,
-                                         local_data_chunk_,
-                                         trace_point_data_id_),
+                                                trace_point_,
+                                                binding_type_,
+                                                local_data_chunk_,
+                                                trace_point_data_id_),
                  ".*");
 }
 
@@ -200,12 +200,12 @@ TEST_F(CommonEventTracingShmTraceDataFixture, CallingTraceDataWillDispatchToBind
 
     // When calling TraceShmData with local data chunk
     score::cpp::ignore = TraceShmData(binding_type_,
-                               service_element_tracing_data_,
-                               service_element_instance_identifier_view_,
-                               trace_point_,
-                               trace_point_data_id_,
-                               std::move(type_erased_sample_ptr_),
-                               shm_data_chunk_);
+                                      service_element_tracing_data_,
+                                      service_element_instance_identifier_view_,
+                                      trace_point_,
+                                      trace_point_data_id_,
+                                      std::move(type_erased_sample_ptr_),
+                                      shm_data_chunk_);
 }
 
 TEST_F(CommonEventTracingShmTraceDataFixture, CallingTraceDataWillReturnErrorIfBindingReturnsError)
@@ -237,12 +237,12 @@ TEST_F(CommonEventTracingShmTraceDataDeathTest, CallingTraceDataWhenTracingRunti
     // When calling TraceData with a shm data chunk
     // Then the program terminates
     EXPECT_DEATH(score::cpp::ignore = TraceShmData(binding_type_,
-                                            service_element_tracing_data_,
-                                            service_element_instance_identifier_view_,
-                                            trace_point_,
-                                            trace_point_data_id_,
-                                            std::move(type_erased_sample_ptr_),
-                                            shm_data_chunk_),
+                                                   service_element_tracing_data_,
+                                                   service_element_instance_identifier_view_,
+                                                   trace_point_,
+                                                   trace_point_data_id_,
+                                                   std::move(type_erased_sample_ptr_),
+                                                   shm_data_chunk_),
                  ".*");
 }
 

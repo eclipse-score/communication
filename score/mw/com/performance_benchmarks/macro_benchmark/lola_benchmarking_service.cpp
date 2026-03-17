@@ -47,7 +47,8 @@ bool RunService(const ServiceConfig& config, score::cpp::stop_token test_stop_to
     }
 
     auto& proxy_is_done_flag = proxy_is_done_flag_optional.value();
-    const score::mw::com::test::SharedMemoryObjectGuard<CounterType> interprocess_notification_guard{proxy_is_done_flag};
+    const score::mw::com::test::SharedMemoryObjectGuard<CounterType> interprocess_notification_guard{
+        proxy_is_done_flag};
 
     // zero out the value before starting the service. If this object was not cleaned up propperly an old file from
     // previous run might exist which will hold a value. This will cause bugs.
@@ -77,7 +78,7 @@ bool RunService(const ServiceConfig& config, score::cpp::stop_token test_stop_to
     if (!offer_service_result.has_value())
     {
         score::mw::log::LogInfo(kLogContext) << "Could not offer Service."
-                                           << "Error: " << offer_service_result.error();
+                                             << "Error: " << offer_service_result.error();
         return false;
     }
 
