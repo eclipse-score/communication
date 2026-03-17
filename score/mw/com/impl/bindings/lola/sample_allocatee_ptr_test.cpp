@@ -41,7 +41,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
     FakeMemoryResource memory_{};
     EventDataControl control_block_{kMaxSlots, memory_, kMaxSubscribers};
     SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{control_block_};
-    EventDataControlComposite<> control_composite_{&skeleton_event_data_control_local_, nullptr};
+    EventDataControlComposite<> control_composite_{skeleton_event_data_control_local_, nullptr, nullptr};
 };
 
 TEST_F(SampleAllocateePtrFixture, PtrContainingInvalidSlotIsNotDestroyingAnything)
