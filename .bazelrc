@@ -90,7 +90,11 @@ test:clang-tidy --output_groups=+rules_lint_report
 test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 
+# ==============================================================================
+# Sanitizer Configurations
+# ==============================================================================
 import quality/sanitizer/sanitizer.bazelrc
+# ==============================================================================
 
 common:codeql --platform_suffix=codeql
 common:codeql --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
