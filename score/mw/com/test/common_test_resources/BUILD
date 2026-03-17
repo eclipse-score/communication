@@ -13,6 +13,7 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test")
 
 cc_library(
     name = "bigdata_type",
@@ -126,6 +127,35 @@ cc_library(
     deps = [
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_library(
+    name = "command_line_parser",
+    srcs = [
+        "command_line_parser.cpp",
+    ],
+    hdrs = [
+        "command_line_parser.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:test_error_domain",
+        "@boost.program_options",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "command_line_parser_test",
+    srcs = [
+        "command_line_parser_test.cpp",
+    ],
+    deps = [
+        ":command_line_parser",
     ],
 )
 
