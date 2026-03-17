@@ -32,13 +32,15 @@ class MyEvent final : public SkeletonEventBinding<SampleType>
         return {};
     }
     void PrepareStopOffer() noexcept override {}
-    ResultBlank Send(const SampleType&,
-                     score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
+    ResultBlank Send(
+        const SampleType&,
+        score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
     {
         return {};
     }
-    ResultBlank Send(SampleAllocateePtr<SampleType>,
-                     score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
+    ResultBlank Send(
+        SampleAllocateePtr<SampleType>,
+        score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
     {
         return {};
     }
