@@ -219,7 +219,7 @@ EventDataControlComposite<> SkeletonMemoryManager::CreateEventControlComposite(
     // coverity[autosar_cpp14_m7_5_1_violation]
     // coverity[autosar_cpp14_m7_5_2_violation]
     // coverity[autosar_cpp14_a3_8_1_violation]
-    return EventDataControlComposite{&skeleton_event_data_control_local_qm.get().data_control,
+    return EventDataControlComposite{skeleton_event_data_control_local_qm.get().data_control,
                                      control_asil_local_result,
                                      proxy_event_data_control_local};
 }
