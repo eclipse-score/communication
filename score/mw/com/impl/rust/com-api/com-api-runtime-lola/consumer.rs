@@ -282,7 +282,7 @@ pub struct SubscribableImpl<T> {
 impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &'static str, instance_info: LolaConsumerInfo) -> Result<Self> {
-        log::debug!(
+        log::info!(
             "Creating SubscribableImpl for identifier: {} with interface_id: {}",
             identifier,
             instance_info.interface_id
@@ -298,7 +298,7 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
         })
     }
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
-        log::debug!(
+        log::info!(
             "Subscribing to event: {} for identifier: {} with max_num_samples: {}",
             self.identifier,
             self.instance_info.interface_id,
@@ -675,7 +675,7 @@ where
     type ServiceEnumerator = Vec<SampleConsumerBuilder<I>>;
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
-        log::debug!(
+        log::info!(
             "Starting synchronous service discovery for interface_id: {} with instance_specifier: {}",
             I::INTERFACE_ID,
             format!("{:?}", self.instance_specifier)
@@ -716,7 +716,7 @@ where
         &self,
     ) -> impl Future<Output = Result<Self::ServiceEnumerator>> + Send {
         let instance_specifier = self.instance_specifier.clone();
-        log::debug!(
+        log::info!(
             "Starting asynchronous service discovery for interface_id: {} with instance_specifier: {}",
             I::INTERFACE_ID,
             format!("{:?}", instance_specifier)

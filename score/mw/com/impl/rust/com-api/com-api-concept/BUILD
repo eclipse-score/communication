@@ -30,6 +30,7 @@ rust_library(
     ],
     deps = [
         "@score_baselibs_rust//src/containers",
+        "@score_baselibs_rust//src/log/score_log",
     ],
 )
 

@@ -176,7 +176,7 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     //unoffer returns producer back, so if needed it can be used further
     match monitor.producer.unoffer() {
         Ok(_) => log::info!("Successfully unoffered the service"),
-        Err(e) => log::error!("Failed to unoffer: {}", format!("{:?}", e)),
+        Err(e) => log::error!("Failed to unoffer: {:?}", e),
     }
     log::info!("runtime execution completed");
 }
@@ -191,8 +191,9 @@ fn init_lola_runtime_builder() -> LolaRuntimeBuilderImpl {
 }
 
 fn init_logging() {
-    // Try to load logging config from environment variable, or use default relative path
-    let config_path = std::env::var("MW_LOG_CONFIG_FILE").unwrap();
+    // Try to load logging config from environment variable.
+    let config_path = std::env::var("MW_LOG_CONFIG_FILE")
+        .expect("config file not set in environment variable MW_LOG_CONFIG_FILE");
 
     // Initialize ScoreLogBridge as a default logger.
     ScoreLogBridgeBuilder::new()
@@ -337,7 +338,7 @@ mod test {
                 pressure: 1.0 + i as f32,
             });
             sample.send().unwrap();
-            log::info!("Sent tire data: {}", format!("{:?}", 1.0 + i as f32));
+            log::info!("Sent tire data: {:.2}", 1.0 + i as f32);
             tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
         }
         offered_producer
@@ -364,7 +365,7 @@ mod test {
                     }
                 }
                 Err(e) => {
-                    log::error!("[RECEIVER] Error receiving data: {}", format!("{:?}", e));
+                    log::error!("[RECEIVER] Error receiving data: {:?}", e);
                     SampleContainer::new(5)
                 }
             }
@@ -405,7 +406,7 @@ mod test {
 
         match producer.unoffer() {
             Ok(_) => log::info!("Successfully unoffered the service"),
-            Err(e) => log::error!("Failed to unoffer: {}", format!("{:?}", e)),
+            Err(e) => log::error!("Failed to unoffer: {:?}", e),
         }
 
         log::info!("=== Async subscription test with Lola runtime completed ===\n");

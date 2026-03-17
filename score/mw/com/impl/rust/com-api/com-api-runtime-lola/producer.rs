@@ -66,6 +66,11 @@ impl ProviderInfo for LolaProviderInfo {
             );
             return Err(Error::Fail);
         }
+        log::info!(
+            "Service offered successfully for interface: {} with instance specifier: {}",
+            self.interface_id,
+            self.instance_specifier.as_ref()
+        );
         Ok(())
     }
 
@@ -73,6 +78,11 @@ impl ProviderInfo for LolaProviderInfo {
         //SAFETY: it is safe as we are passing valid skeleton handle to stop offer service
         // the skeleton handle is created during building the provider info instance
         unsafe { bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle) };
+        log::info!(
+            "Service stopped successfully for interface: {} with instance specifier: {}",
+            self.interface_id,
+            self.instance_specifier.as_ref()
+        );
         Ok(())
     }
 }
@@ -196,7 +206,7 @@ where
             log::error!("Failed to send sample");
             return Err(Error::Fail);
         }
-        log::info!("Sample sent successfully");
+        log::debug!("Sample sent successfully");
         Ok(())
     }
 }
@@ -421,6 +431,7 @@ where
 
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier);
+        log::info!("Publisher created for event: {}", identifier);
 
         Ok(Self {
             identifier: identifier.to_string(),
