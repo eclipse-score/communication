@@ -1,0 +1,75 @@
+###############################################################################
+#
+# QNX 8.0 Unit Test Image for x86_64
+#
+###############################################################################
+
+[-optional +autolink]
+
+[image=0x3600000]
+[virtual=x86_64,multiboot] boot = {
+    startup-x86 -v -D8250..115200
+    PATH=/proc/boot
+    LD_LIBRARY_PATH=/proc/boot
+    procnto-smp-instr
+}
+
+[+script] startup-script = {
+    procmgr_symlink /dev/shmem /tmp
+
+    display_msg Welcome to QNX OS 8.0 on x86_64 for SCORE Unit Tests
+
+    # These env variables get inherited by all programs which follow
+    SYSNAME=nto
+    TERM=qansi
+
+    devc-ser8250 &
+    waitfor /dev/ser1
+    reopen /dev/ser1
+
+    startup.sh
+
+    {RUN_BINARY}
+}
+
+# Instead of [+include], inline the essential tools directly
+# dynamic loader
+/usr/lib/ldqnx-64.so.2=ldqnx-64.so.2
+
+# shared libraries (QNX 8.0 x86_64 - minimal set)
+cam-disk.so
+fs-qnx6.so
+io-blk.so
+libc++.so.2
+libc.so
+libc.so.6
+libcam.so.2
+libgcc_s.so.1
+libm.so
+libsecpol.so.1
+libz.so
+
+# essential tools
+devc-ser8250
+ksh
+pipe
+slogger2
+toybox
+
+# links
+[type=link] /bin/sh=/proc/boot/ksh
+[type=link] cat=toybox
+[type=link] echo=toybox
+[type=link] ls=toybox
+
+# Custom scripts
+startup.sh=${STARTUP_SCRIPT}
+run_test.sh=${RUN_TEST_SCRIPT}
+configure_persistency.sh=${CONFIGURE_PERSISTENCY_SCRIPT}
+
+# Include test package filesystem
+/=${TESTS}
+
+# Include application binaries (if provided via app_tar parameter)
+# This line is optional - mkifs will ignore it if ${APP} is not defined in tars dictionary
+[-optional] /app=${APP}
