@@ -130,6 +130,25 @@ cc_library(
 )
 
 cc_library(
+    name = "command_line_parser",
+    srcs = [
+        "command_line_parser.cpp",
+    ],
+    hdrs = [
+        "command_line_parser.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:test_error_domain",
+        "@boost.program_options",
+    ],
+)
+
+cc_library(
     name = "sctf_test_runner",
     srcs = [
         "sctf_test_runner.cpp",
