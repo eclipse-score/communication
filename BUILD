@@ -24,7 +24,7 @@ compile_pip_requirements(
     ],
     requirements_txt = "requirements_lock.txt",
 )
-
+# FOO
 copyright_checker(
     name = "copyright",
     srcs = [
