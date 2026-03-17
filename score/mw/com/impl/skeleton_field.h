@@ -29,6 +29,7 @@
 #include <score/assert.hpp>
 
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -37,9 +38,9 @@ namespace score::mw::com::impl
 {
 
 template <typename SampleDataType,
-        const bool EnableSet = false,
-        const bool EnableNotifier = false,
-        const bool EnableGet = false>
+          const bool EnableSet = false,
+          const bool EnableNotifier = false,
+          const bool EnableGet = false>
 class SkeletonField : public SkeletonFieldBase
 {
   public:
@@ -224,11 +225,37 @@ class SkeletonField : public SkeletonFieldBase
         return !is_set_handler_registered_;
     }
 
+    // Get handler registration
+    // SFINAE-gated: only exists when EnableGet == true
+    template <bool EG = EnableGet, typename std::enable_if<EG, int>::type = 0>
+    void RegisterGetHandler()
+    {
+        if (get_method_ == nullptr)
+        {
+            return;
+        }
+        const auto result = get_method_.get()->RegisterHandler([this]() -> Result<FieldType> {
+            // need to serialize access to Get. In case of concurrent Get calls,
+            // we want to ensure that they are processed sequentially.
+            std::lock_guard<std::mutex> lock{get_handler_mutex_};
+            return SkeletonEventView<FieldType>{*GetTypedEvent()}.GetLatestSample();
+        });
+        if (!result.has_value())
+        {
+            score::mw::log::LogError("lola")
+                << "RegisterGetHandler: failed to register get handler: " << result.error();
+        }
+    }
+
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
 
     // Tracks whether RegisterSetHandler() has been called.
     bool is_set_handler_registered_;
+
+    // Zero-cost storage: only a real mutex when EnableGet=true, otherwise an empty zero-size type.
+    using GetHandlerMutexType = std::conditional_t<EnableGet, std::mutex, detail::EnableNeitherTag>;
+    GetHandlerMutexType get_handler_mutex_{};
 
     std::unique_ptr<SkeletonMethod<SetMethodSignature>> set_method_;
     std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_;
@@ -238,8 +265,8 @@ class SkeletonField : public SkeletonFieldBase
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
 SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
-                                                                        const std::string_view field_name,
-                                                                        detail::EnableBothTag)
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableBothTag)
     : SkeletonField{
           parent,
           std::make_unique<SkeletonEvent<FieldType>>(parent,
@@ -267,8 +294,8 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonFie
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
 SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
-                                                                        const std::string_view field_name,
-                                                                        detail::EnableGetOnlyTag)
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableGetOnlyTag)
     : SkeletonField{
           parent,
           std::make_unique<SkeletonEvent<FieldType>>(parent,
@@ -292,8 +319,8 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonFie
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
 SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
-                                                                        const std::string_view field_name,
-                                                                        detail::EnableSetOnlyTag)
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableSetOnlyTag)
     : SkeletonField{
           parent,
           std::make_unique<SkeletonEvent<FieldType>>(parent,
@@ -317,8 +344,8 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonFie
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
 SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
-                                                                        const std::string_view field_name,
-                                                                        detail::EnableNeitherTag)
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableNeitherTag)
     : SkeletonField{
           parent,
           std::make_unique<SkeletonEvent<FieldType>>(parent,
@@ -364,6 +391,10 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonFie
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
+    if constexpr (EnableGet)
+    {
+        RegisterGetHandler();
+    }
 }
 
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
@@ -449,8 +480,8 @@ Result<void> SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>
 /// This function cannot be currently called to set the initial value of a field as the shared memory must be first
 /// set up in the Skeleton::PrepareOffer() before the user can obtain / use a SampleAllocateePtr.
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
-Result<SampleAllocateePtr<SampleDataType>> SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::
-    Allocate() noexcept
+Result<SampleAllocateePtr<SampleDataType>>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::Allocate() noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
