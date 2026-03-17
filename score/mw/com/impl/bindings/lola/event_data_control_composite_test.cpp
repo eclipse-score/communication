@@ -107,7 +107,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_qm_local_.has_value());
 
         auto* const asil_control = skeleton_asil_local_.has_value() ? &skeleton_asil_local_.value() : nullptr;
-        unit_ = std::make_unique<EventDataControlComposite<>>(&skeleton_qm_local_.value(), asil_control, nullptr);
+        unit_ = std::make_unique<EventDataControlComposite<>>(skeleton_qm_local_.value(), asil_control, nullptr);
         return *this;
     }
 
@@ -120,7 +120,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
 
         auto* const asil_control = skeleton_asil_local_.has_value() ? &skeleton_asil_local_.value() : nullptr;
         unit_mock_ = std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(
-            &skeleton_qm_local_.value(), asil_control, nullptr);
+            skeleton_qm_local_.value(), asil_control, nullptr);
 
         return *this;
     }
@@ -597,7 +597,7 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     SkeletonEventDataControlLocalView skeleton_asil_local{asil};
     SkeletonEventDataControlLocalView skeleton_qm_local{qm};
 
-    EventDataControlComposite unit{&skeleton_qm_local, &skeleton_asil_local, nullptr};
+    EventDataControlComposite unit{skeleton_qm_local, &skeleton_asil_local, nullptr};
 
     std::mutex allocated_slots_mutex{};
     std::vector<ControlSlotCompositeIndicator> allocated_slots{};
@@ -765,7 +765,7 @@ TEST_F(EventDataControlCompositeFixture, GetProxyEventDataControlLocalView)
     EventDataControl qm{kMaxSlots, memory_, kMaxSubscribers};
     SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
     ProxyEventDataControlLocalView<> proxy_qm_local{qm};
-    EventDataControlComposite<> unit{&skeleton_qm_local, &proxy_qm_local};
+    EventDataControlComposite<> unit{skeleton_qm_local, &proxy_qm_local};
 
     // When getting the ASIL-B event data control
     auto& returned_proxy_qm_local = unit.GetProxyEventDataControlLocalView();
@@ -782,7 +782,7 @@ TEST_F(EventDataControlCompositeFixture, GetProxyEventDataControlLocalViewWithAs
     SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
     SkeletonEventDataControlLocalView<> skeleton_asil_b_local{asil_b};
     ProxyEventDataControlLocalView<> proxy_qm_local{qm};
-    EventDataControlComposite<> unit{&skeleton_qm_local, &skeleton_asil_b_local, &proxy_qm_local};
+    EventDataControlComposite<> unit{skeleton_qm_local, &skeleton_asil_b_local, &proxy_qm_local};
 
     // When getting the ASIL-B event data control
     auto& returned_proxy_qm_local = unit.GetProxyEventDataControlLocalView();
@@ -797,16 +797,11 @@ TEST_F(EventDataControlCompositeFixture,
     // Given an EventDataControlComposite constructed without a ProxyEventDataControlLocalView
     EventDataControl qm{kMaxSlots, memory_, kMaxSubscribers};
     SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
-    EventDataControlComposite<> unit{&skeleton_qm_local, nullptr};
+    EventDataControlComposite<> unit{skeleton_qm_local, nullptr};
 
     // When getting the ASIL-B event data control
     // Then the program terminates
     EXPECT_DEATH(score::cpp::ignore = unit.GetProxyEventDataControlLocalView(), ".*");
-}
-
-TEST(EventDataControlCompositeDeathTest, DiesOnConstructionWithNullptr)
-{
-    EXPECT_DEATH(EventDataControlComposite(nullptr, nullptr), ".*");
 }
 
 using EventDataControlCompositeGetTimestampFixture = EventDataControlCompositeFixture;
