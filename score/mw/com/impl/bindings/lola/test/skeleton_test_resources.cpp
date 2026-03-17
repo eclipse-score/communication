@@ -221,23 +221,6 @@ SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
             }));
     ON_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _))
         .WillByDefault(Return(data_shared_memory_resource_mock_));
-
-    // Construct ServiceDataControl / Storage using mocked memory resources
-    service_data_control_qm_ = std::make_unique<ServiceDataControl>(
-        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_QM));
-    service_data_control_asil_b_ = std::make_unique<ServiceDataControl>(
-        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_B));
-    service_data_storage_ = std::make_unique<ServiceDataStorage>(
-        CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId));
-
-    // Default behaviour for get the usable base addresses of the mocked memory resources using the constructed
-    // ServiceDataControl / Storage created above.
-    ON_CALL(*control_qm_shared_memory_resource_mock_, getUsableBaseAddress())
-        .WillByDefault(Return(static_cast<void*>(service_data_control_qm_.get())));
-    ON_CALL(*control_asil_b_shared_memory_resource_mock_, getUsableBaseAddress())
-        .WillByDefault(Return(static_cast<void*>(service_data_control_asil_b_.get())));
-    ON_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
-        .WillByDefault(Return(static_cast<void*>(service_data_storage_.get())));
 }
 
 SkeletonMockedMemoryFixture::~SkeletonMockedMemoryFixture()
