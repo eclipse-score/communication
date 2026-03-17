@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -120,6 +121,14 @@ class SkeletonFieldTestFixture : public ::testing::Test
     mock_binding::SkeletonMethod skeleton_field_set_binding_mock_{};
 };
 
+class MyGetEnabledSkeleton : public SkeletonBase
+{
+  public:
+    using SkeletonBase::SkeletonBase;
+
+    SkeletonField<TestSampleType, WithGetter> my_get_field_{*this, kFieldName};
+};
+
 TEST(SkeletonFieldTest, NotCopyable)
 {
     RecordProperty("Verifies", "SCR-18221574");
@@ -170,6 +179,32 @@ TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
     static_assert(std::is_same<typename SkeletonField<TestSampleType, WithGetter, WithNotifier, WithSetter>::FieldType,
                                TestSampleType>::value,
                   "Incorrect FieldType.");
+}
+
+TEST(SkeletonFieldGetHandlerTest, RegisterGetHandlerInvokesGetLatestSampleOnBinding)
+{
+    // Given a runtime, an event binding factory returning a mock event binding,
+    // and a method binding factory returning a mock method binding
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+
+    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
+    auto skeleton_field_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    ON_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_,
+            CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
+        .WillByDefault(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
+
+    SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
+    mock_binding::SkeletonMethod skeleton_method_binding_mock{};
+    ON_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, _))
+        .WillByDefault(
+            Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(skeleton_method_binding_mock))));
+
+    // Then RegisterHandler must be called on the get method binding exactly once during construction
+    EXPECT_CALL(skeleton_method_binding_mock, RegisterHandler(_)).WillOnce(Return(ResultBlank{}));
+
+    // When a skeleton with EnableGet=true field is constructed, RegisterHandler is called automatically
+    MyGetEnabledSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 }
 
 // When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This

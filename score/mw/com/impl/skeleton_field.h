@@ -32,6 +32,7 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -275,6 +276,29 @@ class SkeletonFieldImpl : public SkeletonFieldBase
         }
     }
 
+    /// \brief Registers a get handler into get_method_ so that proxy Get() calls are served automatically.
+    void RegisterGetHandler()
+    {
+        if constexpr (kHasGetter)
+        {
+            if (get_method_ == nullptr)
+            {
+                return;
+            }
+            const auto result = get_method_->RegisterHandler([this]() -> Result<FieldType> {
+                // need to serialize access to Get. In case of concurrent Get calls,
+                // we want to ensure that they are processed sequentially.    
+                std::lock_guard<std::mutex> lock{get_handler_mutex_};
+                return SkeletonEventView<FieldType>{*GetTypedEvent()}.GetLatestSample();
+            });
+            if (!result.has_value())
+            {
+                score::mw::log::LogError("lola")
+                    << "RegisterGetHandler: failed to register get handler: " << result.error();
+            }
+        }
+    }
+
     /// \brief Single private delegating constructor. Both the production and test ctors funnel through here with
     ///        appropriate dispatches (real ones from the Make*IfEnabled helpers, or nullptr).
     SkeletonFieldImpl(SkeletonBase& parent,
@@ -288,6 +312,11 @@ class SkeletonFieldImpl : public SkeletonFieldBase
 
     // Tracks whether RegisterSetHandler() has been called.
     bool is_set_handler_registered_;
+
+    // Zero-cost storage: only a real mutex when kHasGetter=true, otherwise an empty zero-size type.
+    struct NullMutex {};
+    using GetHandlerMutexType = std::conditional_t<kHasGetter, std::mutex, NullMutex>;
+    GetHandlerMutexType get_handler_mutex_{};
 
     std::unique_ptr<SkeletonMethod<SetMethodSignature>> set_method_;
     std::unique_ptr<SkeletonMethod<GetMethodSignature>> get_method_;
@@ -309,6 +338,10 @@ SkeletonFieldImpl<SampleDataType, Tags...>::SkeletonFieldImpl(
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, GetReferenceToMoveable());
+    if constexpr (kHasGetter)
+    {
+        RegisterGetHandler();
+    }
 }
 
 /// \brief FieldType is allocated by the user and provided to the middleware to send. Dispatches to
