@@ -1,0 +1,814 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7001,
+          "events": [
+            { "eventName": "u8_event",   "eventId": 1  },
+            { "eventName": "u16_event",  "eventId": 2  },
+            { "eventName": "u32_event",  "eventId": 3  },
+            { "eventName": "u64_event",  "eventId": 4  },
+            { "eventName": "i8_event",   "eventId": 5  },
+            { "eventName": "i16_event",  "eventId": 6  },
+            { "eventName": "i32_event",  "eventId": 7  },
+            { "eventName": "i64_event",  "eventId": 8  },
+            { "eventName": "f32_event",  "eventId": 9  },
+            { "eventName": "f64_event",  "eventId": 10 },
+            { "eventName": "bool_event", "eventId": 11 }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7002,
+          "events": [
+            { "eventName": "simple_event",  "eventId": 1 },
+            { "eventName": "complex_event", "eventId": 2 },
+            { "eventName": "nested_event",  "eventId": 3 },
+            { "eventName": "point_event",   "eventId": 4 },
+            { "eventName": "point3d_event", "eventId": 5 },
+            { "eventName": "sensor_event",  "eventId": 6 },
+            { "eventName": "vehicle_event", "eventId": 7 }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/score/test/LolaRuntimeTestInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 7003,
+          "events": [
+            { "eventName": "test_event", "eventId": 1 }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/PrimitiveTest/U8/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/U8/Multiple",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 2,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/U16/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 3,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/U16/Multiple",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 4,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/U32/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 5,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/U64/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 6,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/I8/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 7,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/I8/Multiple",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 8,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/I16/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 9,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/I32/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 10,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/I64/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 11,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/F32/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 12,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/F32/Multiple",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 13,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/F64/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 14,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/PrimitiveTest/Bool/Single",
+      "serviceTypeName": "/score/test/PrimitiveInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 15,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "u8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "u64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i8_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i16_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "i64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f32_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "f64_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "bool_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/SimpleStruct/Instance1",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/SimpleStruct/Instance2",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 2,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/ComplexStruct/Instance1",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 3,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/ComplexStruct/Instance2",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 4,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/NestedStruct/Instance1",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 5,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/NestedStruct/Instance2",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 6,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/Point/Instance1",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 7,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/Point/Instance2",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 8,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/Point3D/Instance1",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 9,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/Point3D/Instance2",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 10,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/SensorData/Instance1",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 11,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/SensorData/Instance2",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 12,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/VehicleState/Instance1",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 13,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/UserDefinedTest/VehicleState/Instance2",
+      "serviceTypeName": "/score/test/UserDefinedInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 14,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "simple_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "complex_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "nested_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point_event",   "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "point3d_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "sensor_event",  "numberOfSampleSlots": 10, "maxSubscribers": 3 },
+            { "eventName": "vehicle_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/LolaRuntimeTest/TestService/Instance1",
+      "serviceTypeName": "/score/test/LolaRuntimeTestInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 15,
+          "allowedConsumer": { "QM": [ 4002, 0 ] },
+          "allowedProvider": { "QM": [ 4001, 0 ] },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            { "eventName": "test_event", "numberOfSampleSlots": 10, "maxSubscribers": 3 }
+          ]
+        }
+      ]
+    }
+  ]
+}
