@@ -13,11 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 #define SCORE_MW_COM_IMPL_SKELETON_FIELD_H
 
+#include "score/mw/com/impl/methods/skeleton_method.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/skeleton_field_binding_factory.h"
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_field_base.h"
-#include "score/mw/com/impl/methods/skeleton_method.h"
 
 #include "score/mw/com/impl/mocking/i_skeleton_field.h"
 
@@ -27,6 +27,7 @@
 #include <score/assert.hpp>
 
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -52,9 +53,9 @@ struct EnableNeitherTag
 }  // namespace detail
 
 template <typename SampleDataType,
-        const bool EnableSet = false,
-        const bool EnableNotifier = false,
-        const bool EnableGet = false>
+          const bool EnableSet = false,
+          const bool EnableNotifier = false,
+          const bool EnableGet = false>
 class SkeletonField : public SkeletonFieldBase
 {
   public:
@@ -150,23 +151,23 @@ class SkeletonField : public SkeletonFieldBase
 
     // Set handler registration
     // SFINAE-gated: only exists when EnableSet == true
-    template <typename Callable,
-              bool ES = EnableSet,
-              typename std::enable_if<ES, int>::type = 0>
-    ResultBlank RegisterSetHandler(Callable&& callback) {
+    template <typename Callable, bool ES = EnableSet, typename std::enable_if<ES, int>::type = 0>
+    ResultBlank RegisterSetHandler(Callable&& callback)
+    {
         // Wrap user callback to also call Update() after user validation
-        auto wrapped_callback = [this, user_callback = std::move(callback)]
-                                (FieldType new_value) -> Result<FieldType> {
+        auto wrapped_callback = [this, user_callback = std::move(callback)](FieldType new_value) -> Result<FieldType> {
             // 1. Call user's validation/modification handler
             auto result = user_callback(new_value);
 
-            if (!result.has_value()) {
+            if (!result.has_value())
+            {
                 return result;  // User rejected the value, propagate the error
             }
 
             // 2. User accepted (possibly modified) - update the field
             auto update_result = this->Update(result.value());
-            if (!update_result.has_value()) {
+            if (!update_result.has_value())
+            {
                 return MakeUnexpected(update_result.error());
             }
 
@@ -191,8 +192,31 @@ class SkeletonField : public SkeletonFieldBase
 
     SkeletonEvent<FieldType>* GetTypedEvent() const noexcept;
 
+    // Get handler registration
+    // SFINAE-gated: only exists when EnableGet == true
+    template <bool EG = EnableGet, typename std::enable_if<EG, int>::type = 0>
+    void RegisterGetHandler()
+    {
+        // get_method_ is guaranteed to be unique_ptr here since RegisterGetHandler is SFINAE-gated on EnableGet=true.
+        const auto result = get_method_.get()->RegisterHandler([this]() -> Result<FieldType> {
+            // need to serialize access to Get. In case of concurrent Get calls,
+            // we want to ensure that they are processed sequentially.
+            std::lock_guard<std::mutex> lock{get_handler_mutex_};
+            return SkeletonEventView<FieldType>{*GetTypedEvent()}.GetLatestSample();
+        });
+        if (!result.has_value())
+        {
+            score::mw::log::LogError("lola")
+                << "RegisterGetHandler: failed to register get handler: " << result.error();
+        }
+    }
+
     std::unique_ptr<FieldType> initial_field_value_;
     ISkeletonField<FieldType>* skeleton_field_mock_;
+
+    // Zero-cost storage: only a real mutex when EnableGet=true, otherwise an empty zero-size type.
+    using GetHandlerMutexType = std::conditional_t<EnableGet, std::mutex, detail::EnableNeitherTag>;
+    GetHandlerMutexType get_handler_mutex_{};
 
     // Zero-cost storage: when EnableSet=false the member has type 'detail::EnableSetOnlyTag', which is a zero-size
     // type, so it doesn't actually take up any space in the class. When EnableSet=true, the member has the actual
@@ -202,9 +226,8 @@ class SkeletonField : public SkeletonFieldBase
                                              detail::EnableSetOnlyTag>;
     SetMethodType set_method_;
 
-    using GetMethodType = std::conditional_t<EnableGet,
-                                             std::unique_ptr<SkeletonMethod<Result<FieldType>()>>,
-                                             detail::EnableGetOnlyTag>;
+    using GetMethodType =
+        std::conditional_t<EnableGet, std::unique_ptr<SkeletonMethod<Result<FieldType>()>>, detail::EnableGetOnlyTag>;
     GetMethodType get_method_;
 
     /// \brief Private delegating constructor: EnableSet=true, EnableGet=true.
@@ -239,88 +262,80 @@ class SkeletonField : public SkeletonFieldBase
 /// \brief Public ctor - EnableSet=true, EnableGet=true.
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
-SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(
-    SkeletonBase& parent,
-    const std::string_view field_name,
-    detail::EnableBothTag)
-    : SkeletonField{parent,
-                    std::make_unique<SkeletonEvent<FieldType>>(
-                        parent,
-                        field_name,
-                        SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                            SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
-                            parent,
-                            field_name),
-                        typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
-                    std::make_unique<SkeletonMethod<Result<FieldType>(FieldType)>>(
-                        parent, std::string(field_name) + "_Set"),
-                    std::make_unique<SkeletonMethod<Result<FieldType>()>>(
-                        parent, std::string(field_name) + "_Get"),
-                    field_name}
+SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableBothTag)
+    : SkeletonField{
+          parent,
+          std::make_unique<SkeletonEvent<FieldType>>(parent,
+                                                     field_name,
+                                                     SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
+                                                         SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
+                                                         parent,
+                                                         field_name),
+                                                     typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+          std::make_unique<SkeletonMethod<Result<FieldType>(FieldType)>>(parent, std::string(field_name) + "_Set"),
+          std::make_unique<SkeletonMethod<Result<FieldType>()>>(parent, std::string(field_name) + "_Get"),
+          field_name}
 {
 }
 
 /// \brief Public ctor - EnableSet=false, EnableGet=true.
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
-SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(
-    SkeletonBase& parent,
-    const std::string_view field_name,
-    detail::EnableGetOnlyTag)
-    : SkeletonField{parent,
-                    std::make_unique<SkeletonEvent<FieldType>>(
-                        parent,
-                        field_name,
-                        SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                            SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
-                            parent,
-                            field_name),
-                        typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
-                    std::make_unique<SkeletonMethod<Result<FieldType>()>>(
-                        parent, std::string(field_name) + "_Get"),
-                    field_name}
+SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableGetOnlyTag)
+    : SkeletonField{
+          parent,
+          std::make_unique<SkeletonEvent<FieldType>>(parent,
+                                                     field_name,
+                                                     SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
+                                                         SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
+                                                         parent,
+                                                         field_name),
+                                                     typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+          std::make_unique<SkeletonMethod<Result<FieldType>()>>(parent, std::string(field_name) + "_Get"),
+          field_name}
 {
 }
 
 /// \brief Public ctor - EnableSet=true, EnableGet=false.
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
-SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(
-    SkeletonBase& parent,
-    const std::string_view field_name,
-    detail::EnableSetOnlyTag)
-    : SkeletonField{parent,
-                    std::make_unique<SkeletonEvent<FieldType>>(
-                        parent,
-                        field_name,
-                        SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                            SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
-                            parent,
-                            field_name),
-                        typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
-                    std::make_unique<SkeletonMethod<Result<FieldType>(FieldType)>>(
-                        parent, std::string(field_name) + "_Set"),
-                    field_name}
+SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableSetOnlyTag)
+    : SkeletonField{
+          parent,
+          std::make_unique<SkeletonEvent<FieldType>>(parent,
+                                                     field_name,
+                                                     SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
+                                                         SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
+                                                         parent,
+                                                         field_name),
+                                                     typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+          std::make_unique<SkeletonMethod<Result<FieldType>(FieldType)>>(parent, std::string(field_name) + "_Set"),
+          field_name}
 {
 }
 
 /// \brief Public ctor - EnableSet=false, EnableGet=false.
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
 template <bool ES, bool EG, typename>
-SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(
-    SkeletonBase& parent,
-    const std::string_view field_name,
-    detail::EnableNeitherTag)
-    : SkeletonField{parent,
-                    std::make_unique<SkeletonEvent<FieldType>>(
-                        parent,
-                        field_name,
-                        SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                            SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
-                            parent,
-                            field_name),
-                        typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
-                    field_name}
+SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonField(SkeletonBase& parent,
+                                                                                   const std::string_view field_name,
+                                                                                   detail::EnableNeitherTag)
+    : SkeletonField{
+          parent,
+          std::make_unique<SkeletonEvent<FieldType>>(parent,
+                                                     field_name,
+                                                     SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
+                                                         SkeletonBaseView{parent}.GetAssociatedInstanceIdentifier(),
+                                                         parent,
+                                                         field_name),
+                                                     typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+          field_name}
 {
 }
 
@@ -353,6 +368,7 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonFie
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
+    RegisterGetHandler();
 }
 
 /// \brief Private delegating ctor - EnableSet=false, EnableGet=true.
@@ -370,6 +386,7 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::SkeletonFie
 {
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
+    RegisterGetHandler();
 }
 
 /// \brief Private delegating ctor - EnableSet=true, EnableGet=false.
@@ -486,8 +503,8 @@ ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>:
 /// This function cannot be currently called to set the initial value of a field as the shared memory must be first
 /// set up in the Skeleton::PrepareOffer() before the user can obtain / use a SampleAllocateePtr.
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier, bool EnableGet>
-Result<SampleAllocateePtr<SampleDataType>> SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::
-    Allocate() noexcept
+Result<SampleAllocateePtr<SampleDataType>>
+SkeletonField<SampleDataType, EnableSet, EnableNotifier, EnableGet>::Allocate() noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
