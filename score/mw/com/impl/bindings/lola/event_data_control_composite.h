@@ -15,14 +15,13 @@
 
 #include "score/mw/com/impl/bindings/lola/control_slot_composite_indicator.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
-#include <optional>
+#include <functional>
 
 namespace score::mw::com::impl::lola
 {
@@ -47,11 +46,11 @@ class EventDataControlComposite
 
   public:
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL use-case)
-    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>* const asil_qm_control_local,
+    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>& asil_qm_control_local,
                                        ProxyEventDataControlLocalView<>* const proxy_control_local);
 
     /// \brief Constructs a composite which will manage QM and ASIL control at the same time
-    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>* const asil_qm_control_local,
+    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>& asil_qm_control_local,
                                        SkeletonEventDataControlLocalView<>* const asil_b_control_local,
                                        ProxyEventDataControlLocalView<>* const proxy_control_local);
 
@@ -104,7 +103,7 @@ class EventDataControlComposite
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:
-    SkeletonEventDataControlLocalView<>* asil_qm_control_local_;
+    std::reference_wrapper<SkeletonEventDataControlLocalView<>> asil_qm_control_local_;
     SkeletonEventDataControlLocalView<>* asil_b_control_local_;
 
     ProxyEventDataControlLocalView<>* proxy_control_local_;
