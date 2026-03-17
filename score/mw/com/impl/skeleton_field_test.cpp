@@ -109,6 +109,62 @@ TEST(SkeletonFieldTest, SkeletonFieldContainsPublicSampleType)
                   "Incorrect FieldType.");
 }
 
+TEST(SkeletonFieldTest, CtorBothEnabledAcceptsEnableBothTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, true>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableBothTag>,
+                  "Constructor should accept EnableBothTag when ES=true and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorGetOnlyAcceptsEnableGetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, true>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableGetOnlyTag>,
+                  "Constructor should accept EnableGetOnlyTag when ES=false and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorSetOnlyAcceptsEnableSetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, false>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableSetOnlyTag>,
+                  "Constructor should accept EnableSetOnlyTag when ES=true and EG=false");
+}
+
+TEST(SkeletonFieldTest, CtorNeitherEnabledAcceptsEnableNeitherTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, false>;
+    static_assert(std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableNeitherTag>,
+                  "Constructor should accept EnableNeitherTag when ES=false and EG=false");
+}
+
+TEST(SkeletonFieldTest, CtorBothEnabledRejectsEnableGetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, true>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableGetOnlyTag>,
+                  "Constructor should reject EnableGetOnlyTag when ES=true and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorGetOnlyRejectsEnableSetOnlyTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, true>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableSetOnlyTag>,
+                  "Constructor should reject EnableSetOnlyTag when ES=false and EG=true");
+}
+
+TEST(SkeletonFieldTest, CtorSetOnlyRejectsEnableBothTag)
+{
+    using FieldType = SkeletonField<TestSampleType, true, false, false>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableBothTag>,
+                  "Constructor should reject EnableBothTag when ES=true and EG=false");
+}
+
+TEST(SkeletonFieldTest, CtorNeitherEnabledRejectsEnableBothTag)
+{
+    using FieldType = SkeletonField<TestSampleType, false, false, false>;
+    static_assert(!std::is_constructible_v<FieldType, SkeletonBase&, std::string_view, detail::EnableBothTag>,
+                  "Constructor should reject EnableBothTag when ES=false and EG=false");
+}
+
 // When Ticket-104261 is implemented, the Update call does not have to be deferred until OfferService is called. This
 // test can be reworked to remove the call to PrepareOffer() and simply test Update() before PrepareOffer() is called.
 TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOfferService)
