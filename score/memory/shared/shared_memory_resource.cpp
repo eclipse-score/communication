@@ -713,7 +713,7 @@ auto SharedMemoryResource::do_allocate(const std::size_t bytes, const std::size_
     if (new_address_aligned == nullptr)
     {
         score::mw::log::LogFatal("shm")
-            << "Cannot allocate shared memory block of size" << bytes << "with alignement " << alignment
+            << "Cannot allocate shared memory block of size" << bytes << "with alignment " << alignment
             << " at: ["
             // In our architecture we have a one-to-one mapping between pointers and integral values.
             // Therefore, casting between the two is well-defined.
