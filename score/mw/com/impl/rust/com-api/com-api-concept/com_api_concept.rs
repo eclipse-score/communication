@@ -269,10 +269,7 @@ impl InstanceSpecifier {
                 specifier: service_name.to_string(),
             })
         } else {
-            Err(Error::InstanceSpecifierInvalid(format!(
-                "Invalid instance specifier format: '{}'",
-                service_name
-            )))
+            Err(Error::InstanceSpecifierInvalid)
         }
     }
 }
@@ -709,9 +706,7 @@ impl<S> SampleContainer<S> {
     /// Returns 'Error::SampleContainerAllocateFailed' if container is already full.
     pub fn push_back(&mut self, new: S) -> Result<()> {
         self.inner.push_back(new).map_err(|_| {
-            Error::SampleContainerAllocateFailed(AllocationFailureReason::OutOfMemory(
-                "Sample container is full".to_string(),
-            ))
+            Error::SampleContainerAllocateFailed(AllocationFailureReason::OutOfMemory)
         })?;
         Ok(())
     }
