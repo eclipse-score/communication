@@ -11,147 +11,120 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+pub use com_api_concept_macros::ErrorDisplay;
+
 /// Detailed information about Service Discovery failure reasons,
 /// including specific issues with service interfaces, instance specifiers, and handle retrieval.
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum ServiceDiscoveryFailedReason {
-    /// Invalid instance specifier format or content
+    #[error = "Invalid instance specifier format or content, which may not be according to the expected format or contain invalid content"]
     InstanceSpecifierInvalid,
-    /// Service handle not found
+    #[error = "Service not found, which may not be available currently or accessible"]
     ServiceNotFound,
-    /// Internal error
+    #[error = "Internal error during service discovery"]
     InternalError(&'static str),
 }
 
 /// Reason for producer creation failure
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum ProducerCreationReason {
-    /// Invalid instance specifier format or content
+    #[error = "Invalid instance specifier format or content, which may not be according to the expected format or contain invalid content"]
     InstanceSpecifierInvalid,
-    /// Skeleton creation failed
+    #[error = "Skeleton creation failed"]
     SkeletonCreationFailed,
-    /// Builder creation failed
+    #[error = "Builder creation failed for producer instance"]
     BuilderCreationFailed,
-    /// Internal error
-    InternalError(&'static str),
 }
 
 /// Reason for consumer creation failure
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum ConsumerCreationReason {
-    /// Invalid instance specifier format or content
+    #[error = "Invalid instance specifier format or content, which may not be according to the expected format or contain invalid content"]
     InstanceSpecifierInvalid,
-    /// Service handle not found from discovery
+    #[error = "Service not found from service discovery handle"]
     ServiceHandleNotFound,
-    /// Proxy creation failed
+    #[error = "Proxy creation failed"]
     ProxyCreationFailed,
-    /// Internal error
-    InternalError(&'static str),
 }
 
 /// Reason for subscribe operation failure
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum SubscribeFailureReason {
-    /// Event not available
+    #[error = "Event not available for subscription, possibly due to missing event type or incompatible service"]
     EventNotAvailable,
-    /// Internal subscription error
+    #[error = "Internal subscription error"]
     InternalError(&'static str),
 }
+
 /// Memory allocation error details
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum AllocationFailureReason {
-    /// Requested size exceeds available memory
+    #[error = "Requested size exceeds available memory which is configured during subscription setup"]
     OutOfMemory,
-    /// Invalid allocation request
+    #[error = "Invalid allocation request"]
     InvalidRequest,
-    /// Internal allocation error
+    #[error = "Internal allocation error related to allocation operations of shared memory or sample container"]
     InternalError(&'static str),
 }
 
 /// Comprehensive error reasons asynchronous receive failure
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum AsyncReceiveFailedReason {
-    /// initialization failed
+    #[error = "Error at the time of initialzing async receive operation"]
     InitializationFailed,
-    /// receive operation failed
+    #[error = "Receive operation failed because of internal error"]
     ReceiveError,
-    /// Bufffer not available for receive operation
+    #[error = "Internal receive buffer not available for receive operation"]
     BufferUnavailable,
-    /// sample count out of bounds
-    SampleCountOutOfBounds(&'static str, usize, usize),
+    #[error = "Sample size out of bounds, expected at most {}, but got {}"]
+    SampleCountOutOfBounds(usize, usize),
 }
 
 /// Comprehensive error reasons for receive failure
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum ReceiveFailedReason {
-    /// initialization failed
+    #[error = "Error at the time of initializing receive operation"]
     InitializationFailed,
-    /// receive operation failed
+    #[error = "Receive operation failed because of internal error"]
     ReceiveError,
-    /// sample count out of bounds
-    SampleCountOutOfBounds(&'static str, usize, usize),
+    #[error = "Sample size out of bounds, expected at most {}, but got {}"]
+    SampleCountOutOfBounds(usize, usize),
 }
 
 /// Comprehensive error reasons for event-related failures
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum EventFailedReason {
-    /// Event creation failed
+    #[error = "Event creation error, possibly due to invalid event type or internal error"]
     EventCreationFailed,
-    /// Event publication failed
+    #[error = "Event publication failed, possibly due to internal error"]
     EventPublishFailed,
 }
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
-#[derive(Debug)]
+#[derive(ErrorDisplay)]
 pub enum Error {
-    /// Generic failure with optional message
-    Fail(Option<String>),
-    /// Service discovery failed with detailed reason
+    #[error = "Service discovery operation failed due to"]
     ServiceDiscoveryFailed(ServiceDiscoveryFailedReason),
-    /// Failed to create producer instance
+    #[error = "Producer creation failed due to"]
     ProducerCreationFailed(ProducerCreationReason),
-    /// Failed to create consumer instance
+    #[error = "Consumer creation failed due to"]
     ConsumerCreationFailed(ConsumerCreationReason),
-    /// Failed to offer service instance for discovery
+    #[error = "Failed to offer service instance for discovery"]
     OfferServiceFailed,
-    /// Failed to send sample
+    #[error = "Failed to send sample data to the service instance, possibly due to internal error"]
     SendingDataFailed,
-    /// Event Error
+    #[error = "Event operation failed due to"]
     EventError(EventFailedReason),
-    /// Sample container allocation failed
+    #[error = "Sample container allocation failed due to"]
     SampleContainerAllocateFailed(AllocationFailureReason),
-    /// Memory allocation failed
+    #[error = "Memory allocation failed due to"]
     MemoryAllocationFailed(AllocationFailureReason),
-    /// Asynchronous receive operation failed
+    #[error = "Asynchronous receive operation failed due to"]
     AsyncReceiveFailed(AsyncReceiveFailedReason),
-    /// Receive operation failed
+    #[error = "Receive operation failed due to"]
     ReceiveFailed(ReceiveFailedReason),
-    /// Invalid instance specifier provided
+    #[error = "Invalid instance specifier provided, which may be not according to the expected format or contain invalid content"]
     InstanceSpecifierInvalid,
-    /// Event subscription failed
+    #[error = "Event subscription failed due to"]
     SubscribeFailed(SubscribeFailureReason),
-}
-
-impl std::fmt::Display for ServiceDiscoveryFailedReason {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InstanceSpecifierInvalid => {
-                write!(f, "invalid instance specifier format or content")
-            }
-            Self::ServiceNotFound => write!(f, "service handle not found"),
-            Self::InternalError(msg) => write!(f, "internal error: {}", msg),
-        }
-    }
-}
-
-impl core::fmt::Display for ReceiveFailedReason {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match self {
-            Self::InitializationFailed => write!(f, "initialization failed"),
-            Self::ReceiveError => write!(f, "receive operation failed"),
-            Self::SampleCountOutOfBounds(msg, requested, max) => {
-                write!(f, "{}: requested {}, max {}", msg, requested, max)
-            }
-        }
-    }
 }

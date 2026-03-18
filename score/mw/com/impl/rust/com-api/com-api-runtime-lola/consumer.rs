@@ -528,11 +528,10 @@ where
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
                 return Err(Error::AsyncReceiveFailed(
                     AsyncReceiveFailedReason::SampleCountOutOfBounds(
-                            "Requested sample count exceeds subscription limit: requested max_samples {}, subscription max_num_samples {}",
-                            max_samples, self.max_num_samples
-                        )
+                        self.max_num_samples,
+                        max_samples.max(new_samples),
                     ),
-                );
+                ));
             }
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
@@ -922,11 +921,7 @@ fn try_receive_samples<T: CommData + Debug>(
 ) -> Result<usize> {
     if max_samples > max_num_samples {
         return Err(Error::ReceiveFailed(
-            ReceiveFailedReason::SampleCountOutOfBounds(
-                "Requested sample count exceeds subscription limit: requested {}, max {}",
-                max_samples,
-                max_num_samples,
-            ),
+            ReceiveFailedReason::SampleCountOutOfBounds(max_num_samples, max_samples),
         ));
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
@@ -948,11 +943,7 @@ fn try_receive_samples<T: CommData + Debug>(
     };
     if count > max_num_samples as u32 {
         return Err(Error::ReceiveFailed(
-            ReceiveFailedReason::SampleCountOutOfBounds(
-                "Returned more samples than subscription limit: returned {}, max {}",
-                count as usize,
-                max_num_samples,
-            ),
+            ReceiveFailedReason::SampleCountOutOfBounds(max_num_samples, count as usize),
         ));
     }
     Ok(count as usize)

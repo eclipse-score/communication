@@ -335,6 +335,124 @@ fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
     Ok(out)
 }
 
+/// Automatically generates Display and Debug implementations from #[error] attributes
+///
+/// Generates both Display and Debug traits using `#[error("...")]` attributes (thiserror-style):
+/// - Display: Shows human-readable error message from #[error] attributes
+/// - Debug: Delegates to Display for consistent, user-friendly output
+///
+/// # Usage
+/// ```ignore
+/// #[derive(ErrorDisplay)]
+/// pub enum MyError {
+///     #[error("error message here")]
+///     SomeVariant,
+///
+///     #[error("nested error")]
+///     OtherVariant(SomeError),
+/// }
+/// ```
+#[proc_macro_derive(ErrorDisplay, attributes(error))]
+pub fn error_display(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+    let name = &input.ident;
+
+    let display_arms = match &input.data {
+        Data::Enum(data) => {
+            data.variants
+                .iter()
+                .map(|variant| {
+                    let variant_name = &variant.ident;
+
+                    // Extract error message from #[error("...")] attribute
+                    let error_msg = variant
+                        .attrs
+                        .iter()
+                        .find_map(|attr| {
+                            if attr.path().is_ident("error") {
+                                if let syn::Meta::NameValue(nv) = &attr.meta {
+                                    if let syn::Expr::Lit(syn::ExprLit {
+                                        lit: syn::Lit::Str(lit_str),
+                                        ..
+                                    }) = &nv.value
+                                    {
+                                        return Some(lit_str.value());
+                                    }
+                                }
+                            }
+                            None
+                        })
+                        .unwrap_or_else(|| format!("{}", variant_name));
+
+                    // Match pattern based on field types
+                    match &variant.fields {
+                        Fields::Unit => {
+                            quote! {
+                                #name::#variant_name => write!(f, "{}", #error_msg)
+                            }
+                        }
+                        Fields::Unnamed(fields) => {
+                            let field_count = fields.unnamed.len();
+                            if field_count == 1 {
+                                quote! {#name::#variant_name(err) => write!(f, "{}: {}", #error_msg, err)}
+                            } else {
+                                let has_placeholders = error_msg.contains("{}");
+                                if has_placeholders {
+                                    let field_names: Vec<_> = (0..field_count)
+                                        .map(|i| {
+                                            syn::Ident::new(
+                                                &format!("f{}", i),
+                                                proc_macro::Span::call_site().into(),
+                                            )
+                                        })
+                                        .collect();
+                                    let field_refs = field_names.iter();
+                                    quote! {
+                                        #name::#variant_name(#(#field_names),*) => {
+                                            write!(f, "{}", format!(#error_msg, #(#field_refs),*))
+                                        }
+                                    }
+                                } else {
+                                    let wildcards = (0..field_count).map(|_| quote! { _ });
+                                    quote! {#name::#variant_name(#(#wildcards),*) => write!(f, "{}", #error_msg)}
+                                }
+                            }
+                        }
+                        Fields::Named(_) => {
+                            quote! {
+                                #name::#variant_name { .. } => write!(f, "{}", #error_msg)
+                            }
+                        }
+                    }
+                })
+                .collect::<Vec<_>>()
+        }
+        _ => {
+            return syn::Error::new_spanned(&input, "ErrorDisplay only works on enums")
+                .to_compile_error()
+                .into()
+        }
+    };
+
+    let expanded = quote! {
+        impl core::fmt::Display for #name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                match self {
+                    #(#display_arms),*
+                }
+            }
+        }
+
+        impl core::fmt::Debug for #name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                write!(f, "{}", self)
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
 // Use doctest to test failed compilations and successful ones
 
 /// ```
