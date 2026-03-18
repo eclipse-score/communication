@@ -82,6 +82,11 @@ template <typename SampleType>
 using SampleAllocateePtr = impl::SampleAllocateePtr<SampleType>;
 
 /// \api
+/// A pointer type which carries a pointer to the method return value in shared memory.
+template <typename ReturnType>
+using MethodReturnTypePtr = impl::MethodReturnTypePtr<ReturnType>;
+
+/// \api
 /// \brief Callback for event notifications on proxy side.
 /// \requirement SWS_CM_00309
 using EventReceiveHandler = impl::EventReceiveHandler;
