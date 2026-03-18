@@ -132,9 +132,9 @@ TEST_F(ServiceDiscoveryClientStopOfferFixture, HandlersAreCalledOnceWhenServiceI
     service_found_barrier_after_offer_2.get_future().wait();
 
     score::cpp::ignore = service_discovery_client_->StopOfferService(kConfigStoreQm1.GetInstanceIdentifier(),
-                                                              IServiceDiscovery::QualityTypeSelector::kBoth);
+                                                                     IServiceDiscovery::QualityTypeSelector::kBoth);
     score::cpp::ignore = service_discovery_client_->StopOfferService(kConfigStoreQm2.GetInstanceIdentifier(),
-                                                              IServiceDiscovery::QualityTypeSelector::kBoth);
+                                                                     IServiceDiscovery::QualityTypeSelector::kBoth);
 
     service_found_barrier_after_stop_offer_1.get_future().wait();
     service_found_barrier_after_stop_offer_2.get_future().wait();
@@ -190,7 +190,7 @@ TEST_F(ServiceDiscoveryClientWithFakeFileSystemStopOfferFixture,
     WhichContainsAServiceDiscoveryClient();
     score::cpp::ignore = service_discovery_client_->OfferService(kConfigStoreQm1.GetInstanceIdentifier());
     score::cpp::ignore = service_discovery_client_->StopOfferService(kConfigStoreQm1.GetInstanceIdentifier(),
-                                                              IServiceDiscovery::QualityTypeSelector::kBoth);
+                                                                     IServiceDiscovery::QualityTypeSelector::kBoth);
 
     // When calling StopOfferService on the service that was already stop offered
     const auto stop_offer_service_result = service_discovery_client_->StopOfferService(

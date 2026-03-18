@@ -20,8 +20,8 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 
 #include "score/memory/shared/pointer_arithmetic_util.h"
-#include "score/os/utils/interprocess/interprocess_notification.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
+#include "score/os/utils/interprocess/interprocess_notification.h"
 
 #include <score/optional.hpp>
 

@@ -69,37 +69,37 @@ class ProvidedServices final : public ProvidedServicesBase
     template <typename ServiceType, typename... Args>
     ProvidedServices& Add(Args&&... args) &
     {
-      return *this;
+        return *this;
     }
 
     template <typename ServiceType, typename... Args>
     ProvidedServices&& Add(Args&&... args) &&
     {
-      return std::move(*this);
+        return std::move(*this);
     }
 
     template <typename ServiceType, typename... Args>
     ProvidedServices& AddViaInstanceSpecifier(InstanceSpecifierView instance_specifier, Args&&... args) &
     {
-      return *this;
+        return *this;
     }
 
     template <typename ServiceType, typename... Args>
     ProvidedServices&& AddViaInstanceSpecifier(InstanceSpecifierView instance_specifier, Args&&... args) &&
     {
-      return std::move(*this);
+        return std::move(*this);
     }
 
     template <typename ServiceBaseType, typename ServiceImplType, typename... Args>
     ProvidedServices& EmplaceServiceInstance(std::in_place_type_t<ServiceImplType>, Args&&... args) &
     {
-      return *this;
+        return *this;
     }
 
     template <typename ServiceBaseType, typename ServiceImplType, typename... Args>
     ProvidedServices&& EmplaceServiceInstance(std::in_place_type_t<ServiceImplType>, Args&&... args) &&
     {
-      return std::move(*this);
+        return std::move(*this);
     }
 
     template <typename ServiceBaseType, typename ServiceImplType, typename... Args>
@@ -107,7 +107,7 @@ class ProvidedServices final : public ProvidedServicesBase
                                              std::in_place_type_t<ServiceImplType>,
                                              Args&&... args)
     {
-      return *this;
+        return *this;
     }
 
     template <typename ServiceType>
@@ -123,7 +123,7 @@ class ProvidedServices final : public ProvidedServicesBase
     template <typename ServiceType>
     auto Extract(InstanceSpecifierView instance_specifier) noexcept
     {
-      return nullptr;
+        return nullptr;
     }
 
     template <typename ServiceType>
@@ -172,19 +172,13 @@ class ProvidedServices final : public ProvidedServicesBase
     }
 
     /// @brief Start all contained valid service instances
-    void StartAll() override
-    {
-    }
+    void StartAll() override {}
 
     /// @brief Stop all contained valid service instances
-    void StopAll() override
-    {
-    }
+    void StopAll() override {}
 
     /// @brief Swap the content of this object with another one
-    void Swap(ProvidedServices& other) noexcept
-    {
-    }
+    void Swap(ProvidedServices& other) noexcept {}
 };
 
 class ProvidedServiceContainer

@@ -80,9 +80,9 @@ TEST(API, InstanceIdentifierContainerExists)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     score::mw::com::InstanceIdentifierContainer unit{};
-    static_assert(
-        std::is_same<score::mw::com::InstanceIdentifierContainer, std::vector<score::mw::com::InstanceIdentifier>>::value,
-        "Container is not a sequence container");
+    static_assert(std::is_same<score::mw::com::InstanceIdentifierContainer,
+                               std::vector<score::mw::com::InstanceIdentifier>>::value,
+                  "Container is not a sequence container");
 }
 
 TEST(API, EventReceiverHandlerExists)

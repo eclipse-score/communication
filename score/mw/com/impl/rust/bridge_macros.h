@@ -27,8 +27,8 @@ namespace score::mw::com::impl::rust
 
 template <typename T>
 inline score::Result<std::uint32_t> GetSamplesFromEvent(::score::mw::com::impl::ProxyEvent<T>& proxy_event,
-                                                      const FatPtr& callback,
-                                                      std::uint32_t max_num_samples) noexcept
+                                                        const FatPtr& callback,
+                                                        std::uint32_t max_num_samples) noexcept
 {
     RustFnMutCallable<RustRefMutCallable, void, SamplePtr<T>> rust_callable{callback};
     auto samples = proxy_event.GetNewSamples(std::move(rust_callable), max_num_samples);
@@ -79,114 +79,114 @@ inline S* CreateSkeletonWrapper(const ::score::mw::com::InstanceSpecifier& insta
                                                                                                                     \
     uid##MwComProxyType* mw_com_gen_ProxyWrapperClass_##uid##_create(const uid##MwComProxyType::HandleType& handle) \
     {                                                                                                               \
-        return ::score::mw::com::impl::rust::CreateProxyWrapper<uid##MwComProxyType>(handle);                         \
+        return ::score::mw::com::impl::rust::CreateProxyWrapper<uid##MwComProxyType>(handle);                       \
     }                                                                                                               \
                                                                                                                     \
     void mw_com_gen_ProxyWrapperClass_##uid##_delete(uid##MwComProxyType* proxy)                                    \
     {                                                                                                               \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy != nullptr, "Attempt to delete nullptr proxywrapper!");                        \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy != nullptr, "Attempt to delete nullptr proxywrapper!");   \
         delete proxy;                                                                                               \
     }                                                                                                               \
                                                                                                                     \
     uid##MwComSkeletonType* mw_com_gen_SkeletonWrapperClass_##uid##_create(                                         \
-        const ::score::mw::com::InstanceSpecifier& instance_specifier)                                                \
+        const ::score::mw::com::InstanceSpecifier& instance_specifier)                                              \
     {                                                                                                               \
-        return ::score::mw::com::impl::rust::CreateSkeletonWrapper<uid##MwComSkeletonType>(instance_specifier);       \
+        return ::score::mw::com::impl::rust::CreateSkeletonWrapper<uid##MwComSkeletonType>(instance_specifier);     \
     }                                                                                                               \
                                                                                                                     \
     void mw_com_gen_SkeletonWrapperClass_##uid##_delete(uid##MwComSkeletonType* skeleton)                           \
     {                                                                                                               \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to delete nullptr skeleton!");                         \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to delete nullptr skeleton!");    \
         delete skeleton;                                                                                            \
     }                                                                                                               \
                                                                                                                     \
     bool mw_com_gen_SkeletonWrapperClass_##uid##_offer(uid##MwComSkeletonType* skeleton)                            \
     {                                                                                                               \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to use nullptr skeleton!");                            \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to use nullptr skeleton!");       \
         return skeleton->OfferService().has_value();                                                                \
     }                                                                                                               \
                                                                                                                     \
     void mw_com_gen_SkeletonWrapperClass_##uid##_stop_offer(uid##MwComSkeletonType* skeleton)                       \
     {                                                                                                               \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to use nullptr skeleton!");                            \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to use nullptr skeleton!");       \
         skeleton->StopOfferService();                                                                               \
     }
 
-#define EXPORT_MW_COM_EVENT(uid, event_type, event_name)                                                         \
+#define EXPORT_MW_COM_EVENT(uid, event_type, event_name)                                                           \
     ::score::mw::com::impl::ProxyEvent<event_type>* mw_com_gen_ProxyWrapperClass_##uid##_##event_name##_get(       \
-        uid##MwComProxyType* proxy) noexcept                                                                     \
-    {                                                                                                            \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy != nullptr, "Attempt to use nullptr proxy!");                               \
-        return &proxy->event_name;                                                                               \
-    }                                                                                                            \
-                                                                                                                 \
+        uid##MwComProxyType* proxy) noexcept                                                                       \
+    {                                                                                                              \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy != nullptr, "Attempt to use nullptr proxy!");            \
+        return &proxy->event_name;                                                                                 \
+    }                                                                                                              \
+                                                                                                                   \
     ::score::mw::com::impl::SkeletonEvent<event_type>* mw_com_gen_SkeletonWrapperClass_##uid##_##event_name##_get( \
-        uid##MwComSkeletonType* skeleton) noexcept                                                               \
-    {                                                                                                            \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to use nullptr skeleton!");                         \
-        return &skeleton->event_name;                                                                            \
+        uid##MwComSkeletonType* skeleton) noexcept                                                                 \
+    {                                                                                                              \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(skeleton != nullptr, "Attempt to use nullptr skeleton!");      \
+        return &skeleton->event_name;                                                                              \
     }
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // extern "C"
 
-#define EXPORT_MW_COM_TYPE(uid, type)                                                                                \
-    extern "C" {                                                                                                     \
+#define EXPORT_MW_COM_TYPE(uid, type)                                                                                  \
+    extern "C" {                                                                                                       \
     void mw_com_impl_call_dyn_ref_fnmut_sample_##uid(const ::score::mw::com::impl::rust::FatPtr* boxed_fnmut,          \
                                                      ::score::mw::com::impl::SamplePtr<type>* ptr);                    \
-    }                                                                                                                \
-    template <>                                                                                                      \
-    class score::mw::com::impl::rust::RustRefMutCallable<void, ::score::mw::com::impl::SamplePtr<type>>                  \
-    {                                                                                                                \
-      public:                                                                                                        \
+    }                                                                                                                  \
+    template <>                                                                                                        \
+    class score::mw::com::impl::rust::RustRefMutCallable<void, ::score::mw::com::impl::SamplePtr<type>>                \
+    {                                                                                                                  \
+      public:                                                                                                          \
         static void invoke(::score::mw::com::impl::rust::FatPtr ptr_,                                                  \
                            ::score::mw::com::impl::SamplePtr<type> sample) noexcept                                    \
-        {                                                                                                            \
-            alignas(                                                                                                 \
-                ::score::mw::com::impl::SamplePtr<type>) char storage[sizeof(::score::mw::com::impl::SamplePtr<type>)];  \
+        {                                                                                                              \
+            alignas(::score::mw::com::impl::SamplePtr<type>) char                                                      \
+                storage[sizeof(::score::mw::com::impl::SamplePtr<type>)];                                              \
             auto* placement_sample = new (storage)::score::mw::com::impl::SamplePtr<type>(std::move(sample));          \
-            mw_com_impl_call_dyn_ref_fnmut_sample_##uid(&ptr_, placement_sample);                                    \
-        }                                                                                                            \
-                                                                                                                     \
+            mw_com_impl_call_dyn_ref_fnmut_sample_##uid(&ptr_, placement_sample);                                      \
+        }                                                                                                              \
+                                                                                                                       \
         static void dispose(::score::mw::com::impl::rust::FatPtr) noexcept {}                                          \
-    };                                                                                                               \
-    extern "C" {                                                                                                     \
+    };                                                                                                                 \
+    extern "C" {                                                                                                       \
     std::uint32_t mw_com_gen_ProxyEvent_##uid##_get_new_samples(::score::mw::com::impl::ProxyEvent<type>& proxy_event, \
                                                                 const ::score::mw::com::impl::rust::FatPtr& callback,  \
-                                                                std::uint32_t max_num_samples) noexcept              \
-    {                                                                                                                \
+                                                                std::uint32_t max_num_samples) noexcept                \
+    {                                                                                                                  \
         auto result = ::score::mw::com::impl::rust::GetSamplesFromEvent(proxy_event, callback, max_num_samples);       \
-        return result.value_or(0);                                                                                   \
-    }                                                                                                                \
-                                                                                                                     \
-    std::uint32_t mw_com_gen_##uid##_get_size() noexcept                                                             \
-    {                                                                                                                \
-        return sizeof(type);                                                                                         \
-    }                                                                                                                \
-                                                                                                                     \
+        return result.value_or(0);                                                                                     \
+    }                                                                                                                  \
+                                                                                                                       \
+    std::uint32_t mw_com_gen_##uid##_get_size() noexcept                                                               \
+    {                                                                                                                  \
+        return sizeof(type);                                                                                           \
+    }                                                                                                                  \
+                                                                                                                       \
     const type* mw_com_gen_SamplePtr_##uid##_get(const ::score::mw::com::impl::SamplePtr<type>* sample_ptr) noexcept   \
-    {                                                                                                                \
-        if (sample_ptr != nullptr)                                                                                   \
-        {                                                                                                            \
-            return sample_ptr->Get();                                                                                \
-        }                                                                                                            \
-        else                                                                                                         \
-        {                                                                                                            \
-            return nullptr;                                                                                          \
-        }                                                                                                            \
-    }                                                                                                                \
-                                                                                                                     \
+    {                                                                                                                  \
+        if (sample_ptr != nullptr)                                                                                     \
+        {                                                                                                              \
+            return sample_ptr->Get();                                                                                  \
+        }                                                                                                              \
+        else                                                                                                           \
+        {                                                                                                              \
+            return nullptr;                                                                                            \
+        }                                                                                                              \
+    }                                                                                                                  \
+                                                                                                                       \
     void mw_com_gen_SamplePtr_##uid##_delete(::score::mw::com::impl::SamplePtr<type>* sample_ptr)                      \
-    {                                                                                                                \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_ptr != nullptr, "Attempt to delete null sample ptr!");                         \
-        sample_ptr->~SamplePtr<type>();                                                                              \
-    }                                                                                                                \
-                                                                                                                     \
+    {                                                                                                                  \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_ptr != nullptr, "Attempt to delete null sample ptr!");      \
+        sample_ptr->~SamplePtr<type>();                                                                                \
+    }                                                                                                                  \
+                                                                                                                       \
     bool mw_com_gen_SkeletonEvent_##uid##_send(::score::mw::com::impl::SkeletonEvent<type>* event, type* data)         \
-    {                                                                                                                \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event != nullptr, "Attempt to use nullptr event!");                                   \
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(data != nullptr, "Attempt to send nullptr data");                                     \
-        return event->Send(std::move(*data)).has_value();                                                            \
-    }                                                                                                                \
+    {                                                                                                                  \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event != nullptr, "Attempt to use nullptr event!");                \
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(data != nullptr, "Attempt to send nullptr data");                  \
+        return event->Send(std::move(*data)).has_value();                                                              \
+    }                                                                                                                  \
     }
 
 #endif  // SCORE_MW_COM_IMPL_RUST_BRIDGE_MACROS_H

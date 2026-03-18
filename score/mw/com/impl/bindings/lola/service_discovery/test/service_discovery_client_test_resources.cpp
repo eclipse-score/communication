@@ -37,8 +37,8 @@ filesystem::Path GenerateExpectedInstanceDirectoryPath(const LolaServiceId servi
     return GenerateExpectedServiceDirectoryPath(service_id) / std::to_string(static_cast<std::uint32_t>(instance_id));
 }
 
-// Creates an score::cpp::callback wrapper which dispatches to a pointer to a MockFunction. We do this since a MockFunction
-// does not fit inside an score::cpp::callback with default capacity.
+// Creates an score::cpp::callback wrapper which dispatches to a pointer to a MockFunction. We do this since a
+// MockFunction does not fit inside an score::cpp::callback with default capacity.
 score::cpp::callback<void(ServiceHandleContainer<HandleType>, FindServiceHandle)> CreateWrappedMockFindServiceHandler(
     ::testing::MockFunction<void(ServiceHandleContainer<HandleType>, FindServiceHandle)>& mock_find_service_handler)
 {

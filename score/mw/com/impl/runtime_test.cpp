@@ -191,7 +191,8 @@ TEST_F(RuntimeFixture, TerminatesWhenCallingWithLolaTemplateAndNonLolaBindingTyp
 
     // When calling GetBindingRuntime with lola::Runtime template type and kLola binding type
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = GetBindingRuntime<lola::IRuntime>(BindingType::kFake));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          GetBindingRuntime<lola::IRuntime>(BindingType::kFake));
 }
 
 /// Test to be enabled if we implement a fake runtime binding
@@ -207,7 +208,8 @@ TEST_F(RuntimeFixture, TerminatesWhenCallingWithLolaTemplateAndNonLolaBindingTyp
 //
 //     // When calling GetBindingRuntime with  template type and kLola binding type
 //     // Then the program terminates
-//     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = GetBindingRuntime<fake_binding::Runtime>(BindingType::kLoLa));
+//     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+//     GetBindingRuntime<fake_binding::Runtime>(BindingType::kLoLa));
 // }
 
 using RuntimeTracingConfigTest = RuntimeFixture;

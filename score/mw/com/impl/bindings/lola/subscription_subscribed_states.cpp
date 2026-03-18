@@ -36,10 +36,10 @@ ResultBlank SubscribedState::SubscribeEvent(const std::size_t max_sample_count) 
     const auto max_sample_count_uint16 = static_cast<std::uint16_t>(max_sample_count);
     if (state_machine_.subscription_data_.max_sample_count_.value() == max_sample_count_uint16)
     {
-        ::score::mw::log::LogWarn("lola") << CreateLoggingString(
-            "Calling SubscribeEvent() while already subscribed has no effect.",
-            state_machine_.GetElementFqId(),
-            state_machine_.GetCurrentStateNoLock());
+        ::score::mw::log::LogWarn("lola")
+            << CreateLoggingString("Calling SubscribeEvent() while already subscribed has no effect.",
+                                   state_machine_.GetElementFqId(),
+                                   state_machine_.GetCurrentStateNoLock());
         return {};
     }
     else
@@ -69,8 +69,8 @@ void SubscribedState::StopOfferEvent() noexcept
 void SubscribedState::ReOfferEvent(const pid_t) noexcept
 {
     ::score::mw::log::LogWarn("lola") << CreateLoggingString("Service cannot be re-offered while already subscribed.",
-                                                           state_machine_.GetElementFqId(),
-                                                           state_machine_.GetCurrentStateNoLock());
+                                                             state_machine_.GetElementFqId(),
+                                                             state_machine_.GetCurrentStateNoLock());
 }
 
 void SubscribedState::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept
@@ -93,22 +93,24 @@ std::optional<std::uint16_t> SubscribedState::GetMaxSampleCount() const noexcept
 
 score::cpp::optional<SlotCollector>& SubscribedState::GetSlotCollector() noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(state_machine_.subscription_data_.max_sample_count_.has_value(),
-                       "The subscription data and the contained slot collector should be initialised on subscription.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
+        state_machine_.subscription_data_.max_sample_count_.has_value(),
+        "The subscription data and the contained slot collector should be initialised on subscription.");
     return state_machine_.subscription_data_.slot_collector_;
 }
 
 const score::cpp::optional<SlotCollector>& SubscribedState::GetSlotCollector() const noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(state_machine_.subscription_data_.max_sample_count_.has_value(),
-                       "The subscription data and the contained slot collector should be initialised on subscription.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
+        state_machine_.subscription_data_.max_sample_count_.has_value(),
+        "The subscription data and the contained slot collector should be initialised on subscription.");
     return state_machine_.subscription_data_.slot_collector_;
 }
 
 score::cpp::optional<TransactionLogSet::TransactionLogIndex> SubscribedState::GetTransactionLogIndex() const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(state_machine_.transaction_log_registration_guard_.has_value(),
-                       "TransactionLogRegistrationGuard should be initialised on subscription.");
+                                            "TransactionLogRegistrationGuard should be initialised on subscription.");
     return state_machine_.transaction_log_registration_guard_.value().GetTransactionLogIndex();
 }
 

@@ -198,17 +198,18 @@ TEST_F(ComErrorMessageForDeathTest, MessageForkInvalidTerminates)
 {
     // When calling MessageFor with the code kInvalid
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kInvalid)),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kInvalid)),
+        ".*");
 }
 
 TEST_F(ComErrorMessageForDeathTest, MessageForNumEnumElements)
 {
     // When calling MessageFor with the code kNumEnumElements
     // Then the program terminates
-    EXPECT_DEATH(
-        score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements)),
-        ".*");
+    EXPECT_DEATH(score::cpp::ignore =
+                     ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements)),
+                 ".*");
 }
 
 TEST_F(ComErrorMessageForFixture, MessageForDefaultClause)

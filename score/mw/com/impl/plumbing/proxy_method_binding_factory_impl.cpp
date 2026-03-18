@@ -28,7 +28,8 @@ LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle, c
     if (!contains_method)
     {
         mw::log::LogFatal("lola") << "Provided a method name which can not be found in LolaServiceInstanceDeployment";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Provided a method name which can not be found in LolaServiceInstanceDeployment");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            false, "Provided a method name which can not be found in LolaServiceInstanceDeployment");
     }
     const auto& lola_method_instance_deployment = method_it->second;
 
@@ -37,8 +38,8 @@ LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle, c
     {
         mw::log::LogFatal("lola")
             << "ProxyMethod can not be created if queue_size is not configured on the proxy side.";
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false,
-                               "ProxyMethod can not be created if queue_size is not configured on the proxy side.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            false, "ProxyMethod can not be created if queue_size is not configured on the proxy side.");
     }
     return lola_method_instance_deployment.queue_size_.value();
 }

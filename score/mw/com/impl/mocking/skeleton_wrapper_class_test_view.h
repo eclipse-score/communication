@@ -152,7 +152,7 @@ class SkeletonWrapperClassTestView
     {
         auto* typed_event = dynamic_cast<SkeletonEvent<SampleType>*>(&event_base);
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(typed_event != nullptr,
-                                     "event_base should always be a fully typed SkeletonEvent!");
+                                                          "event_base should always be a fully typed SkeletonEvent!");
         typed_event->InjectMock(mock);
     }
 
@@ -160,7 +160,8 @@ class SkeletonWrapperClassTestView
     static void InjectFieldMock(SkeletonFieldBase& field_base, SkeletonFieldMock<SampleType>& mock)
     {
         auto* typed_field = dynamic_cast<SkeletonField<SampleType>*>(&field_base);
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(typed_field != nullptr, "field_base should always be a fully typed SkeletonField");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(typed_field != nullptr,
+                                                          "field_base should always be a fully typed SkeletonField");
         typed_field->InjectMock(mock);
     }
 

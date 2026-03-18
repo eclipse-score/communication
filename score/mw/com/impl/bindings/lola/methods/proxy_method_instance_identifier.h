@@ -46,8 +46,8 @@ template <>
 class hash<score::mw::com::impl::lola::ProxyMethodInstanceIdentifier>
 {
   public:
-    std::size_t operator()(
-        const score::mw::com::impl::lola::ProxyMethodInstanceIdentifier& proxy_method_instance_identifier) const noexcept
+    std::size_t operator()(const score::mw::com::impl::lola::ProxyMethodInstanceIdentifier&
+                               proxy_method_instance_identifier) const noexcept
     {
         using ProxyMethodInstanceIdentifier = score::mw::com::impl::lola::ProxyMethodInstanceIdentifier;
         using ProxyInstanceIdentifier = score::mw::com::impl::lola::ProxyInstanceIdentifier;

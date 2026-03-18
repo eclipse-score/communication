@@ -11,6 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+# In order to overcome stability issues in GitHub
+common --experimental_repository_downloader_retries=10
+common --experimental_scale_timeouts=2.0
+common --http_connector_attempts=10
+common --http_connector_retry_max_timeout=1s
+common --http_timeout_scaling=2.0
+
+
 common --@score_baselibs//score/json:base_library=nlohmann
 common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
 common --@score_logging//score/mw/log/flags:KRemote_Logging=False
@@ -23,6 +31,8 @@ build --experimental_retain_test_configuration_across_testonly #https://github.c
 
 common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:x86_64-linux-gcc_12.2.0-posix
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
+common:linux_aarch64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:aarch64-linux-gcc_12.2.0-posix
+common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_aarch64_toolchain//:aarch64-linux
 
 # In order to build for QNX, you need:
 # * An account on qnx.com
@@ -80,7 +90,7 @@ test:clang-tidy --output_groups=+rules_lint_report
 test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 
-import quality/sanitizer/sanitizer.bazelrc
+import %workspace%/quality/sanitizer/sanitizer.bazelrc
 
 common:codeql --platform_suffix=codeql
 common:codeql --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux

@@ -71,10 +71,10 @@ class ProxyWrapperClassTestView
     ///
     /// e.g. auto proxy = ProxyWrapperClassTestView<MyProxy>::Create(events_tuple, fields_tuple);
     ///
-    /// Note. Currently, the mocks are not injected in the Create function (to be implemented in Ticket-218575). However,
-    /// event_mocks and field_mocks should still be provided to the Create function so that EventTypes and FieldTypes
-    /// can still be deduced by Create which is needed for creating the binding factories. This note can be removed once
-    /// Ticket-218575 has been implemented.
+    /// Note. Currently, the mocks are not injected in the Create function (to be implemented in Ticket-218575).
+    /// However, event_mocks and field_mocks should still be provided to the Create function so that EventTypes and
+    /// FieldTypes can still be deduced by Create which is needed for creating the binding factories. This note can be
+    /// removed once Ticket-218575 has been implemented.
     ///
     /// @tparam EventTypes Variadic template pack containing the types of ALL events specified in the interface
     /// @tparam FieldTypes Variadic template pack containing the types of ALL fields specified in the interface

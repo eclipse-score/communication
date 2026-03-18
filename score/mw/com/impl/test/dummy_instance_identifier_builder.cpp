@@ -93,8 +93,8 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateLolaInstanceIdentifierW
 
 InstanceIdentifier DummyInstanceIdentifierBuilder::CreateBlankBindingInstanceIdentifier()
 {
-    instance_deployment_ =
-        std::make_unique<ServiceInstanceDeployment>(type_, score::cpp::blank{}, QualityType::kASIL_QM, instance_specifier_);
+    instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(
+        type_, score::cpp::blank{}, QualityType::kASIL_QM, instance_specifier_);
     return make_InstanceIdentifier(*instance_deployment_, type_deployment_);
 }
 

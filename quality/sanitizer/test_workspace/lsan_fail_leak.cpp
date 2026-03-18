@@ -1,5 +1,5 @@
 /********************************************************************************
-* Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -11,8 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-int main() {
-    auto *p = new int[100];
-    p[0] = 0; // Leaked memory
+int main()
+{
+    auto* p = new int[100];
+    p[0] = 0;  // Leaked memory
     return 0;
 }

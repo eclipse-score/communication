@@ -32,7 +32,8 @@ struct Params
 };
 
 template <typename ParsedType, typename SavedType = ParsedType>
-score::cpp::optional<SavedType> GetValueIfProvided(const boost::program_options::variables_map& args, std::string arg_string)
+score::cpp::optional<SavedType> GetValueIfProvided(const boost::program_options::variables_map& args,
+                                                   std::string arg_string)
 {
     return (args.count(arg_string) > 0U) ? static_cast<SavedType>(args[arg_string].as<ParsedType>())
                                          : score::cpp::optional<SavedType>();

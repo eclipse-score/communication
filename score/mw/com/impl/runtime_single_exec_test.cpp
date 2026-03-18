@@ -23,9 +23,9 @@
 #include <score/overload.hpp>
 #include <score/span.hpp>
 
-#include <score/utility.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <score/utility.hpp>
 
 #include <cstdlib>
 #include <fstream>

@@ -140,17 +140,19 @@ TEST_F(MethodResourceMapInsertFixture,
     score::cpp::ignore = method_resource_map_->CleanUpOldRegions(
         ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid2);
 
-    score::cpp::ignore = method_resource_map_->Insert(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
-                                               kDummyPid2,
-                                               std::make_shared<memory::shared::SharedMemoryResourceMock>());
+    score::cpp::ignore =
+        method_resource_map_->Insert(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                     kDummyPid2,
+                                     std::make_shared<memory::shared::SharedMemoryResourceMock>());
 
     // When doing a new cleanup to insert a new element with the same application ID and PID but different instance
     // counter
     const auto cleanup_result = method_resource_map_->CleanUpOldRegions(
         ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2}, kDummyPid2);
-    score::cpp::ignore = method_resource_map_->Insert(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2},
-                                               kDummyPid2,
-                                               std::make_shared<memory::shared::SharedMemoryResourceMock>());
+    score::cpp::ignore =
+        method_resource_map_->Insert(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2},
+                                     kDummyPid2,
+                                     std::make_shared<memory::shared::SharedMemoryResourceMock>());
 
     // Then the result should contain that no regions were removed
     EXPECT_EQ(cleanup_result, MethodResourceMap::CleanUpResult::NO_REGIONS_REMOVED);
@@ -169,8 +171,9 @@ TEST_F(MethodResourceMapInsertFixture, InsertingAlreadyExistingElementTerminates
 
     // When inserting the same element that was already inserted
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = method_resource_map_->CleanUpOldRegions(
-                                     ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = method_resource_map_->CleanUpOldRegions(
+            ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1));
 }
 
 using MethodResourceMapContainsFixture = MethodResourceMapFixture;

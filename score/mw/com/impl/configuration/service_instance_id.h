@@ -76,8 +76,8 @@ const ServiceInstanceIdBinding& GetServiceInstanceIdBinding(const ServiceInstanc
     // LCOV_EXCL_BR_START False positive: The tool is reporting that the true decision is never taken. We have tests in
     // service_instance_deployment_test.cpp (GettingLolaBindingFromServiceInstanceIdNotContainingLolaBindingTerminates
     // and GettingSomeIpBindingFromServiceInstanceIdNotContainingSomeIpBindingTerminates) which test the true branch of
-    // this condition. This is a bug with the tool to be fixed in (Ticket-219132). This suppression should be removed when
-    // the tool is fixed.
+    // this condition. This is a bug with the tool to be fixed in (Ticket-219132). This suppression should be removed
+    // when the tool is fixed.
     if (service_instance_id_binding == nullptr)
     // LCOV_EXCL_BR_STOP
     {

@@ -28,7 +28,7 @@ std::string_view score::mw::com::test::TestErrorDomain::MessageFor(const score::
 
 constexpr score::mw::com::test::TestErrorDomain test_error_domain;
 score::result::Error score::mw::com::test::MakeError(score::mw::com::test::TestErrorCode code,
-                                                 std::string_view user_message) noexcept
+                                                     std::string_view user_message) noexcept
 {
     return {static_cast<score::result::ErrorCode>(code), test_error_domain, user_message};
 }

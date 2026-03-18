@@ -350,7 +350,8 @@ const auto kDataChannelPath{"/lola-data-0000000000000001-00016"};
 static const std::string kServiceInstanceUsageFilePath{"/test_service_instance_usage_file_path"};
 static const std::int32_t kServiceInstanceUsageFileDescriptor{7890};
 
-static const score::os::Fcntl::Open kCreateOrOpenFlags{score::os::Fcntl::Open::kCreate | score::os::Fcntl::Open::kReadOnly};
+static const score::os::Fcntl::Open kCreateOrOpenFlags{score::os::Fcntl::Open::kCreate |
+                                                       score::os::Fcntl::Open::kReadOnly};
 
 static const os::Fcntl::Operation kNonBlockingExlusiveLockOperation =
     os::Fcntl::Operation::kLockExclusive | score::os::Fcntl::Operation::kLockNB;

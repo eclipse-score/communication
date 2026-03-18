@@ -16,7 +16,6 @@
 #include "score/memory/shared/i_shared_memory_resource.h"
 #include "score/memory/shared/shared_memory_resource.h"
 #include "score/memory/shared/shared_memory_resource_mock.h"
-#include "score/result/result.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
@@ -24,6 +23,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
+#include "score/result/result.h"
 
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -161,14 +161,15 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingWithoutRegisteringCa
 
     // When calling OnProxyMethodSubscribeFinished without first calling Register
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                                     kValidInArgStorage,
-                                                                                     kValidReturnStorage,
-                                                                                     proxy_method_instance_identifier_,
-                                                                                     method_call_handler_scope_,
-                                                                                     kAllowedProxyUid,
-                                                                                     kAllowedProxyPid,
-                                                                                     kAsilLevel));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(
+        score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                                   kValidInArgStorage,
+                                                                   kValidReturnStorage,
+                                                                   proxy_method_instance_identifier_,
+                                                                   method_call_handler_scope_,
+                                                                   kAllowedProxyUid,
+                                                                   kAllowedProxyPid,
+                                                                   kAsilLevel));
 }
 
 TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingRegistersCallbackWithProvidedData)
@@ -261,14 +262,15 @@ TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, FailingToGetLolaRuntimeTerm
 
     // When calling OnProxyMethodSubscribeFinished with a registered callback
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                                                     kValidInArgStorage,
-                                                                                     kValidReturnStorage,
-                                                                                     proxy_method_instance_identifier_,
-                                                                                     method_call_handler_scope_,
-                                                                                     kAllowedProxyUid,
-                                                                                     kAllowedProxyPid,
-                                                                                     kAsilLevel));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
+                                                                   kValidInArgStorage,
+                                                                   kValidReturnStorage,
+                                                                   proxy_method_instance_identifier_,
+                                                                   method_call_handler_scope_,
+                                                                   kAllowedProxyUid,
+                                                                   kAllowedProxyPid,
+                                                                   kAsilLevel));
 }
 
 TEST_F(SkeletonMethodOnProxyMethodSubscribedFixture, CallingWillNotCallUnregister)
@@ -439,7 +441,8 @@ TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingBeforeSubscribingT
 
     // When calling OnProxyMethodUnsubscribe with proxy_method_instance_identifier_ which was never subscribed
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        unit_->OnProxyMethodUnsubscribe(proxy_method_instance_identifier_));
 }
 
 using SkeletonMethodCallFixture = SkeletonMethodFixture;
@@ -456,13 +459,13 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndStorageDispatchesTo
 
     // Given that OnProxyMethodSubscribeFinished was called with only InArgs TypeErasedElementInfo and storage
     score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsOnly,
-                                                        kValidInArgStorage,
-                                                        kEmptyReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_,
-                                                        kAllowedProxyUid,
-                                                        kAllowedProxyPid,
-                                                        kAsilLevel);
+                                                               kValidInArgStorage,
+                                                               kEmptyReturnStorage,
+                                                               proxy_method_instance_identifier_,
+                                                               method_call_handler_scope_,
+                                                               kAllowedProxyUid,
+                                                               kAllowedProxyPid,
+                                                               kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -484,13 +487,13 @@ TEST_F(SkeletonMethodCallFixture,
 
     // Given that OnProxyMethodSubscribeFinished was called with only Return TypeErasedElementInfo and storage
     score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithReturnOnly,
-                                                        kEmptyInArgStorage,
-                                                        kValidReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_,
-                                                        kAllowedProxyUid,
-                                                        kAllowedProxyPid,
-                                                        kAsilLevel);
+                                                               kEmptyInArgStorage,
+                                                               kValidReturnStorage,
+                                                               proxy_method_instance_identifier_,
+                                                               method_call_handler_scope_,
+                                                               kAllowedProxyUid,
+                                                               kAllowedProxyPid,
+                                                               kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -513,13 +516,13 @@ TEST_F(SkeletonMethodCallFixture,
     // Given that OnProxyMethodSubscribeFinished was called with both InArgs and Return TypeErasedElementInfo and
     // storage
     score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsAndReturn,
-                                                        kValidInArgStorage,
-                                                        kValidReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_,
-                                                        kAllowedProxyUid,
-                                                        kAllowedProxyPid,
-                                                        kAsilLevel);
+                                                               kValidInArgStorage,
+                                                               kValidReturnStorage,
+                                                               proxy_method_instance_identifier_,
+                                                               method_call_handler_scope_,
+                                                               kAllowedProxyUid,
+                                                               kAllowedProxyPid,
+                                                               kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -540,13 +543,13 @@ TEST_F(SkeletonMethodCallFixture, CallingWithNoTypeInfosAndStoragesDispatchesToR
 
     // Given that OnProxyMethodSubscribeFinished was called with only Return TypeErasedElementInfo and storage
     score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithNoInArgsOrReturn,
-                                                        kEmptyInArgStorage,
-                                                        kEmptyReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_,
-                                                        kAllowedProxyUid,
-                                                        kAllowedProxyPid,
-                                                        kAsilLevel);
+                                                               kEmptyInArgStorage,
+                                                               kEmptyReturnStorage,
+                                                               proxy_method_instance_identifier_,
+                                                               method_call_handler_scope_,
+                                                               kAllowedProxyUid,
+                                                               kAllowedProxyPid,
+                                                               kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
@@ -561,19 +564,20 @@ TEST_F(SkeletonMethodCallFixture, CallingWithInArgTypeInfoAndNoValidStorageTermi
     // Given that OnProxyMethodSubscribeFinished was called with only InArgs TypeErasedElementInfo but no valid InArgs
     // storage
     score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithInArgsOnly,
-                                                        kEmptyInArgStorage,
-                                                        kEmptyReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_,
-                                                        kAllowedProxyUid,
-                                                        kAllowedProxyPid,
-                                                        kAsilLevel);
+                                                               kEmptyInArgStorage,
+                                                               kEmptyReturnStorage,
+                                                               proxy_method_instance_identifier_,
+                                                               method_call_handler_scope_,
+                                                               kAllowedProxyUid,
+                                                               kAllowedProxyPid,
+                                                               kAsilLevel);
 
     // When the method call handler is called by the message passing (i.e. when a Proxy sends a message passing message
     // to call the method)
     // Then the program terminates
     ASSERT_TRUE(captured_method_call_handler_.has_value());
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        std::invoke(captured_method_call_handler_.value(), kDummyQueuePosition));
 }
 
 TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeErasedCallback)
@@ -583,13 +587,13 @@ TEST_F(SkeletonMethodCallFixture, CallingAfterScopeHasExpiredDoesNotCallTypeEras
     // Given that OnProxyMethodSubscribeFinished was called with only Return TypeErasedElementInfo but no valid Return
     // storage
     score::cpp::ignore = unit_->OnProxyMethodSubscribeFinished(kTypeErasedInfoWithReturnOnly,
-                                                        kEmptyInArgStorage,
-                                                        kEmptyReturnStorage,
-                                                        proxy_method_instance_identifier_,
-                                                        method_call_handler_scope_,
-                                                        kAllowedProxyUid,
-                                                        kAllowedProxyPid,
-                                                        kAsilLevel);
+                                                               kEmptyInArgStorage,
+                                                               kEmptyReturnStorage,
+                                                               proxy_method_instance_identifier_,
+                                                               method_call_handler_scope_,
+                                                               kAllowedProxyUid,
+                                                               kAllowedProxyPid,
+                                                               kAsilLevel);
     // and given that the method call handler scope has expired
     method_call_handler_scope_.Expire();
 
