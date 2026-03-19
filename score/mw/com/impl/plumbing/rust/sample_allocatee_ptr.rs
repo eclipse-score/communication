@@ -17,14 +17,7 @@
 use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
-use common_rs::{BlankBinding, ControlSlotType, CxxOptional, EventDataControl, SlotIndexType};
-
-#[repr(C)]
-struct ControlSlotCompositeIndicator {
-    _slot_index: SlotIndexType,
-    _slot_pointer_qm: *mut ControlSlotType,
-    _slot_pointer_asil_b: *mut ControlSlotType,
-}
+use common_rs::{BlankBinding, CxxOptional, EventDataControl, SlotIndexType};
 
 #[repr(C)]
 struct EventDataControlComposite {
@@ -36,7 +29,7 @@ struct EventDataControlComposite {
 #[repr(C)]
 struct LolaSampleAllocateePtrBinding<T> {
     _managed_object: *mut T,
-    _event_slot_indicator: ControlSlotCompositeIndicator,
+    _event_slot_index: SlotIndexType,
     _event_data_control: CxxOptional<EventDataControlComposite<>>,
 }
 
@@ -123,16 +116,6 @@ mod tests {
             SampleAllocateePtr<UserType>,
             cpp_size,
             "SampleAllocateePtr<UserType>"
-        );
-    }
-
-    #[test]
-    fn test_control_slot_composite_indicator_size() {
-        let cpp_size = SampleAllocateePtrLola::get_control_slot_composite_indicator_size();
-        verify_size_and_align!(
-            ControlSlotCompositeIndicator,
-            cpp_size,
-            "ControlSlotCompositeIndicator"
         );
     }
 
