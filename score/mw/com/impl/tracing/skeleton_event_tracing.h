@@ -68,8 +68,7 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<SampleType>
                 lola::SampleAllocateePtrView{lola_ptr}.GetEventDataControlComposite();
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite.has_value());
             const auto referenced_slot = lola_ptr.GetReferencedSlot();
-            const auto sample_timestamp =
-                event_data_control_composite->GetEventSlotTimestamp(referenced_slot.GetIndex());
+            const auto sample_timestamp = event_data_control_composite->GetEventSlotTimestamp(referenced_slot);
             static_assert(
                 sizeof(lola::EventSlotStatus::EventTimeStamp) ==
                     sizeof(impl::tracing::ITracingRuntime::TracePointDataId),
@@ -116,16 +115,15 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
             auto& proxy_event_data_control_local =
                 event_data_control_composite_result->GetProxyEventDataControlLocalView();
 
-            auto slot_indicator = lola_ptr.GetReferencedSlot();
-            proxy_event_data_control_local.ReferenceSpecificEvent(slot_indicator.GetIndex(),
+            const auto event_slot_index = lola_ptr.GetReferencedSlot();
+            proxy_event_data_control_local.ReferenceSpecificEvent(event_slot_index,
                                                                   lola::TransactionLogSet::kSkeletonIndexSentinel);
             const auto* const managed_object = lola::SampleAllocateePtrView{lola_ptr}.GetManagedObject();
 
-            lola::SamplePtr<SampleType> sample_ptr{
-                managed_object,
-                proxy_event_data_control_local,
-                lola::ControlSlotIndicator(slot_indicator.GetIndex(), slot_indicator.GetSlotQM()),
-                lola::TransactionLogSet::kSkeletonIndexSentinel};
+            lola::SamplePtr<SampleType> sample_ptr{managed_object,
+                                                   proxy_event_data_control_local,
+                                                   event_slot_index,
+                                                   lola::TransactionLogSet::kSkeletonIndexSentinel};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
         },
         [](mock_binding::SampleAllocateePtr<SampleType>& ptr) -> TypeErasedSamplePtr {

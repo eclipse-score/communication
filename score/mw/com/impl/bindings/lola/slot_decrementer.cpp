@@ -12,14 +12,16 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
+#include "score/mw/com/impl/bindings/lola/control_slot_types.h"
+
 namespace score::mw::com::impl::lola
 {
 
 SlotDecrementer::SlotDecrementer(ProxyEventDataControlLocalView<>& event_data_control_local,
-                                 ControlSlotIndicator control_slot_indicator,
+                                 const SlotIndexType event_slot_index,
                                  const TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
     : event_data_control_local_{&event_data_control_local},
-      control_slot_indicator_{control_slot_indicator},
+      event_slot_index_{event_slot_index},
       transaction_log_idx_{transaction_log_idx}
 {
 }
@@ -34,9 +36,9 @@ SlotDecrementer::SlotDecrementer(SlotDecrementer&& other) noexcept
       // Suppress "AUTOSAR C++14 A12-8-4" rule finding. This rule states: "Move constructor shall not initialize its
       // class members and base classes using copy semantics."
       // Rationale: False positive - std::move is used which will result in the move constructor of
-      // control_slot_indicator_ being called.
+      // event_slot_index_ being called.
       // coverity[autosar_cpp14_a12_8_4_violation : FALSE]
-      control_slot_indicator_{std::move(other.control_slot_indicator_)},
+      event_slot_index_{std::move(other.event_slot_index_)},
       transaction_log_idx_{other.transaction_log_idx_}
 {
     other.event_data_control_local_ = nullptr;
@@ -53,7 +55,7 @@ SlotDecrementer& SlotDecrementer::operator=(SlotDecrementer&& other) noexcept
     {
         internal_delete();
         event_data_control_local_ = other.event_data_control_local_;
-        control_slot_indicator_ = other.control_slot_indicator_;
+        event_slot_index_ = other.event_slot_index_;
         transaction_log_idx_ = other.transaction_log_idx_;
 
         other.event_data_control_local_ = nullptr;
@@ -65,7 +67,7 @@ void SlotDecrementer::internal_delete() noexcept
 {
     if (event_data_control_local_ != nullptr)
     {
-        event_data_control_local_->DereferenceEvent(control_slot_indicator_, transaction_log_idx_);
+        event_data_control_local_->DereferenceEvent(event_slot_index_, transaction_log_idx_);
     }
 }
 

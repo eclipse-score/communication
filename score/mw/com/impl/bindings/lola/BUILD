@@ -562,26 +562,6 @@ cc_library(
 )
 
 cc_library(
-    name = "control_slot_indicator",
-    srcs = [
-        "control_slot_composite_indicator.cpp",
-        "control_slot_indicator.cpp",
-    ],
-    hdrs = [
-        "control_slot_composite_indicator.h",
-        "control_slot_indicator.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-    deps = [
-        ":control_slot_types",
-        ":event_slot_status",
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
     name = "event_data_control",
     srcs = ["event_data_control.cpp"],
     hdrs = ["event_data_control.h"],
@@ -589,7 +569,6 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":control_slot_indicator",
         ":control_slot_types",
         ":transaction_log_set",
         "@score_baselibs//score/containers:dynamic_array",
@@ -605,7 +584,6 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":control_slot_indicator",
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
@@ -622,7 +600,6 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":control_slot_indicator",
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
@@ -1233,28 +1210,6 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
-    name = "control_slot_composite_indicator_test",
-    srcs = [
-        "control_slot_composite_indicator_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":control_slot_indicator",
-    ],
-)
-
-cc_gtest_unit_test(
-    name = "control_slot_indicator_test",
-    srcs = [
-        "control_slot_indicator_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    deps = [
-        ":control_slot_indicator",
-    ],
-)
-
-cc_gtest_unit_test(
     name = "element_fq_id_test",
     srcs = [
         "element_fq_id_test.cpp",
@@ -1550,8 +1505,6 @@ cc_unit_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
-        ":control_slot_composite_indicator_test",
-        ":control_slot_indicator_test",
         ":element_fq_id_test",
         ":event_data_storage_test",
         ":event_slot_status_test",

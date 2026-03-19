@@ -56,7 +56,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
     lola::SkeletonEventDataControlLocalView<> skeleton_event_data_ctrl_qm_local_{event_data_ctrl_qm_};
     lola::EventDataControlComposite<> event_data_ctrl_{skeleton_event_data_ctrl_qm_local_, nullptr};
     lola::SlotIndexType event_data_slot_index_{std::numeric_limits<lola::SlotIndexType>::max()};
-    lola::SampleAllocateePtr<std::uint8_t> lola_allocatee_ptr_{&value_, event_data_ctrl_, {}};
+    lola::SampleAllocateePtr<std::uint8_t> lola_allocatee_ptr_{&value_, event_data_ctrl_, event_data_slot_index_};
     SampleAllocateePtr<std::uint8_t> valid_unit_{MakeSampleAllocateePtr(std::move(lola_allocatee_ptr_))};
 
     SampleAllocateePtr<std::uint8_t> unit_with_unique_ptr_{MakeSampleAllocateePtr(
@@ -101,7 +101,7 @@ TEST_F(SampleAllocateePtrFixture, CanSwap)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
     // Given a valid_unit and a second SampleAllocateePtr
     std::uint8_t value{0x43};
-    lola::SampleAllocateePtr<std::uint8_t> foo{&value, event_data_ctrl_, {}};
+    lola::SampleAllocateePtr<std::uint8_t> foo{&value, event_data_ctrl_, event_data_slot_index_};
     auto unit = MakeSampleAllocateePtr(std::move(foo));
 
     // When swapping both classes
@@ -254,7 +254,7 @@ TEST_F(SampleAllocateePtrFixture, ValidLolaSampleAllocateePtrConvertsToTrue)
     } value;
 
     // Given a valid lola::SampleAllocateePtr
-    lola::SampleAllocateePtr<Foo> valid_lola_ptr{&value, event_data_ctrl_, {}};
+    lola::SampleAllocateePtr<Foo> valid_lola_ptr{&value, event_data_ctrl_, event_data_slot_index_};
 
     // When creating an impl::SampleAllocateePtr from the lola::SampleAllocateePtr
     const auto ptr = MakeSampleAllocateePtr(std::move(valid_lola_ptr));
@@ -308,7 +308,7 @@ TEST_F(SampleAllocateePtrFixture, CanDereferenceUsingArrow)
 
     value.bar = 0x42;
 
-    lola::SampleAllocateePtr<Foo> foo{&value, event_data_ctrl_, {}};
+    lola::SampleAllocateePtr<Foo> foo{&value, event_data_ctrl_, event_data_slot_index_};
     const auto unit = MakeSampleAllocateePtr(std::move(foo));
 
     EXPECT_EQ(value.bar, unit->bar);
@@ -321,7 +321,7 @@ TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
     {
         std::uint8_t bar{};
     } value;
-    lola::SampleAllocateePtr<Foo> foo{&value, event_data_ctrl_, {}};
+    lola::SampleAllocateePtr<Foo> foo{&value, event_data_ctrl_, event_data_slot_index_};
     const auto ptr = MakeSampleAllocateePtr(std::move(foo));
     const auto unit = SampleAllocateePtrView<Foo>{ptr};
 
@@ -529,7 +529,7 @@ TEST_F(SampleAllocateePtrFixture, UnderlyingLolaPtrIsFreedOnDestruction)
     bool is_destructed{false};
     ObjectDestructionNotifier object_destruction_notifier(is_destructed);
     lola::SampleAllocateePtr<ObjectDestructionNotifier> lola_allocatee_ptr{
-        &object_destruction_notifier, event_data_ctrl, {}};
+        &object_destruction_notifier, event_data_ctrl, event_data_slot_index_};
     {
         SampleAllocateePtr<ObjectDestructionNotifier> unit_with_lola_sample_allocatee_ptr{
             MakeSampleAllocateePtr(std::move(lola_allocatee_ptr))};
