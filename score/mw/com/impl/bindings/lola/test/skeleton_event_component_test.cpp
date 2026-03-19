@@ -147,10 +147,10 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
         ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_data_control};
         proxy_event_data_control_local.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot_indicator =
+        auto slot_index =
             proxy_event_data_control_local.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
-        EXPECT_TRUE(slot_indicator.IsValid());
-        return values->at(slot_indicator.GetIndex());
+        EXPECT_TRUE(slot_index.has_value());
+        return values->at(slot_index.value());
     }
 
     std::size_t GetFreeSampleSlots() const

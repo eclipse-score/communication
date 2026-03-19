@@ -13,7 +13,6 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_DATA_CONTROL_LOCAL_VIEW_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_DATA_CONTROL_LOCAL_VIEW_H
 
-#include "score/mw/com/impl/bindings/lola/control_slot_indicator.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
@@ -25,6 +24,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -77,13 +77,12 @@ class ProxyEventDataControlLocalView final
     /// \details This method will perform retries (bounded) on data-races. I.e. if a viable slot failed to be marked
     /// for reading because of a data race, retries are made.
     ///
-    /// \return Will return a valid ControlSlotIndicator indicating/pointing to an event, which is the youngest/newest
-    ///         one between last_search_time and upper_limit. I.e. its timestamp is between last_search_time and
-    ///         upper_limit and all other events with timestamps between last_search_time and upper_limit have a smaller
-    ///         timestamp (are older).
-    ///         If no such event exists, an invalid ControlSlotIndicator is returned.
+    /// \return Will return the index of an event, which is the youngest/newest one between last_search_time and
+    ///         upper_limit. I.e. its timestamp is between last_search_time and upper_limit and all other events with
+    ///         timestamps between last_search_time and upper_limit have a smaller timestamp (are older). If no such
+    ///         event exists, an empty optional is returned.
     /// \post DereferenceEvent() is invoked to withdraw read-ownership
-    ControlSlotIndicator ReferenceNextEvent(
+    std::optional<SlotIndexType> ReferenceNextEvent(
         const EventSlotStatus::EventTimeStamp last_search_time,
         const TransactionLogSet::TransactionLogIndex transaction_log_index,
         const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
@@ -112,7 +111,7 @@ class ProxyEventDataControlLocalView final
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will also record the transaction in the TransactionLog corresponding to transaction_log_index
-    void DereferenceEvent(ControlSlotIndicator slot_indicator,
+    void DereferenceEvent(const SlotIndexType slot_index,
                           const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
 
     /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).

@@ -67,7 +67,7 @@ class SampleAllocateePtr
     // reference. So we need to have two different class initializations. coverity[autosar_cpp14_m3_2_2_violation]
     // coverity[autosar_cpp14_a12_1_5_violation]
     explicit SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept
-        : managed_object_{nullptr}, event_slot_indicator_{}, event_data_control_{std::nullopt}
+        : managed_object_{nullptr}, event_slot_index_{kUninitialisedEventSlotIndex}, event_data_control_{std::nullopt}
     {
     }
 
@@ -75,10 +75,10 @@ class SampleAllocateePtr
     /// \param ptr pointer to managed object
     /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_index index of event slot
-    explicit SampleAllocateePtr(pointer ptr,
-                                const EventDataControlComposite<>& event_data_ctrl,
-                                ControlSlotCompositeIndicator slot_indicator) noexcept
-        : managed_object_{ptr}, event_slot_indicator_{slot_indicator}, event_data_control_{event_data_ctrl}
+    SampleAllocateePtr(pointer ptr,
+                       const EventDataControlComposite<>& event_data_ctrl,
+                       const SlotIndexType slot_index) noexcept
+        : managed_object_{ptr}, event_slot_index_{slot_index}, event_data_control_{event_data_ctrl}
     {
     }
 
@@ -118,7 +118,7 @@ class SampleAllocateePtr
         using std::swap;
 
         swap(this->managed_object_, other.managed_object_);
-        swap(this->event_slot_indicator_, other.event_slot_indicator_);
+        swap(this->event_slot_index_, other.event_slot_index_);
         swap(this->event_data_control_, other.event_data_control_);
     }
 
@@ -159,33 +159,35 @@ class SampleAllocateePtr
         return *this;
     };
 
-    /// \brief access to internal control-slot-indicator
-    /// \return ControlSlotCompositeIndicator pointing to the underlying shmem event slot.
-    ControlSlotCompositeIndicator GetReferencedSlot() const noexcept
+    /// \brief access to internal slot index
+    /// \return slot index of underlying shmem event slot.
+    SlotIndexType GetReferencedSlot() const noexcept
     {
-        return event_slot_indicator_;
+        return event_slot_index_;
     };
 
   private:
+    static constexpr SlotIndexType kUninitialisedEventSlotIndex = std::numeric_limits<SlotIndexType>::max();
+
     void internal_delete()
     {
         managed_object_ = nullptr;
-        if (event_slot_indicator_.IsValidQM() || event_slot_indicator_.IsValidAsilB())
+        if (event_slot_index_ < kUninitialisedEventSlotIndex)
         {
             // LCOV_EXCL_BR_START: Defensive programming: The only time that event_data_control_ does not have a value
-            // is if the SampleAllocateePtr is default initialised or initialised with a nullptr. In both these cases
-            // IsValidQM/IsValidAsilB will return false, so we will never enter this branch.
+            // is if the SampleAllocateePtr is default initialised or initialised with a nullptr. In both these, cases
+            // event_slot_index_ == kUninitialisedEventSlotIndex so we will never enter this branch.
             if (event_data_control_.has_value())
             {
                 // LCOV_EXCL_BR_STOP
-                event_data_control_->Discard(event_slot_indicator_);
+                event_data_control_->Discard(event_slot_index_);
             }
-            event_slot_indicator_.Reset();
+            event_slot_index_ = kUninitialisedEventSlotIndex;
         }
     }
 
     pointer managed_object_;
-    ControlSlotCompositeIndicator event_slot_indicator_;
+    SlotIndexType event_slot_index_;
     std::optional<EventDataControlComposite<>> event_data_control_;
 };
 
