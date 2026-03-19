@@ -32,7 +32,8 @@ namespace score::mw::com::impl::lola
 /// This is a data-only class. All behaviour related to EventDataControl is added to EventDataControlLocal.
 /// This is because accessing state_slots_ (which is in shared memory) during runtime requires using (dereferencing,
 /// copying etc.) OffsetPtrs which can negatively affect performance. Therefore, the data in EventDataControl is created
-/// / opened once during Skeleton / Proxy creation, and then is accessed during runtime via EventDataControlLocal.
+/// / opened once during Skeleton / Proxy creation, and then is accessed during runtime via ProxyEventDataControlLocal /
+/// SkeletonEventDataControlLocal.
 ///
 /// It is one of the corner stone elements of our LoLa IPC for Events!
 class EventDataControl

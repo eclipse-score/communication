@@ -11,8 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
+#include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 
-#include <utility>
+#include <optional>
 
 namespace score::mw::com::impl::lola
 {
@@ -53,59 +54,29 @@ template <template <class> class AtomicIndirectorType>
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto EventDataControlComposite<AtomicIndirectorType>::GetNextFreeMultiSlot() const noexcept
-    -> ControlSlotCompositeIndicator
+    -> std::optional<SlotWithTimeStamp>
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
     score::cpp::optional<SlotIndexType> possible_index{};
     SkeletonEventDataControlLocalView<>::LocalEventControlSlots::iterator qm_slot_ptr{};
     SkeletonEventDataControlLocalView<>::LocalEventControlSlots::iterator asil_b_slot_ptr{};
 
-    // Here we are explicitly iterating via iterators/raw-pointers over the slots as it avoids unnecessary
-    // bounds-checks, which index access would apply!
-    // Suppress "AUTOSAR C++14 A5-2-2" finding rule. This rule states: "Traditional C-style casts shall not be used".
-    // There is no C-style cast happening here! "current_index" and "it" are automatically deduced.
-    // Suppress "AUTOSAR C++14 M6-5-5" finding rule. This rule states: "A loop-control-variable other than the
-    // loop-counter shall not be modified within condition or expression".
-    // Both variables (current_index, it) depict exactly the same element once via index addressing and once via
-    // iterator/raw-pointer! The func has to return both, and we want both to be fully in sync, therefore we increment
-    // them both symmetrically, since in this case, it is less error-prone!
-    // Suppress "AUTOSAR C++14 M5-0-15". This rule states:"indexing shall be the only form of pointer arithmetic.".
-    // Rationale: Tolerated due to containers providing pointer-like iterators.
-    // The Coverity tool considers these iterators as raw pointers.
-    // Suppress "AUTOSAR C++14 A12-8-3". This rule states:"Moved-from object shall not be read-accessed.".
-    // Rationale: This is a false positive, object is not moved-from.
-    // Suppress "AUTOSAR C++14 M5-2-10". This rule states: "The increment (++) and decrement (--) operators shall not be
-    // mixed with other operators in an expression".
-    // Rationale: We are only using increment operators here on separate variables! That we use it on separate variables
-    // is explained above for M6-5-5.
-    for (auto [current_index, it_slots_qm, it_slots_asil_b] = std::make_tuple(
-             // coverity[autosar_cpp14_a5_2_2_violation]
-             std::size_t{0U},
-             asil_qm_control_local_.get().state_slots_.begin(),
-             asil_b_control_local_->state_slots_.begin());
-         current_index != asil_b_control_local_->state_slots_.size();
-         // coverity[autosar_cpp14_m6_5_5_violation]
-         // coverity[autosar_cpp14_m5_0_15_violation]
-         // coverity[autosar_cpp14_a12_8_3_violation : FALSE]
-         // coverity[autosar_cpp14_m5_2_10_violation]
-         ++it_slots_qm,
-                                           // coverity[autosar_cpp14_m5_0_15_violation]
-                                           // coverity[autosar_cpp14_m6_5_5_violation]
-         ++it_slots_asil_b,
-                                           // coverity[autosar_cpp14_a12_8_3_violation : FALSE]
-                                           // coverity[autosar_cpp14_m6_5_5_violation]
-         ++current_index)
+    for (SlotIndexType slot_index = 0U;
+         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
+         // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
+         // coverity[autosar_cpp14_a4_7_1_violation]
+         slot_index < static_cast<SlotIndexType>(asil_b_control_local_->state_slots_.size());
+         ++slot_index)
     {
-        const EventSlotStatus slot_qm{it_slots_qm->load(std::memory_order_acquire)};
-        const EventSlotStatus slot_b{it_slots_asil_b->load(std::memory_order_acquire)};
+        const EventSlotStatus slot_qm{
+            asil_qm_control_local_.get().state_slots_[slot_index].load(std::memory_order_acquire)};
+        const EventSlotStatus slot_b{asil_b_control_local_->state_slots_[slot_index].load(std::memory_order_acquire)};
         if (slot_b.IsInvalid() || ((slot_qm.IsUsed() == false) && (slot_b.IsUsed() == false)))
         {
             const auto time_stamp = slot_b.GetTimeStamp();
             if (time_stamp < oldest_time_stamp)
             {
-                possible_index = current_index;
-                qm_slot_ptr = it_slots_qm;
-                asil_b_slot_ptr = it_slots_asil_b;
+                possible_index = slot_index;
                 oldest_time_stamp = time_stamp;
             }
         }
@@ -113,7 +84,7 @@ auto EventDataControlComposite<AtomicIndirectorType>::GetNextFreeMultiSlot() con
 
     if (possible_index.has_value())
     {
-        return {possible_index.value(), *qm_slot_ptr, *asil_b_slot_ptr};
+        return {{possible_index.value(), oldest_time_stamp}};
     }
     return {};
 }
@@ -124,14 +95,18 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto EventDataControlComposite<AtomicIndirectorType>::TryLockSlot(ControlSlotCompositeIndicator slot_indicator) noexcept
-    -> bool
+auto EventDataControlComposite<AtomicIndirectorType>::TryLockSlot(
+    const SlotWithTimeStamp expected_slot_with_timestamp) noexcept -> bool
 {
-    auto& slot_value_qm = slot_indicator.GetSlotQM();
-    auto& slot_value_asil_b = slot_indicator.GetSlotAsilB();
+    const auto [slot_index, expected_time_stamp] = expected_slot_with_timestamp;
 
-    EventSlotStatus asil_qm_old{slot_value_qm.load(std::memory_order_acquire)};
-    EventSlotStatus asil_b_old{slot_value_asil_b.load(std::memory_order_acquire)};
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) <
+                                        asil_qm_control_local_.get().state_slots_.size());
+    auto& slot_value_qm_atomic = asil_qm_control_local_.get().state_slots_[slot_index];
+    auto& slot_value_asil_b_atomic = asil_b_control_local_->state_slots_[slot_index];
+
+    EventSlotStatus asil_qm_old{slot_value_qm_atomic.load(std::memory_order_acquire)};
+    EventSlotStatus asil_b_old{slot_value_asil_b_atomic.load(std::memory_order_acquire)};
 
     if (asil_qm_old.IsUsed() || asil_b_old.IsUsed())
     {
@@ -144,17 +119,17 @@ auto EventDataControlComposite<AtomicIndirectorType>::TryLockSlot(ControlSlotCom
     auto asil_qm_old_value_type = static_cast<EventSlotStatus::value_type&>(asil_qm_old);
     auto in_writing_value_type = static_cast<EventSlotStatus::value_type&>(in_writing);
     if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
-            slot_value_qm, asil_qm_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
+            slot_value_qm_atomic, asil_qm_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
     {
         return false;
     }
 
     auto asil_b_old_value_type = static_cast<EventSlotStatus::value_type&>(asil_b_old);
     if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
-            slot_value_asil_b, asil_b_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
+            slot_value_asil_b_atomic, asil_b_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
     {
         // Roll back write lock on asil qm since lock on b failed
-        slot_value_qm.store(static_cast<EventSlotStatus::value_type>(asil_qm_old), std::memory_order_release);
+        slot_value_qm_atomic.store(static_cast<EventSlotStatus::value_type>(asil_qm_old), std::memory_order_release);
         return false;
     }
 
@@ -167,7 +142,7 @@ template <template <class> class AtomicIndirectorType>
 // have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
 // to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() noexcept -> ControlSlotCompositeIndicator
+auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() noexcept -> std::optional<SlotIndexType>
 {
     // \todo we should also monitor retry counts in the multi-slot/EventDataControlComposite case, like we are doing in
     //  EventDataControl! Currently we are "blind", if we have retries, because ASIL-QM/ASIL-B consumers do influence
@@ -175,11 +150,11 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() no
     for (std::size_t counter{0U}; counter < MAX_MULTI_ALLOCATE_RETRY_COUNT; ++counter)
     {
         const auto possible_slot = GetNextFreeMultiSlot();
-        if (possible_slot.IsValidQmAndAsilB())
+        if (possible_slot.has_value())
         {
-            if (TryLockSlot(possible_slot))
+            if (TryLockSlot(possible_slot.value()))
             {
-                return possible_slot;
+                return possible_slot->slot_index;
             }
         }
     }
@@ -188,34 +163,20 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextMultiSlot() no
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcept -> ControlSlotCompositeIndicator
+auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcept -> AllocationResult
 {
     if (asil_b_control_local_ == nullptr)
     {
-        auto qm_control_slot_indicator = asil_qm_control_local_.get().AllocateNextSlot();
-        if (qm_control_slot_indicator.IsValid())
-        {
-            return {qm_control_slot_indicator.GetIndex(),
-                    qm_control_slot_indicator.GetSlot(),
-                    ControlSlotCompositeIndicator::CompositeSlotTagType::QM};
-        }
-        return {};
+        return {asil_qm_control_local_.get().AllocateNextSlot(), false};
     }
 
     if (ignore_qm_control_)
     {
-        auto asil_b_control_slot_indicator = asil_b_control_local_->AllocateNextSlot();
-        if (asil_b_control_slot_indicator.IsValid())
-        {
-            return {asil_b_control_slot_indicator.GetIndex(),
-                    asil_b_control_slot_indicator.GetSlot(),
-                    ControlSlotCompositeIndicator::CompositeSlotTagType::ASIL_B};
-        }
-        return {};
+        return {asil_b_control_local_->AllocateNextSlot(), true};
     }
 
     auto slot = AllocateNextMultiSlot();
-    if (!(slot.IsValidQmAndAsilB()))
+    if (!(slot.has_value()))
     {
         // we failed to allocate a "multi-slot". This is per our definition a misbehaviour of the QM consumers.
         // Even if it could be, that the ASIL-B side (ASIL-B producer and ASIL-B consumers are occupying all slots!
@@ -223,45 +184,38 @@ auto EventDataControlComposite<AtomicIndirectorType>::AllocateNextSlot() noexcep
         // to be able to allocate a further slot ...
         ignore_qm_control_ = true;
         // fall back to allocation solely within asil_b control.
-        auto asil_b_control_slot_indicator = asil_b_control_local_->AllocateNextSlot();
-        if (asil_b_control_slot_indicator.IsValid())
-        {
-            return {asil_b_control_slot_indicator.GetIndex(),
-                    asil_b_control_slot_indicator.GetSlot(),
-                    ControlSlotCompositeIndicator::CompositeSlotTagType::ASIL_B};
-        }
-        return {};
+        slot = asil_b_control_local_->AllocateNextSlot();
     }
-    return slot;
+    return {slot, ignore_qm_control_};
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventDataControlComposite<AtomicIndirectorType>::EventReady(ControlSlotCompositeIndicator slot_indicator,
+auto EventDataControlComposite<AtomicIndirectorType>::EventReady(const SlotIndexType slot_index,
                                                                  EventSlotStatus::EventTimeStamp time_stamp) noexcept
     -> void
 {
     if (asil_b_control_local_ != nullptr)
     {
-        asil_b_control_local_->EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotAsilB()}, time_stamp);
+        asil_b_control_local_->EventReady(slot_index, time_stamp);
     }
 
     if (!ignore_qm_control_)
     {
-        asil_qm_control_local_.get().EventReady({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()}, time_stamp);
+        asil_qm_control_local_.get().EventReady(slot_index, time_stamp);
     }
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventDataControlComposite<AtomicIndirectorType>::Discard(ControlSlotCompositeIndicator slot_indicator) -> void
+auto EventDataControlComposite<AtomicIndirectorType>::Discard(const SlotIndexType slot_index) -> void
 {
     if (asil_b_control_local_ != nullptr)
     {
-        asil_b_control_local_->Discard({slot_indicator.GetIndex(), slot_indicator.GetSlotAsilB()});
+        asil_b_control_local_->Discard(slot_index);
     }
 
     if (!ignore_qm_control_)
     {
-        asil_qm_control_local_.get().Discard({slot_indicator.GetIndex(), slot_indicator.GetSlotQM()});
+        asil_qm_control_local_.get().Discard(slot_index);
     }
 }
 

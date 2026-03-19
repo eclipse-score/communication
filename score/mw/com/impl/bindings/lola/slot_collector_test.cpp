@@ -33,13 +33,13 @@ class SlotCollectorWithFakeMem : public ::testing::Test
   protected:
     SlotIndexType AllocateSlot(const EventSlotStatus::EventTimeStamp timestamp = 1)
     {
-        const auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
-        EXPECT_TRUE(slot.IsValid());
-        skeleton_event_data_control_local_.EventReady(slot, timestamp);
-        return slot.GetIndex();
+        const auto allocated_slot = skeleton_event_data_control_local_.AllocateNextSlot();
+        EXPECT_TRUE(allocated_slot.has_value());
+        skeleton_event_data_control_local_.EventReady(allocated_slot.value(), timestamp);
+        return allocated_slot.value();
     }
 
-    std::size_t CalculateNumberOfCollectedSlots(const SlotCollector::SlotIndicators& indices)
+    std::size_t CalculateNumberOfCollectedSlots(const SlotCollector::SlotIndices& indices)
     {
         return static_cast<std::size_t>(std::distance(indices.begin, indices.end));
     }
@@ -62,7 +62,7 @@ TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
     const auto slot_indices = slot_collector.GetNewSamplesSlotIndices(max_count);
 
     EXPECT_EQ(CalculateNumberOfCollectedSlots(slot_indices), 1);
-    EXPECT_EQ(slot_indices.begin->GetIndex(), 0);
+    EXPECT_EQ(*slot_indices.begin, 0);
 }
 
 TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
@@ -86,7 +86,7 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
     SlotIndexType current_slot_index = 0;
     for (auto it = slot_indices.begin; it != slot_indices.end; ++it)
     {
-        EXPECT_EQ(it->GetIndex(), current_slot_index);
+        EXPECT_EQ(*it, current_slot_index);
         current_slot_index++;
     }
 

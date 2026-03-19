@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
@@ -110,10 +111,10 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
     SlotIndexType WithAnAllocatedSlot(EventSlotStatus::EventTimeStamp timestamp = 1)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_event_data_control_local_ != nullptr);
-        auto slot = skeleton_event_data_control_local_->AllocateNextSlot();
-        EXPECT_TRUE(slot.IsValid());
-        skeleton_event_data_control_local_->EventReady(slot, timestamp);
-        return slot.GetIndex();
+        const auto slot_index = skeleton_event_data_control_local_->AllocateNextSlot();
+        EXPECT_TRUE(slot_index.has_value());
+        skeleton_event_data_control_local_->EventReady(slot_index.value(), timestamp);
+        return slot_index.value();
     }
 
     FakeMemoryResource memory_{};
@@ -151,10 +152,10 @@ TEST_F(ProxyEventDataControlLocalViewFixture, FindNextSlotBlocksAllocation)
 
     // When finding the next slot
     auto event = unit_->ReferenceNextEvent(0, transaction_log_index);
-    ASSERT_TRUE(event.IsValid());
+    ASSERT_TRUE(event.has_value());
 
     // Then we cannot allocate the slot again
-    ASSERT_FALSE(skeleton_event_data_control_local_->AllocateNextSlot().IsValid());
+    ASSERT_FALSE(skeleton_event_data_control_local_->AllocateNextSlot().has_value());
 }
 
 // Re-enable when the test is fixed in Ticket-128552
@@ -172,11 +173,11 @@ TEST_F(ProxyEventDataControlLocalViewFixture, DISABLED_MultipleReceiverRefCountC
         {
             // We can increase the ref-count
             auto receive_slot = unit_->ReferenceNextEvent(0, transaction_log_index, EventSlotStatus::TIMESTAMP_MAX);
-            ASSERT_TRUE(receive_slot.IsValid());
-            EXPECT_EQ((*unit_)[receive_slot.GetIndex()].GetTimeStamp(), 1);
+            ASSERT_TRUE(receive_slot.has_value());
+            EXPECT_EQ((*unit_)[receive_slot.value()].GetTimeStamp(), 1);
 
             // and decrease the ref-count
-            unit_->DereferenceEvent(receive_slot, transaction_log_index);
+            unit_->DereferenceEvent(receive_slot.value(), transaction_log_index);
         }
     };
 
@@ -192,7 +193,7 @@ TEST_F(ProxyEventDataControlLocalViewFixture, DISABLED_MultipleReceiverRefCountC
     }
 
     // Then the reference count is zero and we can overwrite the slot if no memory corruption or race occurred
-    ASSERT_TRUE(skeleton_event_data_control_local_->AllocateNextSlot().IsValid());
+    ASSERT_TRUE(skeleton_event_data_control_local_->AllocateNextSlot().has_value());
 }
 
 TEST_F(ProxyEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesReferenceNextEventToReturnNull)
@@ -210,7 +211,8 @@ TEST_F(ProxyEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesRefe
 
     // and a EventDataControlUnit with one ready slot
     auto slot = skeleton_event_data_control_local_mocked_->AllocateNextSlot();
-    skeleton_event_data_control_local_mocked_->EventReady(slot, 1);
+    ASSERT_TRUE(slot.has_value());
+    skeleton_event_data_control_local_mocked_->EventReady(slot.value(), 1);
 
     const auto transaction_log_index =
         unit_mock_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
@@ -219,7 +221,7 @@ TEST_F(ProxyEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesRefe
     auto event = unit_mock_->ReferenceNextEvent(0, transaction_log_index);
 
     // No event will be found
-    ASSERT_FALSE(event.IsValid());
+    ASSERT_FALSE(event.has_value());
 }
 using EventDataControlReferenceSpecificEventFixture = ProxyEventDataControlLocalViewFixture;
 TEST_F(EventDataControlReferenceSpecificEventFixture, ReferenceSpecificEvents)
@@ -266,8 +268,8 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_S
     // Given an EventDataControl with one in_writing slot
     GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers);
     auto slot = skeleton_event_data_control_local_->AllocateNextSlot();
-    ASSERT_TRUE(slot.IsValid());
-    EXPECT_TRUE((*unit_)[slot.GetIndex()].IsInWriting());
+    ASSERT_TRUE(slot.has_value());
+    EXPECT_TRUE((*unit_)[slot.value()].IsInWriting());
 
     const auto transaction_log_index =
         unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
@@ -292,7 +294,7 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_R
     // Given an EventDataControl with one slot
     GivenAMockedEventDataControl(1, kMaxSubscribers);
     auto slot = skeleton_event_data_control_local_mocked_->AllocateNextSlot();
-    ASSERT_TRUE(slot.IsValid());
+    ASSERT_TRUE(slot.has_value());
 
     const auto transaction_log_index =
         unit_mock_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
@@ -385,9 +387,9 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
         for (std::size_t counter = 0; counter < params.num_actions_per_sender; ++counter)
         {
             auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
-            ASSERT_TRUE(slot.IsValid());
+            ASSERT_TRUE(slot.has_value());
 
-            skeleton_event_data_control_local_.EventReady(slot, ++ts);
+            skeleton_event_data_control_local_.EventReady(slot.value(), ++ts);
         }
     };
 
@@ -395,7 +397,7 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
         // randomly increases or decreases ref-count
         const auto& params = GetParam();
 
-        std::vector<ControlSlotIndicator> used_slots{};
+        std::vector<SlotIndexType> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{1};
 
         TransactionLogSet::TransactionLogIndex transaction_log_index =
@@ -406,10 +408,10 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
             if (used_slots.size() < params.max_referenced_samples_per_receiver && RandomTrueOrFalse())
             {
                 auto slot = unit_.ReferenceNextEvent(start_ts, transaction_log_index);
-                if (slot.IsValid())
+                if (slot.has_value())
                 {
-                    start_ts = EventSlotStatus{unit_[slot.GetIndex()]}.GetTimeStamp();
-                    used_slots.push_back(slot);
+                    start_ts = EventSlotStatus{unit_[slot.value()]}.GetTimeStamp();
+                    used_slots.push_back(slot.value());
                 }
             }
             else
@@ -457,16 +459,16 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
         {
             auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
             ASSERT_NE(ts, std::numeric_limits<std::uint32_t>::max());
-            if (!slot.IsValid())
+            if (!slot.has_value())
             {
                 ProxyEventDataControlLocalView<>::DumpPerformanceCounters();
                 std::terminate();
             }
             else
             {
-                skeleton_event_data_control_local_.EventReady(slot, ++ts);
+                skeleton_event_data_control_local_.EventReady(slot.value(), ++ts);
             }
-            EXPECT_TRUE(slot.IsValid());
+            EXPECT_TRUE(slot.has_value());
         }
     };
 
@@ -474,7 +476,7 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
         // randomly increases or decreases ref-count
         const auto& params = GetParam();
 
-        std::vector<ControlSlotIndicator> used_slots{};
+        std::vector<SlotIndexType> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{0};
 
         TransactionLogSet::TransactionLogIndex transaction_log_index =
@@ -489,11 +491,11 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
                    used_slots.size() < params.max_referenced_samples_per_receiver)
             {
                 auto slot = unit_.ReferenceNextEvent(start_ts, transaction_log_index, highest_ts);
-                if (slot.IsValid())
+                if (slot.has_value())
                 {
-                    highest_ts = EventSlotStatus{unit_[slot.GetIndex()]}.GetTimeStamp();
-                    used_slots.push_back(slot);
-                    slot_last = slot.GetIndex();
+                    highest_ts = EventSlotStatus{unit_[slot.value()]}.GetTimeStamp();
+                    used_slots.push_back(slot.value());
+                    slot_last = slot.value();
                 }
                 counter1++;
             }

@@ -67,21 +67,9 @@ SizeInfo TestSizeProvider::GetSamplePtrVariantUserDefinedTypeSize() noexcept
     return {sizeof(score::mw::com::impl::SamplePtr<UserType>), alignof(score::mw::com::impl::SamplePtr<UserType>)};
 }
 
-SizeInfo TestSizeProvider::GetControlSlotIndicatorSize() noexcept
-{
-    return {sizeof(score::mw::com::impl::lola::ControlSlotIndicator),
-            alignof(score::mw::com::impl::lola::ControlSlotIndicator)};
-}
-
 SizeInfo TestSizeProvider::GetSlotDecrementerSize() noexcept
 {
     return {sizeof(score::mw::com::impl::lola::SlotDecrementer), alignof(score::mw::com::impl::lola::SlotDecrementer)};
-}
-
-SizeInfo TestSizeProvider::GetControlSlotCompositeIndicatorSize() noexcept
-{
-    return {sizeof(score::mw::com::impl::lola::ControlSlotCompositeIndicator),
-            alignof(score::mw::com::impl::lola::ControlSlotCompositeIndicator)};
 }
 
 SizeInfo TestSizeProvider::GetEventDataControlCompositeSize() noexcept
@@ -159,19 +147,9 @@ score::mw::com::impl::SizeInfo ffi_get_sample_ptr_variant_user_defined_type_size
     return score::mw::com::impl::TestSizeProvider::GetSamplePtrVariantUserDefinedTypeSize();
 }
 
-score::mw::com::impl::SizeInfo ffi_get_control_slot_indicator_size() noexcept
-{
-    return score::mw::com::impl::TestSizeProvider::GetControlSlotIndicatorSize();
-}
-
 score::mw::com::impl::SizeInfo ffi_get_slot_decrementer_size() noexcept
 {
     return score::mw::com::impl::TestSizeProvider::GetSlotDecrementerSize();
-}
-
-score::mw::com::impl::SizeInfo ffi_get_control_slot_composite_indicator_size() noexcept
-{
-    return score::mw::com::impl::TestSizeProvider::GetControlSlotCompositeIndicatorSize();
 }
 
 score::mw::com::impl::SizeInfo ffi_get_event_data_control_composite_size() noexcept

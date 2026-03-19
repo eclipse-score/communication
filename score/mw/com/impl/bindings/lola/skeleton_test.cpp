@@ -401,10 +401,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
 
     // and given that QM and ASIL B control segments contain (previously) allocated slots that are in writing
     auto first_allocation_qm = event_control_qm_local.data_control.AllocateNextSlot();
-    ASSERT_TRUE(first_allocation_qm.IsValid());
+    ASSERT_TRUE(first_allocation_qm.has_value());
 
     auto first_allocation_asil_b = event_control_asil_b_local.data_control.AllocateNextSlot();
-    ASSERT_TRUE(first_allocation_asil_b.IsValid());
+    ASSERT_TRUE(first_allocation_asil_b.has_value());
 
     EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _));
     EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathAsilB, true, _));
@@ -416,12 +416,12 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
 
     // And a new allocation will return the same slot as before, as it was cleaned up
     auto second_allocation_qm = event_control_qm_local.data_control.AllocateNextSlot();
-    ASSERT_TRUE(second_allocation_qm.IsValid());
-    EXPECT_EQ(first_allocation_qm.GetIndex(), second_allocation_qm.GetIndex());
+    ASSERT_TRUE(second_allocation_qm.has_value());
+    EXPECT_EQ(first_allocation_qm.value(), second_allocation_qm.value());
 
     auto second_allocation_asil_b = event_control_asil_b_local.data_control.AllocateNextSlot();
-    ASSERT_TRUE(second_allocation_asil_b.IsValid());
-    EXPECT_EQ(first_allocation_asil_b.GetIndex(), second_allocation_asil_b.GetIndex());
+    ASSERT_TRUE(second_allocation_asil_b.has_value());
+    EXPECT_EQ(first_allocation_asil_b.value(), second_allocation_asil_b.value());
 }
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningExistingSharedMemoryDataFails)
@@ -801,7 +801,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmReg
     // Then the Register call should return pointers to the created control and data sections which can be used to
     // allocate slots
     auto allocation = event_data_control_composite.AllocateNextSlot();
-    ASSERT_TRUE(allocation.IsValidQmAndAsilB());
+    ASSERT_TRUE(allocation.allocated_slot_index.has_value());
 
     EXPECT_NE(typed_event_data_storage_ptr, nullptr);
 }
@@ -1050,8 +1050,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CanAllocateSlotAfterEventIsRegister
 
     // Then we can allocate and free slots on that event
     auto allocation = event_reg_result.second.AllocateNextSlot();
-    ASSERT_TRUE(allocation.IsValidQM());
-    EXPECT_EQ(allocation.GetIndex(), 0);
+    ASSERT_TRUE(allocation.allocated_slot_index.has_value());
+    EXPECT_EQ(allocation.allocated_slot_index.value(), 0);
 
     CleanUpSkeleton();
 }
@@ -1091,8 +1091,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
 
     // Then the same slot can get allocated
     auto allocation_after_cleanup = event_reg_result.second.AllocateNextSlot();
-    ASSERT_TRUE(allocation_after_cleanup.IsValidQM());
-    EXPECT_EQ(allocation.GetIndex(), allocation_after_cleanup.GetIndex());
+    ASSERT_TRUE(allocation_after_cleanup.allocated_slot_index.has_value());
+    EXPECT_EQ(allocation.allocated_slot_index.value(), allocation_after_cleanup.allocated_slot_index.value());
 
     CleanUpSkeleton();
 }

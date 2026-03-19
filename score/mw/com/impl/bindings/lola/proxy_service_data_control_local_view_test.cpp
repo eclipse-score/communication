@@ -92,14 +92,14 @@ TEST_F(ServiceDataControlLocalFixture, ConstructsEventControlLocalPointingToEach
     // Slots should initially be all 0
     auto& event_data_control_0{GetEventControl(service_data_control_, element_fq_id_0_).data_control};
     auto& event_data_control_1{GetEventControl(service_data_control_, element_fq_id_1_).data_control};
-    std::all_of(
+    EXPECT_TRUE(std::all_of(
         event_data_control_0.state_slots_.begin(), event_data_control_0.state_slots_.end(), [](const auto& slot_value) {
             return slot_value == 0U;
-        });
-    std::all_of(
+        }));
+    EXPECT_TRUE(std::all_of(
         event_data_control_1.state_slots_.begin(), event_data_control_1.state_slots_.end(), [](const auto& slot_value) {
             return slot_value == 0U;
-        });
+        }));
 
     auto& event_data_control_local_0 = GetEventControlLocal(service_data_control_local, element_fq_id_0_).data_control;
     auto& event_data_control_local_1 = GetEventControlLocal(service_data_control_local, element_fq_id_1_).data_control;
@@ -109,8 +109,9 @@ TEST_F(ServiceDataControlLocalFixture, ConstructsEventControlLocalPointingToEach
     score::cpp::ignore = event_data_control_local_1.AllocateNextSlot();
 
     // the EventDataControl should be updated
-    EXPECT_EQ(event_data_control_0.state_slots_[0], std::numeric_limits<std::uint32_t>::max());
-    EXPECT_EQ(event_data_control_1.state_slots_[0], std::numeric_limits<std::uint32_t>::max());
+    constexpr auto kSlotIsInWriting = std::numeric_limits<EventSlotStatus::SubscriberCount>::max();
+    EXPECT_EQ(event_data_control_0.state_slots_[0], kSlotIsInWriting);
+    EXPECT_EQ(event_data_control_1.state_slots_[0], kSlotIsInWriting);
 }
 
 TEST_F(ServiceDataControlLocalFixture, StoresReferenceToEventSubscriptionControlInServiceDataControl)
