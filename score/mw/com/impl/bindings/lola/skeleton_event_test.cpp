@@ -12,11 +12,13 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_test_resources.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
 #include "score/filesystem/filesystem.h"
 
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
@@ -413,13 +415,15 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 
     const impl::SampleAllocateePtrView<test::TestSampleType> first_view{first_allocated_slot};
     auto* first_lola_ptr = first_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
-    auto first_slot_indicator = first_lola_ptr->GetReferencedSlot();
+    auto first_slot_index = first_lola_ptr->GetReferencedSlot();
 
     auto first_send_result = skeleton_event_->Send(std::move(first_allocated_slot), score::cpp::nullopt);
     ASSERT_TRUE(first_send_result.has_value());
 
     // THEN its timestamp should be a valid, non-zero value
-    const EventSlotStatus first_final_slot_status{first_slot_indicator.GetSlotQM().load()};
+    auto* event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
+    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local{event_control->data_control};
+    const EventSlotStatus first_final_slot_status{skeleton_event_data_control_local[first_slot_index]};
     // AND the first timestamp should be 2, as it's the first one after initialization.
     const auto first_timestamp = first_final_slot_status.GetTimeStamp();
     EXPECT_EQ(first_timestamp, 2U);
@@ -431,12 +435,12 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 
     const impl::SampleAllocateePtrView<test::TestSampleType> second_view{second_allocated_slot};
     auto* second_lola_ptr = second_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
-    auto second_slot_indicator = second_lola_ptr->GetReferencedSlot();
+    auto second_slot_index = second_lola_ptr->GetReferencedSlot();
     auto second_send_result = skeleton_event_->Send(std::move(second_allocated_slot), score::cpp::nullopt);
     ASSERT_TRUE(second_send_result.has_value());
 
     // THEN its timestamp should be exactly one greater than the first one
-    const EventSlotStatus second_final_slot_status{second_slot_indicator.GetSlotQM().load()};
+    const EventSlotStatus second_final_slot_status{skeleton_event_data_control_local[second_slot_index]};
     const auto second_timestamp = second_final_slot_status.GetTimeStamp();
     EXPECT_EQ(second_timestamp, first_timestamp + 1U)
         << "The second timestamp should be exactly one greater than the first.";

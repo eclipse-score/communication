@@ -81,9 +81,10 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    const auto slot = control_.value().AllocateNextSlot();
+    const auto allocated_slot_result = control_.value().AllocateNextSlot();
 
-    if (!qm_disconnect_ && (control_->GetAsilBEventDataControlLocal() != nullptr) && !slot.IsValidQM())
+    if (!qm_disconnect_ && (control_->GetAsilBEventDataControlLocal() != nullptr) &&
+        allocated_slot_result.qm_misbehaved)
     {
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
@@ -93,24 +94,25 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
         event_shared_impl_.GetParent().DisconnectQmConsumers();
     }
 
-    if (slot.IsValidQM() || slot.IsValidAsilB())
+    if (!allocated_slot_result.allocated_slot_index.has_value())
     {
-        // Calculate the exact slot spacing based on alignment padding
-        const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
-        std::size_t offset = static_cast<std::size_t>(slot.GetIndex()) * aligned_size;
-        void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(data_storage_, offset));
-
-        auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
-        return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
+        if (!event_properties_.enforce_max_samples)
+        {
+            ::score::mw::log::LogError("lola")
+                << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
+                   "disabled by config. Might be the root cause!";
+        }
+        return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    if (!event_properties_.enforce_max_samples)
-    {
-        ::score::mw::log::LogError("lola")
-            << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
-               "disabled by config. Might be the root cause!";
-    }
-    return MakeUnexpected(ComErrc::kBindingFailure);
+    // Calculate the exact slot spacing based on alignment padding
+    const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
+    std::size_t offset = static_cast<std::size_t>(*allocated_slot_result.allocated_slot_index) * aligned_size;
+    void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(data_storage_, offset));
+
+    auto lola_ptr =
+        lola::SampleAllocateePtr<void>(data_ptr, control_.value(), *allocated_slot_result.allocated_slot_index);
+    return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 
 std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept

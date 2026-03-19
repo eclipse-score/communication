@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 
+#include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
 #include <score/assert.hpp>
@@ -44,24 +45,23 @@ template <template <class> class AtomicIndirectorType>
 // have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
 // to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept -> ControlSlotIndicator
+auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept
+    -> std::optional<SlotIndexType>
 {
-    // initially we have a default constructed "invalid" control-slot-indicator
-    ControlSlotIndicator selected_slot{};
+    std::optional<SlotIndexType> selected_index{};
     std::uint64_t retry_counter{0U};
 
     for (; retry_counter <= MAX_ALLOCATE_RETRIES; ++retry_counter)
     {
-        selected_slot = FindOldestUnusedSlot();
+        selected_index = FindOldestUnusedSlot();
 
-        if (!selected_slot.IsValid())
+        if (!selected_index.has_value())
         {
             continue;
         }
 
-        const auto& slot = selected_slot.GetSlot();
-        const auto slot_value =
-            AtomicIndirectorType<EventSlotStatus::value_type>::load(slot, std::memory_order_acquire);
+        const auto slot_value = AtomicIndirectorType<EventSlotStatus::value_type>::load(
+            state_slots_[selected_index.value()], std::memory_order_acquire);
         EventSlotStatus status{slot_value};
 
         // we need to check that this is still the same, since it is possible that is has changed after we found it
@@ -76,7 +76,7 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot()
 
         auto status_value_type = static_cast<EventSlotStatus::value_type&>(status);
         auto status_new_value_type = static_cast<EventSlotStatus::value_type&>(status_new);
-        if (selected_slot.GetSlot().compare_exchange_weak(
+        if (state_slots_[selected_index.value()].compare_exchange_weak(
                 status_value_type, status_new_value_type, std::memory_order_acq_rel))
         {
             break;
@@ -85,58 +85,33 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot()
 
     score::cpp::ignore = num_alloc_retries.fetch_add(retry_counter);
 
-    if ((retry_counter >= MAX_ALLOCATE_RETRIES) && (!selected_slot.IsValid()))
+    if ((retry_counter >= MAX_ALLOCATE_RETRIES))
     {
         ++num_alloc_misses;
     }
 
-    return selected_slot;
+    return selected_index;
 }
 
 template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, no way for throwing std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSlot() noexcept -> ControlSlotIndicator
+auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSlot() const noexcept
+    -> std::optional<SlotIndexType>
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
-
-    ControlSlotIndicator selected_slot{};
-    // Suppress "AUTOSAR C++14 A5-2-2" finding rule. This rule states: "Traditional C-style casts shall not be used".
-    // There is no C-style cast happening here! "current_index" and "it" are automatically deduced.
-    // Suppress "AUTOSAR C++14 M6-5-5" finding rule. This rule states: "A loop-control-variable other than the
-    // loop-counter shall not be modified within condition or expression".
-    // Both variables (current_index, it) depict exactly the same element once via index addressing and once via
-    // iterator/raw-pointer! The func has to return both, and we want both to be fully in sync, therefore we increment
-    // them both symmetrically, since in this case, it is less error-prone!
-    // Suppress "AUTOSAR C++14 A4-7-1" finding rule. This rule states: "An integer expression shall not lead to data
-    // loss". This can not be the case as the type of current_index is correctly deduced from SlotIndexType and it is
-    // assured, that state_slots_ doesn't contain more elements than SlotIndexType can represent.
-    // Suppress "AUTOSAR C++14 M5-0-15". This rule states:"indexing shall be the only form of pointer arithmetic.".
-    // Rationale: Tolerated due to containers providing pointer-like iterators.
-    // The Coverity tool considers these iterators as raw pointers.
-    // Suppress "AUTOSAR C++14 M5-2-10". This rule states: "The increment (++) and decrement (--) operators shall not be
-    // mixed with other operators in an expression".
-    // Rationale: We are only using increment operators here on separate variables! That we use it on separate variables
-    // is explained above for M6-5-5.
-    // coverity[autosar_cpp14_a5_2_2_violation]
-    for (auto [current_index, it] = std::make_tuple(SlotIndexType{0U}, state_slots_.begin()); it != state_slots_.end();
-         // coverity[autosar_cpp14_m6_5_5_violation]
-         // coverity[autosar_cpp14_a4_7_1_violation]
-         // coverity[autosar_cpp14_m5_0_15_violation]
-         // coverity[autosar_cpp14_m5_2_10_violation]
-         ++it,
-                              // coverity[autosar_cpp14_a4_7_1_violation]
-                              // coverity[autosar_cpp14_m6_5_5_violation]
-         ++current_index)
+    std::size_t current_index = 0U;
+    std::optional<SlotIndexType> selected_index{};
+    for (const auto& slot : state_slots_)
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
         const EventSlotStatus status{
-            AtomicIndirectorType<EventSlotStatus::value_type>::load(*it, std::memory_order_acquire)};
+            AtomicIndirectorType<EventSlotStatus::value_type>::load(slot, std::memory_order_acquire)};
 
         if (status.IsInvalid())
         {
-            selected_slot = {current_index, *it};
+            selected_index = current_index;
             break;
         }
 
@@ -147,38 +122,41 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
             if (status.GetTimeStamp() < oldest_time_stamp)
             {
                 oldest_time_stamp = status.GetTimeStamp();
-                selected_slot = {current_index, *it};
+                selected_index = current_index;
             }
         }
+        static_assert(std::is_same_v<decltype(state_slots_.size()), decltype(current_index)>,
+                      "FindOldestUnusedSlot: Overflow dangerous.");
+        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
+        // not lead to data loss.".
+        // As we are looping on the state slots, and current_index is incremented after handling each slot
+        // so no way for an overflow as long as both variables have same data type.
+        // coverity[autosar_cpp14_a4_7_1_violation : FALSE]
+        ++current_index;
     }
-    return selected_slot;
+    return selected_index;
 }
 
 template <template <class> class AtomicIndirectorType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a segmentation fault
-// in case the index goes outside the range. As we already do an index check before accessing, so no way for
-// segmentation fault which leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::EventReady(
-    ControlSlotIndicator slot_indicator,
+    const SlotIndexType slot_index,
     const EventSlotStatus::EventTimeStamp time_stamp) noexcept -> void
 {
     const EventSlotStatus initial{time_stamp, 0U};
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(slot_indicator.IsValid());
-    slot_indicator.GetSlot().store(static_cast<EventSlotStatus::value_type>(
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
+    state_slots_[slot_index].store(static_cast<EventSlotStatus::value_type>(
         initial));  // no race-condition can happen, since event sender has to be single-threaded/non-concurrent per AoU
 }
 
 template <template <class> class AtomicIndirectorType>
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::Discard(ControlSlotIndicator slot_indicator) -> void
+auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::Discard(const SlotIndexType slot_index) -> void
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(slot_indicator.IsValid());
-    auto slot = static_cast<EventSlotStatus>(slot_indicator.GetSlot().load(std::memory_order_acquire));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
+    auto slot = static_cast<EventSlotStatus>(state_slots_[slot_index].load(std::memory_order_acquire));
     if (slot.IsInWriting())
     {
         slot.MarkInvalid();
-        slot_indicator.GetSlot().store(static_cast<EventSlotStatus::value_type>(slot), std::memory_order_release);
+        state_slots_[slot_index].store(static_cast<EventSlotStatus::value_type>(slot), std::memory_order_release);
     }
 }
 

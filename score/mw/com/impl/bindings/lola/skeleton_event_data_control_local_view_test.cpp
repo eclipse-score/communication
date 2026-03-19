@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
@@ -101,9 +102,9 @@ class SkeletonEventDataControlLocalViewFixture : public ::testing::Test
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(unit_ != nullptr);
         auto slot = unit_->AllocateNextSlot();
-        EXPECT_TRUE(slot.IsValid());
-        unit_->EventReady(slot, timestamp);
-        return slot.GetIndex();
+        EXPECT_TRUE(slot.has_value());
+        unit_->EventReady(slot.value(), timestamp);
+        return slot.value();
     }
 
     FakeMemoryResource memory_{};
@@ -128,9 +129,9 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOneSlotWithoutConten
     // When allocating a slot
     auto slot = unit_->AllocateNextSlot();
 
-    EXPECT_TRUE(slot.IsValid());
+    EXPECT_TRUE(slot.has_value());
     // The expected (first) slot is returned
-    EXPECT_EQ(slot.GetIndex(), 0);
+    EXPECT_EQ(slot.value(), 0);
 }
 
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOneSlotWhenReferenceCountChanges)
@@ -174,9 +175,9 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOneSlotWhenReference
     // When allocating a slot
     const auto slot = unit_mock_->AllocateNextSlot();
 
-    EXPECT_TRUE(slot.IsValid());
+    EXPECT_TRUE(slot.has_value());
     // The expected (second) slot is returned
-    EXPECT_EQ(slot.GetIndex(), 1);
+    EXPECT_EQ(slot.value(), 1);
 }
 
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateMultipleSlotWithoutContention)
@@ -189,7 +190,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateMultipleSlotWithoutC
     const auto slot = unit_->AllocateNextSlot();
 
     // Then the second possible slot is returned
-    EXPECT_EQ(slot.GetIndex(), 1);
+    EXPECT_EQ(slot.value(), 1);
 }
 
 TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementOnWritingWillBeInvalid)
@@ -199,13 +200,10 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementOnWritingWillBe
     auto slot = unit_->AllocateNextSlot();
 
     // When discarding that slot
-    unit_->Discard(slot);
+    unit_->Discard(slot.value());
 
     // Then the slot is marked as invalid
-    // either accessed via EventDataControl array-elem-access-op
-    EXPECT_TRUE((*unit_)[slot.GetIndex()].IsInvalid());
-    // or via raw-pointer
-    EXPECT_TRUE(EventSlotStatus(slot.GetSlot().load()).IsInvalid());
+    EXPECT_TRUE((*unit_)[slot.value()].IsInvalid());
 }
 
 TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementAfterWritingIsNotTouched)
@@ -213,14 +211,14 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementAfterWritingIsN
     // Given an initialized EventDataControl structure where already a slot is written
     GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
     const auto slot = unit_->AllocateNextSlot();
-    unit_->EventReady(slot, 0x42);
+    unit_->EventReady(slot.value(), 0x42);
 
     // When discarding that slot
-    unit_->Discard(slot);
+    unit_->Discard(slot.value());
 
     // Then the slot is not touched
-    EXPECT_EQ((*unit_)[slot.GetIndex()].GetTimeStamp(), 0x42);
-    EXPECT_EQ((*unit_)[slot.GetIndex()].GetReferenceCount(), 0);
+    EXPECT_EQ((*unit_)[slot.value()].GetTimeStamp(), 0x42);
+    EXPECT_EQ((*unit_)[slot.value()].GetReferenceCount(), 0);
 }
 
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanNotAllocateSlotIfAllSlotsAllocated)
@@ -236,44 +234,42 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanNotAllocateSlotIfAllSlotsAll
     const auto slot = unit_->AllocateNextSlot();
 
     // Then this is not possible
-    EXPECT_FALSE(slot.IsValid());
+    EXPECT_FALSE(slot.has_value());
 }
 
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateSlotAfterOneSlotReady)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
     GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
-    std::array<ControlSlotIndicator, 5U> slot_indicators{};
     for (auto counter = 0U; counter < 5U; ++counter)
     {
-        slot_indicators[counter] = unit_->AllocateNextSlot();
+        unit_->AllocateNextSlot();
     }
 
     // When trying freeing one slot and trying to allocate another one
-    unit_->EventReady(slot_indicators[3], 1);
+    unit_->EventReady(3, 1);
     const auto slot = unit_->AllocateNextSlot();
 
     // Then the freed slot is allocated
-    EXPECT_EQ(slot.GetIndex(), 3);
+    EXPECT_EQ(slot.value(), 3);
 }
 
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOldestSlotAfterOneSlotReady)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
     GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
-    std::array<ControlSlotIndicator, 5U> slot_indicators{};
     for (auto counter = 0U; counter < 5U; ++counter)
     {
-        slot_indicators[counter] = unit_->AllocateNextSlot();
+        unit_->AllocateNextSlot();
     }
 
     // When trying freeing multiple slots and trying to allocate another one
-    unit_->EventReady(slot_indicators[4], 3);
-    unit_->EventReady(slot_indicators[2], 2);
+    unit_->EventReady(4, 3);
+    unit_->EventReady(2, 2);
     const auto slot = unit_->AllocateNextSlot();
 
     // Then the oldest (lowest timestamp) slot is allocated
-    EXPECT_EQ(slot.GetIndex(), 2);
+    EXPECT_EQ(slot.value(), 2);
 }
 
 // Initially we had a 'randomized allocate or free logic'.
@@ -288,16 +284,16 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, MultithreadedSlotAllocationDeal
     std::atomic<EventSlotStatus::EventTimeStamp> time_stamp{1};
     auto fuzzer = [this, &time_stamp]() {
         // Worker that alternates between slot allocation and deallocation, ensuring an increasing time stamp
-        std::vector<ControlSlotIndicator> allocated_events{};
+        std::vector<SlotIndexType> allocated_events{};
         bool allocate{false};
         for (int i = 0; i < 1000; i++)
         {
             if ((allocate = !allocate))
             {
                 const auto slot = unit_->AllocateNextSlot();
-                if (slot.IsValid())
+                if (slot.has_value())
                 {
-                    allocated_events.push_back(slot);
+                    allocated_events.push_back(slot.value());
                 }
             }
             else
@@ -339,8 +335,8 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, AllocatedSlotsCanBeCleanedUp)
     unit_->RemoveAllocationsForWriting();
 
     // Then the allocated slots are no longer in writing
-    EXPECT_FALSE((*unit_)[first_slot.GetIndex()].IsInWriting());
-    EXPECT_FALSE((*unit_)[second_slot.GetIndex()].IsInWriting());
+    EXPECT_FALSE((*unit_)[first_slot.value()].IsInWriting());
+    EXPECT_FALSE((*unit_)[second_slot.value()].IsInWriting());
 }
 
 using EventDataControlDeathTest = SkeletonEventDataControlLocalViewFixture;
