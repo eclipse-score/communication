@@ -230,7 +230,10 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             parent,
             field_name,
             SkeletonFieldBindingFactory<SampleDataType>::CreateEventBinding(
-                skeleton_base_view.GetAssociatedInstanceIdentifier(), skeleton_base_view.GetBinding(), field_name),
+                skeleton_base_view.GetAssociatedInstanceIdentifier(),
+                skeleton_base_view.GetBinding(),
+                field_name,
+                (kHasGetter || kHasSetter) ? 1U : 0U),
             typename SkeletonEvent<FieldType>::FieldOnlyConstructorEnabler{});
     }
 
@@ -287,7 +290,7 @@ class SkeletonFieldImpl : public SkeletonFieldBase
             }
             const auto result = get_method_->RegisterHandler([this]() -> Result<FieldType> {
                 // need to serialize access to Get. In case of concurrent Get calls,
-                // we want to ensure that they are processed sequentially.    
+                // we want to ensure that they are processed sequentially.
                 std::lock_guard<std::mutex> lock{get_handler_mutex_};
                 return SkeletonEventView<FieldType>{*GetTypedEvent()}.GetLatestSample();
             });
@@ -314,7 +317,9 @@ class SkeletonFieldImpl : public SkeletonFieldBase
     bool is_set_handler_registered_;
 
     // Zero-cost storage: only a real mutex when kHasGetter=true, otherwise an empty zero-size type.
-    struct NullMutex {};
+    struct NullMutex
+    {
+    };
     using GetHandlerMutexType = std::conditional_t<kHasGetter, std::mutex, NullMutex>;
     GetHandlerMutexType get_handler_mutex_{};
 
