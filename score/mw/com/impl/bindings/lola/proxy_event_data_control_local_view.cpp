@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 
+#include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
 #include <score/assert.hpp>
@@ -47,10 +48,10 @@ template <template <class> class AtomicIndirectorType>
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
     const EventSlotStatus::EventTimeStamp last_search_time,
     const TransactionLogSet::TransactionLogIndex transaction_log_index,
-    const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> ControlSlotIndicator
+    const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> std::optional<SlotIndexType>
 {
     // function can only finish with result, if use count was able to be increased
-    ControlSlotIndicator possible_slot{};
+    std::optional<SlotIndexType> possible_index{};
 
     auto& transaction_log = transaction_log_set_.get().GetTransactionLog(transaction_log_index);
 
@@ -58,8 +59,7 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
     std::uint64_t counter = 0U;
     for (; counter < MAX_REFERENCE_RETRIES; counter++)
     {
-        // resetting possible slot for this iteration
-        possible_slot.Reset();
+        possible_index.reset();
 
         // initialize candidate_slot_status with last_search_time. candidate_slot_status.timestamp always reflects
         // "highest new timestamp". The sentinel, if we did find a possible candidate is always possible_index.
@@ -70,13 +70,13 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
         // The "slot" variable must never be a null pointer, since DynamicArray allocates its elements when it is
         // created.
         // coverity[autosar_cpp14_a5_3_2_violation]
-        for (auto& slot : state_slots_)
+        for (const auto& slot : state_slots_)
         {
             // coverity[autosar_cpp14_a5_3_2_violation]
             const EventSlotStatus slot_status{slot.load(std::memory_order_relaxed)};
             if (slot_status.IsTimeStampBetween(candidate_slot_status.GetTimeStamp(), upper_limit))
             {
-                possible_slot = {current_index, slot};
+                possible_index = current_index;
                 candidate_slot_status = slot_status;
             }
 
@@ -88,7 +88,7 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
             ++current_index;
         }
 
-        if (!possible_slot.IsValid())
+        if (!possible_index.has_value())
         {
             return {};  // no sample within searched timestamp range exists.
         }
@@ -114,8 +114,8 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
 
         auto& candidate_slot_status_value = static_cast<EventSlotStatus::value_type&>(candidate_slot_status);
 
-        auto possible_index_value = possible_slot.GetIndex();
-        auto& slot_value = possible_slot.GetSlot();
+        auto possible_index_value = possible_index.value();
+        auto& slot_value = state_slots_[possible_index_value];
 
         transaction_log.ReferenceTransactionBegin(possible_index_value);
         if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_weak(
@@ -131,7 +131,7 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
 
     if (counter < MAX_REFERENCE_RETRIES)
     {
-        return possible_slot;
+        return possible_index;
     }
 
     ++num_ref_misses;
@@ -205,14 +205,13 @@ std::size_t ProxyEventDataControlLocalView<AtomicIndirectorType>::GetNumNewEvent
 
 template <template <class> class AtomicIndirectorType>
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::DereferenceEvent(
-    ControlSlotIndicator slot_indicator,
+    const SlotIndexType event_slot_index,
     const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept -> void
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(slot_indicator.IsValid());
     auto& transaction_log = transaction_log_set_.get().GetTransactionLog(transaction_log_index);
-    transaction_log.DereferenceTransactionBegin(slot_indicator.GetIndex());
-    score::cpp::ignore = slot_indicator.GetSlot().fetch_sub(1U, std::memory_order_acq_rel);
-    transaction_log.DereferenceTransactionCommit(slot_indicator.GetIndex());
+    transaction_log.DereferenceTransactionBegin(event_slot_index);
+    DereferenceEventWithoutTransactionLogging(event_slot_index);
+    transaction_log.DereferenceTransactionCommit(event_slot_index);
 }
 
 template <template <class> class AtomicIndirectorType>

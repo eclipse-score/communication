@@ -187,10 +187,10 @@ SlotIndexType LolaProxyEventResources::PutData(const std::uint32_t value,
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_event_control_local_.has_value());
     auto slot_result = skeleton_event_control_local_->data_control.AllocateNextSlot();
-    EXPECT_TRUE(slot_result.IsValid());
-    auto slot_index = slot_result.GetIndex();
+    EXPECT_TRUE(slot_result.has_value());
+    auto slot_index = slot_result.value();
     event_data_storage_->at(slot_index) = value;
-    skeleton_event_control_local_->data_control.EventReady(slot_result, timestamp);
+    skeleton_event_control_local_->data_control.EventReady(slot_index, timestamp);
     return slot_index;
 }
 

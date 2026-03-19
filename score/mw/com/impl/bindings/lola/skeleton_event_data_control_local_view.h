@@ -13,7 +13,6 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
 
-#include "score/mw/com/impl/bindings/lola/control_slot_indicator.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
@@ -93,14 +92,13 @@ class SkeletonEventDataControlLocalView final
     /// * enough retries are performed (currently max number of parallel actions is restricted to 50 (number of
     /// possible transactions (2) * number of parallel actions = number of retries))
     ///
-    /// \return reserved slot for writing in the form of a valid ControlSlotIndicator if found, invalid
-    ///         ControlSlotIndicator otherwise
+    /// \return reserved slot for writing if found, empty otherwise
     /// \post EventReady() is invoked to withdraw write-ownership
-    ControlSlotIndicator AllocateNextSlot() noexcept;
+    std::optional<SlotIndexType> AllocateNextSlot() noexcept;
 
     /// \brief Indicates that a slot is ready for reading - writing has finished. (thread-safe, wait-free)
     /// \pre AllocateNextSlot() was invoked to obtain write-ownership
-    void EventReady(ControlSlotIndicator slot_indicator, const EventSlotStatus::EventTimeStamp time_stamp) noexcept;
+    void EventReady(const SlotIndexType slot_index, const EventSlotStatus::EventTimeStamp time_stamp) noexcept;
 
     /// \brief Marks selected slot as invalid, if it was not yet marked as ready
     ///
@@ -108,7 +106,7 @@ class SkeletonEventDataControlLocalView final
     /// read them. This just might be the case if a SampleAllocateePtr is destroyed after invoking Send().
     ///
     /// \pre AllocateNextSlot() was invoked to obtain write-ownership
-    void Discard(ControlSlotIndicator slot_indicator);
+    void Discard(const SlotIndexType slot_index);
 
     /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
@@ -145,9 +143,8 @@ class SkeletonEventDataControlLocalView final
 
   private:
     /// \brief Finds oldest unused slot within control slots, if there is any.
-    /// \return if an unused slot is found, returns a ControlSlotIndicator, which is valid, otherwise an invalid
-    ///         ControlSlotIndicator is returned.
-    ControlSlotIndicator FindOldestUnusedSlot() noexcept;
+    /// \return if an unused slot is found, returns its index, otherwise, an empty optional is returned.
+    std::optional<SlotIndexType> FindOldestUnusedSlot() const noexcept;
 
     LocalEventControlSlots state_slots_;
 
