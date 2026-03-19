@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
+#include <cstddef>
 #include <memory>
 #include <string_view>
 
@@ -44,11 +45,13 @@ class ISkeletonFieldBindingFactory
     /// \param identifier The instance identifier containing the binding information.
     /// \param parent A reference to the Skeleton which owns this event.
     /// \param field_name The binding unspecific name of the field inside the skeleton denoted by instance identifier.
+    /// \param additional_slots_for_field_get_set Additional slots to reserve on top of configured sample slots.
     /// \return An instance of SkeletonEventBinding or nullptr in case of an error.
     virtual auto CreateEventBinding(const InstanceIdentifier& identifier,
-                                    SkeletonBase& parent,
-                                    const std::string_view field_name) noexcept
-        -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
+                    SkeletonBase& parent,
+                    const std::string_view field_name,
+                std::size_t additional_slots_for_field_get_set = 0U) noexcept
+      -> std::unique_ptr<SkeletonEventBinding<SampleType>> = 0;
 };
 
 }  // namespace score::mw::com::impl
