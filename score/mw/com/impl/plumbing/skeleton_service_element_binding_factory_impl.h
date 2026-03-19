@@ -29,6 +29,7 @@
 #include <score/overload.hpp>
 
 #include <chrono>
+#include <cstddef>
 #include <exception>
 #include <memory>
 #include <string>
@@ -44,7 +45,8 @@ namespace detail
 
 template <typename LolaServiceElementInstanceDeployment>
 lola::SkeletonEventProperties GetSkeletonEventProperties(
-    const LolaServiceElementInstanceDeployment& lola_service_element_instance_deployment)
+    const LolaServiceElementInstanceDeployment& lola_service_element_instance_deployment,
+    std::size_t additional_slots_for_field_get_set = 0U)
 {
     if (!lola_service_element_instance_deployment.GetNumberOfSampleSlots().has_value())
     {
@@ -61,7 +63,11 @@ lola::SkeletonEventProperties GetSkeletonEventProperties(
                "not specified in the configuration. Terminating.";
         std::terminate();
     }
-    return lola::SkeletonEventProperties{lola_service_element_instance_deployment.GetNumberOfSampleSlots().value(),
+    const auto number_of_slots = static_cast<std::size_t>(
+        lola_service_element_instance_deployment.GetNumberOfSampleSlots().value()) +
+        additional_slots_for_field_get_set;
+
+    return lola::SkeletonEventProperties{number_of_slots,
                                          lola_service_element_instance_deployment.max_subscribers_.value(),
                                          lola_service_element_instance_deployment.enforce_max_samples_};
 }
@@ -79,7 +85,8 @@ template <typename SkeletonServiceElementBinding, typename SkeletonServiceElemen
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
                                   SkeletonBase& parent,
-                                  const std::string_view service_element_name) noexcept
+                                  const std::string_view service_element_name,
+                                  std::size_t additional_slots_for_field_get_set = 0U) noexcept
     -> std::unique_ptr<SkeletonServiceElementBinding>
 {
     static_assert(element_type != ServiceElementType::INVALID);
@@ -88,7 +95,7 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
 
     using ReturnType = std::unique_ptr<SkeletonServiceElementBinding>;
     auto visitor = score::cpp::overload(
-        [identifier_view, &parent, &service_element_name](
+        [identifier_view, &parent, &service_element_name, additional_slots_for_field_get_set](
             const LolaServiceTypeDeployment& lola_service_type_deployment) -> ReturnType {
             auto* const lola_parent = dynamic_cast<lola::Skeleton*>(SkeletonBaseView{parent}.GetBinding());
             if (lola_parent == nullptr)
@@ -106,7 +113,8 @@ auto CreateSkeletonServiceElement(const InstanceIdentifier& identifier,
             const auto& lola_service_element_instance_deployment = GetServiceElementInstanceDeployment<element_type>(
                 lola_service_instance_deployment, service_element_name_str);
             const auto skeleton_event_properties =
-                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment);
+                detail::GetSkeletonEventProperties(lola_service_element_instance_deployment,
+                                                   additional_slots_for_field_get_set);
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_service_type_deployment, service_element_name_str);

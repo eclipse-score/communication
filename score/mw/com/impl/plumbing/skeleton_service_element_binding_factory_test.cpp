@@ -138,6 +138,31 @@ INSTANTIATE_TEST_CASE_P(SkeletonServiceElementBindingFactoryParamaterisedDeathTe
 
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructFixture) {}
 
+class SkeletonServiceElementBindingFactoryFixture : public ::testing::Test
+{
+  protected:
+    const LolaFieldInstanceDeployment field_deployment_{{2U}, {3U}, 1U, true, 0U};
+
+    auto GetSkeletonEventProperties(const std::size_t additional_slots_for_field_get_set = 0U) const
+    {
+        return detail::GetSkeletonEventProperties(field_deployment_, additional_slots_for_field_get_set);
+    }
+};
+
+TEST_F(SkeletonServiceElementBindingFactoryFixture, AdditionalSlotsAreAddedToConfiguredNumberOfSlots)
+{
+    const auto skeleton_event_properties = GetSkeletonEventProperties(1U);
+
+    EXPECT_EQ(skeleton_event_properties.number_of_slots, 3U);
+}
+
+TEST_F(SkeletonServiceElementBindingFactoryFixture, DefaultAdditionalSlotsKeepsConfiguredNumberOfSlots)
+{
+    const auto skeleton_event_properties = GetSkeletonEventProperties();
+
+    EXPECT_EQ(skeleton_event_properties.number_of_slots, 2U);
+}
+
 TEST_P(SkeletonServiceElementBindingFactoryParamaterisedFixture, CanConstructServiceElement)
 {
     RecordProperty("Verifies", "SCR-21803701, SCR-21803702, SCR-5898925");

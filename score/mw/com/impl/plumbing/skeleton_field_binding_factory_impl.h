@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
 
+#include <cstddef>
 #include <memory>
 #include <string_view>
 
@@ -36,7 +37,8 @@ class SkeletonFieldBindingFactoryImpl : public ISkeletonFieldBindingFactory<Samp
     std::unique_ptr<SkeletonEventBinding<SampleType>> CreateEventBinding(
         const InstanceIdentifier& identifier,
         SkeletonBase& parent,
-        const std::string_view field_name) noexcept override;
+        const std::string_view field_name,
+      std::size_t additional_slots_for_field_get_set = 0U) noexcept override;
 };
 
 template <typename SampleType>
@@ -49,13 +51,17 @@ template <typename SampleType>
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonFieldBindingFactoryImpl<SampleType>::CreateEventBinding(const InstanceIdentifier& identifier,
-                                                                     SkeletonBase& parent,
-                                                                     const std::string_view field_name) noexcept
-    -> std::unique_ptr<SkeletonEventBinding<SampleType>>
+                                   SkeletonBase& parent,
+                                   const std::string_view field_name,
+                                   std::size_t additional_slots_for_field_get_set) noexcept
+  -> std::unique_ptr<SkeletonEventBinding<SampleType>>
 {
-    return CreateSkeletonServiceElement<SkeletonEventBinding<SampleType>,
-                                        lola::SkeletonEvent<SampleType>,
-                                        ServiceElementType::FIELD>(identifier, parent, field_name);
+  return CreateSkeletonServiceElement<SkeletonEventBinding<SampleType>,
+                    lola::SkeletonEvent<SampleType>,
+                    ServiceElementType::FIELD>(identifier,
+                                   parent,
+                                   field_name,
+                                   additional_slots_for_field_get_set);
 }
 
 }  // namespace score::mw::com::impl
