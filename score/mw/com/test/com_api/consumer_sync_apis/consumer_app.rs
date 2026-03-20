@@ -27,6 +27,7 @@
 //! samples before exiting with code 0.
 
 use bigdata_com_api_gen::BigDataInterface;
+use clap::Parser;
 use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Runtime,
     RuntimeBuilder, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
@@ -39,25 +40,16 @@ const CONFIG_PATH: &str = "etc/config.json";
 const SERVICE_DISCOVERY_RETRY_MS: u64 = 500;
 const MAX_SAMPLES_PER_CALL: usize = 5;
 
-fn parse_args() -> Result<usize, String> {
-    let args: Vec<String> = std::env::args().collect();
-    let mut args_iter = args.iter().skip(1).peekable();
-    while let Some(arg) = args_iter.next() {
-        if arg == "-n" {
-            return args_iter
-                .next()
-                .and_then(|v| v.parse::<usize>().ok())
-                .ok_or_else(|| "expected integer after -n".to_owned());
-        }
-    }
-    Err("-n <num_cycles> is required".to_owned())
+#[derive(Parser)]
+struct Args {
+    /// Number of samples to receive before exiting
+    #[arg(short = 'n', required = true)]
+    num_cycles: usize,
 }
 
 fn main() {
-    let num_cycles = parse_args().unwrap_or_else(|e| {
-        eprintln!("[bigdata-consumer] ERROR: {e}");
-        std::process::exit(1);
-    });
+    let args = Args::parse();
+    let num_cycles = args.num_cycles;
 
     println!(
         "[bigdata-consumer] Starting, will receive {} samples",
@@ -73,11 +65,11 @@ fn main() {
 
     let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
         .expect("Invalid instance specifier");
+    let discovery = runtime
+        .find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
 
     // Retry until the producer has offered the service.
     let consumer_builder = loop {
-        let discovery = runtime
-            .find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
         let instances = discovery
             .get_available_instances()
             .expect("Service discovery failed");

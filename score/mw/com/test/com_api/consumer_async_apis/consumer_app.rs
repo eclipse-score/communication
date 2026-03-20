@@ -24,6 +24,7 @@
 //! prints the `x` field of each received sample until it has received the specified number of samples, at which point it exits.
 
 use bigdata_com_api_gen::BigDataInterface;
+use clap::Parser;
 use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, LolaRuntimeBuilderImpl, Runtime,
     RuntimeBuilder, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
@@ -33,25 +34,17 @@ use std::path::Path;
 const CONFIG_PATH: &str = "etc/config.json";
 const MAX_SAMPLES_PER_CALL: usize = 5;
 
-fn parse_args() -> usize {
-    let args: Vec<String> = std::env::args().collect();
-    let mut iter = args.iter().skip(1);
-    while let Some(arg) = iter.next() {
-        if arg == "-n" {
-            if let Some(val) = iter.next() {
-                if let Ok(n) = val.parse::<usize>() {
-                    return n;
-                }
-            }
-        }
-    }
-    eprintln!("[bigdata-consumer] ERROR: -n <num_cycles> is required");
-    std::process::exit(1);
+#[derive(Parser)]
+struct Args {
+    /// Number of samples to receive before exiting
+    #[arg(short = 'n', required = true)]
+    num_cycles: usize,
 }
 
 #[tokio::main]
 async fn main() {
-    let num_cycles = parse_args();
+    let args = Args::parse();
+    let num_cycles = args.num_cycles;
 
     println!(
         "[bigdata-consumer] Starting, will receive {} samples",

@@ -28,6 +28,7 @@ use std::thread;
 use std::time::Duration;
 
 use bigdata_com_api_gen::{BigDataInterface, MapApiLanesStamped};
+use clap::Parser;
 use com_api::{
     Builder, InstanceSpecifier, LolaRuntimeBuilderImpl, Producer, Publisher, Runtime,
     RuntimeBuilder, SampleMaybeUninit, SampleMut,
@@ -38,22 +39,16 @@ const DEFAULT_CYCLES: u32 = 40;
 const SERVICE_OFFER_DELAY_MS: u64 = 2000;
 const SEND_INTERVAL_MS: u64 = 100;
 
-fn parse_args() -> u32 {
-    let args: Vec<String> = std::env::args().collect();
-    let mut num_cycles = DEFAULT_CYCLES;
-    let mut iter = args.iter().skip(1);
-    while let Some(arg) = iter.next() {
-        if arg == "-n" {
-            if let Some(val) = iter.next() {
-                num_cycles = val.parse().unwrap_or(DEFAULT_CYCLES);
-            }
-        }
-    }
-    num_cycles
+#[derive(Parser)]
+struct Args {
+    /// Number of samples to send before exiting
+    #[arg(short = 'n', default_value_t = DEFAULT_CYCLES)]
+    num_cycles: u32,
 }
 
 fn main() {
-    let num_cycles = parse_args();
+    let args = Args::parse();
+    let num_cycles = args.num_cycles;
 
     println!("[bigdata-producer] Starting with num_cycles={}", num_cycles);
 
