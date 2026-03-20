@@ -89,6 +89,8 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
     /// implementations.
     virtual Result<SampleAllocateePtr<SampleType>> Allocate() noexcept = 0;
 
+    virtual Result<SampleType> GetLatestSample() noexcept = 0;
+
     std::size_t GetMaxSize() const noexcept override
     {
         return sizeof(SampleType);
