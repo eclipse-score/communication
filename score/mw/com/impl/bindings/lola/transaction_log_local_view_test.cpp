@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
@@ -60,6 +60,36 @@ class TransactionLogFixture : public ::testing::Test
     StrictMock<MockFunction<void(TransactionLog::SlotIndexType)>> dereference_slot_callback_{};
     StrictMock<MockFunction<void(TransactionLog::MaxSampleCountType)>> unsubscribe_callback_{};
 };
+
+TEST_F(TransactionLogFixture, SubscriptionTransactionUpdatesPointedToTransactionLog)
+{
+    // Given a TransactionLogLocalView pointing to a valid TransactionLog
+
+    // When calling SubscribeTransactionBegin on the TransactionLogLocalView
+    EXPECT_FALSE(transaction_log_.subscribe_transactions_.GetTransactionBegin());
+    EXPECT_FALSE(transaction_log_.subscribe_transactions_.GetTransactionEnd());
+    unit_.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
+
+    // Then the underlying TransactionLog being pointed to by the TransactionLogLocalView should be updated.
+    EXPECT_TRUE(transaction_log_.subscribe_transactions_.GetTransactionBegin());
+    EXPECT_FALSE(transaction_log_.subscribe_transactions_.GetTransactionEnd());
+}
+
+TEST_F(TransactionLogFixture, ReferenceTransactionUpdatesPointedToTransactionLog)
+{
+    // Given a TransactionLogLocalView pointing to a valid TransactionLog
+
+    // When calling ReferenceTransactionBegin on the first slot in the TransactionLogLocalView
+    constexpr std::size_t slot_index{0U};
+    auto& slot = transaction_log_.reference_count_slots_.at(slot_index);
+    EXPECT_FALSE(slot.GetTransactionBegin());
+    EXPECT_FALSE(slot.GetTransactionEnd());
+    unit_.ReferenceTransactionBegin(slot_index);
+
+    // Then the underlying TransactionLog being pointed to by the TransactionLogLocalView should be updated.
+    EXPECT_TRUE(slot.GetTransactionBegin());
+    EXPECT_FALSE(slot.GetTransactionEnd());
+}
 
 using TransactionLogProxyElementFixture = TransactionLogFixture;
 TEST_F(TransactionLogProxyElementFixture, RollbackWillNotCallCallbackWhenNoTransactionsRecorded)
