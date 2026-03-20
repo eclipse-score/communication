@@ -23,7 +23,7 @@
 //!                       before exiting (required).
 //!
 //! The consumer retries service discovery until the producer is available,
-//! then subscribes to `map_api_lanes_stamped` and reads exactly `num_cycles`
+//! then subscribes to `map_api_lanes_stamped_` and reads exactly `num_cycles`
 //! samples before exiting with code 0.
 
 use bigdata_com_api_gen::BigDataInterface;
@@ -76,9 +76,8 @@ fn main() {
 
     // Retry until the producer has offered the service.
     let consumer_builder = loop {
-        let discovery = runtime.find_service::<BigDataInterface>(FindServiceSpecifier::Specific(
-            instance_specifier.clone(),
-        ));
+        let discovery = runtime
+            .find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
         let instances = discovery
             .get_available_instances()
             .expect("Service discovery failed");
@@ -92,9 +91,9 @@ fn main() {
     let consumer = consumer_builder.build().expect("Failed to build consumer");
 
     let subscription = consumer
-        .map_api_lanes_stamped
+        .map_api_lanes_stamped_
         .subscribe(MAX_SAMPLES_PER_CALL)
-        .expect("Failed to subscribe to map_api_lanes_stamped");
+        .expect("Failed to subscribe to map_api_lanes_stamped_");
 
     println!(
         "[bigdata-consumer] Subscribed, waiting for {} samples",

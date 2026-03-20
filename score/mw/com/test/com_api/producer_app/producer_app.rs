@@ -77,7 +77,7 @@ fn main() {
     println!("[bigdata-producer] Service offered, starting send loop");
     for x in 0..num_cycles {
         let uninit = offered
-            .map_api_lanes_stamped
+            .map_api_lanes_stamped_
             .allocate()
             .expect("Failed to allocate sample");
         let mut sample = MapApiLanesStamped::default();

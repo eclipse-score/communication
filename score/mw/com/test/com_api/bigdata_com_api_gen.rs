@@ -18,10 +18,7 @@
 //! and wires them through the com-api `Interface` / `Consumer` / `Producer`
 //! abstractions instead of the legacy `mw_com::import_interface!` macro.
 
-use com_api::{
-    CommData, Consumer, Interface, OfferedProducer, Producer, ProviderInfo, Publisher, Reloc,
-    Runtime, Subscriber,
-};
+use com_api::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
 
 use core::fmt::Debug;
 
@@ -102,84 +99,10 @@ impl Debug for DummyDataStamped {
     }
 }
 
-/// Generated com-api bindings for the BigData interface.
-pub struct BigDataInterface {}
-
-impl Interface for BigDataInterface {
-    const INTERFACE_ID: &'static str = "BigDataInterface";
-    type Consumer<R: Runtime + ?Sized> = BigDataConsumer<R>;
-    type Producer<R: Runtime + ?Sized> = BigDataProducer<R>;
-}
-
-/// Consumer type for the BigData interface.
-pub struct BigDataConsumer<R: Runtime + ?Sized> {
-    pub map_api_lanes_stamped: R::Subscriber<MapApiLanesStamped>,
-    pub dummy_data_stamped: R::Subscriber<DummyDataStamped>,
-}
-
-impl<R: Runtime + ?Sized> Consumer<R> for BigDataConsumer<R> {
-    fn new(instance_info: R::ConsumerInfo) -> Self {
-        let map_api_lanes_stamped =
-            R::Subscriber::new("map_api_lanes_stamped_", instance_info.clone())
-                .expect("Failed to create map_api_lanes_stamped subscriber");
-        let dummy_data_stamped = R::Subscriber::new("dummy_data_stamped_", instance_info)
-            .expect("Failed to create dummy_data_stamped subscriber");
-        BigDataConsumer {
-            map_api_lanes_stamped,
-            dummy_data_stamped,
-        }
-    }
-}
-
-/// Producer type for the BigData interface.
-pub struct BigDataProducer<R: Runtime + ?Sized> {
-    _runtime: core::marker::PhantomData<R>,
-    instance_info: R::ProviderInfo,
-}
-
-impl<R: Runtime + ?Sized> Producer<R> for BigDataProducer<R> {
-    type Interface = BigDataInterface;
-    type OfferedProducer = BigDataOfferedProducer<R>;
-
-    fn new(instance_info: R::ProviderInfo) -> com_api::Result<Self> {
-        Ok(BigDataProducer {
-            _runtime: core::marker::PhantomData,
-            instance_info,
-        })
-    }
-
-    fn offer(self) -> com_api::Result<Self::OfferedProducer> {
-        let map_api_lanes_stamped =
-            R::Publisher::new("map_api_lanes_stamped_", self.instance_info.clone())
-                .expect("Failed to create map_api_lanes_stamped publisher");
-        let dummy_data_stamped =
-            R::Publisher::new("dummy_data_stamped_", self.instance_info.clone())
-                .expect("Failed to create dummy_data_stamped publisher");
-        self.instance_info.offer_service()?;
-        Ok(BigDataOfferedProducer {
-            map_api_lanes_stamped,
-            dummy_data_stamped,
-            instance_info: self.instance_info,
-        })
-    }
-}
-
-/// Offered producer type for the BigData interface, returned by `BigDataProducer::offer()`.
-pub struct BigDataOfferedProducer<R: Runtime + ?Sized> {
-    pub map_api_lanes_stamped: R::Publisher<MapApiLanesStamped>,
-    pub dummy_data_stamped: R::Publisher<DummyDataStamped>,
-    instance_info: R::ProviderInfo,
-}
-
-impl<R: Runtime + ?Sized> OfferedProducer<R> for BigDataOfferedProducer<R> {
-    type Interface = BigDataInterface;
-    type Producer = BigDataProducer<R>;
-
-    fn unoffer(self) -> com_api::Result<Self::Producer> {
-        self.instance_info.stop_offer_service()?;
-        Ok(BigDataProducer {
-            _runtime: core::marker::PhantomData,
-            instance_info: self.instance_info,
-        })
-    }
-}
+interface!(
+    interface BigData, {
+        Id = "BigDataInterface",
+        map_api_lanes_stamped_: Event<MapApiLanesStamped>,
+        dummy_data_stamped_: Event<DummyDataStamped>,
+     }
+);

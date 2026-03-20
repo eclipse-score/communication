@@ -20,7 +20,7 @@
 //! bigdata-consumer -n <num_cycles>
 //! ```
 //! * `-n <num_cycles>` — number of samples to receive before exiting.
-//! The consumer subscribes to the producer's `map_api_lanes_stamped` output and
+//! The consumer subscribes to the producer's `map_api_lanes_stamped_` output and
 //! prints the `x` field of each received sample until it has received the specified number of samples, at which point it exits.
 
 use bigdata_com_api_gen::BigDataInterface;
@@ -68,9 +68,8 @@ async fn main() {
     let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
         .expect("Invalid instance specifier");
 
-    let discovery = runtime.find_service::<BigDataInterface>(FindServiceSpecifier::Specific(
-        instance_specifier.clone(),
-    ));
+    let discovery = runtime
+        .find_service::<BigDataInterface>(FindServiceSpecifier::Specific(instance_specifier));
 
     // Await the producer to become available.
     let instances = discovery
@@ -86,9 +85,9 @@ async fn main() {
 
     // Subscribe with a slot buffer large enough for MAX_SAMPLES_PER_CALL.
     let subscription = consumer
-        .map_api_lanes_stamped
+        .map_api_lanes_stamped_
         .subscribe(MAX_SAMPLES_PER_CALL)
-        .expect("Failed to subscribe to map_api_lanes_stamped");
+        .expect("Failed to subscribe to map_api_lanes_stamped_");
 
     let mut received_total: usize = 0;
     let mut sample_buf = SampleContainer::new(MAX_SAMPLES_PER_CALL);
