@@ -36,8 +36,9 @@ use core::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use com_api_concept::{
-    AllocationFailureReason, Builder, CommData, Error, InstanceSpecifier, Interface, Producer,
-    ProducerBuilder, ProducerCreationReason, ProviderInfo, Result,
+    AllocationFailureReason, Builder, CommData, Error, EventFailedReason, InstanceSpecifier,
+    Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo, Result,
+    ServiceFailedReason,
 };
 
 use bridge_ffi_rs::*;
@@ -58,7 +59,7 @@ impl ProviderInfo for LolaProviderInfo {
         let status =
             unsafe { bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
         if !status {
-            return Err(Error::OfferServiceFailed);
+            return Err(Error::ServiceError(ServiceFailedReason::OfferServiceFailed));
         }
         Ok(())
     }
@@ -187,7 +188,7 @@ where
             )
         };
         if !status {
-            return Err(Error::SendingDataFailed);
+            return Err(Error::EventError(EventFailedReason::SendingDataFailed));
         }
         Ok(())
     }
@@ -302,8 +303,8 @@ impl NativeSkeletonHandle {
         let handle =
             unsafe { bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native()) };
         if handle.is_null() {
-            return Err(Error::ProducerCreationFailed(
-                ProducerCreationReason::SkeletonCreationFailed,
+            return Err(Error::ProducerError(
+                ProducerFailedReason::SkeletonCreationFailed,
             ));
         }
         Ok(Self { handle })
@@ -345,8 +346,8 @@ impl NativeSkeletonEventBase {
             )
         };
         if skeleton_event_ptr.is_null() {
-            return Err(Error::ProducerCreationFailed(
-                ProducerCreationReason::SkeletonCreationFailed,
+            return Err(Error::ProducerError(
+                ProducerFailedReason::SkeletonCreationFailed,
             ));
         }
         Ok(Self { skeleton_event_ptr })
@@ -399,10 +400,8 @@ where
                 T::ID,
             );
             if !status {
-                return Err(Error::MemoryAllocationFailed(
-                    AllocationFailureReason::InternalError(
-                        "Failed to allocate sample via skeleton event",
-                    ),
+                return Err(Error::AllocateError(
+                    AllocationFailureReason::AllocationToSharedMemoryFailed,
                 ));
             }
             sample.assume_init()
@@ -446,10 +445,10 @@ impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder
 
 impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
-        let instance_specifier_runtime =
-            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref()).map_err(
-                |_| Error::ProducerCreationFailed(ProducerCreationReason::InstanceSpecifierInvalid),
-            )?;
+        let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(
+            self.instance_specifier.as_ref(),
+        )
+        .map_err(|_| Error::ProducerError(ProducerFailedReason::InstanceSpecifierInvalid))?;
 
         let skeleton_handle =
             NativeSkeletonHandle::new(I::INTERFACE_ID, &instance_specifier_runtime)?;
@@ -459,9 +458,8 @@ impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuild
             skeleton_handle: SkeletonInstanceManager(Arc::new(skeleton_handle)),
         };
 
-        I::Producer::new(instance_info).map_err(|_| {
-            Error::ProducerCreationFailed(ProducerCreationReason::BuilderCreationFailed)
-        })
+        I::Producer::new(instance_info)
+            .map_err(|_| Error::ProducerError(ProducerFailedReason::BuilderCreationFailed))
     }
 }
 
