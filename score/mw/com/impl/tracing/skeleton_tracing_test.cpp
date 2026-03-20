@@ -76,6 +76,11 @@ class MyDummyField : public SkeletonFieldBase
     {
         return {};
     }
+
+    bool IsSetHandlerRegistered() const noexcept override
+    {
+        return true;
+    }
 };
 
 class SkeletonTracingFixture : public ::testing::Test
