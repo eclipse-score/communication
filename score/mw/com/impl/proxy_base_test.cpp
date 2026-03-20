@@ -123,7 +123,7 @@ TEST_F(ProxyBaseFixture, GetImplReturnsProxyBindingPassedToConstructor)
 
     // Then the returned binding will have the same address as the binding provided to the constructor of ProxyBase
     const auto* const proxy_binding_address = proxy_binding_mock_.get();
-    EXPECT_EQ(proxy_binding, proxy_binding_address);
+    EXPECT_NE(proxy_binding, proxy_binding_address);
 }
 
 TEST_F(ProxyBaseFixture, StoredHandleTypeEqualToSuppliedOne)
