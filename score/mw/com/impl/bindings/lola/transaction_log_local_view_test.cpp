@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
