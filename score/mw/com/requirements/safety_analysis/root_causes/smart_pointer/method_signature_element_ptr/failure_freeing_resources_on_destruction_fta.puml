@@ -15,12 +15,11 @@
 
 !include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
 
-$TopEvent("Method Call blocks", "Communication.CallBlocks")
+$TopEvent("Failure freeing resources on destruction", "Communication.MethodSignatureElementPtrFailsToFree")
 
 $OrGate("Gate1", "TopEvent")
-$BasicEvent("Method call blocks in message-passing at the caller side -> send blocked", "Communication.BlocksOnCaller", "Gate1")
-$BasicEvent("Method call blocks in user-handler at the callee side", "Communication.CallBlocksOnUserHandler", "Gate1")
-$BasicEvent("Method call blocks in reply at the callee side -> send blocked ", "Communication.CallBlocksOnCallee", "Gate1")
-
+$BasicEvent("Does not free method signature element", "Event1", "Gate1")
+$IntermediateEvent("Frees wrong method signature element", "Event2", "Gate1")
+$BasicEvent("Overwrite of element in use", "Communication.ChangingStateFails", "Event2")
 
 @enduml

@@ -363,7 +363,61 @@ section "LoLa" {
                 potentialcause = "nearly the same as [ISSUE:Failuremode NoResourcesFreed] The only difference is that unlink / unmap will happen early."
             }
         }
+        section "Handle Method Calls" {
 
+            // Fault-Tree $TopEvent [Communication.WrongInArgsUsed]
+            // Reference as mitigation measures:
+            // - Callee used InArgs in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
+            // - Callee used InArgs while concurrently updated: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
+            // Reference as prevention measures:
+            // - Callee used InArgs from wrong location: ToDo: Requirement, that we make sure, that the provided MethodInArgPtrs are actually pointing to the right location.
+            // - Callee used InArgs before being provided: ToDo: Requirement, that we make sure, that the user handler is only called, when the provided in-arg references are pointing to completely setup in-arg.
+            // - InArgs corrupted by 3d party: ToDo: Requirement: shm-objects created for method calls need to be accessible only to service provider instance and the proxy instance.
+            ScoreReq.FailureMode WrongMethodInArgsProvided {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "Unintended input arguments are provided to a service method call. Therefore, the method call gets executed with wrong input data."
+                failureeffect = "Communication of data-garbage, which could harm an overall safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "For all causes, we have either preventive measures or AoUs. Thus, no additional measures are required."
+                potentialcause = "A: Either the user interpreted the InArgs in the wrong layout or accesses the InArgs after return from the call. B: The mw::com implementation signals the call before all InArgs are provided or provides in-arg pointers to the wrong location."
+            }
+
+            // Fault-Tree $TopEvent [Communication.WrongMethodCalled]
+            // Reference as mitigation measures:
+            // - Wrongly configured: Is covered here: [ISSUE:Failuremode [InMemoryConfigurationWrong]
+            // Reference as prevention measures:
+            // - User Handler assignment wrong: ToDo: Requirement, that we make sure, that the user provided handlers are assigned to the right method and that the assignment is not corrupted and the lookup is safe.
+            // - MethodId corrupted: ToDo: Requirement, that we assure, that the methodid gets not corrupted on its way from the caller to the callee and then also within the callee.
+            ScoreReq.FailureMode WrongMethodCalled {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "Either the wrong user provided method handler is called or no user handler is called at all. Therefore, the method call results are invalid/garbage."
+                failureeffect = "Communication of data-garbage, which could harm an overall safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "For all causes, we have either preventive measures or AoUs. Thus, no additional measures are required."
+                potentialcause = "A: The configuration between provider and consumer mismatches regarding method identification. B: The methodid used in assignment of user provided handlers is corrupted or the assignment/storage/lookup of the user provided handler fails."
+            }
+
+            // Fault-Tree $TopEvent [Communication.WrongResultsProvided]
+            // Reference as mitigation measures:
+            // - Callee provided result in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
+            // - Callee signalled call finished before or without providing result completely: ToDo: Add an AoU, which states, that a user provided method handler always has to completely update the return-type reference before returning from its handler.
+            // - Callee (user layer) concurrently updates result after returning from handler : ToDo: Eventually add an explicit/new AoU or extend the AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer for return value references, which states, that the user handler is not allowed to update any reference )by storing the address) after returning from a handler being called by mw::com.
+            // Reference as prevention measures:
+            // - Callee provided result in wrong location: ToDo: Requirement, that we make sure, that the result-reference provided to the user-handler is actually pointing to the right location, where the caller expects the result.
+            // - Callee (mw::com layer) concurrently updates result after signaling call finished : ToDo: Requirement, that we make sure, that there is no write access to the result location after the method-return has been signalled to the caller.
+            ScoreReq.FailureMode WrongResultsProvided {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "The result of a method call is either not provided in the expected location, leaving uninitialized data in the expected location or it is provided in an inconsistent state. Therefore, the method call results are invalid/garbage."
+                failureeffect = "Communication of data-garbage, which could harm an overall safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "For all causes, we have either preventive measures or AoUs. Thus, no additional measures are required."
+                potentialcause = "A: The user handler either returns without providing a valid result or it writes it in an incorrect format. B: The user handler gets invoked with an invalid return-value reference."
+            }
+        }
+    }
     section "Proxy" {
 
         section "Start Find Service" {
@@ -706,61 +760,151 @@ section "LoLa" {
                 }
             }
         }
+
+        section "Call Method" {
+            // Fault-Tree $TopEvent [Communication.CallBlocks]
+            // Reference as mitigation for all three leaf-nodes/BasicEvents in the fault-tree: ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
+            ScoreReq.FailureMode MethodCallBlocksLongerThanExpected {
+                guideword = ScoreReq.GuideWord.DelayedFunction
+                description = "A call to a service-method on the client/consumer side blocks longer than expected (or indefinite). This is a specific instance of FailureMode [AnyFunctionBlocksLongerThanExpected], but since with service-methods we have concrete root causes in the form of message-passing behaviour and behaviour of user-provided handler, we have this specific failure mode."
+                failureeffect = "This could cause a halt of parts of/or the whole system."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "Our system anyhow imposes a watchdog to check for safety-related and time related paths. Thus, we do not try to safety qualify ever aspect and guarantee any execution timings."
+                potentialcause = "Underlying message-passing mechanism is blocked (e.g. the opposite side is not receiving messages) or the user provided handler is blocking."
+            }
+
+            // Fault-Tree $TopEvent [Communication.WrongInArgsProvided]
+            // Reference as mitigation measures:
+            // - Caller provided InArgs in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
+            // - Caller updates InArgs concurrently after call signalling: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
+            // Reference as prevention measures:
+            // - Call signalled before InArgs completely provided: ToDo: Requirement, that we make sure, that all MethodInArgPtrs are set/provided, before signalling the call.
+            // - Caller provided InArgs in wrong location: ToDo: Requirement, that we make sure, that the provided MethodInArgPtrs are actually pointing to the right location.
+            ScoreReq.FailureMode WrongMethodInArgsProvided {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "Unintended input arguments are provided to a service method call. Therefore, the method call gets executed with wrong input data."
+                failureeffect = "Communication of data-garbage, which could harm an overall safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "For all causes, we have either preventive measures or AoUs. Thus, no additional measures are required."
+                potentialcause = "A: Either the user provides the InArgs in the wrong layout or updates the InArgs concurrently after call signalling. B: The mw::com implementation signals the call before all InArgs are provided or provides in-arg pointers to the wrong location."
+            }
+
+            // Fault-Tree $TopEvent [Communication.WrongResultsUsed]
+            // Reference as mitigation measures:
+            // - Caller used result in wrong layout: Mitigated by AoU ScoreReq.AoU SameCompilerSettingsForProviderAndConsumerSide
+            // - Caller used result while concurrently updated: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
+            // Reference as prevention measures:
+            // - Caller used result from wrong location: ToDo: Requirement, that we make sure, that MethodReturnPtr points to the correct location in shm.
+            // - Caller used result before fully provided: ToDo: Requirement, that we make sure, that the MethodReturnPtr is only set/provided, when method call being signalled as finished.
+            ScoreReq.FailureMode WrongMethodInArgsProvided {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "Unintended results are provided from a service method call. Therefore, the caller of the method works on wrong data."
+                failureeffect = "Communication of data-garbage, which could harm an overall safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "For all causes, we have either preventive measures or AoUs. Thus, no additional measures are required."
+                potentialcause = "A: Either the user interpreted the Result in the wrong layout or accesses it after signalling, that he is done with its usage. B: The mw::com implementation signals the call being done before the return value is fully provided or provides result pointers to the wrong location."
+            }
+        }
     }
+
+
+
 
     section "SmartPointer" {
 
-        // ID: 6166375
-        ScoreReq.FailureMode DoesNotFreeResourcesOnDestruction {
-            guideword = ScoreReq.GuideWord.LossOfFunction
-            description = "A SampleAllocateePtr or SamplePtr is destroyed, which should lead to a freeing of resources, but caused by a fault they are not freed."
-            failureeffect = "Resource exhaustion. Could block further communication which could lead to failures on provider and consumer side, which on the other hand could lead to a violation of a safety goal."
-            version = 1
-            safety = ScoreReq.Asil.B
-            rationale = "This failure mode can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic. Which both is presented as preventive measure."
+        section "SamplePtr and SampleAllocateePtr" {
+
+            // ID: 6166375
+            ScoreReq.FailureMode DoesNotFreeResourcesOnDestruction {
+                guideword = ScoreReq.GuideWord.LossOfFunction
+                description = "A SampleAllocateePtr or SamplePtr is destroyed, which should lead to a freeing of resources, but caused by a fault they are not freed."
+                failureeffect = "Resource exhaustion. Could block further communication which could lead to failures on provider and consumer side, which on the other hand could lead to a violation of a safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "This failure mode can be avoided by ensuring an always valid slot and ensuring a correct slot-change logic. Which both is presented as preventive measure."
+            }
+
+            // ID: 6166378
+            ScoreReq.FailureMode FreesWrongResources {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "A SampleAllocateePtr or SamplePtr free the wrong resources associated with them."
+                failureeffect = "Communication of data-garbage or resource exhaustion, which both could harm an overall safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction]"
+                potentialcause = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction] with the only difference that a slot could now be valid but the wrong one."
+            }
+
+            // ID: 6166381
+            ScoreReq.FailureMode DoesNotReserveResources {
+                guideword = ScoreReq.GuideWord.LossOfFunction
+                description = "A SamplePtr or SampleAllocateePtr do not increase their respective ref-counts and thus avoid data changes."
+                failureeffect = "Data is manipulated from different processes because they think its not owned. Which could cause garbage data and thus harm any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increas."
+                potentialcause = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction]"
+            }
+
+            // ID: 6166382
+            ScoreReq.FailureMode DoesNotUpdateFreeSampleCountCorrectly {
+                guideword = ScoreReq.GuideWord.LossOfFunction
+                description = "When a SamplePtr gets created or destroyed for a given event instance, the Free Sample Count of this instance doesn't get updated accordingly"
+                failureeffect = "Users may not know, if they are allowed to retrieve new Samples at all and may therefore fail to get new data! This may violate any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "By ensuring a correct behavior of the SamplePtr, this fault can be omitted."
+                potentialcause = "The only possible cause is a wrong behavior of our reference counting mechanism."
+            }
+
+            // ID: 6166385
+            ScoreReq.FailureMode ReturnsWrongData {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "On dereferenciation of a SamplePtr or SampleAllocateePtr wrong data is returned."
+                failureeffect = "If you cannot trust the data in the smart pointer, then the data can be garbage, which could break safe communication, which could harm any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "The validity of the slot is ensured by a preventive measure, while the validity of the memory data is ensure by AoUs."
+            }
         }
 
-        // ID: 6166378
-        ScoreReq.FailureMode FreesWrongResources {
-            guideword = ScoreReq.GuideWord.UnintendedFunction
-            description = "A SampleAllocateePtr or SamplePtr free the wrong resources associated with them."
-            failureeffect = "Communication of data-garbage or resource exhaustion, which both could harm an overall safety goal."
-            version = 1
-            safety = ScoreReq.Asil.B
-            rationale = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction]"
-            potentialcause = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction] with the only difference that a slot could now be valid but the wrong one."
-        }
+        section "MethodSignatureElementPtr" {
 
-        // ID: 6166381
-        ScoreReq.FailureMode DoesNotReserveResources {
-            guideword = ScoreReq.GuideWord.LossOfFunction
-            description = "A SamplePtr or SampleAllocateePtr do not increase their respective ref-counts and thus avoid data changes."
-            failureeffect = "Data is manipulated from different processes because they think its not owned. Which could cause garbage data and thus harm any safety goal."
-            version = 1
-            safety = ScoreReq.Asil.B
-            rationale = "Same as [ISSUE:FailureMode DoesNotFreeResourcesOnDestruction] since a decrease of the ref-count has the same issues as an increas."
-            potentialcause = "Same as [ISSUE:Failuremode DoesNotFreeResourcesOnDestruction]"
-        }
+            // Fault-Tree $TopEvent [Communication.MethodSignatureElementPtrWrongTarget]
+            // Reference as mitigation measures:
+            // - References outdated valid memory inside shared-memory: Mitigated by AoU ScoreReq.AoU ValidityOfPointerOnLoLaPointer. ToDo: extend this AoU for MethodElementPtrs!
+            // Reference as prevention measures:
+            // - References wrong valid memory outside shared-memory: ToDo: This is either a lifetime issue (the memory was previously a mapped shm-region, which is now unmapped) or it was always in wrong memory, thus the following prevention holds.
+            // - References wrong valid memory inside shared-memory: ToDo: Requirement, that we make sure, that the provided MethodSignatureElementPtrs are actually pointing to the right locations in shared-memory method-call-queues.
+            // Reference as control measures:
+            // - References invalid memory: Access to invalid memory leads to a crash, which harms availability but no safety goal.
+            ScoreReq.FailureMode MethodSignatureElementPtrWrongTarget {
+                guideword = ScoreReq.GuideWord.UnintendedFunction
+                description = "On de-referencing of a MethodSignatureElementPtr wrong data is returned."
+                failureeffect = "Resolution of the smart pointer to the wrong memory location, leads to garbage data access. This could harm any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "The validity of the method signature element (return value/in-argument) is ensured by a preventive measure, while the validity of the data at this location is ensured by AoUs."
+                potentialcause = "A: The user didn't obey the lifetime rules of the MethodSignatureElementPtr and thus accesses it after it has been invalidated. B: The pointers were either wrongly initialized or point to locations, which were invalidated before the access happens.
+            }
 
-        // ID: 6166382
-        ScoreReq.FailureMode DoesNotUpdateFreeSampleCountCorrectly {
-            guideword = ScoreReq.GuideWord.LossOfFunction
-            description = "When a SamplePtr gets created or destroyed for a given event instance, the Free Sample Count of this instance doesn't get updated accordingly"
-            failureeffect = "Users may not know, if they are allowed to retrieve new Samples at all and may therefore fail to get new data! This may violate any safety goal."
-            version = 1
-            safety = ScoreReq.Asil.B
-            rationale = "By ensuring a correct behavior of the SamplePtr, this fault can be omitted."
-            potentialcause = "The only possible cause is a wrong behavior of our reference counting mechanism."
-        }
-
-        // ID: 6166385
-        ScoreReq.FailureMode ReturnsWrongData {
-            guideword = ScoreReq.GuideWord.UnintendedFunction
-            description = "On dereferenciation of a SamplePtr or SampleAllocateePtr wrong data is returned."
-            failureeffect = "If you cannot trust the data in the smart pointer, then the data can be garbage, which could break safe communication, which could harm any safety goal."
-            version = 1
-            safety = ScoreReq.Asil.B
-            rationale = "The validity of the slot is ensured by a preventive measure, while the validity of the memory data is ensure by AoUs."
+            // Fault-Tree $TopEvent [Communication.MethodSignatureElementPtrFailsToFree]
+            // Reference as mitigation measures:
+            // - Does not free method signature element: Mitigated by AoU ScoreReq.AoU [NoGuaranteesForTimelyMethodCallExecution]
+            // Reference as prevention measures:
+            // - Overwrite of element in use: ToDo: Requirement, that we make sure, that the provided MethodSignatureElementPtrs are actually pointing to the right locations in shared-memory method-call-queues and no double use takes place.
+            ScoreReq.FailureMode MethodSignatureElementPtrFailsToFree {
+                guideword = ScoreReq.GuideWord.LossOfFunction
+                description = "On destruction of a MethodSignatureElementPtr wrong memory is freed or not freed at all."
+                failureeffect = "Failing to free resources can lead to a loss of function as no further method calls could be processed. This does not harm a safety goal. But freeing the wrong resources could lead to This could harm any safety goal."
+                version = 1
+                safety = ScoreReq.Asil.B
+                rationale = "Not freeing a method signature element within a call-queue would lead to a further call to be blocked, but since we anyhow do not guarantee any execution timing, this is not a safety issue. Freeing the wrong memory can be tackled by ensuring that the MethodSignatureElementPtrs always point to the right location in shared-memory method-call-queues."
+                potentialcause = "A: Pointer got corrupted and therefore points to the wrong location. B: The location, where the pointer points to, was falsely re-used."
+            }
         }
     }
 }

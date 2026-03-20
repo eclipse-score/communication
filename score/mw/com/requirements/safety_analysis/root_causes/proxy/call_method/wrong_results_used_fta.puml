@@ -18,20 +18,9 @@
 $TopEvent("Wrong call result used", "Communication.WrongResultsUsed")
 
 $OrGate("Gate1", "TopEvent")
-$IntermediateEvent("Callee failed to provide correct result", "Event2", "Gate1")
-$IntermediateEvent("Caller accesses wrong result", "Event6", "Gate1")
-$OrGate("Gate2", "Event2")
-$IntermediateEvent("Callee did not provide result", "Event3", "Gate2")
-$OrGate("Gate3", "Event3")
-$BasicEvent("Callee signalled call finished before providing result", "Event5", "Gate3")
-$BasicEvent("Someone else signalled call finished wrongly", "Event7", "Gate3")
-
-$BasicEvent("Callee provided result in wrong location", "Event8", "Gate2")
-$BasicEvent("Callee provided result in wrong layout", "Event9", "Gate2")
-$OrGate("Gate4", "Event6")
-$BasicEvent("Caller used result from wrong location", "Event10", "Gate4")
-$BasicEvent("Caller used result in wrong layout", "Event11", "Gate4")
-$BasicEvent("Caller used result while concurrently updated", "Event12", "Gate4")
-
+$BasicEvent("Caller used result from wrong location", "Event10", "Gate1")
+$BasicEvent("Caller used result in wrong layout", "Event11", "Gate1")
+$BasicEvent("Caller used result before fully provided", "Event12", "Gate1")
+$BasicEvent("Caller used result while concurrently updated", "Event13", "Gate1")
 
 @enduml

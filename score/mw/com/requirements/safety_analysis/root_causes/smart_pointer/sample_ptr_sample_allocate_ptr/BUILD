@@ -12,11 +12,10 @@
 # *******************************************************************************
 
 filegroup(
-    name = "call_method_fta",
+    name = "sample_ptr_sample_allocate_ptr",
     srcs = [
-        "call_blocks_fta.puml",
-        "wrong_in_args_provided_fta.puml",
-        "wrong_results_used_fta.puml",
+        "does_not_free_resources_on_destruction_fta.puml",
+        "returns_wrong_data_fta.puml",
     ],
     visibility = ["//visibility:public"],
 )

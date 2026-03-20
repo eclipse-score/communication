@@ -15,12 +15,18 @@
 
 !include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
 
-$TopEvent("Method Call blocks", "Communication.CallBlocks")
+$TopEvent("Wrong input arguments provided", "Communication.WrongInArgsProvided")
 
 $OrGate("Gate1", "TopEvent")
-$BasicEvent("Method call blocks in message-passing at the caller side -> send blocked", "Communication.BlocksOnCaller", "Gate1")
-$BasicEvent("Method call blocks in user-handler at the callee side", "Communication.CallBlocksOnUserHandler", "Gate1")
-$BasicEvent("Method call blocks in reply at the callee side -> send blocked ", "Communication.CallBlocksOnCallee", "Gate1")
 
+$IntermediateEvent("Caller did not/only partially provide InArgs", "Event1", "Gate1")
+$OrGate("Gate2", "Event1")
+$BasicEvent("Call signalled before InArgs completely provided", "Event2", "Gate2")
+$BasicEvent("Caller provided InArgs in wrong location", "Event4", "Gate2")
+
+$IntermediateEvent("Caller provided wrong InArgs", "Event5", "Gate1")
+$OrGate("Gate4", "Event5")
+$BasicEvent("Caller provided InArgs in wrong layout", "Communication.InArgsWrongLayout", "Gate4")
+$BasicEvent("Caller updates InArgs concurrently after call signalling", "Communication.InArgsUpdateAfterCall", "Gate4")
 
 @enduml

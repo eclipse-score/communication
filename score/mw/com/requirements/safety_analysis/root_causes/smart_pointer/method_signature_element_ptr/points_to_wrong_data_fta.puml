@@ -15,12 +15,15 @@
 
 !include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
 
-$TopEvent("Method Call blocks", "Communication.CallBlocks")
+$TopEvent("Points to wrong data", "Communication.MethodSignatureElementPtrWrongTarget")
 
 $OrGate("Gate1", "TopEvent")
-$BasicEvent("Method call blocks in message-passing at the caller side -> send blocked", "Communication.BlocksOnCaller", "Gate1")
-$BasicEvent("Method call blocks in user-handler at the callee side", "Communication.CallBlocksOnUserHandler", "Gate1")
-$BasicEvent("Method call blocks in reply at the callee side -> send blocked ", "Communication.CallBlocksOnCallee", "Gate1")
-
+$IntermediateEvent("Shared Memory no longer valid", "Event2", "Gate1")
+$BasicEvent("Life-Cycle issues", "Communication.LifeCycleIssues", "Event2")
+$IntermediateEvent("Wrong memory location referenced", "Event3", "Gate1")
+$OrGate("Gate2", "Event3")
+$BasicEvent("References valid memory outside shared-memory", "Event4", "Gate2")
+$BasicEvent("References valid memory inside shared-memory", "Event5", "Gate2")
+$BasicEvent("References invalid memory", "Event6", "Gate2")
 
 @enduml

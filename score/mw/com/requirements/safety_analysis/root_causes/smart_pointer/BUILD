@@ -12,11 +12,10 @@
 # *******************************************************************************
 
 filegroup(
-    name = "call_method_fta",
+    name = "smart_pointer_fta",
     srcs = [
-        "call_blocks_fta.puml",
-        "wrong_in_args_provided_fta.puml",
-        "wrong_results_used_fta.puml",
+        "//score/mw/com/requirements/safety_analysis/root_causes/smart_pointer/method_signature_element_ptr:method_signature_element_ptr_fta",
+        "//score/mw/com/requirements/safety_analysis/root_causes/smart_pointer/sample_ptr_sample_allocate_ptr",
     ],
     visibility = ["//visibility:public"],
 )

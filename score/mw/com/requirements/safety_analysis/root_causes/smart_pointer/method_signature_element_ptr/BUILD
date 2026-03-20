@@ -12,11 +12,10 @@
 # *******************************************************************************
 
 filegroup(
-    name = "call_method_fta",
+    name = "method_signature_element_ptr_fta",
     srcs = [
-        "call_blocks_fta.puml",
-        "wrong_in_args_provided_fta.puml",
-        "wrong_results_used_fta.puml",
+        "failure_freeing_resources_on_destruction_fta.puml",
+        "points_to_wrong_data_fta.puml",
     ],
     visibility = ["//visibility:public"],
 )
