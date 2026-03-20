@@ -16,11 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_slot.h"
 
 #include "score/containers/dynamic_array.h"
-#include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
-#include "score/result/result.h"
-
-#include <score/callback.hpp>
 
 #include <cstdint>
 
@@ -36,12 +32,6 @@ namespace score::mw::com::impl::lola
 /// so that the service element can be recreated (e.g. in the case of a crash).
 class TransactionLog
 {
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // The "TransactionLogAttorney" class is a helper, which sets the internal state of "TransactionLog" accessing
-    // private members and used for testing purposes only.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class TransactionLogAttorney;
-
   public:
     /// \todo Add a central location in which all the type aliases are placed so that these types align with their
     /// usages in other parts of the code base.
@@ -52,70 +42,7 @@ class TransactionLog
         score::containers::DynamicArray<TransactionLogSlot,
                                         memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogSlot>>;
 
-    /// \brief Callbacks called during Roll back
-    ///
-    /// These callbacks will be provided by reference and may be called multiple times by TransactionLogSet. Therefore,
-    /// it should be ensured that it is safe to call these callbacks multiple times without violating any invariants in
-    /// the state of the callbacks.
-    using DereferenceSlotCallback = score::cpp::callback<void(SlotIndexType slot_index)>;
-    using UnsubscribeCallback = score::cpp::callback<void(MaxSampleCountType subscription_max_sample_count)>;
-
-    TransactionLog(std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource) noexcept;
-
-    /// \brief Record Subscription / Unsubscription transactions
-    ///
-    /// The expected sequence for a full subscription and unsubscription is as follows:
-    /// Initial state:                Begin -> false, End -> false
-    /// SubscribeTransactionBegin:    Begin -> true,  End -> false
-    /// SubscribeTransactionCommit:   Begin -> true,  End -> true
-    /// UnsubscribeTransactionBegin:  Begin -> false, End -> true
-    /// UnsubscribeTransactionCommit: Begin -> false, End -> false
-    ///
-    /// We set begin to false in UnsubscribeTransactionBegin so that we can differentiate between a failure during
-    /// subscription or unsubscription.
-    void SubscribeTransactionBegin(const std::size_t subscription_max_sample_count) noexcept;
-    void SubscribeTransactionCommit() noexcept;
-    void SubscribeTransactionAbort() noexcept;
-
-    void UnsubscribeTransactionBegin() noexcept;
-    void UnsubscribeTransactionCommit() noexcept;
-
-    void ReferenceTransactionBegin(SlotIndexType slot_index) noexcept;
-    void ReferenceTransactionCommit(SlotIndexType slot_index) noexcept;
-    void ReferenceTransactionAbort(SlotIndexType slot_index) noexcept;
-
-    void DereferenceTransactionBegin(SlotIndexType slot_index) noexcept;
-    void DereferenceTransactionCommit(SlotIndexType slot_index) noexcept;
-
-    /// \brief Rollback all previous increments and subscriptions that were recorded in the transaction log.
-    /// \param dereference_slot_callback Callback which will decrement the slot in EventDataControl with the provided
-    ///        index.
-    /// \param unsubscribe_callback Callback which will perform the unsubscribe with the stored
-    ///        subscription_max_sample_count_.
-    ///
-    /// This function should be called when trying to create a Proxy service element that had previously crashed. It
-    /// will decrement all reference counts that the old Proxy had incremented in the EventDataControl which were
-    /// recorded in this TransactionLog.
-    ResultBlank RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
-                                        const UnsubscribeCallback& unsubscribe_callback) noexcept;
-
-    /// \brief Rollback all previous increments that were recorded in the transaction log.
-    /// \param dereference_slot_callback Callback which will decrement the slot in EventDataControl with the provided
-    ///        index.
-    ///
-    /// This function should be called when trying to create a Skeleton service element that had previously crashed. It
-    /// will decrement all reference counts that the old Skeleton (due to tracing) had incremented in the
-    /// EventDataControl which were recorded in this TransactionLog.
-    ResultBlank RollbackSkeletonTracingElementLog(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
-
-    /// \brief Checks whether the TransactionLog contains any transactions
-    /// \return Returns true if there is at least one Subscribe transaction or Reference transaction that hasn't been
-    ///         finished with a completed Unsubscribe or Dereference transaction.
-    bool ContainsTransactions() const noexcept;
-
-  private:
-    ResultBlank RollbackIncrementTransactions(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
-    ResultBlank RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback) noexcept;
+    TransactionLog(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource) noexcept;
 
     /// \brief Vector containing one TransactionLogSlot for each slot in the corresponding control vector.
     TransactionLogSlots reference_count_slots_;

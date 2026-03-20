@@ -767,6 +767,20 @@ cc_library(
     srcs = ["transaction_log.cpp"],
     hdrs = ["transaction_log.h"],
     features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
+    deps = [
+        ":transaction_log_slot",
+        "@score_baselibs//score/containers:dynamic_array",
+        "@score_baselibs//score/memory/shared",
+    ],
+)
+
+cc_library(
+    name = "transaction_log_local_view",
+    srcs = ["transaction_log_local_view.cpp"],
+    hdrs = ["transaction_log_local_view.h"],
+    features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl:error",
         "@score_logging//score/mw/log",
@@ -774,7 +788,8 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":transaction_log_slot",
+        ":transaction_log",
+        ":control_slot_types",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared",
@@ -1439,9 +1454,9 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
-    name = "transaction_log_test",
+    name = "transaction_log_local_view_test",
     srcs = [
-        "transaction_log_test.cpp",
+        "transaction_log_local_view_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
@@ -1527,7 +1542,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":transaction_log_registration_guard_test",
         ":transaction_log_set_test",
         ":transaction_log_slot_test",
-        ":transaction_log_test",
+        ":transaction_log_local_view_test",
         ":dynamic_array_bounds_checking_test",
         ":event_data_control_test",
         ":event_data_control_composite_test",
