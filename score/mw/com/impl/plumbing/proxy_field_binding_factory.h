@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_PROXY_FIELD_BINDING_FACTORY_H
 #define SCORE_MW_COM_IMPL_PLUMBING_PROXY_FIELD_BINDING_FACTORY_H
 
+#include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory_impl.h"
 #include "score/mw/com/impl/proxy_base.h"
@@ -37,6 +38,18 @@ class ProxyFieldBindingFactory final
                                                                              std::string_view field_name) noexcept
     {
         return instance().CreateEventBinding(parent, field_name);
+    }
+
+    static std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(ProxyBase& parent,
+                                                                      std::string_view field_name) noexcept
+    {
+        return instance().CreateGetMethodBinding(parent, field_name);
+    }
+
+    static std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(ProxyBase& parent,
+                                                                      std::string_view field_name) noexcept
+    {
+        return instance().CreateSetMethodBinding(parent, field_name);
     }
 
     /// \brief Inject a mock IProxyFieldBindingFactory. If a mock is injected, then all calls on

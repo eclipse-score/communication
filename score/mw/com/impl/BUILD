@@ -208,6 +208,7 @@ cc_library(
         ":proxy_event",
         ":proxy_event_binding",
         ":proxy_field_base",
+        "//score/mw/com/impl/methods:proxy_method",
         "//score/mw/com/impl/mocking:i_proxy_event",
         "//score/mw/com/impl/plumbing:field",
         "@score_baselibs//score/language/futurecpp",
@@ -964,6 +965,7 @@ cc_gtest_unit_test(
     deps = [
         ":impl",
         ":runtime_mock",
+        "//score/mw/com/impl/mocking:proxy_event_mock",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
