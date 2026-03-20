@@ -38,8 +38,9 @@ class IConnectionHandler
     IConnectionHandler& operator=(const IConnectionHandler&) = delete;
     IConnectionHandler& operator=(IConnectionHandler&&) = delete;
 
-    virtual score::cpp::expected_blank<score::os::Error> OnMessageSent(IServerConnection& connection,
-                                                              score::cpp::span<const std::uint8_t> message) noexcept = 0;
+    virtual score::cpp::expected_blank<score::os::Error> OnMessageSent(
+        IServerConnection& connection,
+        score::cpp::span<const std::uint8_t> message) noexcept = 0;
     virtual score::cpp::expected_blank<score::os::Error> OnMessageSentWithReply(
         IServerConnection& connection,
         score::cpp::span<const std::uint8_t> message) noexcept = 0;

@@ -30,7 +30,8 @@ class MessagePassingClientCacheTest : public ::testing::TestWithParam<ClientQual
     static constexpr pid_t pid2_{42};
 
     score::cpp::pmr::unique_ptr<::testing::NiceMock<ClientConnectionMock>> client_connection_mock_{
-        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource())};
+        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+            score::cpp::pmr::new_delete_resource())};
     ClientFactoryMock client_factory_mock_{};
     MessagePassingClientCache client_cache_{GetParam(), client_factory_mock_};
 };
@@ -98,10 +99,12 @@ TEST_P(MessagePassingClientCacheTest,
     // and factory that returns new ClientConnectionMock each time
     // Expect that factory will be invoked to create of a new client connection
     EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(::testing::ByMove(
-            score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource()))))
-        .WillOnce(::testing::Return(::testing::ByMove(
-            score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource()))));
+        .WillOnce(
+            ::testing::Return(::testing::ByMove(score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource()))))
+        .WillOnce(
+            ::testing::Return(::testing::ByMove(score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource()))));
 
     // When GetMessagePassingClient is called with different target node ids
     auto client1 = client_cache_.GetMessagePassingClient(pid_);
@@ -148,8 +151,8 @@ TEST_P(MessagePassingClientCacheTest, RemoveMessagePassingClientRemovesClientInS
 
     // Expect factory's .Create() to be called
     EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(
-            ::testing::ByMove(score::cpp::pmr::make_unique<ClientConnectionMock>(score::cpp::pmr::new_delete_resource()))));
+        .WillOnce(::testing::Return(::testing::ByMove(
+            score::cpp::pmr::make_unique<ClientConnectionMock>(score::cpp::pmr::new_delete_resource()))));
 
     // When GetMessagePassingClient is called with the same target node id
     client_cache_.GetMessagePassingClient(pid_);
@@ -169,7 +172,8 @@ TEST(MessagePassingClientCacheDeathTest, RemoveMessagePassingClientTerminatesWhe
 
     // Given client connection mock in ready state
     score::cpp::pmr::unique_ptr<::testing::NiceMock<ClientConnectionMock>> client_connection_mock{
-        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource())};
+        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+            score::cpp::pmr::new_delete_resource())};
     EXPECT_CALL(*client_connection_mock, GetState())
         .WillRepeatedly(::testing::Return(IClientConnection::State::kReady));
 

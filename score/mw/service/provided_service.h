@@ -31,11 +31,17 @@ class ProvidedService
     // Stub methods - not called in config_daemon tests
     virtual void StartService() {}
     virtual void StopService() {}
-    
+
     /// @brief Helper method for polymorphic service lookup (stub-specific)
     /// Derived classes (decorators) should override to return their inner service as void*
-    virtual void* GetServicePtr() noexcept { return nullptr; }
-    virtual const void* GetServicePtr() const noexcept { return nullptr; }
+    virtual void* GetServicePtr() noexcept
+    {
+        return nullptr;
+    }
+    virtual const void* GetServicePtr() const noexcept
+    {
+        return nullptr;
+    }
 
   protected:
     constexpr ProvidedService(ProvidedService&&) noexcept = default;

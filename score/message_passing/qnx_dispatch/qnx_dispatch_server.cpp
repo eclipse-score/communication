@@ -51,8 +51,9 @@ QnxDispatchServer::ServerConnection::ServerConnection(ClientIdentity client_iden
 }
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-void QnxDispatchServer::ServerConnection::AcceptConnection(UserData&& data,
-                                                           score::cpp::pmr::unique_ptr<ServerConnection>&& self) noexcept
+void QnxDispatchServer::ServerConnection::AcceptConnection(
+    UserData&& data,
+    score::cpp::pmr::unique_ptr<ServerConnection>&& self) noexcept
 {
     user_data_ = std::move(data);
     self_ = std::move(self);
@@ -305,10 +306,11 @@ QnxDispatchServer::~QnxDispatchServer() noexcept
 
 // NOLINTNEXTLINE(google-default-arguments) TODO:
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-score::cpp::expected_blank<score::os::Error> QnxDispatchServer::StartListening(ConnectCallback connect_callback,
-                                                                      DisconnectCallback disconnect_callback,
-                                                                      MessageCallback sent_callback,
-                                                                      MessageCallback sent_with_reply_callback) noexcept
+score::cpp::expected_blank<score::os::Error> QnxDispatchServer::StartListening(
+    ConnectCallback connect_callback,
+    DisconnectCallback disconnect_callback,
+    MessageCallback sent_callback,
+    MessageCallback sent_with_reply_callback) noexcept
 {
     connect_callback_ = std::move(connect_callback);
     disconnect_callback_ = std::move(disconnect_callback);

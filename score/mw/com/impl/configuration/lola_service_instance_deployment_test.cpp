@@ -255,8 +255,9 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingEventThat
 
     // When getting a LolaEventInstanceDeployment using an incorrect event name
     // Then the program termintaes
-    EXPECT_DEATH(score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(unit, kDummyFieldName),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::EVENT>(unit, kDummyFieldName),
+        ".*");
 }
 
 TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingFieldThatDoesNotExistInDeploymentTerminates)
@@ -268,8 +269,9 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingFieldThat
 
     // When getting a LolaFieldInstanceDeployment using an incorrect field name
     // Then the program termintaes
-    EXPECT_DEATH(score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(unit, kDummyEventName),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::FIELD>(unit, kDummyEventName),
+        ".*");
 }
 
 TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingMethodThatDoesNotExistInDeploymentTerminates)
@@ -282,8 +284,9 @@ TEST_F(LolaServiceInstanceDeploymentGetServiceElementDeathTest, GettingMethodTha
 
     // When getting a LolaMethodInstanceDeployment using an incorrect method name
     // Then the program termintaes
-    EXPECT_DEATH(score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(unit, kDummyEventName),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(unit, kDummyEventName),
+        ".*");
 }
 
 TEST(LolaServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)

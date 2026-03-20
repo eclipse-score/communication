@@ -27,7 +27,9 @@ namespace score::mw::com::test
 ///        that argc/argv can be used to initialize the lola/mw_com runtime with the cmdline.
 /// \param argv see argc
 /// \return Either EXIT_FAILURE (failure in test sequence happened) or EXIT_SUCCESS
-int DoProviderNormalRestartSubscribedProxy(score::cpp::stop_token test_stop_token, int argc, const char** argv) noexcept;
+int DoProviderNormalRestartSubscribedProxy(score::cpp::stop_token test_stop_token,
+                                           int argc,
+                                           const char** argv) noexcept;
 
 /// \brief This is the test sequence done by the Controller for ITF 2 - Provider normal restart - without connected
 /// Proxy \see README.md in this directory \param test_stop_token stop-token connected to the overall test connected to

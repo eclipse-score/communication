@@ -113,7 +113,8 @@ void SerializeArgs(MemoryBufferAccessor& target_buffer, T& arg)
         // The resulting pointer is used as start of the memory arena for the allocation.
         // In C++23 std::start_lifetime_as_array can be used to inform the compiler.
         // NOLINTNEXTLINE(score-banned-function) see above
-        static_cast<void*>(score::memory::shared::AddOffsetToPointer(target_buffer.buffer.data(), target_buffer.offset));
+        static_cast<void*>(
+            score::memory::shared::AddOffsetToPointer(target_buffer.buffer.data(), target_buffer.offset));
     const std::size_t buffer_space_before_align = target_buffer.buffer.size() - target_buffer.offset;
     std::size_t buffer_space_after_align = buffer_space_before_align;
     dest_ptr = std::align(alignof(T), sizeof(T), dest_ptr, buffer_space_after_align);
@@ -132,7 +133,8 @@ void SerializeArgs(MemoryBufferAccessor& target_buffer, T& arg)
         return !(is_arg_before_target_buffer || is_arg_after_target_buffer);
     };
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(dest_ptr != nullptr, "Buffer too small");
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!AreRegionsOverlapping(target_buffer, arg), "arg is already inside target_buffer!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(!AreRegionsOverlapping(target_buffer, arg),
+                                                "arg is already inside target_buffer!");
     static_assert(std::is_trivially_copyable_v<T>, "std::memcpy assumes that type T is trivially copyable!");
     // NOLINTBEGIN(score-banned-function): Since the output buffer is type erased, we must do a memcpy rather than an
     // explicit copy using the copy constructor of type T.

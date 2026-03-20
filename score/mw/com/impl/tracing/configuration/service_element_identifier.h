@@ -55,7 +55,7 @@ bool operator==(const ServiceElementIdentifier& lhs, const ServiceElementIdentif
 bool operator<(const ServiceElementIdentifier& lhs, const ServiceElementIdentifier& rhs) noexcept;
 
 ::score::mw::log::LogStream& operator<<(::score::mw::log::LogStream& log_stream,
-                                      const ServiceElementIdentifier& service_element_identifier);
+                                        const ServiceElementIdentifier& service_element_identifier);
 
 }  // namespace score::mw::com::impl::tracing
 

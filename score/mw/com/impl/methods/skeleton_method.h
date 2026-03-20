@@ -12,12 +12,12 @@
  ********************************************************************************/
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
-#include "score/result/result.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/util/type_erased_storage.h"
+#include "score/result/result.h"
 
 #include <functional>
 #include <iostream>
@@ -137,8 +137,9 @@ ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& 
     };
 
     SkeletonMethodBinding::TypeErasedHandler type_erased_callable =
-        [callable_invoker = std::move(callable_invoker)](std::optional<score::cpp::span<std::byte>> type_erased_in_args,
-                                                         std::optional<score::cpp::span<std::byte>> type_erased_return) {
+        [callable_invoker = std::move(callable_invoker)](
+            std::optional<score::cpp::span<std::byte>> type_erased_in_args,
+            std::optional<score::cpp::span<std::byte>> type_erased_return) {
             using InArgPtrTuple = std::tuple<ArgTypes*...>;
             InArgPtrTuple typed_in_arg_ptrs{};
 
@@ -146,16 +147,18 @@ ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& 
 
             if constexpr (!is_in_arg_pack_empty)
             {
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_in_args.has_value(),
-                                       "ArgTypes is non void. Thus, type_erased_in_args needs to have a value!");
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                    type_erased_in_args.has_value(),
+                    "ArgTypes is non void. Thus, type_erased_in_args needs to have a value!");
                 typed_in_arg_ptrs = Deserialize<ArgTypes...>(type_erased_in_args.value());
             }
 
             constexpr bool is_return_type_not_void = !std::is_same_v<ReturnType, void>;
             if constexpr (is_return_type_not_void)
             {
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_return.has_value(),
-                                       "ReturnType is non void. Thus, type_erased_result needs to have a value!");
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                    type_erased_return.has_value(),
+                    "ReturnType is non void. Thus, type_erased_result needs to have a value!");
                 ReturnType res = std::apply(callable_invoker, std::forward<InArgPtrTuple>(typed_in_arg_ptrs));
                 SerializeArgs<ReturnType>(type_erased_return.value(), res);
             }

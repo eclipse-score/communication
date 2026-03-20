@@ -13,10 +13,10 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 
-#include "score/result/result.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+#include "score/result/result.h"
 
 #include <functional>
 #include <optional>
@@ -36,7 +36,7 @@ class TransactionLogRegistrationGuard
     /// \param transaction_log_id transaction log is identifying the proxy instance
     /// \return
     static score::Result<TransactionLogRegistrationGuard> Create(EventDataControl& event_data_control,
-                                                               const TransactionLogId& transaction_log_id) noexcept;
+                                                                 const TransactionLogId& transaction_log_id) noexcept;
     /// \brief Create func for TransactionLogRegistrationGuard for SkeletonServiceElementTracingTransactionLog
     /// \param event_data_control event_data_control event data control for the service element
     /// \return

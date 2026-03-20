@@ -55,6 +55,5 @@ format_test(
     cc = "@clang_format//:executable",
     no_sandbox = True,
     starlark = "@buildifier_prebuilt//:buildifier",
-    tags = ["manual"],
     workspace = "//:LICENSE",
 )

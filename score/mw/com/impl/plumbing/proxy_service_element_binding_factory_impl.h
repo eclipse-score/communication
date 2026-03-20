@@ -64,7 +64,7 @@ std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
             if (lola_parent == nullptr)
             {
                 score::mw::log::LogError("lola") << "Proxy service element could not be created because parent proxy "
-                                                  "binding is a nullptr.";
+                                                    "binding is a nullptr.";
                 return nullptr;
             }
 
@@ -72,7 +72,7 @@ std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
             const auto* const lola_service_instance_id =
                 std::get_if<LolaServiceInstanceId>(&(instance_id.binding_info_));
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
-                                   "ServiceInstanceId does not contain lola binding.");
+                                                        "ServiceInstanceId does not contain lola binding.");
 
             const auto lola_service_element_id =
                 GetServiceElementId<element_type>(lola_type_deployment, std::string{service_element_name});

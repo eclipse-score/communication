@@ -66,7 +66,8 @@ score::Result<score::mw::com::test::BigDataSkeleton> CreateAndOfferSkeleton(
     return bigdata_result;
 }
 
-score::Result<score::mw::com::test::BigDataProxy> CreateProxy(const score::mw::com::InstanceSpecifier& instance_specifier)
+score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
+    const score::mw::com::InstanceSpecifier& instance_specifier)
 {
     std::promise<std::vector<score::mw::com::test::BigDataProxy::HandleType>> service_discovery_promise{};
     auto service_discovery_future = service_discovery_promise.get_future();

@@ -23,7 +23,8 @@ namespace score::mw::com::test
 namespace
 {
 constexpr auto kInstanceSpecifierString{"partial_restart/small_but_great"};
-const auto kInstanceSpecifier = score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifierString}).value();
+const auto kInstanceSpecifier =
+    score::mw::com::InstanceSpecifier::Create(std::string{kInstanceSpecifierString}).value();
 const std::chrono::milliseconds kDelayBetweenSendEvents{20U};
 }  // namespace
 

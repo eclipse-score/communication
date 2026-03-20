@@ -19,14 +19,14 @@
 
 #include "score/filesystem/filesystem_struct.h"
 
-#include <score/callback.hpp>
 #include <gmock/gmock.h>
+#include <score/callback.hpp>
 
 namespace score::mw::com::impl::lola
 {
 
-// Creates an score::cpp::callback wrapper which dispatches to a pointer to a MockFunction. We do this since a MockFunction
-// does not fit inside an score::cpp::callback with default capacity.
+// Creates an score::cpp::callback wrapper which dispatches to a pointer to a MockFunction. We do this since a
+// MockFunction does not fit inside an score::cpp::callback with default capacity.
 score::cpp::callback<void(ServiceHandleContainer<HandleType>, FindServiceHandle)> CreateWrappedMockFindServiceHandler(
     ::testing::MockFunction<void(ServiceHandleContainer<HandleType>, FindServiceHandle)>& mock_find_service_handler);
 

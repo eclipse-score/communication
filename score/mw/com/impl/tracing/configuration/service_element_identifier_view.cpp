@@ -44,7 +44,7 @@ bool operator<(const ServiceElementIdentifierView& lhs, const ServiceElementIden
 // respective types. code analysis tools tend to assume otherwise hence a false positive.
 // coverity[autosar_cpp14_a13_2_2_violation]
 ::score::mw::log::LogStream& operator<<(::score::mw::log::LogStream& log_stream,
-                                      const ServiceElementIdentifierView& service_element_identifier_view)
+                                        const ServiceElementIdentifierView& service_element_identifier_view)
 {
     log_stream << "service type: " << service_element_identifier_view.service_element_type
                << ", service element: " << service_element_identifier_view.service_element_name

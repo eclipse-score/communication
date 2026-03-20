@@ -33,7 +33,7 @@ UnixDomainServerFactory::UnixDomainServerFactory(const std::shared_ptr<UnixDomai
 UnixDomainServerFactory::~UnixDomainServerFactory() noexcept {}
 
 score::cpp::pmr::unique_ptr<IServer> UnixDomainServerFactory::Create(const ServiceProtocolConfig& protocol_config,
-                                                              const ServerConfig& server_config) noexcept
+                                                                     const ServerConfig& server_config) noexcept
 {
     return score::cpp::pmr::make_unique<detail::UnixDomainServer>(
         engine_->GetMemoryResource(), engine_, protocol_config, server_config);

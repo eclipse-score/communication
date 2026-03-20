@@ -67,8 +67,8 @@ std::pair<std::uint8_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
             // we copy the target_node_identifiers to a tmp-array under lock ...
             for (auto iter = search->second.lower_bound(start); iter != search->second.cend(); iter++)
             {
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(dest_buffer.size() > 0U,
-                                       "HandlerBase::CopyNodeIdentifiers destination buffer has size zero!");
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                    dest_buffer.size() > 0U, "HandlerBase::CopyNodeIdentifiers destination buffer has size zero!");
                 // Suppress "AUTOSAR C++14 M5-0-3" rule findings. This rule states: "A cvalue expression shall
                 // not be implicitly converted to a different underlying type"
                 // That return `pid_t` type as a result. Tolerated implicit conversion as underlying types are the

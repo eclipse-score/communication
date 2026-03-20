@@ -24,9 +24,9 @@
 
 #include "score/result/result.h"
 
+#include <sched.h>
 #include <score/assert.hpp>
 #include <score/span.hpp>
-#include <sched.h>
 
 #include <cstddef>
 #include <functional>
@@ -62,8 +62,9 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
     pid_t proxy_pid,
     const QualityType asil_level)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_callback_.has_value(),
-                           "Cannot register a method call handler without a registered handler from Register()!");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        type_erased_callback_.has_value(),
+        "Cannot register a method call handler without a registered handler from Register()!");
     // Note. the scope of the method call handler is owned by the parent Skeleton and will be expired during
     // StopOfferService.
     IMessagePassingService::MethodCallHandler method_call_callback{
@@ -140,10 +141,11 @@ bool SkeletonMethod::IsRegistered() const
 void SkeletonMethod::Call(const std::optional<score::cpp::span<std::byte>> in_args,
                           const std::optional<score::cpp::span<std::byte>> return_arg)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(type_erased_callback_.has_value(),
-                           "Defensive programming: Call can only be called after OnProxyMethodSubscribeFinished has "
-                           "registered the callback with message passing. We check in OnProxyMethodSubscribeFinished "
-                           "that type_erased_callback_ has a value.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        type_erased_callback_.has_value(),
+        "Defensive programming: Call can only be called after OnProxyMethodSubscribeFinished has "
+        "registered the callback with message passing. We check in OnProxyMethodSubscribeFinished "
+        "that type_erased_callback_ has a value.");
     std::invoke(type_erased_callback_.value(), in_args, return_arg);
 }
 

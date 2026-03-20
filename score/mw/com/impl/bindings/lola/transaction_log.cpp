@@ -42,7 +42,7 @@ void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
         std::this_thread::sleep_for(kRetryInterval);
     }
     score::mw::log::LogFatal("lola") << "ReferenceTransactionBegin: Transaction-END bit remains TRUE after "
-                                   << kRetryCount * kRetryInterval.count() << "ms; terminating";
+                                     << kRetryCount * kRetryInterval.count() << "ms; terminating";
     std::terminate();
 }
 
@@ -181,8 +181,9 @@ ResultBlank TransactionLog::RollbackProxyElementLog(const DereferenceSlotCallbac
                                          !subscribe_transactions_.GetTransactionEnd()};
     if (was_no_subscribe_recorded)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE(!DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_),
-                                 "All slot increment transactions should be reversed before calling unsubscribe");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE(
+            !DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_),
+            "All slot increment transactions should be reversed before calling unsubscribe");
     }
 
     const auto rollback_increment_transactions_result = RollbackIncrementTransactions(dereference_slot_callback);

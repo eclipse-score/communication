@@ -195,7 +195,7 @@ void TracingRuntime::RegisterShmObject(
     if (!insert_result.second)
     {
         score::mw::log::LogFatal("lola") << "Could not insert shm object handle" << shm_object_handle
-                                       << "into map. Terminating.";
+                                         << "into map. Terminating.";
         std::terminate();
     }
 }
@@ -221,7 +221,7 @@ void TracingRuntime::CacheFileDescriptorForReregisteringShmObject(
     if (!insert_result.second)
     {
         score::mw::log::LogFatal("lola") << "Could not insert file descriptor" << shm_file_descriptor
-                                       << "for shm object which failed registration into map. Terminating.";
+                                         << "for shm object which failed registration into map. Terminating.";
         std::terminate();
     }
 }
@@ -300,7 +300,7 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     else
     {
         score::mw::log::LogFatal("lola") << "Service element type: " << service_element_type
-                                       << " is invalid. Terminating.";
+                                         << " is invalid. Terminating.";
         std::terminate();
     }
 

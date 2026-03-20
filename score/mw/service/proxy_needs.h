@@ -13,11 +13,11 @@
 
 #ifndef SCORE_MW_SERVICE_PROXY_NEEDS_H
 #define SCORE_MW_SERVICE_PROXY_NEEDS_H
+#include "score/concurrency/future/interruptible_promise.h"
+#include "score/mw/service/proxy_future.h"
 #include <memory>
 #include <tuple>
 #include <utility>
-#include "score/mw/service/proxy_future.h"
-#include "score/concurrency/future/interruptible_promise.h"
 
 namespace score
 {

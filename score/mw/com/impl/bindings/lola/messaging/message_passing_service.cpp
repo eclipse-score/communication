@@ -19,9 +19,9 @@
 #include "score/mw/com/impl/bindings/lola/messaging/thread_abstraction.h"
 
 #include "score/message_passing/i_server_connection.h"
+#include "score/mw/log/logging.h"
 #include "score/os/errno_logging.h"
 #include "score/result/result.h"
-#include "score/mw/log/logging.h"
 
 #ifdef __QNX__
 #include "score/message_passing/qnx_dispatch/qnx_dispatch_engine.h"
@@ -54,8 +54,8 @@ MessagePassingService::MessagePassingService(
     const std::unique_ptr<IMessagePassingServiceInstanceFactory>& factory) noexcept
     : IMessagePassingService{},
       client_factory_{score::cpp::pmr::make_shared<Engine>(score::cpp::pmr::get_default_resource(),
-                                                    score::cpp::pmr::get_default_resource(),
-                                                    GetMwLogLogger())},
+                                                           score::cpp::pmr::get_default_resource(),
+                                                           GetMwLogLogger())},
       // Suppress "AUTOSAR C++14 A15-4-2" rule findings. This rule states: "Throwing an exception in a
       // "noexcept" function." In this case it is ok, because the system anyways forces the process to
       // terminate if an exception is thrown.
@@ -138,7 +138,8 @@ IMessagePassingServiceInstance& MessagePassingService::GetMessagePassingServiceI
         // coverity[autosar_cpp14_m6_4_5_violation] return instead of break
         case QualityType::kASIL_B:
             return *asil_b_;
-        // coverity[autosar_cpp14_m6_4_5_violation] SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE will terminate this switch clause
+        // coverity[autosar_cpp14_m6_4_5_violation] SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE will terminate this
+        // switch clause
         case QualityType::kInvalid:
         default:
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(false, "Invalid asil level");
