@@ -50,7 +50,7 @@ class SkeletonEventAttorney
         skeleton_event_.qm_disconnect_ = qm_disconnect_value;
     }
 
-    std::optional<EventDataControlComposite>& GetEventDataControlComposite()
+    score::cpp::optional<EventDataControlComposite>& GetEventDataControlComposite()
     {
         return skeleton_event_.event_data_control_composite_;
     }

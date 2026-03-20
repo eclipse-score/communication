@@ -59,6 +59,7 @@ enum class ComErrc : score::result::ErrorCode
     kFindServiceHandlerFailure,
     kInvalidHandle,
     kCallQueueFull,
+    kServiceElementAlreadyExists,
     kNumEnumElements
 };
 
@@ -198,6 +199,9 @@ class ComErrorDomain final : public score::result::ErrorDomain
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kCallQueueFull):
                 return "Call queue of service method is already full.";
+            // coverity[autosar_cpp14_m6_4_5_violation]
+            case static_cast<score::result::ErrorCode>(ComErrc::kServiceElementAlreadyExists):
+                return "A service element (event, field, method) with the same name already exists.";
             // coverity[autosar_cpp14_m6_4_5_violation]
             case static_cast<score::result::ErrorCode>(ComErrc::kInvalid):
             case static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements):
