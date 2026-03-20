@@ -24,7 +24,7 @@ namespace score::mw::com::impl::lola
 class EventDataControlCompositeAttorney
 {
   public:
-    EventDataControlCompositeAttorney(EventDataControlComposite& event_data_control_composite) noexcept;
+    EventDataControlCompositeAttorney(EventDataControlComposite<>& event_data_control_composite) noexcept;
 
     /// \brief Prepares the underlying EventDataControlComposite (its contained EventDataControls) in a way, that the
     ///        next call to AllocateNextSlot() will return the given expected_result
@@ -42,7 +42,7 @@ class EventDataControlCompositeAttorney
         const SlotIndexType slot_index) const noexcept;
 
   private:
-    EventDataControlComposite& event_data_control_composite_;
+    EventDataControlComposite<>& event_data_control_composite_;
 };
 
 class EventDataControlAttorney
@@ -64,10 +64,10 @@ class EventDataControlAttorney
     /// \param expected_result to be expected result for ReferenceNextEvent()
     /// \param last_search_time see ReferenceNextEvent()
     /// \param upper_limit see ReferenceNextEvent()
-    void PrepareReferenceNextEvent(const score::cpp::optional<SlotIndexType> expected_result,
-                                   const EventSlotStatus::EventTimeStamp last_search_time,
-                                   const EventSlotStatus::EventTimeStamp upper_limit =
-                                       EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX) noexcept;
+    void PrepareReferenceNextEvent(
+        const score::cpp::optional<SlotIndexType> expected_result,
+        const EventSlotStatus::EventTimeStamp last_search_time,
+        const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
 
     /// \brief Prepares the underlying EventDataControl in a way, that the next call to GetNumNewEvents() will return
     /// the given expected_result

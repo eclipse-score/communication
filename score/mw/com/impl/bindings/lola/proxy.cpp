@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/methods/offered_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
@@ -38,6 +39,7 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/service_element_type.h"
 
+#include "score/filesystem/factory/filesystem_factory.h"
 #include "score/language/safecpp/safe_atomics/try_atomic_add.h"
 #include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
@@ -186,7 +188,8 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
     return std::make_pair(control, data);
 }
 
-ServiceDataControl& GetServiceDataControlProxySide(const memory::shared::ManagedMemoryResource& control) noexcept
+ProxyServiceDataControlLocalView GetProxyServiceDataControlLocalView(
+    const memory::shared::ManagedMemoryResource& control) noexcept
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
     // An object with integer type or pointer to void type shall not be converted to an object with pointer type.
@@ -195,7 +198,7 @@ ServiceDataControl& GetServiceDataControlProxySide(const memory::shared::Managed
     auto* const service_data_control = static_cast<ServiceDataControl*>(control.getUsableBaseAddress());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_control != nullptr,
                                                 "Could not retrieve service data control.");
-    return *service_data_control;
+    return ProxyServiceDataControlLocalView{*service_data_control};
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -216,8 +219,8 @@ score::ResultBlank ExecutePartialRestartLogic(const QualityType quality_type,
     // The transaction log is identified by the application's unique identifier, which is either the configured
     // 'applicationID' or the process UID as a fallback.
     const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(lola_runtime.GetApplicationId())};
-    auto& service_data_control = GetServiceDataControlProxySide(control);
-    TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control,
+    auto service_data_control_local = GetProxyServiceDataControlLocalView(control);
+    TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control_local,
                                                                      skeleton_instance_identifier,
                                                                      quality_type,
                                                                      service_data_storage.skeleton_pid_,
@@ -403,6 +406,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       control_{std::move(control)},
       data_{std::move(data)},
       method_shm_resource_{nullptr},
+      service_data_control_local_{GetProxyServiceDataControlLocalView(*control_)},
       quality_type_{quality_type},
       event_name_to_element_fq_id_converter_{std::move(event_name_to_element_fq_id_converter)},
       handle_{std::move(handle)},
@@ -515,13 +519,12 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-EventControl& Proxy::GetEventControl(const ElementFqId element_fq_id) noexcept
+ProxyEventControlLocalView& Proxy::GetEventControlLocal(const ElementFqId element_fq_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
-    auto& service_data_control = GetServiceDataControlProxySide(*control_);
-    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
-    if (event_entry == service_data_control.event_controls_.end())
+    const auto event_entry = service_data_control_local_.event_controls_.find(element_fq_id);
+    if (event_entry == service_data_control_local_.event_controls_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
@@ -577,10 +580,9 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "IsEventProvided: Managed memory control pointer is Null");
-    auto& service_data_control = GetServiceDataControlProxySide(*control_);
     const auto element_fq_id = event_name_to_element_fq_id_converter_.Convert(event_name);
-    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
-    const bool event_exists = (event_entry != service_data_control.event_controls_.end());
+    const auto event_entry = service_data_control_local_.event_controls_.find(element_fq_id);
+    const bool event_exists = (event_entry != service_data_control_local_.event_controls_.end());
     return event_exists;
 }
 

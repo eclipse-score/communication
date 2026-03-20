@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 
-#include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 
 #include "score/mw/com/impl/bindings/lola/subscription_not_subscribed_states.h"
@@ -27,7 +26,7 @@ namespace score::mw::com::impl::lola
 SubscriptionStateMachine::SubscriptionStateMachine(const QualityType quality_type,
                                                    const ElementFqId element_fq_id,
                                                    const pid_t event_source_pid,
-                                                   EventControl& event_control,
+                                                   ProxyEventControlLocalView& event_control_local,
                                                    const TransactionLogId& transaction_log_id) noexcept
     : std::enable_shared_from_this<SubscriptionStateMachine>{},
       state_mutex_{},
@@ -38,7 +37,7 @@ SubscriptionStateMachine::SubscriptionStateMachine(const QualityType quality_typ
       subscription_data_{},
       event_receiver_handler_{},
       event_receive_handler_manager_{quality_type, element_fq_id, event_source_pid},
-      event_control_{event_control},
+      event_control_local_{event_control_local},
       provider_service_instance_is_available_{true},
       transaction_log_id_{transaction_log_id},
       transaction_log_registration_guard_{},

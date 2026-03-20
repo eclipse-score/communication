@@ -22,7 +22,6 @@
 
 #include <exception>
 #include <memory>
-#include <sstream>
 #include <utility>
 
 namespace score::mw::com::impl::lola

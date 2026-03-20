@@ -21,7 +21,6 @@
 #include <score/callback.hpp>
 #include <score/optional.hpp>
 
-#include <cstddef>
 #include <string>
 
 namespace score::mw::com::impl::lola

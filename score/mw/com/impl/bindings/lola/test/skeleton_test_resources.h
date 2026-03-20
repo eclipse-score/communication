@@ -21,6 +21,8 @@
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
@@ -411,8 +413,11 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     void ExpectServiceUsageMarkerFileCreatedOrOpenedAndClosed() noexcept;
 
     ServiceDataControl CreateServiceDataControlWithEvent(ElementFqId element_fq_id, QualityType quality_type) noexcept;
-    EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
-                                                        ServiceDataControl& service_data_control) noexcept;
+    static EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
+                                                               ServiceDataControl& service_data_control) noexcept;
+    static SkeletonEventControlLocalView& GetEventControlLocalFromServiceDataControlLocal(
+        ElementFqId element_fq_id,
+        SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept;
 
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept
@@ -480,12 +485,6 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
         data_shared_memory_resource_mock_{
             std::make_shared<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>(
                 test::kDataMemoryResourceId)};
-
-    // Since these objects rely on the default behaviour of some mocks (e.g. the mocked lola Runtime), we create them
-    // after setting the default mock behaviours in the body of the constructor.
-    std::unique_ptr<ServiceDataControl> service_data_control_qm_{nullptr};
-    std::unique_ptr<ServiceDataControl> service_data_control_asil_b_{nullptr};
-    std::unique_ptr<ServiceDataStorage> service_data_storage_{nullptr};
 
     std::unique_ptr<Skeleton> skeleton_{nullptr};
 };

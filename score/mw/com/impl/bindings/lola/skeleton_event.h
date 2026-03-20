@@ -117,7 +117,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     const std::string_view event_name_;
     const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
-    std::optional<EventDataControlComposite> event_data_control_composite_;
+    std::optional<EventDataControlComposite<>> event_data_control_composite_;
     EventSlotStatus::EventTimeStamp current_timestamp_;
     bool qm_disconnect_;
     impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data_;
@@ -236,14 +236,15 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    const auto slot = event_data_control_composite_->AllocateNextSlot();
+    const auto allocated_slot_result = event_data_control_composite_->AllocateNextSlot();
 
     // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
     // parenthesized if the operands contain binary operators".
     // This suppression is unnecessary as the operands do not contain binary operators.
     // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    if (!qm_disconnect_ && event_data_control_composite_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
+    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
+        allocated_slot_result.qm_misbehaved)
     {
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
@@ -252,17 +253,10 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
         parent_.DisconnectQmConsumers();
     }
 
-    if (slot.IsValidQM() || slot.IsValidAsilB())
-    {
-        return MakeSampleAllocateePtr(
-            SampleAllocateePtr<SampleType>(&event_data_storage_->at(static_cast<std::uint64_t>(slot.GetIndex())),
-                                           *event_data_control_composite_,
-                                           slot));
-    }
-    else
+    if (!allocated_slot_result.allocated_slot_index.has_value())
     {
         // we didn't get a slot, which is a sign, that too few slots have been configured.
-        if (event_properties_.enforce_max_samples == false)
+        if (!event_properties_.enforce_max_samples)
         {
             ::score::mw::log::LogError("lola")
                 << "SkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
@@ -270,6 +264,10 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
         }
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
+    return MakeSampleAllocateePtr(SampleAllocateePtr<SampleType>(
+        &event_data_storage_->at(static_cast<std::uint64_t>(*allocated_slot_result.allocated_slot_index)),
+        *event_data_control_composite_,
+        allocated_slot_result.allocated_slot_index.value()));
 }
 
 template <typename SampleType>
@@ -299,7 +297,7 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     {
         // LCOV_EXCL_BR_STOP
         score::cpp::ignore = transaction_log_registration_guard_.emplace(
-            TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControl()));
+            TransactionLogRegistrationGuard::Create(event_data_control_composite_->GetQmEventDataControlLocal()));
         score::cpp::ignore =
             type_erased_sample_ptrs_guard_.emplace(skeleton_event_tracing_data_.service_element_tracing_data);
     }

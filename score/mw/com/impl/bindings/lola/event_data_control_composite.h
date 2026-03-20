@@ -10,27 +10,22 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef DDAD_SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
-#define DDAD_SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
 
-#include "score/mw/com/impl/bindings/lola/control_slot_composite_indicator.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
-#include <optional>
-#include <tuple>
-#include <utility>
+#include <functional>
 
 namespace score::mw::com::impl::lola
 {
 
 class EventDataControlCompositeAttorney;
-
-namespace detail_event_data_control_composite
-{
 
 /// \brief Encapsulates multiple EventDataControl instances
 ///
@@ -40,21 +35,35 @@ namespace detail_event_data_control_composite
 /// control structures. Please be aware that the control structures will live in different shared memory segments, thus
 /// it is not possible to store them by value, but rather as pointer.
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
-class EventDataControlCompositeImpl
+class EventDataControlComposite
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // The "EventDataControlCompositeAttorney" class is a helper, which sets the internal state of
-    // "EventDataControlCompositeImpl" accessing private members and used for testing purposes only.
+    // "EventDataControlComposite" accessing private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class lola::EventDataControlCompositeAttorney;
 
   public:
+    /// \brief Result returned by AllocateNextSlot()
+    struct AllocationResult
+    {
+        // \brief the index of the slot reserved for writing (potentially in QM and ASIL-B control section) if a slot
+        // could be found. Otherwise, an empty optional.
+        std::optional<SlotIndexType> allocated_slot_index;
+
+        // \brief A flag indicating whether QM consumers should be ignored due to misbehaviour. In this case, QM
+        // consumers have been disconnected and therefore the QM related slots are ignored.
+        bool qm_misbehaved;
+    };
+
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL use-case)
-    explicit EventDataControlCompositeImpl(EventDataControl* const asil_qm_control);
+    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>& asil_qm_control_local,
+                                       ProxyEventDataControlLocalView<>* const proxy_control_local);
 
     /// \brief Constructs a composite which will manage QM and ASIL control at the same time
-    explicit EventDataControlCompositeImpl(EventDataControl* const asil_qm_control,
-                                           EventDataControl* const asil_b_control);
+    explicit EventDataControlComposite(SkeletonEventDataControlLocalView<>& asil_qm_control_local,
+                                       SkeletonEventDataControlLocalView<>* const asil_b_control_local,
+                                       ProxyEventDataControlLocalView<>* const proxy_control_local);
 
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
@@ -68,57 +77,64 @@ class EventDataControlCompositeImpl
     /// rollback mechanisms are in place. Thus, if this function returns positively, it is guaranteed that the slot has
     /// been allocated in all underlying control structures.
     ///
-    /// \return A valid ControlSlotCompositeIndicator "pointing" to a reserved slot for writing (potentially in QM and
-    ///         ASIL-B control section) if successful. If the underlying event was enabled for QM AND ASIL-B and the
-    ///         returned ControlSlotCompositeIndicator has no valid QM pointer, it means, that QM consumers have been
-    ///         disconnected and therefore the QM related slots are ignored.
+    /// \return Struct containing index of slot which was marked for writing if possible and a flag indicating whether a
+    /// qm consumer misbehaved.
     /// \post EventReady() is invoked to withdraw write-ownership
-    ControlSlotCompositeIndicator AllocateNextSlot() noexcept;
+    AllocationResult AllocateNextSlot() noexcept;
 
     /// \brief Indicates that a slot is ready for reading - writing has finished. (thread-safe, wait-free)
     /// \pre AllocateNextSlot() was invoked to obtain write-ownership
-    void EventReady(ControlSlotCompositeIndicator slot_indicator, EventSlotStatus::EventTimeStamp time_stamp) noexcept;
+    void EventReady(const SlotIndexType slot_index, EventSlotStatus::EventTimeStamp time_stamp) noexcept;
 
     /// \brief Marks selected slot as invalid, if it was not yet marked as ready (thread-safe, wait-free)
     /// \pre AllocateNextSlot() was invoked to obtain write-ownership
-    void Discard(ControlSlotCompositeIndicator slot_indicator);
+    void Discard(const SlotIndexType slot_index);
 
     /// \brief Indicates, whether the QM control part of the composite has been disconnected due to QM consumer mis-
     ///        behaviour or not.
     /// \return _true_ if disconnected and the composite supports QM/ASIL parts, _false_ else.
     bool IsQmControlDisconnected() const noexcept;
 
-    /// \brief Returns the (mandatory) EventDataControl for QM.
-    EventDataControl& GetQmEventDataControl() const noexcept;
+    /// \brief Returns the (mandatory) SkeletonEventDataControlLocalView for QM.
+    SkeletonEventDataControlLocalView<>& GetQmEventDataControlLocal() const noexcept;
 
-    /// \brief Returns the optional EventDataControl for ASIL-B
-    /// \return an empty optional if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
-    std::optional<EventDataControl*> GetAsilBEventDataControl() noexcept;
+    /// \brief Returns a pointer to SkeletonEventDataControlLocalView for ASIL-B
+    /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
+    SkeletonEventDataControlLocalView<>* GetAsilBEventDataControlLocal() noexcept;
+
+    /// \brief Returns a reference to ProxyEventDataControlLocalView for which is used for tracing
+    /// \pre only called if EventDataControlComposite was constructed with a valid ProxyEventDataControlLocalView
+    ProxyEventDataControlLocalView<>& GetProxyEventDataControlLocalView() noexcept;
 
     /// \brief Returns the timestamp of the provided slot index
-    EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot) const noexcept;
+    EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot_index) const noexcept;
 
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:
-    EventDataControl* asil_qm_control_;
-    EventDataControl* asil_b_control_;
+    struct SlotWithTimeStamp
+    {
+        SlotIndexType slot_index;
+        EventSlotStatus::EventTimeStamp timestamp;
+    };
+
+    std::reference_wrapper<SkeletonEventDataControlLocalView<>> asil_qm_control_local_;
+    SkeletonEventDataControlLocalView<>* asil_b_control_local_;
+
+    ProxyEventDataControlLocalView<>* proxy_control_local_;
 
     /// \brief flag indicating, whether qm_control part shall be ignored in any public API (AllocateNextSlot(),
     /// EventReady(), Discard()()
     bool ignore_qm_control_;
 
     // Algorithms that operate on multiple control blocks
-    ControlSlotCompositeIndicator GetNextFreeMultiSlot() const noexcept;
+    std::optional<SlotWithTimeStamp> GetNextFreeMultiSlot() const noexcept;
 
-    bool TryLockSlot(ControlSlotCompositeIndicator slot_indicator) noexcept;
-    ControlSlotCompositeIndicator AllocateNextMultiSlot() noexcept;
+    bool TryLockSlot(const SlotWithTimeStamp expected_slot_with_timestamp) noexcept;
+    std::optional<SlotIndexType> AllocateNextMultiSlot() noexcept;
     void CheckForValidDataControls() const noexcept;
 };
 
-}  // namespace detail_event_data_control_composite
-
-using EventDataControlComposite = detail_event_data_control_composite::EventDataControlCompositeImpl<>;
-
 }  // namespace score::mw::com::impl::lola
-#endif  // DDAD_SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
+
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_

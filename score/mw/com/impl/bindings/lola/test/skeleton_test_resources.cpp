@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
+#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -221,23 +223,6 @@ SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
             }));
     ON_CALL(shared_memory_factory_mock_, Open(test::kDataChannelPath, true, _))
         .WillByDefault(Return(data_shared_memory_resource_mock_));
-
-    // Construct ServiceDataControl / Storage using mocked memory resources
-    service_data_control_qm_ = std::make_unique<ServiceDataControl>(
-        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_QM));
-    service_data_control_asil_b_ = std::make_unique<ServiceDataControl>(
-        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_B));
-    service_data_storage_ = std::make_unique<ServiceDataStorage>(
-        CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId));
-
-    // Default behaviour for get the usable base addresses of the mocked memory resources using the constructed
-    // ServiceDataControl / Storage created above.
-    ON_CALL(*control_qm_shared_memory_resource_mock_, getUsableBaseAddress())
-        .WillByDefault(Return(static_cast<void*>(service_data_control_qm_.get())));
-    ON_CALL(*control_asil_b_shared_memory_resource_mock_, getUsableBaseAddress())
-        .WillByDefault(Return(static_cast<void*>(service_data_control_asil_b_.get())));
-    ON_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
-        .WillByDefault(Return(static_cast<void*>(service_data_storage_.get())));
 }
 
 SkeletonMockedMemoryFixture::~SkeletonMockedMemoryFixture()
@@ -350,6 +335,16 @@ EventControl& SkeletonMockedMemoryFixture::GetEventControlFromServiceDataControl
     EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
     auto& event_control = event_control_it->second;
     return event_control;
+}
+
+SkeletonEventControlLocalView& SkeletonMockedMemoryFixture::GetEventControlLocalFromServiceDataControlLocal(
+    ElementFqId element_fq_id,
+    SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept
+{
+    auto event_control_local_it = skeleton_service_data_control_local.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_local_it, skeleton_service_data_control_local.event_controls_.cend());
+    auto& event_control_local = event_control_local_it->second;
+    return event_control_local;
 }
 
 void SkeletonMockedMemoryFixture::CleanUpSkeleton()
