@@ -117,7 +117,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     const std::string_view event_name_;
     const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
-    std::optional<EventDataControlComposite> event_data_control_composite_;
+    std::optional<EventDataControlComposite<>> event_data_control_composite_;
     EventSlotStatus::EventTimeStamp current_timestamp_;
     bool qm_disconnect_;
     impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data_;

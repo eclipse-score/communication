@@ -39,7 +39,7 @@ abstract class SkeletonBinding {
 ' Concrete classes
 class lola::SkeletonEvent<SampleType> {
   -event_data_storage: EventDataStorage<SampleType>*
-  -event_data_control: score::cpp::optional<EventDataControlComposite>
+  -event_data_control: score::cpp::optional<EventDataControlComposite<>>
   +SkeletonEvent(parent: Skeleton&, event_fqn: const ElementFqId, max_number_of_slots: const std::size_t, enforce_max_samples: const bool)
   +Send(SampleType const&): void
   +Send(SampleAllocateePtr<SampleType>): void
@@ -71,7 +71,7 @@ class lola::Skeleton {
   +Skeleton(const InstanceIdentifier&, SkeletonEvents&)
   +PrepareOffer(): ResultBlank
   +PrepareStopOffer(): ResultBlank
-  +Register(ElementFqId, size_t numberOfSlots): std::pair<EventDataStorage*, EventDataControlComposite>
+  +Register(ElementFqId, size_t numberOfSlots): std::pair<EventDataStorage*, EventDataControlComposite<>>
   +GetInstanceQualityType() const: QualityType
 }
 
@@ -136,7 +136,7 @@ class lola::SampleAllocateePtr<SampleType> {
   -event_data_control_: EventDataControlComposite
   +SampleAllocateePtr()
   +SampleAllocateePtr(std::nullptr_t)
-  +SampleAllocateePtr(ptr: pointer, const EventDataControlComposite&, const EventDataControl::SlotIndexType)
+  +SampleAllocateePtr(ptr: pointer, const EventDataControlComposite<>&, const EventDataControl::SlotIndexType)
   +GetReferencedSlot() const: EventDataControl::SlotIndexType
   +get() const: SampleType*
   +reset(std::nullptr_t): void
@@ -159,7 +159,7 @@ class lola::SamplePtr<SampleType> {
   -event_data_control_: EventDataControl*
   +SamplePtr()
   +SamplePtr(std::nullptr_t)
-  +SamplePtr(pointer ptr, const EventDataControlComposite&, const EventDataControl::SlotIndexType)
+  +SamplePtr(pointer ptr, const EventDataControlComposite<>&, const EventDataControl::SlotIndexType)
   +get() const: pointer
   +swap(): void
 }
@@ -213,11 +213,11 @@ class "<<SharedMemory>>\nlola::EventSlotStatus" {
   +IsTimeStampBetween(EventTimeStamp min, EventTimeStamp max): bool
 }
 
-class EventDataControlCompositeImpl<memory::shared::AtomicIndirectorType> {
+class EventDataControlComposite<memory::shared::AtomicIndirectorType> {
   -asil_qm_control_: EventDataControl*
   -asil_b_control_: EventDataControl*
-  +EventDataControlCompositeImpl(asil_qm_control: EventDataControl* const)
-  +EventDataControlCompositeImpl(asil_qm_control: EventDataControl* const, asil_b_control: EventDataControl* const)
+  +EventDataControlComposite(asil_qm_control: EventDataControl* const)
+  +EventDataControlComposite(asil_qm_control: EventDataControl* const, asil_b_control: EventDataControl* const)
   +AllocateNextSlot(): std::optional<EventDataControl::SlotIndexType>
   +EventReady(EventDataControl::SlotIndexType, EventSlotStatus::EventTimeStamp): void
   +Discard(EventDataControl::SlotIndexType): void
@@ -238,7 +238,7 @@ lola::Skeleton *-- SkeletonDataStorage : "1..1"
 lola::Skeleton *-- "<<SharedMemory>>\nlola::SkeletonDataControl" : "1..2"
 "<<SharedMemory>>\nlola::SkeletonDataControl" *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "0..n"
 lola::SkeletonEvent o-- "EventDataStorage"
-lola::SkeletonEvent *-- EventDataControlCompositeImpl
+lola::SkeletonEvent *-- EventDataControlComposite
 "<<SharedMemory>>\nlola::EventDataControlImpl" ..> "<<SharedMemory>>\nlola::EventSlotStatus"
 SampleAllocateePtr o-- lola::SampleAllocateePtr
 SamplePtr o-- lola::SamplePtr
@@ -246,10 +246,10 @@ lola::ProxyEvent *-- lola::ProxyEventCommon
 lola::ProxyEventCommon *-- lola::SubscriptionStateMachine
 lola::ProxyEventCommon --* lola::SlotCollector
 ProxyEventBindingBase o-- SubscriptionState
-lola::SampleAllocateePtr *-- EventDataControlCompositeImpl
-EventDataControlCompositeImpl o-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
+lola::SampleAllocateePtr *-- EventDataControlComposite
+EventDataControlComposite o-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
 lola::Skeleton ..> lola::ShmPathBuilder : uses
-lola::Skeleton ..> EventDataControlCompositeImpl
+lola::Skeleton ..> EventDataControlComposite
 lola::SubscriptionStateMachine ..> lola::SlotCollector : <<creates>>
 SkeletonEventBinding ..> SampleAllocateePtr
 lola::ProxyEvent ..> lola::SamplePtr

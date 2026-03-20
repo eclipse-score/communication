@@ -43,7 +43,8 @@ cc_library(
     deps = [
         ":fake_memory_resource",
         "//score/mw/com/impl/bindings/lola:event",
-        "//score/mw/com/impl/bindings/lola:shared_data_structures",
+        "//score/mw/com/impl/bindings/lola:service_data_control",
+        "//score/mw/com/impl/bindings/lola:service_data_storage",
         "//score/mw/com/impl/bindings/lola:skeleton",
         "@score_baselibs//score/memory/shared",
         "@score_baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",

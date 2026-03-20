@@ -481,12 +481,6 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
             std::make_shared<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>(
                 test::kDataMemoryResourceId)};
 
-    // Since these objects rely on the default behaviour of some mocks (e.g. the mocked lola Runtime), we create them
-    // after setting the default mock behaviours in the body of the constructor.
-    std::unique_ptr<ServiceDataControl> service_data_control_qm_{nullptr};
-    std::unique_ptr<ServiceDataControl> service_data_control_asil_b_{nullptr};
-    std::unique_ptr<ServiceDataStorage> service_data_storage_{nullptr};
-
     std::unique_ptr<Skeleton> skeleton_{nullptr};
 };
 

@@ -106,7 +106,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto EventDataControlImpl<AtomicIndirectorType>::FindOldestUnusedSlot() noexcept -> ControlSlotIndicator
 {
-    EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX};
+    EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
 
     ControlSlotIndicator selected_slot{};
     // Suppress "AUTOSAR C++14 A5-2-2" finding rule. This rule states: "Traditional C-style casts shall not be used".
@@ -342,7 +342,7 @@ std::size_t EventDataControlImpl<AtomicIndirectorType>::GetNumNewEvents(
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
         const EventSlotStatus slot_status{slot.load(std::memory_order_relaxed)};
-        if (slot_status.IsTimeStampBetween(reference_time, EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX))
+        if (slot_status.IsTimeStampBetween(reference_time, EventSlotStatus::TIMESTAMP_MAX))
         {
             // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
             // loss.". This is a false positive as the maximum number of slots is std::uint16_t, so there is no case for

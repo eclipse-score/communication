@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef DDAD_SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
-#define DDAD_SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
 
 #include "score/mw/com/impl/bindings/lola/control_slot_composite_indicator.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
@@ -29,9 +29,6 @@ namespace score::mw::com::impl::lola
 
 class EventDataControlCompositeAttorney;
 
-namespace detail_event_data_control_composite
-{
-
 /// \brief Encapsulates multiple EventDataControl instances
 ///
 /// \details Due to the fact that we have multiple EventDataControl instances (one for ASIL, one for QM) we need to
@@ -40,21 +37,20 @@ namespace detail_event_data_control_composite
 /// control structures. Please be aware that the control structures will live in different shared memory segments, thus
 /// it is not possible to store them by value, but rather as pointer.
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
-class EventDataControlCompositeImpl
+class EventDataControlComposite
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
     // The "EventDataControlCompositeAttorney" class is a helper, which sets the internal state of
-    // "EventDataControlCompositeImpl" accessing private members and used for testing purposes only.
+    // "EventDataControlComposite" accessing private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class lola::EventDataControlCompositeAttorney;
 
   public:
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL use-case)
-    explicit EventDataControlCompositeImpl(EventDataControl* const asil_qm_control);
+    explicit EventDataControlComposite(EventDataControl* const asil_qm_control);
 
     /// \brief Constructs a composite which will manage QM and ASIL control at the same time
-    explicit EventDataControlCompositeImpl(EventDataControl* const asil_qm_control,
-                                           EventDataControl* const asil_b_control);
+    explicit EventDataControlComposite(EventDataControl* const asil_qm_control, EventDataControl* const asil_b_control);
 
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
@@ -116,9 +112,6 @@ class EventDataControlCompositeImpl
     void CheckForValidDataControls() const noexcept;
 };
 
-}  // namespace detail_event_data_control_composite
-
-using EventDataControlComposite = detail_event_data_control_composite::EventDataControlCompositeImpl<>;
-
 }  // namespace score::mw::com::impl::lola
-#endif  // DDAD_SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
+
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_COMPOSITE_H_
