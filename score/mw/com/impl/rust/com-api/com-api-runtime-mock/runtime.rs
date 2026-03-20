@@ -63,9 +63,9 @@ pub struct MockConsumerInfo {
 
 impl Runtime for MockRuntimeImpl {
     type ServiceDiscovery<I: Interface + Send> = SampleConsumerDiscovery<I>;
-    type Subscriber<T: CommData> = SubscribableImpl<T>;
+    type Subscriber<T: CommData + Debug> = SubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
-    type Publisher<T: CommData> = Publisher<T>;
+    type Publisher<T: CommData + Debug> = Publisher<T>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
 
@@ -100,12 +100,12 @@ where
     event: &'a MockEvent<T>,
 }
 
-unsafe impl<'a, T> Send for MockBinding<'a, T> where T: CommData {}
+unsafe impl<'a, T> Send for MockBinding<'a, T> where T: CommData + Debug {}
 
 #[derive(Debug)]
 enum SampleBinding<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     Mock(MockBinding<'a, T>),
     Test(Box<T>),
@@ -114,7 +114,7 @@ where
 #[derive(Debug)]
 pub struct Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     id: usize,
     inner: SampleBinding<'a, T>,
@@ -124,7 +124,7 @@ static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl<'a, T> From<T> for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn from(value: T) -> Self {
         Self {
@@ -136,7 +136,7 @@ where
 
 impl<'a, T> Deref for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Target = T;
 
@@ -148,22 +148,22 @@ where
     }
 }
 
-impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: CommData {}
+impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: CommData + Debug {}
 
 impl<'a, T> PartialEq for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl<'a, T> Eq for Sample<'a, T> where T: CommData {}
+impl<'a, T> Eq for Sample<'a, T> where T: CommData + Debug {}
 
 impl<'a, T> PartialOrd for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -172,7 +172,7 @@ where
 
 impl<'a, T> Ord for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id.cmp(&other.id)
@@ -182,7 +182,7 @@ where
 #[derive(Debug)]
 pub struct SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     data: T,
     lifetime: PhantomData<&'a T>,
@@ -190,7 +190,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn send(self) -> com_api_concept::Result<()> {
         todo!()
@@ -199,7 +199,7 @@ where
 
 impl<'a, T> Deref for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Target = T;
 
@@ -210,7 +210,7 @@ where
 
 impl<'a, T> DerefMut for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data
@@ -220,7 +220,7 @@ where
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     data: MaybeUninit<T>,
     lifetime: PhantomData<&'a T>,
@@ -228,7 +228,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMut = SampleMut<'a, T>;
 
@@ -249,7 +249,7 @@ where
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         &mut self.data
@@ -263,7 +263,7 @@ pub struct SubscribableImpl<T> {
     data: PhantomData<T>,
 }
 
-impl<T: CommData> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
+impl<T: CommData + Debug> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(
         identifier: &'static str,
@@ -287,7 +287,7 @@ impl<T: CommData> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
 #[derive(Debug)]
 pub struct SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     identifier: &'static str,
     instance_info: MockConsumerInfo,
@@ -296,7 +296,7 @@ where
 
 impl<T> SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
@@ -305,7 +305,7 @@ where
 
 impl<T> Subscription<T, MockRuntimeImpl> for SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Subscriber = SubscribableImpl<T>;
     type Sample<'a> = Sample<'a, T>;
@@ -343,7 +343,7 @@ pub struct Publisher<T> {
 
 impl<T> Default for Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn default() -> Self {
         Self::new()
@@ -352,7 +352,7 @@ where
 
 impl<T> Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
     pub fn new() -> Self {
@@ -362,7 +362,7 @@ where
 
 impl<T> com_api_concept::Publisher<T, MockRuntimeImpl> for Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>

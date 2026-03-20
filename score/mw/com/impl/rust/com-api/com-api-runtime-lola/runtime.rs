@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+use crate::Debug;
 use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
@@ -26,9 +27,9 @@ pub struct LolaRuntimeImpl {}
 
 impl Runtime for LolaRuntimeImpl {
     type ServiceDiscovery<I: Interface + Send> = SampleConsumerDiscovery<I>;
-    type Subscriber<T: CommData> = SubscribableImpl<T>;
+    type Subscriber<T: CommData + Debug> = SubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
-    type Publisher<T: CommData> = Publisher<T>;
+    type Publisher<T: CommData + Debug> = Publisher<T>;
     type ProviderInfo = LolaProviderInfo;
     type ConsumerInfo = LolaConsumerInfo;
 
