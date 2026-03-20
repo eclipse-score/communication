@@ -66,6 +66,9 @@ test --nosandbox_default_allow_network
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
 common --registry=https://bcr.bazel.build
 
+# Enable colored output for gtest
+build --test_env="GTEST_COLOR=1"
+
 # With this instrumentation filter for our two main components, we ensure that `bazel coverage //...` is yielding the correct results
 coverage --instrumentation_filter="^//score/message_passing[/:],^//score/mw/com[/:],-//score/mw/com/performance_benchmarks[/:],-//score/mw/.*/test[/:]".
 coverage --experimental_generate_llvm_lcov
