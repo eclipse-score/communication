@@ -182,6 +182,7 @@ bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = Tr
 
 bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "score_communication_crate_index")
 bazel_dep(name = "boost.program_options", version = "1.87.0")
+bazel_dep(name = "boost.container", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
 
 bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
@@ -227,12 +228,13 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-# Apply patch to fix visibility issue with interprocess_notification target
+# NOTE: local_path_override is temporary for development.
+# Once baselibs merges the interprocess_mutex visibility fix,
+# replace with git_override pointing to that commit.
 bazel_dep(name = "score_baselibs", version = "0.2.4")
-git_override(
+local_path_override(
     module_name = "score_baselibs",
-    commit = "052c2f271be4239f97182b164f4903b8c88d6c72",
-    remote = "https://github.com/eclipse-score/baselibs.git",
+    path = "/home/q551424/score/baselibs",
 )
 
 bazel_dep(name = "score_logging", version = "0.1.0")
