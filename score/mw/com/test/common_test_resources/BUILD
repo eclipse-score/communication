@@ -53,6 +53,20 @@ cc_library(
 )
 
 cc_library(
+    name = "fail_test",
+    srcs = [
+        "fail_test.cpp",
+    ],
+    hdrs = [
+        "fail_test.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test:__subpackages__",
+    ],
+)
+
+cc_library(
     name = "shared_memory_object_guard",
     srcs = [
         "shared_memory_object_guard.cpp",
