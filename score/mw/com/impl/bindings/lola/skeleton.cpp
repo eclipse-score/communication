@@ -1138,11 +1138,10 @@ EventDataControlComposite<> Skeleton::CreateEventControlComposite(
                                      proxy_event_data_control_local};
 }
 
-std::pair<void*, EventDataControlComposite<>> Skeleton::CreateEventDataInCreatedSharedMemory(
-    const ElementFqId element_fq_id,
-    const SkeletonEventProperties& element_properties,
-    size_t sample_size,
-    size_t sample_alignment) noexcept
+auto Skeleton::CreateEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
+                                                    const SkeletonEventProperties& element_properties,
+                                                    size_t sample_size,
+                                                    size_t sample_alignment) noexcept -> GenericRegistrationResult
 {
     // Calculate the aligned size for a single sample to ensure proper padding between slots
     const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
@@ -1166,17 +1165,16 @@ std::pair<void*, EventDataControlComposite<>> Skeleton::CreateEventDataInCreated
     return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
 }
 
-std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
-    const ElementFqId element_fq_id,
-    const SkeletonEventProperties& element_properties,
-    const size_t sample_size,
-    const size_t sample_alignment) noexcept
+auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
+                               const SkeletonEventProperties& element_properties,
+                               const size_t sample_size,
+                               const size_t sample_alignment) noexcept -> GenericRegistrationResult
 {
     if (was_old_shm_region_reopened_)
     {
-        auto [data_storage, control_composite] = OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
+        const auto registration_result = OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
 
-        auto& event_data_control_qm = control_composite.GetQmEventDataControlLocal();
+        auto& event_data_control_qm = registration_result.event_data_control_composite.GetQmEventDataControlLocal();
         auto rollback_result = event_data_control_qm.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
             [&event_data_control_qm](const TransactionLog::SlotIndexType slot_index) {
                 event_data_control_qm.DereferenceEventWithoutTransactionLogging(slot_index);
@@ -1189,7 +1187,8 @@ std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
             impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
         }
 
-        return {data_storage, control_composite};
+        return {registration_result.event_data_storage_ptr,
+                CreateEventControlComposite(element_fq_id, element_properties)};
     }
 
     return CreateEventDataInCreatedSharedMemory(element_fq_id, element_properties, sample_size, sample_alignment);

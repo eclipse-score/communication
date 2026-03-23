@@ -1008,9 +1008,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventDataSlotsExistAfterEventI
     auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
 
     // Then a valid slot-vector with the right size exists and we can access/write to it:
-    ASSERT_NE(event_reg_result.first, nullptr);
-    ASSERT_EQ(event_reg_result.first->size(), test::kMaxSlots);
-    event_reg_result.first->at(3) = 0x42;
+    ASSERT_NE(event_reg_result.event_data_storage_ptr, nullptr);
+    ASSERT_EQ(event_reg_result.event_data_storage_ptr->size(), test::kMaxSlots);
+    event_reg_result.event_data_storage_ptr->at(3) = 0x42;
 
     CleanUpSkeleton();
 }
@@ -1048,7 +1048,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CanAllocateSlotAfterEventIsRegister
     auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
 
     // Then we can allocate and free slots on that event
-    auto allocation = event_reg_result.second.AllocateNextSlot();
+    auto allocation = event_reg_result.event_data_control_composite.AllocateNextSlot();
     ASSERT_TRUE(allocation.allocated_slot_index.has_value());
     EXPECT_EQ(allocation.allocated_slot_index.value(), 0);
 
@@ -1083,13 +1083,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
     auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
 
-    auto allocation = event_reg_result.second.AllocateNextSlot();
+    auto allocation = event_reg_result.event_data_control_composite.AllocateNextSlot();
 
     // When cleaning up
     skeleton_->CleanupSharedMemoryAfterCrash();
 
     // Then the same slot can get allocated
-    auto allocation_after_cleanup = event_reg_result.second.AllocateNextSlot();
+    auto allocation_after_cleanup = event_reg_result.event_data_control_composite.AllocateNextSlot();
     ASSERT_TRUE(allocation_after_cleanup.allocated_slot_index.has_value());
     EXPECT_EQ(allocation.allocated_slot_index.value(), allocation_after_cleanup.allocated_slot_index.value());
 
@@ -1171,13 +1171,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     ElementFqId foo_event_fqn{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
     auto foo_event_reg_result = skeleton_->Register<uint8_t>(foo_event_fqn, test::kDefaultEventProperties);
-    void* const foo_event_data_storage = foo_event_reg_result.first->data();
+    void* const foo_event_data_storage = foo_event_reg_result.event_data_storage_ptr->data();
 
     // and dumb_event is registered with the skeleton with 5 slots
     ElementFqId dumb_event_fqn{
         lola_service_type_deployment->service_id_, test::kDumbEventId, test::kDefaultLolaInstanceId, element_type};
     auto dumb_event_reg_result = skeleton_->Register<VeryComplexType>(dumb_event_fqn, test::kDefaultEventProperties);
-    void* const dumb_event_data_storage = dumb_event_reg_result.first->data();
+    void* const dumb_event_data_storage = dumb_event_reg_result.event_data_storage_ptr->data();
 
     // Expect, that we can then retrieve the meta-info of the registered events
     auto event_foo_meta_info_ptr = skeleton_->GetEventMetaInfo(ElementFqId{
