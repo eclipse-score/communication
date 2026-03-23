@@ -98,6 +98,8 @@ class EventDataControlCompositeImpl
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot) const noexcept;
 
+    ControlSlotCompositeIndicator GetLatestSlot() const noexcept;
+
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:
@@ -110,8 +112,10 @@ class EventDataControlCompositeImpl
 
     // Algorithms that operate on multiple control blocks
     ControlSlotCompositeIndicator GetNextFreeMultiSlot() const noexcept;
+    score::cpp::optional<SlotIndexType> FindLatestReadableSlotIndex(const EventDataControl& control) const noexcept;
 
     bool TryLockSlot(ControlSlotCompositeIndicator slot_indicator) noexcept;
+    bool TryIncreaseReferenceCount(ControlSlotType& slot) const noexcept;
     ControlSlotCompositeIndicator AllocateNextMultiSlot() noexcept;
     void CheckForValidDataControls() const noexcept;
 };
