@@ -17,7 +17,7 @@ load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER
 load("@score_baselibs//score/quality/clang_tidy:extra_checks.bzl", "clang_tidy_extra_checks")
 
 package(default_visibility = [
-    "@score_baselibs//score/memory:__subpackages__",
+    "//score/memory:__subpackages__",
 ])
 
 cc_library(
@@ -200,7 +200,7 @@ cc_unit_test_suites_for_host_and_qnx(
         ":string_comparison_adaptor_unit_test",
     ],
     test_suites_from_sub_packages = [
-        "@score_baselibs//score/memory/shared:unit_test_suite",
+        "//score/memory/shared:unit_test_suite",
     ],
     visibility = [
         "//visibility:public",

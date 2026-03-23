@@ -18,9 +18,9 @@ cc_library(
     testonly = True,
     srcs = ["typed_memory_mock.cpp"],
     hdrs = ["typed_memory_mock.h"],
-    visibility = ["@score_baselibs//score/memory/shared:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
     deps = [
         "@googletest//:gtest",
-        "@score_baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
+        "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
     ],
 )

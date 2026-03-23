@@ -27,8 +27,8 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "@score_baselibs//score/memory/shared:__subpackages__",
-        "@score_baselibs//score/memory/shared/test:__subpackages__",
+        "//score/memory/shared:__subpackages__",
+        "//score/memory/shared/test:__subpackages__",
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -53,7 +53,7 @@ cc_library(
         "sealed_shm_mock.h",
     ],
     visibility = [
-        "@score_baselibs//score/memory/shared:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
     deps = [
         "@googletest//:gtest",
@@ -68,7 +68,7 @@ cc_gtest_unit_test(
         "sealed_shm_test.cpp",
     ],
     visibility = [
-        "@score_baselibs//score/memory:__pkg__",
+        "//score/memory:__pkg__",
     ],
     deps = [
         ":sealedshm",
@@ -86,6 +86,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":unit_test",
     ],
     visibility = [
-        "@score_baselibs//score/memory/shared:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
 )

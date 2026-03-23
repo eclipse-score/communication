@@ -22,7 +22,7 @@ cc_library(
     strip_include_prefix = "api_under_test",
     deps = [
         "//score/mw/com",
-        "@score_baselibs//score/memory/shared:types",
+        "//score/memory/shared:types",
     ],
 )
 

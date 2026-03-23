@@ -95,7 +95,7 @@ cc_library(
     deps = [
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory:string_literal",
+        "//score/memory:string_literal",
         "@score_logging//score/mw/log",
     ],
 )

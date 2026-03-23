@@ -26,7 +26,7 @@ cc_library(
     ],
     tags = ["FFI"],
     deps = [
-        "@score_baselibs//score/memory/shared:lock_file",
+        "//score/memory/shared:lock_file",
     ],
 )
 
@@ -44,7 +44,7 @@ cc_library(
     ],
     deps = [
         ":flock_mutex",
-        "@score_baselibs//score/memory/shared:lock_file",
+        "//score/memory/shared:lock_file",
     ],
 )
 
@@ -62,7 +62,7 @@ cc_library(
     ],
     deps = [
         ":flock_mutex",
-        "@score_baselibs//score/memory/shared:lock_file",
+        "//score/memory/shared:lock_file",
     ],
 )
 
@@ -76,7 +76,7 @@ cc_library(
         "//visibility:public",  # platform_only
     ],
     deps = [
-        "@score_baselibs//score/memory/shared:lock_file",
+        "//score/memory/shared:lock_file",
     ],
 )
 
@@ -87,7 +87,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "@score_baselibs//score/memory:__pkg__",
+        "//score/memory:__pkg__",
     ],
     deps = [
         ":exclusive_flock_mutex",
@@ -105,6 +105,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":unit_test",
     ],
     visibility = [
-        "@score_baselibs//score/memory/shared:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
 )

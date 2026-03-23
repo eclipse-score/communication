@@ -46,7 +46,7 @@ cc_library(
         "//score/mw/com/flags:tracing_library",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
+        "//score/memory/shared",
     ],
 )
 
@@ -198,7 +198,7 @@ cc_library(
         "//score/mw/com/impl/tracing/configuration:skeleton_event_trace_point_type",
         "//score/mw/com/impl/tracing/configuration:skeleton_field_trace_point_type",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
+        "//score/memory/shared:i_shared_memory_resource",
     ],
 )
 
@@ -223,7 +223,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/flags:tracing_library",
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared:pointer_arithmetic_util",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],

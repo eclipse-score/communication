@@ -29,8 +29,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:shared_memory_resource",
-        "@score_baselibs//score/memory/shared:types",
+        "//score/memory/shared:shared_memory_resource",
+        "//score/memory/shared:types",
     ],
 )
 
@@ -48,7 +48,7 @@ cc_library(
     deps = [
         ":fake_memory_resources",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
-        "@score_baselibs//score/memory/shared:types",
+        "//score/memory/shared:i_shared_memory_resource",
+        "//score/memory/shared:types",
     ],
 )

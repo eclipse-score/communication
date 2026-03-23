@@ -20,7 +20,7 @@ selects.config_setting_group(
     name = "QNX_AND_USE_TYPED_SHMD",
     match_all = [
         "@platforms//os:qnx",
-        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd",
+        "//score/memory/shared/flags:config_use_typedshmd",
     ],
 )
 
@@ -33,7 +33,7 @@ cc_library(
         "typed_memory.h",
     ],
     defines = select({
-        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd": [
+        "//score/memory/shared/flags:config_use_typedshmd": [
             "USE_TYPEDSHMD",
             "ALLOW_QM",
         ],
@@ -46,7 +46,7 @@ cc_library(
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:user_permission",
+        "//score/memory/shared:user_permission",
         "@score_baselibs//score/os:errno_logging",
         "@score_baselibs//score/os/utils/acl",
     ] + select({
@@ -69,15 +69,15 @@ cc_test(
         "unit",
     ],
     target_compatible_with = select({
-        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
+        "//score/memory/shared/flags:config_use_typedshmd": ["@platforms//os:qnx"],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = [
-        "@score_baselibs//score/memory:__pkg__",
+        "//score/memory:__pkg__",
     ],
     deps = [
         # clientlib mock target removed
-        "@score_baselibs//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
+        "//score/memory/shared/typedshm/typedshm_wrapper:typedmemory",
         "@score_baselibs//score/os/mocklib/qnx:mman_mock",
         "@googletest//:gtest_main",
     ],
@@ -89,6 +89,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":typed_memory_test",
     ],
     visibility = [
-        "@score_baselibs//score/memory/shared:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
 )

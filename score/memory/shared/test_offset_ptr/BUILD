@@ -27,11 +27,11 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     visibility = [
-        "@score_baselibs//score/memory:__pkg__",
+        "//score/memory:__pkg__",
     ],
     deps = [
         ":offset_ptr_test_resources",
-        "@score_baselibs//score/memory/shared:offset_ptr",
+        "//score/memory/shared:offset_ptr",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -48,7 +48,7 @@ cc_unit_test(
         "-aborts_upon_exception",
     ],
     visibility = [
-        "@score_baselibs//score/memory:__pkg__",
+        "//score/memory:__pkg__",
     ],
     deps = [
         ":bounds_check_memory_pool",
@@ -56,7 +56,7 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score_baselibs//score/memory/shared:offset_ptr",
+        "//score/memory/shared:offset_ptr",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -67,12 +67,12 @@ cc_library(
     srcs = ["offset_ptr_test_resources.cpp"],
     hdrs = ["offset_ptr_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["@score_baselibs//score/memory/shared:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
     deps = [
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared",
+        "//score/memory/shared/fake:fake_memory_resources",
     ],
 )
 
@@ -85,7 +85,7 @@ cc_library(
     deps = [
         ":offset_ptr_test_resources",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
+        "//score/memory/shared",
     ],
 )
 
@@ -96,6 +96,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":offset_ptr_test",
     ],
     visibility = [
-        "@score_baselibs//score/memory/shared:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
 )

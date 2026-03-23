@@ -24,7 +24,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:__pkg__",
         "//score/mw/com/impl/plumbing:__pkg__",
     ],
-    deps = ["@score_baselibs//score/memory/shared:types"],
+    deps = ["//score/memory/shared:types"],
 )
 
 cc_library(
@@ -45,7 +45,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/lola:shared_data_structures",
         "//score/mw/com/impl/bindings/lola:skeleton",
-        "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
+        "//score/memory/shared",
+        "//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )

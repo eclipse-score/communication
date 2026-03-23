@@ -18,7 +18,7 @@ selects.config_setting_group(
     name = "QNX_AND_USE_TYPED_SHMD",
     match_all = [
         "@platforms//os:qnx",
-        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd",
+        "//score/memory/shared/flags:config_use_typedshmd",
     ],
 )
 
@@ -27,7 +27,7 @@ cc_library(
     srcs = ["typed_memory_utils.cpp"],
     hdrs = ["typed_memory_utils.h"],
     defines = select({
-        "@score_baselibs//score/memory/shared/flags:config_use_typedshmd": [
+        "//score/memory/shared/flags:config_use_typedshmd": [
             "USE_TYPEDSHMD",
             "ALLOW_QM",
         ],
@@ -36,7 +36,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
-        "@score_baselibs//score/memory/shared:__subpackages__",
+        "//score/memory/shared:__subpackages__",
     ],
     deps = [
         "@score_baselibs//score/mw/log:frontend",

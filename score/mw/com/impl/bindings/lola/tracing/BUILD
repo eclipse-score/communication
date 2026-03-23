@@ -35,7 +35,7 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/language/safecpp/scoped_function:move_only_scoped_function",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
+        "//score/memory/shared:i_shared_memory_resource",
         "@score_logging//score/mw/log",
     ],
 )
