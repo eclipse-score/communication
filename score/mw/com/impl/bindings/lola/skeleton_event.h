@@ -37,6 +37,7 @@
 #include <score/utility.hpp>
 
 #include <atomic>
+#include <filesystem>
 #include <mutex>
 #include <optional>
 #include <string_view>
@@ -258,9 +259,10 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
-    std::tie(event_data_storage_, event_data_control_composite_) =
-        event_shared_impl_.GetParent().template Register<SampleType>(event_shared_impl_.GetElementFQId(),
-                                                                     event_properties_);
+    const auto registration_result = event_shared_impl_.GetParent().template Register<SampleType>(
+        event_shared_impl_.GetElementFQId(), event_properties_);
+    event_data_storage_ = &registration_result.event_data_storage;
+    event_data_control_composite_ = registration_result.event_data_control_composite;
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         event_data_control_composite_.has_value(),
