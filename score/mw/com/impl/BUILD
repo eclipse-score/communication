@@ -960,6 +960,7 @@ cc_test(
         ":runtime",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score_baselibs//score/utils/meyer_singleton/test:single_test_per_process_fixture",
         "@score_logging//score/mw/log",
     ],
 )
