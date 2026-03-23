@@ -653,5 +653,63 @@ TEST(SkeletonEventTest, MovingAssigningSkeletonUpdatesEventMapReference)
     EXPECT_EQ(&event, &unit2.my_dummy_event_);
 }
 
+TEST(SkeletonEventGetLatestSampleTest, CallingGetLatestSampleDispatchesToBinding)
+{
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+
+    // Expecting that a SkeletonEvent binding is created
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, kEventName))
+        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+
+
+    // and that GetLatestSample() is called once on the event binding which returns a valid sample
+    EXPECT_CALL(skeleton_event_binding_mock, GetLatestSample())
+        .WillOnce(Return(ByMove(static_cast<TestSampleType>(42U))));
+
+    // Given a skeleton which has a mock skeleton-binding
+    MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // When calling GetLatestSample on the event
+    const auto latest_sample_result = SkeletonEventView<TestSampleType>{unit.my_dummy_event_}.GetLatestSample();
+
+    // Then the result is valid and contains the sample from the binding
+    ASSERT_TRUE(latest_sample_result.has_value());
+    EXPECT_EQ(latest_sample_result.value(), static_cast<TestSampleType>(42U));
+}
+
+TEST(SkeletonEventGetLatestSampleTest, CallingGetLatestSampleWhenBindingFailsReturnsError)
+{
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    SkeletonEventBindingFactoryMockGuard<TestSampleType> skeleton_event_binding_factory_mock_guard{};
+
+    // Expecting that a SkeletonEvent binding is created
+    auto skeleton_event_binding_mock_ptr = std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>();
+    auto& skeleton_event_binding_mock = *skeleton_event_binding_mock_ptr;
+    EXPECT_CALL(skeleton_event_binding_factory_mock_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, kEventName))
+        .WillOnce(Return(ByMove(std::move(skeleton_event_binding_mock_ptr))));
+
+
+    // and that GetLatestSample() is called once on the event binding which returns an error
+    EXPECT_CALL(skeleton_event_binding_mock, GetLatestSample())
+        .WillOnce(Return(ByMove(MakeUnexpected(ComErrc::kBindingFailure))));
+
+    // Given a skeleton which has a mock skeleton-binding
+    MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // When calling GetLatestSample on the event
+    const auto latest_sample_result = SkeletonEventView<TestSampleType>{unit.my_dummy_event_}.GetLatestSample();
+
+    // Then the result contains an error that the binding failed
+    ASSERT_FALSE(latest_sample_result.has_value());
+    EXPECT_EQ(latest_sample_result.error(), ComErrc::kBindingFailure);
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl

@@ -147,6 +147,7 @@ cc_library(
     deps = [
         ":skeleton_event",
         ":skeleton_field_base",
+        "//score/mw/com/impl/methods:skeleton_method",
         "//score/mw/com/impl/mocking:i_skeleton_field",
         "//score/mw/com/impl/plumbing:field",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
@@ -246,6 +247,7 @@ cc_library(
     deps = [
         ":error",
         ":skeleton_event_base",
+        "//score/mw/com/impl/methods:skeleton_method_base",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
         "@score_logging//score/mw/log",
