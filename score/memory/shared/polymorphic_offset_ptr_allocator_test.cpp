@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "polymorphic_offset_ptr_allocator.h"
+#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 #include "fake/my_memory_resource.h"
 

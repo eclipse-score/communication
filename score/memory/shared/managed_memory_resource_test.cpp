@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "managed_memory_resource.h"
+#include "score/memory/shared/managed_memory_resource.h"
 
 #include "fake/my_memory_resource.h"
 #include "shared_memory_test_resources.h"

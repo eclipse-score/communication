@@ -10,11 +10,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "memory_resource_proxy.h"
+#include "score/memory/shared/memory_resource_proxy.h"
 
 #include "fake/my_bounded_memory_resource.h"
 #include "fake/my_memory_resource.h"
-#include "memory_resource_registry.h"
+#include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/memory/shared/shared_memory_test_resources.h"
 

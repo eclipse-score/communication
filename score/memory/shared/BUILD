@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test", "cc_unit_test_suites_for_host_and_qnx")
+load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_test_suites_for_host_and_qnx")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 alias(
@@ -36,35 +36,19 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-cc_library(
+alias(
     name = "pointer_arithmetic_util",
-    srcs = ["pointer_arithmetic_util.cpp"],
-    hdrs = ["pointer_arithmetic_util.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
+    actual = "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
     visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        "@score_baselibs//score/language/safecpp/safe_math",
-        "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/mw/log:frontend",
+        "//visibility:public",
     ],
 )
 
-cc_library(
+alias(
     name = "i_shared_memory_resource",
-    srcs = ["i_shared_memory_resource.cpp"],
-    hdrs = ["i_shared_memory_resource.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
+    actual = "@score_baselibs//score/memory/shared:i_shared_memory_resource",
     visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":managed_memory_resource",
-        ":user_permission",
-        "@score_baselibs//score/language/futurecpp",
+        "//visibility:public",
     ],
 )
 
@@ -239,224 +223,99 @@ cc_library(
     ],
 )
 
-cc_library(
+alias(
     name = "managed_memory_resource",
-    srcs = ["managed_memory_resource.cpp"],
-    hdrs = ["managed_memory_resource.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = ["@score_baselibs//score/language/futurecpp"],
-)
-
-cc_library(
-    name = "memory_region_map",
-    srcs = ["memory_region_map.cpp"],
-    hdrs = ["memory_region_map.h"],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        "@score_baselibs//score/mw/log:frontend",
-    ],
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        "@score_baselibs//score/concurrency/atomic:atomic_indirector",
-        ":memory_region_bounds",
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
-    name = "memory_region_bounds",
-    srcs = ["memory_region_bounds.cpp"],
-    hdrs = ["memory_region_bounds.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    deps = [
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
-    name = "memory_resource_registry",
-    srcs = ["memory_resource_registry.cpp"],
-    hdrs = ["memory_resource_registry.h"],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        ":pointer_arithmetic_util",
-        ":shared_memory_error",
-        "@score_baselibs//score/mw/log:frontend",
-    ],
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":managed_memory_resource",
-        ":memory_region_bounds",
-        ":memory_region_map",
-        "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_library(
-    name = "memory_resource_proxy",
-    srcs = ["memory_resource_proxy.cpp"],
-    hdrs = ["memory_resource_proxy.h"],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        ":memory_region_bounds",
-        ":memory_resource_registry",
-        ":pointer_arithmetic_util",
-        "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/mw/log:frontend",
-    ],
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-)
-
-cc_library(
-    name = "offset_ptr",
-    srcs = [
-        "offset_ptr.cpp",
-    ],
-    hdrs = [
-        "offset_ptr.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":memory_region_bounds",
-        ":memory_resource_registry",
-        ":offset_ptr_bounds_check",
-        ":pointer_arithmetic_util",
-        "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/language/safecpp/safe_math",
-        "@score_baselibs//score/quality/compiler_warnings",
-    ],
-)
-
-cc_library(
-    name = "offset_ptr_bounds_check",
-    srcs = [
-        "offset_ptr_bounds_check.cpp",
-    ],
-    hdrs = [
-        "offset_ptr_bounds_check.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        ":pointer_arithmetic_util",
-        "@score_baselibs//score/mw/log:frontend",
-    ],
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":memory_region_map",
-        ":memory_resource_registry",
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
-cc_library(
-    name = "polymorphic_offset_ptr_allocator",
-    srcs = ["polymorphic_offset_ptr_allocator.cpp"],
-    hdrs = ["polymorphic_offset_ptr_allocator.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":memory_resource_proxy",
-        ":offset_ptr",
-        "@score_baselibs//score/language/safecpp/safe_math",
-    ],
-)
-
-cc_library(
-    name = "map",
-    srcs = ["map.cpp"],
-    hdrs = ["map.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":polymorphic_offset_ptr_allocator",
-    ] + select({
-        "@platforms//os:linux": [
-            "@boost.container",
-            "@boost.interprocess",
-        ],
-        "@platforms//os:qnx": [],
-    }),
-)
-
-cc_library(
-    name = "string",
-    srcs = ["string.cpp"],
-    hdrs = ["string.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":polymorphic_offset_ptr_allocator",
-        "@score_baselibs//score/language/safecpp/string_view:char_traits_wrapper",
-    ],
-)
-
-cc_library(
-    name = "vector",
-    srcs = ["vector.cpp"],
-    hdrs = ["vector.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
-    deps = [
-        ":polymorphic_offset_ptr_allocator",
-    ],
-)
-
-cc_library(
-    name = "types",
-    srcs = [
-    ],
-    hdrs = [
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
+    actual = "@score_baselibs//score/memory/shared:managed_memory_resource",
     visibility = [
         "//visibility:public",
     ],
-    deps = [
-        ":managed_memory_resource",
-        ":map",
-        ":memory_region_map",
-        ":memory_resource_proxy",
-        ":memory_resource_registry",
-        ":offset_ptr",
-        ":polymorphic_offset_ptr_allocator",
-        ":shared_memory_error",
-        ":string",
-        ":vector",
+)
+
+alias(
+    name = "memory_region_map",
+    actual = "@score_baselibs//score/memory/shared:memory_region_map",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "memory_region_bounds",
+    actual = "@score_baselibs//score/memory/shared:memory_region_bounds",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "memory_resource_registry",
+    actual = "@score_baselibs//score/memory/shared:memory_resource_registry",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "memory_resource_proxy",
+    actual = "@score_baselibs//score/memory/shared:memory_resource_proxy",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "offset_ptr",
+    actual = "@score_baselibs//score/memory/shared:offset_ptr",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "offset_ptr_bounds_check",
+    actual = "@score_baselibs//score/memory/shared:offset_ptr_bounds_check",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "polymorphic_offset_ptr_allocator",
+    actual = "@score_baselibs//score/memory/shared:polymorphic_offset_ptr_allocator",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "map",
+    actual = "@score_baselibs//score/memory/shared:map",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "string",
+    actual = "@score_baselibs//score/memory/shared:string",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "vector",
+    actual = "@score_baselibs//score/memory/shared:vector",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+alias(
+    name = "types",
+    actual = "@score_baselibs//score/memory/shared:types",
+    visibility = [
+        "//visibility:public",
     ],
 )
 
@@ -485,13 +344,10 @@ cc_library(
     ],
 )
 
-cc_library(
+alias(
     name = "user_permission",
-    hdrs = ["user_permission.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
+    actual = "@score_baselibs//score/memory/shared:user_permission",
     visibility = ["//score/memory/shared:__subpackages__"],
-    deps = ["@score_baselibs//score/os/utils/acl"],
 )
 
 cc_library(
@@ -515,59 +371,10 @@ cc_library(
     ],
 )
 
-cc_library(
+alias(
     name = "shared_memory_error",
-    srcs = ["shared_memory_error.cpp"],
-    hdrs = ["shared_memory_error.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
+    actual = "@score_baselibs//score/memory/shared:shared_memory_error",
     visibility = ["//score/memory/shared:__pkg__"],
-    deps = [
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_unit_test(
-    name = "pointer_arithmetic_util_precondition_violation_test",
-    srcs = [
-        "pointer_arithmetic_util_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES + [
-        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
-        "-aborts_upon_exception",
-    ],
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
-    deps = [
-        ":pointer_arithmetic_util",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/language/safecpp/coverage_termination_handler",  # TODO: Remove when SubtractPointersBytes is no longer noexcept and we remove the last death test.
-        "@score_baselibs//score/mw/log:backend_stub_testutil",
-    ],
-)
-
-cc_unit_test(
-    name = "pointer_arithmetic_util_calculate_aligned_size_test",
-    srcs = [
-        "pointer_arithmetic_util_calculate_aligned_size_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES + [
-        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
-        "-aborts_upon_exception",
-    ],
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
-    deps = [
-        ":pointer_arithmetic_util",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/mw/log:backend_stub_testutil",
-    ],
 )
 
 cc_gtest_unit_test(
@@ -585,21 +392,6 @@ cc_gtest_unit_test(
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
-
-cc_gtest_unit_test(
-    name = "memory_region_bounds_test",
-    srcs = [
-        "memory_region_bounds_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
-    deps = [
-        ":memory_region_bounds",
-    ],
-)
-
 
 cc_gtest_unit_test(
     name = "lock_file_test",
@@ -683,23 +475,7 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
-    name = "memory_resource_registry_test",
-    srcs = [
-        "memory_resource_registry_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
-    deps = [
-        ":memory_resource_registry",
-        ":pointer_arithmetic_util",
-        ":shared_memory_error",
-        "@score_baselibs//score/mw/log:backend_stub_testutil",
-    ],
-)
 
-cc_gtest_unit_test(
     name = "new_delete_delegate_resource_test",
     srcs = [
         "new_delete_delegate_resource_test.cpp",
@@ -728,20 +504,6 @@ cc_gtest_unit_test(
         ":polymorphic_offset_ptr_allocator",
         "//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
-    ],
-)
-
-cc_gtest_unit_test(
-    name = "shared_memory_error_test",
-    srcs = [
-        "shared_memory_error_test.cpp",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/memory:__pkg__",
-    ],
-    deps = [
-        ":shared_memory_error",
     ],
 )
 
@@ -899,15 +661,10 @@ cc_unit_test_suites_for_host_and_qnx(
         ":lock_file_test",
         ":managed_memory_resource_test",
         ":map_test",
-        ":memory_region_bounds_test",
         ":memory_region_map_test",
         ":memory_resource_proxy_test",
-        ":memory_resource_registry_test",
         ":new_delete_delegate_resource_test",
         ":polymorphic_offset_ptr_allocator_test",
-        ":pointer_arithmetic_util_precondition_violation_test",
-        ":pointer_arithmetic_util_calculate_aligned_size_test",
-        ":shared_memory_error_test",
         ":shared_memory_factory_test",
         ":shared_memory_resource_allocate_test",
         ":shared_memory_resource_create_anonymous_test",
