@@ -163,7 +163,7 @@ TEST(TracingRuntime, TracingRuntimeTraceWillReceivePointerToConstShmData)
         score::mw::com::impl::tracing::TracingRuntime::*)(BindingType,
                                                           ServiceElementInstanceIdentifierView,
                                                           ITracingRuntime::TracePointType,
-                                                          score::cpp::optional<ITracingRuntime::TracePointDataId>,
+                                                          std::optional<ITracingRuntime::TracePointDataId>,
                                                           ShmPointerType,
                                                           std::size_t)>(&TracingRuntime::Trace);
     static_assert(std::is_member_function_pointer_v<decltype(trace_shm_signature)>,
