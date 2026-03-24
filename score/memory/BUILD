@@ -20,13 +20,11 @@ package(default_visibility = [
     "//score/memory:__subpackages__",
 ])
 
-cc_library(
+alias(
     name = "string_literal",
-    hdrs = ["string_literal.h"],
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",  # platform_only
-    ],
+    actual = "@score_baselibs//score/string:string_literal",
+    deprecation = "Use @score_baselibs//score/string:string_literal directly. This alias will be removed.",
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -42,23 +40,11 @@ cc_library(
     deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
-cc_library(
+alias(
     name = "string_comparison_adaptor",
-    srcs = [
-        "string_comparison_adaptor.cpp",
-    ],
-    hdrs = [
-        "string_comparison_adaptor.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//visibility:public",
-    ],
-    deps = [
-        ":string_literal",
-        "@score_baselibs//score/language/futurecpp",
-    ],
+    actual = "@score_baselibs//score/string:string_comparison_adaptor",
+    deprecation = "Use @score_baselibs//score/string:string_comparison_adaptor directly. This alias will be removed.",
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -71,39 +57,12 @@ cc_library(
     deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
-cc_test(
-    name = "string_comparison_adaptor_unit_test",
-    srcs = [
-        "string_comparison_adaptor_test.cpp",
-    ],
-    features = [
-        "aborts_upon_exception",
-        "treat_warnings_as_errors",
-        "strict_warnings",
-        "additional_warnings",
-    ],
-    tags = ["unit"],
-    deps = [
-        ":string_comparison_adaptor",
-        "@googletest//:gtest_main",
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
 
-cc_library(
+alias(
     name = "split_string_view",
-    srcs = [
-        "split_string_view.cpp",
-    ],
-    hdrs = [
-        "split_string_view.h",
-    ],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_baselibs//score/language/futurecpp"],
-    tags = ["FFI"],
-    visibility = [
-        "@score_baselibs//score/mw/log:__subpackages__",
-    ],
+    actual = "@score_baselibs//score/string:split_string_view",
+    deprecation = "Use @score_baselibs//score/string:split_string_view directly. This alias will be removed.",
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -121,23 +80,6 @@ cc_library(
     ],
 )
 
-cc_test(
-    name = "split_string_view_unit_test",
-    srcs = [
-        "split_string_view_test.cpp",
-    ],
-    features = [
-        "aborts_upon_exception",
-        "treat_warnings_as_errors",
-        "strict_warnings",
-        "additional_warnings",
-    ],
-    tags = ["unit"],
-    deps = [
-        ":split_string_view",
-        "@googletest//:gtest_main",
-    ],
-)
 
 cc_test(
     name = "endianness_unit_test",
@@ -195,9 +137,7 @@ cc_unit_test_suites_for_host_and_qnx(
     cc_unit_tests = [
         ":endianness_unit_test",
         ":pmr_ring_buffer_unit_test",
-        ":split_string_view_unit_test",
         ":data_type_size_info_test",
-        ":string_comparison_adaptor_unit_test",
     ],
     test_suites_from_sub_packages = [
         "//score/memory/shared:unit_test_suite",
