@@ -18,9 +18,6 @@
 // Note: The example is using unwrap and panic in some places for simplicity,
 // but it is recommended to handle errors properly in production code.
 
-use clap::Parser;
-use std::path::PathBuf;
-
 use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
     OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,

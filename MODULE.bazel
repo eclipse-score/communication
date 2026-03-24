@@ -181,6 +181,11 @@ bazel_dep(name = "rules_rust", version = "0.68.1-score")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
 
 bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "score_communication_crate_index")
+git_override(
+    module_name = "score_crates",
+    commit = "a5f4f5765acc83f9c23b0b12860e130b9ebef3a7",
+    remote = "https://github.com/eclipse-score/score-crates.git",
+)
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
 
