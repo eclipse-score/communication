@@ -330,8 +330,8 @@ class Skeleton final : public SkeletonBinding
     /// Each guard corresponds to the method subscription / method call handler which was registered in
     /// Skeleton::PrepareOffer() (in case any methods were registered). The guard objects will be destroyed in
     /// Skeleton::PrepareStopOffer()
-    MethodSubscriptionRegistrationGuard method_subscription_registration_guard_qm_;
-    MethodSubscriptionRegistrationGuard method_subscription_registration_guard_asil_b_;
+    std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_qm_;
+    std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_asil_b_;
 
     bool was_old_shm_region_reopened_;
 

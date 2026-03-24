@@ -299,8 +299,8 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       on_service_methods_subscribed_mutex_{},
       method_resources_{},
       skeleton_methods_{},
-      method_subscription_registration_guard_qm_{nullptr},
-      method_subscription_registration_guard_asil_b_{nullptr},
+      method_subscription_registration_guard_qm_{},
+      method_subscription_registration_guard_asil_b_{},
       was_old_shm_region_reopened_{false},
       filesystem_{std::move(filesystem)},
       method_call_handler_scope_{},
@@ -398,7 +398,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         score::mw::log::LogError("lola") << "Could not register QM service method handler. Returning error.";
         return MakeUnexpected<Blank>(qm_registration_result.error());
     }
-    method_subscription_registration_guard_qm_ = std::move(qm_registration_result).value();
+    method_subscription_registration_guard_qm_.emplace(std::move(qm_registration_result).value());
 
     if (detail_skeleton::HasAsilBSupport(identifier_))
     {
@@ -421,7 +421,8 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
             score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
             return MakeUnexpected<Blank>(asil_b_registration_result.error());
         }
-        method_subscription_registration_guard_asil_b_ = std::move(asil_b_registration_result).value();
+        score::cpp::ignore =
+            method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_registration_result).value());
     }
 
     return {};
