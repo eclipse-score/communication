@@ -36,3 +36,22 @@ cc_library(
         "//score/memory/shared:pointer_arithmetic_util",
     ],
 )
+
+cc_library(
+    name = "my_bounded_shared_memory_resource",
+    testonly = True,
+    srcs = [
+        "my_bounded_shared_memory_resource.cpp",
+    ],
+    hdrs = [
+        "my_bounded_shared_memory_resource.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":fake_memory_resources",
+        "@score_baselibs//score/language/futurecpp",
+        "//score/memory/shared:i_shared_memory_resource",
+        "//score/memory/shared:types",
+    ],
+)
