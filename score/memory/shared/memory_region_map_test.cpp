@@ -13,8 +13,8 @@
 #include "score/memory/shared/memory_region_map.h"
 
 #include "memory_region_bounds.h"
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_mock.h"
 
 #include "gtest/gtest.h"
 
@@ -28,12 +28,14 @@ namespace score::memory::shared::test
 {
 
 using ::testing::_;
+using score::concurrency::atomic::AtomicIndirectorMock;
+using score::concurrency::atomic::AtomicMock;
 using ::testing::Return;
 
 class MemoryRegionMapAttorney
 {
   public:
-    using MemoryRegionMapMock = detail::MemoryRegionMapImpl<AtomicIndirectorMock>;
+    using MemoryRegionMapMock = detail::MemoryRegionMapImpl<score::concurrency::atomic::AtomicIndirectorMock>;
     using RegionVersionRefCountType = MemoryRegionMapMock::RegionVersionRefCountType;
 
     constexpr static auto VERSION_COUNT = MemoryRegionMapMock::VERSION_COUNT;
@@ -76,7 +78,7 @@ class MemoryRegionMapTest : public ::testing::Test
 class MockMemoryRegionMapTest : public MemoryRegionMapTest
 {
   protected:
-    using MemoryRegionMapMock = detail::MemoryRegionMapImpl<AtomicIndirectorMock>;
+    using MemoryRegionMapMock = detail::MemoryRegionMapImpl<score::concurrency::atomic::AtomicIndirectorMock>;
     using AtomicType = MemoryRegionMapAttorney::RegionVersionRefCountType;
 
     MockMemoryRegionMapTest() : unit_{}, attorney_{unit_}, atomic_mock_{}

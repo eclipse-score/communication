@@ -13,7 +13,7 @@
 #ifndef SCORE_LIB_MEMORY_SHARED_MEMORYREGIONMAP_H
 #define SCORE_LIB_MEMORY_SHARED_MEMORYREGIONMAP_H
 
-#include "score/memory/shared/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
 #include "score/memory/shared/memory_region_bounds.h"
 
 #include <array>
@@ -53,7 +53,7 @@ namespace detail
 ///          Detailed description can be found here:
 ///          score/memory/design/shared_memory/Readme.md - chapter Bounds_Checking_Performance
 
-template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
+template <template <class> class AtomicIndirectorType = concurrency::atomic::AtomicIndirectorReal>
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding: "A type, object or function that is used in multiple translation units
 // shall be declared in one and only one file.".
 // this is false positive. MemoryRegionMapImpl is declared only once.
