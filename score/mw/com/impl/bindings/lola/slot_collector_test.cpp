@@ -48,7 +48,7 @@ class SlotCollectorWithFakeMem : public ::testing::Test
     EventDataControl event_data_control_{5, fake_memory_resource_, kMaxSubscribers};
     ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
     SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
-    TransactionLogSet::TransactionLogIndex transaction_log_index_{
+    TransactionLogIndex transaction_log_index_{
         proxy_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
 };
 
