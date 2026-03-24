@@ -24,7 +24,4 @@
 pub mod test_types;
 
 #[cfg(test)]
-mod primitive_types_test;
-
-#[cfg(test)]
-mod user_defined_types_test;
+mod integration_test;

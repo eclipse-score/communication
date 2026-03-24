@@ -14,70 +14,10 @@
 #include "integration_test_gen.h"
 #include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
 
-BEGIN_EXPORT_MW_COM_INTERFACE(U8Interface,
-                              ::score::mw::com::integration_test::U8Proxy,
-                              ::score::mw::com::integration_test::U8Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::U8Data, u8_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(U16Interface,
-                              ::score::mw::com::integration_test::U16Proxy,
-                              ::score::mw::com::integration_test::U16Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::U16Data, u16_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(U32Interface,
-                              ::score::mw::com::integration_test::U32Proxy,
-                              ::score::mw::com::integration_test::U32Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::U32Data, u32_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(U64Interface,
-                              ::score::mw::com::integration_test::U64Proxy,
-                              ::score::mw::com::integration_test::U64Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::U64Data, u64_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(I8Interface,
-                              ::score::mw::com::integration_test::I8Proxy,
-                              ::score::mw::com::integration_test::I8Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::I8Data, i8_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(I16Interface,
-                              ::score::mw::com::integration_test::I16Proxy,
-                              ::score::mw::com::integration_test::I16Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::I16Data, i16_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(I32Interface,
-                              ::score::mw::com::integration_test::I32Proxy,
-                              ::score::mw::com::integration_test::I32Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::I32Data, i32_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(I64Interface,
-                              ::score::mw::com::integration_test::I64Proxy,
-                              ::score::mw::com::integration_test::I64Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::I64Data, i64_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(F32Interface,
-                              ::score::mw::com::integration_test::F32Proxy,
-                              ::score::mw::com::integration_test::F32Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::F32Data, f32_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(F64Interface,
-                              ::score::mw::com::integration_test::F64Proxy,
-                              ::score::mw::com::integration_test::F64Skeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::F64Data, f64_event)
-END_EXPORT_MW_COM_INTERFACE()
-
-BEGIN_EXPORT_MW_COM_INTERFACE(BoolInterface,
-                              ::score::mw::com::integration_test::BoolProxy,
-                              ::score::mw::com::integration_test::BoolSkeleton)
-EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::BoolData, bool_event)
+BEGIN_EXPORT_MW_COM_INTERFACE(MixedPrimitivesInterface,
+                              ::score::mw::com::integration_test::MixedPrimitivesProxy,
+                              ::score::mw::com::integration_test::MixedPrimitivesSkeleton)
+EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::MixedPrimitivesPayload, mixed_event)
 END_EXPORT_MW_COM_INTERFACE()
 
 BEGIN_EXPORT_MW_COM_INTERFACE(SimpleStructInterface,
@@ -123,17 +63,7 @@ EXPORT_MW_COM_EVENT(::score::mw::com::integration_test::VehicleState, vehicle_ev
 END_EXPORT_MW_COM_INTERFACE()
 
 // Export all types
-EXPORT_MW_COM_TYPE(U8Data, ::score::mw::com::integration_test::U8Data)
-EXPORT_MW_COM_TYPE(U16Data, ::score::mw::com::integration_test::U16Data)
-EXPORT_MW_COM_TYPE(U32Data, ::score::mw::com::integration_test::U32Data)
-EXPORT_MW_COM_TYPE(U64Data, ::score::mw::com::integration_test::U64Data)
-EXPORT_MW_COM_TYPE(I8Data, ::score::mw::com::integration_test::I8Data)
-EXPORT_MW_COM_TYPE(I16Data, ::score::mw::com::integration_test::I16Data)
-EXPORT_MW_COM_TYPE(I32Data, ::score::mw::com::integration_test::I32Data)
-EXPORT_MW_COM_TYPE(I64Data, ::score::mw::com::integration_test::I64Data)
-EXPORT_MW_COM_TYPE(F32Data, ::score::mw::com::integration_test::F32Data)
-EXPORT_MW_COM_TYPE(F64Data, ::score::mw::com::integration_test::F64Data)
-EXPORT_MW_COM_TYPE(BoolData, ::score::mw::com::integration_test::BoolData)
+EXPORT_MW_COM_TYPE(MixedPrimitivesPayload, ::score::mw::com::integration_test::MixedPrimitivesPayload)
 EXPORT_MW_COM_TYPE(SimpleStruct, ::score::mw::com::integration_test::SimpleStruct)
 EXPORT_MW_COM_TYPE(ComplexStruct, ::score::mw::com::integration_test::ComplexStruct)
 EXPORT_MW_COM_TYPE(NestedStruct, ::score::mw::com::integration_test::NestedStruct)
