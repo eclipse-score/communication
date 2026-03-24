@@ -59,7 +59,7 @@ cc_library(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/scoped_function:copyable_scoped_function",
         "@score_baselibs//score/result",
-        "@score_baselibs//score/utils:scoped_operation",
+        "@score_baselibs//score/scope_exit",
     ],
 )
 
@@ -366,6 +366,7 @@ cc_gtest_unit_test(
         ":i_message_passing_service",
         ":message_passing_service_mock",
         "@score_baselibs//score/mw/log:recorder_mock",
+        "@score_baselibs//score/scope_exit",
     ],
 )
 
