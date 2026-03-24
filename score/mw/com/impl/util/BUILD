@@ -46,7 +46,7 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
-        "//score/memory:data_type_size_info",
+        "@score_baselibs//score/memory:data_type_size_info",
         "//score/memory/shared:pointer_arithmetic_util",
     ],
 )

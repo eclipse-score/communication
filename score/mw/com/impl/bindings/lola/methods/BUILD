@@ -91,7 +91,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
-        "//score/memory:data_type_size_info",
+        "@score_baselibs//score/memory:data_type_size_info",
         "//score/memory/shared:memory_resource_proxy",
         "//score/memory/shared:offset_ptr",
     ],
@@ -134,7 +134,7 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
-        "//score/memory:data_type_size_info",
+        "@score_baselibs//score/memory:data_type_size_info",
         "//score/memory/shared:memory_resource_proxy",
         "//score/memory/shared:pointer_arithmetic_util",
         "//score/memory/shared/fake:fake_memory_resources",
