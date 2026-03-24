@@ -31,7 +31,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":offset_ptr_test_resources",
-        "@score_baselibs//score/memory/shared:offset_ptr",
+        "//score/memory/shared:offset_ptr",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -42,13 +42,13 @@ cc_library(
     srcs = ["offset_ptr_test_resources.cpp"],
     hdrs = ["offset_ptr_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = ["@score_baselibs//score/memory/shared:__pkg__"],
+    visibility = ["//score/memory/shared:__pkg__"],
     deps = [
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:managed_memory_resource",
-        "@score_baselibs//score/memory/shared:offset_ptr",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:offset_ptr",
+        "//score/memory/shared/fake:fake_memory_resources",
     ],
 )
 
@@ -58,6 +58,6 @@ cc_unit_test_suites_for_host_and_qnx(
         ":offset_ptr_test",
     ],
     visibility = [
-        "@score_baselibs//score/memory/shared:__pkg__",
+        "//score/memory/shared:__pkg__",
     ],
 )

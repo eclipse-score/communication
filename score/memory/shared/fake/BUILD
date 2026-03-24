@@ -29,10 +29,10 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:allocation_algorithm",
-        "@score_baselibs//score/memory/shared:managed_memory_resource",
-        "@score_baselibs//score/memory/shared:memory_resource_proxy",
-        "@score_baselibs//score/memory/shared:memory_resource_registry",
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared:allocation_algorithm",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:memory_resource_proxy",
+        "//score/memory/shared:memory_resource_registry",
+        "//score/memory/shared:pointer_arithmetic_util",
     ],
 )

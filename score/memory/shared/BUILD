@@ -424,7 +424,7 @@ cc_gtest_unit_test(
     deps = [
         ":map",
         ":vector",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -456,7 +456,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":polymorphic_offset_ptr_allocator",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -486,7 +486,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":vector",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -505,7 +505,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":string",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared/fake:fake_memory_resources",
         "@score_baselibs//score/mw/log:backend_stub_testutil",
     ],
 )
@@ -535,9 +535,9 @@ cc_unit_test_suites_for_host_and_qnx(
         ":vector_test",
     ],
     test_suites_from_sub_packages = [
-        "@score_baselibs//score/memory/shared/test_offset_ptr:unit_test_suite",
+        "//score/memory/shared/test_offset_ptr:unit_test_suite",
     ],
     visibility = [
-        "@score_baselibs//score/memory:__pkg__",
+        "//score/memory:__pkg__",
     ],
 )
