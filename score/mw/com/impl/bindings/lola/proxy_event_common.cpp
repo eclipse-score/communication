@@ -120,7 +120,7 @@ std::optional<std::uint16_t> ProxyEventCommon::GetMaxSampleCount() const noexcep
     return subscription_event_state_machine_.GetMaxSampleCount();
 }
 
-score::cpp::optional<TransactionLogSet::TransactionLogIndex> ProxyEventCommon::GetTransactionLogIndex() const noexcept
+score::cpp::optional<TransactionLogIndex> ProxyEventCommon::GetTransactionLogIndex() const noexcept
 {
     return subscription_event_state_machine_.GetTransactionLogIndex();
 }

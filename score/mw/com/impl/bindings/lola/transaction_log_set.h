@@ -16,7 +16,7 @@
 #include "score/containers/dynamic_array.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
-#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/util/copyable_atomic.h"
 
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -63,8 +63,6 @@ class TransactionLogSet
     friend class TransactionLogSetAttorney;
 
   public:
-    using TransactionLogIndex = LolaEventInstanceDeployment::SubscriberCountType;
-
     /// \brief Struct that stores the status of a given TransactionLog
     class TransactionLogNode
     {
@@ -192,8 +190,7 @@ class TransactionLogSet
     /// \brief Creates a new transaction log in the DynamicArray of transaction logs.
     ///
     /// Will terminate if transaction_log_id already exists within the DynamicArray of transaction logs.
-    score::Result<TransactionLogSet::TransactionLogIndex> RegisterProxyElement(
-        const TransactionLogId& transaction_log_id);
+    score::Result<TransactionLogIndex> RegisterProxyElement(const TransactionLogId& transaction_log_id);
 
     /// \brief Creates a new skeleton tracing transaction log
     /// \return Returns kSkeletonIndexSentinel which is a special sentinel value which will return the registered
@@ -229,12 +226,10 @@ class TransactionLogSet
     /// \param transaction_log_id
     /// \return if slot could be acquired, the returned optional contains a pair of an iterator to the allocated slot
     ///         (TransactionLogNode) and its index, otherwise an empty optional
-    std::optional<
-        std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogSet::TransactionLogIndex>>
+    std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogIndex>>
     AcquireNextAvailableSlot(TransactionLogId transaction_log_id);
 
-    static bool IsSkeletonElementTransactionLogIndex(
-        const TransactionLogSet::TransactionLogIndex transaction_log_index);
+    static bool IsSkeletonElementTransactionLogIndex(const TransactionLogIndex transaction_log_index);
 
     TransactionLogCollection proxy_transaction_logs_;
     TransactionLogNode skeleton_tracing_transaction_log_;

@@ -19,7 +19,7 @@ namespace score::mw::com::impl::lola
 
 SlotDecrementer::SlotDecrementer(ProxyEventDataControlLocalView<>& event_data_control_local,
                                  const SlotIndexType event_slot_index,
-                                 const TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
+                                 const TransactionLogIndex transaction_log_idx) noexcept
     : event_data_control_local_{&event_data_control_local},
       event_slot_index_{event_slot_index},
       transaction_log_idx_{transaction_log_idx}

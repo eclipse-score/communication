@@ -121,8 +121,7 @@ ResultBlank TransactionLogSet::RollbackSkeletonTracingTransactions(
     return {};
 }
 
-score::Result<TransactionLogSet::TransactionLogIndex> TransactionLogSet::RegisterProxyElement(
-    const TransactionLogId& transaction_log_id)
+score::Result<TransactionLogIndex> TransactionLogSet::RegisterProxyElement(const TransactionLogId& transaction_log_id)
 {
     const auto next_available_slot_result = AcquireNextAvailableSlot(transaction_log_id);
     if (!next_available_slot_result.has_value())
@@ -139,7 +138,7 @@ score::Result<TransactionLogSet::TransactionLogIndex> TransactionLogSet::Registe
     return next_available_slot_result.value().second;
 }
 
-TransactionLogSet::TransactionLogIndex TransactionLogSet::RegisterSkeletonTracingElement()
+TransactionLogIndex TransactionLogSet::RegisterSkeletonTracingElement()
 {
     // we only do have one skeleton instance accessing the skeleton transaction log, so a dummy value is good enough,
     // we don't need e.g. an uid here.
@@ -217,7 +216,7 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
     return found_node_iterators;
 }
 
-std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogSet::TransactionLogIndex>>
+std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogIndex>>
 TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
 {
     //  The size of the transaction logs reflects the size of max subscribers and therefore the potential upper-bound
@@ -227,7 +226,7 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
     while (retries < max_retry_count)
     {
         // we iterate using iterators as it minimizes bounds-checking to start/end!
-        TransactionLogSet::TransactionLogIndex index{0U};
+        TransactionLogIndex index{0U};
 
         // LCOV_EXCL_BR_START (Tool incorrectly marks the branch as "Decision couldn't be analyzed" despite all lines
         // within the for loop being covered. The case in which proxy_transaction_logs_.size() == 0 will never be
@@ -265,8 +264,7 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
     return {};
 }
 
-bool TransactionLogSet::IsSkeletonElementTransactionLogIndex(
-    const TransactionLogSet::TransactionLogIndex transaction_log_index)
+bool TransactionLogSet::IsSkeletonElementTransactionLogIndex(const TransactionLogIndex transaction_log_index)
 {
     return transaction_log_index == TransactionLogSet::kSkeletonIndexSentinel;
 }
