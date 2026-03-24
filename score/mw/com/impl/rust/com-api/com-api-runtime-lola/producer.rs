@@ -39,6 +39,8 @@ use com_api_concept::{
     ProviderInfo, Result,
 };
 
+use score_log as log;
+
 use bridge_ffi_rs::*;
 
 use crate::LolaRuntimeImpl;
@@ -57,8 +59,18 @@ impl ProviderInfo for LolaProviderInfo {
         let status =
             unsafe { bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
         if !status {
+            log::error!(
+                "Failed to offer service for interface: {} with instance specifier: {}",
+                self.interface_id,
+                self.instance_specifier.as_ref()
+            );
             return Err(Error::Fail);
         }
+        log::info!(
+            "Service offered successfully for interface: {} with instance specifier: {}",
+            self.interface_id,
+            self.instance_specifier.as_ref()
+        );
         Ok(())
     }
 
@@ -66,6 +78,11 @@ impl ProviderInfo for LolaProviderInfo {
         //SAFETY: it is safe as we are passing valid skeleton handle to stop offer service
         // the skeleton handle is created during building the provider info instance
         unsafe { bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle) };
+        log::info!(
+            "Service stopped successfully for interface: {} with instance specifier: {}",
+            self.interface_id,
+            self.instance_specifier.as_ref()
+        );
         Ok(())
     }
 }
@@ -186,8 +203,10 @@ where
             )
         };
         if !status {
+            log::error!("Failed to send sample");
             return Err(Error::Fail);
         }
+        log::debug!("Sample sent successfully");
         Ok(())
     }
 }
@@ -233,7 +252,7 @@ where
         //It is safe to write the value because data_ptr is valid
         // and we are writing the value of type T which is same as allocatee_ptr type
         data_ptr.write(val);
-
+        log::debug!("Sample data written successfully");
         SampleMut {
             skeleton_event: self.skeleton_event,
             allocatee_ptr: self.allocatee_ptr,
@@ -388,8 +407,16 @@ where
                 T::ID,
             );
             if !status {
+                log::error!(
+                    "Failed to get allocatee pointer for event: {}",
+                    self.identifier
+                );
                 return Err(Error::Fail);
             }
+            log::debug!(
+                "Allocatee pointer obtained successfully for event: {}",
+                self.identifier
+            );
             sample.assume_init()
         };
 
@@ -404,6 +431,7 @@ where
 
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier);
+        log::info!("Publisher created for event: {}", identifier);
 
         Ok(Self {
             identifier: identifier.to_string(),

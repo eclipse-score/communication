@@ -51,10 +51,18 @@ use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
+use score_log::ScoreDebug;
 use std::path::Path;
 
 /// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
-#[derive(Debug)]
+///
+/// Both `Debug` and `ScoreDebug` are derived because `score_log` macros require `ScoreDebug`,
+/// while `Debug` is needed for standard Rust formatting. There is currently no blanket
+/// `impl<T: Debug> ScoreDebug for T` in `score_log_fmt`, so both must be explicitly derived
+/// for any type used across both contexts.
+// TODO: Need to explore if we can somehow avoid deriving both Debug and ScoreDebug for all types.
+// Maybe we can add a blanket impl for ScoreDebug for all Debug types in score_log_fmt?
+#[derive(Debug, ScoreDebug)]
 pub enum Error {
     /// TODO: To be replaced, dummy value for "something went wrong"
     Fail,

@@ -16,18 +16,33 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 rust_binary(
     name = "com-api-example",
     srcs = ["basic-consumer-producer.rs"],
+    data = [
+        "etc/config.json",
+        "etc/logging.json",
+    ],
+    env = {
+        "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
+    },
     features = ["link_std_cpp_lib"],
     visibility = ["//visibility:public"],
     deps = [
         "//score/mw/com/example/com-api-example/com-api-gen",
         "//score/mw/com/impl/rust/com-api/com-api",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_logging//score/mw/log/rust/score_log_bridge",
     ],
 )
 
 rust_test(
     name = "com-api-example-test",
     crate = ":com-api-example",
-    data = ["etc/config.json"],
+    data = [
+        "etc/config.json",
+        "etc/logging.json",
+    ],
+    env = {
+        "MW_LOG_CONFIG_FILE": "score/mw/com/example/com-api-example/etc/logging.json",
+    },
     tags = ["manual"],
     deps = [
         ":com-api-example",

@@ -18,6 +18,8 @@ use com_api::{
 };
 
 use com_api_gen::{Exhaust, Tire, VehicleInterface};
+use score_log as log;
+use score_log_bridge::ScoreLogBridgeBuilder;
 
 // Type aliases for generated consumer and offered producer types for the Vehicle interface
 // VehicleConsumer is the consumer type generated for the Vehicle interface, parameterized by the runtime R
@@ -97,7 +99,7 @@ impl<R: Runtime> VehicleMonitor<R> {
         let uninit_sample = self.producer.left_tire.allocate()?;
         let sample = uninit_sample.write(tire);
         sample.send()?;
-        println!("Tire data sent");
+        log::info!("Tire data sent");
         Ok(())
     }
 }
@@ -153,7 +155,7 @@ fn create_producer<R: Runtime>(
 
 // Run the example with the specified runtime
 fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
-    println!("\n=== Running with {name} runtime ===");
+    log::info!("Running with {} runtime", name);
 
     let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
         .expect("Failed to create InstanceSpecifier");
@@ -161,7 +163,7 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     let consumer = create_consumer(runtime, service_id);
     let monitor = VehicleMonitor::new(consumer, producer).unwrap();
     let tire_pressure = 5.0;
-    println!("Setting tire pressure to {tire_pressure}");
+    log::info!("Setting tire pressure to {}", tire_pressure);
     for i in 0..5 {
         monitor
             .write_tire_data(Tire {
@@ -169,14 +171,14 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
             })
             .unwrap();
         let tire_data = monitor.read_tire_data().unwrap();
-        println!("{tire_data}");
+        log::info!("Received tire data: {}", tire_data);
     }
     //unoffer returns producer back, so if needed it can be used further
     match monitor.producer.unoffer() {
-        Ok(_) => println!("Successfully unoffered the service"),
-        Err(e) => eprintln!("Failed to unoffer: {:?}", e),
+        Ok(_) => log::info!("Successfully unoffered the service"),
+        Err(e) => log::error!("Failed to unoffer: {:?}", e),
     }
-    println!("=== {name} runtime completed ===\n");
+    log::info!("runtime execution completed");
 }
 
 // Initialize Lola runtime builder with configuration
@@ -188,7 +190,22 @@ fn init_lola_runtime_builder() -> LolaRuntimeBuilderImpl {
     lola_runtime_builder
 }
 
+fn init_logging() {
+    // Try to load logging config from environment variable.
+    let config_path = std::env::var("MW_LOG_CONFIG_FILE")
+        .expect("config file not set in environment variable MW_LOG_CONFIG_FILE");
+
+    // Initialize ScoreLogBridge as a default logger.
+    ScoreLogBridgeBuilder::new()
+        .show_module(false)
+        .show_file(true)
+        .show_line(false)
+        .config(config_path.into())
+        .set_as_default_logger();
+}
+
 fn main() {
+    init_logging();
     let lola_runtime_builder = init_lola_runtime_builder();
     let lola_runtime = lola_runtime_builder.build().unwrap();
     run_with_runtime("Lola", &lola_runtime);
@@ -202,7 +219,8 @@ mod test {
 
     #[test]
     fn integration_test() {
-        println!("Starting integration test with Lola runtime");
+        init_logging();
+        log::info!("Starting integration test with Lola runtime");
         let lola_runtime_builder = init_lola_runtime_builder();
         let lola_runtime = lola_runtime_builder.build().unwrap();
         run_with_runtime("Lola", &lola_runtime);
@@ -320,10 +338,7 @@ mod test {
                 pressure: 1.0 + i as f32,
             });
             sample.send().unwrap();
-            println!(
-                "[SENDER] Sent sample with pressure: {:.2} psi",
-                1.0 + i as f32
-            );
+            log::info!("Sent tire data: {:.2}", 1.0 + i as f32);
             tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
         }
         offered_producer
@@ -332,17 +347,17 @@ mod test {
     //receiver function which use async receive to get data, it waits for new data and process it once it arrives,
     //it will receive data 10 times and print the received samples
     async fn async_data_processor_fn<R: Runtime>(subscribed: impl Subscription<Tire, R>) {
-        println!("[RECEIVER] Async data processor started");
+        log::info!("Async data processor started");
         let mut buffer = SampleContainer::new(5);
         for _ in 0..5 {
             buffer = match subscribed.receive(buffer, 2, 3).await {
                 Ok(returned_buf) => {
                     let count = returned_buf.sample_count();
                     if count > 0 {
-                        println!("[RECEIVER] Received {} samples", count);
+                        log::info!("[RECEIVER] Received {} samples", count);
                         let mut buf = returned_buf;
                         while let Some(sample) = buf.pop_front() {
-                            println!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
+                            log::info!("[RECEIVER]   Sample: {:.2} psi", sample.pressure);
                         }
                         buf
                     } else {
@@ -350,7 +365,7 @@ mod test {
                     }
                 }
                 Err(e) => {
-                    println!("[RECEIVER] Error receiving data: {:?}", e);
+                    log::error!("[RECEIVER] Error receiving data: {:?}", e);
                     SampleContainer::new(5)
                 }
             }
@@ -361,7 +376,7 @@ mod test {
     // Use the tokio multi-threaded runtime to run async sender and receiver concurrently on separate threads
     #[tokio::test(flavor = "multi_thread")]
     async fn receive_and_send_using_multi_thread() {
-        println!("Starting async subscription test with Lola runtime");
+        log::info!("Starting async subscription test with Lola runtime");
         let service_id = InstanceSpecifier::new("/Vehicle/Service3/Instance")
             .expect("Failed to create InstanceSpecifier");
         let service_id_clone = service_id.clone();
@@ -390,10 +405,10 @@ mod test {
         let producer = sender_join_handle.await.expect("Error returned from task");
 
         match producer.unoffer() {
-            Ok(_) => println!("Successfully unoffered the service"),
-            Err(e) => eprintln!("Failed to unoffer: {:?}", e),
+            Ok(_) => log::info!("Successfully unoffered the service"),
+            Err(e) => log::error!("Failed to unoffer: {:?}", e),
         }
 
-        println!("=== Async subscription test with Lola runtime completed ===\n");
+        log::info!("=== Async subscription test with Lola runtime completed ===\n");
     }
 }

@@ -44,6 +44,8 @@ use com_api_concept::{
     Interface, Result, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
 };
 
+use score_log as log;
+
 use bridge_ffi_rs::*;
 
 use crate::LolaRuntimeImpl;
@@ -280,6 +282,11 @@ pub struct SubscribableImpl<T> {
 impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &'static str, instance_info: LolaConsumerInfo) -> Result<Self> {
+        log::info!(
+            "Creating SubscribableImpl for identifier: {} with interface_id: {}",
+            identifier,
+            instance_info.interface_id
+        );
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
         let native_proxy = NativeProxyBase::new(instance_info.interface_id, handle);
         let proxy_instance = ProxyInstanceManager(Arc::new(native_proxy));
@@ -291,6 +298,12 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
         })
     }
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
+        log::info!(
+            "Subscribing to event: {} for identifier: {} with max_num_samples: {}",
+            self.identifier,
+            self.instance_info.interface_id,
+            max_num_samples
+        );
         let instance_info = self.instance_info.clone();
         let event_instance = NativeProxyEventBase::new(
             self.proxy_instance.0.proxy,
@@ -307,6 +320,11 @@ impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
             )
         };
         if !status {
+            log::error!(
+                "Failed to subscribe to event: {} for identifier: {}",
+                self.instance_info.interface_id,
+                self.identifier
+            );
             return Err(Error::Fail);
         }
         // Store in SubscriberImpl with event, max_num_samples
@@ -454,6 +472,7 @@ impl<T: CommData> SubscriberImpl<T> {
         unsafe {
             bridge_ffi_rs::set_event_receive_handler(event_guard.deref_mut(), &fat_ptr, T::ID);
         }
+        log::debug!("Initialized async receive for event: {}", self.event_id);
         Ok(())
     }
 }
@@ -495,6 +514,12 @@ where
     ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
         async move {
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
+                log::error!(
+                    "Requested max_samples: {} or new_samples: {} exceeds the max_num_samples: {} for this subscription",
+                    max_samples,
+                    new_samples,
+                    self.max_num_samples
+                );
                 return Err(Error::Fail);
             }
             // Get the event guard to ensure no concurrent receive calls on the same subscriber instance.
@@ -505,6 +530,7 @@ where
                 .load(std::sync::atomic::Ordering::Relaxed)
             {
                 if let Err(_e) = self.init_async_receive(&mut event_guard) {
+                    log::error!("Failed to initialize async receive for event: {}", T::ID);
                     return Err(Error::Fail);
                 }
                 self.async_init_status
@@ -550,7 +576,12 @@ impl<'a, T: CommData> Future for ReceiveFuture<'a, T> {
 
         // Register the current waker to be notified when new samples arrive via FFI callback
         self.waker_storage.register(ctx.waker());
-
+        log::debug!(
+            "Polling for samples: total_received: {}, new_samples: {}, max_samples: {}",
+            total_received,
+            new_samples,
+            max_samples
+        );
         let samples_received = {
             // Temporarily take ownership of scratch to avoid borrow issues
             if let Some(mut scratch) = self.scratch.take() {
@@ -564,9 +595,11 @@ impl<'a, T: CommData> Future for ReceiveFuture<'a, T> {
                     self.scratch = Some(scratch);
                     result
                 } else {
+                    log::error!("Event guard is not available for receiving samples");
                     Err(Error::Fail)
                 }
             } else {
+                log::error!("Internal buffer is not available for receiving samples");
                 Err(Error::Fail)
             }
         };
@@ -580,6 +613,11 @@ impl<'a, T: CommData> Future for ReceiveFuture<'a, T> {
                     self.event_guard = None;
                     return Poll::Ready(self.scratch.take().ok_or(Error::Fail));
                 }
+                log::debug!(
+                    "Received {} samples, total_received: {}, waiting for more...",
+                    count,
+                    self.total_received
+                );
                 // Have some samples but not enough yet, wait for more via waker
                 Poll::Pending
             }
@@ -637,6 +675,11 @@ where
     type ServiceEnumerator = Vec<SampleConsumerBuilder<I>>;
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
+        log::info!(
+            "Starting synchronous service discovery for interface_id: {} with instance_specifier: {}",
+            I::INTERFACE_ID,
+            format!("{:?}", self.instance_specifier)
+        );
         //If ANY Support is added in Lola, then we need to return all available instances
         let instance_specifier_lola =
             mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
@@ -644,7 +687,11 @@ where
 
         let service_handle =
             mw_com::proxy::find_service(instance_specifier_lola).map_err(|_| Error::Fail)?;
-
+        log::debug!(
+            "Synchronous service discovery returned {} handles for interface_id: {}",
+            service_handle.len(),
+            I::INTERFACE_ID
+        );
         let service_handle_arc = Arc::new(service_handle);
         let available_instances = (0..service_handle_arc.len())
             .map(|handle_index| {
@@ -669,7 +716,11 @@ where
         &self,
     ) -> impl Future<Output = Result<Self::ServiceEnumerator>> + Send {
         let instance_specifier = self.instance_specifier.clone();
-
+        log::info!(
+            "Starting asynchronous service discovery for interface_id: {} with instance_specifier: {}",
+            I::INTERFACE_ID,
+            format!("{:?}", instance_specifier)
+        );
         // Convert to Lola InstanceSpecifier early
         let instance_specifier_lola =
             mw_com::InstanceSpecifier::try_from(instance_specifier.as_ref())
@@ -691,6 +742,11 @@ where
         let discovery_callback = Box::new(
             move |handles: mw_com::proxy::HandleContainer,
                   _find_handle: bridge_ffi_rs::NativeFindServiceHandle| {
+                log::debug!(
+                    "Service discovery callback received {} handles for interface_id: {}",
+                    handles.len(),
+                    I::INTERFACE_ID
+                );
                 if let Ok(mut state) = state_ref.lock() {
                     state.handles = Some(handles);
                 }
@@ -715,10 +771,12 @@ where
             // stop_find_service is always called in Drop.
             let raw_handle = unsafe { bridge_ffi_rs::start_find_service(&fat_ptr, spec) };
             if raw_handle.is_null() {
+                log::error!("Failed to start service discovery");
                 Err(Error::Fail)
             } else {
                 // Single authoritative source of find_handle — return value only.
                 // Callback's find_handle argument is ignored to prevent double-write.
+                log::debug!("Service discovery started successfully");
                 Ok(bridge_ffi_rs::NativeFindServiceHandle::new(raw_handle))
             }
         });
@@ -771,7 +829,10 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
     ) -> std::task::Poll<Self::Output> {
         // Register the waker so C++ callback can wake us up
         self.waker_storage.register(ctx.waker());
-
+        log::debug!(
+            "Polling for service discovery results for interface_id: {}",
+            I::INTERFACE_ID
+        );
         // NOTE: Lock usage in poll() is acceptable here because:
         // The callback (running on C++ thread) and this poll (running on executor thread) both
         // access the same shared mutable state (discovery_state).
@@ -788,6 +849,11 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
             //create Arc for service handle to share between instances
             let service_handle_arc = Arc::new(service_handle);
             // Build the response from discovered handles
+            log::debug!(
+                "Service discovery completed with {} handles for interface_id: {}, building consumer builders...",
+                service_handle_arc.len(),
+                I::INTERFACE_ID
+            );
             let available_instances = (0..service_handle_arc.len())
                 .map(|handle_index| {
                     let instance_info = LolaConsumerInfo {
@@ -826,7 +892,8 @@ impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
         //if InstanceSpecifier::ANY support enable by lola
         //then this API should get InstanceSpecifier from FFI Call
-        todo!()
+        log::error!("get_instance_identifier is not supported for SampleConsumerBuilder, as LoLa does not support ANY instance specifier.");
+        panic!("get_instance_identifier is not supported for SampleConsumerBuilder, as LoLa does not support ANY instance specifier.");
     }
 }
 
@@ -847,6 +914,11 @@ fn try_receive_samples<T: CommData>(
     max_samples: usize,
 ) -> Result<usize> {
     if max_samples > max_num_samples {
+        log::error!(
+            "Requested max_samples: {} exceeds the max_num_samples: {} for this subscription",
+            max_samples,
+            max_num_samples
+        );
         return Err(Error::Fail);
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
@@ -867,6 +939,11 @@ fn try_receive_samples<T: CommData>(
         )
     };
     if count > max_num_samples as u32 {
+        log::error!(
+            "Received sample count: {} exceeds the max_num_samples: {} for this subscription",
+            count,
+            max_num_samples
+        );
         return Err(Error::Fail);
     }
     Ok(count as usize)
@@ -891,6 +968,11 @@ pub fn create_sample_callback<'a, T: CommData>(
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {
     move |raw_sample: *mut sample_ptr_rs::SamplePtr<T>| {
         if !raw_sample.is_null() {
+            log::debug!(
+                "Received new sample pointer from FFI callback for event: {}, max_samples: {}",
+                T::ID,
+                max_samples
+            );
             //SAFETY: It is safe to read the sample pointer because
             // raw_sample is valid pointer passed from FFI callback
             // and raw_pointer is moved from FFI to Rust ownership here
@@ -910,6 +992,11 @@ pub fn create_sample_callback<'a, T: CommData>(
             assert!(
                 scratch.push_back(wrapped_sample).is_ok(),
                 "Failed to push sample after making room in buffer"
+            );
+        } else {
+            log::error!(
+                "Received null sample pointer from FFI callback for event: {}",
+                T::ID
             );
         }
     }
