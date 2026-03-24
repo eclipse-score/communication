@@ -25,7 +25,7 @@ class SlotDecrementer
   public:
     SlotDecrementer(ProxyEventDataControlLocalView<>& event_data_control,
                     const SlotIndexType event_slot_index,
-                    const TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept;
+                    const TransactionLogIndex transaction_log_idx) noexcept;
     ~SlotDecrementer() noexcept;
 
     SlotDecrementer(const SlotDecrementer&) = delete;
@@ -38,7 +38,7 @@ class SlotDecrementer
 
     ProxyEventDataControlLocalView<>* event_data_control_local_;
     SlotIndexType event_slot_index_;
-    TransactionLogSet::TransactionLogIndex transaction_log_idx_;
+    TransactionLogIndex transaction_log_idx_;
 };
 
 }  // namespace score::mw::com::impl::lola

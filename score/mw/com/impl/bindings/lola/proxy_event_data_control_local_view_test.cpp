@@ -426,7 +426,7 @@ TEST_P(MultiSenderMultiReceiverTest, MultiSenderMultiReceiver)
         std::vector<SlotIndexType> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{1};
 
-        TransactionLogSet::TransactionLogIndex transaction_log_index =
+        TransactionLogIndex transaction_log_index =
             unit_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
         for (std::size_t counter = 0; counter < params.num_actions_per_receiver; ++counter)
@@ -505,7 +505,7 @@ TEST_P(MultiSenderMultiReceiverTest, DISABLED_MultiSenderMultiReceiverMaxReceive
         std::vector<SlotIndexType> used_slots{};
         EventSlotStatus::EventTimeStamp start_ts{0};
 
-        TransactionLogSet::TransactionLogIndex transaction_log_index =
+        TransactionLogIndex transaction_log_index =
             unit_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
         for (std::size_t counter = 0; counter < params.num_actions_per_receiver; ++counter)

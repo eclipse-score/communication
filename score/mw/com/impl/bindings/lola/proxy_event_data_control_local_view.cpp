@@ -47,7 +47,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
     const EventSlotStatus::EventTimeStamp last_search_time,
-    const TransactionLogSet::TransactionLogIndex transaction_log_index,
+    const TransactionLogIndex transaction_log_index,
     const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> std::optional<SlotIndexType>
 {
     // function can only finish with result, if use count was able to be increased
@@ -148,7 +148,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(
     const SlotIndexType slot_index,
-    const TransactionLogSet::TransactionLogIndex transaction_log_index) -> void
+    const TransactionLogIndex transaction_log_index) -> void
 {
     // Sanity check that the slot is currently ready for reading:
     //    - Slot is not in writing or invalid. This would be a programming bug since ReferenceSpecificEvent is called by
@@ -217,7 +217,7 @@ std::size_t ProxyEventDataControlLocalView<AtomicIndirectorType>::GetNumNewEvent
 template <template <class> class AtomicIndirectorType>
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::DereferenceEvent(
     const SlotIndexType event_slot_index,
-    const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept -> void
+    const TransactionLogIndex transaction_log_index) noexcept -> void
 {
     auto& transaction_log = transaction_log_set_.get().GetTransactionLog(transaction_log_index);
     transaction_log.DereferenceTransactionBegin(event_slot_index);

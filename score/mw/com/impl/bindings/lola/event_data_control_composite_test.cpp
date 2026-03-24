@@ -130,12 +130,12 @@ class EventDataControlCompositeFixture : public ::testing::Test
     EventDataControlCompositeFixture& WithARegisteredTransactionLog()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(qm_ != nullptr);
-        transaction_log_index_qm_ = std::make_unique<TransactionLogSet::TransactionLogIndex>(
+        transaction_log_index_qm_ = std::make_unique<TransactionLogIndex>(
             skeleton_qm_local_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdQm).value());
 
         if (asil_ != nullptr)
         {
-            transaction_log_index_asil_ = std::make_unique<TransactionLogSet::TransactionLogIndex>(
+            transaction_log_index_asil_ = std::make_unique<TransactionLogIndex>(
                 skeleton_asil_local_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdAsil).value());
         }
         return *this;
@@ -179,8 +179,8 @@ class EventDataControlCompositeFixture : public ::testing::Test
     std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
     std::unique_ptr<EventDataControlComposite<memory::shared::AtomicIndirectorMock>> unit_with_mock_atomics_{nullptr};
 
-    std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_qm_{nullptr};
-    std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_asil_{nullptr};
+    std::unique_ptr<TransactionLogIndex> transaction_log_index_qm_{nullptr};
+    std::unique_ptr<TransactionLogIndex> transaction_log_index_asil_{nullptr};
 };
 
 TEST_F(EventDataControlCompositeFixture, CanCreateAndDestroyFixture) {}
@@ -642,9 +642,9 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
         std::set<SlotIndexType> used_slots_asil{};
         EventSlotStatus::EventTimeStamp start_ts{1};
 
-        TransactionLogSet::TransactionLogIndex transaction_log_index_qm =
+        TransactionLogIndex transaction_log_index_qm =
             proxy_qm_local.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdQm).value();
-        TransactionLogSet::TransactionLogIndex transaction_log_index_asil =
+        TransactionLogIndex transaction_log_index_asil =
             proxy_asil_local.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogIdAsil).value();
 
         for (auto counter = 0; counter < 100; counter++)

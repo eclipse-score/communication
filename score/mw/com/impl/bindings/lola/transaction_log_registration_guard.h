@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include "score/result/result.h"
@@ -56,14 +57,14 @@ class TransactionLogRegistrationGuard
     // The TransactionLogRegistrationGuard must be move constructible so that it can be wrapped in an std::optional.
     TransactionLogRegistrationGuard(TransactionLogRegistrationGuard&& other) noexcept;
 
-    TransactionLogSet::TransactionLogIndex GetTransactionLogIndex() const noexcept;
+    TransactionLogIndex GetTransactionLogIndex() const noexcept;
 
   private:
     TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
-                                    const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
+                                    const TransactionLogIndex transaction_log_index) noexcept;
 
     std::reference_wrapper<TransactionLogSet> transaction_log_set_;
-    std::optional<TransactionLogSet::TransactionLogIndex> transaction_log_index_;
+    std::optional<TransactionLogIndex> transaction_log_index_;
 };
 
 }  // namespace score::mw::com::impl::lola

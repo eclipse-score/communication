@@ -47,7 +47,7 @@ TransactionLogRegistrationGuard TransactionLogRegistrationGuard::Create(
 
 TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
     TransactionLogSet& transaction_log_set,
-    const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept
+    const TransactionLogIndex transaction_log_index) noexcept
     : transaction_log_set_{transaction_log_set}, transaction_log_index_{transaction_log_index}
 {
 }
@@ -80,7 +80,7 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(TransactionLogR
     other.transaction_log_index_.reset();
 }
 
-TransactionLogSet::TransactionLogIndex TransactionLogRegistrationGuard::GetTransactionLogIndex() const noexcept
+TransactionLogIndex TransactionLogRegistrationGuard::GetTransactionLogIndex() const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         transaction_log_index_.has_value(), "GetTransactionLogIndex cannot be called without a transaction_log_index");
