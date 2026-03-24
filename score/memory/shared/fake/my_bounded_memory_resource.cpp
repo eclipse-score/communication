@@ -15,7 +15,7 @@
 #include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
-#include "score/memory/shared/shared_memory_resource.h"
+#include "score/memory/shared/allocation_algorithm.h"
 
 #include "score/language/safecpp/safe_math/safe_math.h"
 
