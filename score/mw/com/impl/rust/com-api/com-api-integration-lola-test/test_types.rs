@@ -39,19 +39,21 @@ macro_rules! define_type {
     };
 }
 
-define_type!(U8Data, eq, value: u8);
-define_type!(U16Data, eq, value: u16);
-define_type!(U32Data, eq, value: u32);
-define_type!(U64Data, eq, value: u64);
-define_type!(I8Data, eq, value: i8);
-define_type!(I16Data, eq, value: i16);
-define_type!(I32Data, eq, value: i32);
-define_type!(I64Data, eq, value: i64);
-define_type!(BoolData, eq, value: bool);
-
-// Floating point types (without Eq)
-define_type!(F32Data, value: f32);
-define_type!(F64Data, value: f64);
+// Combined primitive payload – all primitive types packed into one struct.
+// Field order follows descending alignment to match the C++ repr(C) layout.
+define_type!(
+    MixedPrimitivesPayload,
+    u64_val: u64,
+    i64_val: i64,
+    u32_val: u32,
+    i32_val: i32,
+    f32_val: f32,
+    u16_val: u16,
+    i16_val: i16,
+    u8_val: u8,
+    i8_val: i8,
+    flag: bool
+);
 
 // Complex struct types
 define_type!(SimpleStruct, eq, id: u32);
@@ -62,17 +64,7 @@ define_type!(Point3D, x: f32, y: f32, z: f32);
 define_type!(SensorData, sensor_id: u16, temperature: f32, humidity: f32, pressure: f32);
 define_type!(VehicleState, speed: f32, rpm: u16, fuel_level: f32, is_running: u8, mileage: u32);
 
-interface!(interface U8,   { Id = "U8Interface",   u8_event:   Event<U8Data>   });
-interface!(interface U16,  { Id = "U16Interface",  u16_event:  Event<U16Data>  });
-interface!(interface U32,  { Id = "U32Interface",  u32_event:  Event<U32Data>  });
-interface!(interface U64,  { Id = "U64Interface",  u64_event:  Event<U64Data>  });
-interface!(interface I8,   { Id = "I8Interface",   i8_event:   Event<I8Data>   });
-interface!(interface I16,  { Id = "I16Interface",  i16_event:  Event<I16Data>  });
-interface!(interface I32,  { Id = "I32Interface",  i32_event:  Event<I32Data>  });
-interface!(interface I64,  { Id = "I64Interface",  i64_event:  Event<I64Data>  });
-interface!(interface F32,  { Id = "F32Interface",  f32_event:  Event<F32Data>  });
-interface!(interface F64,  { Id = "F64Interface",  f64_event:  Event<F64Data>  });
-interface!(interface Bool, { Id = "BoolInterface", bool_event: Event<BoolData> });
+interface!(interface MixedPrimitives, { Id = "MixedPrimitivesInterface", mixed_event: Event<MixedPrimitivesPayload> });
 
 interface!(interface SimpleStruct,  { Id = "SimpleStructInterface",  simple_event:  Event<SimpleStruct>  });
 interface!(interface ComplexStruct, { Id = "ComplexStructInterface", complex_event: Event<ComplexStruct> });
@@ -80,7 +72,7 @@ interface!(interface NestedStruct,  { Id = "NestedStructInterface",  nested_even
 interface!(interface Point,         { Id = "PointInterface",         point_event:   Event<Point>         });
 interface!(interface Point3D,       { Id = "Point3DInterface",       point3d_event: Event<Point3D>       });
 interface!(interface SensorData,    { Id = "SensorDataInterface",    sensor_event:  Event<SensorData>    });
-interface!(interface VehicleState,  { Id = "VehicleStateInterface",  vehicle_event: Event<VehicleState>  });
+interface!(interface VehicleState,       { Id = "VehicleStateInterface",       vehicle_event:   Event<VehicleState>       });
 
 // Generic test macro for send/receive tests
 #[macro_export]
