@@ -18,7 +18,7 @@
 #include "score/mw/com/runtime_configuration.h"
 
 #include "score/filesystem/path.h"
-#include "score/memory/string_literal.h"
+#include "score/string/string_literal.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

@@ -33,7 +33,7 @@ cc_library(
         "//score/mw/com:types",
         "//score/mw/com/impl:instance_specifier",
         "@score_baselibs//score/language/futurecpp",
-        "//score/memory:string_literal",
+        "@score_baselibs//score/string:string_literal",
         "@score_baselibs//score/result",
     ],
 )

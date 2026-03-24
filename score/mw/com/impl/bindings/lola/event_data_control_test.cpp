@@ -17,8 +17,8 @@
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_mock.h"
 
 #include <score/utility.hpp>
 
@@ -76,8 +76,8 @@ class EventDataControlFixture : public ::testing::Test
 {
   public:
     FakeMemoryResource memory_{};
-    std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
-    std::unique_ptr<detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock>> unit_mock_{
+    std::unique_ptr<concurrency::atomic::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
+    std::unique_ptr<detail_event_data_control::EventDataControlImpl<concurrency::atomic::AtomicIndirectorMock>> unit_mock_{
         nullptr};
 
     static void SetUpTestSuite()
@@ -93,11 +93,11 @@ class EventDataControlFixture : public ::testing::Test
 
     EventDataControlFixture& WithMockedEventDataControl()
     {
-        atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
+        atomic_mock_ = std::make_unique<concurrency::atomic::AtomicMock<EventSlotStatus::value_type>>();
+        concurrency::atomic::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
         unit_mock_ =
-            std::make_unique<detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock>>(
+            std::make_unique<detail_event_data_control::EventDataControlImpl<concurrency::atomic::AtomicIndirectorMock>>(
                 kMaxSlots, memory_, kMaxSubscribers);
 
         return *this;
@@ -105,7 +105,7 @@ class EventDataControlFixture : public ::testing::Test
 
     void TearDown() override
     {
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
+        concurrency::atomic::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
     }
 };
 
@@ -395,6 +395,7 @@ TEST_F(EventDataControlFixture, DISABLED_MultipleReceiverRefCountCheck)
 TEST_F(EventDataControlFixture, FailingToUpdateSlotValueCausesReferenceNextEventToReturnNull)
 {
     using namespace score::memory::shared;
+using namespace score::concurrency::atomic;
 
     AtomicMock<EventSlotStatus::value_type> atomic_mock;
     AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
@@ -520,8 +521,8 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_S
 
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_ReferenceCountOverFlowsTerminates)
 {
-    memory::shared::AtomicMock<EventSlotStatus::value_type> atomic_mock;
-    memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
+    concurrency::atomic::AtomicMock<EventSlotStatus::value_type> atomic_mock;
+    concurrency::atomic::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
 
     // Expecting that incrementing the current reference count overflows (i.e. the previous value returned by fetch_add
     // was already the max possible value)
@@ -531,7 +532,7 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_R
         .WillByDefault(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing)));
 
     // Given an EventDataControl with one slot
-    detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock> unit{
+    detail_event_data_control::EventDataControlImpl<concurrency::atomic::AtomicIndirectorMock> unit{
         1, memory_, kMaxSubscribers};
     auto slot = unit.AllocateNextSlot();
     ASSERT_TRUE(slot.IsValid());
@@ -563,8 +564,8 @@ TEST_F(EventDataControlFixture, AllocatedSlotsCanBeCleanedUp)
 using EventDataControlDeathTest = EventDataControlFixture;
 TEST_F(EventDataControlDeathTest, FailingToCleanUpSlotDueToOtherThreadModifyingAtomicTerminates)
 {
-    memory::shared::AtomicMock<EventSlotStatus::value_type> atomic_mock;
-    memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
+    concurrency::atomic::AtomicMock<EventSlotStatus::value_type> atomic_mock;
+    concurrency::atomic::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
 
     // Given that load returns that the slot is in writing
     EventSlotStatus event_slot_status_in_writing{};
@@ -576,7 +577,7 @@ TEST_F(EventDataControlDeathTest, FailingToCleanUpSlotDueToOtherThreadModifyingA
     ON_CALL(atomic_mock, compare_exchange_weak(_, _, _)).WillByDefault(Return(false));
 
     // and given an initialized EventDataControl structure, with a single allocated slot
-    detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock> unit{
+    detail_event_data_control::EventDataControlImpl<concurrency::atomic::AtomicIndirectorMock> unit{
         kMaxSlots, memory_, kMaxSubscribers};
 
     // When cleaning up allocations

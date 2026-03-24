@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_SUBSCRIPTION_CONTROL_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_SUBSCRIPTION_CONTROL_H
 
-#include "score/memory/shared/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 
 #include <atomic>
@@ -44,7 +44,7 @@ namespace detail_event_subscription_control
 ///          number of subscribers) in an atomic member and also max slots and subscribers as constants. It provides
 ///          functionality to subscribe/unsubscribe in a lock-free manner.
 ///          template arg AtomicIndirectorType is used for testing to enable mocking of std::atomic functionality.
-template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
+template <template <class> class AtomicIndirectorType = concurrency::atomic::AtomicIndirectorReal>
 class EventSubscriptionControlImpl final
 {
     template <class EventSubscriptionControl>

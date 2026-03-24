@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/runtime_configuration.h"
 
-#include "score/memory/string_literal.h"
+#include "score/string/string_literal.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
