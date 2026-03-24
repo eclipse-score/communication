@@ -343,7 +343,7 @@ EventSlotStatus::EventTimeStamp EventDataControlCompositeImpl<AtomicIndirectorTy
     return latest_time_stamp;
 }
 
-template class EventDataControlCompositeImpl<memory::shared::AtomicIndirectorReal>;
-template class EventDataControlCompositeImpl<memory::shared::AtomicIndirectorMock>;
+template class EventDataControlCompositeImpl<concurrency::atomic::AtomicIndirectorReal>;
+template class EventDataControlCompositeImpl<concurrency::atomic::AtomicIndirectorMock>;
 
 }  // namespace score::mw::com::impl::lola::detail_event_data_control_composite

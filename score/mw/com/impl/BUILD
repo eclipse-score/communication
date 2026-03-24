@@ -466,7 +466,7 @@ cc_library(
         ":generic_skeleton_event_binding",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
+        "//score/memory/shared:i_shared_memory_resource",
         "@score_baselibs//score/result",
     ],
 )
@@ -876,7 +876,7 @@ cc_library(
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_parser",
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:types",
+        "//score/memory/shared:types",
         "@score_logging//score/mw/log",
     ],
 )

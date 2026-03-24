@@ -24,7 +24,7 @@
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/com/types.h"
 
-#include "score/memory/string_literal.h"
+#include "score/string/string_literal.h"
 #include "score/result/result.h"
 
 #include <cstdint>

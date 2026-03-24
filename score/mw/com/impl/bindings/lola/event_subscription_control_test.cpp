@@ -14,8 +14,8 @@
 
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_mock.h"
 
 #include <gtest/gtest.h>
 
@@ -32,7 +32,7 @@ TEST(EventSubscriptionControl, Create)
 {
     // Expect, that we can create EventSubscriptionControl with real and mocked AtomicIndirector types without crash
     EventSubscriptionControl unit1{20, 3, true};
-    detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock> unit2{
+    detail_event_subscription_control::EventSubscriptionControlImpl<score::concurrency::atomic::AtomicIndirectorMock> unit2{
         20, 3, true};
 }
 
@@ -155,6 +155,7 @@ TEST(EventSubscriptionControl, ConcurrentAccess)
 TEST(EventSubscriptionControl, CompareExchangeBehaviour_Subscribe)
 {
     using namespace score::memory::shared;
+using namespace score::concurrency::atomic;
     using ::testing::_;
     using ::testing::Return;
 
@@ -167,7 +168,7 @@ TEST(EventSubscriptionControl, CompareExchangeBehaviour_Subscribe)
     // Given the operation to update state fails num_retries times
     EXPECT_CALL(atomic_mock, compare_exchange_weak(_, _, _)).Times(num_retries).WillRepeatedly(Return(false));
 
-    detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock> unit{
+    detail_event_subscription_control::EventSubscriptionControlImpl<score::concurrency::atomic::AtomicIndirectorMock> unit{
         20, 3, true};
 
     // when calling subscribe()
@@ -178,6 +179,7 @@ using EventSubscriptionControlDeathTest = EventSubscriptionControl;
 TEST(EventSubscriptionControlDeathTest, CompareExchangeBehaviour_Unsubscribe_RetryLimit)
 {
     using namespace score::memory::shared;
+using namespace score::concurrency::atomic;
     using ::testing::_;
     using ::testing::Return;
 
@@ -187,10 +189,10 @@ TEST(EventSubscriptionControlDeathTest, CompareExchangeBehaviour_Unsubscribe_Ret
 
         EventSubscriptionControl::SubscriberCountType max_subscribers{3};
         auto num_retries = 2 * max_subscribers;
-        detail_event_subscription_control::EventSubscriptionControlImpl<score::memory::shared::AtomicIndirectorMock>
+        detail_event_subscription_control::EventSubscriptionControlImpl<score::concurrency::atomic::AtomicIndirectorMock>
             unit{20, 3, true};
         EventSubscriptionControlAttorney<detail_event_subscription_control::EventSubscriptionControlImpl<
-            score::memory::shared::AtomicIndirectorMock>>
+            score::concurrency::atomic::AtomicIndirectorMock>>
             attorney{unit};
 
         // Given the unit has currently one subscriber and 5 subscribed slots

@@ -23,7 +23,7 @@
 #include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
-#include "score/memory/shared/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
 
 #include "score/containers/dynamic_array.h"
 
@@ -68,7 +68,7 @@ namespace detail_event_data_control
 /// a process).
 ///
 /// It is one of the corner stone elements of our LoLa IPC for Events!
-template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
+template <template <class> class AtomicIndirectorType = concurrency::atomic::AtomicIndirectorReal>
 class EventDataControlImpl final
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".

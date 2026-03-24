@@ -133,7 +133,7 @@ cc_library(
         "@score_baselibs//score/concurrency:executor",
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
+        "//score/memory/shared",
         "@score_logging//score/mw/log",
     ],
 )
@@ -200,7 +200,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl:data_type_meta_info",
-        "@score_baselibs//score/memory/shared",
+        "//score/memory/shared",
     ],
 )
 
@@ -226,7 +226,7 @@ cc_library(
         ":event_meta_info",
         ":i_runtime",
         "//score/mw/com/impl:runtime",
-        "@score_baselibs//score/memory/shared",
+        "//score/memory/shared",
         "@score_baselibs//score/os:unistd",
     ],
 )
@@ -306,12 +306,12 @@ cc_library(
         "@score_baselibs//score/language/safecpp/safe_math",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
         "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
-        "@score_baselibs//score/memory/shared:lock_file",
-        "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
-        "@score_baselibs//score/memory/shared/flock:exclusive_flock_mutex",
-        "@score_baselibs//score/memory/shared/flock:flock_mutex_and_lock",
+        "//score/memory/shared",
+        "//score/memory/shared:i_shared_memory_resource",
+        "//score/memory/shared:lock_file",
+        "//score/memory/shared:new_delete_delegate_resource",
+        "//score/memory/shared/flock:exclusive_flock_mutex",
+        "//score/memory/shared/flock:flock_mutex_and_lock",
         "@score_baselibs//score/result",
     ],
 )
@@ -381,11 +381,11 @@ cc_library(
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/safecpp/safe_atomics:try_atomic_add",
         "@score_baselibs//score/language/safecpp/safe_math",
-        "@score_baselibs//score/memory/shared",
-        "@score_baselibs//score/memory/shared:lock_file",
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
-        "@score_baselibs//score/memory/shared/flock:flock_mutex_and_lock",
-        "@score_baselibs//score/memory/shared/flock:shared_flock_mutex",
+        "//score/memory/shared",
+        "//score/memory/shared:lock_file",
+        "//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared/flock:flock_mutex_and_lock",
+        "//score/memory/shared/flock:shared_flock_mutex",
         "@score_baselibs//score/os:errno_logging",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:glob",
@@ -454,8 +454,8 @@ cc_library(
         ":application_id_pid_mapping_entry",
         ":register_pid_fake",
         "@score_baselibs//score/containers:dynamic_array",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
-        "@score_baselibs//score/memory/shared:types",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector",
+        "//score/memory/shared:types",
     ],
 )
 
@@ -518,8 +518,8 @@ cc_library(
         ":transaction_log_id",
         ":transaction_log_set",
         "@score_baselibs//score/containers:dynamic_array",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
-        "@score_baselibs//score/memory/shared:types",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector",
+        "//score/memory/shared:types",
     ],
 )
 
@@ -564,7 +564,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
         "//score/mw/com/impl/configuration",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector",
     ],
 )
 
@@ -592,7 +592,7 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector",
     ],
 )
 
@@ -607,7 +607,7 @@ cc_library(
     ],
     deps = [
         "@score_baselibs//score/containers:dynamic_array",
-        "@score_baselibs//score/memory/shared:types",
+        "//score/memory/shared:types",
     ],
 )
 
@@ -663,7 +663,7 @@ cc_library(
         ":transaction_log_slot",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
+        "//score/memory/shared",
     ],
 )
 
@@ -825,8 +825,8 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":application_id_pid_mapping",
-        "@score_baselibs//score/memory/shared:atomic_indirector",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector_mock_binding",
     ],
 )
 
@@ -882,7 +882,7 @@ cc_unit_test(
     ],
     visibility = [
         "//score/mw/com/impl/bindings/lola:__subpackages__",
-        "@score_baselibs//score/memory:__pkg__",
+        "//score/memory:__pkg__",
     ],
     deps = [
         "@googletest//:gtest",
@@ -891,8 +891,8 @@ cc_unit_test(
         "@score_baselibs//score/containers:non_relocatable_vector",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score_baselibs//score/memory/shared:polymorphic_offset_ptr_allocator",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
+        "//score/memory/shared/fake:fake_memory_resources",
         "@score_logging//score/mw/log",
     ],
 )
@@ -917,8 +917,8 @@ cc_test(
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
-        "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector_mock_binding",
+        "//score/memory/shared:new_delete_delegate_resource",
     ],
 )
 
@@ -933,8 +933,8 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
-        "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector_mock_binding",
+        "//score/memory/shared:new_delete_delegate_resource",
     ],
 )
 
@@ -979,8 +979,8 @@ cc_test(
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/memory/shared:shared_memory_resource_mock",
-        "@score_baselibs//score/memory/shared/fake:my_bounded_shared_memory_resource",
+        "//score/memory/shared:shared_memory_resource_mock",
+        "//score/memory/shared/fake:my_bounded_shared_memory_resource",
         "@score_baselibs//score/result",
     ],
 )
@@ -1015,8 +1015,8 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score_baselibs//score/filesystem:mock",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/memory/shared:shared_memory_resource_mock",
-        "@score_baselibs//score/memory/shared/fake:my_bounded_shared_memory_resource",
+        "//score/memory/shared:shared_memory_resource_mock",
+        "//score/memory/shared/fake:my_bounded_shared_memory_resource",
     ],
 )
 
@@ -1055,7 +1055,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola/messaging:message_passing_service_mock",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
-        "@score_baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
+        "//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )
 
@@ -1126,7 +1126,7 @@ cc_gtest_unit_test(
     deps = [
         ":event_subscription_control",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
-        "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
+        "@score_baselibs//score/concurrency/atomic:atomic_indirector_mock_binding",
     ],
 )
 
@@ -1189,8 +1189,8 @@ cc_gtest_unit_test(
         ":shared_data_structures",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl/test:runtime_mock_guard",
-        "@score_baselibs//score/memory/shared:map",
-        "@score_baselibs//score/memory/shared:new_delete_delegate_resource",
+        "//score/memory/shared:map",
+        "//score/memory/shared:new_delete_delegate_resource",
         "@score_baselibs//score/os:object_seam",
         "@score_baselibs//score/os/mocklib:unistd_mock",
     ],
@@ -1313,7 +1313,7 @@ cc_gtest_unit_test(
     deps = [
         ":transaction_log",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
-        "@score_baselibs//score/memory/shared:shared_memory_resource_heap_allocator_mock",
+        "//score/memory/shared:shared_memory_resource_heap_allocator_mock",
     ],
 )
 

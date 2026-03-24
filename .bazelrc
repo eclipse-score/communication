@@ -20,7 +20,7 @@ common --http_timeout_scaling=2.0
 
 
 common --@score_baselibs//score/json:base_library=nlohmann
-common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
+common --//score/memory/shared/flags:use_typedshmd=False
 common --@score_logging//score/mw/log/flags:KRemote_Logging=False
 common --//score/mw/com/flags:tracing_library=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
 common --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain

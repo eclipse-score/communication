@@ -18,7 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 
-#include "score/memory/shared/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
 
 #include <optional>
 #include <tuple>
@@ -39,7 +39,7 @@ namespace detail_event_data_control_composite
 /// whole codebase, we implemented this composite which takes care of setting the status correctly in all underlying
 /// control structures. Please be aware that the control structures will live in different shared memory segments, thus
 /// it is not possible to store them by value, but rather as pointer.
-template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
+template <template <class> class AtomicIndirectorType = concurrency::atomic::AtomicIndirectorReal>
 class EventDataControlCompositeImpl
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
