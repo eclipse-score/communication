@@ -15,8 +15,8 @@
 
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+
 #include <gtest/gtest.h>
 
 namespace score::mw::com::impl::lola::detail
@@ -29,37 +29,22 @@ using namespace ::testing;
 const QualityType kAsilLevel{QualityType::kASIL_B};
 const ProxyMethodInstanceIdentifier kProxyMethodInstanceIdentifier{{5U, 1U}, {LolaMethodId{55U}}};
 
-class RegistrationGuardFixture : public ::testing::Test
+class MethodCallRegistrationGuardFixture : public ::testing::Test
 {
   public:
-    RegistrationGuardFixture()
+    MethodCallRegistrationGuardFixture()
     {
         ON_CALL(message_passing_service_mock_, UnregisterMethodCallHandler(_, _))
             .WillByDefault(WithoutArgs(Invoke([this]() -> ResultBlank {
                 unregister_method_call_handler_called_ = true;
                 return {};
             })));
-
-        ON_CALL(message_passing_service_mock_2_, UnregisterMethodCallHandler(_, _))
-            .WillByDefault(WithoutArgs(Invoke([this]() -> ResultBlank {
-                unregister_method_call_handler_called_2_ = true;
-                return {};
-            })));
     }
 
-    RegistrationGuardFixture& GivenAMethodCallRegistrationGuard()
+    MethodCallRegistrationGuardFixture& GivenAMethodCallRegistrationGuard()
     {
         score::cpp::ignore = method_call_registration_guard_.emplace(MethodCallRegistrationGuardFactory::Create(
             message_passing_service_mock_, kAsilLevel, kProxyMethodInstanceIdentifier, scope_));
-        return *this;
-    }
-
-    RegistrationGuardFixture& GivenTwoMethodCallRegistrationGuards()
-    {
-        score::cpp::ignore = method_call_registration_guard_.emplace(MethodCallRegistrationGuardFactory::Create(
-            message_passing_service_mock_, kAsilLevel, kProxyMethodInstanceIdentifier, scope_));
-        score::cpp::ignore = method_call_registration_guard_2_.emplace(MethodCallRegistrationGuardFactory::Create(
-            message_passing_service_mock_2_, kAsilLevel, kProxyMethodInstanceIdentifier, scope_));
         return *this;
     }
 
@@ -67,16 +52,24 @@ class RegistrationGuardFixture : public ::testing::Test
     std::optional<MethodCallRegistrationGuard> method_call_registration_guard_{};
     bool unregister_method_call_handler_called_{false};
 
-    MessagePassingServiceMock message_passing_service_mock_2_{};
-    std::optional<MethodCallRegistrationGuard> method_call_registration_guard_2_{};
-    bool unregister_method_call_handler_called_2_{false};
-
     safecpp::Scope<> scope_{};
 };
 
-using MethodCallRegistrationGuardFixture = RegistrationGuardFixture;
+TEST_F(MethodCallRegistrationGuardFixture, MethodCallRegistrationGuardUsesScopeExit)
+{
+    // Expecting that MethodCallRegistrationGuard is a type alias for utils::ScopeExit. If this is the
+    // case, then we only add basic tests here that UnregisterMethodCallHandler is called on destruction of the guard
+    // and that the scope of the guard is correctly handled. The more complex tests about testing whether the handler is
+    // called when move constructing / move assigning the guard is handled in the tests for ScopeExit.
+    static_assert(
+        std::is_same_v<MethodCallRegistrationGuard, utils::ScopeExit<safecpp::MoveOnlyScopedFunction<void()>>>);
+}
+
 TEST_F(MethodCallRegistrationGuardFixture, CreatingGuardDoesNotCallUnregister)
 {
+    // Expecting that UnregisterMethodCallHandler is never called
+    EXPECT_CALL(message_passing_service_mock_, UnregisterMethodCallHandler(_, _)).Times(0);
+
     // When creating a MethodCallRegistrationGuard
     GivenAMethodCallRegistrationGuard();
 
@@ -106,90 +99,14 @@ TEST_F(MethodCallRegistrationGuardFixture, DestroyingGuardAfterScopeHasExpiredDo
     // and given that the scope has expired
     scope_.Expire();
 
+    // Expecting that UnregisterMethodCallHandler is never called
+    EXPECT_CALL(message_passing_service_mock_, UnregisterMethodCallHandler(_, _)).Times(0);
+
     // When destroying the MethodCallRegistrationGuard
     method_call_registration_guard_.reset();
 
     // Then UnregisterMethodCallHandler is not called
     EXPECT_FALSE(unregister_method_call_handler_called_);
-}
-
-TEST_F(MethodCallRegistrationGuardFixture, MoveConstructingGuardDoesNotCallUnregister)
-{
-    GivenAMethodCallRegistrationGuard();
-
-    // When move constructing a new MethodCallRegistrationGuard
-    MethodCallRegistrationGuard moved_to_guard{std::move(method_call_registration_guard_).value()};
-
-    // Then UnregisterMethodCallHandler is not called
-    EXPECT_FALSE(unregister_method_call_handler_called_);
-}
-
-TEST_F(MethodCallRegistrationGuardFixture, DestroyingMoveConstructedMovedFromGuardDoesNotCallUnregister)
-{
-    GivenAMethodCallRegistrationGuard();
-
-    // and given a new MethodCallRegistrationGuard move constructed from another
-    MethodCallRegistrationGuard moved_to_guard{std::move(method_call_registration_guard_).value()};
-
-    // When destroying the moved_from guard
-    method_call_registration_guard_.reset();
-
-    // Then UnregisterMethodCallHandler is not called
-    EXPECT_FALSE(unregister_method_call_handler_called_);
-}
-
-TEST_F(MethodCallRegistrationGuardFixture, DestroyingMoveConstructedMovedToGuardCallsUnregister)
-{
-    GivenAMethodCallRegistrationGuard();
-
-    // and given a new MethodCallRegistrationGuard move constructed from another
-    MethodCallRegistrationGuard moved_to_guard{std::move(method_call_registration_guard_).value()};
-
-    // When destroying the moved_to guard
-    moved_to_guard.reset();
-
-    // Then UnregisterMethodCallHandler is called
-    EXPECT_TRUE(unregister_method_call_handler_called_);
-}
-
-TEST_F(MethodCallRegistrationGuardFixture, MoveAssigningGuardCallsUnregisterOnMovedToGuard)
-{
-    GivenTwoMethodCallRegistrationGuards();
-
-    // When move assigning one MethodCallRegistrationGuard to another
-    method_call_registration_guard_.value() = std::move(method_call_registration_guard_2_).value();
-
-    // Then UnregisterMethodCallHandler is only called on the moved-to guard
-    EXPECT_TRUE(unregister_method_call_handler_called_);
-    EXPECT_FALSE(unregister_method_call_handler_called_2_);
-}
-
-TEST_F(MethodCallRegistrationGuardFixture, DestroyingMoveAssignedMovedFromGuardDoesNotCallUnregister)
-{
-    GivenTwoMethodCallRegistrationGuards();
-
-    // and given that one MethodCallRegistrationGuard to was move assigned to another
-    method_call_registration_guard_.value() = std::move(method_call_registration_guard_2_).value();
-
-    // When destroying the moved-from guard
-    method_call_registration_guard_2_.reset();
-
-    // Then UnregisterMethodCallHandler is not called on the moved-from guard
-    EXPECT_FALSE(unregister_method_call_handler_called_2_);
-}
-
-TEST_F(MethodCallRegistrationGuardFixture, DestroyingMoveAssignedMovedToGuardCallsUnregister)
-{
-    GivenTwoMethodCallRegistrationGuards();
-
-    // and given that one MethodCallRegistrationGuard to was move assigned to another
-    method_call_registration_guard_.value() = std::move(method_call_registration_guard_2_).value();
-
-    // When destroying the moved-to guard
-    method_call_registration_guard_.reset();
-
-    // Then UnregisterMethodCallHandler is not called on the moved-to guard
-    EXPECT_TRUE(unregister_method_call_handler_called_2_);
 }
 
 }  // namespace
