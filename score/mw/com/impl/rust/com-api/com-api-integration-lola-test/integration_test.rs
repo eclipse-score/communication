@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -14,15 +14,16 @@
 //! integration test module covering both primitive and user-defined payloads.
 //!
 //! Primitive types are validated through one combined `MixedPrimitivesPayload`
-
+//! Complex user-defined types are validated through `ComplexStruct`
+//! The tests ensure that the COM API correctly handles data transmission and reception
+//! for both primitive and complex types when integrated with the Lola runtime.
 #[cfg(test)]
 mod integration_tests {
     use crate::generate_test;
     use crate::test_types::{
-        ComplexStruct, ComplexStructInterface, MixedPrimitivesInterface, MixedPrimitivesPayload,
-        NestedStruct, NestedStructInterface, Point, Point3D, Point3DInterface, PointInterface,
-        SensorData, SensorDataInterface, SimpleStruct, SimpleStructInterface, VehicleState,
-        VehicleStateInterface,
+        ArrayStruct, ComplexStruct, ComplexStructInterface, MixedPrimitivesInterface,
+        MixedPrimitivesPayload, NestedStruct, Point, Point3D, SensorData, SimpleStruct,
+        VehicleState,
     };
 
     generate_test!(
@@ -62,116 +63,68 @@ mod integration_tests {
     );
 
     generate_test!(
-        test = test_simple_struct_send_receive,
-        interface = SimpleStructInterface,
-        event = simple_event,
-        path = "/UserDefinedTest/SimpleStruct",
-        data = SimpleStruct { id: 42 },
-        assert = |r: &SimpleStruct, e: &SimpleStruct| assert_eq!(r.id, e.id),
-    );
-
-    generate_test!(
         test = test_complex_struct_send_receive,
         interface = ComplexStructInterface,
         event = complex_event,
         path = "/UserDefinedTest/ComplexStruct",
         data = ComplexStruct {
             count: 42,
-            temperature: 25.5,
-            is_active: 1,
-            timestamp: 1_234_567_890,
+            simple: SimpleStruct { id: 10 },
+            nested: NestedStruct {
+                id: 1,
+                simple: SimpleStruct { id: 123 },
+                value: 99.9
+            },
+            point: Point { x: 1.5, y: 2.5 },
+            point3d: Point3D {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0
+            },
+            sensor: SensorData {
+                sensor_id: 7,
+                temperature: 22.5,
+                humidity: 45.0,
+                pressure: 1013.25
+            },
+            vehicle: VehicleState {
+                speed: 60.0,
+                rpm: 3000,
+                fuel_level: 75.0,
+                is_running: 1,
+                mileage: 50_000
+            },
+            array: ArrayStruct {
+                values: [1, 2, 3, 4, 5]
+            }
         },
         assert = |r: &ComplexStruct, e: &ComplexStruct| {
             assert_eq!(r.count, e.count);
-            assert!((r.temperature - e.temperature).abs() < 0.01_f32);
-            assert_eq!(r.is_active, e.is_active);
-            assert_eq!(r.timestamp, e.timestamp);
-        },
-    );
-
-    generate_test!(
-        test = test_nested_struct_send_receive,
-        interface = NestedStructInterface,
-        event = nested_event,
-        path = "/UserDefinedTest/NestedStruct",
-        data = NestedStruct {
-            id: 1,
-            simple: SimpleStruct { id: 123 },
-            value: 99.9,
-        },
-        assert = |r: &NestedStruct, e: &NestedStruct| {
-            assert_eq!(r.id, e.id);
             assert_eq!(r.simple.id, e.simple.id);
-            assert!((r.value - e.value).abs() < 0.01_f32);
-        },
-    );
-
-    generate_test!(
-        test = test_point_2d_send_receive,
-        interface = PointInterface,
-        event = point_event,
-        path = "/UserDefinedTest/Point",
-        data = Point { x: 1.5, y: 2.5 },
-        assert = |r: &Point, e: &Point| {
-            assert!((r.x - e.x).abs() < 0.001_f32);
-            assert!((r.y - e.y).abs() < 0.001_f32);
-        },
-    );
-
-    generate_test!(
-        test = test_point_3d_send_receive,
-        interface = Point3DInterface,
-        event = point3d_event,
-        path = "/UserDefinedTest/Point3D",
-        data = Point3D {
-            x: 1.0,
-            y: 2.0,
-            z: 3.0,
-        },
-        assert = |r: &Point3D, e: &Point3D| {
-            assert!((r.x - e.x).abs() < 0.001_f32);
-            assert!((r.y - e.y).abs() < 0.001_f32);
-            assert!((r.z - e.z).abs() < 0.001_f32);
-        },
-    );
-
-    generate_test!(
-        test = test_sensor_data_send_receive,
-        interface = SensorDataInterface,
-        event = sensor_event,
-        path = "/UserDefinedTest/SensorData",
-        data = SensorData {
-            sensor_id: 1,
-            temperature: 22.5,
-            humidity: 45.0,
-            pressure: 1013.25,
-        },
-        assert = |r: &SensorData, e: &SensorData| {
-            assert_eq!(r.sensor_id, e.sensor_id);
-            assert!((r.temperature - e.temperature).abs() < 0.01_f32);
-            assert!((r.humidity - e.humidity).abs() < 0.01_f32);
-            assert!((r.pressure - e.pressure).abs() < 0.01_f32);
-        },
-    );
-
-    generate_test!(
-        test = test_vehicle_state_send_receive,
-        interface = VehicleStateInterface,
-        event = vehicle_event,
-        path = "/UserDefinedTest/VehicleState",
-        data = VehicleState {
-            speed: 60.0,
-            rpm: 3000,
-            fuel_level: 75.0,
-            is_running: 1,
-            mileage: 50_000,
-        },
-        assert = |r: &VehicleState, e: &VehicleState| {
-            assert!((r.speed - e.speed).abs() < 0.1_f32);
-            assert_eq!(r.rpm, e.rpm);
-            assert!((r.fuel_level - e.fuel_level).abs() < 0.1_f32);
-            assert_eq!(r.is_running, e.is_running);
-            assert_eq!(r.mileage, e.mileage);
+            assert_eq!(r.nested.id, e.nested.id);
+            assert_eq!(r.nested.simple.id, e.nested.simple.id);
+            assert!((r.nested.value - e.nested.value).abs() < 0.01_f32);
+            assert!((r.point.x - e.point.x).abs() < 0.001_f32);
+            assert!((r.point.y - e.point.y).abs() < 0.001_f32);
+            assert!((r.point3d.x - e.point3d.x).abs() < 0.001_f32);
+            assert!((r.point3d.y - e.point3d.y).abs() < 0.001_f32);
+            assert!((r.point3d.z - e.point3d.z).abs() < 0.001_f32);
+            assert_eq!(r.sensor.sensor_id, e.sensor.sensor_id);
+            assert!((r.sensor.temperature - e.sensor.temperature).abs() < 0.01_f32);
+            assert!((r.sensor.humidity - e.sensor.humidity).abs() < 0.01_f32);
+            assert!((r.sensor.pressure - e.sensor.pressure).abs() < 0.01_f32);
+            assert!((r.vehicle.speed - e.vehicle.speed).abs() < 0.1_f32);
+            assert_eq!(r.vehicle.rpm, e.vehicle.rpm);
+            assert!((r.vehicle.fuel_level - e.vehicle.fuel_level).abs() < 0.1_f32);
+            assert_eq!(r.vehicle.is_running, e.vehicle.is_running);
+            assert_eq!(r.vehicle.mileage, e.vehicle.mileage);
+            for i in 0..r.array.values.len() {
+                assert_eq!(
+                    r.array.values[i], e.array.values[i],
+                    "array.values[{}] mismatch",
+                    i
+                );
+            }
         },
     );
 }
