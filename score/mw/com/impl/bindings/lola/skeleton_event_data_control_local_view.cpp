@@ -168,7 +168,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(
     const SlotIndexType slot_index,
-    const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept -> void
+    const TransactionLogIndex transaction_log_index) noexcept -> void
 {
     // Sanity check that the slot is currently ready for reading. It's up to the caller to ensure that this function is
     // not called in a context in which the status can change to in writing or invalid while this function is running.

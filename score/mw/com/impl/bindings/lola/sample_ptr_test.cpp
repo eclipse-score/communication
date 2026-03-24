@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
 #include <gtest/gtest.h>
@@ -45,7 +46,7 @@ class SamplePtrTest : public ::testing::Test
     EventDataControl event_data_control_{kMaxSlots, memory_, kMaxSubscribers};
     ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
     SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
-    TransactionLogSet::TransactionLogIndex transaction_log_index_ =
+    TransactionLogIndex transaction_log_index_ =
         proxy_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     SlotIndexType AllocateSlot(EventSlotStatus::EventTimeStamp timestamp = 1)

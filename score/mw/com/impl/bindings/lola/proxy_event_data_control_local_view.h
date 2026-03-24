@@ -63,7 +63,7 @@ class ProxyEventDataControlLocalView final
     /// \post DereferenceEvent() is invoked to withdraw read-ownership
     std::optional<SlotIndexType> ReferenceNextEvent(
         const EventSlotStatus::EventTimeStamp last_search_time,
-        const TransactionLogSet::TransactionLogIndex transaction_log_index,
+        const TransactionLogIndex transaction_log_index,
         const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
 
     /// \brief Increments refcount of given slot by one (given it is in the correct state i.e. being accessible/
@@ -79,7 +79,7 @@ class ProxyEventDataControlLocalView final
     ///          then it is safe.
     /// \param slot_index index of the slot to be referenced.
     void ReferenceSpecificEvent(const SlotIndexType slot_index,
-                                const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
+                                const TransactionLogIndex transaction_log_index) noexcept;
 
     /// \brief Returns number/count of events within event slots, which are newer than the given timestamp.
     /// \param reference_time given reference timestamp.
@@ -90,8 +90,7 @@ class ProxyEventDataControlLocalView final
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will also record the transaction in the TransactionLog corresponding to transaction_log_index
-    void DereferenceEvent(const SlotIndexType slot_index,
-                          const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
+    void DereferenceEvent(const SlotIndexType slot_index, const TransactionLogIndex transaction_log_index) noexcept;
 
     /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership

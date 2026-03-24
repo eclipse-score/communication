@@ -107,8 +107,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
         return TransactionLogAttorney{transaction_log_result.value().get()}.IsSubscribeTransactionSuccesfullyRecorded();
     }
 
-    score::Result<TransactionLogSet::TransactionLogIndex> RegisterTransactionLog(
-        const TransactionLogId& transaction_log_id) noexcept
+    score::Result<TransactionLogIndex> RegisterTransactionLog(const TransactionLogId& transaction_log_id) noexcept
     {
         auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).data_control.GetTransactionLogSet();
         return transaction_log_set.RegisterProxyElement(transaction_log_id);
