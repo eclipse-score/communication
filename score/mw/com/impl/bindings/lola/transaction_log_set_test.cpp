@@ -68,7 +68,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
         };
     }
 
-    TransactionLogSet::TransactionLogIndex RegisterProxyElementWithSubscribeTransaction(
+    TransactionLogIndex RegisterProxyElementWithSubscribeTransaction(
         const TransactionLogId& transaction_log_id) noexcept
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(unit_ != nullptr);
@@ -86,7 +86,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
         return transaction_log_index;
     }
 
-    TransactionLogSet::TransactionLogIndex RegisterProxyElementWithSubscribeAndReferenceTransactions(
+    TransactionLogIndex RegisterProxyElementWithSubscribeAndReferenceTransactions(
         const TransactionLogId& transaction_log_id,
         const TransactionLog::SlotIndexType slot_index) noexcept
     {
@@ -531,7 +531,7 @@ TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLo
     // again.
     for (std::size_t i = 0; i < thread_count; ++i)
     {
-        threads.emplace_back([&unit, thread_number = TransactionLogSet::TransactionLogIndex(i + 1U)]() noexcept {
+        threads.emplace_back([&unit, thread_number = TransactionLogIndex(i + 1U)]() noexcept {
             for (auto loop_count = 0U; loop_count < 50U; loop_count++)
             {
                 auto register_result = unit->RegisterProxyElement(thread_number);

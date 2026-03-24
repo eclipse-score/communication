@@ -47,7 +47,7 @@ class SamplePtr final
     SamplePtr(pointer ptr,
               ProxyEventDataControlLocalView<>& event_data_ctrl_local,
               const SlotIndexType slot_index,
-              TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
+              TransactionLogIndex transaction_log_idx) noexcept
         : SamplePtr{ptr, std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index, transaction_log_idx)}
     {
     }

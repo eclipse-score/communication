@@ -48,7 +48,7 @@ class SubscribedState final : public SubscriptionStateBase
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     score::cpp::optional<SlotCollector>& GetSlotCollector() noexcept override;
     const score::cpp::optional<SlotCollector>& GetSlotCollector() const noexcept override;
-    score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept override;
+    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept override;
 };
 
 }  // namespace score::mw::com::impl::lola

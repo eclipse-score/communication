@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/subscription_state_base.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine_states.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
@@ -113,7 +114,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     /// of this lock-free optimisation.
     score::cpp::optional<SlotCollector>& GetSlotCollectorLockFree() noexcept;
     const score::cpp::optional<SlotCollector>& GetSlotCollectorLockFree() const noexcept;
-    score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept;
+    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept;
     [[nodiscard]] const ElementFqId& GetElementFqId() const noexcept;
 
   private:

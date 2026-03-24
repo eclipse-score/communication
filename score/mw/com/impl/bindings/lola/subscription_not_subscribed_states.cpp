@@ -148,7 +148,7 @@ const score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector(
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-score::cpp::optional<TransactionLogSet::TransactionLogIndex> NotSubscribedState::GetTransactionLogIndex() const noexcept
+score::cpp::optional<TransactionLogIndex> NotSubscribedState::GetTransactionLogIndex() const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         !state_machine_.transaction_log_registration_guard_.has_value(),

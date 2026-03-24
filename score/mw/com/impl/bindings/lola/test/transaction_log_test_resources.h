@@ -90,7 +90,7 @@ class TransactionLogSetHelperFixture : public ::testing::Test
 
     void ExpectProxyTransactionLogExistsAtIndex(TransactionLogSet& transaction_log_set,
                                                 const TransactionLogId& transaction_log_id,
-                                                const TransactionLogSet::TransactionLogIndex transaction_log_index,
+                                                const TransactionLogIndex transaction_log_index,
                                                 const bool expect_needs_rollback,
                                                 const bool expect_other_slots_empty = true) noexcept
     {
