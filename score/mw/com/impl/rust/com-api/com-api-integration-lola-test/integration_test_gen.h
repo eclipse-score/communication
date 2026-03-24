@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -27,28 +27,20 @@ namespace score::mw::com::integration_test
 struct MixedPrimitivesPayload
 {
     uint64_t u64_val;
-    int64_t  i64_val;
+    int64_t i64_val;
     uint32_t u32_val;
-    int32_t  i32_val;
-    float    f32_val;
+    int32_t i32_val;
+    float f32_val;
     uint16_t u16_val;
-    int16_t  i16_val;
-    uint8_t  u8_val;
-    int8_t   i8_val;
-    bool     flag;
+    int16_t i16_val;
+    uint8_t u8_val;
+    int8_t i8_val;
+    bool flag;
 };
 
 struct SimpleStruct
 {
     uint32_t id;
-};
-
-struct ComplexStruct
-{
-    uint32_t count;
-    float temperature;
-    uint8_t is_active;
-    uint64_t timestamp;
 };
 
 struct NestedStruct
@@ -88,6 +80,23 @@ struct VehicleState
     uint32_t mileage;
 };
 
+struct ArrayStruct
+{
+    uint32_t values[5];
+};
+
+struct ComplexStruct
+{
+    uint32_t count;
+    SimpleStruct simple;
+    NestedStruct nested;
+    Point point;
+    Point3D point3d;
+    SensorData sensor;
+    VehicleState vehicle;
+    ArrayStruct array;
+};
+
 // Macro to generate interface classes
 #define CREATE_INTERFACE(ClassName, DataType, EventName)                       \
     template <typename Trait>                                                  \
@@ -98,35 +107,14 @@ struct VehicleState
         typename Trait::template Event<DataType> EventName{*this, #EventName}; \
     };
 
-// Combined primitive payload interface
+// payload interface
 CREATE_INTERFACE(MixedPrimitivesInterface, MixedPrimitivesPayload, mixed_event)
-
-// User-defined type interfaces (one per type)
-CREATE_INTERFACE(SimpleStructInterface, SimpleStruct, simple_event)
 CREATE_INTERFACE(ComplexStructInterface, ComplexStruct, complex_event)
-CREATE_INTERFACE(NestedStructInterface, NestedStruct, nested_event)
-CREATE_INTERFACE(PointInterface, Point, point_event)
-CREATE_INTERFACE(Point3DInterface, Point3D, point3d_event)
-CREATE_INTERFACE(SensorDataInterface, SensorData, sensor_event)
-CREATE_INTERFACE(VehicleStateInterface, VehicleState, vehicle_event)
 
 // Type aliases for proxy and skeleton
-using MixedPrimitivesProxy      = ::score::mw::com::AsProxy<MixedPrimitivesInterface>;
-using MixedPrimitivesSkeleton   = ::score::mw::com::AsSkeleton<MixedPrimitivesInterface>;
-using SimpleStructProxy = ::score::mw::com::AsProxy<SimpleStructInterface>;
-using SimpleStructSkeleton = ::score::mw::com::AsSkeleton<SimpleStructInterface>;
+using MixedPrimitivesProxy = ::score::mw::com::AsProxy<MixedPrimitivesInterface>;
+using MixedPrimitivesSkeleton = ::score::mw::com::AsSkeleton<MixedPrimitivesInterface>;
 using ComplexStructProxy = ::score::mw::com::AsProxy<ComplexStructInterface>;
 using ComplexStructSkeleton = ::score::mw::com::AsSkeleton<ComplexStructInterface>;
-using NestedStructProxy = ::score::mw::com::AsProxy<NestedStructInterface>;
-using NestedStructSkeleton = ::score::mw::com::AsSkeleton<NestedStructInterface>;
-using PointProxy = ::score::mw::com::AsProxy<PointInterface>;
-using PointSkeleton = ::score::mw::com::AsSkeleton<PointInterface>;
-using Point3DProxy = ::score::mw::com::AsProxy<Point3DInterface>;
-using Point3DSkeleton = ::score::mw::com::AsSkeleton<Point3DInterface>;
-using SensorDataProxy = ::score::mw::com::AsProxy<SensorDataInterface>;
-using SensorDataSkeleton = ::score::mw::com::AsSkeleton<SensorDataInterface>;
-using VehicleStateProxy = ::score::mw::com::AsProxy<VehicleStateInterface>;
-using VehicleStateSkeleton = ::score::mw::com::AsSkeleton<VehicleStateInterface>;
 }  // namespace score::mw::com::integration_test
-
 #endif  // SCORE_MW_COM_IMPL_RUST_COM_API_INTEGRATION_TEST_LOLA_INTEGRATION_TEST_GEN_H

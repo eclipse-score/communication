@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -40,7 +40,6 @@ macro_rules! define_type {
 }
 
 // Combined primitive payload – all primitive types packed into one struct.
-// Field order follows descending alignment to match the C++ repr(C) layout.
 define_type!(
     MixedPrimitivesPayload,
     u64_val: u64,
@@ -57,22 +56,16 @@ define_type!(
 
 // Complex struct types
 define_type!(SimpleStruct, eq, id: u32);
-define_type!(ComplexStruct, count: u32, temperature: f32, is_active: u8, timestamp: u64);
 define_type!(NestedStruct, id: u32, simple: SimpleStruct, value: f32);
 define_type!(Point, x: f32, y: f32);
 define_type!(Point3D, x: f32, y: f32, z: f32);
 define_type!(SensorData, sensor_id: u16, temperature: f32, humidity: f32, pressure: f32);
 define_type!(VehicleState, speed: f32, rpm: u16, fuel_level: f32, is_running: u8, mileage: u32);
+define_type!(ArrayStruct, eq, values: [u32; 5]);
+define_type!(ComplexStruct, count: u32, simple: SimpleStruct, nested: NestedStruct, point: Point, point3d: Point3D, sensor: SensorData, vehicle: VehicleState, array: ArrayStruct);
 
 interface!(interface MixedPrimitives, { Id = "MixedPrimitivesInterface", mixed_event: Event<MixedPrimitivesPayload> });
-
-interface!(interface SimpleStruct,  { Id = "SimpleStructInterface",  simple_event:  Event<SimpleStruct>  });
 interface!(interface ComplexStruct, { Id = "ComplexStructInterface", complex_event: Event<ComplexStruct> });
-interface!(interface NestedStruct,  { Id = "NestedStructInterface",  nested_event:  Event<NestedStruct>  });
-interface!(interface Point,         { Id = "PointInterface",         point_event:   Event<Point>         });
-interface!(interface Point3D,       { Id = "Point3DInterface",       point3d_event: Event<Point3D>       });
-interface!(interface SensorData,    { Id = "SensorDataInterface",    sensor_event:  Event<SensorData>    });
-interface!(interface VehicleState,       { Id = "VehicleStateInterface",       vehicle_event:   Event<VehicleState>       });
 
 // Generic test macro for send/receive tests
 #[macro_export]
