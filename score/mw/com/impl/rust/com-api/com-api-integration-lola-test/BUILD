@@ -35,10 +35,9 @@ cc_library(
 rust_library(
     name = "integration-test-lola",
     srcs = [
+        "integration_test.rs",
         "lib.rs",
-        "primitive_types_test.rs",
         "test_types.rs",
-        "user_defined_types_test.rs",
     ],
     visibility = [
         "//visibility:public",  # platform_only
@@ -51,20 +50,7 @@ rust_library(
 )
 
 rust_test(
-    name = "integration-test-primitives",
-    crate = ":integration-test-lola",
-    data = [":integration_test_config"],
-    features = ["link_std_cpp_lib"],
-    deps = [
-        ":integration-test-lola",
-        ":integration_test_gen_cpp",
-        "//score/mw/com/impl/rust/com-api/com-api",
-        "//score/mw/com/impl/rust/com-api/com-api-runtime-lola",
-    ],
-)
-
-rust_test(
-    name = "integration-test-user-defined",
+    name = "integration-test",
     crate = ":integration-test-lola",
     data = [":integration_test_config"],
     features = ["link_std_cpp_lib"],
