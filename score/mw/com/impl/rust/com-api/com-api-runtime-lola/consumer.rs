@@ -28,13 +28,13 @@
 //TODO: revist this once com-api is stable - Ticket-234827
 #![allow(clippy::needless_lifetimes)]
 
+use crate::Debug;
 use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
-use std::fmt::Debug;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::Arc;
@@ -67,14 +67,14 @@ impl LolaConsumerInfo {
 #[derive(Debug)]
 pub struct LolaBinding<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     data: ManuallyDrop<sample_ptr_rs::SamplePtr<T>>,
 }
 
 impl<T> Drop for LolaBinding<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn drop(&mut self) {
         //SAFETY: It is safe to call the delete function because data ptr is valid
@@ -92,7 +92,7 @@ where
 #[derive(Debug)]
 pub struct Sample<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     //we need unique id for each sample to implement Ord and Eq traits for sorting in SampleContainer
     id: usize,
@@ -103,7 +103,7 @@ pub static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl<T> Sample<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub fn get_data(&self) -> &T {
         //SAFETY: It is safe to get the data pointer because SamplePtr is valid
@@ -122,7 +122,7 @@ where
 
 impl<T> Deref for Sample<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Target = T;
 
@@ -131,23 +131,23 @@ where
     }
 }
 
-impl<T> com_api_concept::Sample<T> for Sample<T> where T: CommData {}
+impl<T> com_api_concept::Sample<T> for Sample<T> where T: CommData + Debug {}
 
 // Ordering traits for Sample<T> are using id field to provide total ordering
 impl<T> PartialEq for Sample<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl<T> Eq for Sample<T> where T: CommData {}
+impl<T> Eq for Sample<T> where T: CommData + Debug {}
 
 impl<T> PartialOrd for Sample<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -156,7 +156,7 @@ where
 
 impl<T> Ord for Sample<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id.cmp(&other.id)
@@ -277,7 +277,7 @@ pub struct SubscribableImpl<T> {
     data: PhantomData<T>,
 }
 
-impl<T: CommData> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
+impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &'static str, instance_info: LolaConsumerInfo) -> Result<Self> {
         let handle = instance_info.get_handle().ok_or(Error::Fail)?;
@@ -412,7 +412,7 @@ impl<'a> DerefMut for ProxyEventManagerGuard<'a> {
 #[derive(Debug)]
 pub struct SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     event: ProxyEventManager,
     event_id: &'static str,
@@ -424,7 +424,7 @@ where
     _phantom: PhantomData<T>,
 }
 
-impl<T: CommData> Drop for SubscriberImpl<T> {
+impl<T: CommData + Debug> Drop for SubscriberImpl<T> {
     fn drop(&mut self) {
         //SAFETY: it is safe to clear the event receive handler because event ptr is valid
         // which was obtained from valid proxy instance and the callback set for this event stream will be dropped after this,
@@ -438,7 +438,7 @@ impl<T: CommData> Drop for SubscriberImpl<T> {
     }
 }
 
-impl<T: CommData> SubscriberImpl<T> {
+impl<T: CommData + Debug> SubscriberImpl<T> {
     fn init_async_receive(&self, event_guard: &mut ProxyEventManagerGuard) -> Result<()> {
         let callback_waker = Arc::clone(&self.waker_storage);
         let waker_callback = move || {
@@ -460,7 +460,7 @@ impl<T: CommData> SubscriberImpl<T> {
 
 impl<T> Subscription<T, LolaRuntimeImpl> for SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Subscriber = SubscribableImpl<T>;
     type Sample<'a> = Sample<T>;
@@ -528,7 +528,7 @@ where
 // It holds a reference to the proxy event manager, a waker storage for async notifications, and parameters for managing the receive operation.
 // The Future implementation for ReceiveFuture defines the polling logic,
 // which attempts to receive samples and manages the state of the receive operation.
-struct ReceiveFuture<'a, T: CommData> {
+struct ReceiveFuture<'a, T: CommData + Debug> {
     event_guard: Option<ProxyEventManagerGuard<'a>>,
     waker_storage: Arc<AtomicWaker>,
     max_num_samples: usize,
@@ -538,7 +538,7 @@ struct ReceiveFuture<'a, T: CommData> {
     total_received: usize,
 }
 
-impl<'a, T: CommData> Future for ReceiveFuture<'a, T> {
+impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
     type Output = Result<SampleContainer<Sample<T>>>;
 
     fn poll(mut self: Pin<&mut Self>, ctx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -840,7 +840,7 @@ impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_num_samples` - Maximum allowed samples for this subscription
 /// * `max_samples` - How many samples to fetch in this call
-fn try_receive_samples<T: CommData>(
+fn try_receive_samples<T: CommData + Debug>(
     event: &mut ProxyEventBase,
     scratch: &mut SampleContainer<Sample<T>>,
     max_num_samples: usize,
@@ -885,7 +885,7 @@ fn try_receive_samples<T: CommData>(
 /// # Parameters
 /// * `scratch` - Mutable reference to the sample container
 /// * `max_samples` - Maximum number of samples to maintain in the container
-pub fn create_sample_callback<'a, T: CommData>(
+pub fn create_sample_callback<'a, T: CommData + Debug>(
     scratch: &'a mut SampleContainer<Sample<T>>,
     max_samples: usize,
 ) -> impl FnMut(*mut sample_ptr_rs::SamplePtr<T>) + 'a {

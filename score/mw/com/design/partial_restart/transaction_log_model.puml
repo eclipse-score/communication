@@ -46,7 +46,7 @@ class "lola::EventDataControlImpl" <<SharedMemory>> {
   +AllocateNextSlot(): std::optional<SlotIndexType>
   +EventReady(SlotIndexType, EventTimestamp): void
   +Discard(SlotIndexType): void
-  +ReferenceNextEvent(lastSearchTime : EventTimestampType, upper_limit : const EventSlotStatus::EventTimeStamp = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX): std::optional<SlotIndexType>
+  +ReferenceNextEvent(lastSearchTime : EventTimestampType, upper_limit : const EventSlotStatus::EventTimeStamp = EventSlotStatus::TIMESTAMP_MAX): std::optional<SlotIndexType>
   +DereferenceEvent(SlotIndexType eventSlotIndex): void
   +GetNumNewEvents(reference_time : const EventSlotStatus::EventTimeStamp) const : std::size_t
   +<b>GetTransactionLogSet() : TransactionLogSet&</b>

@@ -150,7 +150,7 @@ class "lola::Skeleton" as lola_Skeleton {
     +PrepareStopOffer(): void
 
     template <typename SampleType>
-    +Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*,EventDataControlComposite>
+    +Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*,EventDataControlComposite<>>
 }
 
 class "lola::SkeletonEvent<SampleType>" as lola_SkeletonEvent {

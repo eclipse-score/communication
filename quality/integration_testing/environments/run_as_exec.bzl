@@ -60,6 +60,7 @@ _RULE_ATTRS = {
         cfg = "exec",
     ),
     "env": attr.string_dict(),
+    "env_inherit": attr.string_list(),
     "executable": attr.label(
         allow_files = True,
         cfg = "exec",
@@ -88,7 +89,7 @@ def _executable_as_exec_impl(ctx):
                 ),
             ),
         ),
-        RunEnvironmentInfo(environment = ctx.attr.env),
+        RunEnvironmentInfo(environment = ctx.attr.env, inherited_environment = ctx.attr.env_inherit),
     ]
 
 _as_exec_run = rule(

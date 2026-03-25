@@ -14,13 +14,13 @@
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
-load("//score/mw/com/doc/sphinx/utils:defs.bzl", "generate_api_rst")
+load("//docs/sphinx/utils:defs.bzl", "generate_api_rst")
 
 # Create the sphinx-build binary with required dependencies
 # This wrapper approach is used for older environments (e.g. Sphinx <=7.2.* and rules_python 1.2)
 py_binary(
     name = "sphinx-build-wrapper",
-    srcs = ["//score/mw/com/doc/sphinx/utils:sphinx_build_wrapper"],
+    srcs = ["//docs/sphinx/utils:sphinx_build_wrapper"],
     main = "sphinx_build_wrapper.py",
     deps = [
         "//third_party/breathe",
@@ -49,8 +49,8 @@ sphinx_build_binary(
 alias(
     name = "sphinx-build",
     actual = select({
-        "//score/mw/com/doc/sphinx/utils:use_native": ":sphinx-build-native",
-        "//score/mw/com/doc/sphinx/utils:use_wrapper": ":sphinx-build-wrapper",
+        "//docs/sphinx/utils:use_native": ":sphinx-build-native",
+        "//docs/sphinx/utils:use_wrapper": ":sphinx-build-wrapper",
     }),
 )
 

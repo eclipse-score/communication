@@ -13,15 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_NOT_SUBSCRIBED_STATES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_NOT_SUBSCRIBED_STATES_H
 
-#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_base.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
 #include <score/optional.hpp>
 
 #include <cstddef>
-#include <exception>
-#include <mutex>
 
 namespace score::mw::com::impl::lola
 {

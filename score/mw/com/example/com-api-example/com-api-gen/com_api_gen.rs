@@ -13,23 +13,17 @@
 
 use com_api::{interface, CommData, ProviderInfo, Publisher, Reloc, Subscriber};
 
-#[derive(Debug, Reloc)]
+#[derive(Debug, Reloc, CommData)]
 #[repr(C)]
+#[comm_data(id = "Tire")]
 pub struct Tire {
     pub pressure: f32,
 }
 
-impl CommData for Tire {
-    const ID: &'static str = "Tire";
-}
-
-#[derive(Debug, Reloc)]
+#[derive(Debug, Reloc, CommData)]
 #[repr(C)]
+// No explicit ID provided, so it will be auto-generated as "com_api_gen::Exhaust"
 pub struct Exhaust {}
-
-impl CommData for Exhaust {
-    const ID: &'static str = "Exhaust";
-}
 
 // Example interface definition using the interface macro with a custom UID for the interface.
 // This will generate the following types and trait implementations:

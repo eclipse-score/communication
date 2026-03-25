@@ -15,17 +15,17 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load(":sphinx_build_flags.bzl", "sphinx_build_settings")
 
 # Setup feature flags for sphinx build selection
-sphinx_build_settings(visibility = ["//score/mw/com/doc/sphinx:__subpackages__"])
+sphinx_build_settings(visibility = ["//docs/sphinx:__subpackages__"])
 
 py_library(
     name = "sphinx_build_wrapper",
     srcs = ["sphinx_build_wrapper.py"],
-    visibility = ["//score/mw/com/doc/sphinx:__pkg__"],
+    visibility = ["//docs/sphinx:__pkg__"],
 )
 
 py_binary(
     name = "generate_api_rst_bin",
     srcs = ["extract_api_items.py"],
     main = "extract_api_items.py",
-    visibility = ["//score/mw/com/doc/sphinx:__pkg__"],
+    visibility = ["//docs/sphinx:__pkg__"],
 )

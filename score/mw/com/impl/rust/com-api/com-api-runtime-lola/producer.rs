@@ -29,6 +29,7 @@
 //TODO: revist this once com-api is stable - Ticket-234827
 #![allow(clippy::needless_lifetimes)]
 
+use crate::Debug;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
@@ -77,14 +78,14 @@ impl ProviderInfo for LolaProviderInfo {
 #[derive(Debug)]
 pub struct AllocateePtrWrapper<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
 }
 
 impl<T> Drop for AllocateePtrWrapper<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn drop(&mut self) {
         //SAFETY: It is safe to call the delete function because allocatee_ptr is valid
@@ -101,7 +102,7 @@ where
 
 impl<T> AsRef<sample_allocatee_ptr_rs::SampleAllocateePtr<T>> for AllocateePtrWrapper<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn as_ref(&self) -> &sample_allocatee_ptr_rs::SampleAllocateePtr<T> {
         &self.inner
@@ -111,7 +112,7 @@ where
 #[derive(Debug)]
 pub struct SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub skeleton_event: NativeSkeletonEventBase,
     pub allocatee_ptr: AllocateePtrWrapper<T>,
@@ -120,7 +121,7 @@ where
 
 impl<'a, T> SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn get_allocatee_data_ptr_const(&self) -> Option<&T> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
@@ -149,7 +150,7 @@ where
 
 impl<'a, T> Deref for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Target = T;
 
@@ -161,7 +162,7 @@ where
 
 impl<'a, T> DerefMut for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.get_allocatee_data_ptr_mut()
@@ -171,7 +172,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn send(self) -> Result<()> {
         //SAFETY: It is safe to send the sample because allocatee_ptr and skeleton_event are valid
@@ -195,7 +196,7 @@ where
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub skeleton_event: NativeSkeletonEventBase,
     pub allocatee_ptr: AllocateePtrWrapper<T>,
@@ -204,7 +205,7 @@ where
 
 impl<'a, T> SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn get_allocatee_data_ptr(&self) -> Option<&mut core::mem::MaybeUninit<T>> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
@@ -221,7 +222,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMut = SampleMut<'a, T>;
 
@@ -252,7 +253,7 @@ where
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         self.get_allocatee_data_ptr()
@@ -366,7 +367,7 @@ pub struct Publisher<T> {
 
 impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>

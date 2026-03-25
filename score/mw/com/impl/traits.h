@@ -189,7 +189,8 @@ class SkeletonWrapperClass : public Interface<Trait>
         const auto instance_identifier_result = GetInstanceIdentifier(specifier);
         if (!instance_identifier_result.has_value())
         {
-            score::mw::log::LogError("lola") << "Failed to resolve instance identifier from instance specifier";
+            score::mw::log::LogError("lola")
+                << "Failed to resolve instance identifier from instance specifier:" << specifier.ToString();
             return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
         }
         return Create(instance_identifier_result.value());

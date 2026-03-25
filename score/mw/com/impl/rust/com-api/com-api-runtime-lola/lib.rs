@@ -33,3 +33,5 @@ pub use producer::{
     LolaProviderInfo, Publisher, SampleMaybeUninit, SampleMut, SampleProducerBuilder,
 };
 pub use runtime::{LolaRuntimeImpl, RuntimeBuilderImpl};
+
+use core::fmt::Debug;

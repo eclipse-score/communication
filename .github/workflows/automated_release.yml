@@ -57,6 +57,8 @@ jobs:
   run-build-and-test-host:
     needs: create-draft-release
     uses: ./.github/workflows/build_and_test_host.yml
+    with:
+      run_all_configurations: true
     permissions:
       contents: read
 

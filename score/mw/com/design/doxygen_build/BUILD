@@ -7,7 +7,7 @@ doxygen(
         "xml",
     ],
     project_name = "com",
-    visibility = ["//score/mw/com/doc/sphinx:__pkg__"],
+    visibility = ["//docs/sphinx:__pkg__"],
     deps = [
         "//score/mw/com",
     ],

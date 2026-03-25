@@ -15,11 +15,8 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/mw/log/logging.h"
-
 #include <score/assert.hpp>
 
-#include <exception>
 #include <sstream>
 #include <string>
 #include <utility>

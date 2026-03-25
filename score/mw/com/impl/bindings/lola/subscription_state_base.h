@@ -13,12 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_SUBSCRIPTION_STATE_BASE_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_SUBSCRIPTION_STATE_BASE_H
 
-#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
-#include "score/mw/com/impl/bindings/lola/subscription_state_machine_states.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
-#include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
 #include "score/result/result.h"
@@ -26,8 +22,6 @@
 #include <score/optional.hpp>
 
 #include <cstddef>
-#include <functional>
-#include <mutex>
 
 namespace score::mw::com::impl::lola
 {

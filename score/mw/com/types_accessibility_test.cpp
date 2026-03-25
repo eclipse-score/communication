@@ -58,6 +58,23 @@ TEST(TypesAccessibilityTest, GenericProxyExistInCorrectNamespaceWithCorrectInclu
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     static_assert(std::is_class_v<score::mw::com::GenericProxy>, "GenericProxy does not exist");
+    static_assert(std::is_class_v<score::mw::com::GenericProxyEvent>, "GenericProxyEvent does not exist");
 }
 
+TEST(TypesAccessibilityTest, GenericSkeletonExistInCorrectNamespaceWithCorrectInclude)
+{
+    RecordProperty(
+        "Description",
+        "Checks that the GenericSkeleton class is accessible in the mw::com namespace by including mw/com/types.h");
+    RecordProperty("TestType", "Requirements-based test");
+    RecordProperty("Priority", "1");
+    RecordProperty("DerivationTechnique", "Analysis of requirements");
+
+    static_assert(std::is_class_v<score::mw::com::GenericSkeleton>, "GenericSkeleton does not exist");
+    static_assert(std::is_class_v<score::mw::com::GenericSkeletonEvent>, "GenericSkeletonEvent does not exist");
+    static_assert(std::is_class_v<score::mw::com::GenericSkeletonServiceElementInfo>,
+                  "GenericSkeletonServiceElementInfo does not exist");
+    static_assert(std::is_class_v<score::mw::com::EventInfo>, "EventInfo does not exist");
+    static_assert(std::is_class_v<score::mw::com::DataTypeMetaInfo>, "DataTypeMetaInfo does not exist");
+}
 }  // namespace

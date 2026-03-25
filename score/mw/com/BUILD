@@ -21,8 +21,8 @@ load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 sphinx_docs_library(
     name = "readme_md",
     srcs = ["README.md"],
-    prefix = "score/mw/com/doc/sphinx/",  # Place under sphinx out folder
-    visibility = ["//score/mw/com/doc/sphinx:__pkg__"],
+    prefix = "docs/sphinx/",  # Place under sphinx out folder
+    visibility = ["//docs/sphinx:__pkg__"],
 )
 
 cc_library(

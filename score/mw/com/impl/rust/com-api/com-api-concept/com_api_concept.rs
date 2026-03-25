@@ -47,6 +47,7 @@
 //! - Tuples
 
 use crate::Reloc;
+pub use com_api_concept_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;
 use core::future::Future;
@@ -96,13 +97,13 @@ pub trait Runtime {
     type ServiceDiscovery<I: Interface + Send>: ServiceDiscovery<I, Self>;
 
     /// `Subscriber<T>` types for Manages subscriptions to event notifications
-    type Subscriber<T: CommData>: Subscriber<T, Self>;
+    type Subscriber<T: CommData + Debug>: Subscriber<T, Self>;
 
     /// `ProducerBuilder<I>` types for Constructs producer instances for offering services
     type ProducerBuilder<I: Interface>: ProducerBuilder<I, Self>;
 
     /// `Publisher<T>` types for Publishes event data to subscribers
-    type Publisher<T: CommData>: Publisher<T, Self>;
+    type Publisher<T: CommData + Debug>: Publisher<T, Self>;
 
     /// `ProviderInfo` types for Configuration data for service producers instances
     type ProviderInfo: ProviderInfo + Send + Clone;
@@ -194,11 +195,19 @@ where
     fn load_config(&mut self, config: &Path) -> &mut Self;
 }
 
-/// Communication data type requirements trait.
-/// Requires the data type to be relocatable between address spaces and sendable across threads.
-/// Also requires the data type to implement Debug for logging and debugging purposes.
-/// 'static' lifetime is required to ensure the data can live for the entire duration of the program.
-pub trait CommData: Reloc + Send + Debug + 'static {
+/// Defines the necessary properties for data types that can be communicated over the COM API.
+/// This trait ensures that data types are suitable for IPC communication by enforcing properties
+/// such as being relocatable. The Reloc trait provides Send + Unpin + 'static bounds which are necessary for safe cross-address-space usage.
+/// # Important
+/// Users must NOT implement the `CommData` trait manually. Always use the derive macros instead.
+/// Since `Reloc` is a supertrait of `CommData`, both must be derived explicitly:
+/// `#[derive(Reloc, CommData)]` on type definitions.
+/// This is to ensure that all necessary trait bounds and metadata are correctly applied to the communication data types.
+/// Also if user wants to specify a custom ID for the communication data type,
+/// they can use the `#[comm_data(id = "CustomID")]` attribute on the type definition.
+/// The custom ID must be unique across all communication data types to avoid conflicts in the system.
+/// If no custom ID is provided, the type name will be used as the default ID with module path as prefix to ensure uniqueness.
+pub trait CommData: Reloc {
     const ID: &'static str;
 }
 
@@ -303,7 +312,7 @@ impl From<InstanceSpecifier> for FindServiceSpecifier {
 // TODO: C++ doesn't yet support this. Expose API to compare SamplePtr ages.
 pub trait Sample<T>: Deref<Target = T> + Send + PartialOrd + Ord + Debug
 where
-    T: CommData,
+    T: CommData + Debug,
 {
 }
 
@@ -316,7 +325,7 @@ where
 /// * `T` - The relocatable event data type
 pub trait SampleMut<T>: DerefMut<Target = T> + Debug
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     /// Send the sample and consume it.
     ///
@@ -341,7 +350,7 @@ where
 /// TODO: with the ambiguous `assume_init()` then?
 pub trait SampleMaybeUninit<T>: Debug + AsMut<core::mem::MaybeUninit<T>>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     /// Buffer type for mutable data after initialization
     type SampleMut: SampleMut<T>;
@@ -459,7 +468,7 @@ pub trait Producer<R: Runtime + ?Sized> {
 /// * `T` - The relocatable event data type
 pub trait Publisher<T, R: Runtime + ?Sized>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     /// Associated sample type for uninitialized event data
     type SampleMaybeUninit<'a>: SampleMaybeUninit<T> + 'a
@@ -610,7 +619,7 @@ pub trait ConsumerBuilder<I: Interface, R: Runtime + ?Sized>:
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscriber<T: CommData, R: Runtime + ?Sized> {
+pub trait Subscriber<T: CommData + Debug, R: Runtime + ?Sized> {
     /// Associated subscription type for receiving event samples
     type Subscription: Subscription<T, R>;
 
@@ -669,7 +678,7 @@ impl<S> SampleContainer<S> {
     pub fn iter<T>(&self) -> impl Iterator<Item = &T>
     where
         S: Sample<T>,
-        T: CommData,
+        T: CommData + Debug,
     {
         self.inner.iter().map(<S as Deref>::deref)
     }
@@ -711,7 +720,7 @@ impl<S> SampleContainer<S> {
     ///
     /// # Returns
     /// An `Option` containing a reference to the first sample, or `None` if the container is empty.
-    pub fn front<T: CommData>(&self) -> Option<&T>
+    pub fn front<T: CommData + Debug>(&self) -> Option<&T>
     where
         S: Sample<T>,
     {
@@ -727,7 +736,7 @@ impl<S> SampleContainer<S> {
 /// # Type Parameters
 /// * `T` - The relocatable event data type
 /// * `R` - The runtime managing the subscription
-pub trait Subscription<T: CommData, R: Runtime + ?Sized> {
+pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// Associated subscriber type for managing the subscription lifecycle
     type Subscriber: Subscriber<T, R>;
     /// Associated sample type for received event data

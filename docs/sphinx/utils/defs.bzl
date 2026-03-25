@@ -136,7 +136,7 @@ generate_api_rst = rule(
         "_generator": attr.label(
             executable = True,
             cfg = "exec",
-            default = "//score/mw/com/doc/sphinx/utils:generate_api_rst_bin",
+            default = "//docs/sphinx/utils:generate_api_rst_bin",
             doc = "The Python binary that extracts API items and generates RST files (default: generate_api_rst_bin)",
         ),
     },

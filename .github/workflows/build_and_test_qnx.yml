@@ -30,7 +30,7 @@ on:
         required: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request_target'}}
 
 env:
@@ -50,7 +50,7 @@ jobs:
           env:
             EVENT_NAME: ${{ github.event_name }}
           run: |
-            python3 - <<'SCRIPT_END' >> "${GITHUB_OUTPUT}"
+            python3 - <<'SCRIPT_END'
             import json
             import os
 
@@ -70,9 +70,24 @@ jobs:
                     require_approval = True
                 else:
                     should_run = False
+            
+            should_run_string = 'true' if should_run else 'false'
+            require_approval_string = 'true' if require_approval else 'false'
 
-            print(f"should-run={'true' if should_run else 'false'}")
-            print(f"require-approval={'true' if require_approval else 'false'}")
+            labels_display = ", ".join(sorted(label for label in labels if label)) or "(none)"
+            print(
+                "QNX gate evaluation: "
+                f"event_name='{os.environ['EVENT_NAME']}', "
+                f"head_repo='{head_repo}', "
+                f"base_repo='{base_repo}', "
+                f"labels=[{labels_display}], "
+                f"outputs: should-run={should_run_string}, "
+                f"require-approval={require_approval_string}"
+            )
+
+            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as github_output:
+                print(f"should-run={should_run_string}", file=github_output)
+                print(f"require-approval={require_approval_string}", file=github_output)
             SCRIPT_END
 
     approval:
@@ -104,7 +119,7 @@ jobs:
             ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
             repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
         - name: Free Disk Space (Ubuntu)
-          uses: ./actions/free_disk_space
+          uses: eclipse-score/cicd-workflows/.github/actions/free_disk_space@7e109c9e97670ec621adaea1c21721c18212a96d
         - name: Setup Bazel
           uses: bazel-contrib/setup-bazel@0.18.0
           with:
@@ -127,7 +142,7 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: |
-            bazel build --config qnx_arm64 -- //score/... -//score/mw/com/requirements/... -//score/mw/com/performance_benchmarks/... -//score/mw/com/doc/... -//score/mw/com/design/...
+            bazel build --config qnx_arm64 -- //score/... -//score/mw/com/requirements/... -//score/mw/com/performance_benchmarks/... -//docs/... -//score/mw/com/design/...
         - name: Cleanup QNX License
           if: ${{ !cancelled() }}
           run: sudo rm -rf ${{ env.LICENSE_DIR }}
