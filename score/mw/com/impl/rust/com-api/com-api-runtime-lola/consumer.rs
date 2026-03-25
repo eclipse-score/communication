@@ -34,6 +34,7 @@ use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
+use core::panic;
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
 use std::pin::Pin;
@@ -614,11 +615,10 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     //event_guard will be dropped here, allowing new receive calls to access the
                     // proxy event
                     self.event_guard = None;
-                    return Poll::Ready(
-                        self.scratch
-                            .take()
-                            .ok_or(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable)),
-                    );
+                    return Poll::Ready(Ok(self
+                        .scratch
+                        .take()
+                        .expect("SampleContainer is not available when returning Future result")));
                 }
                 // Have some samples but not enough yet, wait for more via waker
                 Poll::Pending
@@ -679,6 +679,7 @@ where
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
+        //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
             mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
                 .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))?;
@@ -717,6 +718,7 @@ where
         let instance_specifier = self.instance_specifier.clone();
 
         // Convert to Lola InstanceSpecifier early
+        //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
             mw_com::InstanceSpecifier::try_from(instance_specifier.as_ref())
                 .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid));
