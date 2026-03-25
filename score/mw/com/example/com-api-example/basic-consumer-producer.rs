@@ -18,6 +18,9 @@
 // Note: The example is using unwrap and panic in some places for simplicity,
 // but it is recommended to handle errors properly in production code.
 
+use clap::Parser;
+use std::path::PathBuf;
+
 use com_api::{
     Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
     OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
@@ -125,18 +128,18 @@ fn create_consumer<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> Ve
         runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
     let available_service_instances = consumer_discovery
         .get_available_instances()
-        .unwrap_or_else(|e| panic!("{:?}", e));
+        .expect("Failed to get available service instances");
 
     // Select service instance at specific handle_index
     let handle_index = 0; // or any index you need from vector of instances
     let consumer_builder = available_service_instances
         .into_iter()
         .nth(handle_index)
-        .unwrap();
+        .expect("Failed to get consumer builder at specified handle index");
 
     consumer_builder
         .build()
-        .unwrap_or_else(|e| panic!("{:?}", e))
+        .expect("Failed to build consumer instance")
 }
 
 #[allow(dead_code)]
@@ -150,16 +153,16 @@ async fn create_consumer_async<R: Runtime>(
     let available_service_instances = consumer_discovery
         .get_available_instances_async()
         .await
-        .unwrap();
+        .expect("Failed to get available service instances asynchronously");
 
     // Select service instance at specific handle_index
     let handle_index = 0; // or any index you need from vector of instances
     let consumer_builder = available_service_instances
         .into_iter()
         .nth(handle_index)
-        .unwrap();
+        .expect("Failed to get consumer builder at specified handle index");
 
-    consumer_builder.build().unwrap()
+    consumer_builder.build().expect("Failed to build consumer instance")
 }
 
 // Create a producer for the specified service identifier
@@ -170,18 +173,16 @@ fn create_producer<R: Runtime>(
     let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
     let producer = producer_builder
         .build()
-        .unwrap_or_else(|e| panic!("{:?}", e));
-    producer.offer().unwrap_or_else(|e| panic!("{:?}", e))
+        .expect("Failed to build producer instance");
+    producer.offer().expect("Failed to offer producer instance")
 }
 
 // Run the example with the specified runtime
 fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     println!("\n=== Running with {name} runtime ===");
 
-    let service_id = match InstanceSpecifier::new("/Vehicle/Service1/Instance") {
-        Ok(specifier) => specifier,
-        Err(e) => panic!("{:?}", e),
-    };
+    let service_id = InstanceSpecifier::new("/Vehicle/Service1/Instance")
+        .expect("Failed to create InstanceSpecifier");
     let producer = create_producer(runtime, service_id.clone());
     let consumer = create_consumer(runtime, service_id);
     let monitor = VehicleMonitor::new(consumer, producer).unwrap();

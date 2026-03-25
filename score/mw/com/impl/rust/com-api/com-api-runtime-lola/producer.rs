@@ -445,6 +445,7 @@ impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder
 
 impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
+        //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(
             self.instance_specifier.as_ref(),
         )
@@ -459,7 +460,6 @@ impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuild
         };
 
         I::Producer::new(instance_info)
-            .map_err(|_| Error::ProducerError(ProducerFailedReason::BuilderCreationFailed))
     }
 }
 
