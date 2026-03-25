@@ -20,36 +20,24 @@ test:with_debug_symbols --cxxopt=-g1
 test:with_debug_symbols --strip=never
 
 # ASan + UBSan + LSan (Combined)
-build:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-build:asan_ubsan_lsan --features=asan
-build:asan_ubsan_lsan --features=ubsan
-build:asan_ubsan_lsan --features=lsan
-build:asan_ubsan_lsan --linkopt=-fsanitize=undefined,address,leak
-build:asan_ubsan_lsan --linkopt=-fsanitize-link-c++-runtime
+test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+test:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+test:asan_ubsan_lsan --features=asan_ubsan_lsan_link
 build:asan_ubsan_lsan --platform_suffix=asan_ubsan_lsan
 test:asan_ubsan_lsan --config=with_debug_symbols
-test:asan_ubsan_lsan --test_tag_filters=-no-asan,-no-lsan,-no-ubsan
 test:asan_ubsan_lsan --@score_cpp_policies//sanitizers/flags:sanitizer=asan_ubsan_lsan
 test:asan_ubsan_lsan --run_under=@score_cpp_policies//sanitizers:wrapper
 
 # Shortcuts for individual sanitizers
 build:asan  --config=asan_ubsan_lsan
-build:asan  --test_tag_filters=-no-asan
 build:ubsan --config=asan_ubsan_lsan
-build:ubsan --test_tag_filters=-no-ubsan
 build:lsan  --config=asan_ubsan_lsan
-build:lsan  --test_tag_filters=-no-lsan
 
 # ThreadSanitizer
-build:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-build:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-build:tsan --features=tsan
-build:tsan --linkopt=-fsanitize=thread
-build:tsan --linkopt=-fsanitize-link-c++-runtime
+test:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+test:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+test:tsan --features=tsan_link
 build:tsan --platform_suffix=tsan
 test:tsan --config=with_debug_symbols
-test:tsan --cxxopt=-O1
-test:tsan --test_tag_filters=-no-tsan
 test:tsan --@score_cpp_policies//sanitizers/flags:sanitizer=tsan
 test:tsan --run_under=@score_cpp_policies//sanitizers:wrapper
