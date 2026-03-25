@@ -136,7 +136,12 @@ toolchains_qnx.sdp(
 )
 use_repo(toolchains_qnx, "toolchains_qnx_ifs")
 
-bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
+bazel_dep(name = "toolchains_llvm", version = "1.7.0", dev_dependency = True)
+git_override(
+    module_name = "toolchains_llvm",
+    commit = "576a587e4542733166ac1c3c4fb14c79c421332c",
+    remote = "https://github.com/bazel-contrib/toolchains_llvm",
+)
 
 llvm = use_extension(
     "@toolchains_llvm//toolchain/extensions:llvm.bzl",
@@ -158,12 +163,17 @@ llvm.toolchain(
         "-Wthread-safety",
     ]},
     cxx_standard = {"": "c++17"},
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan_link",
+        "@score_cpp_policies//sanitizers/features:tsan_link",
+    ],
     link_libs = {"": [
         "-lrt",
         # This is the agreed way to ensure linking for targets using std::atomic operations.
         "-latomic",
     ]},
     llvm_version = "19.1.7",
+    stdlib = {"": "stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")
 
