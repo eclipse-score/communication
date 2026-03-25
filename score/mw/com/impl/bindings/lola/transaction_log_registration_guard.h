@@ -13,58 +13,42 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
-#include "score/result/result.h"
-
-#include <functional>
-#include <optional>
+#include "score/scope_exit/scope_exit.h"
 
 namespace score::mw::com::impl::lola
 {
 
-/**
- * RAII helper class that will call TransactionLogSet::RegisterTransactionLog on construction and
- * EventDataControl::UnregisterTransactionLog on destruction.
- */
+class TransactionLogSet;
+
+/// \brief RAII helper class that will call TransactionLogSet::Unregister on destruction.
+///
+/// Class must not be destroyed concurrently with a call to TransactionLogSet::GetTransactionLog with the same
+/// transaction_log_index.
 class TransactionLogRegistrationGuard
 {
+    // Suppress "AUTOSAR C++14 A11-3-1"
+    // Design dessision: The "*Attorney" class is a helper, which reads can access private members of this class and
+    // used for testing purposes only.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class TransactionLogRegistrationGuardTestAttorney;
+
   public:
-    /// \brief Create func for TransactionLogRegistrationGuard for ProxyServiceElementTransactionLog
-    /// \param event_data_control event data control for the service element
-    /// \param transaction_log_id transaction log is identifying the proxy instance
-    /// \return
-    static score::Result<TransactionLogRegistrationGuard> Create(
-        ProxyEventDataControlLocalView<>& event_data_control_local,
-        const TransactionLogId& transaction_log_id) noexcept;
+    TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
+                                    const TransactionLogIndex transaction_log_index);
 
-    /// \brief Create func for TransactionLogRegistrationGuard for SkeletonServiceElementTracingTransactionLog
-    /// \param event_data_control event_data_control event data control for the service element
-    /// \return
-    static TransactionLogRegistrationGuard Create(
-        SkeletonEventDataControlLocalView<>& event_data_control_local) noexcept;
-
-    ~TransactionLogRegistrationGuard() noexcept;
-
-    TransactionLogRegistrationGuard(const TransactionLogRegistrationGuard&) = delete;
-    TransactionLogRegistrationGuard& operator=(const TransactionLogRegistrationGuard&) = delete;
-    TransactionLogRegistrationGuard& operator=(TransactionLogRegistrationGuard&& other) noexcept = delete;
-
-    // The TransactionLogRegistrationGuard must be move constructible so that it can be wrapped in an std::optional.
-    TransactionLogRegistrationGuard(TransactionLogRegistrationGuard&& other) noexcept;
-
-    TransactionLogIndex GetTransactionLogIndex() const noexcept;
+    TransactionLogIndex GetTransactionLogIndex() const;
 
   private:
-    TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
-                                    const TransactionLogIndex transaction_log_index) noexcept;
+    TransactionLogIndex transaction_log_index_;
 
-    std::reference_wrapper<TransactionLogSet> transaction_log_set_;
-    std::optional<TransactionLogIndex> transaction_log_index_;
+    /// The lifetime of the TransactionLogSet starts with Proxy creation and opening the TrasnactionlogSet in shared
+    /// memory and ends with munmap during Proxy destruction. The TransactionLogRegistrationGuard is held
+    /// by the SubscriptionStateMachine which is owned by the ProxyEvent which is owned by the Proxy. Therefore, the
+    /// TransactionLogRegistrationGuard will always be destroyed before the TransactionLogSet is destroyed, so it is
+    /// safe to capture a reference to the TransactionLogSet in the lambda without using a ScopedFunction.
+    utils::ScopeExit<score::cpp::callback<void()>> unregister_on_destruction_operation_;
 };
 
 }  // namespace score::mw::com::impl::lola

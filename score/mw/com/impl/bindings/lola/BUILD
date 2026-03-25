@@ -326,7 +326,6 @@ cc_library(
         ":shm_path_builder",
         ":skeleton_instance_identifier",
         ":skeleton_service_data_control_local_view",
-        ":transaction_log_registration_guard",
         ":type_erased_sample_ptrs_guard",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:generic_skeleton_event_binding",
@@ -389,7 +388,6 @@ cc_library(
         ":slot_collector",
         ":subscription_state_machine",
         ":transaction_log_id",
-        ":transaction_log_registration_guard",
         ":transaction_log_rollback_executor",
         "//score/mw/com/impl:generic_proxy_event_binding",
         "//score/mw/com/impl:instance_identifier",
@@ -500,7 +498,6 @@ cc_library(
         ":proxy_event_data_control_local_view",
         ":slot_collector",
         ":transaction_log_id",
-        ":transaction_log_registration_guard",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola/messaging:i_message_passing_service",
@@ -805,6 +802,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
 )
 
+# TransactionLogSet and TransactionLogRegistrationGuard are in the same build target to avoid cyclic dependency errors
 cc_library(
     name = "transaction_log_index",
     srcs = ["transaction_log_index.cpp"],
@@ -819,8 +817,14 @@ cc_library(
 
 cc_library(
     name = "transaction_log_set",
-    srcs = ["transaction_log_set.cpp"],
-    hdrs = ["transaction_log_set.h"],
+    srcs = [
+        "transaction_log_registration_guard.cpp",
+        "transaction_log_set.cpp",
+    ],
+    hdrs = [
+        "transaction_log_registration_guard.h",
+        "transaction_log_set.h",
+    ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -836,6 +840,7 @@ cc_library(
         "//score/mw/com/impl/util:copyable_atomic",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/result",
+        "@score_baselibs//score/scope_exit",
     ],
 )
 
@@ -854,26 +859,6 @@ cc_library(
         "//score/mw/com/impl/bindings/lola:runtime",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
-        "@score_baselibs//score/result",
-    ],
-)
-
-cc_library(
-    name = "transaction_log_registration_guard",
-    srcs = ["transaction_log_registration_guard.cpp"],
-    hdrs = ["transaction_log_registration_guard.h"],
-    features = COMPILER_WARNING_FEATURES,
-    implementation_deps = [
-        "//score/mw/com/impl:error",
-    ],
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-    deps = [
-        ":proxy_event_data_control_local_view",
-        ":skeleton_event_data_control_local_view",
-        ":transaction_log_id",
-        ":transaction_log_index",
-        ":transaction_log_set",
         "@score_baselibs//score/result",
     ],
 )
@@ -1423,6 +1408,7 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
+        ":transaction_log_set",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
     ],
 )

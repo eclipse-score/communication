@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
+#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
@@ -121,7 +122,8 @@ Result<void> TransactionLogSet::RollbackSkeletonTracingTransactions(
     return {};
 }
 
-score::Result<TransactionLogIndex> TransactionLogSet::RegisterProxyElement(const TransactionLogId& transaction_log_id)
+score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyElement(
+    const TransactionLogId& transaction_log_id)
 {
     const auto next_available_slot_result = AcquireNextAvailableSlot(transaction_log_id);
     if (!next_available_slot_result.has_value())
@@ -135,10 +137,10 @@ score::Result<TransactionLogIndex> TransactionLogSet::RegisterProxyElement(const
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         !next_available_slot_result.value().first->GetTransactionLog().ContainsTransactions(),
         "Cannot reuse TransactionLog as it still contains some old transactions.");
-    return next_available_slot_result.value().second;
+    return TransactionLogRegistrationGuard{*this, next_available_slot_result.value().second};
 }
 
-TransactionLogIndex TransactionLogSet::RegisterSkeletonTracingElement()
+TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTracingElement()
 {
     // we only do have one skeleton instance accessing the skeleton transaction log, so a dummy value is good enough,
     // we don't need e.g. an uid here.
@@ -148,7 +150,7 @@ TransactionLogIndex TransactionLogSet::RegisterSkeletonTracingElement()
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         skeleton_tracing_transaction_log_.TryAcquire(kDummyTransactionLogIdSkeleton),
         "Unexpected failure to acquire TransactionLogNode for SkeletonEvent!");
-    return kSkeletonIndexSentinel;
+    return TransactionLogRegistrationGuard{*this, kSkeletonIndexSentinel};
 }
 
 void TransactionLogSet::Unregister(const TransactionLogIndex transaction_log_index)
