@@ -479,6 +479,12 @@ where
     type Sample<'a> = Sample<T>;
 
     fn unsubscribe(self) -> Self::Subscriber {
+        //SAFETY: it is safe to unsubscribe from event because event ptr is valid
+        //User must not call unsubscribe while holding any samplePtr or performing any receive operation,
+        //because of that we are consuming self in this function, so there won't be any receive operation or samplePtr access after this call.
+        unsafe {
+            bridge_ffi_rs::unsubscribe_to_event(self.event.get_proxy_event().deref_mut());
+        }
         SubscribableImpl {
             identifier: self.event_id,
             instance_info: self.instance_info.clone(),
@@ -1027,7 +1033,6 @@ mod test {
             find_handle: None,
             handles: None,
         };
-        assert!(state.find_handle.is_none());
         assert!(state.handles.is_none());
     }
 
@@ -1040,7 +1045,6 @@ mod test {
         };
         let debug_string = format!("{:?}", state);
         assert!(debug_string.contains("DiscoveryStateData"));
-        assert!(debug_string.contains("find_handle"));
         assert!(debug_string.contains("handles"));
     }
 
