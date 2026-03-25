@@ -212,6 +212,9 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
         Ok(_) => println!("Successfully unoffered the service"),
         Err(e) => eprintln!("Failed to unoffer: {:?}", e),
     }
+
+    //UnSubscribe the event
+    let _ = monitor.tire_subscriber.unsubscribe();
     println!("=== {name} runtime completed ===\n");
 }
 
