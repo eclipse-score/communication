@@ -21,8 +21,8 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     strip_include_prefix = "api_under_test",
     deps = [
+        "//score/memory/shared:types",
         "//score/mw/com",
-        "@score_baselibs//score/memory/shared:types",
     ],
 )
 

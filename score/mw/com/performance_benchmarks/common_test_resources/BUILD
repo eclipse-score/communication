@@ -30,8 +30,8 @@ cc_library(
         "//score/mw/com/performance_benchmarks:__subpackages__",
     ],
     deps = [
+        "//score/memory/shared",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:mman",
         "@score_baselibs//score/os:stat",
