@@ -877,6 +877,7 @@ cc_library(
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:types",
+        "@score_baselibs//score/utils/meyer_singleton",
         "@score_logging//score/mw/log",
     ],
 )

@@ -148,7 +148,7 @@ Runtime& Runtime::getInstanceInternal() noexcept
     // Suppress "AUTOSAR C++14 A3-3-2" rule finding. This rule states: "Static and thread-local objects shall be
     // constant-initialized.". This cannot be constexpr as the lambda function executes at runtime.
     // coverity[autosar_cpp14_a3_3_2_violation]
-    static Runtime instance{([]() -> std::pair<Configuration, score::cpp::optional<TracingFilterConfig>> {
+    return singleton::MeyerSingleton<Runtime>::GetInstanceInitializedWithCallable([]() -> Runtime {
         std::lock_guard<std::mutex> lock{mutex_};
         runtime_initialization_locked_ = true;
         if (!initialization_config_.has_value())
@@ -156,7 +156,7 @@ Runtime& Runtime::getInstanceInternal() noexcept
             runtime::RuntimeConfiguration runtime_configuration{};
             auto configuration = configuration::Parse(runtime_configuration.GetConfigurationPath().Native());
             auto tracing_config = ParseTraceConfig(configuration);
-            return std::make_pair(std::move(configuration), std::move(tracing_config));
+            return Runtime{std::make_pair(std::move(configuration), std::move(tracing_config))};
         }
         else
         {
@@ -164,10 +164,9 @@ Runtime& Runtime::getInstanceInternal() noexcept
             auto configuration_pair =
                 std::make_pair(std::move(initialization_config_.value()), std::move(tracing_config));
             initialization_config_.reset();
-            return configuration_pair;
+            return Runtime{std::move(configuration_pair)};
         }
-    })()};
-    return instance;
+    });
 }
 
 Runtime::Runtime(std::pair<Configuration&&, score::cpp::optional<TracingFilterConfig>&&> configs)
