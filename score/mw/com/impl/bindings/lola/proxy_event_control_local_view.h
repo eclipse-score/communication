@@ -25,7 +25,7 @@ namespace score::mw::com::impl::lola
 class ProxyEventControlLocalView
 {
   public:
-    using SubscriberCountType = EventSubscriptionControl::SubscriberCountType;
+    using SubscriberCountType = EventSubscriptionControl<>::SubscriberCountType;
     ProxyEventControlLocalView(EventControl& event_control_shared_mem) noexcept;
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
@@ -34,7 +34,7 @@ class ProxyEventControlLocalView
     // coverity[autosar_cpp14_m11_0_1_violation]
     ProxyEventDataControlLocalView<> data_control;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    std::reference_wrapper<EventSubscriptionControl> subscription_control;
+    std::reference_wrapper<EventSubscriptionControl<>> subscription_control;
 };
 
 }  // namespace score::mw::com::impl::lola

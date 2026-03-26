@@ -23,7 +23,7 @@ namespace score::mw::com::impl::lola
 class EventControl
 {
   public:
-    using SubscriberCountType = EventSubscriptionControl::SubscriberCountType;
+    using SubscriberCountType = EventSubscriptionControl<>::SubscriberCountType;
     EventControl(const SlotIndexType number_of_slots,
                  const SubscriberCountType max_subscribers,
                  const bool enforce_max_samples,
@@ -35,7 +35,7 @@ class EventControl
     // coverity[autosar_cpp14_m11_0_1_violation]
     EventDataControl data_control;
     // coverity[autosar_cpp14_m11_0_1_violation]
-    EventSubscriptionControl subscription_control;
+    EventSubscriptionControl<> subscription_control;
 };
 
 }  // namespace score::mw::com::impl::lola

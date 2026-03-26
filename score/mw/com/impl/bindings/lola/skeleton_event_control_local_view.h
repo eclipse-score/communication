@@ -22,7 +22,7 @@ namespace score::mw::com::impl::lola
 class SkeletonEventControlLocalView
 {
   public:
-    using SubscriberCountType = EventSubscriptionControl::SubscriberCountType;
+    using SubscriberCountType = EventSubscriptionControl<>::SubscriberCountType;
     SkeletonEventControlLocalView(EventControl& event_control_shared_mem) noexcept;
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
