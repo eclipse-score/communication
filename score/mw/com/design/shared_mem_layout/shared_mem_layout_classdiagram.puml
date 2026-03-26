@@ -82,7 +82,7 @@ class "lola::EventControl" <<Shared Memory>> {
 class "lola::EventSubscriptionControl" <<Shared Memory>> <<typedef>> {
 }
 
-class "lola::detail_event_subscription_control::EventSubscriptionControlImpl<>" as EventSubscriptionControlImpl <<Shared Memory>> {
+class "lola::EventSubscriptionControl<>" as EventSubscriptionControl <<Shared Memory>> {
   -current_subscription_state_ : std::atomic_uint32_t
   -max_subscribable_slots_ : const SlotNumberType
   -max_subscribers_ : const SubscriberCountType
@@ -157,7 +157,7 @@ lola::EventControl *-- lola::EventSubscriptionControl
 lola::UidPidMapping *-- "0..n" lola::UidPidMappingEntry
 
 lola::EventDataControl .> EventDataControl : type
-lola::EventSubscriptionControl .> EventSubscriptionControlImpl : type
+lola::EventSubscriptionControl .> EventSubscriptionControl : type
 
 EventDataControl *-- lola::TransactionLogSet
 lola::TransactionLogSet *-- lola::TransactionLog

@@ -112,10 +112,10 @@ class TransactionLogSetHelperFixture : public ::testing::Test
     }
 };
 
-std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl::SubscriberCountType subscriber_count,
-                                                  EventSubscriptionControl::SlotNumberType subscribed_slots);
+std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
+                                                  EventSubscriptionControl<>::SlotNumberType subscribed_slots);
 void AddSubscriptionToEventSubscriptionControl(ProxyEventControlLocalView& proxy_event_control_local,
-                                               const EventSubscriptionControl::SubscriberCountType subscriber_count,
+                                               const EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                                const TransactionLog::MaxSampleCountType max_sample_count) noexcept;
 void InsertProxyTransactionLogWithValidTransactions(
     ProxyEventControlLocalView& proxy_event_control_local,
