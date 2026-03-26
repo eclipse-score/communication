@@ -1138,7 +1138,7 @@ EventDataControlComposite<> Skeleton::CreateEventControlComposite(
                                      proxy_event_data_control_local};
 }
 
-std::pair<void*, EventDataControlComposite<>> Skeleton::CreateEventDataFromOpenedSharedMemory(
+std::pair<void*, EventDataControlComposite<>> Skeleton::CreateEventDataInCreatedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     size_t sample_size,
@@ -1192,7 +1192,7 @@ std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
         return {data_storage, control_composite};
     }
 
-    return CreateEventDataFromOpenedSharedMemory(element_fq_id, element_properties, sample_size, sample_alignment);
+    return CreateEventDataInCreatedSharedMemory(element_fq_id, element_properties, sample_size, sample_alignment);
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
