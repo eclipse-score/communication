@@ -324,8 +324,8 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             max_num_samples,
             instance_info,
             waker_storage: Arc::default(),
-            _proxy: self.proxy_instance.clone(),
             async_init_status: AtomicBool::new(false),
+            _proxy: self.proxy_instance.clone(),
             _phantom: PhantomData,
         })
     }
@@ -430,21 +430,27 @@ where
     max_num_samples: usize,
     instance_info: LolaConsumerInfo,
     waker_storage: Arc<AtomicWaker>,
-    _proxy: ProxyInstanceManager,
     async_init_status: AtomicBool,
+    _proxy: ProxyInstanceManager,
     _phantom: PhantomData<T>,
 }
 
 impl<T: CommData + Debug> Drop for SubscriberImpl<T> {
     fn drop(&mut self) {
-        //SAFETY: it is safe to clear the event receive handler because event ptr is valid
-        // which was obtained from valid proxy instance and the callback set for this event stream
-        // will be dropped after this, so it won't be called after the handler is cleared
+        // SAFETY: It is safe to unsubscribe from the event because the event pointer is valid
+        // and was created during subscription.
+        // Exculsive access to the event pointer is guaranteed by the ProxyEventManagerGuard.
+        // Unset the receive handler to release the async callback,
+        // and then unsubscribe from the event to clean up resources on the C++ side.
+        let mut guard = self.event.get_proxy_event();
         unsafe {
-            bridge_ffi_rs::clear_event_receive_handler(
-                self.event.get_proxy_event().deref_mut(),
-                T::ID,
-            );
+            if self
+                .async_init_status
+                .load(std::sync::atomic::Ordering::Relaxed)
+            {
+                bridge_ffi_rs::clear_event_receive_handler(guard.deref_mut(), T::ID);
+            }
+            bridge_ffi_rs::unsubscribe_to_event(guard.deref_mut());
         }
     }
 }
@@ -479,12 +485,7 @@ where
     type Sample<'a> = Sample<T>;
 
     fn unsubscribe(self) -> Self::Subscriber {
-        //SAFETY: it is safe to unsubscribe from event because event ptr is valid
-        //User must not call unsubscribe while holding any samplePtr or performing any receive operation,
-        //because of that we are consuming self in this function, so there won't be any receive operation or samplePtr access after this call.
-        unsafe {
-            bridge_ffi_rs::unsubscribe_to_event(self.event.get_proxy_event().deref_mut());
-        }
+        //Unsubscribe FFI call will be triggered in Drop implementation of SubscriberImpl.
         SubscribableImpl {
             identifier: self.event_id,
             instance_info: self.instance_info.clone(),
@@ -1029,20 +1030,14 @@ mod test {
     #[test]
     fn test_discovery_state_data_creation() {
         // Test that DiscoveryStateData can be created with None values
-        let state = super::DiscoveryStateData {
-            find_handle: None,
-            handles: None,
-        };
+        let state = super::DiscoveryStateData { handles: None };
         assert!(state.handles.is_none());
     }
 
     #[test]
     fn test_discovery_state_data_debug() {
         // Test that DiscoveryStateData debug formatting works
-        let state = super::DiscoveryStateData {
-            find_handle: None,
-            handles: None,
-        };
+        let state = super::DiscoveryStateData { handles: None };
         let debug_string = format!("{:?}", state);
         assert!(debug_string.contains("DiscoveryStateData"));
         assert!(debug_string.contains("handles"));
@@ -1076,4 +1071,33 @@ mod test {
         // Call get_available_instances - verifies the method exists and is callable
         let _result = discovery.get_available_instances();
     }
+}
+
+mod doctest {
+
+    /// Calling `unsubscribe` while a `SampleContainer` holding samples whose lifetime
+    /// is tied to the subscription is still in scope so it must not compile.
+    ///
+    /// `try_receive` fills the container with `S::Sample<'a>` where `'a` is the
+    /// borrow lifetime of `self`.  The borrow checker therefore prevents moving
+    /// `self` (via `unsubscribe`) while the container and the samples it may hold
+    /// are still in scope.
+    ///
+    /// ``` compile_fail
+    /// use com_api_concept::{CommData, SampleContainer, Subscription};
+    /// use com_api_runtime_lola::LolaRuntimeImpl;
+    ///
+    /// fn demonstrate_sample_container_lifetime_borrow<T, S>(sub: S)
+    /// where
+    ///     T: CommData + std::fmt::Debug,
+    ///     S: Subscription<T, LolaRuntimeImpl>,
+    /// {
+    ///     let mut container = SampleContainer::new(2);
+    ///     let _ = sub.try_receive(&mut container, 2);
+    ///     sub.unsubscribe(); // ERROR: cannot move `sub` while `container` borrows it
+    ///     drop(container);
+    /// }
+    /// ```
+    #[cfg(doctest)]
+    fn unsubscribe_during_sample_container_is_in_scope() {}
 }
