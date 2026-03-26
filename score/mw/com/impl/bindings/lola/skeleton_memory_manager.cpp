@@ -224,7 +224,7 @@ EventDataControlComposite<> SkeletonMemoryManager::CreateEventControlComposite(
                                      proxy_event_data_control_local};
 }
 
-std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEventDataFromOpenedSharedMemory(
+std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     size_t sample_size,

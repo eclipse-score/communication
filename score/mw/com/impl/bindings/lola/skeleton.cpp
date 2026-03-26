@@ -517,7 +517,7 @@ std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
         return {data_storage, control_composite};
     }
 
-    return memory_manager_.CreateEventDataFromOpenedSharedMemory(
+    return memory_manager_.CreateEventDataInCreatedSharedMemory(
         element_fq_id, element_properties, sample_size, sample_alignment);
 }
 
