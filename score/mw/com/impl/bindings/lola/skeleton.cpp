@@ -1069,11 +1069,11 @@ EventDataControlComposite<> Skeleton::CreateEventControlComposite(
     return EventDataControlComposite{&control_qm.first->second.data_control, control_asil_result};
 }
 
-std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>>
-Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
-                                                const SkeletonEventProperties& element_properties,
-                                                size_t sample_size,
-                                                size_t sample_alignment) noexcept
+std::pair<void*, EventDataControlComposite<>> Skeleton::CreateEventDataFromOpenedSharedMemory(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties,
+    size_t sample_size,
+    size_t sample_alignment) noexcept
 {
     // Calculate the aligned size for a single sample to ensure proper padding between slots
     const auto aligned_sample_size = memory::shared::CalculateAlignedSize(sample_size, sample_alignment);
@@ -1096,7 +1096,8 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
 
     return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
 }
-std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>> Skeleton::RegisterGeneric(
+
+std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     const size_t sample_size,
@@ -1121,10 +1122,8 @@ std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>> S
 
         return {data_storage, control_composite};
     }
-    else
-    {
-        return CreateEventDataFromOpenedSharedMemory(element_fq_id, element_properties, sample_size, sample_alignment);
-    }
+
+    return CreateEventDataFromOpenedSharedMemory(element_fq_id, element_properties, sample_size, sample_alignment);
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
