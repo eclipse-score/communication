@@ -182,6 +182,11 @@ bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = Tr
 
 bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "score_communication_crate_index")
 bazel_dep(name = "boost.program_options", version = "1.87.0")
+
+# boost.container and boost.interprocess are currently pulled in via
+# @score_baselibs//score/memory/shared:map alias. Will be needed directly
+# once map target is converted from alias to cc_library here.
+bazel_dep(name = "boost.container", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
 
 bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
@@ -231,7 +236,7 @@ single_version_override(
 bazel_dep(name = "score_baselibs", version = "0.2.4")
 git_override(
     module_name = "score_baselibs",
-    commit = "052c2f271be4239f97182b164f4903b8c88d6c72",
+    commit = "72f9b56e840d3b3e96ddaad21f7413bc5862de1e",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
