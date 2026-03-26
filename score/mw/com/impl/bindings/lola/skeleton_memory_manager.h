@@ -74,7 +74,7 @@ class SkeletonMemoryManager final
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
 
     template <typename SampleType>
-    std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> CreateEventDataFromOpenedSharedMemory(
+    std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> CreateEventDataInCreatedSharedMemory(
         const ElementFqId element_fq_id,
         const SkeletonEventProperties& element_properties);
 
@@ -91,7 +91,7 @@ class SkeletonMemoryManager final
     /// \param sample_size The size of a single data sample.
     /// \param sample_alignment The alignment of the data sample.
     /// \return A pair containing the data storage pointer (void*) and the control composite.
-    std::pair<void*, EventDataControlComposite<>> CreateEventDataFromOpenedSharedMemory(
+    std::pair<void*, EventDataControlComposite<>> CreateEventDataInCreatedSharedMemory(
         const ElementFqId element_fq_id,
         const SkeletonEventProperties& element_properties,
         size_t sample_size,
@@ -189,8 +189,8 @@ template <typename SampleType>
 // Justification: This is a false positive, no way to throw std::bad_variant_access.
 // coverity[autosar_cpp14_m3_2_2_violation]
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonMemoryManager::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
-                                                                  const SkeletonEventProperties& element_properties)
+auto SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
+                                                                 const SkeletonEventProperties& element_properties)
     -> std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>>
 {
     auto* typed_event_data_storage_ptr = storage_resource_->construct<EventDataStorage<SampleType>>(
