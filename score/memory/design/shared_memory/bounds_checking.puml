@@ -1,0 +1,92 @@
+@startuml bounds_checking
+skinparam linetype ortho
+
+
+class "score::memory::shared::MemoryResourceProxy" as Proxy {
+  Notes:
+  Unchanged
+}
+
+
+
+class "score::memory::shared::MemoryResourceRegistry" as Registry {
+  known_regions: MemoryRegionMap
+  --
+  + insert_resource(std::pair<std::unit64_t, ManagedMemoryResource*>): void
+  + remove_resource(std::uint64_t identifier): void
+  + GetBoundsFromAddress(uintptr_t): optional<pair<MemoryRegionBounds, MemoryResourceIdentifier>>
+  + GetBoundsFromIdentifier(uint64 identifier): Result<MemoryRegionBounds>
+  --
+  Notes:
+  * known_regions is a map for memory regions (i.e. storing the start and end
+  addresses for each memory region) which provides lock-free access to one
+  writer and multiple concurrent readers.
+  * GetBoundsFromAddress() checks if the passed pointer is within a known
+  memory region. If so, returns the bounds of that memory region. Else,
+  returns pair of null ptrs. We return memory bounds rather than a bool
+  value indicating whether the OffsetPtr is within the memory bounds to
+  avoid explicitly coupling it with an OffsetPtr.
+}
+
+class "score::memory::shared::SharedMemoryResource" as SharedResource {
+  - Create(StringLiteral, InitializeCallback, std::size_t, UserPermissions permissions = {}) noexcept: std::shared_ptr<ManagedMemoryResource>
+  --
+  Notes:
+  Calls MemoryResourceRegistry::insert_resource() in Create() after mapping the shared memory into the process.
+}
+
+class "score::memory::shared::HeapMemoryResource" as HeapResource {
+  --
+  Notes:
+  Since we don't want to bounds check, don't
+  call MemoryResourceRegistry::insert_memory_range().
+}
+
+class "score::memory::shared::OffsetPtr<PointedType>" as OffsetPtr {
+  + get() const: PointedType*
+  + get(size_t) const: PointedType*
+  + get<ExplicitPointedType>(): ExplicitPointedType*
+  + GetWithoutBoundsCheck(): PointedType*
+  --
+  Notes:
+  If EnableOffsetPtrBoundsChecking() has not been called
+  with enable=false, when get() is called, gets the memory
+  bounds of the region in which the offset pointer is allocated
+  with MemoryResourceRegistry::get_bounds_for(this). If non-null
+  bounds are returned, terminates if pointed-to-object is not
+  inside memory bounds. Otherwise, returns as normal.
+}
+
+class "score::memory::shared::PolymorphicOffsetPtrAllocator<T:class>" as PolymorphicOffsetPtrAllocator {
+  Notes:
+  Unchanged
+  --
+}
+
+class "score::memory::shared::ManagedMemoryResource" as ManagedMemoryResource {
+  --
+  Notes:
+  Unchanged
+}
+
+
+Proxy -l-> Registry : lookup dispatch \ntarget
+ManagedMemoryResource -u-o Registry: holds
+HeapResource -l.|> ManagedMemoryResource
+SharedResource -u.|> ManagedMemoryResource
+Proxy -d-> ManagedMemoryResource: dispatch allocate deallocate
+Proxy -d-o PolymorphicOffsetPtrAllocator: allocates memory \nusing
+PolymorphicOffsetPtrAllocator -d-> OffsetPtr: constructs and \nreturns
+OffsetPtr -l-> Registry: get memory bounds
+
+
+note as N1
+
+--
+Global Functions
+--
+EnableOffsetPtrBoundsChecking():
+- Sets or clears flag which to allow bounds checking.
+end note
+
+@enduml
