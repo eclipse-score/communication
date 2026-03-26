@@ -17,8 +17,8 @@
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_mock.h"
 
 #include <score/utility.hpp>
 
@@ -88,7 +88,7 @@ class EventDataControlFixture : public ::testing::Test
 
     void TearDown() override
     {
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
+        concurrency::atomic::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
     }
 
     EventDataControlFixture& GivenARealEventDataControl(
@@ -104,12 +104,12 @@ class EventDataControlFixture : public ::testing::Test
         const SlotIndexType max_slots,
         const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
     {
-        atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
+        atomic_mock_ = std::make_unique<concurrency::atomic::AtomicMock<EventSlotStatus::value_type>>();
+        concurrency::atomic::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
-        unit_mock_ =
-            std::make_unique<detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock>>(
-                max_slots, memory_, max_subscribers);
+        unit_mock_ = std::make_unique<
+            detail_event_data_control::EventDataControlImpl<concurrency::atomic::AtomicIndirectorMock>>(
+            max_slots, memory_, max_subscribers);
 
         return *this;
     }
@@ -124,9 +124,9 @@ class EventDataControlFixture : public ::testing::Test
     }
 
     FakeMemoryResource memory_{};
-    std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
-    std::unique_ptr<detail_event_data_control::EventDataControlImpl<memory::shared::AtomicIndirectorMock>> unit_mock_{
-        nullptr};
+    std::unique_ptr<concurrency::atomic::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
+    std::unique_ptr<detail_event_data_control::EventDataControlImpl<concurrency::atomic::AtomicIndirectorMock>>
+        unit_mock_{nullptr};
     std::unique_ptr<EventDataControl> unit_{nullptr};
 };
 

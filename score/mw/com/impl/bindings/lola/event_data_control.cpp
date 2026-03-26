@@ -449,7 +449,7 @@ auto EventDataControlImpl<AtomicIndirectorType>::ResetPerformanceCounters() -> v
     num_ref_retries.store(0U);
 }
 
-template class EventDataControlImpl<memory::shared::AtomicIndirectorReal>;
-template class EventDataControlImpl<memory::shared::AtomicIndirectorMock>;
+template class EventDataControlImpl<concurrency::atomic::AtomicIndirectorReal>;
+template class EventDataControlImpl<concurrency::atomic::AtomicIndirectorMock>;
 
 }  // namespace score::mw::com::impl::lola::detail_event_data_control

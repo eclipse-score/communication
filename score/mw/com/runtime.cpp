@@ -15,8 +15,8 @@
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/runtime.h"
 
-#include "score/memory/string_literal.h"
 #include "score/result/result.h"
+#include "score/string/string_literal.h"
 
 #include <score/span.hpp>
 
