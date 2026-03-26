@@ -16,8 +16,8 @@
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping_entry.h"
 #include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
 
+#include "score/concurrency/atomic/atomic_indirector.h"
 #include "score/containers/dynamic_array.h"
-#include "score/memory/shared/atomic_indirector.h"
 
 #include <sys/types.h>
 #include <cstdint>
@@ -38,7 +38,7 @@ namespace detail
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "A type, object or function that is used in multiple
 // translation units shall be declared in one and only one file.".
 // coverity[autosar_cpp14_m3_2_3_violation] This is false positive. Function is declared only once.
-template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
+template <template <class> class AtomicIndirectorType = concurrency::atomic::AtomicIndirectorReal>
 // coverity[autosar_cpp14_m3_2_3_violation] This is false positive. Function is declared only once.
 std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
                                  score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
@@ -111,7 +111,7 @@ class ApplicationIdPidMapping
         // element. Therefore, the provided assertions check this rule requirement, whether the iterators return a
         // result other than nullptr.
         // coverity[autosar_cpp14_a5_3_2_violation]
-        return detail::RegisterPid<memory::shared::AtomicIndirectorReal>(
+        return detail::RegisterPid<concurrency::atomic::AtomicIndirectorReal>(
             mapping_entries_.begin(), mapping_entries_.end(), application_id, pid);
     };
 

@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 
-#include "score/memory/shared/atomic_indirector.h"
-#include "score/memory/shared/atomic_mock.h"
+#include "score/concurrency/atomic/atomic_indirector.h"
+#include "score/concurrency/atomic/atomic_mock.h"
 
 #include <gtest/gtest.h>
 
@@ -71,15 +71,15 @@ TEST(ApplicationIdPidMapping, RegisterMaxRetryFailure)
         }
     }
 
-    memory::shared::AtomicMock<ApplicationIdPidMappingEntry::key_type> atomic_mock{};
-    memory::shared::AtomicIndirectorMock<ApplicationIdPidMappingEntry::key_type>::SetMockObject(&atomic_mock);
+    concurrency::atomic::AtomicMock<ApplicationIdPidMappingEntry::key_type> atomic_mock{};
+    concurrency::atomic::AtomicIndirectorMock<ApplicationIdPidMappingEntry::key_type>::SetMockObject(&atomic_mock);
 
     const std::size_t kMaxRetries{50};
     // Given the operation to update the mapping entry fails kMaxRetries times
     EXPECT_CALL(atomic_mock, compare_exchange_weak(_, _, _)).Times(kMaxRetries).WillRepeatedly(Return(false));
 
     // when trying to register a new application_id 42 (not among the registered application_ids)
-    auto result = lola::detail::RegisterPid<memory::shared::AtomicIndirectorMock>(
+    auto result = lola::detail::RegisterPid<concurrency::atomic::AtomicIndirectorMock>(
         mapping_entries.begin(), mapping_entries.end(), 42, 142);
     // expect, that an empty optional is returned.
     EXPECT_FALSE(result.has_value());
