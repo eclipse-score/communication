@@ -249,7 +249,7 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
         return {typed_event_data_storage_ptr, event_data_control_composite};
     }
 
-    return memory_manager_.CreateEventDataFromOpenedSharedMemory<SampleType>(element_fq_id, element_properties);
+    return memory_manager_.CreateEventDataInCreatedSharedMemory<SampleType>(element_fq_id, element_properties);
 }
 
 }  // namespace score::mw::com::impl::lola
