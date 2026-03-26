@@ -15,8 +15,8 @@
 namespace score::mw::com::impl::lola
 {
 
-std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl::SubscriberCountType subscriber_count,
-                                                  EventSubscriptionControl::SlotNumberType subscribed_slots)
+std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
+                                                  EventSubscriptionControl<>::SlotNumberType subscribed_slots)
 {
     std::uint32_t result{subscriber_count};
     result = result << 16U;
@@ -25,12 +25,12 @@ std::uint32_t CreateEventSubscriptionControlState(EventSubscriptionControl::Subs
 }
 
 void AddSubscriptionToEventSubscriptionControl(ProxyEventControlLocalView& proxy_event_control_local,
-                                               const EventSubscriptionControl::SubscriberCountType subscriber_count,
+                                               const EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                                const TransactionLog::MaxSampleCountType max_sample_count) noexcept
 {
     const std::uint32_t current_subscription_state{
         CreateEventSubscriptionControlState(subscriber_count, max_sample_count)};
-    EventSubscriptionControlAttorney<EventSubscriptionControl>{proxy_event_control_local.subscription_control}
+    EventSubscriptionControlAttorney<EventSubscriptionControl<>>{proxy_event_control_local.subscription_control}
         .SetCurrentState(current_subscription_state);
 }
 
@@ -41,7 +41,7 @@ void InsertProxyTransactionLogWithValidTransactions(
 {
     // Modify the SubscriptionControl so that it currently has a record of a single subscriber which subscribed with
     // a sample count of subscription_max_sample_count_
-    const EventSubscriptionControl::SubscriberCountType subscriber_count{1U};
+    const EventSubscriptionControl<>::SubscriberCountType subscriber_count{1U};
     AddSubscriptionToEventSubscriptionControl(
         proxy_event_control_local, subscriber_count, subscription_max_sample_count);
 
@@ -77,7 +77,7 @@ void InsertProxyTransactionLogWithInvalidTransactions(
 {
     // Modify the SubscriptionControl so that it currently has a record of a single subscriber which subscribed with
     // a sample count of subscription_max_sample_count_
-    const EventSubscriptionControl::SubscriberCountType subscriber_count{1U};
+    const EventSubscriptionControl<>::SubscriberCountType subscriber_count{1U};
     AddSubscriptionToEventSubscriptionControl(
         proxy_event_control_local, subscriber_count, subscription_max_sample_count);
 
