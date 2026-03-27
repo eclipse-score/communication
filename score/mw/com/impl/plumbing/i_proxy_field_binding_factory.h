@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_I_PROXY_FIELD_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
@@ -45,6 +46,20 @@ class IProxyFieldBindingFactory
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
     virtual auto CreateEventBinding(ProxyBase& parent, const std::string_view field_name) noexcept
         -> std::unique_ptr<ProxyEventBinding<SampleType>> = 0;
+
+    ///
+    /// @param parent
+    /// @param field_name
+    /// @return
+    virtual auto CreateGetMethodBinding(ProxyBase& parent, const std::string_view field_name) noexcept
+        -> std::unique_ptr<ProxyMethodBinding> = 0;
+
+    ///
+    /// @param parent
+    /// @param field_name
+    /// @return
+    virtual auto CreateSetMethodBinding(ProxyBase& parent, const std::string_view field_name) noexcept
+        -> std::unique_ptr<ProxyMethodBinding> = 0;
 };
 }  // namespace score::mw::com::impl
 
