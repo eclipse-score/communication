@@ -18,6 +18,7 @@
 #include "score/mw/com/runtime_configuration.h"
 
 #include "score/filesystem/factory/filesystem_factory.h"
+#include "score/lib/utils/meyer_singleton/test/single_test_per_process_fixture.h"
 
 #include <score/blank.hpp>
 #include <score/overload.hpp>
@@ -40,39 +41,10 @@ namespace score::mw::com::impl
 namespace
 {
 
-// This fixture forces every test to run within its own process.
-// This is required to support resets of a Meyer-Singleton.
-// This fixture should be used sparingly, since it has quite a big runtime penalty.
-// Every test must be executed within TestInSeparateProcess()!
-class SingleTestPerProcessFixture : public ::testing::Test
+// This fixture inherity from SingleTestPerProcessFixture to allow resetting the Runtime Meyer-singleton between tests.
+class RuntimeSingleTestPerProcessFixture : public singleton::test::SingleTestPerProcessFixture
 {
   public:
-    void TearDown() override
-    {
-        // Safeguard against accidentially not using TestInSeparateProcess()
-        ASSERT_TRUE(tested_in_separate_process_);
-    }
-
-    template <class TestFunction>
-    void TestInSeparateProcess(TestFunction test_function)
-    {
-        const auto exit_test = [&test_function]() {
-            std::invoke(std::forward<TestFunction>(test_function));
-
-            PrintTestPartResults();
-
-            if (HasFailure())
-            {
-                std::exit(1);
-            }
-            std::exit(0);
-        };
-
-        EXPECT_EXIT(exit_test(), ::testing::ExitedWithCode(0), ".*");
-
-        tested_in_separate_process_ = true;
-    }
-
     static const std::string get_path(const std::string& file_name)
     {
         const std::string default_path = "score/mw/com/impl/configuration/example/" + file_name;
@@ -96,18 +68,6 @@ class SingleTestPerProcessFixture : public ::testing::Test
         InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePortOther"}).value()};
     std::string config_with_tire_pressure_port_other_{get_path("mw_com_config_other.json")};
     bool tested_in_separate_process_{false};
-
-  private:
-    static void PrintTestPartResults()
-    {
-        auto* const instance = testing::UnitTest::GetInstance();
-        auto* const test_result = instance->current_test_info()->result();
-        auto* const listener = instance->listeners().default_result_printer();
-        for (auto i = 0; i < test_result->total_part_count(); ++i)
-        {
-            listener->OnTestPartResult(test_result->GetTestPartResult(i));
-        }
-    }
 };
 
 std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handle_type) noexcept
@@ -143,7 +103,7 @@ void WithConfigAtDefaultPath(const std::string& source_path)
     ASSERT_TRUE(filesystem.CopyFile(filesystem::Path{source_path}, target).has_value());
 }
 
-using RuntimeInitializationTest = SingleTestPerProcessFixture;
+using RuntimeInitializationTest = RuntimeSingleTestPerProcessFixture;
 
 TEST_F(RuntimeInitializationTest, InitializationLoadsCorrectConfiguration)
 {
@@ -226,7 +186,7 @@ TEST_F(RuntimeInitializationTest, ImplicitInitializationLoadsCorrectConfiguratio
     });
 }
 
-using RuntimeTest = SingleTestPerProcessFixture;
+using RuntimeTest = RuntimeSingleTestPerProcessFixture;
 
 TEST_F(RuntimeTest, CannotResolveUnknownInstanceSpecifier)
 {
