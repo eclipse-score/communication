@@ -1,0 +1,32 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+
+$TopEvent("Wrong input arguments used", "Communication.WrongInArgsUsed")
+
+$OrGate("Gate1", "TopEvent")
+$IntermediateEvent("Callee used wrong InArgs", "Event1", "Gate1")
+$IntermediateEvent("Callee used corrupted InArgs", "Event2", "Gate1")
+$OrGate("Gate2", "Event1")
+$OrGate("Gate3", "Event2")
+$BasicEvent("Callee used InArgs from wrong location", "Event3", "Gate2")
+$BasicEvent("Callee used InArgs before being provided", "Event4", "Gate2")
+
+$BasicEvent("Callee used InArgs in wrong layout", "Event5", "Gate3")
+$BasicEvent("Callee used InArgs while concurrently updated", "Event6", "Gate3")
+$BasicEvent("InArgs corrupted by 3d party", "Event7", "Gate3")
+
+@enduml
