@@ -39,7 +39,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
 {
   public:
     FakeMemoryResource memory_{};
-    EventDataControl control_block_{kMaxSlots, memory_, kMaxSubscribers};
+    EventDataControl control_block_{kMaxSlots, memory_};
     SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{control_block_};
     EventDataControlComposite<> control_composite_{skeleton_event_data_control_local_, nullptr, nullptr};
 };

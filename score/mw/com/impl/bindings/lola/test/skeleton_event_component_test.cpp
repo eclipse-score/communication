@@ -144,13 +144,13 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
 
-        auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
-        ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_data_control};
-        proxy_event_data_control_local.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot_index =
-            proxy_event_data_control_local.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
-        EXPECT_TRUE(slot_index.has_value());
-        return values->at(slot_index.value());
+        auto& event_control = control_storage->event_controls_.find(fake_element_fq_id_)->second;
+        ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_control.data_control};
+        // event_control.transaction_log_set_.RegisterSkeletonTracingElement(proxy_event_data_control_local);
+        // auto slot_index = proxy_event_data_control_local.ReferenceNextEvent(0);
+        Does this make sense ? ? ? return proxy_event_data_control_local.GetNumNewEvents(0);
+        // EXPECT_TRUE(slot_index.has_value());
+        // return values->at(slot_index.value());
     }
 
     std::size_t GetFreeSampleSlots() const

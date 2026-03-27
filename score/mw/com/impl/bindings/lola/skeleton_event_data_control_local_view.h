@@ -16,10 +16,10 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
+#include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
 #include <score/span.hpp>
 
 #include <atomic>
@@ -87,26 +87,11 @@ class SkeletonEventDataControlLocalView final
     /// \pre AllocateNextSlot() was invoked to obtain write-ownership
     void Discard(const SlotIndexType slot_index);
 
-    /// \brief Increments refcount of given slot by one (given it is in the correct state i.e. being accessible/
-    ///        readable)
-    /// \details This is a specific feature - not used by the standard proxy/consumer, which is using
-    ///          ReferenceNextEvent(). This API has been introduced in the context of IPC-Tracing, where a skeleton is
-    ///          referencing/using a slot it just has allocated to trace out the content via Trace-API and
-    ///          de-referencing it after tracing of the slot data has been accomplished.
-    ///          IMPORTANT: This function is _ONLY_ threadsafe with another function incrementing the ref count of a
-    ///          slot (e.g. via ReferenceNextEvent). The function must _NOT_ be called in a context in which another
-    ///          thread could mark the slot as invalid or marked for writing concurrently with this function. If this
-    ///          function is called by the SkeletonEvent itself before handing out a SampleAllocateePtr to the user,
-    ///          then it is safe.
-    /// \param slot_index index of the slot to be referenced.
-    void ReferenceSpecificEvent(const SlotIndexType slot_index,
-                                const TransactionLogIndex transaction_log_index) noexcept;
-
     /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will not record the transaction in any TransactionLog. This function is called by the
-    /// TransactionLog::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
+    /// TransactionLogLocalView::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
     /// RollbackSkeletonTracingTransactions. In these cases, the transaction will be recorded within
     /// TransactionLog::RollbackIncrementTransactions resp. RollbackSubscribeTransactions before calling the callback.
     void DereferenceEventWithoutTransactionLogging(const SlotIndexType event_slot_index) noexcept;
@@ -117,19 +102,6 @@ class SkeletonEventDataControlLocalView final
     /// \brief Marks all Slots which are `InWriting` as `Invalid`.
     /// \details This function shall _only_ be called on skeleton side and _only_ if a previous skeleton instance died.
     void RemoveAllocationsForWriting() noexcept;
-
-    // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
-    // references to private or protected data owned by the class.".
-    // To avoid overhead such as shared_ptr in the result, a non-const reference to the instance is returned instead.
-    // This instance exposes another sub-API that can change the its state and therefore also the state of instance
-    // holder. API callers get the reference and use it in place without leaving the scope, so the reference remains
-    // valid.
-    // coverity[autosar_cpp14_a9_3_1_violation]
-    TransactionLogSet& GetTransactionLogSet() noexcept
-    {
-        // coverity[autosar_cpp14_a9_3_1_violation] see above
-        return transaction_log_set_;
-    }
 
     // helper for performance indication (no production usage)
     static void DumpPerformanceCounters();
@@ -142,7 +114,14 @@ class SkeletonEventDataControlLocalView final
 
     LocalEventControlSlots state_slots_;
 
-    std::reference_wrapper<TransactionLogSet> transaction_log_set_;
+    /// \brief Cached TransactionLogLocalView used by a SkeletonEvent for tracing (when tracing is enabled) to avoid
+    /// looking up the log in the TransactionLogSet.
+    ///
+    /// When tracing is enabled, a SkeletonEvent needs to create SamplePtrs to reference a slot while the slot is being
+    /// traced. These operations must be recorded in a TransactionLog stored in the TransactionLogSet. Since looking up
+    /// the TransactionLog in shared memory on demand is expensive, we create a TransactionLogLocalView once on
+    /// construction.
+    TransactionLogLocalView* tracing_transaction_log_local_view_;
 
     // helper variables to calculated performance indicators
     static inline std::atomic_uint_fast64_t num_alloc_misses{0U};

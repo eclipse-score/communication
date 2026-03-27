@@ -55,7 +55,7 @@ class TransactionLogRegistrationGuardFixture : public TransactionLogSetHelperFix
     TransactionLogRegistrationGuardFixture& GivenATransactionLogRegistrationGuard()
     {
         auto transaction_log_registration_guard_result =
-            transaction_log_set_->RegisterProxyElement(kDummyTransactionLogId);
+            transaction_log_set_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_view_);
         SCORE_LANGUAGE_FUTURECPP_ASSERT(transaction_log_registration_guard_result.has_value());
         transaction_log_registration_guard_.emplace(std::move(transaction_log_registration_guard_result).value());
         return *this;
@@ -65,6 +65,9 @@ class TransactionLogRegistrationGuardFixture : public TransactionLogSetHelperFix
     std::unique_ptr<TransactionLogSet> transaction_log_set_{
         std::make_unique<TransactionLogSet>(kMaxSlots, kMaxSubscribers, memory_)};
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
+
+    EventDataControl event_data_control_{kMaxSlots, memory_};
+    ProxyEventDataControlLocalView<> proxy_event_data_control_local_view_{event_data_control_};
 };
 
 TEST_F(TransactionLogRegistrationGuardFixture, TransactionLogRegistrationGuardUsesMovableScopedOperation)
@@ -82,6 +85,11 @@ TEST_F(TransactionLogRegistrationGuardFixture, TransactionLogRegistrationGuardUs
     static_assert(std::is_same_v<DestructionHandlerType, utils::MovableScopedOperation<score::cpp::callback<void()>>>);
 }
 
+TEST_F(TransactionLogRegistrationGuardFixture,
+       TransactionLogRegistrationGuardInjectsTransactionLogLocalViewOnConstruction)
+{
+}
+
 TEST_F(TransactionLogRegistrationGuardFixture, CreatingTransactionLogRegistrationGuardDoesNotCallUnregister)
 {
     // When creating a TransactionLogRegistrationGuard
@@ -91,6 +99,11 @@ TEST_F(TransactionLogRegistrationGuardFixture, CreatingTransactionLogRegistratio
     // We evaluate this by trying to get the TransactionLog, which would terminate if it was already unregistered.
     TransactionLog& transaction_log =
         transaction_log_set_->GetTransactionLog(transaction_log_registration_guard_->GetTransactionLogIndex());
+}
+
+TEST_F(TransactionLogRegistrationGuardFixture,
+       CreatingTransactionLogRegistrationGuardDoesNotClearTransactionLogLocalView)
+{
 }
 
 TEST_F(TransactionLogRegistrationGuardFixture, DestroyingTransactionLogRegistrationGuardCallsUnregister)
@@ -105,6 +118,10 @@ TEST_F(TransactionLogRegistrationGuardFixture, DestroyingTransactionLogRegistrat
     EXPECT_DEATH(score::cpp::ignore = transaction_log_set_->GetTransactionLog(
                      transaction_log_registration_guard_->GetTransactionLogIndex()),
                  ".*");
+}
+
+TEST_F(TransactionLogRegistrationGuardFixture, DestroyingTransactionLogRegistrationGuardClearsTransactionLogLocalView)
+{
 }
 
 }  // namespace

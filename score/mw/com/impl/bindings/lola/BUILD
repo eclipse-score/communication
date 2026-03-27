@@ -463,8 +463,8 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
+        ":control_slot_types",
         ":proxy_event_data_control_local_view",
-        ":transaction_log_index",
     ],
 )
 
@@ -511,7 +511,6 @@ cc_library(
     deps = [
         ":event_slot_status",
         ":proxy_event_data_control_local_view",
-        ":transaction_log_index",
     ],
 )
 
@@ -568,7 +567,7 @@ cc_library(
         ":event_slot_status",
         ":transaction_log",
         ":transaction_log_id",
-        ":transaction_log_set",
+        "//score/mw/com/impl/configuration",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/memory/shared:atomic_indirector",
         "@score_baselibs//score/memory/shared:types",
@@ -586,7 +585,7 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
-        ":transaction_log_set",
+        ":transaction_log_local_view",
         "@score_baselibs//score/memory/shared:atomic_indirector",
     ],
 )
@@ -602,7 +601,7 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_slot_status",
-        ":transaction_log_set",
+        ":transaction_log_local_view",
         "@score_baselibs//score/memory/shared:atomic_indirector",
     ],
 )
@@ -632,6 +631,7 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_subscription_control",
+        ":transaction_log_set",
     ],
 )
 
@@ -645,6 +645,7 @@ cc_library(
     deps = [
         ":event_control",
         ":skeleton_event_data_control_local_view",
+        ":transaction_log_set",
     ],
 )
 
@@ -659,6 +660,7 @@ cc_library(
         ":event_control",
         ":event_data_control",
         ":proxy_event_data_control_local_view",
+        ":transaction_log_set",
     ],
 )
 
@@ -787,8 +789,8 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":transaction_log",
         ":control_slot_types",
+        ":transaction_log",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared",
@@ -835,9 +837,12 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
+        ":proxy_event_data_control_local_view",
+        ":skeleton_event_data_control_local_view",
         ":transaction_log",
         ":transaction_log_id",
         ":transaction_log_index",
+        ":transaction_log_local_view",
         "//score/mw/com/impl/configuration",
         "//score/mw/com/impl/util:copyable_atomic",
         "@score_baselibs//score/containers:dynamic_array",
@@ -928,7 +933,11 @@ cc_library(
     hdrs = ["event_data_control_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = [],
+    deps = [
+        ":control_slot_types",
+        ":proxy_event_data_control_local_view",
+        ":transaction_log_index",
+    ],
 )
 
 cc_gtest_unit_test(
@@ -1071,6 +1080,7 @@ cc_test(
     ],
     tags = ["unit"],
     deps = [
+        ":event_data_control_test_resources",
         ":proxy_event_data_control_local_view",
         ":skeleton_event_data_control_local_view",
         "//score/mw/com/impl/bindings/lola:event_data_control",

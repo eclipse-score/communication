@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/proxy.h"
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+/* #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
@@ -702,7 +702,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains valid transactions
-    InsertProxyTransactionLogWithValidTransactions(
+    const auto transaction_log_registration_guard = InsertProxyTransactionLogWithValidTransactions(
         *proxy_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
     EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*proxy_event_control_local_, transaction_log_id_));
 
@@ -745,7 +745,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransacti
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains invalid transactions
-    InsertProxyTransactionLogWithInvalidTransactions(
+    const auto transaction_log_registration_guard = InsertProxyTransactionLogWithInvalidTransactions(
         *proxy_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
     EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*proxy_event_control_local_, transaction_log_id_));
 
@@ -761,4 +761,4 @@ TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransacti
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola */

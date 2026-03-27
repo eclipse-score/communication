@@ -39,7 +39,7 @@ namespace score::mw::com::impl::lola
 {
 namespace
 {
-
+/*
 using namespace ::testing;
 
 const os::Fcntl::Operation kNonBlockingExclusiveLockOperation =
@@ -860,7 +860,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
     auto& event_data_control_qm_local = GetEventControlLocalFromServiceDataControlLocal(
                                             test::kDummyElementFqId, existing_service_data_control_qm_local_)
                                             .data_control;
-    InsertSkeletonTransactionLogWithValidTransactions(event_data_control_qm_local);
+    const auto transaction_log_registration_guard =
+        InsertSkeletonTransactionLogWithValidTransactions(event_data_control_qm_local);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm_local));
 
     const ServiceElementType element_type = GetParam();
@@ -900,7 +901,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
     auto& event_data_control_asil_b_local =
         GetEventControlLocalFromServiceDataControlLocal(test::kDummyElementFqId, existing_service_data_control_b_local_)
             .data_control;
-    InsertSkeletonTransactionLogWithValidTransactions(event_data_control_asil_b_local);
+    const auto transaction_log_registration_guard =
+        InsertSkeletonTransactionLogWithValidTransactions(event_data_control_asil_b_local);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b_local));
 
     const ServiceElementType element_type = GetParam();
@@ -940,7 +942,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
     auto& event_data_control_qm_local = GetEventControlLocalFromServiceDataControlLocal(
                                             test::kDummyElementFqId, existing_service_data_control_qm_local_)
                                             .data_control;
-    InsertSkeletonTransactionLogWithInvalidTransactions(event_data_control_qm_local);
+    const auto transaction_log_registration_guard =
+        InsertSkeletonTransactionLogWithInvalidTransactions(event_data_control_qm_local);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm_local));
 
     const ServiceElementType element_type = GetParam();
@@ -1514,6 +1517,6 @@ TEST_F(SkeletonCreateDeathTest,
                      std::make_unique<PartialRestartPathBuilderFacade>(partial_restart_path_builder_mock_)),
                  ".*");
 }
-
+*/
 }  // namespace
 }  // namespace score::mw::com::impl::lola

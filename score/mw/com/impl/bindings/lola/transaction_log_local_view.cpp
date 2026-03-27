@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <iostream>
 #include <thread>
 
 #include "score/mw/com/impl/com_error.h"
@@ -68,6 +69,8 @@ TransactionLogLocalView::TransactionLogLocalView(TransactionLog& transaction_log
       subscribe_transactions_{transaction_log.subscribe_transactions_},
       subscription_max_sample_count_{transaction_log.subscription_max_sample_count_}
 {
+    std::cout << "Construction TxLocalView: " << this << std::endl;
+    std::cout << "\trefercnecount_lsots-local: " << reference_count_slots_local_.data() << std::endl;
 }
 
 void TransactionLogLocalView::SubscribeTransactionBegin(const std::size_t subscription_max_sample_count) noexcept
@@ -114,6 +117,11 @@ void TransactionLogLocalView::UnsubscribeTransactionCommit() noexcept
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void TransactionLogLocalView::ReferenceTransactionBegin(SlotIndexType slot_index) noexcept
 {
+    std::cout << "ReferenceTxbegin TxLocalView: " << this << std::endl;
+    std::cout << "\trefercnecount_lsots-local: " << reference_count_slots_local_.data() << std::endl;
+    std::cout << "ReferenceTransactionBegin: slot_index=" << static_cast<int>(slot_index) << std::endl;
+    std::cout << "ReferenceTransactionBegin: reference_count_slots_local_.size()="
+              << reference_count_slots_local_.size() << std::endl;
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION(slot_index < reference_count_slots_local_.size());
     TransactionLogSlot& slot = reference_count_slots_local_[static_cast<std::size_t>(slot_index)];
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION(!slot.GetTransactionBegin());

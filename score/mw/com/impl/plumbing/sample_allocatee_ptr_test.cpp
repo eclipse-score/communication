@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
-
+/*
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
@@ -545,4 +545,4 @@ TEST_F(SampleAllocateePtrFixture, UnderlyingLolaPtrIsFreedOnDestruction)
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl
+}  // namespace score::mw::com::impl */

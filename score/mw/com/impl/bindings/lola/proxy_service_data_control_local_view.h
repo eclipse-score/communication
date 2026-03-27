@@ -43,6 +43,7 @@ class ProxyServiceDataControlLocalView
         {
             const auto insertion_result = event_controls_.emplace(
                 std::piecewise_construct, std::forward_as_tuple(element.first), std::forward_as_tuple(element.second));
+            std::cout << "Opened tx log set @: " << &insertion_result.first->second.transaction_log_set << std::endl;
 
             const bool was_inserted = insertion_result.second;
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(was_inserted);

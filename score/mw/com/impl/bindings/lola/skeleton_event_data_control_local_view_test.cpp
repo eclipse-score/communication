@@ -40,7 +40,6 @@ using ::testing::Return;
 
 constexpr std::size_t kMaxSlots{5U};
 constexpr std::size_t kMaxSubscribers{5U};
-const TransactionLogId kDummyTransactionLogId{10U};
 
 constexpr auto kSlotIsInWriting = std::numeric_limits<EventSlotStatus::SubscriberCount>::max();
 
@@ -73,21 +72,17 @@ class SkeletonEventDataControlLocalViewFixture : public ::testing::Test
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
     }
 
-    SkeletonEventDataControlLocalViewFixture& GivenARealSkeletonEventDataControlLocalView(
-        const SlotIndexType max_slots,
-        const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
+    SkeletonEventDataControlLocalViewFixture& GivenARealSkeletonEventDataControlLocalView(const SlotIndexType max_slots)
     {
-        event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_, max_subscribers);
+        event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_);
         unit_ = std::make_unique<SkeletonEventDataControlLocalView<>>(*event_data_control_);
 
         return *this;
     }
 
-    SkeletonEventDataControlLocalViewFixture& GivenAMockedEventDataControl(
-        const SlotIndexType max_slots,
-        const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
+    SkeletonEventDataControlLocalViewFixture& GivenAMockedEventDataControl(const SlotIndexType max_slots)
     {
-        event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_, max_subscribers);
+        event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_);
 
         atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
@@ -124,7 +119,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOneSlotWithoutConten
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given an initialized EventDataControl structure
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
 
     // When allocating a slot
     auto slot = unit_->AllocateNextSlot();
@@ -143,7 +138,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOneSlotWhenReference
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given an initialized EventDataControl structure
-    score::cpp::ignore = GivenAMockedEventDataControl(kMaxSlots, kMaxSubscribers);
+    score::cpp::ignore = GivenAMockedEventDataControl(kMaxSlots);
 
     // And an atomic mimicking two relevant slots where ...
     EXPECT_CALL(*atomic_mock_, load(_))
@@ -183,7 +178,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOneSlotWhenReference
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateMultipleSlotWithoutContention)
 {
     // Given an initialized EventDataControl structure where already a slot is allocated
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
     unit_->AllocateNextSlot();
 
     // When allocating a slot
@@ -196,7 +191,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateMultipleSlotWithoutC
 TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementOnWritingWillBeInvalid)
 {
     // Given an initialized EventDataControl structure where already a slot is allocated
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
     auto slot = unit_->AllocateNextSlot();
 
     // When discarding that slot
@@ -209,7 +204,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementOnWritingWillBe
 TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementAfterWritingIsNotTouched)
 {
     // Given an initialized EventDataControl structure where already a slot is written
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
     const auto slot = unit_->AllocateNextSlot();
     unit_->EventReady(slot.value(), 0x42);
 
@@ -224,7 +219,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, DiscardedElementAfterWritingIsN
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanNotAllocateSlotIfAllSlotsAllocated)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
     for (auto counter = 0; counter < 5; ++counter)
     {
         unit_->AllocateNextSlot();
@@ -240,7 +235,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanNotAllocateSlotIfAllSlotsAll
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateSlotAfterOneSlotReady)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
     for (auto counter = 0U; counter < 5U; ++counter)
     {
         unit_->AllocateNextSlot();
@@ -257,7 +252,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateSlotAfterOneSlotRead
 TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOldestSlotAfterOneSlotReady)
 {
     // Given an initialized EventDataControl structure where all slots are allocated
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
     for (auto counter = 0U; counter < 5U; ++counter)
     {
         unit_->AllocateNextSlot();
@@ -279,7 +274,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, CanAllocateOldestSlotAfterOneSl
 TEST_F(SkeletonEventDataControlLocalViewFixture, MultithreadedSlotAllocationDeallocation)
 {
     // Given an empty EventDataControl
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
 
     std::atomic<EventSlotStatus::EventTimeStamp> time_stamp{1};
     auto fuzzer = [this, &time_stamp]() {
@@ -322,93 +317,12 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, MultithreadedSlotAllocationDeal
     // Then no race-condition or memory corruption occurs
 }
 
-using EventDataControlReferenceSpecificEventFixture = SkeletonEventDataControlLocalViewFixture;
-TEST_F(EventDataControlReferenceSpecificEventFixture, ReferenceSpecificEvents)
-{
-    const std::size_t max_number_slots{6U};
-    const std::size_t subscription_slots{6U};
-
-    // Given an EventDataControl with 6 ready slots
-    GivenARealSkeletonEventDataControlLocalView(max_number_slots, kMaxSubscribers);
-    for (unsigned int i = 0; i < 6; i++)
-    {
-        WithAnAllocatedSlot(i + 1);
-    }
-
-    const auto transaction_log_index =
-        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
-
-    // When explicitly referencing (ref-count-incrementing) each of them by index this is successful
-    for (SlotIndexType i = 0; i < subscription_slots; i++)
-    {
-        EXPECT_EQ((*unit_)[i].GetReferenceCount(), 0U);
-        unit_->ReferenceSpecificEvent(i, transaction_log_index);
-        EXPECT_EQ((*unit_)[i].GetReferenceCount(), 1U);
-    }
-}
-
-using EventDataControlReferenceSpecificEventDeathTest = EventDataControlReferenceSpecificEventFixture;
-TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_StatusInvalidTerminates)
-{
-    // Given an EventDataControl with one (initially invalid) slot
-    GivenARealSkeletonEventDataControlLocalView(1, kMaxSubscribers);
-    EXPECT_TRUE((*unit_)[0].IsInvalid());
-
-    const auto transaction_log_index =
-        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
-
-    // When explicitly referencing (ref-count-incrementing) it
-    // Then the program terminates
-    EXPECT_DEATH(unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
-}
-
-TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_StatusInWritingTerminates)
-{
-    // Given an EventDataControl with one in_writing slot
-    GivenARealSkeletonEventDataControlLocalView(1, kMaxSubscribers);
-    auto slot = unit_->AllocateNextSlot();
-    ASSERT_TRUE(slot.has_value());
-    EXPECT_TRUE((*unit_)[slot.value()].IsInWriting());
-
-    const auto transaction_log_index =
-        unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
-
-    // When explicitly referencing (ref-count-incrementing) it
-    // Then the program terminates
-    EXPECT_DEATH(unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
-}
-
-TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_ReferenceCountOverFlowsTerminates)
-{
-    memory::shared::AtomicMock<EventSlotStatus::value_type> atomic_mock;
-    memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
-
-    // Expecting that incrementing the current reference count overflows (i.e. the previous value returned by fetch_add
-    // was already the max possible value)
-    EventSlotStatus event_slot_status_in_writing{};
-    event_slot_status_in_writing.SetReferenceCount(kSlotIsInWriting);
-    ON_CALL(atomic_mock, fetch_add(_, _))
-        .WillByDefault(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing)));
-
-    // Given an EventDataControl with one slot
-    GivenAMockedEventDataControl(1, kMaxSubscribers);
-    auto slot = unit_mock_->AllocateNextSlot();
-    ASSERT_TRUE(slot.has_value());
-
-    const auto transaction_log_index =
-        unit_mock_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
-
-    // When explicitly referencing (ref-count-incrementing) it which would lead to the ref count overflowing
-    // Then the program terminates
-    EXPECT_DEATH(unit_mock_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
-}
-
 TEST_F(SkeletonEventDataControlLocalViewFixture, AllocatedSlotsCanBeCleanedUp)
 {
     RecordProperty("Description", "Tests that all allocated slots can be cleaned up at once.");
 
     // Given an initialized EventDataControl structure, with allocated slots
-    GivenARealSkeletonEventDataControlLocalView(kMaxSlots, kMaxSubscribers);
+    GivenARealSkeletonEventDataControlLocalView(kMaxSlots);
     const auto first_slot = unit_->AllocateNextSlot();
     const auto second_slot = unit_->AllocateNextSlot();
 
@@ -423,7 +337,7 @@ TEST_F(SkeletonEventDataControlLocalViewFixture, AllocatedSlotsCanBeCleanedUp)
 using EventDataControlDeathTest = SkeletonEventDataControlLocalViewFixture;
 TEST_F(EventDataControlDeathTest, FailingToCleanUpSlotDueToOtherThreadModifyingAtomicTerminates)
 {
-    GivenAMockedEventDataControl(kMaxSlots, kMaxSubscribers);
+    GivenAMockedEventDataControl(kMaxSlots);
 
     // and given that load returns that the slot is in writing
     EventSlotStatus event_slot_status_in_writing{};

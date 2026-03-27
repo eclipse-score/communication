@@ -106,11 +106,4 @@ const score::cpp::optional<SlotCollector>& SubscribedState::GetSlotCollector() c
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-score::cpp::optional<TransactionLogIndex> SubscribedState::GetTransactionLogIndex() const noexcept
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(state_machine_.transaction_log_registration_guard_.has_value(),
-                                            "TransactionLogRegistrationGuard should be initialised on subscription.");
-    return state_machine_.transaction_log_registration_guard_.value().GetTransactionLogIndex();
-}
-
 }  // namespace score::mw::com::impl::lola

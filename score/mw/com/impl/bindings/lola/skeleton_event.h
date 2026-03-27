@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
@@ -261,14 +262,14 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
     const auto registration_result = event_shared_impl_.GetParent().template Register<SampleType>(
         event_shared_impl_.GetElementFQId(), event_properties_);
-    event_data_storage_ = registration_result.event_data_storage_ptr;
+    event_data_storage_ = &registration_result.event_data_storage;
     event_data_control_composite_ = registration_result.event_data_control_composite;
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         event_data_control_composite_.has_value(),
         "Defensive programming as event_data_control_composite_ is set by Register above.");
 
-    event_shared_impl_.PrepareOfferCommon();
+    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set);
 
     return {};
 }

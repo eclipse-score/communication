@@ -26,6 +26,10 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info),
       event_properties_(event_properties),
+      event_data_control_composite_{},
+      current_timestamp_{1U},
+      event_data_storage_{nullptr},
+      qm_disconnect_{false},
       event_shared_impl_(parent, event_fqn, event_data_control_composite_, current_timestamp_, tracing_data)
 {
 }
@@ -38,7 +42,7 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
     event_data_control_composite_ = registration_result.event_data_control_composite;
 
-    event_shared_impl_.PrepareOfferCommon();
+    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set);
 
     return {};
 }
@@ -109,7 +113,7 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     // Calculate the exact slot spacing based on alignment padding
     const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
     std::size_t offset = static_cast<std::size_t>(*allocated_slot_result.allocated_slot_index) * aligned_size;
-    void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(data_storage_, offset));
+    void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
     auto lola_ptr = lola::SampleAllocateePtr<void>(
         data_ptr, event_data_control_composite_.value(), *allocated_slot_result.allocated_slot_index);

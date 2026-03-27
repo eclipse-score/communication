@@ -34,8 +34,7 @@ constexpr auto MAX_ALLOCATE_RETRIES = 100U;
 template <template <class> class AtomicIndirectorType>
 SkeletonEventDataControlLocalView<AtomicIndirectorType>::SkeletonEventDataControlLocalView(
     EventDataControl& event_data_control) noexcept
-    : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()},
-      transaction_log_set_{event_data_control.transaction_log_set_}
+    : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()}
 {
 }
 
@@ -158,42 +157,6 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::Discard(const Slot
         slot.MarkInvalid();
         state_slots_[slot_index].store(static_cast<EventSlotStatus::value_type>(slot), std::memory_order_release);
     }
-}
-
-template <template <class> class AtomicIndirectorType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a segmentation fault
-// in case the index goes outside the range. As we already do an index check before accessing, so no way for
-// segmentation fault which leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(
-    const SlotIndexType slot_index,
-    const TransactionLogIndex transaction_log_index) noexcept -> void
-{
-    // Sanity check that the slot is currently ready for reading. It's up to the caller to ensure that this function is
-    // not called in a context in which the status can change to in writing or invalid while this function is running.
-    const auto slot_current_status =
-        static_cast<EventSlotStatus>(state_slots_[slot_index].load(std::memory_order_relaxed));
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        !(slot_current_status.IsInWriting() || slot_current_status.IsInvalid()),
-        "An event slot can only be referenced once it's ready for reading.");
-
-    auto& transaction_log = transaction_log_set_.get().GetTransactionLog(transaction_log_index);
-
-    // Since this function must be called when the slot is already ready for reading, we can simply increment the ref
-    // count.
-    transaction_log.ReferenceTransactionBegin(slot_index);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
-    const auto old_slot_value = AtomicIndirectorType<EventSlotStatus::value_type>::fetch_add(
-        state_slots_[slot_index], static_cast<EventSlotStatus::value_type>(1U), std::memory_order_acq_rel);
-
-    // If the slot value overflows then the value is completely invalid which is an unrecoverable error. If we try to
-    // restart the provider, then it should contain an uncommitted reference transaction which will cause the restart to
-    // fail.
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(EventSlotStatus{old_slot_value}.GetReferenceCount() !=
-                                                          std::numeric_limits<EventSlotStatus::SubscriberCount>::max(),
-                                                      "Reference count overflowed which cannot be recovered from.");
-    transaction_log.ReferenceTransactionCommit(slot_index);
 }
 
 template <template <class> class AtomicIndirectorType>

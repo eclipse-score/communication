@@ -16,10 +16,10 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
+#include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
 #include <score/span.hpp>
 
 #include <atomic>
@@ -36,12 +36,30 @@ namespace score::mw::com::impl::lola
 /// which can negatively affect performance. Therefore, the data in EventDataControl is created / opened once during
 /// Skeleton / Proxy creation, and then is accessed during runtime via EventDataControlLocal.
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
-class ProxyEventDataControlLocalView final
+/// gtodo: Could now introduce interface? What are the performance impacts? Maybe create a ticket. If there's no
+/// performance impact, then we should introduce it. Ask George to run test.
+class ProxyEventDataControlLocalView final  //: public IProxyEventDataControlLocalView
 {
+    // Suppress "AUTOSAR C++14 A11-3-1"
+    // Certain members of ProxyEventDataControlLocalView are only intended to be accessed by
+    // TransactionLogRegistrationGuard. Therefore, to make the API clearer, we make those functions private and make the
+    // TransactionLogRegistrationGuard a friend class.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class TransactionLogRegistrationGuard;
+
   public:
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
     ProxyEventDataControlLocalView(EventDataControl& event_data_control_shared) noexcept;
+
+    /// Test-only constructor which allows to directly set the TransactionLogLocalView. This avoids having to
+    /// inject the TransactionLogLocalView via the production code path which would require creating a
+    /// TransactionLogSet, registering a TransactionLog and storing the TransactionLogRegistrationGuard in the test.
+    ///
+    /// In production, this cannot be used since the ProxyEventDataControlLocalView is created before the TransactionLog
+    /// is created, so it must be injected later.
+    ProxyEventDataControlLocalView(EventDataControl& event_data_control_shared,
+                                   TransactionLogLocalView transaction_log_local_view) noexcept;
 
     ~ProxyEventDataControlLocalView() noexcept = default;
 
@@ -63,7 +81,6 @@ class ProxyEventDataControlLocalView final
     /// \post DereferenceEvent() is invoked to withdraw read-ownership
     std::optional<SlotIndexType> ReferenceNextEvent(
         const EventSlotStatus::EventTimeStamp last_search_time,
-        const TransactionLogIndex transaction_log_index,
         const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
 
     /// \brief Increments refcount of given slot by one (given it is in the correct state i.e. being accessible/
@@ -78,8 +95,7 @@ class ProxyEventDataControlLocalView final
     ///          function is called by the SkeletonEvent itself before handing out a SampleAllocateePtr to the user,
     ///          then it is safe.
     /// \param slot_index index of the slot to be referenced.
-    void ReferenceSpecificEvent(const SlotIndexType slot_index,
-                                const TransactionLogIndex transaction_log_index) noexcept;
+    void ReferenceSpecificEvent(const SlotIndexType slot_index) noexcept;
 
     /// \brief Returns number/count of events within event slots, which are newer than the given timestamp.
     /// \param reference_time given reference timestamp.
@@ -90,32 +106,19 @@ class ProxyEventDataControlLocalView final
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will also record the transaction in the TransactionLog corresponding to transaction_log_index
-    void DereferenceEvent(const SlotIndexType slot_index, const TransactionLogIndex transaction_log_index) noexcept;
+    void DereferenceEvent(const SlotIndexType slot_index) noexcept;
 
     /// \brief Indicates that a consumer is finished reading (thread-safe, wait-free).
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will not record the transaction in any TransactionLog. This function is called by the
-    /// TransactionLog::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
+    /// TransactionLogLocalView::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
     /// RollbackSkeletonTracingTransactions. In these cases, the transaction will be recorded within
     /// TransactionLog::RollbackIncrementTransactions resp. RollbackSubscribeTransactions before calling the callback.
     void DereferenceEventWithoutTransactionLogging(const SlotIndexType event_slot_index) noexcept;
 
     /// \brief Directly access EventSlotStatus for one specific slot
     EventSlotStatus operator[](const SlotIndexType slot_index) const noexcept;
-
-    // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
-    // references to private or protected data owned by the class.".
-    // To avoid overhead such as shared_ptr in the result, a non-const reference to the instance is returned instead.
-    // This instance exposes another sub-API that can change the its state and therefore also the state of instance
-    // holder. API callers get the reference and use it in place without leaving the scope, so the reference remains
-    // valid.
-    // coverity[autosar_cpp14_a9_3_1_violation]
-    TransactionLogSet& GetTransactionLogSet() noexcept
-    {
-        // coverity[autosar_cpp14_a9_3_1_violation] see above
-        return transaction_log_set_;
-    }
 
     /// \brief Returns the max sample slots set on creation of EventDataControl
     std::size_t GetMaxSampleSlots() const noexcept
@@ -128,9 +131,33 @@ class ProxyEventDataControlLocalView final
     static void ResetPerformanceCounters();
 
   private:
+    /// \brief Sets the cached TransactionLogLocalView which is used to avoid looking up the log directly in shared
+    /// memory which has performance issues.
+    ///
+    /// This will be called in the constructor of TransactionLogRegistrationGuard.
+    void SetTransactionLogLocalView(TransactionLogLocalView transaction_log_local_view) noexcept
+    {
+        transaction_log_local_view_ = transaction_log_local_view;
+    }
+
+    /// \brief Clears the cached TransactionLogLocalView.
+    ///
+    /// This will be called in the destructor of TransactionLogRegistrationGuard.
+    void ClearTransactionLogLocalView() noexcept
+    {
+        transaction_log_local_view_.reset();
+    }
+
     LocalEventControlSlots state_slots_;
 
-    std::reference_wrapper<TransactionLogSet> transaction_log_set_;
+    /// \brief Cached TransactionLogLocalView used by a ProxyEvent (and SkeletonEvent when tracing is enabled) to avoid
+    /// looking up the log in the TransactionLogSet.
+    ///
+    /// Each SkeletonEvent creates an EventDataControl and TransactionLogSet in shared memory. All connected ProxyEvents
+    /// share the same EventDataControl but register their own TransactionLog in the TransactionLogSet. Since looking up
+    /// the TransactionLog in shared memory on demand is expensive, we create a TransactionLogLocalView once on
+    /// construction.
+    std::optional<TransactionLogLocalView> transaction_log_local_view_;
 
     // helper variables to calculated performance indicators
     static inline std::atomic_uint_fast64_t num_ref_misses{0U};

@@ -32,12 +32,6 @@ namespace score::mw::com::impl::lola
 /// \brief View class which provides functionality for interacting with Transactionlog.
 class TransactionLogLocalView
 {
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // The "TransactionLogAttorney" class is a helper, which sets the internal state of "TransactionLog" accessing
-    // private members and used for testing purposes only.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class TransactionLogAttorney;
-
   public:
     using TransactionLogSlotsLocalView = score::cpp::span<TransactionLog::TransactionLogSlots::value_type>;
 

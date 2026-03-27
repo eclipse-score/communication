@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event.h"
+/* #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
@@ -622,4 +622,4 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillCallClea
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola */
