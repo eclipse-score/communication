@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2024 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,12 +11,4 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Python dependencies for integration testing framework
--r ./quality/integration_testing/requirements.txt
-
-# Python dependencies for traceability tools
--r ./third_party/traceability/requirements.txt
-
-# Direct dependencies for QNX unit testing and Bazel Python rules
-pyfatfs
-fs
+exports_files(["run_as_exec.bzl"])

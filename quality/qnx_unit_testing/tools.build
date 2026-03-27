@@ -1,0 +1,54 @@
+# dynamic loader
+/usr/lib/ldqnx-64.so.2=ldqnx-64.so.2
+
+# shared libraries (QNX 8.0 x86_64)
+cam-disk.so
+fs-qnx6.so
+io-blk.so
+libc++.so.2
+libc.so
+libc.so.6
+libcam.so.2
+libgcc_s.so.1
+libm.so
+libqcrypto.so.1.0
+libqh.so
+libregex.so.1
+libslog2.so.1
+libslog2parse.so.1
+libz.so
+
+# tools (absolute minimum for unit testing)
+devc-ser8250
+devb-ram
+ksh
+mount
+pipe
+slogger2
+toybox
+
+# links
+[type=link] /bin/sh=/proc/boot/ksh
+[type=link] /bin/ls=/proc/boot/ls
+[type=link] cat=toybox
+[type=link] chmod=toybox
+[type=link] cp=toybox
+[type=link] dd=toybox
+[type=link] echo=toybox
+[type=link] grep=toybox
+[type=link] ls=toybox
+[type=link] rm=toybox
+
+# Custom scripts
+startup.sh=${STARTUP_SCRIPT}
+run_test.sh=${RUN_TEST_SCRIPT}
+configure_persistency.sh=${CONFIGURE_PERSISTENCY_SCRIPT}
+
+# Minimal user/group configuration
+/etc/passwd = {
+root:x:0:0:Superuser:/root:/bin/sh
+}
+
+/etc/group = {
+root:x:0:root
+}
