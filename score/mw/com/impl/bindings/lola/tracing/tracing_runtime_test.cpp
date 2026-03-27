@@ -1035,13 +1035,13 @@ TEST_F(TracingRuntimeConvertToTracingServiceInstanceElementFixture,
         major_version_number_,
         minor_version_number_,
         static_cast<ServiceInstanceElement::InstanceIdType>(instance_id_),
-        static_cast<ServiceInstanceElement::EventIdType>(event_id_)};
+        ServiceInstanceElement::EventIdType{event_id_}};
     const ServiceInstanceElement expected_service_instance_element_field{
         static_cast<ServiceInstanceElement::ServiceIdType>(service_id_),
         major_version_number_,
         minor_version_number_,
         static_cast<ServiceInstanceElement::InstanceIdType>(instance_id_),
-        static_cast<ServiceInstanceElement::FieldIdType>(field_id_)};
+        ServiceInstanceElement::FieldIdType{field_id_}};
 
     // Given a TracingRuntimeObject with a provided configuration object
     TracingRuntime tracing_runtime{kNumberOfTotalConfiguredTracingSlots, configuration};

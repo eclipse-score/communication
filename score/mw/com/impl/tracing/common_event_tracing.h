@@ -39,7 +39,7 @@ ResultBlank TraceData(const ServiceElementInstanceIdentifierView service_element
                       const TracingRuntime::TracePointType trace_point,
                       const BindingType binding_type,
                       const std::pair<const void*, std::size_t>& local_data_chunk = {nullptr, 0U},
-                      const score::cpp::optional<TracingRuntime::TracePointDataId> trace_point_data_id = {}) noexcept;
+                      const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id = {}) noexcept;
 
 ResultBlank TraceShmData(const BindingType binding_type,
                          const ServiceElementTracingData service_element_tracing_data,
