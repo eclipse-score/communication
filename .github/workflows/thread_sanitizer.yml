@@ -32,6 +32,10 @@ jobs:
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
+          with:
+            fetch-depth: 0  # Required for rebasing
+        - name: Rebase on dependency PR
+          uses: ./actions/rebase_on_dependency
         - name: Free Disk Space (Ubuntu)
           uses: eclipse-score/cicd-workflows/.github/actions/free_disk_space@7e109c9e97670ec621adaea1c21721c18212a96d
         - uses: bazel-contrib/setup-bazel@0.18.0
