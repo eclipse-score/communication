@@ -10,7 +10,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/event_data_control_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine_states.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"

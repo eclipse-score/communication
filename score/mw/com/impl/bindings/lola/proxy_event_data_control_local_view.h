@@ -28,23 +28,6 @@
 
 namespace score::mw::com::impl::lola
 {
-// Suppress The rule AUTOSAR C++14 M3-2-3: "A type, object or function that is used in multiple translation units shall
-// be declared in one and only one file."
-// This is a forward declaration that does not vioalate this rule.
-// coverity[autosar_cpp14_m3_2_3_violation]
-class EventDataControlAttorney;
-// Suppress The rule AUTOSAR C++14 M3-2-3: "A type, object or function that is used in multiple translation units shall
-// be declared in one and only one file."
-// This is a forward declaration that does not vioalate this rule.
-// coverity[autosar_cpp14_m3_2_3_violation]
-class EventDataControlCompositeAttorney;
-
-// Suppress The rule AUTOSAR C++14 M3-2-3: "A type, object or function that is used in multiple translation units shall
-// be declared in one and only one file."
-// This is a forward declaration that does not vioalate this rule.
-// coverity[autosar_cpp14_m3_2_3_violation]
-template <template <class> class T>
-class EventDataControlCompositeImpl;
 
 /// \brief View class which provides functionality for interacting with EventDataControl.
 ///
@@ -55,25 +38,6 @@ class EventDataControlCompositeImpl;
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
 class ProxyEventDataControlLocalView final
 {
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // The "EventDataControlAttorney" class is a helper, which sets the internal state of
-    // "EventDataControlImpl" accessing private members and used for testing purposes only.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class lola::EventDataControlAttorney;
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // The "EventDataControlCompositeAttorney" class is a helper, which sets the internal state of
-    // "EventDataControlImpl" accessing private members and used for testing purposes only.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class lola::EventDataControlCompositeAttorney;
-
-    template <template <typename> class T>
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // In order that users do not depend on implementation details, we only expose on user facing classes the bare
-    // necessary. Thus, we have friend classes that expose internals for our implementation. Design decision for better
-    // encapsulation.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class EventDataControlCompositeImpl;
-
   public:
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 

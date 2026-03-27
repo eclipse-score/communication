@@ -914,10 +914,7 @@ cc_library(
     hdrs = ["event_data_control_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = [
-        "//score/mw/com/impl/bindings/lola:event",
-        "@score_baselibs//score/language/futurecpp",
-    ],
+    deps = [],
 )
 
 cc_gtest_unit_test(
