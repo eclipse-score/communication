@@ -21,14 +21,12 @@
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_discovery.h"
 #include "score/mw/com/impl/tracing/configuration/tracing_filter_config.h"
-#include "score/mw/com/impl/tracing/tracing_runtime.h"
 #include "score/mw/com/runtime_configuration.h"
 
 #include <score/assert.hpp>
 #include <score/optional.hpp>
 #include <score/span.hpp>
 
-#include <atomic>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
