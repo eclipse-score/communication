@@ -19,7 +19,10 @@
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
+#include <score/assert_support.hpp>
+
 #include <gtest/gtest.h>
+
 #include <memory>
 
 namespace score::mw::com::impl::lola
@@ -513,7 +516,7 @@ TEST_F(TransactionLogSetRegisterFixtureDeathTest, CallingUnRegisterWhileTransact
     auto& transaction_log = unit_->GetTransactionLog(transaction_log_index);
     transaction_log.ReferenceTransactionBegin(2U);
 
-    EXPECT_DEATH({ unit_->Unregister(transaction_log_index); }, "");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(unit_->Unregister(transaction_log_index));
 }
 
 TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLogsConcurrently)
