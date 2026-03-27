@@ -116,13 +116,12 @@ class Skeleton final : public SkeletonBinding
     /// \param sample_size The size of a single data sample in bytes.
     /// \param sample_alignment The alignment requirement of the data sample in bytes.
     /// \return A pair containing:
-    ///         - An OffsetPtr to the allocated data storage (void*).
+    ///         - An type erased pointer to the allocated data storage (void*).
     ///         - The EventDataControlComposite for managing the event's control data.
-    std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>> RegisterGeneric(
-        const ElementFqId element_fq_id,
-        const SkeletonEventProperties& element_properties,
-        const size_t sample_size,
-        const size_t sample_alignment) noexcept;
+    std::pair<void*, EventDataControlComposite<>> RegisterGeneric(const ElementFqId element_fq_id,
+                                                                  const SkeletonEventProperties& element_properties,
+                                                                  const size_t sample_size,
+                                                                  const size_t sample_alignment) noexcept;
 
     /// \brief Enables dynamic registration of Events at the Skeleton.
     /// \tparam SampleType The type of the event
@@ -209,11 +208,11 @@ class Skeleton final : public SkeletonBinding
     /// \param sample_size The size of a single data sample.
     /// \param sample_alignment The alignment of the data sample.
     /// \return A pair containing the data storage pointer (void*) and the control composite.
-    std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>>
-    CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
-                                          const SkeletonEventProperties& element_properties,
-                                          size_t sample_size,
-                                          size_t sample_alignment) noexcept;
+    std::pair<void*, EventDataControlComposite<>> CreateEventDataFromOpenedSharedMemory(
+        const ElementFqId element_fq_id,
+        const SkeletonEventProperties& element_properties,
+        size_t sample_size,
+        size_t sample_alignment) noexcept;
 
     class ShmResourceStorageSizes
     {
@@ -360,13 +359,8 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
         }
         return {typed_event_data_storage_ptr, event_data_control_composite};
     }
-    else
-    {
-        auto [typed_event_data_storage_ptr, event_data_control_composite] =
-            CreateEventDataFromOpenedSharedMemory<SampleType>(element_fq_id, element_properties);
 
-        return {typed_event_data_storage_ptr, event_data_control_composite};
-    }
+    return CreateEventDataFromOpenedSharedMemory<SampleType>(element_fq_id, element_properties);
 }
 
 template <typename SampleType>
