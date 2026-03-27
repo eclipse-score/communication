@@ -21,6 +21,8 @@
 #include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 
+#include <optional>
+
 namespace score::mw::com::impl::lola
 {
 
