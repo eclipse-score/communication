@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"

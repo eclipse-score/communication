@@ -155,7 +155,8 @@ auto EventSubscriptionControl<AtomicIndirectorType>::Unsubscribe(SlotNumberType 
             return;
         }
     }
-    mw::log::LogFatal("lola") << "EventSubscriptionControl<>::Unsubscribe() retry limit exceeded, couldn't unsubscribe!";
+    mw::log::LogFatal("lola")
+        << "EventSubscriptionControl<>::Unsubscribe() retry limit exceeded, couldn't unsubscribe!";
     std::terminate();
 }
 
