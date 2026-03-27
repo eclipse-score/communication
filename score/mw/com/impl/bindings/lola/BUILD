@@ -1416,11 +1416,15 @@ cc_gtest_unit_test(
     srcs = [
         "transaction_log_set_test.cpp",
     ],
-    features = COMPILER_WARNING_FEATURES,
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
+    ],
     deps = [
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "//score/mw/com/impl/test:runtime_mock_guard",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
     ],
 )
 
