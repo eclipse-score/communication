@@ -119,7 +119,7 @@ jobs:
             ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
             repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
         - name: Free Disk Space (Ubuntu)
-          uses: eclipse-score/cicd-workflows/.github/actions/free_disk_space@7e109c9e97670ec621adaea1c21721c18212a96d
+          uses: eclipse-score/cicd-workflows/.github/actions/free_disk_space@0dce4ae68e2e908fc6c7cc64d324bc1c0c92bf73
         - name: Setup Bazel
           uses: bazel-contrib/setup-bazel@0.18.0
           with:
