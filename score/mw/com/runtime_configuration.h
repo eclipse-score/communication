@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_RUNTIME_CONFIGURATION_H
 
 #include "score/filesystem/path.h"
-#include "score/memory/string_literal.h"
+#include "score/string/string_literal.h"
 
 #include <score/span.hpp>
 

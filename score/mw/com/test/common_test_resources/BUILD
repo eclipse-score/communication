@@ -84,8 +84,8 @@ cc_library(
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
+        "//score/memory/shared",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:mman",
         "@score_baselibs//score/os:stat",
@@ -218,7 +218,7 @@ cc_library(
     hdrs = ["generic_trace_api_test_resources.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_baselibs//score/memory/shared",
+        "//score/memory/shared",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:mman",
         "@score_baselibs//score/os:stat",

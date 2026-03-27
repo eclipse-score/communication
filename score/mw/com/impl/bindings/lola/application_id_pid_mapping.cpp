@@ -142,12 +142,12 @@ std::optional<pid_t> RegisterPid(score::containers::DynamicArray<ApplicationIdPi
 
 /// Instantiate the method templates once for AtomicIndirectorReal (production use) and AtomicIndirectorMock (testing)
 /// Those are all instantiations we need, so we are able to put the template definitions into the .cpp file.
-template std::optional<pid_t> RegisterPid<memory::shared::AtomicIndirectorMock>(
+template std::optional<pid_t> RegisterPid<concurrency::atomic::AtomicIndirectorMock>(
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
     const std::uint32_t application_id,
     const pid_t pid);
-template std::optional<pid_t> RegisterPid<memory::shared::AtomicIndirectorReal>(
+template std::optional<pid_t> RegisterPid<concurrency::atomic::AtomicIndirectorReal>(
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_begin,
     score::containers::DynamicArray<ApplicationIdPidMappingEntry>::iterator entries_end,
     const std::uint32_t application_id,

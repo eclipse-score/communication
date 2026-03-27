@@ -164,8 +164,8 @@ auto EventSubscriptionControlImpl<AtomicIndirectorType>::Unsubscribe(SlotNumberT
     std::terminate();
 }
 
-template class EventSubscriptionControlImpl<memory::shared::AtomicIndirectorReal>;
-template class EventSubscriptionControlImpl<memory::shared::AtomicIndirectorMock>;
+template class EventSubscriptionControlImpl<concurrency::atomic::AtomicIndirectorReal>;
+template class EventSubscriptionControlImpl<concurrency::atomic::AtomicIndirectorMock>;
 
 }  // namespace detail_event_subscription_control
 

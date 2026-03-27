@@ -217,7 +217,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared:pointer_arithmetic_util",
         "@score_communication//score/message_passing",
         "@score_logging//score/mw/log",
     ],

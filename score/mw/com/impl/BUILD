@@ -467,9 +467,9 @@ cc_library(
         ":binding_type",
         ":data_type_meta_info",
         ":generic_skeleton_event_binding",
+        "//score/memory/shared:i_shared_memory_resource",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:i_shared_memory_resource",
         "@score_baselibs//score/result",
     ],
 )
@@ -870,6 +870,7 @@ cc_library(
         ":instance_specifier",
         ":runtime_interfaces",
         ":service_discovery",
+        "//score/memory/shared:types",
         "//score/mw/com:runtime_configuration",
         "//score/mw/com/impl:event_receive_handler",
         "//score/mw/com/impl/configuration",
@@ -879,7 +880,6 @@ cc_library(
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_parser",
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:types",
         "@score_logging//score/mw/log",
     ],
 )

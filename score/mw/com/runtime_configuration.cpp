@@ -13,8 +13,8 @@
 #include "score/mw/com/runtime_configuration.h"
 
 #include "score/filesystem/path.h"
-#include "score/memory/string_literal.h"
 #include "score/mw/log/logging.h"
+#include "score/string/string_literal.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>

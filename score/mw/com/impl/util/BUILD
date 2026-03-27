@@ -45,9 +45,9 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
+        "//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
     ],
 )
 

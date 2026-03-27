@@ -45,11 +45,11 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         ":type_erased_call_queue",
+        "//score/memory/shared:managed_memory_resource",
+        "//score/memory/shared:polymorphic_offset_ptr_allocator",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
-        "@score_baselibs//score/memory/shared:managed_memory_resource",
-        "@score_baselibs//score/memory/shared:polymorphic_offset_ptr_allocator",
     ],
 )
 
@@ -69,9 +69,9 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
+        "//score/memory/shared",
         "//score/mw/com/impl/bindings/lola:proxy_instance_identifier",
         "//score/mw/com/impl/configuration",
-        "@score_baselibs//score/memory/shared",
     ],
 )
 
@@ -85,15 +85,15 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared:pointer_arithmetic_util",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
+        "//score/memory/shared:memory_resource_proxy",
+        "//score/memory/shared:offset_ptr",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/memory/shared:memory_resource_proxy",
-        "@score_baselibs//score/memory/shared:offset_ptr",
     ],
 )
 
@@ -130,14 +130,14 @@ cc_unit_test(
     ],
     deps = [
         ":type_erased_call_queue",
+        "//score/memory/shared:memory_resource_proxy",
+        "//score/memory/shared:pointer_arithmetic_util",
+        "//score/memory/shared/fake:fake_memory_resources",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/memory:data_type_size_info",
-        "@score_baselibs//score/memory/shared:memory_resource_proxy",
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
         "@score_logging//score/mw/log",
     ],
 )
@@ -157,7 +157,7 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":method_data",
-        "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
+        "//score/memory/shared/fake:fake_memory_resources",
     ],
 )
 
@@ -187,8 +187,8 @@ cc_gtest_unit_test(
     ],
     deps = [
         ":method_resource_map",
+        "//score/memory/shared:shared_memory_resource_mock",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_baselibs//score/memory/shared:shared_memory_resource_mock",
     ],
 )
 

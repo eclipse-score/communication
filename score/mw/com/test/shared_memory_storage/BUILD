@@ -27,11 +27,11 @@ cc_binary(
     ],
     deps = [
         ":test_resources",
+        "//score/memory/shared:pointer_arithmetic_util",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:bigdata_type",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
         "//score/mw/com/test/common_test_resources:shared_memory_object_guard",
-        "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/os/utils/interprocess:interprocess_notification",
     ],
 )
