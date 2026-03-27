@@ -905,19 +905,6 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "event_data_control_test_resources",
-    testonly = True,
-    srcs = ["event_data_control_test_resources.cpp"],
-    hdrs = ["event_data_control_test_resources.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//score/mw/com/impl:__subpackages__"],
-    deps = [
-        "//score/mw/com/impl/bindings/lola:event",
-        "@score_baselibs//score/language/futurecpp",
-    ],
-)
-
 cc_gtest_unit_test(
     name = "partial_restart_path_builder_test",
     srcs = ["partial_restart_path_builder_test.cpp"],
@@ -1333,7 +1320,6 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":event_data_control_test_resources",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
     ],
 )
@@ -1345,7 +1331,6 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":event_data_control_test_resources",
         "//score/mw/com/impl/bindings/lola/test:skeleton_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",
         "//score/mw/com/impl/tracing/configuration:tracing_filter_config_mock",
@@ -1373,7 +1358,6 @@ cc_gtest_unit_test(
     ],
     features = COMPILER_WARNING_FEATURES,
     deps = [
-        ":event_data_control_test_resources",
         ":subscription_state_machine",
         "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
         "//score/mw/com/impl/bindings/lola/test:transaction_log_test_resources",

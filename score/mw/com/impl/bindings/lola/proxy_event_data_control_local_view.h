@@ -28,16 +28,6 @@
 
 namespace score::mw::com::impl::lola
 {
-// Suppress The rule AUTOSAR C++14 M3-2-3: "A type, object or function that is used in multiple translation units shall
-// be declared in one and only one file."
-// This is a forward declaration that does not vioalate this rule.
-// coverity[autosar_cpp14_m3_2_3_violation]
-class EventDataControlAttorney;
-// Suppress The rule AUTOSAR C++14 M3-2-3: "A type, object or function that is used in multiple translation units shall
-// be declared in one and only one file."
-// This is a forward declaration that does not vioalate this rule.
-// coverity[autosar_cpp14_m3_2_3_violation]
-class EventDataControlCompositeAttorney;
 
 /// \brief View class which provides functionality for interacting with EventDataControl.
 ///
@@ -48,17 +38,6 @@ class EventDataControlCompositeAttorney;
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
 class ProxyEventDataControlLocalView final
 {
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // The "EventDataControlAttorney" class is a helper, which sets the internal state of
-    // "EventDataControl" accessing private members and used for testing purposes only.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class lola::EventDataControlAttorney;
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // The "EventDataControlCompositeAttorney" class is a helper, which sets the internal state of
-    // "EventDataControl" accessing private members and used for testing purposes only.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class lola::EventDataControlCompositeAttorney;
-
   public:
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
