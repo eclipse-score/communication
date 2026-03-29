@@ -17,6 +17,7 @@ rust_library(
     name = "com-api-concept",
     srcs = [
         "com_api_concept.rs",
+        "error.rs",
         "interface_macros.rs",
         "lib.rs",
         "reloc.rs",
@@ -30,6 +31,7 @@ rust_library(
     ],
     deps = [
         "@score_baselibs_rust//src/containers",
+        "@score_communication_crate_index//:thiserror",
     ],
 )
 
