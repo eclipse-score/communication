@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/skeleton_base.h"
+#include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/mw/log/logging.h"
 

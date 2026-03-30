@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
@@ -361,6 +362,31 @@ static const ElementFqId kDummyElementFqId{1U, 2U, 3U, ServiceElementType::EVENT
 
 }  // namespace test
 
+class SkeletonMemoryManagerTestAttorney
+{
+  public:
+    SkeletonMemoryManagerTestAttorney(SkeletonMemoryManager& skeleton_memory_manager) noexcept
+        : skeleton_memory_manager_{skeleton_memory_manager}
+    {
+    }
+
+    ServiceDataControl* GetServiceDataControl(const QualityType quality_type) const noexcept
+    {
+        if (quality_type == QualityType::kASIL_QM)
+        {
+            return skeleton_memory_manager_.control_qm_;
+        }
+        if (quality_type == QualityType::kASIL_B)
+        {
+            return skeleton_memory_manager_.control_asil_b_;
+        }
+        return nullptr;
+    }
+
+  private:
+    SkeletonMemoryManager& skeleton_memory_manager_;
+};
+
 class SkeletonAttorney
 {
   public:
@@ -368,15 +394,7 @@ class SkeletonAttorney
 
     ServiceDataControl* GetServiceDataControl(const QualityType quality_type) const noexcept
     {
-        if (quality_type == QualityType::kASIL_QM)
-        {
-            return skeleton_.control_qm_;
-        }
-        if (quality_type == QualityType::kASIL_B)
-        {
-            return skeleton_.control_asil_b_;
-        }
-        return nullptr;
+        return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetServiceDataControl(quality_type);
     }
 
   private:
