@@ -40,6 +40,10 @@ common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_aarch6
 #   * If you are applicable for "Free for non commercial use" see here: https://www.qnx.com/products/everywhere/
 # * The credentials for this account stored in your ~/.netrc (machine qnx.com)
 # * A license stored under `/opt/score_qnx/license/licenses`
+# * Simply copy the directory ~/.qnx/license/licenses to the aforementioned directory. The directory ~/.qnx with the
+#   license included is created, when you install the QNX Software Development Platform (SDP) for QNX 8. Thus, you 1st
+#   have to install the QNX Software Center and then via the Software Center the QNX SDP for QNX 8.
+#   After the installation, you can find the directory ~/.qnx/license/licenses with the license file(s) in it.
 common:qnx_x86_64 --credential_helper_timeout="60s" # QNX credential helper can be slow
 common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 common:qnx_x86_64 --extra_toolchains=@toolchains_qnx_ifs//:ifs_x86_64
