@@ -15,7 +15,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary")
 load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
 
 rust_binary(
-    name = "bigdata-consumer-async",
+    name = "bigdata-consumer",
     srcs = ["consumer_app.rs"],
     features = ["link_std_cpp_lib"],
     # linux_x86_64_score_gcc_12_2_0_posix toolchain is built without --enable-default-pie, so its static C++ libs are non-PIC.
@@ -27,28 +27,27 @@ rust_binary(
         "-Clink-arg=-lstdc++",
     ],
     visibility = [
-        "//score/mw/com/test/com_api:__subpackages__",
+        "//score/mw/com/test/basic_rust_api:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api",
-        "//score/mw/com/test/com_api:bigdata_com_api_gen_rs",
+        "//score/mw/com/test/basic_rust_api:bigdata_com_api_gen_rs",
         "@score_communication_crate_index//:clap",
-        "@score_communication_crate_index//:futures",
     ],
 )
 
 pkg_application(
-    name = "bigdata-com-api-async-pkg",
-    app_name = "bigdata-com-api-async",
+    name = "bigdata-com-api-sync-pkg",
+    app_name = "bigdata-com-api-sync",
     bin = [
-        ":bigdata-consumer-async",
-        "//score/mw/com/test/com_api/producer_app:bigdata-producer",
+        ":bigdata-consumer",
+        "//score/mw/com/test/basic_rust_api/producer_app:bigdata-producer",
     ],
     etc = [
-        "//score/mw/com/test/com_api/etc:config",
+        "//score/mw/com/test/basic_rust_api/etc:config",
         "//score/mw/com/test/bigdata:logging.json",
     ],
     visibility = [
-        "//score/mw/com/test/com_api:__subpackages__",
+        "//score/mw/com/test/basic_rust_api:__subpackages__",
     ],
 )
