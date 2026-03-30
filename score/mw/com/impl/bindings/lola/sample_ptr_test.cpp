@@ -183,5 +183,24 @@ TEST_F(SamplePtrTest, StarOp)
     EXPECT_EQ(val1.member2_, 44);
 }
 
+TEST_F(SamplePtrTest, GetTimestamp)
+{
+    constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
+
+    // Valid SamplePtr returns the timestamp of its slot
+    AllocateSlot(kTimestamp);
+    auto client_slot_indicator = event_data_control_.ReferenceNextEvent(0, transaction_log_index_);
+    ASSERT_TRUE(client_slot_indicator.IsValid());
+
+    uint8_t dummy_val{};
+    SamplePtr<uint8_t> sample_ptr{
+        &dummy_val, event_data_control_, client_slot_indicator, transaction_log_index_};
+
+    EXPECT_EQ(sample_ptr.GetTimestamp(), kTimestamp);
+
+    // Invalid SamplePtr returns default timestamp
+    SamplePtr<uint8_t> null_sample{nullptr};
+    EXPECT_EQ(null_sample.GetTimestamp(), EventSlotStatus::EventTimeStamp{});
+}
 }  // namespace
 }  // namespace score::mw::com::impl::lola

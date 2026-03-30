@@ -36,23 +36,35 @@ class SamplePtr final
     using element_type = SampleType;
 
     /// \brief default ctor giving invalid SamplePtr (owning no managed object, invalid event slot)
-    SamplePtr() noexcept : SamplePtr{nullptr, std::nullopt} {}
+    SamplePtr() noexcept : SamplePtr{nullptr, nullptr, {}, std::nullopt} {}
 
     /// \brief ctor from nullptr_t also giving invalid SamplePtr like default ctor.
-    explicit SamplePtr(std::nullptr_t /* ptr */) noexcept : SamplePtr{nullptr, std::nullopt} {}
+    explicit SamplePtr(std::nullptr_t /* ptr */) noexcept : SamplePtr{nullptr, nullptr, {}, std::nullopt} {}
 
     /// \brief ctor creates valid SamplePtr from its members.
     /// \param ptr pointer to managed object
     /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_indicator indicator of event slot
     SamplePtr(pointer ptr,
-              EventDataControl& event_data_ctrl,
-              ControlSlotIndicator slot_indicator,
-              TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
-        : SamplePtr{ptr, std::make_optional<SlotDecrementer>(&event_data_ctrl, slot_indicator, transaction_log_idx)}
+          EventDataControl& event_data_ctrl,
+          ControlSlotIndicator slot_indicator,
+          TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
+    : SamplePtr{ptr,
+                &event_data_ctrl,
+                slot_indicator,
+                std::make_optional<SlotDecrementer>(&event_data_ctrl, slot_indicator, transaction_log_idx)}
     {
     }
 
+    EventSlotStatus::EventTimeStamp GetTimestamp() const noexcept
+    {
+        if ((event_data_ctrl_ == nullptr) || (!slot_indicator_.IsValid()))
+        {
+            return EventSlotStatus::EventTimeStamp{};
+        }
+
+        return (*event_data_ctrl_)[slot_indicator_.GetIndex()].GetTimeStamp();
+    }
     ~SamplePtr() noexcept = default;
 
     /// \brief assign nullptr.
@@ -60,6 +72,8 @@ class SamplePtr final
     SamplePtr& operator=(std::nullptr_t) & noexcept
     {
         managed_object_ = nullptr;
+        event_data_ctrl_ = nullptr;
+        slot_indicator_ = {};
         slot_decrementer_ = {};
         return *this;
     }
@@ -104,12 +118,20 @@ class SamplePtr final
     }
 
   private:
-    explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slog_decrementer) noexcept
-        : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
-    {
-    }
+    explicit SamplePtr(pointer managed_object,
+                   EventDataControl* event_data_ctrl,
+                   ControlSlotIndicator slot_indicator,
+                   std::optional<SlotDecrementer>&& slot_decrementer) noexcept
+    : managed_object_{managed_object},
+      event_data_ctrl_{event_data_ctrl},
+      slot_indicator_{slot_indicator},
+      slot_decrementer_{std::move(slot_decrementer)}
+{
+}
 
     pointer managed_object_;
+    EventDataControl* event_data_ctrl_{nullptr};
+    ControlSlotIndicator slot_indicator_;
     std::optional<SlotDecrementer> slot_decrementer_;
 };
 
