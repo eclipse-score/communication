@@ -268,6 +268,7 @@ class Skeleton final : public SkeletonBinding
     IMessagePassingService::AllowedConsumerUids GetAllowedConsumers(const QualityType asil_level) const;
 
     InstanceIdentifier identifier_;
+    QualityType quality_type_;
     const LolaServiceInstanceDeployment& lola_service_instance_deployment_;
     const LolaServiceTypeDeployment& lola_service_type_deployment_;
     LolaServiceInstanceId::InstanceId lola_instance_id_;
@@ -325,13 +326,6 @@ class Skeleton final : public SkeletonBinding
     /// method.
     safecpp::Scope<> on_service_method_subscribed_handler_scope_;
 };
-
-namespace detail_skeleton
-{
-
-bool HasAsilBSupport(const InstanceIdentifier& identifier);
-
-}  // namespace detail_skeleton
 
 template <typename SampleType>
 auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties element_properties)
@@ -392,7 +386,7 @@ auto Skeleton::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_
     const auto event_control_qm_it = find_element(control_qm_->event_controls_, element_fq_id);
 
     EventDataControl* event_data_control_asil_b{nullptr};
-    if (detail_skeleton::HasAsilBSupport(identifier_))
+    if (quality_type_ == QualityType::kASIL_B)
     {
         const auto event_control_asil_b_it = find_element(control_asil_b_->event_controls_, element_fq_id);
         // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:

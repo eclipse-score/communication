@@ -198,16 +198,6 @@ std::string GetDataChannelShmPath(const LolaServiceInstanceDeployment& lola_serv
 
 }  // namespace
 
-namespace detail_skeleton
-{
-
-bool HasAsilBSupport(const InstanceIdentifier& identifier)
-{
-    return (InstanceIdentifierView{identifier}.GetServiceInstanceDeployment().asilLevel_ == QualityType::kASIL_B);
-}
-
-}  // namespace detail_skeleton
-
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". std::terminate() is implicitly called from 'service_instance_existence_marker_file.value()' in case the
 // 'service_instance_existence_marker_file' doesn't have value but as we check before with 'has_value()' so no way for
@@ -273,6 +263,7 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
                        service_instance_existence_flock_mutex_and_lock)
     : SkeletonBinding{},
       identifier_{identifier},
+      quality_type_{InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_},
       lola_service_instance_deployment_{lola_service_instance_deployment},
       lola_service_type_deployment_{lola_service_type_deployment},
       lola_instance_id_{lola_service_instance_deployment_.instance_id_.value().GetId()},
@@ -395,7 +386,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     }
     method_subscription_registration_guard_qm_ = std::move(qm_registration_result).value();
 
-    if (detail_skeleton::HasAsilBSupport(identifier_))
+    if (quality_type_ == QualityType::kASIL_B)
     {
         auto allowed_consumers_asil_b = GetAllowedConsumers(QualityType::kASIL_B);
         auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
@@ -518,7 +509,7 @@ auto Skeleton::CreateSharedMemory(SkeletonEventBindings& events,
         return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not create shared memory object for control QM");
     }
 
-    if (detail_skeleton::HasAsilBSupport(identifier_) &&
+    if ((quality_type_ == QualityType::kASIL_B) &&
         (!CreateSharedMemoryForControl(lola_service_instance_deployment_,
                                        QualityType::kASIL_B,
                                        storage_size_calc_result.control_asil_b_size.value())))
@@ -544,7 +535,7 @@ auto Skeleton::OpenExistingSharedMemory(
         return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control QM");
     }
 
-    if (detail_skeleton::HasAsilBSupport(identifier_) && (!OpenSharedMemoryForControl(QualityType::kASIL_B)))
+    if ((quality_type_ == QualityType::kASIL_B) && (!OpenSharedMemoryForControl(QualityType::kASIL_B)))
     {
         return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control ASIL-B");
     }
@@ -795,7 +786,7 @@ Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizesBySi
     // (lola::Skeleton::Register()), which leads to updates/allocation within ctrl AND data resources!
     InitializeSharedMemoryForControl(QualityType::kASIL_QM, control_qm_resource_);
 
-    if (detail_skeleton::HasAsilBSupport(identifier_))
+    if (quality_type_ == QualityType::kASIL_B)
     {
         control_asil_resource_ = std::make_shared<NewDeleteDelegateMemoryResource>(
             CalculateMemoryResourceId(lola_service_id_, lola_instance_id_, ShmObjectType::kControl_ASIL_B));
@@ -827,7 +818,7 @@ Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizesBySi
     }
 
     const auto control_asil_b_size =
-        detail_skeleton::HasAsilBSupport(identifier_)
+        quality_type_ == QualityType::kASIL_B
             ? score::cpp::optional<std::size_t>{control_asil_resource_->GetUserAllocatedBytes()}
             : score::cpp::optional<std::size_t>{};
 
@@ -942,7 +933,7 @@ score::cpp::optional<EventMetaInfo> Skeleton::GetEventMetaInfo(const ElementFqId
 
 QualityType Skeleton::GetInstanceQualityType() const
 {
-    return InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_;
+    return quality_type_;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
