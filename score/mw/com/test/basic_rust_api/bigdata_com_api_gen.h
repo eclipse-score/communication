@@ -1,4 +1,4 @@
-/********************************************************************************
+/*******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -9,19 +9,17 @@
  * https://www.apache.org/licenses/LICENSE-2.0
  *
  * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
+ *******************************************************************************/
 
-#ifndef SCORE_MW_COM_IMPL_RUST_COM_API_INTEGRATION_TEST_LOLA_INTEGRATION_TEST_GEN_H
-#define SCORE_MW_COM_IMPL_RUST_COM_API_INTEGRATION_TEST_LOLA_INTEGRATION_TEST_GEN_H
+#ifndef SCORE_MW_COM_TEST_COM_API_BIGDATA_COM_API_GEN_H
+#define SCORE_MW_COM_TEST_COM_API_BIGDATA_COM_API_GEN_H
 
-#include "score/mw/com/types.h"
+// Re-export the BigData interface types (BigDataProxy / BigDataSkeleton) that are
+// already defined in big_datatype.h
+#include "score/mw/com/test/common_test_resources/big_datatype.h"
 
-#include <cstddef>
-#include <cstdint>
-
-namespace score::mw::com::integration_test
+namespace score::mw::com::test
 {
-
 /// Combined payload carrying every primitive type in a single struct.
 /// Field order follows descending alignment to eliminate padding bytes.
 struct MixedPrimitivesPayload
@@ -116,5 +114,6 @@ using MixedPrimitivesProxy = ::score::mw::com::AsProxy<MixedPrimitivesInterface>
 using MixedPrimitivesSkeleton = ::score::mw::com::AsSkeleton<MixedPrimitivesInterface>;
 using ComplexStructProxy = ::score::mw::com::AsProxy<ComplexStructInterface>;
 using ComplexStructSkeleton = ::score::mw::com::AsSkeleton<ComplexStructInterface>;
-}  // namespace score::mw::com::integration_test
-#endif  // SCORE_MW_COM_IMPL_RUST_COM_API_INTEGRATION_TEST_LOLA_INTEGRATION_TEST_GEN_H
+}  // namespace score::mw::com::test
+
+#endif  // SCORE_MW_COM_TEST_COM_API_BIGDATA_COM_API_GEN_H
