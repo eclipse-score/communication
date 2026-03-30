@@ -238,11 +238,6 @@ class Skeleton final : public SkeletonBinding
     /// \return storage sizes for the different shm-objects
     ShmResourceStorageSizes CalculateShmResourceStorageSizesBySimulation(SkeletonEventBindings& events,
                                                                          SkeletonFieldBindings& fields);
-    /// \brief Calculates needed sizes for shm-objects for data and ctrl via estimation based on sizeof info of related
-    /// data types.
-    /// \return storage sizes for the different shm-objects
-    ShmResourceStorageSizes CalculateShmResourceStorageSizesByEstimation(SkeletonEventBindings& events,
-                                                                         SkeletonFieldBindings& fields) const;
 
     void RemoveSharedMemory();
     void RemoveStaleSharedMemoryArtefacts() const;
