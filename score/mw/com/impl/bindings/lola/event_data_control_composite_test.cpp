@@ -248,9 +248,9 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesI
     unit_->Discard(slot_indicator_1);
     unit_->Discard(slot_indicator_2);
 
-    // Then the timestamp equal to 1
+    // Then the timestamp is invalid
     auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{1};
+    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::InvalidTimestamp};
     EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
@@ -259,9 +259,9 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesI
     // Given an EventDataControlComposite with zero used slots
     WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
 
-    // Then the timestamp equal to 1
+    // Then the timestamp is invalid
     auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{1};
+    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::InvalidTimestamp};
     EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
@@ -274,9 +274,9 @@ TEST_F(EventDataControlCompositeFixture,
     // When allocating 1 slot
     score::cpp::ignore = unit_->AllocateNextSlot();
 
-    // Then the timestamp equal to 1
+    // Then the timestamp is invalid
     auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{1};
+    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::InvalidTimestamp};
     EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
