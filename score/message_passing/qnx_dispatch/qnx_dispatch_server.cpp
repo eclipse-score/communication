@@ -34,7 +34,9 @@ QnxDispatchServer::ServerConnection::ServerConnection(ClientIdentity client_iden
       user_data_{},
       client_identity_{client_identity},
       self_{},
+      send_mutex_{},
       reply_message_{server.engine_->GetMemoryResource()},
+      max_notify_size_{static_cast<std::size_t>(server.max_notify_size_)},
       notify_storage_{server.server_config_.max_queued_notifies, server.engine_->GetMemoryResource()},
       notify_pool_{},
       send_queue_{}
@@ -44,7 +46,7 @@ QnxDispatchServer::ServerConnection::ServerConnection(ClientIdentity client_iden
 
     for (auto& notify_message : notify_storage_)
     {
-        notify_message.message.reserve(static_cast<std::size_t>(server.max_notify_size_));
+        notify_message.message.reserve(max_notify_size_);
         notify_message.code = score::cpp::to_underlying(ServerToClient::NOTIFY);
     }
     notify_pool_.assign(notify_storage_.begin(), notify_storage_.end());
@@ -83,9 +85,10 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection
 
     reply_message_.message.assign(message.begin(), message.end());
 
+    std::lock_guard lock(send_mutex_);
+
     send_queue_.push_back(reply_message_);
     auto& os_resources = server.engine_->GetOsResources();
-
     // NOLINTNEXTLINE(score-banned-function) implementing FFI wrapper
     score::cpp::ignore = os_resources.channel->MsgDeliverEvent(rcvid_, &select_event_);
     return {};
@@ -94,11 +97,23 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection
 score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection::Notify(
     score::cpp::span<const std::uint8_t> message) noexcept
 {
-    auto& server = GetQnxDispatchServer();
-
-    if (message.size() > server.max_notify_size_)
+    if (message.size() > max_notify_size_)
     {
         return score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE));
+    }
+
+    std::lock_guard lock(send_mutex_);
+
+    if (message.size() == 0U)
+    {
+        if (ping_event_.sigev_notify != SIGEV_NONE)
+        {
+            // the server and the notification pulse has already been set up, we don't need to queue the response
+            auto& server = GetQnxDispatchServer();
+            auto& os_resources = server.engine_->GetOsResources();
+            score::cpp::ignore = os_resources.channel->MsgDeliverEvent(rcvid_, &ping_event_);
+            return {};
+        }
     }
 
     if (notify_pool_.empty())
@@ -110,9 +125,14 @@ score::cpp::expected_blank<score::os::Error> QnxDispatchServer::ServerConnection
     notify_pool_.pop_front();
     notify_message.message.assign(message.begin(), message.end());
     send_queue_.push_back(notify_message);
-    auto& os_resources = server.engine_->GetOsResources();
 
-    score::cpp::ignore = os_resources.channel->MsgDeliverEvent(rcvid_, &select_event_);
+    if (select_event_.sigev_notify != SIGEV_NONE)
+    {
+        // the server and the notification pulse has already been set up, we can send notification pulse
+        auto& server = GetQnxDispatchServer();
+        auto& os_resources = server.engine_->GetOsResources();
+        score::cpp::ignore = os_resources.channel->MsgDeliverEvent(rcvid_, &select_event_);
+    }
     return {};
 }
 
@@ -177,6 +197,8 @@ bool QnxDispatchServer::ServerConnection::ProcessInput(const std::uint8_t code,
 
 bool QnxDispatchServer::ServerConnection::HasSomethingToRead() noexcept
 {
+    std::lock_guard lock(send_mutex_);
+
     return !send_queue_.empty();
 }
 
@@ -186,6 +208,8 @@ bool QnxDispatchServer::ServerConnection::HasSomethingToRead() noexcept
 // coverity[autosar_cpp14_a8_4_10_violation]
 std::int32_t QnxDispatchServer::ServerConnection::ProcessReadRequest(resmgr_context_t* const ctp) noexcept
 {
+    std::lock_guard lock(send_mutex_);
+
     if (send_queue_.empty())
     {
         return EAGAIN;
