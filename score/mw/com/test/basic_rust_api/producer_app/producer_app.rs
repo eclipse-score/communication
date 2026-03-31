@@ -42,8 +42,8 @@ use com_api::{
 
 const CONFIG_PATH: &str = "etc/config.json";
 const DEFAULT_CYCLES: u32 = 40;
-const SERVICE_OFFER_DELAY_MS: u64 = 2000;
-const SEND_INTERVAL_MS: u64 = 100;
+const SERVICE_OFFER_DELAY_MS: Duration = Duration::from_millis(2000);
+const SEND_INTERVAL_MS: Duration = Duration::from_millis(100);
 
 #[derive(Clone, clap::ValueEnum)]
 enum TestCase {
@@ -84,7 +84,7 @@ fn main() {
             let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
                 .expect("Invalid instance specifier");
             // Sleep to allow the consumer to start first and demonstrate service discovery retries.
-            thread::sleep(Duration::from_millis(SERVICE_OFFER_DELAY_MS));
+            thread::sleep(SERVICE_OFFER_DELAY_MS);
 
             let producer_builder = runtime.producer_builder::<BigDataInterface>(instance_specifier);
             let producer = producer_builder.build().expect("Failed to build producer");
@@ -101,7 +101,7 @@ fn main() {
                 let ready = uninit.write(sample);
                 ready.send().expect("Failed to send sample");
                 println!("[bigdata-producer] Sent sample x={}", x);
-                thread::sleep(Duration::from_millis(SEND_INTERVAL_MS));
+                thread::sleep(SEND_INTERVAL_MS);
             }
         }
         // The mixed_primitives test uses the `MixedPrimitivesInterface` and its `mixed_event` event.
@@ -113,7 +113,7 @@ fn main() {
 
             let instance_specifier = InstanceSpecifier::new("/IntegrationTest/MixedPrimitives")
                 .expect("Invalid instance specifier");
-            thread::sleep(Duration::from_millis(SERVICE_OFFER_DELAY_MS));
+            thread::sleep(SERVICE_OFFER_DELAY_MS);
 
             let producer_builder =
                 runtime.producer_builder::<MixedPrimitivesInterface>(instance_specifier);
@@ -141,7 +141,7 @@ fn main() {
                 let ready = uninit.write(sample);
                 ready.send().expect("Failed to send sample");
                 println!("[mixed-primitives-producer] Sent sample u32_val={}", x);
-                thread::sleep(Duration::from_millis(SEND_INTERVAL_MS));
+                thread::sleep(SEND_INTERVAL_MS);
             }
         }
         // The complex_struct test uses the `ComplexStructInterface` and its `complex_event` event.
@@ -153,7 +153,7 @@ fn main() {
 
             let instance_specifier = InstanceSpecifier::new("/UserDefinedTest/ComplexStruct")
                 .expect("Invalid instance specifier");
-            thread::sleep(Duration::from_millis(SERVICE_OFFER_DELAY_MS));
+            thread::sleep(SERVICE_OFFER_DELAY_MS);
 
             let producer_builder =
                 runtime.producer_builder::<ComplexStructInterface>(instance_specifier);
@@ -194,7 +194,7 @@ fn main() {
                         speed: x_f32 / 2.0,
                         rpm: u16::try_from(x).expect("Failed to convert x to u16"),
                         fuel_level: x_f32 / 2.0,
-                        is_running: u8::try_from(x).expect("Failed to convert x to u8"),
+                        is_running: x % 2 == 0,
                         mileage: x,
                     },
                     array: ArrayStruct { values: [x; 5] },
@@ -202,7 +202,7 @@ fn main() {
                 let ready = uninit.write(sample);
                 ready.send().expect("Failed to send sample");
                 println!("[complex-struct-producer] Sent sample count={}", x);
-                thread::sleep(Duration::from_millis(SEND_INTERVAL_MS));
+                thread::sleep(SEND_INTERVAL_MS);
             }
         }
     }

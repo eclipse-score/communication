@@ -149,7 +149,7 @@ define_type!(NestedStruct, id: u32, simple: SimpleStruct, value: f32);
 define_type!(Point, x: f32, y: f32);
 define_type!(Point3D, x: f32, y: f32, z: f32);
 define_type!(SensorData, sensor_id: u16, temperature: f32, humidity: f32, pressure: f32);
-define_type!(VehicleState, speed: f32, rpm: u16, fuel_level: f32, is_running: u8, mileage: u32);
+define_type!(VehicleState, speed: f32, rpm: u16, fuel_level: f32, is_running: bool, mileage: u32);
 define_type!(ArrayStruct, eq, values: [u32; 5]);
 define_type!(ComplexStruct, count: u32, simple: SimpleStruct, nested: NestedStruct, point: Point, point3d: Point3D, sensor: SensorData, vehicle: VehicleState, array: ArrayStruct);
 
