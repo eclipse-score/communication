@@ -104,11 +104,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
   private:
     const std::string_view event_name_;
-    const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
-    std::optional<EventDataControlComposite<>> event_data_control_composite_;
     EventSlotStatus::EventTimeStamp current_timestamp_;
-    bool qm_disconnect_;
 
     SkeletonEventCommon event_shared_impl_;
 };
@@ -121,16 +118,9 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
       event_name_{event_name},
-      event_properties_{properties},
       event_data_storage_{nullptr},
-      event_data_control_composite_{},
       current_timestamp_{EventSlotStatus::UNINITIALIZED_TIMESTAMP},
-      qm_disconnect_{false},
-      event_shared_impl_(parent,
-                         event_fqn,
-                         event_data_control_composite_,
-                         current_timestamp_,
-                         skeleton_event_tracing_data)
+      event_shared_impl_(parent, event_fqn, skeleton_event_tracing_data, properties)
 {
 }
 
@@ -170,7 +160,7 @@ ResultBlank SkeletonEvent<SampleType>::Send(impl::SampleAllocateePtr<SampleType>
     // The current logic will not exceed the maximum value.
     // coverity[autosar_cpp14_a4_7_1_violation]
     ++current_timestamp_;
-    event_data_control_composite_->EventReady(slot, current_timestamp_);
+    event_shared_impl_.event_data_control_composite_.value().EventReady(slot, current_timestamp_);
 
     if (send_trace_callback.has_value())
     {
@@ -181,7 +171,7 @@ ResultBlank SkeletonEvent<SampleType>::Send(impl::SampleAllocateePtr<SampleType>
     // This avoids the expensive lock operation in the common case where no handlers are registered.
     // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
     // handler registration, the next Send() will pick it up.
-    if (event_shared_impl_.IsQmNotificationsRegistered() && !qm_disconnect_)
+    if (event_shared_impl_.IsQmNotificationsRegistered() && !event_shared_impl_.qm_disconnect_)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
@@ -204,22 +194,23 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate() noexcept
 {
-    if (event_data_control_composite_.has_value() == false)
+    auto& event_data_control_optional = event_shared_impl_.event_data_control_composite_;
+    if (event_data_control_optional.has_value() == false)
     {
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    const auto allocated_slot_result = event_data_control_composite_->AllocateNextSlot();
+    const auto allocated_slot_result = event_data_control_optional->AllocateNextSlot();
 
     // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
     // parenthesized if the operands contain binary operators".
     // This suppression is unnecessary as the operands do not contain binary operators.
     // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
     // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
+    if (!event_shared_impl_.qm_disconnect_ && (event_data_control_optional->GetAsilBEventDataControlLocal() != nullptr) &&
         allocated_slot_result.qm_misbehaved)
     {
-        qm_disconnect_ = true;
+        event_shared_impl_.qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
             << __func__ << __LINE__
             << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: "
@@ -230,7 +221,7 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     if (!allocated_slot_result.allocated_slot_index.has_value())
     {
         // we didn't get a slot, which is a sign, that too few slots have been configured.
-        if (!event_properties_.enforce_max_samples)
+        if (!event_shared_impl_.event_properties_.enforce_max_samples)
         {
             ::score::mw::log::LogError("lola")
                 << "SkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
@@ -240,7 +231,7 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     }
     return MakeSampleAllocateePtr(SampleAllocateePtr<SampleType>(
         &event_data_storage_->at(static_cast<std::uint64_t>(*allocated_slot_result.allocated_slot_index)),
-        *event_data_control_composite_,
+        event_data_control_optional.value(),
         allocated_slot_result.allocated_slot_index.value()));
 }
 
@@ -253,16 +244,12 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
-    const auto registration_result = event_shared_impl_.GetParent().template Register<SampleType>(
-        event_shared_impl_.GetElementFQId(), event_properties_);
+    auto registration_result = event_shared_impl_.GetParent().template Register<SampleType>(
+        event_shared_impl_.GetElementFQId(), event_shared_impl_.event_properties_);
     event_data_storage_ = &registration_result.event_data_storage;
-    event_data_control_composite_ = registration_result.event_data_control_composite;
+    auto& event_data_control_composite = registration_result.event_data_control_composite;
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        event_data_control_composite_.has_value(),
-        "Defensive programming as event_data_control_composite_ is set by Register above.");
-
-    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set);
+    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set, event_data_control_composite);
 
     return {};
 }

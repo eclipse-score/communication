@@ -265,37 +265,6 @@ EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>:
     }
 }
 
-template <template <class> class AtomicIndirectorType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a segmentation fault
-// in case the index goes outside the range. As we already do an index check before accessing, so no way for
-// segmentation fault which leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetLatestTimestamp() const noexcept
-{
-    EventSlotStatus::EventTimeStamp latest_time_stamp{EventSlotStatus::UNINITIALIZED_TIMESTAMP};
-    ProviderEventDataControlLocalView<>& control =
-        (asil_b_control_local_ != nullptr) ? *asil_b_control_local_ : asil_qm_control_local_.get();
-    for (SlotIndexType slot_index = 0U;
-         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
-         // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
-         // coverity[autosar_cpp14_a4_7_1_violation]
-         slot_index < static_cast<SlotIndexType>(control.state_slots_.size());
-         ++slot_index)
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < control.state_slots_.size());
-        const EventSlotStatus slot{control.state_slots_[slot_index].load(std::memory_order_acquire)};
-        if (!slot.IsInvalid() && !slot.IsInWriting())
-        {
-            const auto slot_time_stamp = slot.GetTimeStamp();
-            if (latest_time_stamp < slot_time_stamp)
-            {
-                latest_time_stamp = slot_time_stamp;
-            }
-        }
-    }
-    return latest_time_stamp;
-}
 
 template class EventDataControlComposite<memory::shared::AtomicIndirectorReal>;
 template class EventDataControlComposite<memory::shared::AtomicIndirectorMock>;

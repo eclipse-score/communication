@@ -12,10 +12,12 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/generic_skeleton_event.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/runtime.h"
+#include <score/assert.hpp>
 
 namespace score::mw::com::impl::lola
 {
@@ -25,44 +27,38 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            const DataTypeMetaInfo& size_info,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info),
-      event_properties_(event_properties),
-      event_data_control_composite_{},
-      current_timestamp_{1U},
       event_data_storage_{nullptr},
-      qm_disconnect_{false},
-      event_shared_impl_(parent, event_fqn, event_data_control_composite_, current_timestamp_, tracing_data)
+      event_shared_impl_(parent, event_fqn, tracing_data, event_properties)
 {
 }
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
-    const auto registration_result = event_shared_impl_.GetParent().RegisterGeneric(
-        event_shared_impl_.GetElementFQId(), event_properties_, size_info_.size, size_info_.alignment);
-
+    auto registration_result = event_shared_impl_.GetParent().RegisterGeneric(
+        event_shared_impl_.GetElementFQId(), event_shared_impl_.event_properties_, size_info_.size, size_info_.alignment);
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
-    event_data_control_composite_ = registration_result.event_data_control_composite;
 
-    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set);
-
+    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set, registration_result.event_data_control_composite);
     return {};
 }
 
 ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_.has_value());
+    auto& control_optional = event_shared_impl_.event_data_control_composite_;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_optional.has_value());
     const impl::SampleAllocateePtrView<void> view{sample};
     auto ptr = view.template As<lola::SampleAllocateePtr<void>>();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != ptr);
 
     auto control_slot_indicator = ptr->GetReferencedSlot();
-    event_data_control_composite_.value().EventReady(control_slot_indicator, ++current_timestamp_);
+    control_optional.value().EventReady(control_slot_indicator, ++current_timestamp_);
 
     // Only call NotifyEvent if there are any registered receive handlers for each quality level (QM and ASIL-B).
     // This avoids the expensive lock operation in the common case where no handlers are registered.
     // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
     // handler registration, the next Send() will pick it up.
 
-    if (event_shared_impl_.IsQmNotificationsRegistered() && !qm_disconnect_)
+    if (event_shared_impl_.IsQmNotificationsRegistered() && !event_shared_impl_.qm_disconnect_)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
@@ -81,17 +77,18 @@ ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<
 
 Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 {
-    if (!event_data_control_composite_.has_value())
+    auto& control_optional = event_shared_impl_.event_data_control_composite_;
+    if (!control_optional.has_value())
     {
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    const auto allocated_slot_result = event_data_control_composite_.value().AllocateNextSlot();
+    const auto allocated_slot_result = control_optional.value().AllocateNextSlot();
 
-    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
+    if (!event_shared_impl_.qm_disconnect_ && (control_optional.value().GetAsilBEventDataControlLocal() != nullptr) &&
         allocated_slot_result.qm_misbehaved)
     {
-        qm_disconnect_ = true;
+        event_shared_impl_.qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
             << __func__ << __LINE__
             << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: "
@@ -101,7 +98,7 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
 
     if (!allocated_slot_result.allocated_slot_index.has_value())
     {
-        if (!event_properties_.enforce_max_samples)
+        if (!event_shared_impl_.event_properties_.enforce_max_samples)
         {
             ::score::mw::log::LogError("lola")
                 << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
@@ -116,7 +113,7 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
     auto lola_ptr = lola::SampleAllocateePtr<void>(
-        data_ptr, event_data_control_composite_.value(), *allocated_slot_result.allocated_slot_index);
+        data_ptr, control_optional.value(), *allocated_slot_result.allocated_slot_index);
     return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 
@@ -128,7 +125,6 @@ std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 void GenericSkeletonEvent::PrepareStopOffer() noexcept
 {
     event_shared_impl_.PrepareStopOfferCommon();
-    event_data_control_composite_.reset();
     event_data_storage_ = nullptr;
 }
 

@@ -189,21 +189,6 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
     EXPECT_FALSE(allocation.qm_misbehaved);
 }
 
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
-{
-    // Given an EventDataControlComposite with 1 allocated slots that are set to ready
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
-    score::cpp::ignore = unit_->AllocateNextSlot();
-    const EventSlotStatus::EventTimeStamp time_stamp{2};
-    unit_->EventReady(SlotIndexType{0U}, time_stamp);
-
-    // When acquiring the latest timestamp
-    const auto time_stamp_obtained = unit_->GetLatestTimestamp();
-
-    // Then the timestamp is equal to 2
-    EXPECT_EQ(time_stamp_obtained, time_stamp);
-}
-
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
 {
     // Given an EventDataControlComposite with zero used slots
@@ -216,73 +201,6 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
     const auto allocation_slot_2 = unit_->AllocateNextSlot();
     const SlotIndexType slot_2_index{1};
     ASSERT_EQ(allocation_slot_2.allocated_slot_index.value(), slot_2_index);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfOneSlotIsMarkedAsInvalid)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
-
-    // When allocating 2 slots
-    auto allocation_result = unit_->AllocateNextSlot();
-    auto allocation_result_2 = unit_->AllocateNextSlot();
-
-    // and set slot 1 to ready
-    EventSlotStatus::EventTimeStamp time_stamp{2};
-    unit_->EventReady(allocation_result.allocated_slot_index.value(), time_stamp);
-
-    // and discarding slot 2
-    unit_->Discard(allocation_result.allocated_slot_index.value());
-
-    // Then the timestamp is equal to 2
-    time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{2};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfAllSlotAreInvalid)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
-
-    // When allocating 2 slots
-    auto allocation_result = unit_->AllocateNextSlot();
-    auto allocation_result_2 = unit_->AllocateNextSlot();
-
-    // and discarding them
-    unit_->Discard(allocation_result.allocated_slot_index.value());
-    unit_->Discard(allocation_result_2.allocated_slot_index.value());
-
-    // Then the timestamp is invalid
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::UNINITIALIZED_TIMESTAMP};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfNoSlotHaveBeenAllocated)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
-
-    // Then the timestamp is invalid
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::UNINITIALIZED_TIMESTAMP};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture,
-       GetLatestTimeStampReturnsDefaultValuesIfASlotHasBeenAllocatedButNotMarkedAsReady)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
-
-    // When allocating 1 slot
-    score::cpp::ignore = unit_->AllocateNextSlot();
-
-    // Then the timestamp is invalid
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::UNINITIALIZED_TIMESTAMP};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
 TEST_F(EventDataControlCompositeFixture, FailingToLockQmMultiSlotAllocatesOnlyAsilBSlot)

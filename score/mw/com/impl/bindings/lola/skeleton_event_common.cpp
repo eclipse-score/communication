@@ -11,9 +11,12 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
+#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 namespace score::mw::com::impl::lola
@@ -21,20 +24,20 @@ namespace score::mw::com::impl::lola
 
 SkeletonEventCommon::SkeletonEventCommon(Skeleton& parent,
                                          const ElementFqId& event_fqn,
-                                         std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
-                                         EventSlotStatus::EventTimeStamp& current_timestamp_ref,
-                                         impl::tracing::SkeletonEventTracingData tracing_data) noexcept
+                                         impl::tracing::SkeletonEventTracingData tracing_data,
+                                         SkeletonEventProperties event_properties) noexcept
     : parent_{parent},
       event_fqn_{event_fqn},
-      event_data_control_composite_ref_{event_data_control_composite_ref},
-      current_timestamp_ref_{current_timestamp_ref},
+      qm_disconnect_{false},
       tracing_data_{tracing_data},
+      event_properties_{event_properties},
       transaction_log_registration_guard_{}
 {
 }
 
-void SkeletonEventCommon::PrepareOfferCommon(TransactionLogSet& transaction_log_set) noexcept
+void SkeletonEventCommon::PrepareOfferCommon(TransactionLogSet& transaction_log_set, EventDataControlComposite<>& event_data_control_composite_ref) noexcept
 {
+    event_data_control_composite_ = event_data_control_composite_ref;
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
     if (!tracing_globally_enabled)
@@ -53,8 +56,6 @@ void SkeletonEventCommon::PrepareOfferCommon(TransactionLogSet& transaction_log_
         EmplaceTransactionLogRegistrationGuard(transaction_log_set);
         EmplaceTypeErasedSamplePtrsGuard();
     }
-
-    UpdateCurrentTimestamp();
 
     // Register callbacks to be notified when event notification existence changes.
     // This allows us to optimise the Send() path by skipping NotifyEvent() when no handlers are registered.
@@ -96,26 +97,20 @@ void SkeletonEventCommon::PrepareStopOfferCommon() noexcept
     SetAsilBNotificationsRegistered(false);
 
     ResetGuards();
+    event_data_control_composite_.reset();
 }
 
 void SkeletonEventCommon::EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                                                 "EventDataControlComposite must be initialized.");
     score::cpp::ignore = transaction_log_registration_guard_.emplace(transaction_log_set.RegisterSkeletonTracingElement(
-        event_data_control_composite_ref_->GetConsumerEventDataControlLocalView()));
+        event_data_control_composite_->GetConsumerEventDataControlLocalView()));
 }
 
 void SkeletonEventCommon::EmplaceTypeErasedSamplePtrsGuard()
 {
     score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
-}
-
-void SkeletonEventCommon::UpdateCurrentTimestamp()
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
-                                                "EventDataControlComposite must be initialized.");
-    current_timestamp_ref_ = event_data_control_composite_ref_.value().GetLatestTimestamp();
 }
 
 void SkeletonEventCommon::SetQmNotificationsRegistered(bool value)
@@ -131,7 +126,7 @@ void SkeletonEventCommon::SetAsilBNotificationsRegistered(bool value)
 void SkeletonEventCommon::ResetGuards() noexcept
 {
     type_erased_sample_ptrs_guard_.reset();
-    if (event_data_control_composite_ref_.has_value())
+    if (event_data_control_composite_.has_value())
     {
         transaction_log_registration_guard_.reset();
     }

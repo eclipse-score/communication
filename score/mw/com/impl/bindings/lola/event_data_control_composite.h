@@ -109,8 +109,6 @@ class EventDataControlComposite
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot_index) const noexcept;
 
-    EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
-
   private:
     struct SlotWithTimeStamp
     {
@@ -132,7 +130,6 @@ class EventDataControlComposite
 
     bool TryLockSlot(const SlotWithTimeStamp expected_slot_with_timestamp) noexcept;
     std::optional<SlotIndexType> AllocateNextMultiSlot() noexcept;
-    void CheckForValidDataControls() const noexcept;
 };
 
 }  // namespace score::mw::com::impl::lola

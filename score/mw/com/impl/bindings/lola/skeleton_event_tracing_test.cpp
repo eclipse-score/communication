@@ -46,12 +46,12 @@ class SkeletonEventAttorney
 
     void SetQmDisconnect(const bool qm_disconnect_value)
     {
-        skeleton_event_.qm_disconnect_ = qm_disconnect_value;
+        skeleton_event_.event_shared_impl_.qm_disconnect_ = qm_disconnect_value;
     }
 
     std::optional<EventDataControlComposite<>>& GetEventDataControlComposite()
     {
-        return skeleton_event_.event_data_control_composite_;
+        return skeleton_event_.event_shared_impl_.event_data_control_composite_;
     }
 
   private:

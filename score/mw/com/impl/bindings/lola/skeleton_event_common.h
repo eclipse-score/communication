@@ -15,6 +15,8 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_COMMON_H_
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/runtime.h"
@@ -34,6 +36,9 @@ namespace score::mw::com::impl::lola
 
 template <typename SampleType>
 class SkeletonEventAttorney;
+template <typename SampleType>
+class SkeletonEvent;
+class GenericSkeletonEvent;
 
 class Skeleton;
 
@@ -46,13 +51,15 @@ class SkeletonEventCommon
 
     template <typename SampleType>
     friend class SkeletonEventAttorney;
+    template <typename SampleType>
+    friend class SkeletonEvent;
+    friend class GenericSkeletonEvent;
 
   public:
     SkeletonEventCommon(Skeleton& parent,
                         const ElementFqId& event_fqn,
-                        std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
-                        EventSlotStatus::EventTimeStamp& current_timestamp_ref,
-                        impl::tracing::SkeletonEventTracingData tracing_data = {}) noexcept;
+                        impl::tracing::SkeletonEventTracingData tracing_data,
+                        SkeletonEventProperties event_properties) noexcept;
 
     SkeletonEventCommon(const SkeletonEventCommon&) = delete;
     SkeletonEventCommon(SkeletonEventCommon&&) noexcept = delete;
@@ -61,7 +68,7 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    void PrepareOfferCommon(TransactionLogSet& transaction_log_set) noexcept;
+    void PrepareOfferCommon(TransactionLogSet& transaction_log_set, EventDataControlComposite<>& event_data_control_composite_ref) noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     // Accessors for members used by PrepareOfferCommon/PrepareStopOfferCommon
@@ -85,10 +92,10 @@ class SkeletonEventCommon
   private:
     Skeleton& parent_;
     const ElementFqId event_fqn_;
-    std::optional<EventDataControlComposite<>>&
-        event_data_control_composite_ref_;                    // Reference to the optional in derived class
-    EventSlotStatus::EventTimeStamp& current_timestamp_ref_;  // Reference to the timestamp in derived class
+    std::optional<EventDataControlComposite<>> event_data_control_composite_;
+    bool qm_disconnect_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
+    const SkeletonEventProperties event_properties_;
 
     /// \brief Atomic flags indicating whether any receive handlers are currently registered for this event
     ///        at each quality level (QM and ASIL-B).
@@ -110,7 +117,6 @@ class SkeletonEventCommon
 
     void EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set);
     void EmplaceTypeErasedSamplePtrsGuard();
-    void UpdateCurrentTimestamp();
     void SetQmNotificationsRegistered(bool value);
     void SetAsilBNotificationsRegistered(bool value);
     void ResetGuards() noexcept;
