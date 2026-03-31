@@ -36,7 +36,7 @@ use std::thread;
 use std::time::Duration;
 
 const CONFIG_PATH: &str = "etc/config.json";
-const SERVICE_DISCOVERY_RETRY_MS: u64 = 500;
+const SERVICE_DISCOVERY_RETRY_MS: Duration = Duration::from_millis(500);
 const MAX_SAMPLES_PER_CALL: usize = 5;
 
 #[derive(Clone, clap::ValueEnum)]
@@ -60,14 +60,14 @@ struct Args {
 fn receive_loop(
     num_cycles: usize,
     tag: &str,
-    retry_ms: u64,
+    retry_ms: Duration,
     mut try_receive: impl FnMut(usize) -> Result<usize>,
 ) {
     let mut received_total: usize = 0;
     while received_total < num_cycles {
         let want = (num_cycles - received_total).min(MAX_SAMPLES_PER_CALL);
         match try_receive(want) {
-            Ok(0) => thread::sleep(Duration::from_millis(retry_ms)),
+            Ok(0) => thread::sleep(retry_ms),
             Ok(n) => {
                 received_total += n;
                 println!("{} Progress: {}/{}", tag, received_total, num_cycles);
@@ -113,7 +113,7 @@ fn main() {
                     break builder;
                 }
                 println!("[bigdata-consumer] Service not yet available, retrying...");
-                thread::sleep(Duration::from_millis(SERVICE_DISCOVERY_RETRY_MS));
+                thread::sleep(SERVICE_DISCOVERY_RETRY_MS);
             };
 
             let consumer = consumer_builder.build().expect("Failed to build consumer");
@@ -128,7 +128,7 @@ fn main() {
             );
 
             let mut sample_buf = SampleContainer::new(MAX_SAMPLES_PER_CALL);
-            receive_loop(num_cycles, "[bigdata-consumer]", 100, |max| {
+            receive_loop(num_cycles, "[bigdata-consumer]", Duration::from_millis(100), |max| {
                 let n = subscription.try_receive(&mut sample_buf, max)?;
                 for _ in 0..n {
                     if let Some(sample) = sample_buf.pop_front() {
@@ -158,7 +158,7 @@ fn main() {
                     break builder;
                 }
                 println!("[mixed-primitives-consumer] Service not yet available, retrying...");
-                thread::sleep(Duration::from_millis(SERVICE_DISCOVERY_RETRY_MS));
+                thread::sleep(SERVICE_DISCOVERY_RETRY_MS);
             };
 
             let consumer = consumer_builder.build().expect("Failed to build consumer");
@@ -173,7 +173,7 @@ fn main() {
             );
 
             let mut sample_buf = SampleContainer::new(MAX_SAMPLES_PER_CALL);
-            receive_loop(num_cycles, "[mixed-primitives-consumer]", 100, |max| {
+            receive_loop(num_cycles, "[mixed-primitives-consumer]", Duration::from_millis(100), |max| {
                 let n = subscription.try_receive(&mut sample_buf, max)?;
 
                 for _ in 0..n {
@@ -232,7 +232,7 @@ fn main() {
                     break builder;
                 }
                 println!("[complex-struct-consumer] Service not yet available, retrying...");
-                thread::sleep(Duration::from_millis(SERVICE_DISCOVERY_RETRY_MS));
+                thread::sleep(SERVICE_DISCOVERY_RETRY_MS);
             };
 
             let consumer = consumer_builder.build().expect("Failed to build consumer");
@@ -247,7 +247,7 @@ fn main() {
             );
 
             let mut sample_buf = SampleContainer::new(MAX_SAMPLES_PER_CALL);
-            receive_loop(num_cycles, "[complex-struct-consumer]", 1, |max| {
+            receive_loop(num_cycles, "[complex-struct-consumer]", Duration::from_millis(100), |max| {
                 let n = subscription.try_receive(&mut sample_buf, max)?;
                 for _ in 0..n {
                     if let Some(sample) = sample_buf.pop_front() {
@@ -281,8 +281,7 @@ fn main() {
                                 speed: x_f32 / 2.0,
                                 rpm: u16::try_from(x_u32).expect("Failed to convert x_u32 to u16"),
                                 fuel_level: x_f32 / 2.0,
-                                is_running: u8::try_from(x_u32)
-                                    .expect("Failed to convert x_u32 to u8"),
+                                is_running: x_u32 % 2 == 0,
                                 mileage: x_u32,
                             },
                             array: ArrayStruct { values: [x_u32; 5] },

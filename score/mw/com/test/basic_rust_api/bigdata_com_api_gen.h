@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#ifndef SCORE_MW_COM_TEST_COM_API_BIGDATA_COM_API_GEN_H
-#define SCORE_MW_COM_TEST_COM_API_BIGDATA_COM_API_GEN_H
+#ifndef SCORE_MW_COM_TEST_BASIC_RUST_API_COM_API_GEN_H
+#define SCORE_MW_COM_TEST_BASIC_RUST_API_COM_API_GEN_H
 
 // Re-export the BigData interface types (BigDataProxy / BigDataSkeleton) that are
 // already defined in big_datatype.h
@@ -74,7 +74,7 @@ struct VehicleState
     float speed;
     uint16_t rpm;
     float fuel_level;
-    uint8_t is_running;
+    bool is_running;
     uint32_t mileage;
 };
 
@@ -116,4 +116,4 @@ using ComplexStructProxy = ::score::mw::com::AsProxy<ComplexStructInterface>;
 using ComplexStructSkeleton = ::score::mw::com::AsSkeleton<ComplexStructInterface>;
 }  // namespace score::mw::com::test
 
-#endif  // SCORE_MW_COM_TEST_COM_API_BIGDATA_COM_API_GEN_H
+#endif  // SCORE_MW_COM_TEST_BASIC_RUST_API_COM_API_GEN_H
