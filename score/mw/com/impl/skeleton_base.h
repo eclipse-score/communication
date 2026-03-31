@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/skeleton_binding.h"
+#include "score/mw/com/impl/skeleton_service_elements.h"
 
 #include "score/mw/com/impl/mocking/i_skeleton_base.h"
 
@@ -47,9 +48,11 @@ class SkeletonMethodBase;
 class SkeletonBase
 {
   public:
-    using SkeletonEvents = std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>;
-    using SkeletonFields = std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>;
-    using SkeletonMethods = std::map<std::string_view, std::reference_wrapper<SkeletonMethodBase>>;
+    // Re-export the element-map type aliases so that the rest of the codebase can
+    // continue to use SkeletonBase::SkeletonEvents etc. without change.
+    using SkeletonEvents = SkeletonServiceElements::SkeletonEvents;
+    using SkeletonFields = SkeletonServiceElements::SkeletonFields;
+    using SkeletonMethods = SkeletonServiceElements::SkeletonMethods;
 
     /// \brief Creation of service skeleton with provided Skeleton binding
     ///
@@ -94,24 +97,40 @@ class SkeletonBase
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonBaseView;
 
-    /// \brief A Skeleton shall be movable
+    /// \brief A Skeleton shall be movable.
+    ///
+    /// \details The move constructor and move assignment operator cannot be defaulted because,
+    ///          after moving all data members, they must call
+    ///          service_elements_.UpdateSkeletonReferences(*this) so that every registered event,
+    ///          field, and method updates its back-pointer to the new SkeletonBase address.
+    ///          The per-element iteration logic lives in SkeletonServiceElements, keeping these
+    ///          implementations intentionally short and free of duplicated loops.
+    ///
     /// \requirement SWS_CM_00135
     SkeletonBase(SkeletonBase&& other) noexcept;
     SkeletonBase& operator=(SkeletonBase&& other) noexcept;
 
   private:
     std::unique_ptr<SkeletonBinding> binding_;
-    SkeletonEvents events_;
-    SkeletonFields fields_;
-    SkeletonMethods methods_;
-    InstanceIdentifier instance_id_;
 
+    /// Holds the maps of registered events, fields, and methods together with the
+    /// post-move reference-update logic (see SkeletonServiceElements).
+    SkeletonServiceElements service_elements_;
+
+    InstanceIdentifier instance_id_;
     ISkeletonBase* skeleton_mock_;
+    FlagOwner service_offered_flag_;
 
     [[nodiscard]] score::ResultBlank OfferServiceEvents() const noexcept;
     [[nodiscard]] score::ResultBlank OfferServiceFields() const noexcept;
 
-    FlagOwner service_offered_flag_;
+    /// \brief Called at the end of both the move constructor and the move assignment operator.
+    /// Iterates all registered events, fields, and methods and calls UpdateSkeletonReference(*this)
+    /// so that each element's back-pointer is updated to the new SkeletonBase address.
+    /// This method exists in SkeletonBase (rather than SkeletonServiceElements) because it needs
+    /// the complete type of SkeletonBase, which would create a circular dependency if placed
+    /// in skeleton_service_elements.cpp.
+    void UpdateAllServiceElementReferences() noexcept;
 };
 
 class SkeletonBaseView
@@ -131,81 +150,47 @@ class SkeletonBaseView
 
     void RegisterEvent(const std::string_view event_name, SkeletonEventBase& event)
     {
-        const auto result = skeleton_base_.events_.emplace(event_name, event);
-        const bool was_event_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_event_inserted, "Event cannot be registered as it already exists.");
+        skeleton_base_.service_elements_.RegisterEvent(event_name, event);
     }
 
     void RegisterField(const std::string_view field_name, SkeletonFieldBase& field)
     {
-        const auto result = skeleton_base_.fields_.emplace(field_name, field);
-        const bool was_field_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
+        skeleton_base_.service_elements_.RegisterField(field_name, field);
     }
 
     void RegisterMethod(const std::string_view method_name, SkeletonMethodBase& method)
     {
-        const auto result = skeleton_base_.methods_.emplace(method_name, method);
-        const bool was_method_inserted = result.second;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted,
-                                                "Method cannot be registered as it already exists.");
+        skeleton_base_.service_elements_.RegisterMethod(method_name, method);
     }
 
-    // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
-    // called implicitly". std::terminate() is implicitly called from std::map::at in case the container doesn't
-    // have the mapped element. This function is called by the move constructor and as we register the event name in
-    // the events_ container during SkeletonEvent construction so we are sure that the event_name already exists, so
-    // no way for throwing std::out_of_range which leds to std::terminate().
-    // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     void UpdateEvent(const std::string_view event_name, SkeletonEventBase& event) noexcept
     {
-        // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "If a function is declared to be
-        // noexcept, noexcept(true) or noexcept(<true condition>), then it shall not exit with an exception"
-        // This function is indirectly called by the move constructor and as we register the event name in the
-        // events_ container during SkeletonEvent construction so we are sure the event name already exists, so no
-        // way for throwing std::out_of_range which leds to std::terminate().
-        // coverity[autosar_cpp14_a15_4_2_violation] : FALSE]
-        skeleton_base_.events_.at(event_name) = event;
+        skeleton_base_.service_elements_.UpdateEvent(event_name, event);
     }
 
     void UpdateField(const std::string_view field_name, SkeletonFieldBase& field) noexcept
     {
-        auto field_name_it = skeleton_base_.fields_.find(field_name);
-        if (field_name_it == skeleton_base_.fields_.cend())
-        {
-            score::mw::log::LogError("lola")
-                << "SkeletonBaseView::UpdateField failed to update field because the requested field doesn't exist";
-            std::terminate();
-        }
-
-        field_name_it->second = field;
+        skeleton_base_.service_elements_.UpdateField(field_name, field);
     }
 
     void UpdateMethod(const std::string_view method_name, SkeletonMethodBase& method) noexcept
     {
-        auto method_it = skeleton_base_.methods_.find(method_name);
-        if (method_it == skeleton_base_.methods_.cend())
-        {
-            score::mw::log::LogError("lola")
-                << "SkeletonBaseView::UpdateMethod failed to update method because the requested method doesn't exist";
-            std::terminate();
-        }
-        method_it->second = method;
+        skeleton_base_.service_elements_.UpdateMethod(method_name, method);
     }
 
     const SkeletonBase::SkeletonEvents& GetEvents() const noexcept
     {
-        return skeleton_base_.events_;
+        return skeleton_base_.service_elements_.GetEvents();
     }
 
     const SkeletonBase::SkeletonFields& GetFields() const noexcept
     {
-        return skeleton_base_.fields_;
+        return skeleton_base_.service_elements_.GetFields();
     }
 
     const SkeletonBase::SkeletonMethods& GetMethods() const noexcept
     {
-        return skeleton_base_.methods_;
+        return skeleton_base_.service_elements_.GetMethods();
     }
 
     bool AreBindingsValid() const
