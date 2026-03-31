@@ -94,8 +94,6 @@ class EventDataControlComposite
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot) const noexcept;
 
-    EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
-
   private:
     EventDataControl* asil_qm_control_;
     EventDataControl* asil_b_control_;

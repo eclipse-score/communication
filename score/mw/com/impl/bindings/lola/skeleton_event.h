@@ -131,11 +131,7 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
       event_data_control_composite_{},
       current_timestamp_{EventSlotStatus::InvalidTimestamp},
       qm_disconnect_{false},
-      event_shared_impl_(parent,
-                         event_fqn,
-                         event_data_control_composite_,
-                         current_timestamp_,
-                         skeleton_event_tracing_data)
+      event_shared_impl_(parent, event_fqn, event_data_control_composite_, skeleton_event_tracing_data)
 {
 }
 

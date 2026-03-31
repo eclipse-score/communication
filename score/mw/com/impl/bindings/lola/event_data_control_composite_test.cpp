@@ -184,21 +184,6 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
     EXPECT_TRUE(allocation.IsValidQmAndAsilB());
 }
 
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
-{
-    // Given an EventDataControlComposite with 1 allocated slots that are set to ready
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-    auto slot_indicator = unit_->AllocateNextSlot();
-    const EventSlotStatus::EventTimeStamp time_stamp{2};
-    unit_->EventReady(slot_indicator, time_stamp);
-
-    // When acquiring the latest timestamp
-    const auto time_stamp_obtained = unit_->GetLatestTimestamp();
-
-    // Then the timestamp is equal to 2
-    EXPECT_EQ(time_stamp_obtained, time_stamp);
-}
-
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
 {
     // Given an EventDataControlComposite with zero used slots
@@ -211,73 +196,6 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
     const auto allocation_slot_2 = unit_->AllocateNextSlot();
     const SlotIndexType slot_2_index{1};
     ASSERT_EQ(allocation_slot_2.GetIndex(), slot_2_index);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfOneSlotIsMarkedAsInvalid)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // When allocating 2 slots
-    auto slot_indicator_1 = unit_->AllocateNextSlot();
-    auto slot_indicator_2 = unit_->AllocateNextSlot();
-
-    // and set slot 1 to ready
-    EventSlotStatus::EventTimeStamp time_stamp{2};
-    unit_->EventReady(slot_indicator_1, time_stamp);
-
-    // and discarding slot 2
-    unit_->Discard(slot_indicator_2);
-
-    // Then the timestamp is equal to 2
-    time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{2};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfAllSlotAreInvalid)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // When allocating 2 slots
-    auto slot_indicator_1 = unit_->AllocateNextSlot();
-    auto slot_indicator_2 = unit_->AllocateNextSlot();
-
-    // and discarding them
-    unit_->Discard(slot_indicator_1);
-    unit_->Discard(slot_indicator_2);
-
-    // Then the timestamp is invalid
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::InvalidTimestamp};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfNoSlotHaveBeenAllocated)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // Then the timestamp is invalid
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::InvalidTimestamp};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture,
-       GetLatestTimeStampReturnsDefaultValuesIfASlotHasBeenAllocatedButNotMarkedAsReady)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // When allocating 1 slot
-    score::cpp::ignore = unit_->AllocateNextSlot();
-
-    // Then the timestamp is invalid
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{EventSlotStatus::InvalidTimestamp};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
 TEST_F(EventDataControlCompositeFixture, FailingToLockQmMultiSlotAllocatesOnlyAsilBSlot)
