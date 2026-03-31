@@ -236,7 +236,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetLatestTimestamp() const noexcept
 {
-    EventSlotStatus::EventTimeStamp latest_time_stamp{1U};
+    EventSlotStatus::EventTimeStamp latest_time_stamp{EventSlotStatus::UNINITIALIZED_TIMESTAMP};
     auto& control = (asil_b_control_local_ != nullptr) ? *asil_b_control_local_ : asil_qm_control_local_.get();
     for (SlotIndexType slot_index = 0U;
          // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to

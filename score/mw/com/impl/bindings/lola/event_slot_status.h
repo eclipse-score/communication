@@ -47,8 +47,13 @@ class EventSlotStatus final
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     static constexpr EventTimeStamp TIMESTAMP_MAX = std::numeric_limits<EventTimeStamp>::max();
 
-    /// \brief If default constructed, SlotStatus is invalid
-    EventSlotStatus() noexcept = default;
+    /// \brief Timestamp value indicating that a slot was never written.
+    static constexpr EventTimeStamp UNINITIALIZED_TIMESTAMP{0U};
+
+    /// \brief First valid timestamp value that can appear in shared memory.
+    static constexpr EventTimeStamp FIRST_VALID_TIMESTAMP{1U};
+
+    EventSlotStatus() noexcept : EventSlotStatus{UNINITIALIZED_TIMESTAMP} {}
     explicit EventSlotStatus(const value_type init_val) noexcept;
     EventSlotStatus(const EventTimeStamp timestamp, const SubscriberCount refcount) noexcept;
     EventSlotStatus(const EventSlotStatus&) noexcept = default;
@@ -86,6 +91,7 @@ class EventSlotStatus final
     value_type data_;
 };
 
+static_assert(sizeof(EventSlotStatus) <= sizeof(std::uint64_t));
 }  // namespace score::mw::com::impl::lola
 
 #endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_SLOT_STATUS_H
