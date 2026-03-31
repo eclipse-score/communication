@@ -423,9 +423,9 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     auto* event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
     ProviderEventDataControlLocalView<> provider_event_data_control_local{event_control->data_control};
     const EventSlotStatus first_final_slot_status{provider_event_data_control_local[first_slot_index]};
-    // AND the first timestamp should be 2, as it's the first one after initialization.
+    // AND the first timestamp should be the first valid timestamp.
     const auto first_timestamp = first_final_slot_status.GetTimeStamp();
-    EXPECT_EQ(first_timestamp, 2U);
+    EXPECT_EQ(first_timestamp, EventSlotStatus::FIRST_VALID_TIMESTAMP);
 
     // AND WHEN we allocate and send a second sample
     auto second_allocated_slot_result = skeleton_event_->Allocate();
