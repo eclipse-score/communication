@@ -61,6 +61,11 @@ class DummyFieldForTest : public SkeletonFieldBase
         return false;
     }
 
+    bool IsSetHandlerRegistered() const noexcept override
+    {
+        return false;
+    }
+
     ResultBlank DoDeferredUpdate() noexcept override
     {
         return ResultBlank{};
