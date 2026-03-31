@@ -86,46 +86,41 @@ SkeletonBinding::SkeletonFieldBindings GetSkeletonFieldBindingsMap(const Skeleto
 
 SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, InstanceIdentifier instance_id)
     : binding_{std::move(skeleton_binding)},
-      events_{},
-      fields_{},
-      methods_{},
+      service_elements_{},
       instance_id_{std::move(instance_id)},
       skeleton_mock_{nullptr},
       service_offered_flag_{}
 {
 }
 
+// ── Move constructor ──────────────────────────────────────────────────────────
+//
+// Step 1: Move every data member from `other` to `*this`.
+//         SkeletonServiceElements has a defaulted move constructor that moves the
+//         three maps; it does NOT touch back-references.
+// Step 2: Call UpdateSkeletonReferences so that every registered event, field, and
+//         method now points to the new SkeletonBase address (*this).
+//         This is the only reason this constructor cannot be defaulted.
+//
 SkeletonBase::SkeletonBase(SkeletonBase&& other) noexcept
     : binding_{std::move(other.binding_)},
-      events_{std::move(other.events_)},
-      fields_{std::move(other.fields_)},
-      methods_{std::move(other.methods_)},
+      service_elements_{std::move(other.service_elements_)},
       instance_id_{std::move(other.instance_id_)},
-      skeleton_mock_{std::move(other.skeleton_mock_)},
+      skeleton_mock_{other.skeleton_mock_},
       service_offered_flag_{std::move(other.service_offered_flag_)}
 {
-    // Since the address of this skeleton has changed, we need update the address stored in each of the events and
-    // fields belonging to the skeleton.
-    for (auto& event : events_)
-    {
-        event.second.get().UpdateSkeletonReference(*this);
-    }
-
-    for (auto& field : fields_)
-    {
-        field.second.get().UpdateSkeletonReference(*this);
-    }
-
-    for (auto& method : methods_)
-    {
-        method.second.get().UpdateSkeletonReference(*this);
-    }
+    UpdateAllServiceElementReferences();
 }
 
-// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
-// or respectively copy base classes and data members of a class, without any side effects." Due to architectural
-// decisions, SkeletonBase must perform a cleanup and update references to itself in its events and fields. Therefore,
-// side effects are required.
+// ── Move assignment operator ──────────────────────────────────────────────────
+//
+// Same two-step approach as the move constructor.  The AUTOSAR A6-2-1 suppression
+// is kept because we intentionally update back-references as a required side-effect.
+//
+// Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall
+// either move or respectively copy base classes and data members of a class, without any side effects."
+// Due to architectural decisions, SkeletonBase must update references to itself in its events, fields, and
+// methods after the move. Therefore, side effects are required.
 // coverity[autosar_cpp14_a6_2_1_violation]
 SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
 {
@@ -135,34 +130,42 @@ SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
     }
 
     binding_ = std::move(other.binding_);
-    events_ = std::move(other.events_);
-    fields_ = std::move(other.fields_);
-    methods_ = std::move(other.methods_);
+    service_elements_ = std::move(other.service_elements_);
     instance_id_ = std::move(other.instance_id_);
-    skeleton_mock_ = std::move(other.skeleton_mock_);
+    skeleton_mock_ = other.skeleton_mock_;
     service_offered_flag_ = std::move(other.service_offered_flag_);
 
-    // Since the address of this skeleton has changed, we need update the address stored in each of the events and
-    // fields belonging to the skeleton.
-    for (auto& event : events_)
+    UpdateAllServiceElementReferences();
+
+    return *this;
+}
+
+// ── Private helper ────────────────────────────────────────────────────────────
+//
+// This method lives in skeleton_base.cpp (not in skeleton_service_elements.cpp) because
+// it needs the complete type of SkeletonBase.  Placing it in skeleton_service_elements
+// would require including skeleton_base.h there, creating a circular dependency since
+// skeleton_base already depends on skeleton_service_elements.
+//
+void SkeletonBase::UpdateAllServiceElementReferences() noexcept
+{
+    for (auto& event : service_elements_.GetEvents())
     {
         event.second.get().UpdateSkeletonReference(*this);
     }
-
-    for (auto& field : fields_)
+    for (auto& field : service_elements_.GetFields())
     {
         field.second.get().UpdateSkeletonReference(*this);
     }
-    for (auto& method : methods_)
+    for (auto& method : service_elements_.GetMethods())
     {
         method.second.get().UpdateSkeletonReference(*this);
     }
-    return *this;
 }
 
 score::ResultBlank SkeletonBase::OfferServiceEvents() const noexcept
 {
-    for (auto& event : events_)
+    for (auto& event : service_elements_.GetEvents())
     {
         const auto event_name = event.first;
         auto& skeleton_event = event.second.get();
@@ -180,7 +183,7 @@ score::ResultBlank SkeletonBase::OfferServiceEvents() const noexcept
 
 score::ResultBlank SkeletonBase::OfferServiceFields() const noexcept
 {
-    for (auto& field : fields_)
+    for (auto& field : service_elements_.GetFields())
     {
         const auto field_name = field.first;
         auto& skeleton_field = field.second.get();
@@ -213,16 +216,19 @@ auto SkeletonBase::OfferService() noexcept -> ResultBlank
         std::terminate();
     }
 
-    auto event_bindings = GetSkeletonEventBindingsMap(events_);
-    auto field_bindings = GetSkeletonFieldBindingsMap(fields_);
+    const auto& events = service_elements_.GetEvents();
+    const auto& fields = service_elements_.GetFields();
+
+    auto event_bindings = GetSkeletonEventBindingsMap(events);
+    auto field_bindings = GetSkeletonFieldBindingsMap(fields);
 
     auto register_shm_object_callback =
-        tracing::CreateRegisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
+        tracing::CreateRegisterShmObjectCallback(instance_id_, events, fields, *binding_);
 
     if (!binding_->VerifyAllMethodsRegistered())
     {
         constexpr std::string_view msg =
-            "Not all methods have been registered! Call Register(...) with an appropriate callback on each mehtod.";
+            "Not all methods have been registered! Call Register(...) with an appropriate callback on each method.";
         return MakeUnexpected(ComErrc::kBindingFailure, msg);
     }
 
@@ -272,16 +278,18 @@ auto SkeletonBase::StopOfferService() noexcept -> void
     {
         StopOfferServiceInServiceDiscovery(instance_id_);
 
-        for (auto& event : events_)
+        for (auto& event : service_elements_.GetEvents())
         {
             event.second.get().PrepareStopOffer();
         }
-        for (auto& field : fields_)
+        for (auto& field : service_elements_.GetFields())
         {
             field.second.get().PrepareStopOffer();
         }
 
-        auto tracing_handler = tracing::CreateUnregisterShmObjectCallback(instance_id_, events_, fields_, *binding_);
+        const auto& events = service_elements_.GetEvents();
+        const auto& fields = service_elements_.GetFields();
+        auto tracing_handler = tracing::CreateUnregisterShmObjectCallback(instance_id_, events, fields, *binding_);
         binding_->PrepareStopOffer(std::move(tracing_handler));
         service_offered_flag_.Clear();
         mw::log::LogInfo("lola") << "Service was stop offered successfully";
@@ -293,28 +301,33 @@ auto SkeletonBase::AreBindingsValid() const noexcept -> bool
     const bool is_skeleton_binding_valid{binding_ != nullptr};
     bool are_service_element_bindings_valid{true};
 
-    score::cpp::ignore =
-        std::for_each(events_.begin(), events_.end(), [&are_service_element_bindings_valid](const auto& element) {
-            if (SkeletonEventBaseView{element.second.get()}.GetBinding() == nullptr)
-            {
-                are_service_element_bindings_valid = false;
-            }
-        });
-    score::cpp::ignore =
-        std::for_each(fields_.begin(), fields_.end(), [&are_service_element_bindings_valid](const auto& element) {
-            if (SkeletonFieldBaseView{element.second.get()}.GetEventBinding() == nullptr)
-            {
-                are_service_element_bindings_valid = false;
-            }
-        });
+    score::cpp::ignore = std::for_each(service_elements_.GetEvents().begin(),
+                                       service_elements_.GetEvents().end(),
+                                       [&are_service_element_bindings_valid](const auto& element) {
+                                           if (SkeletonEventBaseView{element.second.get()}.GetBinding() == nullptr)
+                                           {
+                                               are_service_element_bindings_valid = false;
+                                           }
+                                       });
+
+    score::cpp::ignore = std::for_each(service_elements_.GetFields().begin(),
+                                       service_elements_.GetFields().end(),
+                                       [&are_service_element_bindings_valid](const auto& element) {
+                                           if (SkeletonFieldBaseView{element.second.get()}.GetEventBinding() == nullptr)
+                                           {
+                                               are_service_element_bindings_valid = false;
+                                           }
+                                       });
 
     score::cpp::ignore =
-        std::for_each(methods_.begin(), methods_.end(), [&are_service_element_bindings_valid](const auto& element) {
-            if (SkeletonMethodBaseView{element.second.get()}.GetMethodBinding() == nullptr)
-            {
-                are_service_element_bindings_valid = false;
-            }
-        });
+        std::for_each(service_elements_.GetMethods().begin(),
+                      service_elements_.GetMethods().end(),
+                      [&are_service_element_bindings_valid](const auto& element) {
+                          if (SkeletonMethodBaseView{element.second.get()}.GetMethodBinding() == nullptr)
+                          {
+                              are_service_element_bindings_valid = false;
+                          }
+                      });
 
     return is_skeleton_binding_valid && are_service_element_bindings_valid;
 }
