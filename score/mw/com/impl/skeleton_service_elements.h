@@ -25,23 +25,21 @@ class SkeletonEventBase;
 class SkeletonFieldBase;
 class SkeletonMethodBase;
 
-/// \brief Encapsulates the three service-element registries (events, fields, methods) of a SkeletonBase
-///        together with the post-move reference-fixup logic.
+/// \brief Encapsulates the three service-element registries (events, fields, methods) of a SkeletonBase.
 ///
 /// \details SkeletonBase previously stored three std::map members directly and duplicated
 ///          the same three UpdateSkeletonReference loops in both the move constructor and the
 ///          move assignment operator.  This class extracts that ownership and logic so that:
 ///
 ///          1. All map management (Register / Update / Get) is in one place.
-///          2. The reference-fixup loop (UpdateSkeletonReferences) is declared once.
-///          3. SkeletonBase's move constructor and move assignment operator each only need to
-///             call  service_elements_.UpdateSkeletonReferences(*this)  after delegating the
-///             member-move to the compiler-generated default move of this class.
+///          2. SkeletonBase's move constructor and move assignment operator each only need to
+///             call UpdateAllServiceElementReferences() after delegating the member-move to the
+///             compiler-generated default move of this class.
 ///
 /// The move constructor and move assignment operator of this class are intentionally defaulted:
 /// they simply move the three maps.  The caller (SkeletonBase) is responsible for calling
-/// UpdateSkeletonReferences on the new owner after the move, because the correct new-owner
-/// address is only available at the SkeletonBase level.
+/// UpdateAllServiceElementReferences() after the move, because the correct new-owner address
+/// is only available at the SkeletonBase level.
 class SkeletonServiceElements
 {
   public:
@@ -57,11 +55,10 @@ class SkeletonServiceElements
     SkeletonServiceElements& operator=(const SkeletonServiceElements&) = delete;
 
     /// \brief Default move: moves the three maps; does NOT update skeleton back-references.
-    /// The owning SkeletonBase must call UpdateSkeletonReferences(*this) after the move.
+    ///
+    /// The owning SkeletonBase must call UpdateAllServiceElementReferences() after the move.
     SkeletonServiceElements(SkeletonServiceElements&&) noexcept = default;
     SkeletonServiceElements& operator=(SkeletonServiceElements&&) noexcept = default;
-
-    // ── Registry operations ───────────────────────────────────────────────────
 
     /// \brief Register an event under the given name.  Asserts that the name is unique.
     void RegisterEvent(std::string_view event_name, SkeletonEventBase& event) noexcept;
@@ -82,16 +79,16 @@ class SkeletonServiceElements
     /// \brief Update the stored reference for an existing method.
     void UpdateMethod(std::string_view method_name, SkeletonMethodBase& method) noexcept;
 
-    // ── Accessors ─────────────────────────────────────────────────────────────
-
     const SkeletonEvents& GetEvents() const noexcept
     {
         return events_;
     }
+
     const SkeletonFields& GetFields() const noexcept
     {
         return fields_;
     }
+
     const SkeletonMethods& GetMethods() const noexcept
     {
         return methods_;

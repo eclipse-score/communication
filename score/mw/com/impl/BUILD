@@ -353,7 +353,7 @@ cc_library(
         ":skeleton_field_base",
         "//score/mw/com/impl/methods:skeleton_method_base",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

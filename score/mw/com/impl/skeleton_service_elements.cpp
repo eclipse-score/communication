@@ -12,10 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/skeleton_service_elements.h"
 
-// Full type definitions are needed here; we do NOT include skeleton_base.h because
-// skeleton_service_elements is a dependency OF skeleton_base, and including skeleton_base.h
-// would create a circular dependency.  The UpdateSkeletonReference loops that need SkeletonBase
-// live in skeleton_base.cpp::UpdateAllServiceElementReferences(), not here.
+// Full type definitions are needed here; skeleton_base.h is NOT included because
+// skeleton_service_elements is a dependency OF skeleton_base — including skeleton_base.h
+// here would create a circular dependency.  The UpdateSkeletonReference loops that require
+// a complete SkeletonBase type live in skeleton_base.cpp::UpdateAllServiceElementReferences().
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/impl/skeleton_field_base.h"

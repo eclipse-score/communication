@@ -93,30 +93,27 @@ SkeletonBase::SkeletonBase(std::unique_ptr<SkeletonBinding> skeleton_binding, In
 {
 }
 
-// ── Move constructor ──────────────────────────────────────────────────────────
-//
-// Step 1: Move every data member from `other` to `*this`.
-//         SkeletonServiceElements has a defaulted move constructor that moves the
-//         three maps; it does NOT touch back-references.
-// Step 2: Call UpdateSkeletonReferences so that every registered event, field, and
-//         method now points to the new SkeletonBase address (*this).
-//         This is the only reason this constructor cannot be defaulted.
-//
+/// \brief Move constructor.
+///
+/// \details Moves every data member from \p other to \c *this, then calls
+///          UpdateSkeletonReferences so that every registered event, field, and
+///          method now points to the new SkeletonBase address (*this).
+///          This is the only reason this constructor cannot be defaulted.
 SkeletonBase::SkeletonBase(SkeletonBase&& other) noexcept
     : binding_{std::move(other.binding_)},
       service_elements_{std::move(other.service_elements_)},
       instance_id_{std::move(other.instance_id_)},
-      skeleton_mock_{other.skeleton_mock_},
+      skeleton_mock_{std::move(other.skeleton_mock_)},
       service_offered_flag_{std::move(other.service_offered_flag_)}
 {
     UpdateAllServiceElementReferences();
 }
 
-// ── Move assignment operator ──────────────────────────────────────────────────
-//
-// Same two-step approach as the move constructor.  The AUTOSAR A6-2-1 suppression
-// is kept because we intentionally update back-references as a required side-effect.
-//
+/// \brief Move assignment operator.
+///
+/// \details Same two-step approach as the move constructor.  The AUTOSAR A6-2-1
+///          suppression is kept because we intentionally update back-references
+///          as a required side-effect.
 // Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall
 // either move or respectively copy base classes and data members of a class, without any side effects."
 // Due to architectural decisions, SkeletonBase must update references to itself in its events, fields, and
@@ -132,35 +129,12 @@ SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
     binding_ = std::move(other.binding_);
     service_elements_ = std::move(other.service_elements_);
     instance_id_ = std::move(other.instance_id_);
-    skeleton_mock_ = other.skeleton_mock_;
+    skeleton_mock_ = std::move(other.skeleton_mock_);
     service_offered_flag_ = std::move(other.service_offered_flag_);
 
     UpdateAllServiceElementReferences();
 
     return *this;
-}
-
-// ── Private helper ────────────────────────────────────────────────────────────
-//
-// This method lives in skeleton_base.cpp (not in skeleton_service_elements.cpp) because
-// it needs the complete type of SkeletonBase.  Placing it in skeleton_service_elements
-// would require including skeleton_base.h there, creating a circular dependency since
-// skeleton_base already depends on skeleton_service_elements.
-//
-void SkeletonBase::UpdateAllServiceElementReferences() noexcept
-{
-    for (auto& event : service_elements_.GetEvents())
-    {
-        event.second.get().UpdateSkeletonReference(*this);
-    }
-    for (auto& field : service_elements_.GetFields())
-    {
-        field.second.get().UpdateSkeletonReference(*this);
-    }
-    for (auto& method : service_elements_.GetMethods())
-    {
-        method.second.get().UpdateSkeletonReference(*this);
-    }
 }
 
 score::ResultBlank SkeletonBase::OfferServiceEvents() const noexcept
@@ -341,6 +315,30 @@ score::cpp::optional<InstanceIdentifier> GetInstanceIdentifier(const InstanceSpe
     }
     const auto instance_identifier = instance_identifiers.front();
     return instance_identifier;
+}
+
+/// \brief Re-points every registered service element back-reference to this SkeletonBase.
+///
+/// \details This method is intentionally defined in skeleton_base.cpp rather than in
+///          skeleton_service_elements.cpp because it requires the complete definition of
+///          SkeletonBase.  Including skeleton_base.h in skeleton_service_elements.cpp would
+///          create a circular dependency, since skeleton_base already depends on
+///          skeleton_service_elements.  The pointer approach suggested in code review is
+///          equivalent in effect but does not resolve the Bazel dependency cycle.
+void SkeletonBase::UpdateAllServiceElementReferences() noexcept
+{
+    for (auto& event : service_elements_.GetEvents())
+    {
+        event.second.get().UpdateSkeletonReference(*this);
+    }
+    for (auto& field : service_elements_.GetFields())
+    {
+        field.second.get().UpdateSkeletonReference(*this);
+    }
+    for (auto& method : service_elements_.GetMethods())
+    {
+        method.second.get().UpdateSkeletonReference(*this);
+    }
 }
 
 }  // namespace score::mw::com::impl

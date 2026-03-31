@@ -124,12 +124,11 @@ class SkeletonBase
     [[nodiscard]] score::ResultBlank OfferServiceEvents() const noexcept;
     [[nodiscard]] score::ResultBlank OfferServiceFields() const noexcept;
 
-    /// \brief Called at the end of both the move constructor and the move assignment operator.
-    /// Iterates all registered events, fields, and methods and calls UpdateSkeletonReference(*this)
-    /// so that each element's back-pointer is updated to the new SkeletonBase address.
-    /// This method exists in SkeletonBase (rather than SkeletonServiceElements) because it needs
-    /// the complete type of SkeletonBase, which would create a circular dependency if placed
-    /// in skeleton_service_elements.cpp.
+    /// \brief Re-points every registered service element back-reference to \c *this.
+    ///
+    /// \details Called at the end of both the move constructor and move assignment operator.
+    ///          Defined in skeleton_base.cpp to avoid a circular include with
+    ///          skeleton_service_elements.h.
     void UpdateAllServiceElementReferences() noexcept;
 };
 
