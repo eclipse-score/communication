@@ -46,25 +46,21 @@ class SamplePtr final
     /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_indicator indicator of event slot
     SamplePtr(pointer ptr,
-          EventDataControl& event_data_ctrl,
-          ControlSlotIndicator slot_indicator,
-          TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
-    : SamplePtr{ptr,
-                &event_data_ctrl,
-                slot_indicator,
-                std::make_optional<SlotDecrementer>(&event_data_ctrl, slot_indicator, transaction_log_idx)}
+              EventDataControl& event_data_ctrl,
+              ControlSlotIndicator slot_indicator,
+              TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
+        : SamplePtr{ptr,
+                    &event_data_ctrl,
+                    slot_indicator,
+                    std::make_optional<SlotDecrementer>(&event_data_ctrl, slot_indicator, transaction_log_idx)}
     {
     }
 
-    EventSlotStatus::EventTimeStamp GetTimestamp() const noexcept
+    bool IsNewer(const SamplePtr& other) const noexcept
     {
-        if ((event_data_ctrl_ == nullptr) || (!slot_indicator_.IsValid()))
-        {
-            return EventSlotStatus::EventTimeStamp{};
-        }
-
-        return (*event_data_ctrl_)[slot_indicator_.GetIndex()].GetTimeStamp();
+        return this->GetTimestamp() > other.GetTimestamp();
     }
+
     ~SamplePtr() noexcept = default;
 
     /// \brief assign nullptr.
@@ -119,20 +115,29 @@ class SamplePtr final
 
   private:
     explicit SamplePtr(pointer managed_object,
-                   EventDataControl* event_data_ctrl,
-                   ControlSlotIndicator slot_indicator,
-                   std::optional<SlotDecrementer>&& slot_decrementer) noexcept
-    : managed_object_{managed_object},
-      event_data_ctrl_{event_data_ctrl},
-      slot_indicator_{slot_indicator},
-      slot_decrementer_{std::move(slot_decrementer)}
-{
-}
+                       EventDataControl* event_data_ctrl,
+                       ControlSlotIndicator slot_indicator,
+                       std::optional<SlotDecrementer>&& slot_decrementer) noexcept
+        : managed_object_{managed_object},
+          event_data_ctrl_{event_data_ctrl},
+          slot_indicator_{slot_indicator},
+          slot_decrementer_{std::move(slot_decrementer)}
+    {
+    }
 
     pointer managed_object_;
     EventDataControl* event_data_ctrl_{nullptr};
     ControlSlotIndicator slot_indicator_;
     std::optional<SlotDecrementer> slot_decrementer_;
+    EventSlotStatus::EventTimeStamp GetTimestamp() const noexcept
+    {
+        if ((event_data_ctrl_ == nullptr) || (!slot_indicator_.IsValid()))
+        {
+            return EventSlotStatus::EventTimeStamp{};
+        }
+
+        return (*event_data_ctrl_)[slot_indicator_.GetIndex()].GetTimeStamp();
+    }
 };
 
 }  // namespace score::mw::com::impl::lola

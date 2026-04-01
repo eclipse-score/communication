@@ -183,24 +183,59 @@ TEST_F(SamplePtrTest, StarOp)
     EXPECT_EQ(val1.member2_, 44);
 }
 
-TEST_F(SamplePtrTest, GetTimestamp)
+TEST_F(SamplePtrTest, SortByTimestamp)
 {
+    constexpr EventSlotStatus::EventTimeStamp kOlderTimestamp{10U};
     constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
+    constexpr EventSlotStatus::EventTimeStamp kNewerTimestamp{43U};
 
     // Valid SamplePtr returns the timestamp of its slot
+    AllocateSlot(kOlderTimestamp);
+    auto client_oldest_slot_indicator = event_data_control_.ReferenceNextEvent(0, transaction_log_index_);
+    ASSERT_TRUE(client_oldest_slot_indicator.IsValid());
+
     AllocateSlot(kTimestamp);
-    auto client_slot_indicator = event_data_control_.ReferenceNextEvent(0, transaction_log_index_);
-    ASSERT_TRUE(client_slot_indicator.IsValid());
+    auto client_newer_slot_indicator = event_data_control_.ReferenceNextEvent(1, transaction_log_index_);
+    ASSERT_TRUE(client_newer_slot_indicator.IsValid());
+
+    AllocateSlot(kNewerTimestamp);
+    auto client_newest_slot_indicator = event_data_control_.ReferenceNextEvent(2, transaction_log_index_);
+    ASSERT_TRUE(client_newest_slot_indicator.IsValid());
 
     uint8_t dummy_val{};
-    SamplePtr<uint8_t> sample_ptr{
-        &dummy_val, event_data_control_, client_slot_indicator, transaction_log_index_};
+    SamplePtr<uint8_t> sample_ptr_oldest{
+        &dummy_val, event_data_control_, client_oldest_slot_indicator, transaction_log_index_};
 
-    EXPECT_EQ(sample_ptr.GetTimestamp(), kTimestamp);
+    uint8_t dummy_val_2{};
+    SamplePtr<uint8_t> sample_ptr_newer{
+        &dummy_val_2, event_data_control_, client_newer_slot_indicator, transaction_log_index_};
 
-    // Invalid SamplePtr returns default timestamp
-    SamplePtr<uint8_t> null_sample{nullptr};
-    EXPECT_EQ(null_sample.GetTimestamp(), EventSlotStatus::EventTimeStamp{});
+    uint8_t dummy_val_3{};
+
+    SamplePtr<uint8_t> sample_ptr_newest{
+        &dummy_val_3, event_data_control_, client_newest_slot_indicator, transaction_log_index_};
+
+    EXPECT_TRUE(sample_ptr_newer.IsNewer(sample_ptr_oldest));
+    EXPECT_FALSE(sample_ptr_newer.IsNewer(sample_ptr_newest));
+
+    // Testing sorting of SamplePtrs by timestamp
+    std::vector<SamplePtr<uint8_t>> samples{};
+    samples.emplace_back(std::move(sample_ptr_oldest));
+    samples.emplace_back(std::move(sample_ptr_newer));
+    samples.emplace_back(std::move(sample_ptr_newest));
+
+    // Sort descending by timestamp, so the newest sample should be first and the oldest sample should be the last
+    std::sort(samples.begin(), samples.end(), [](const auto& lhs, const auto& rhs) {
+        return lhs.IsNewer(rhs);
+    });
+
+    // Check the order of the sorted samples. sample_ptr should be newer than sample_ptr_older, but not newer than
+    // sample_ptr_same. sample_ptr_older should not be newer than any other sample.
+    EXPECT_TRUE(samples[0].IsNewer(samples[1]));
+    EXPECT_TRUE(samples[0].IsNewer(samples[2]));
+    EXPECT_TRUE(samples[1].IsNewer(samples[2]));
+    EXPECT_FALSE(samples[2].IsNewer(samples[0]));
+    EXPECT_FALSE(samples[2].IsNewer(samples[1]));
 }
 }  // namespace
 }  // namespace score::mw::com::impl::lola
