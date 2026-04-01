@@ -125,11 +125,6 @@ class Skeleton final : public SkeletonBinding
         const ElementFqId element_fq_id,
         SkeletonEventProperties element_properties);
 
-    /// \brief Returns the meta-info for the given registered event.
-    /// \param element_fq_id identification of the event.
-    /// \return Events meta-info, if it has been registered, null else.
-    score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const;
-
     QualityType GetInstanceQualityType() const;
 
     /// \brief Cleans up all allocated slots for this SkeletonEvent of any previous running instance

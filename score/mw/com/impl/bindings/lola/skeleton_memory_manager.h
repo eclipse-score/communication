@@ -106,8 +106,6 @@ class SkeletonMemoryManager final
     /// \details Note: Only invoke _after_ a crash was detected!
     void CleanupSharedMemoryAfterCrash();
 
-    score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const;
-
     void Reset();
 
   private:

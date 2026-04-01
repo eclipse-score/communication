@@ -312,7 +312,7 @@ TEST_F(SkeletonEventComponentTestFixture, SkeletonWillCalculateEventMetaInfoFrom
     ASSERT_TRUE(prepare_offer_result.has_value());
 
     // When getting the EventMetaInfo for the skeleton event
-    const auto event_meta_info = parent_skeleton_->GetEventMetaInfo(fake_element_fq_id_);
+    const auto event_meta_info = SkeletonAttorney{*parent_skeleton_}.GetEventMetaInfo(fake_element_fq_id_);
 
     // Then the event meta info should correspond to the type of the skeleton event
     ASSERT_TRUE(event_meta_info.has_value());

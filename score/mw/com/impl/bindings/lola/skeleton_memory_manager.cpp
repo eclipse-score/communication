@@ -316,28 +316,6 @@ void SkeletonMemoryManager::Reset()
     control_asil_b_ = nullptr;
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the
-// key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to
-// throw an exception. coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::cpp::optional<EventMetaInfo> SkeletonMemoryManager::GetEventMetaInfo(const ElementFqId element_fq_id) const
-{
-    auto search = storage_->events_metainfo_.find(element_fq_id);
-    if (search == storage_->events_metainfo_.cend())
-    {
-        return score::cpp::nullopt;
-    }
-    else
-    {
-        // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced
-        // .". The "search" variable is an iterator of interprocess map returned by "find" method. Performed the check,
-        // that iterator is not equal to map.end(). A check is made that the iterator is not equal
-        // to map.end(). Therefore, the call to "search->" does not return nullptr.
-        // coverity[autosar_cpp14_a5_3_2_violation]
-        return search->second;
-    }
-}
-
 SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateShmResourceStorageSizes(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields)

@@ -435,15 +435,6 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     memory_manager_.Reset();
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the
-// key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to
-// throw an exception. coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::cpp::optional<EventMetaInfo> Skeleton::GetEventMetaInfo(const ElementFqId element_fq_id) const
-{
-    return memory_manager_.GetEventMetaInfo(element_fq_id);
-}
-
 QualityType Skeleton::GetInstanceQualityType() const
 {
     return quality_type_;
