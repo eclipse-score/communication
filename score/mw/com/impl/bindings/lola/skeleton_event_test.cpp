@@ -22,7 +22,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -169,6 +168,34 @@ TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCal
 }
 
 using SkeletonEventPrepareOfferFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventPrepareOfferFixture, RegisterEventNotificationExistenceChangedCallback)
+{
+    constexpr bool enforce_max_samples{true};
+    constexpr std::size_t max_samples{5U};
+
+    // Given a valid skeleton event with max. sample count of 5, which as per default enforces the max sample count
+    // in subscriptions.
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
+
+    // Expect, that it registers a callback for tracking changes of existence of event-notifications for QM
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .Times(1);
+
+    // Expect, that in case the service has ASIL-B quality, it also registers a callback for tracking changes of
+    // existence of event-notifications for ASIL-B
+    if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        EXPECT_CALL(
+            message_passing_mock_,
+            RegisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_B, fake_element_fq_id_, _))
+            .Times(1);
+    }
+
+    // When offering a skeleton event
+    std::ignore = skeleton_event_->PrepareOffer();
+}
+
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeProvided)
 {
     RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14137270, SCR-17292398, SCR-14033248");
@@ -342,12 +369,27 @@ TEST_F(SkeletonEventPrepareOfferFixture, UnsubscribeIncreasesAvailableSampleSlot
 }
 
 using SkeletonEventPrepareStopOfferFixture = SkeletonEventFixture;
-TEST_F(SkeletonEventPrepareStopOfferFixture, StopOfferSkeletonEvent)
+TEST_F(SkeletonEventPrepareStopOfferFixture, UnregisterEventNotificationExistenceChangedCallback)
 {
     const bool enforce_max_samples{true};
 
     // Given an un-offered event in an offered service
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+
+    // Expect, that it unregisters the callback for tracking changes of existence of event-notifications for QM
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_))
+        .Times(1);
+
+    // Expect, that in case the service has ASIL-B quality, it also unregisters the callback for tracking changes of
+    // existence of event-notifications for ASIL-B
+    if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        EXPECT_CALL(
+            message_passing_mock_,
+            UnregisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_B, fake_element_fq_id_))
+            .Times(1);
+    }
 
     // When stop offering a skeleton event
     skeleton_event_->PrepareStopOffer();

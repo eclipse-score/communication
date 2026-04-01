@@ -57,15 +57,13 @@ void SkeletonEventCommon::PrepareOfferCommon() noexcept
     // Register callbacks to be notified when event notification existence changes.
     // This allows us to optimise the Send() path by skipping NotifyEvent() when no handlers are registered.
     // Separate callbacks for QM and ASIL-B update their respective atomic flags for lock-free access.
-    if (parent_.GetInstanceQualityType() == QualityType::kASIL_QM)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .RegisterEventNotificationExistenceChangedCallback(
-                QualityType::kASIL_QM, event_fqn_, [this](const bool has_handlers) noexcept {
-                    SetQmNotificationsRegistered(has_handlers);
-                });
-    }
+    GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+        .GetLolaMessaging()
+        .RegisterEventNotificationExistenceChangedCallback(
+            QualityType::kASIL_QM, event_fqn_, [this](const bool has_handlers) noexcept {
+                SetQmNotificationsRegistered(has_handlers);
+            });
+
     if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
