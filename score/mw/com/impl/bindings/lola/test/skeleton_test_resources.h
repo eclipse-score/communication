@@ -383,6 +383,19 @@ class SkeletonMemoryManagerTestAttorney
         return nullptr;
     }
 
+    score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
+    {
+        auto search = skeleton_memory_manager_.storage_->events_metainfo_.find(element_fq_id);
+        if (search == skeleton_memory_manager_.storage_->events_metainfo_.cend())
+        {
+            return score::cpp::nullopt;
+        }
+        else
+        {
+            return search->second;
+        }
+    }
+
   private:
     SkeletonMemoryManager& skeleton_memory_manager_;
 };
@@ -395,6 +408,11 @@ class SkeletonAttorney
     ServiceDataControl* GetServiceDataControl(const QualityType quality_type) const noexcept
     {
         return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetServiceDataControl(quality_type);
+    }
+
+    score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
+    {
+        return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetEventMetaInfo(element_fq_id);
     }
 
   private:
