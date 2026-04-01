@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include "score/mw/com/impl/com_error.h"
+
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
 
@@ -97,9 +98,20 @@ ResultBlank TransactionLogSet::RollbackProxyTransactions(
     const auto transaction_log_node_iterators_to_be_rolled_back =
         FindTransactionLogNodesToBeRolledBack(transaction_log_id);
 
-    // Keep trying to rollback a TransactionLog. If a rollback succeeds, return. If a rollback fails, try to rollback
-    // the next TransactionLog. If there are only TransactionLogs remaining which cannot be rolled back, return an
-    // error.
+    if (transaction_log_node_iterators_to_be_rolled_back.empty())
+    {
+        return {};
+    }
+
+    log::LogInfo("lola")
+        << "Performing rollback for TransactionLogId: " << transaction_log_id
+        << ". This should only happen in a restart situation (i.e. in which the process containing the Proxy "
+           "previously crashed and has now restarted). If this is not the case, the ApplicationId (defined in the "
+           "configuration) of two processes may not be unique.";
+
+    // Keep trying to rollback a TransactionLog. If a rollback succeeds, return. If a rollback fails, try to
+    // rollback the next TransactionLog. If there are only TransactionLogs remaining which cannot be rolled back,
+    // return an error.
     ResultBlank rollback_result{};
     for (const auto transaction_log_node_it : transaction_log_node_iterators_to_be_rolled_back)
     {
