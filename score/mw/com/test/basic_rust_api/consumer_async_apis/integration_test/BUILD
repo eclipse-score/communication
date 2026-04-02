@@ -16,15 +16,15 @@ load("//quality/integration_testing:integration_testing.bzl", "integration_test"
 pkg_tar(
     name = "filesystem",
     deps = [
-        "//score/mw/com/test/com_api/consumer_sync_apis:bigdata-com-api-sync-pkg",
+        "//score/mw/com/test/basic_rust_api/consumer_async_apis:bigdata-com-api-async-pkg",
     ],
 )
 
 integration_test(
-    name = "test_com_api_sync",
+    name = "test_com_api_async",
     timeout = "moderate",
     srcs = [
-        "com_api_sync_api_test.py",
+        "com_api_async_api_test.py",
     ],
     filesystem = ":filesystem",
 )
