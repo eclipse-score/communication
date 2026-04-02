@@ -52,9 +52,9 @@ constexpr std::string_view kInstanceSpecifier{"/my_service_type_port"};
 
 const void* const kLocalDataPtr{reinterpret_cast<void*>(static_cast<intptr_t>(500))};
 constexpr std::size_t kLocalDataSize{8};
-const score::cpp::optional<TracingRuntime::TracePointDataId> kEmptyDataId{};
+const std::optional<TracingRuntime::TracePointDataId> kEmptyDataId{};
 
-const analysis::tracing::ServiceInstanceElement::EventIdType kServiceInstanceElementEventId = 42U;
+const analysis::tracing::ServiceInstanceElement::EventIdType kServiceInstanceElementEventId{42U};
 const analysis::tracing::ServiceInstanceElement::VariantType kServiceInstanceElementVariant{
     kServiceInstanceElementEventId};
 const analysis::tracing::ServiceInstanceElement kServiceInstanceElement{25, 1, 0, 1, kServiceInstanceElementVariant};
@@ -902,7 +902,7 @@ TEST_P(TracingRuntimeTraceLocalParamaterisedFixture, TraceLocalData_NonRecoverab
     analysis::tracing::LocalDataChunk root_chunk{kLocalDataPtr, kLocalDataSize};
     analysis::tracing::LocalDataChunkList expected_chunk_list{root_chunk};
 
-    analysis::tracing::ServiceInstanceElement::EventIdType event_id = 42U;
+    analysis::tracing::ServiceInstanceElement::EventIdType event_id{42U};
     analysis::tracing::ServiceInstanceElement::VariantType variant{event_id};
     analysis::tracing::ServiceInstanceElement service_instance_element{25, 1, 0, 1, variant};
 
@@ -958,7 +958,7 @@ TEST_P(TracingRuntimeTraceLocalParamaterisedFixture, DisabledTracing_EarlyReturn
     auto result1 = unit_under_test_->Trace(BindingType::kLoLa,
                                            dummy_service_element_instance_identifier_view_,
                                            trace_point_type_,
-                                           score::cpp::optional<TracingRuntime::TracePointDataId>{},
+                                           std::optional<TracingRuntime::TracePointDataId>{},
                                            reinterpret_cast<void*>(static_cast<intptr_t>(500)),
                                            std::size_t{0});
     EXPECT_FALSE(result1.has_value());
@@ -999,7 +999,7 @@ TEST_P(TracingRuntimeTraceLocalParamaterisedFixture, TraceLocalData_FatalError)
     analysis::tracing::LocalDataChunk root_chunk{kLocalDataPtr, kLocalDataSize};
     analysis::tracing::LocalDataChunkList expected_chunk_list{root_chunk};
 
-    analysis::tracing::ServiceInstanceElement::EventIdType event_id = 42U;
+    analysis::tracing::ServiceInstanceElement::EventIdType event_id{42U};
     analysis::tracing::ServiceInstanceElement::VariantType variant{event_id};
     analysis::tracing::ServiceInstanceElement service_instance_element{25, 1, 0, 1, variant};
 
@@ -1100,7 +1100,7 @@ TEST_P(TracingRuntimeShmMetaInfoFixture, ShmTraceCallMetaInfoContainsAraComMetaI
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _, trace_context_id_))
         .WillOnce(WithArg<1>(Invoke([](const auto& meta_info) -> analysis::tracing::TraceResult {
             // Then the meta_info is set to the variant AraComMetaInfo
-            const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+            const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
             EXPECT_NE(ara_com_meta_info, nullptr);
 
             return analysis::tracing::TraceResult{};
@@ -1138,7 +1138,7 @@ TEST_P(TracingRuntimeShmMetaInfoFixture,
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _, trace_context_id_))
         .WillOnce(
             WithArg<1>(Invoke([&expected_trace_point_type](const auto& meta_info) -> analysis::tracing::TraceResult {
-                const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+                const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
                 EXPECT_NE(ara_com_meta_info, nullptr);
 
                 // Then the meta_info properties contain the correct TracePointType and ServiceInstanceElement
@@ -1178,7 +1178,7 @@ TEST_P(TracingRuntimeLocalMetaInfoFixture, LocalTraceCallMetaInfoContainsAraComM
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _))
         .WillOnce(WithArg<1>(Invoke([](const auto& meta_info) -> analysis::tracing::TraceResult {
             // Then the meta_info is set to the variant AraComMetaInfo
-            const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+            const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
             EXPECT_NE(ara_com_meta_info, nullptr);
 
             return analysis::tracing::TraceResult{};
@@ -1215,7 +1215,7 @@ TEST_P(TracingRuntimeLocalMetaInfoFixture,
         .WillOnce(
             WithArg<1>(Invoke([&expected_trace_point_type](const auto& meta_info) -> analysis::tracing::TraceResult {
                 // Then the meta_info is set to the variant AraComMetaInfo
-                const auto* const ara_com_meta_info = score::cpp::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
+                const auto* const ara_com_meta_info = std::get_if<analysis::tracing::AraComMetaInfo>(&meta_info);
                 EXPECT_NE(ara_com_meta_info, nullptr);
 
                 // Then the meta_info properties contain the correct TracePointType and ServiceInstanceElement
@@ -1275,7 +1275,7 @@ TEST_P(TracingRuntimeTraceDataLossFlagParameterisedFixture, CallingShmTraceWillT
 
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _, trace_context_id_))
         .WillOnce(WithArg<1>(Invoke([data_loss_flag](const auto& meta_info) -> analysis::tracing::TraceResult {
-            const auto ara_com_meta_info = score::cpp::get<analysis::tracing::AraComMetaInfo>(meta_info);
+            const auto ara_com_meta_info = std::get<analysis::tracing::AraComMetaInfo>(meta_info);
             const auto transmitted_data_loss_value_bitset = ara_com_meta_info.trace_status;
 
             if (data_loss_flag)
@@ -1323,7 +1323,7 @@ TEST_P(TracingRuntimeTraceDataLossFlagParameterisedFixture, CallingLocalTraceWil
 
     EXPECT_CALL(*generic_trace_api_mock_.get(), Trace(trace_client_id_, _, _))
         .WillOnce(WithArg<1>(Invoke([data_loss_flag](const auto& meta_info) -> analysis::tracing::TraceResult {
-            const auto ara_com_meta_info = score::cpp::get<analysis::tracing::AraComMetaInfo>(meta_info);
+            const auto ara_com_meta_info = std::get<analysis::tracing::AraComMetaInfo>(meta_info);
             const auto transmitted_data_loss_value_bitset = ara_com_meta_info.trace_status;
 
             if (data_loss_flag)
