@@ -13,10 +13,7 @@
 use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
-use common_rs::{
-    BlankBinding, ControlSlotType, CxxOptional, EventDataControl, SlotIndexType,
-    TransactionLogIndex,
-};
+use common_rs::{BlankBinding, CxxOptional, EventDataControl, SlotIndexType, TransactionLogIndex};
 
 #[cfg(target_os = "nto")]
 mod util_nto {
@@ -75,15 +72,9 @@ union MockVariant<T> {
 }
 
 #[repr(C)]
-struct ControlSlotIndicator {
-    _slot_index: SlotIndexType,
-    _slot_pointer: *mut ControlSlotType,
-}
-
-#[repr(C)]
 struct SlotDecrementer {
     _event_data_control: *mut EventDataControl,
-    _control_slot_indicator: ControlSlotIndicator,
+    _event_slot_index: SlotIndexType,
     _transaction_log_idx: TransactionLogIndex,
 }
 
@@ -165,12 +156,6 @@ mod tests {
     fn test_sample_ptr_variant_user_defined_type_size() {
         let cpp_size = SamplePtrLola::get_variant_user_defined_type();
         verify_size_and_align!(SamplePtr<UserType>, cpp_size, "SamplePtr<UserType>");
-    }
-
-    #[test]
-    fn test_control_slot_indicator_size() {
-        let cpp_size = SamplePtrLola::get_control_slot_indicator_size();
-        verify_size_and_align!(ControlSlotIndicator, cpp_size, "ControlSlotIndicator");
     }
 
     #[test]

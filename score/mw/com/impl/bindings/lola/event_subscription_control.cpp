@@ -16,22 +16,20 @@
 
 namespace score::mw::com::impl::lola
 {
-namespace detail_event_subscription_control
-{
 namespace
 {
 
-inline EventSubscriptionControlImpl<>::SubscriberCountType GetSubscribersFromState(
+inline EventSubscriptionControl<>::SubscriberCountType GetSubscribersFromState(
     std::uint32_t subscription_state) noexcept
 {
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
     // This is an in purpose casting to get the subscribers from the subscription state.
     // coverity[autosar_cpp14_a4_7_1_violation]
-    return static_cast<EventSubscriptionControlImpl<>::SubscriberCountType>(subscription_state >> 16U);
+    return static_cast<EventSubscriptionControl<>::SubscriberCountType>(subscription_state >> 16U);
 }
 
-inline EventSubscriptionControlImpl<>::SlotNumberType GetSubscribedSamplesFromState(
+inline EventSubscriptionControl<>::SlotNumberType GetSubscribedSamplesFromState(
     std::uint32_t subscription_state) noexcept
 {
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
@@ -41,8 +39,8 @@ inline EventSubscriptionControlImpl<>::SlotNumberType GetSubscribedSamplesFromSt
     return static_cast<std::uint16_t>(subscription_state & 0x0000FFFFU);
 }
 
-inline std::uint32_t CreateState(EventSubscriptionControlImpl<>::SubscriberCountType subscriber_count,
-                                 EventSubscriptionControlImpl<>::SlotNumberType subscribed_slots)
+inline std::uint32_t CreateState(EventSubscriptionControl<>::SubscriberCountType subscriber_count,
+                                 EventSubscriptionControl<>::SlotNumberType subscribed_slots)
 {
     std::uint32_t result{subscriber_count};
     result = result << 16U;
@@ -53,10 +51,9 @@ inline std::uint32_t CreateState(EventSubscriptionControlImpl<>::SubscriberCount
 }  // namespace
 
 template <template <class> class AtomicIndirectorType>
-EventSubscriptionControlImpl<AtomicIndirectorType>::EventSubscriptionControlImpl(
-    const SlotNumberType max_slot_count,
-    const SubscriberCountType max_subscribers,
-    const bool enforce_max_samples) noexcept
+EventSubscriptionControl<AtomicIndirectorType>::EventSubscriptionControl(const SlotNumberType max_slot_count,
+                                                                         const SubscriberCountType max_subscribers,
+                                                                         const bool enforce_max_samples) noexcept
     : current_subscription_state_{0U},
       max_subscribable_slots_{max_slot_count},
       max_subscribers_{max_subscribers},
@@ -65,8 +62,7 @@ EventSubscriptionControlImpl<AtomicIndirectorType>::EventSubscriptionControlImpl
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventSubscriptionControlImpl<AtomicIndirectorType>::Subscribe(SlotNumberType slot_count) noexcept
-    -> SubscribeResult
+auto EventSubscriptionControl<AtomicIndirectorType>::Subscribe(SlotNumberType slot_count) noexcept -> SubscribeResult
 {
     // Suppress "AUTOSAR C++14 M5-0-8" rule finding. This rule declares: "An explicit integral or
     // floating-point conversion shall not increase the size of the underlying type of a cvalue expression.".
@@ -86,14 +82,14 @@ auto EventSubscriptionControlImpl<AtomicIndirectorType>::Subscribe(SlotNumberTyp
         if (current_subscribers >= max_subscribers_)
         {
             mw::log::LogInfo("lola")
-                << "EventSubscriptionControlImpl::Subscribe() rejected as already max_subscribers_ are subscribed.";
+                << "EventSubscriptionControl<>::Subscribe() rejected as already max_subscribers_ are subscribed.";
             return SubscribeResult::kMaxSubscribersOverflow;
         }
         SlotNumberType current_subscribed_slots = GetSubscribedSamplesFromState(current_state);
         if (enforce_max_samples_ && (current_subscribed_slots + slot_count > max_subscribable_slots_))
         {
             mw::log::LogInfo("lola")
-                << "EventSubscriptionControlImpl::Subscribe() rejected as max_subscribable_slots_ would overflow.";
+                << "EventSubscriptionControl<>::Subscribe() rejected as max_subscribable_slots_ would overflow.";
             return SubscribeResult::kSlotOverflow;
         }
 
@@ -115,7 +111,7 @@ auto EventSubscriptionControlImpl<AtomicIndirectorType>::Subscribe(SlotNumberTyp
 }
 
 template <template <class> class AtomicIndirectorType>
-auto EventSubscriptionControlImpl<AtomicIndirectorType>::Unsubscribe(SlotNumberType slot_count) noexcept -> void
+auto EventSubscriptionControl<AtomicIndirectorType>::Unsubscribe(SlotNumberType slot_count) noexcept -> void
 {
     /// some heuristics for retry count: we take into account max_subscribers_ as one dimension of the likelihood of
     /// a concurrent try to change the atomic state. The factor in front is resembling the "activity" of this subscriber
@@ -138,14 +134,14 @@ auto EventSubscriptionControlImpl<AtomicIndirectorType>::Unsubscribe(SlotNumberT
         if (current_subscribers == 0U)
         {
             mw::log::LogFatal("lola")
-                << "EventSubscriptionControlImpl::Unsubscribe() Current subscriber count is already 0!";
+                << "EventSubscriptionControl<>::Unsubscribe() Current subscriber count is already 0!";
             std::terminate();
         }
         SlotNumberType current_subscribed_slots = GetSubscribedSamplesFromState(current_state);
         if (current_subscribed_slots < slot_count)
         {
             mw::log::LogFatal("lola")
-                << "EventSubscriptionControlImpl::Unsubscribe() rejected as currently subscribed slots "
+                << "EventSubscriptionControl<>::Unsubscribe() rejected as currently subscribed slots "
                    "are smaller than slot_count.";
             std::terminate();
         }
@@ -160,14 +156,12 @@ auto EventSubscriptionControlImpl<AtomicIndirectorType>::Unsubscribe(SlotNumberT
         }
     }
     mw::log::LogFatal("lola")
-        << "EventSubscriptionControlImpl::Unsubscribe() retry limit exceeded, couldn't unsubscribe!";
+        << "EventSubscriptionControl<>::Unsubscribe() retry limit exceeded, couldn't unsubscribe!";
     std::terminate();
 }
 
-template class EventSubscriptionControlImpl<memory::shared::AtomicIndirectorReal>;
-template class EventSubscriptionControlImpl<memory::shared::AtomicIndirectorMock>;
-
-}  // namespace detail_event_subscription_control
+template class EventSubscriptionControl<memory::shared::AtomicIndirectorReal>;
+template class EventSubscriptionControl<memory::shared::AtomicIndirectorMock>;
 
 std::string_view ToString(SubscribeResult subscribe_result) noexcept
 {

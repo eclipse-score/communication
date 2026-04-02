@@ -21,6 +21,8 @@
 #include "score/mw/com/impl/data_type_meta_info.h"
 #include "score/mw/com/impl/generic_skeleton_event_binding.h"
 
+#include <optional>
+
 namespace score::mw::com::impl::lola
 {
 
@@ -59,10 +61,10 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
   private:
     DataTypeMetaInfo size_info_;
     const SkeletonEventProperties event_properties_;
-    std::optional<EventDataControlComposite<>> control_{};
-    EventSlotStatus::EventTimeStamp current_timestamp_{1U};
-    std::uint8_t* data_storage_{nullptr};
-    bool qm_disconnect_{false};
+    std::optional<EventDataControlComposite<>> event_data_control_composite_;
+    EventSlotStatus::EventTimeStamp current_timestamp_;
+    std::uint8_t* event_data_storage_;
+    bool qm_disconnect_;
 
     SkeletonEventCommon event_shared_impl_;
 };
