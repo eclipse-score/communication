@@ -1166,9 +1166,10 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     void* const dumb_event_data_storage = dumb_event_reg_result.first->data();
 
     // Expect, that we can then retrieve the meta-info of the registered events
-    auto event_foo_meta_info_ptr = skeleton_->GetEventMetaInfo(ElementFqId{
+    SkeletonAttorney skeleton_test_attorney{*skeleton_};
+    auto event_foo_meta_info_ptr = skeleton_test_attorney.GetEventMetaInfo(ElementFqId{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type});
-    auto event_dumb_meta_info_ptr = skeleton_->GetEventMetaInfo(ElementFqId{
+    auto event_dumb_meta_info_ptr = skeleton_test_attorney.GetEventMetaInfo(ElementFqId{
         lola_service_type_deployment->service_id_, test::kDumbEventId, test::kDefaultLolaInstanceId, element_type});
 
     // and the meta-info for these events is valid
@@ -1234,7 +1235,8 @@ TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId
     const std::uint16_t UNKNOWN_EVENT_ID{99U};
     ElementFqId event_unknown_fqn{
         lola_service_type_deployment->service_id_, UNKNOWN_EVENT_ID, test::kDefaultLolaInstanceId, element_type};
-    auto event_unknown_meta_info = skeleton_->GetEventMetaInfo(event_unknown_fqn);
+    SkeletonAttorney skeleton_test_attorney{*skeleton_};
+    auto event_unknown_meta_info = skeleton_test_attorney.GetEventMetaInfo(event_unknown_fqn);
 
     // we expect the meta-info for this event is invalid
     ASSERT_FALSE(event_unknown_meta_info.has_value());
