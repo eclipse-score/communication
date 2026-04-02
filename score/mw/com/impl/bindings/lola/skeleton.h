@@ -243,27 +243,23 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
     // EventDataStorage from the shared memory and attempt to rollback the Skeleton tracing transaction log.
     if (was_old_shm_region_reopened_)
     {
-        auto [event_data_storage_ptr, event_data_control_composite] =
-            memory_manager_.OpenEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
+        auto event_data_control_composite =
+            memory_manager_.OpenEventDataControlCompositeFromOpenedSharedMemory(element_fq_id);
 
-        auto& event_data_control_qm_local = event_data_control_composite.GetQmEventDataControlLocal();
-        auto rollback_result = event_data_control_qm_local.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
-            [&event_data_control_qm_local](const TransactionLog::SlotIndexType slot_index) {
-                event_data_control_qm_local.DereferenceEventWithoutTransactionLogging(slot_index);
-            });
-        if (!rollback_result.has_value())
-        {
-            ::score::mw::log::LogWarn("lola")
-                << "SkeletonEvent: PrepareOffer failed: Could not rollback tracing consumer after "
-                   "crash. Disabling tracing.";
-            impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
-        }
-        return {*event_data_storage_ptr, event_data_control_composite};
+        auto& skeleton_event_data_control_local_qm = event_data_control_composite.GetQmEventDataControlLocal();
+        memory_manager_.RollbackSkeletonTracingTransactions(
+            skeleton_event_data_control_local_qm, skeleton_event_data_control_local_qm.GetTransactionLogSet());
+
+        auto& event_data_storage = memory_manager_.OpenEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
+        return {event_data_storage, event_data_control_composite};
     }
 
-    auto [event_data_storage_ptr, event_data_control_composite] =
+    auto& event_data_storage =
         memory_manager_.CreateEventDataInCreatedSharedMemory<SampleType>(element_fq_id, element_properties);
-    return {*event_data_storage_ptr, event_data_control_composite};
+    auto event_data_control_composite =
+        memory_manager_.CreateEventDataControlCompositeInCreatedSharedMemory(element_fq_id, element_properties);
+
+    return RegistrationResult<SampleType>{event_data_storage, event_data_control_composite};
 }
 
 }  // namespace score::mw::com::impl::lola

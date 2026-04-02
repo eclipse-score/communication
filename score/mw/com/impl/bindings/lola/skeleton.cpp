@@ -493,30 +493,24 @@ auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
 {
     if (was_old_shm_region_reopened_)
     {
-        auto [type_erased_event_data_storage_ptr, event_data_control_composite] =
-            memory_manager_.OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
+        auto event_data_control_composite =
+            memory_manager_.OpenEventDataControlCompositeFromOpenedSharedMemory(element_fq_id);
 
-        auto& event_data_control_qm = event_data_control_composite.GetQmEventDataControlLocal();
-        auto rollback_result = event_data_control_qm.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
-            [&event_data_control_qm](const TransactionLog::SlotIndexType slot_index) {
-                event_data_control_qm.DereferenceEventWithoutTransactionLogging(slot_index);
-            });
-        if (!rollback_result.has_value())
-        {
-            ::score::mw::log::LogWarn("lola")
-                << "SkeletonEvent: PrepareOffer failed: Could not rollback tracing consumer after "
-                   "crash. Disabling tracing.";
-            impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
-        }
+        auto& skeleton_event_data_control_local_qm = event_data_control_composite.GetQmEventDataControlLocal();
+        memory_manager_.RollbackSkeletonTracingTransactions(
+            skeleton_event_data_control_local_qm, skeleton_event_data_control_local_qm.GetTransactionLogSet());
 
-        return {type_erased_event_data_storage_ptr,
-                memory_manager_.CreateEventControlComposite(element_fq_id, element_properties)};
+        auto& event_data_storage = memory_manager_.OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
+
+        return {static_cast<void*>(&event_data_storage), event_data_control_composite};
     }
 
-    auto [type_erased_event_data_storage_ptr, event_data_control_composite] =
-        memory_manager_.CreateEventDataInCreatedSharedMemory(
-            element_fq_id, element_properties, sample_size, sample_alignment);
-    return {type_erased_event_data_storage_ptr, event_data_control_composite};
+    auto* const type_erased_event_data_storage = memory_manager_.CreateGenericEventDataInCreatedSharedMemory(
+        element_fq_id, element_properties, sample_size, sample_alignment);
+    auto event_data_control_composite =
+        memory_manager_.CreateEventDataControlCompositeInCreatedSharedMemory(element_fq_id, element_properties);
+
+    return GenericRegistrationResult{type_erased_event_data_storage, event_data_control_composite};
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
