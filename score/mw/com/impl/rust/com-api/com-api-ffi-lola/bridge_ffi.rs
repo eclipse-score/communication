@@ -472,6 +472,12 @@ extern "C" {
     /// # Arguments
     /// * `handle` - Opaque pointer to FindServiceHandle returned by mw_com_start_find_service
     fn mw_com_stop_find_service(handle: *mut FindServiceHandle);
+
+    /// Unsubscribe from event to stop receiving samples
+    ///
+    /// # Arguments
+    /// * `event_ptr` - Opaque event pointer
+    fn mw_com_proxy_event_unsubscribe(event_ptr: *mut ProxyEventBase);
 }
 
 /// Get allocatee pointer from skeleton event of specific type
@@ -819,6 +825,20 @@ pub unsafe fn subscribe_to_event(event_ptr: *mut ProxyEventBase, max_sample_coun
     // SAFETY: event_ptr is guaranteed to be valid per the caller's contract.
     // The C++ implementation handles subscription and buffer allocation safely.
     mw_com_proxy_event_subscribe(event_ptr, max_sample_count)
+}
+
+/// Unsafe wrapper around mw_com_proxy_event_unsubscribe
+///
+/// # Arguments
+/// * `event_ptr` - Opaque event pointer
+///
+/// # Safety
+/// event_ptr must be a valid pointer to a ProxyEventBase previously obtained from get_event_from_proxy().
+/// This function should be called only when no `SamplePtr` is held by the user for this event.
+pub unsafe fn unsubscribe_to_event(event_ptr: *mut ProxyEventBase) {
+    // SAFETY: event_ptr is guaranteed to be valid per the caller's contract.
+    // The C++ implementation handles unsubscription and buffer cleanup safely.
+    mw_com_proxy_event_unsubscribe(event_ptr);
 }
 
 /// Unsafe wrapper around mw_com_proxy_set_event_receive_handler
