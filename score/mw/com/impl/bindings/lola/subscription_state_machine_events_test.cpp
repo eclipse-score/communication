@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <memory>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -78,7 +79,7 @@ class StateMachineEventsFixture : public LolaProxyEventResources
     score::cpp::optional<std::reference_wrapper<TransactionLog>> GetTransactionLog(
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).data_control.GetTransactionLogSet();
+        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).transaction_log_set;
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
         auto result =
             std::find_if(transaction_logs.begin(), transaction_logs.end(), [&transaction_log_id](const auto& element) {
@@ -104,16 +105,23 @@ class StateMachineEventsFixture : public LolaProxyEventResources
             return false;
         }
 
-        return TransactionLogAttorney{transaction_log_result.value().get()}.IsSubscribeTransactionSuccesfullyRecorded();
+        return (transaction_log_result.value().get().subscribe_transactions_.GetTransactionBegin() &&
+                transaction_log_result.value().get().subscribe_transactions_.GetTransactionEnd());
     }
 
-    score::Result<TransactionLogIndex> RegisterTransactionLog(const TransactionLogId& transaction_log_id) noexcept
+    void RegisterTransactionLog(const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).data_control.GetTransactionLogSet();
-        return transaction_log_set.RegisterProxyElement(transaction_log_id);
+        auto& event_control_local = proxy_->GetEventControlLocal(element_fq_id_);
+        ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view{event_control_local.data_control};
+        auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).transaction_log_set;
+        transaction_log_registration_guards_.push_back(
+            transaction_log_set.get()
+                .RegisterProxyElement(transaction_log_id, proxy_event_data_control_local_view)
+                .value());
     }
 
     SubscriptionStateMachine state_machine_;
+    std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards_{};
     pid_t new_event_source_pid_{kDummyPid + 1};
 };
 
@@ -131,8 +139,8 @@ TEST_F(StateMachineNotSubscribedStateFixture, CallingSubscribeWhenMaxSubscribers
     for (std::size_t i = 0; i < max_subscribers_; ++i)
     {
         const TransactionLogId dummy_transaction_log_id{static_cast<uid_t>(i)};
-        const auto transaction_log_index_result = RegisterTransactionLog(dummy_transaction_log_id);
-        EXPECT_TRUE(transaction_log_index_result.has_value());
+        RegisterTransactionLog(dummy_transaction_log_id);
+        EXPECT_TRUE(IsProxyTransactionLogIdRegistered(dummy_transaction_log_id));
     }
 
     const auto subscription_result = state_machine_.SubscribeEvent(max_num_slots_);

@@ -17,7 +17,8 @@ namespace score::mw::com::impl::lola
 
 ProxyEventControlLocalView::ProxyEventControlLocalView(EventControl& event_control_shared_mem) noexcept
     : data_control{event_control_shared_mem.data_control},
-      subscription_control{event_control_shared_mem.subscription_control}
+      subscription_control{event_control_shared_mem.subscription_control},
+      transaction_log_set{event_control_shared_mem.transaction_log_set_}
 {
 }
 

@@ -15,8 +15,6 @@
 
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include <functional>
 
@@ -48,9 +46,7 @@ class SlotCollector final
     ///
     /// \param event_data_control EventDataControl to be used for data reception.
     /// \param max_slots Maximum number of samples that will be received in one call to GetNewSamples.
-    SlotCollector(ProxyEventDataControlLocalView<>& event_data_control_local,
-                  const std::size_t max_slots,
-                  TransactionLogIndex transaction_log_index) noexcept;
+    SlotCollector(ProxyEventDataControlLocalView<>& event_data_control_local, const std::size_t max_slots) noexcept;
 
     SlotCollector(SlotCollector&& other) noexcept = default;
     SlotCollector& operator=(SlotCollector&& other) & noexcept = delete;
@@ -84,7 +80,6 @@ class SlotCollector final
     std::reference_wrapper<ProxyEventDataControlLocalView<>> event_data_control_local_;
     EventSlotStatus::EventTimeStamp last_ts_;
     SlotIndexVector collected_slots_;  // Pre-allocated scratchpad memory to present the events in-order to the user.
-    TransactionLogIndex transaction_log_index_;
 };
 
 }  // namespace score::mw::com::impl::lola

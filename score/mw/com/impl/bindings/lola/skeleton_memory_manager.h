@@ -90,9 +90,10 @@ class SkeletonMemoryManager final
     ///
     /// The EventDataControlComposite and TransactionLogSet are emplaced into the ServiceDataControl in the shared
     /// memory region that was created with CreateSharedMemory.
-    auto CreateEventDataControlCompositeInCreatedSharedMemory(const ElementFqId element_fq_id,
-                                                              const SkeletonEventProperties& element_properties)
-        -> EventDataControlComposite<>;
+    auto CreateEventDataControlCompositeAndTransactionLogSetInCreatedSharedMemory(
+        const ElementFqId element_fq_id,
+        const SkeletonEventProperties& element_properties)
+        -> std::pair<EventDataControlComposite<>, TransactionLogSet&>;
 
     /// \brief Creates an EventDataStorage for a specific event.
     ///
@@ -119,8 +120,8 @@ class SkeletonMemoryManager final
     ///
     /// The EventDataControlComposite and TransactionLogSet are retrieved from the ServiceDataControl in the shared
     /// memory region that was opened with OpenExistingSharedMemory.
-    auto OpenEventDataControlCompositeFromOpenedSharedMemory(const ElementFqId element_fq_id)
-        -> EventDataControlComposite<>;
+    auto OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(const ElementFqId element_fq_id)
+        -> std::pair<EventDataControlComposite<>, TransactionLogSet&>;
 
     /// \brief Opens an EventDataStorage for a specific event that was created by a previous skeleton.
     ///

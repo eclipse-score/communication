@@ -494,24 +494,25 @@ auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
 {
     if (was_old_shm_region_reopened_)
     {
-        auto event_data_control_composite =
-            memory_manager_.OpenEventDataControlCompositeFromOpenedSharedMemory(element_fq_id);
+        auto opened_result =
+            memory_manager_.OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(element_fq_id);
+        EventDataControlComposite<>& event_data_control_composite = opened_result.first;
+        auto& transaction_log_set = opened_result.second;
 
         auto& skeleton_event_data_control_local_qm = event_data_control_composite.GetQmEventDataControlLocal();
-        memory_manager_.RollbackSkeletonTracingTransactions(
-            skeleton_event_data_control_local_qm, skeleton_event_data_control_local_qm.GetTransactionLogSet());
+        memory_manager_.RollbackSkeletonTracingTransactions(skeleton_event_data_control_local_qm, transaction_log_set);
 
         auto& event_data_storage = memory_manager_.OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
-
-        return {static_cast<void*>(&event_data_storage), event_data_control_composite};
+        return {static_cast<void*>(&event_data_storage), event_data_control_composite, transaction_log_set};
     }
 
     auto* const type_erased_event_data_storage = memory_manager_.CreateGenericEventDataInCreatedSharedMemory(
         element_fq_id, element_properties, sample_size, sample_alignment);
-    auto event_data_control_composite =
-        memory_manager_.CreateEventDataControlCompositeInCreatedSharedMemory(element_fq_id, element_properties);
+    auto [event_data_control_composite, transaction_log_set] =
+        memory_manager_.CreateEventDataControlCompositeAndTransactionLogSetInCreatedSharedMemory(element_fq_id,
+                                                                                                 element_properties);
 
-    return GenericRegistrationResult{type_erased_event_data_storage, event_data_control_composite};
+    return GenericRegistrationResult{type_erased_event_data_storage, event_data_control_composite, transaction_log_set};
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
