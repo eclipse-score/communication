@@ -76,7 +76,6 @@ class SkeletonEventFixture : public SkeletonMockedMemoryFixture
     std::unique_ptr<SkeletonEvent<test::TestSampleType>> skeleton_event_;
 
     /// mocks used by test
-    MessagePassingServiceMock message_passing_service_mock_{};
     ServiceDiscoveryMock service_discovery_mock_{};
 };
 
