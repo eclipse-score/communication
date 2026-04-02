@@ -90,6 +90,8 @@ struct SlotDecrementer {
 #[repr(C)]
 struct LolaBinding<T> {
     _managed_object: *const T,
+    _event_data_ctrl: *mut EventDataControl,
+    _slot_indicator: ControlSlotIndicator,
     _slot_decrementer: CxxOptional<SlotDecrementer>,
 }
 
