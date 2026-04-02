@@ -24,8 +24,7 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-constexpr std::size_t kMaxSubscribers{5U};
-const TransactionLogId kDummyTransactionLogId{10U};
+constexpr std::size_t kMaxSlots{5U};
 
 using namespace ::score::memory::shared;
 class SlotCollectorWithFakeMem : public ::testing::Test
@@ -45,17 +44,16 @@ class SlotCollectorWithFakeMem : public ::testing::Test
     }
 
     FakeMemoryResource fake_memory_resource_;
-    EventDataControl event_data_control_{5, fake_memory_resource_, kMaxSubscribers};
-    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
+    EventDataControl event_data_control_{kMaxSlots, fake_memory_resource_};
+    TransactionLog transaction_log_{kMaxSlots, fake_memory_resource_};
+    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_, transaction_log_};
     SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
-    TransactionLogIndex transaction_log_index_{
-        proxy_event_data_control_local_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
 };
 
 TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
 {
     AllocateSlot();
-    SlotCollector slot_collector{proxy_event_data_control_local_, 1U, transaction_log_index_};
+    SlotCollector slot_collector{proxy_event_data_control_local_, 1U};
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 1);
 
     const std::size_t max_count{1};
@@ -75,7 +73,7 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
         send_time++;
     }
 
-    SlotCollector slot_collector{proxy_event_data_control_local_, 3U, transaction_log_index_};
+    SlotCollector slot_collector{proxy_event_data_control_local_, 3U};
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 3);
 
     const std::size_t max_count{3};
@@ -98,7 +96,7 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
 
 TEST_F(SlotCollectorWithFakeMem, DoNotReceiveEventsFromThePast)
 {
-    SlotCollector slot_collector{proxy_event_data_control_local_, 2U, transaction_log_index_};
+    SlotCollector slot_collector{proxy_event_data_control_local_, 2U};
 
     AllocateSlot(17);
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 1);
@@ -123,7 +121,7 @@ TEST_F(SlotCollectorWithFakeMemDeathTest, CreatingSlotCollectorWith0MaxSlotsTerm
 
     // When creating a SlotCollector with max_slots of 0
     // Then the program terminates
-    EXPECT_DEATH(SlotCollector(proxy_event_data_control_local_, 0U, transaction_log_index_), ".*");
+    EXPECT_DEATH(SlotCollector(proxy_event_data_control_local_, 0U), ".*");
 }
 
 }  // namespace

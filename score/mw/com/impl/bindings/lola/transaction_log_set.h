@@ -14,10 +14,14 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_SET_H
 
 #include "score/containers/dynamic_array.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
+#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/util/copyable_atomic.h"
 
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
@@ -129,6 +133,16 @@ class TransactionLogSet
             return transaction_log_;
         }
 
+        // Since the TransactionLogNode is copyable / moveable, we can't store the TransactionLogLocalView in the
+        // TransactionLogNode itself as it will be invalidated whenever the TransactionLogNode (and the containing
+        // TransactionLog which the view points to) is copied / moved. Since this function is only called during
+        // rollback and registration, it's not called highly frequently so creating a new view every time should not
+        // impact performance.
+        TransactionLogLocalView GetTransactionLogLocalView()
+        {
+            return TransactionLogLocalView{transaction_log_};
+        }
+
         void Reset();
 
       private:
@@ -186,29 +200,45 @@ class TransactionLogSet
     /// rollbacks. This prevents one thread calling RollbackProxyTransactions and then registering a new TransactionLog.
     /// Then another thread with the same transaction_log_id calls RollbackProxyTransactions which would rollback and
     /// destroy the newly created TransactionLog.
-    Result<void> RollbackProxyTransactions(const TransactionLogId& transaction_log_id,
-                                           const TransactionLog::DereferenceSlotCallback dereference_slot_callback,
-                                           const TransactionLog::UnsubscribeCallback unsubscribe_callback);
+    Result<void> RollbackProxyTransactions(
+        const TransactionLogId& transaction_log_id,
+        const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback,
+        const TransactionLogLocalView::DereferenceSlotCallback unsubscribe_callback);
 
     /// \brief If a Skeleton TransactionLog exists, performs a rollback on it.
     Result<void> RollbackSkeletonTracingTransactions(
-        const TransactionLog::DereferenceSlotCallback dereference_slot_callback);
+        const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback);
 
     /// \brief Creates a new transaction log in the DynamicArray of transaction logs.
     ///
+    /// \param transaction_log_id The TransactionLogId corresponding to the ProxyEvent which is registering the
+    ///        TransactionLog.
+    /// \param proxy_event_data_control_local_view The ProxyEventDataControlLocalView used by the Proxy service element
+    ///        which registered a TransactionLog. A cached TransactionLogLocalView will be injected into this
+    ///        ProxyEventDataControlLocalView which it uses for recording reference transactions.
     /// \return Returns TransactionLogRegistrationGuard which holds the index of the registered transaction log and will
-    ///         call Unregister() on destruction.
+    ///         call TransactionLogSet::Unregister() and destroy the cached TransactionLogLocalView on destruction.
     ///
     /// Will terminate if transaction_log_id already exists within the DynamicArray of transaction logs.
-    score::Result<TransactionLogRegistrationGuard> RegisterProxyElement(const TransactionLogId& transaction_log_id);
+    score::Result<TransactionLogRegistrationGuard> RegisterProxyElement(
+        const TransactionLogId& transaction_log_id,
+        ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view);
 
     /// \brief Creates a new skeleton tracing transaction log
+    ///
+    /// \param proxy_event_data_control_local_view The ProxyEventDataControlLocalView used by the SkeletonEvent
+    ///        which registered a TransactionLog. A cached TransactionLogLocalView will be injected into this
+    ///        ProxyEventDataControlLocalView which it uses for recording reference transactions. This is a
+    ///        ProxyEventDataControlLocalView even though it's provided by a Skeleton since it is used for referencing
+    ///        slots on the Skeleton side for tracing (so it behaves like a ProxyEvent within the SkeletonEvent).
     /// \return Returns TransactionLogRegistrationGuard which holds a special sentinel index value which will return the
-    ///         registered skeleton tracing transaction log when passing the sentinel value to GetTransactionLog. The
-    ///         guard will call Unregister() on destruction.
+    ///         registered skeleton tracing transaction log when passing the sentinel value to GetTransactionLog.
+    ///         The guard will call TransactionLogSet::Unregister() and destroy the cached TransactionLogLocalView on
+    ///         destruction.
     ///
     /// Will terminate if a skeleton tracing transaction log was already registered.
-    TransactionLogRegistrationGuard RegisterSkeletonTracingElement();
+    TransactionLogRegistrationGuard RegisterSkeletonTracingElement(
+        ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view);
 
     /// \brief Returns a reference to a TransactionLog corresponding to the provided index.
     ///

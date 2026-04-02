@@ -28,11 +28,11 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
-#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
 #include "score/filesystem/filesystem.h"
@@ -54,8 +54,10 @@ namespace score::mw::com::impl::lola
 {
 
 /// \brief LoLa Skeleton implement all binding specific functionalities that are needed by a Skeleton.
+///
 /// This includes all actions that need to be performed on Service offerings, as also the possibility to register
-/// events dynamically at this skeleton.
+/// events dynamically at this skeleton. All functionality related to shared memory is managed by SkeletonMemoryManager
+/// which is owned by Skeleton.
 class Skeleton final : public SkeletonBinding
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -70,12 +72,14 @@ class Skeleton final : public SkeletonBinding
     {
         EventDataStorage<SampleType>& event_data_storage;
         EventDataControlComposite<> event_data_control_composite;
+        TransactionLogSet& transaction_log_set;
     };
 
     struct GenericRegistrationResult
     {
         void* type_erased_event_data_storage_ptr;
         EventDataControlComposite<> event_data_control_composite;
+        TransactionLogSet& transaction_log_set;
     };
 
     static std::unique_ptr<Skeleton> Create(const InstanceIdentifier& identifier,
@@ -247,23 +251,25 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
     // EventDataStorage from the shared memory and attempt to rollback the Skeleton tracing transaction log.
     if (was_old_shm_region_reopened_)
     {
-        auto event_data_control_composite =
-            memory_manager_.OpenEventDataControlCompositeFromOpenedSharedMemory(element_fq_id);
+        auto opened_result =
+            memory_manager_.OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(element_fq_id);
+        EventDataControlComposite<>& event_data_control_composite = opened_result.first;
+        auto& transaction_log_set = opened_result.second;
 
         auto& skeleton_event_data_control_local_qm = event_data_control_composite.GetQmEventDataControlLocal();
-        memory_manager_.RollbackSkeletonTracingTransactions(
-            skeleton_event_data_control_local_qm, skeleton_event_data_control_local_qm.GetTransactionLogSet());
+        memory_manager_.RollbackSkeletonTracingTransactions(skeleton_event_data_control_local_qm, transaction_log_set);
 
         auto& event_data_storage = memory_manager_.OpenEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
-        return {event_data_storage, event_data_control_composite};
+        return {event_data_storage, event_data_control_composite, transaction_log_set};
     }
 
     auto& event_data_storage =
         memory_manager_.CreateEventDataInCreatedSharedMemory<SampleType>(element_fq_id, element_properties);
-    auto event_data_control_composite =
-        memory_manager_.CreateEventDataControlCompositeInCreatedSharedMemory(element_fq_id, element_properties);
+    auto [event_data_control_composite, transaction_log_set] =
+        memory_manager_.CreateEventDataControlCompositeAndTransactionLogSetInCreatedSharedMemory(element_fq_id,
+                                                                                                 element_properties);
 
-    return RegistrationResult<SampleType>{event_data_storage, event_data_control_composite};
+    return RegistrationResult<SampleType>{event_data_storage, event_data_control_composite, transaction_log_set};
 }
 
 }  // namespace score::mw::com::impl::lola

@@ -12,12 +12,14 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 
+#include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
 #include <gtest/gtest.h>
-
 #include <cstddef>
+#include <memory>
 #include <type_traits>
 
 namespace score::mw::com::impl::lola
@@ -40,6 +42,32 @@ class TransactionLogRegistrationGuardTestAttorney
     TransactionLogRegistrationGuard& transaction_log_registration_guard_;
 };
 
+// While we generally try to only test the public API, checking whether the TransactionLogLocalView is correctly
+// injected and cleared in the ProxyEventDataControlLocalView during construction and destruction of the
+// TransactionLogRegistrationGuard is convoluted and error prone if only checking via the public API. It would require
+// calling functions on ProxyEventDataControlLocalView which access the TransactionLog and ensuring that we take the
+// correct path to actually access the Transactionlog. This requires setting up a SkeletonEventDataControlLocalView,
+// ensuring that we set up slots correctly and then using a death test to ensure that we crash when accessing the
+// TransactionLog after destruction of the guard. We then have no way of ensuring that we crash due to the
+// TransactionLog not being injected rather than anything else. For these reasons, it's simply to directly check that we
+// inject / clear the TransactionLog.
+class ProxyEventDataControlLocalViewTestAttorney
+{
+  public:
+    ProxyEventDataControlLocalViewTestAttorney(ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view)
+        : proxy_event_data_control_local_view_(proxy_event_data_control_local_view)
+    {
+    }
+
+    std::optional<TransactionLogLocalView>& GetTransactionLogLocalView()
+    {
+        return proxy_event_data_control_local_view_.transaction_log_local_view_;
+    }
+
+  private:
+    ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view_;
+};
+
 namespace
 {
 
@@ -53,15 +81,23 @@ class TransactionLogRegistrationGuardFixture : public TransactionLogSetHelperFix
     TransactionLogRegistrationGuardFixture& GivenATransactionLogRegistrationGuard()
     {
         auto transaction_log_registration_guard_result =
-            transaction_log_set_.RegisterProxyElement(kDummyTransactionLogId);
+            transaction_log_set_.RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_view_);
         SCORE_LANGUAGE_FUTURECPP_ASSERT(transaction_log_registration_guard_result.has_value());
         transaction_log_registration_guard_.emplace(std::move(transaction_log_registration_guard_result).value());
         return *this;
     }
 
+    TransactionLog& GetRegisteredTransactionLog()
+    {
+        return transaction_log_set_.GetTransactionLog(transaction_log_registration_guard_->GetTransactionLogIndex());
+    }
+
     FakeMemoryResource memory_{};
     TransactionLogSet transaction_log_set_{kMaxSlots, kMaxSubscribers, memory_};
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
+
+    EventDataControl event_data_control_{kMaxSlots, memory_};
+    ProxyEventDataControlLocalView<> proxy_event_data_control_local_view_{event_data_control_};
 };
 
 TEST_F(TransactionLogRegistrationGuardFixture, TransactionLogRegistrationGuardUsesScopeExit)
@@ -77,6 +113,18 @@ TEST_F(TransactionLogRegistrationGuardFixture, TransactionLogRegistrationGuardUs
     // testing whether the handler is called when move constructing / move assigning the guard is handled in the
     // tests for ScopeExit.
     static_assert(std::is_same_v<DestructionHandlerType, utils::ScopeExit<score::cpp::callback<void()>>>);
+}
+
+TEST_F(TransactionLogRegistrationGuardFixture,
+       TransactionLogRegistrationGuardInjectsTransactionLogLocalViewOnConstruction)
+{
+    // When creating a TransactionLogRegistrationGuard
+    GivenATransactionLogRegistrationGuard();
+
+    // Then a TransactionLogLocalView pointing to the TransactionLog that was just registered should have been injected
+    // into the ProxyEventDataControlLocalView.
+    ProxyEventDataControlLocalViewTestAttorney proxy_event_data_control_attorney{proxy_event_data_control_local_view_};
+    EXPECT_TRUE(proxy_event_data_control_attorney.GetTransactionLogLocalView().has_value());
 }
 
 TEST_F(TransactionLogRegistrationGuardFixture, CreatingTransactionLogRegistrationGuardDoesNotCallUnregister)
@@ -102,6 +150,20 @@ TEST_F(TransactionLogRegistrationGuardFixture, DestroyingTransactionLogRegistrat
     EXPECT_DEATH(score::cpp::ignore = transaction_log_set_.GetTransactionLog(
                      transaction_log_registration_guard_->GetTransactionLogIndex()),
                  ".*");
+}
+
+TEST_F(TransactionLogRegistrationGuardFixture, DestroyingTransactionLogRegistrationGuardClearsTransactionLogLocalView)
+{
+    GivenATransactionLogRegistrationGuard();
+
+    // When destroying the TransactionLogRegistrationGuard
+    ProxyEventDataControlLocalViewTestAttorney proxy_event_data_control_attorney{proxy_event_data_control_local_view_};
+    EXPECT_TRUE(proxy_event_data_control_attorney.GetTransactionLogLocalView().has_value());
+    transaction_log_registration_guard_.reset();
+
+    // Then a TransactionLogLocalView pointing to the TransactionLog that was just registered should have been cleared
+    // from the ProxyEventDataControlLocalView.
+    EXPECT_FALSE(proxy_event_data_control_attorney.GetTransactionLogLocalView().has_value());
 }
 
 }  // namespace

@@ -21,13 +21,11 @@
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
-#include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
-#include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include "score/mw/log/logging.h"
@@ -35,12 +33,8 @@
 #include <score/assert.hpp>
 #include <score/utility.hpp>
 
-#include <atomic>
-#include <filesystem>
-#include <mutex>
 #include <optional>
 #include <string_view>
-#include <tuple>
 #include <utility>
 
 namespace score::mw::com::impl::lola
@@ -197,7 +191,8 @@ Result<void> SkeletonEvent<SampleType>::PrepareOffer() noexcept
         skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
 
-    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite);
+    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite,
+                                              registration_result.transaction_log_set);
 
     return {};
 }

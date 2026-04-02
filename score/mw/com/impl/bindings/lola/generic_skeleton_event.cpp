@@ -26,7 +26,9 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            const ElementFqId& element_fq_id,
                                            const DataTypeMetaInfo& size_info,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
-    : size_info_{size_info}, skeleton_event_common_{parent, event_name, event_properties, element_fq_id, tracing_data}
+    : size_info_{size_info},
+      event_data_storage_{nullptr},
+      skeleton_event_common_{parent, event_name, event_properties, element_fq_id, tracing_data}
 {
 }
 
@@ -40,7 +42,8 @@ Result<void> GenericSkeletonEvent::PrepareOffer() noexcept
 
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
 
-    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite);
+    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite,
+                                              registration_result.transaction_log_set);
 
     return {};
 }

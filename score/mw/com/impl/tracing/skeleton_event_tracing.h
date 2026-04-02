@@ -115,14 +115,10 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
                 event_data_control_composite_result->GetProxyEventDataControlLocalView();
 
             const auto event_slot_index = lola_ptr.GetReferencedSlot();
-            proxy_event_data_control_local.ReferenceSpecificEvent(event_slot_index,
-                                                                  lola::TransactionLogSet::kSkeletonIndexSentinel);
+            proxy_event_data_control_local.ReferenceSpecificEvent(event_slot_index);
             const auto* const managed_object = lola::SampleAllocateePtrView{lola_ptr}.GetManagedObject();
 
-            lola::SamplePtr<SampleType> sample_ptr{managed_object,
-                                                   proxy_event_data_control_local,
-                                                   event_slot_index,
-                                                   lola::TransactionLogSet::kSkeletonIndexSentinel};
+            lola::SamplePtr<SampleType> sample_ptr{managed_object, proxy_event_data_control_local, event_slot_index};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
         },
         [](mock_binding::SampleAllocateePtr<SampleType>& ptr) -> TypeErasedSamplePtr {

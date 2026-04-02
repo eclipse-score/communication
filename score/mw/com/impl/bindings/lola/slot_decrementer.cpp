@@ -13,16 +13,14 @@
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
 
 namespace score::mw::com::impl::lola
 {
 
 SlotDecrementer::SlotDecrementer(ProxyEventDataControlLocalView<>& event_data_control_local,
-                                 const SlotIndexType event_slot_index,
-                                 const TransactionLogIndex transaction_log_idx) noexcept
-    : event_data_control_local_{&event_data_control_local},
-      event_slot_index_{event_slot_index},
-      transaction_log_idx_{transaction_log_idx}
+                                 const SlotIndexType event_slot_index) noexcept
+    : event_data_control_local_{&event_data_control_local}, event_slot_index_{event_slot_index}
 {
 }
 
@@ -38,8 +36,7 @@ SlotDecrementer::SlotDecrementer(SlotDecrementer&& other) noexcept
       // Rationale: False positive - std::move is used which will result in the move constructor of
       // event_slot_index_ being called.
       // coverity[autosar_cpp14_a12_8_4_violation : FALSE]
-      event_slot_index_{std::move(other.event_slot_index_)},
-      transaction_log_idx_{other.transaction_log_idx_}
+      event_slot_index_{std::move(other.event_slot_index_)}
 {
     other.event_data_control_local_ = nullptr;
 }
@@ -56,7 +53,6 @@ SlotDecrementer& SlotDecrementer::operator=(SlotDecrementer&& other) noexcept
         internal_delete();
         event_data_control_local_ = other.event_data_control_local_;
         event_slot_index_ = other.event_slot_index_;
-        transaction_log_idx_ = other.transaction_log_idx_;
 
         other.event_data_control_local_ = nullptr;
     }
@@ -67,7 +63,7 @@ void SlotDecrementer::internal_delete() noexcept
 {
     if (event_data_control_local_ != nullptr)
     {
-        event_data_control_local_->DereferenceEvent(event_slot_index_, transaction_log_idx_);
+        event_data_control_local_->DereferenceEvent(event_slot_index_);
     }
 }
 

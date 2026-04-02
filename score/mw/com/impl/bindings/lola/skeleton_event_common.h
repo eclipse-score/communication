@@ -69,7 +69,8 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    void PrepareOfferCommon(const EventDataControlComposite<> event_data_control_composite) noexcept;
+    void PrepareOfferCommon(const EventDataControlComposite<> event_data_control_composite,
+                            TransactionLogSet& transaction_log_set) noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     Result<SlotIndexType> AllocateSlot() noexcept;
@@ -130,7 +131,7 @@ class SkeletonEventCommon
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
 
-    void EmplaceTransactionLogRegistrationGuard();
+    void EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set);
     void EmplaceTypeErasedSamplePtrsGuard();
     void UpdateCurrentTimestamp();
     void SetQmNotificationsRegistered(bool value);
@@ -156,8 +157,8 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
 }
 
 template <typename SampleType>
-void SkeletonEventCommon<SampleType>::PrepareOfferCommon(
-    const EventDataControlComposite<> event_data_control_composite) noexcept
+void SkeletonEventCommon<SampleType>::PrepareOfferCommon(const EventDataControlComposite<> event_data_control_composite,
+                                                         TransactionLogSet& transaction_log_set) noexcept
 {
     event_data_control_composite_ = event_data_control_composite;
 
@@ -176,7 +177,7 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(
     // Ticket-188259).
     if (tracing_for_skeleton_event_enabled)
     {
-        EmplaceTransactionLogRegistrationGuard();
+        EmplaceTransactionLogRegistrationGuard(transaction_log_set);
         EmplaceTypeErasedSamplePtrsGuard();
     }
 
@@ -310,12 +311,12 @@ Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Samp
 }
 
 template <typename SampleType>
-void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard()
+void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                                                 "EventDataControlComposite must be initialized.");
-    score::cpp::ignore = transaction_log_registration_guard_.emplace(
-        TransactionLogRegistrationGuard::Create(event_data_control_composite_.value().GetQmEventDataControlLocal()));
+    score::cpp::ignore = transaction_log_registration_guard_.emplace(transaction_log_set.RegisterSkeletonTracingElement(
+        event_data_control_composite_->GetProxyEventDataControlLocalView()));
 }
 
 template <typename SampleType>

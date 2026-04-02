@@ -61,7 +61,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
   private:
     DataTypeMetaInfo size_info_;
-    std::uint8_t* event_data_storage_{nullptr};
+    std::uint8_t* event_data_storage_;
     SkeletonEventCommon<void> skeleton_event_common_;
 };
 

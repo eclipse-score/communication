@@ -92,7 +92,6 @@ class ProxyEventCommon final
         return event_control_local_;
     };
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept;
-    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept;
     void NotifyServiceInstanceChangedAvailability(const bool is_available, const pid_t new_event_source_pid) noexcept;
 
   private:

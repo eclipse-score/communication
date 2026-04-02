@@ -19,7 +19,6 @@
 
 #include <atomic>
 #include <iostream>
-#include <limits>
 
 namespace score::mw::com::impl::lola
 {
@@ -34,8 +33,7 @@ constexpr auto MAX_ALLOCATE_RETRIES = 100U;
 template <template <class> class AtomicIndirectorType>
 SkeletonEventDataControlLocalView<AtomicIndirectorType>::SkeletonEventDataControlLocalView(
     EventDataControl& event_data_control) noexcept
-    : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()},
-      transaction_log_set_{event_data_control.transaction_log_set_}
+    : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()}
 {
 }
 

@@ -34,9 +34,17 @@ constexpr auto MAX_REFERENCE_RETRIES = 100U;
 template <template <class> class AtomicIndirectorType>
 ProxyEventDataControlLocalView<AtomicIndirectorType>::ProxyEventDataControlLocalView(
     EventDataControl& event_data_control_shared) noexcept
-    : state_slots_{event_data_control_shared.state_slots_.begin(), event_data_control_shared.state_slots_.size()},
-      transaction_log_set_{event_data_control_shared.transaction_log_set_}
+    : state_slots_{event_data_control_shared.state_slots_.begin(), event_data_control_shared.state_slots_.size()}
 {
+}
+
+template <template <class> class AtomicIndirectorType>
+ProxyEventDataControlLocalView<AtomicIndirectorType>::ProxyEventDataControlLocalView(
+    EventDataControl& event_data_control_shared,
+    TransactionLogLocalView transaction_log_local_view) noexcept
+    : ProxyEventDataControlLocalView{event_data_control_shared}
+{
+    SetTransactionLogLocalView(transaction_log_local_view);
 }
 
 template <template <class> class AtomicIndirectorType>
@@ -47,13 +55,10 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
     const EventSlotStatus::EventTimeStamp last_search_time,
-    const TransactionLogIndex transaction_log_index,
     const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> std::optional<SlotIndexType>
 {
     // function can only finish with result, if use count was able to be increased
     std::optional<SlotIndexType> possible_index{};
-
-    auto& transaction_log = transaction_log_set_.get().GetTransactionLog(transaction_log_index);
 
     // possible optimization: We can remember a history of possible candidates, then we don't need to fully reiterate
     std::uint64_t counter = 0U;
@@ -117,14 +122,14 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
         auto possible_index_value = possible_index.value();
         auto& slot_value = state_slots_[possible_index_value];
 
-        transaction_log.ReferenceTransactionBegin(possible_index_value);
+        transaction_log_local_view_->ReferenceTransactionBegin(possible_index_value);
         if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_weak(
                 slot_value, candidate_slot_status_value, status_new_val, std::memory_order_acq_rel))
         {
-            transaction_log.ReferenceTransactionCommit(possible_index_value);
+            transaction_log_local_view_->ReferenceTransactionCommit(possible_index_value);
             break;
         }
-        transaction_log.ReferenceTransactionAbort(possible_index_value);
+        transaction_log_local_view_->ReferenceTransactionAbort(possible_index_value);
     }
 
     num_ref_retries += counter;
@@ -146,9 +151,8 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(
-    const SlotIndexType slot_index,
-    const TransactionLogIndex transaction_log_index) -> void
+auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(const SlotIndexType slot_index)
+    -> void
 {
     // Sanity check that the slot is currently ready for reading:
     //    - Slot is not in writing or invalid. This would be a programming bug since ReferenceSpecificEvent is called by
@@ -167,11 +171,9 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEven
         !(slot_current_status.IsInWriting() || slot_current_status.IsInvalid()),
         "An event slot can only be referenced once it's ready for reading.");
 
-    auto& transaction_log = transaction_log_set_.get().GetTransactionLog(transaction_log_index);
-
     // Since this function must be called when the slot is already ready for reading, we can simply increment the ref
     // count.
-    transaction_log.ReferenceTransactionBegin(slot_index);
+    transaction_log_local_view_->ReferenceTransactionBegin(slot_index);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
     const auto old_slot_value = AtomicIndirectorType<EventSlotStatus::value_type>::fetch_add(
         state_slots_[slot_index], static_cast<EventSlotStatus::value_type>(1U), std::memory_order_acq_rel);
@@ -184,7 +186,7 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEven
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(EventSlotStatus{old_slot_value}.GetReferenceCount() !=
                                                           std::numeric_limits<EventSlotStatus::SubscriberCount>::max(),
                                                       "Reference count overflowed which cannot be recovered from.");
-    transaction_log.ReferenceTransactionCommit(slot_index);
+    transaction_log_local_view_->ReferenceTransactionCommit(slot_index);
 }
 
 template <template <class> class AtomicIndirectorType>
@@ -216,13 +218,11 @@ std::size_t ProxyEventDataControlLocalView<AtomicIndirectorType>::GetNumNewEvent
 
 template <template <class> class AtomicIndirectorType>
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::DereferenceEvent(
-    const SlotIndexType event_slot_index,
-    const TransactionLogIndex transaction_log_index) noexcept -> void
+    const SlotIndexType event_slot_index) noexcept -> void
 {
-    auto& transaction_log = transaction_log_set_.get().GetTransactionLog(transaction_log_index);
-    transaction_log.DereferenceTransactionBegin(event_slot_index);
+    transaction_log_local_view_->DereferenceTransactionBegin(event_slot_index);
     DereferenceEventWithoutTransactionLogging(event_slot_index);
-    transaction_log.DereferenceTransactionCommit(event_slot_index);
+    transaction_log_local_view_->DereferenceTransactionCommit(event_slot_index);
 }
 
 template <template <class> class AtomicIndirectorType>

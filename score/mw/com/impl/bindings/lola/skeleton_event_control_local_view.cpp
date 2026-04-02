@@ -16,7 +16,8 @@ namespace score::mw::com::impl::lola
 {
 
 SkeletonEventControlLocalView::SkeletonEventControlLocalView(EventControl& event_control_shared_mem) noexcept
-    : data_control{event_control_shared_mem.data_control}
+    : data_control{event_control_shared_mem.data_control},
+      transaction_log_set{event_control_shared_mem.transaction_log_set_}
 {
 }
 

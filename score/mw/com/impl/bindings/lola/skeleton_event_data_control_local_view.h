@@ -16,7 +16,6 @@
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 
@@ -91,7 +90,7 @@ class SkeletonEventDataControlLocalView final
     /// \pre ReferenceNextEvent() was invoked to obtain read-ownership
     ///
     /// \details Will not record the transaction in any TransactionLog. This function is called by the
-    /// TransactionLog::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
+    /// TransactionLogLocalView::DereferenceSlotCallback created within TransactionLogSet::RollbackProxyTransactions and
     /// RollbackSkeletonTracingTransactions. In these cases, the transaction will be recorded within
     /// TransactionLog::RollbackIncrementTransactions resp. RollbackSubscribeTransactions before calling the callback.
     void DereferenceEventWithoutTransactionLogging(const SlotIndexType event_slot_index) noexcept;
@@ -103,19 +102,6 @@ class SkeletonEventDataControlLocalView final
     /// \details This function shall _only_ be called on skeleton side and _only_ if a previous skeleton instance died.
     void RemoveAllocationsForWriting() noexcept;
 
-    // Suppress "AUTOSAR C++14 A9-3-1" rule finding: "Member functions shall not return non-const “raw” pointers or
-    // references to private or protected data owned by the class.".
-    // To avoid overhead such as shared_ptr in the result, a non-const reference to the instance is returned instead.
-    // This instance exposes another sub-API that can change the its state and therefore also the state of instance
-    // holder. API callers get the reference and use it in place without leaving the scope, so the reference remains
-    // valid.
-    // coverity[autosar_cpp14_a9_3_1_violation]
-    TransactionLogSet& GetTransactionLogSet() noexcept
-    {
-        // coverity[autosar_cpp14_a9_3_1_violation] see above
-        return transaction_log_set_;
-    }
-
     // helper for performance indication (no production usage)
     static void DumpPerformanceCounters();
     static void ResetPerformanceCounters();
@@ -126,8 +112,6 @@ class SkeletonEventDataControlLocalView final
     std::optional<SlotIndexType> FindOldestUnusedSlot() const noexcept;
 
     LocalEventControlSlots state_slots_;
-
-    std::reference_wrapper<TransactionLogSet> transaction_log_set_;
 
     // helper variables to calculated performance indicators
     static inline std::atomic_uint_fast64_t num_alloc_misses{0U};

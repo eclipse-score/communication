@@ -82,7 +82,7 @@ TEST_F(TransactionLogLocalViewFixture, ReferenceTransactionUpdatesPointedToTrans
 
     // When calling ReferenceTransactionBegin on the first slot in the TransactionLogLocalView
     constexpr std::size_t slot_index{0U};
-    auto& slot = transaction_log_.reference_count_slots_.at(slot_index);
+    const auto& slot = transaction_log_.reference_count_slots_.at(slot_index);
     EXPECT_FALSE(slot.GetTransactionBegin());
     EXPECT_FALSE(slot.GetTransactionEnd());
     unit_.ReferenceTransactionBegin(slot_index);
