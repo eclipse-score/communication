@@ -687,12 +687,14 @@ class ProxyTransactionLogRollbackFixture : public ProxyMockedMemoryFixture
     ProxyTransactionLogRollbackFixture() noexcept
     {
         InitialiseDummySkeletonEvent(kDummyElementFqId, SkeletonEventProperties{kMaxNumSlots, kMaxSubscribers, true});
+        transaction_log_set_ = &event_control_->transaction_log_set_;
     }
 
     static constexpr std::uint32_t kDummyApplicationId{665U};
     TransactionLogId transaction_log_id_{kDummyApplicationId};
     const InstanceIdentifier instance_identifier_{
         make_InstanceIdentifier(kServiceInstanceDeployment, kServiceTypeDeployment)};
+    TransactionLogSet* transaction_log_set_{nullptr};
 
     const TransactionLog::MaxSampleCountType subscription_max_sample_count_{5U};
 };
@@ -704,7 +706,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
     // When inserting a TransactionLog into the created TransactionLogSet which contains valid transactions
     InsertProxyTransactionLogWithValidTransactions(
         *proxy_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
-    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*proxy_event_control_local_, transaction_log_id_));
+    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     ON_CALL(binding_runtime_, GetApplicationId()).WillByDefault(Return(transaction_log_id_));
 
@@ -713,7 +715,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
     EXPECT_NE(proxy_, nullptr);
 
     // Then the TransactionLog should be rollbacked during construction and removed
-    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*proxy_event_control_local_, transaction_log_id_));
+    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 }
 
 TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeNotBeCalledOnNonExistingTransactionLogOnCreation)
@@ -721,7 +723,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeNotBeCalledOnNonExistin
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When no TransactionLog exists in the created TransactionLogSet
-    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*proxy_event_control_local_, transaction_log_id_));
+    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     // Given a valid deployment information
 
@@ -730,7 +732,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeNotBeCalledOnNonExistin
     EXPECT_NE(proxy_, nullptr);
 
     // Then there should still be no transaction log and we shouldn't crash
-    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*proxy_event_control_local_, transaction_log_id_));
+    EXPECT_FALSE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 }
 
 TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransactionLogWillReturnEmptyProxyBinding)
@@ -747,7 +749,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransacti
     // When inserting a TransactionLog into the created TransactionLogSet which contains invalid transactions
     InsertProxyTransactionLogWithInvalidTransactions(
         *proxy_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
-    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*proxy_event_control_local_, transaction_log_id_));
+    EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(transaction_log_id_));
 

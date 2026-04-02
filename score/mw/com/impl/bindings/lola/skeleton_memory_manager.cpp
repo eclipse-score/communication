@@ -197,13 +197,15 @@ auto SkeletonMemoryManager::OpenExistingSharedMemory(
     return {};
 }
 
-auto SkeletonMemoryManager::CreateEventDataControlCompositeInCreatedSharedMemory(
+auto SkeletonMemoryManager::CreateEventDataControlCompositeAndTransactionLogSetInCreatedSharedMemory(
     const ElementFqId element_fq_id,
-    const SkeletonEventProperties& element_properties) -> EventDataControlComposite<>
+    const SkeletonEventProperties& element_properties) -> std::pair<EventDataControlComposite<>, TransactionLogSet&>
 {
     auto event_control_views_result = EmplaceQmAndAsilBEventControlAndLocalView(element_fq_id, element_properties);
     auto& skeleton_event_control_local_view_qm = event_control_views_result.first.get();
     auto* const skeleton_event_control_local_view_asil = event_control_views_result.second;
+
+    auto& transaction_log_set = skeleton_event_control_local_view_qm.transaction_log_set.get();
 
     // Since we only need ProxyEventDataControlLocalView for tracing which is only supported for QM, we only emplace it
     // if the proxy_control_local_ has a value which is only the case if tracing is enabled.
@@ -214,9 +216,10 @@ auto SkeletonMemoryManager::CreateEventDataControlCompositeInCreatedSharedMemory
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
-        EventDataControlComposite{skeleton_event_control_local_view_qm.data_control,
-                                  GetEventDataControlViewFromEventControlView(skeleton_event_control_local_view_asil),
-                                  GetEventDataControlViewFromEventControlView(tracing_proxy_event_control_local_view)};
+        {EventDataControlComposite{skeleton_event_control_local_view_qm.data_control,
+                                   GetEventDataControlViewFromEventControlView(skeleton_event_control_local_view_asil),
+                                   GetEventDataControlViewFromEventControlView(tracing_proxy_event_control_local_view)},
+         transaction_log_set};
 }
 
 void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
@@ -265,8 +268,8 @@ void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
     return data_storage;
 }
 
-auto SkeletonMemoryManager::OpenEventDataControlCompositeFromOpenedSharedMemory(const ElementFqId element_fq_id)
-    -> EventDataControlComposite<>
+auto SkeletonMemoryManager::OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(
+    const ElementFqId element_fq_id) -> std::pair<EventDataControlComposite<>, TransactionLogSet&>
 {
     // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
     // called implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception
@@ -307,16 +310,19 @@ auto SkeletonMemoryManager::OpenEventDataControlCompositeFromOpenedSharedMemory(
         proxy_event_data_control_local = &(proxy_event_control_local_it->second.data_control);
     }
 
+    auto& transaction_log_set = event_control_qm_it->second.transaction_log_set.get();
+
     // Suppress "AUTOSAR C++14 A3-8-1" rule findings.
     // The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even returned pointer
     // to internal state until Skeleton object is alive.
-    return
+    return {
         // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
         EventDataControlComposite{
-            event_control_qm_it->second.data_control, event_data_control_asil_b_local, proxy_event_data_control_local};
+            event_control_qm_it->second.data_control, event_data_control_asil_b_local, proxy_event_data_control_local},
+        transaction_log_set};
 }
 
 void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(

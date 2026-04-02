@@ -14,7 +14,6 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_EVENT_DATA_CONTROL_H
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include "score/containers/dynamic_array.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
@@ -41,15 +40,12 @@ class EventDataControl
     using EventControlSlots =
         containers::DynamicArray<ControlSlotType, memory::shared::PolymorphicOffsetPtrAllocator<ControlSlotType>>;
 
-    EventDataControl(const SlotIndexType max_slots,
-                     score::memory::shared::ManagedMemoryResource& resource,
-                     const LolaEventInstanceDeployment::SubscriberCountType max_number_combined_subscribers) noexcept
-        : state_slots_{max_slots, resource}, transaction_log_set_{max_number_combined_subscribers, max_slots, resource}
+    EventDataControl(const SlotIndexType max_slots, score::memory::shared::ManagedMemoryResource& resource) noexcept
+        : state_slots_{max_slots, resource}
     {
     }
 
     EventControlSlots state_slots_;
-    TransactionLogSet transaction_log_set_;
 };
 
 }  // namespace score::mw::com::impl::lola

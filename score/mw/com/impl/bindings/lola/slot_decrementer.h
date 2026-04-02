@@ -15,7 +15,6 @@
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -24,8 +23,7 @@ class SlotDecrementer
 {
   public:
     SlotDecrementer(ProxyEventDataControlLocalView<>& event_data_control,
-                    const SlotIndexType event_slot_index,
-                    const TransactionLogIndex transaction_log_idx) noexcept;
+                    const SlotIndexType event_slot_index) noexcept;
     ~SlotDecrementer() noexcept;
 
     SlotDecrementer(const SlotDecrementer&) = delete;
@@ -38,7 +36,6 @@ class SlotDecrementer
 
     ProxyEventDataControlLocalView<>* event_data_control_local_;
     SlotIndexType event_slot_index_;
-    TransactionLogIndex transaction_log_idx_;
 };
 
 }  // namespace score::mw::com::impl::lola

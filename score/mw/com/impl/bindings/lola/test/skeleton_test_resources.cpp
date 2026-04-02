@@ -337,12 +337,22 @@ EventControl& SkeletonMockedMemoryFixture::GetEventControlFromServiceDataControl
     return event_control;
 }
 
-SkeletonEventControlLocalView& SkeletonMockedMemoryFixture::GetEventControlLocalFromServiceDataControlLocal(
+SkeletonEventControlLocalView& SkeletonMockedMemoryFixture::GetSkeletonEventControlLocalFromServiceDataControlLocal(
     ElementFqId element_fq_id,
     SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept
 {
     auto event_control_local_it = skeleton_service_data_control_local.event_controls_.find(element_fq_id);
     EXPECT_NE(event_control_local_it, skeleton_service_data_control_local.event_controls_.cend());
+    auto& event_control_local = event_control_local_it->second;
+    return event_control_local;
+}
+
+ProxyEventControlLocalView& SkeletonMockedMemoryFixture::GetProxyEventControlLocalFromServiceDataControlLocal(
+    ElementFqId element_fq_id,
+    ProxyServiceDataControlLocalView& proxy_service_data_control_local) noexcept
+{
+    auto event_control_local_it = proxy_service_data_control_local.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_local_it, proxy_service_data_control_local.event_controls_.cend());
     auto& event_control_local = event_control_local_it->second;
     return event_control_local;
 }

@@ -52,7 +52,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
   public:
     std::uint8_t value_{0x42};
     lola::FakeMemoryResource fake_memory_resource_{};
-    lola::EventDataControl event_data_ctrl_qm_{0, fake_memory_resource_, 1U};
+    lola::EventDataControl event_data_ctrl_qm_{0, fake_memory_resource_};
     lola::SkeletonEventDataControlLocalView<> skeleton_event_data_ctrl_qm_local_{event_data_ctrl_qm_};
     lola::EventDataControlComposite<> event_data_ctrl_{skeleton_event_data_ctrl_qm_local_, nullptr};
     lola::SlotIndexType event_data_slot_index_{std::numeric_limits<lola::SlotIndexType>::max()};

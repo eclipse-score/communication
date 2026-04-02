@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
-
+/*
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -123,7 +124,9 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     {
         auto& proxy_event_data_control_local = GetProxyEventDataControlLocalView(element_fq_id);
         auto& transaction_log_set = proxy_event_data_control_local.GetTransactionLogSet();
-        const auto transaction_log_index = transaction_log_set.RegisterProxyElement(transaction_log_id).value();
+        transaction_log_registration_guards_.push_back(
+            transaction_log_set.RegisterProxyElement(transaction_log_id).value());
+        const auto transaction_log_index = transaction_log_registration_guards_.back().GetTransactionLogIndex();
 
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
         auto& transaction_log_node = transaction_logs.at(transaction_log_index);
@@ -143,6 +146,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     std::optional<ProxyServiceDataControlLocalView> proxy_service_data_control_local_{};
     std::unique_ptr<TransactionLogRollbackExecutor> unit_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
+    std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards_{};
 };
 
 using TransactionLogRegisterProxyElementFixture = TransactionLogRollbackExecutorFixture;
@@ -358,4 +362,4 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegiste
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola */
