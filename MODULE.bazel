@@ -14,6 +14,14 @@ module(name = "score_communication")
 
 bazel_dep(name = "platforms", version = "1.0.0")
 
+# Centralized sanitizer policies (ASan, TSan, UBSan, LSan)
+bazel_dep(name = "score_cpp_policies", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "score_cpp_policies",
+    commit = "10fd9147eaaa8f2b829bc9b1d50213159415a9c8",  # tip of rs/swp-245137 branch
+    remote = "https://github.com/RSingh1511/score_cpp_policies.git",
+)
+
 bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
@@ -96,7 +104,12 @@ toolchains_qnx.sdp(
 )
 use_repo(toolchains_qnx, "toolchains_qnx_ifs")
 
-bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
+bazel_dep(name = "toolchains_llvm", version = "1.7.0", dev_dependency = True)
+git_override(
+    module_name = "toolchains_llvm",
+    commit = "576a587e4542733166ac1c3c4fb14c79c421332c",
+    remote = "https://github.com/bazel-contrib/toolchains_llvm",
+)
 
 llvm = use_extension(
     "@toolchains_llvm//toolchain/extensions:llvm.bzl",
@@ -118,12 +131,17 @@ llvm.toolchain(
         "-Wthread-safety",
     ]},
     cxx_standard = {"": "c++17"},
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan_link",
+        "@score_cpp_policies//sanitizers/features:tsan_link",
+    ],
     link_libs = {"": [
         "-lrt",
         # This is the agreed way to ensure linking for targets using std::atomic operations.
         "-latomic",
     ]},
     llvm_version = "19.1.7",
+    stdlib = {"": "stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")
 
@@ -170,7 +188,7 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "rules_cc", version = "0.2.17")
 
 bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
