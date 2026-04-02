@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -133,7 +134,7 @@ class Proxy : public ProxyBinding
     ///
     /// \param element_fq_id The Event ID.
     /// \return A reference to the event control structure.
-    EventControl& GetEventControl(const ElementFqId element_fq_id) noexcept;
+    ProxyEventControlLocalView& GetEventControlLocal(const ElementFqId element_fq_id) noexcept;
 
     /// Retrieves a reference to the event data storage area for a given ElementFqId.
     ///
@@ -217,6 +218,11 @@ class Proxy : public ProxyBinding
     std::shared_ptr<memory::shared::ManagedMemoryResource> data_;
     std::shared_ptr<memory::shared::ManagedMemoryResource> method_shm_resource_;
 
+    /// \brief Local view of ServiceDataControl which is stored in shared memory.
+    ///
+    /// We use this view to avoid directly accessing objects in shared memory which negatively affects performance.
+    ProxyServiceDataControlLocalView service_data_control_local_;
+
     QualityType quality_type_;
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter_;
     HandleType handle_;
@@ -237,7 +243,7 @@ class Proxy : public ProxyBinding
 
     /// Flag which is set once the proxy methods are fully setup in Proxy::SetupMethods(). This is checked in the
     /// ServiceAvailabilityChangeHandler so that it doesn't send a notification to the Skeleton before the shared memory
-    /// has been setup. See platform/aas/docs/features/ipc/lola/method/README.md for details about the full methods
+    /// has been setup. See score/docs/features/ipc/lola/method/README.md for details about the full methods
     /// logic related to proxy autoreconnect.
     ///
     /// We use an atomic instead of a mutex because we don't care if SubscribeServiceMethod is called multiple times
