@@ -46,9 +46,8 @@ class SamplePtr final
     /// \param slot_index index of event slot
     SamplePtr(pointer ptr,
               ProxyEventDataControlLocalView<>& event_data_ctrl_local,
-              const SlotIndexType slot_index,
-              TransactionLogIndex transaction_log_idx) noexcept
-        : SamplePtr{ptr, std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index, transaction_log_idx)}
+              const SlotIndexType slot_index) noexcept
+        : SamplePtr{ptr, std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index)}
     {
     }
 

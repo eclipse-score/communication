@@ -52,7 +52,6 @@ class SubscriptionStateBase
     virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
     virtual score::cpp::optional<SlotCollector>& GetSlotCollector() noexcept = 0;
     virtual const score::cpp::optional<SlotCollector>& GetSlotCollector() const noexcept = 0;
-    virtual score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept = 0;
 
     virtual void OnEntry() noexcept {};
     virtual void OnExit() noexcept {};

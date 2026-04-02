@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 #include <functional>
 
@@ -33,8 +34,12 @@ class ProxyEventControlLocalView
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
     ProxyEventDataControlLocalView<> data_control;
+
     // coverity[autosar_cpp14_m11_0_1_violation]
     std::reference_wrapper<EventSubscriptionControl<>> subscription_control;
+
+    // coverity[autosar_cpp14_m11_0_1_violation]
+    std::reference_wrapper<TransactionLogSet> transaction_log_set;
 };
 
 }  // namespace score::mw::com::impl::lola

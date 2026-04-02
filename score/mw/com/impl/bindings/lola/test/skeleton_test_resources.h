@@ -451,9 +451,12 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     ServiceDataControl CreateServiceDataControlWithEvent(ElementFqId element_fq_id, QualityType quality_type) noexcept;
     static EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
                                                                ServiceDataControl& service_data_control) noexcept;
-    static SkeletonEventControlLocalView& GetEventControlLocalFromServiceDataControlLocal(
+    static SkeletonEventControlLocalView& GetSkeletonEventControlLocalFromServiceDataControlLocal(
         ElementFqId element_fq_id,
         SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept;
+    static ProxyEventControlLocalView& GetProxyEventControlLocalFromServiceDataControlLocal(
+        ElementFqId element_fq_id,
+        ProxyServiceDataControlLocalView& proxy_service_data_control_local) noexcept;
 
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept

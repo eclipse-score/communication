@@ -26,6 +26,10 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info),
       event_properties_(event_properties),
+      event_data_control_composite_{},
+      current_timestamp_{1U},
+      event_data_storage_{nullptr},
+      qm_disconnect_{false},
       event_shared_impl_(parent, event_fqn, event_data_control_composite_, current_timestamp_, tracing_data)
 {
 }
@@ -38,7 +42,7 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
     event_data_control_composite_ = registration_result.event_data_control_composite;
 
-    event_shared_impl_.PrepareOfferCommon();
+    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set);
 
     return {};
 }

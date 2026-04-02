@@ -134,11 +134,6 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
     const std::size_t aligned_size =
         memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
 
-    auto transaction_log_index = proxy_event_common_.GetTransactionLogIndex();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        transaction_log_index.has_value(),
-        "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
-
     const std::size_t max_number_of_sample_slots = event_control.data_control.GetMaxSampleSlots();
     const auto event_slots_raw_array_size = safe_math::Multiply(aligned_size, max_number_of_sample_slots);
 
@@ -181,8 +176,7 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         const EventSlotStatus event_slot_status{event_control.data_control[slot_index]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
-        SamplePtr<void> sample{
-            object_start_address, event_control.data_control, slot_index, transaction_log_index.value()};
+        SamplePtr<void> sample{object_start_address, event_control.data_control, slot_index};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));
