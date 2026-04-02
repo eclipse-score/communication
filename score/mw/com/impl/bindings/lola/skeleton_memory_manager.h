@@ -66,24 +66,42 @@ class SkeletonMemoryManager final
     SkeletonMemoryManager(SkeletonMemoryManager&& other) = delete;
     SkeletonMemoryManager& operator=(SkeletonMemoryManager&& other) = delete;
 
-    ResultBlank OpenExistingSharedMemory(
-        std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
+    /// \brief Create and initialize data and control shared memory segments
+    ///
+    /// This function is called by a Skeleton during PrepareOffer in case we aren't in a partial restart case (or we are
+    /// but there are no proxies connected to the old shared memory region). It will create the data and control shared
+    /// memory regions and will initialise the ServiceDataControl and ServiceDataStorage structures in the created
+    /// shared memory.
     ResultBlank CreateSharedMemory(
         SkeletonBinding::SkeletonEventBindings& events,
         SkeletonBinding::SkeletonFieldBindings& fields,
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
 
-    template <typename SampleType>
-    std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> CreateEventDataInCreatedSharedMemory(
-        const ElementFqId element_fq_id,
-        const SkeletonEventProperties& element_properties);
+    /// \brief Open data and control shared memory segments that were created by a previous Skeleton
+    ///
+    /// This function is called by a Skeleton during PrepareOffer in case we are in a partial restart case and there are
+    /// still proxies connected to the old shared memory region. It will open the data and control shared memory regions
+    /// and will store pointers to the already existing ServiceDataControl and ServiceDataStorage structures in the
+    /// opened shared memory.
+    ResultBlank OpenExistingSharedMemory(
+        std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
 
-    /// \brief Creates the control structures (QM and optional ASIL-B) for an event.
-    /// \param element_fq_id The full qualified ID of the element.
-    /// \param element_properties Properties of the event.
-    /// \return The EventDataControlComposite containing pointers to the control structures.
-    EventDataControlComposite<> CreateEventControlComposite(const ElementFqId element_fq_id,
-                                                            const SkeletonEventProperties& element_properties) noexcept;
+    /// \brief Creates an EventDataControlComposite and TransactionLogSet for a specific event.
+    ///
+    /// The EventDataControlComposite and TransactionLogSet are emplaced into the ServiceDataControl in the shared
+    /// memory region that was created with CreateSharedMemory.
+    auto CreateEventDataControlCompositeInCreatedSharedMemory(const ElementFqId element_fq_id,
+                                                              const SkeletonEventProperties& element_properties)
+        -> EventDataControlComposite<>;
+
+    /// \brief Creates an EventDataStorage for a specific event.
+    ///
+    /// The EventDataStorage are emplaced into the ServiceDataStorage in the shared memory region that was created with
+    /// CreateSharedMemory.
+    template <typename SampleType>
+    auto CreateEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
+                                              const SkeletonEventProperties& element_properties)
+        -> EventDataStorage<SampleType>&;
 
     /// \brief Creates shared memory storage for a generic (type-erased) event.
     /// \param element_fq_id The full qualified ID of the element.
@@ -91,23 +109,44 @@ class SkeletonMemoryManager final
     /// \param sample_size The size of a single data sample.
     /// \param sample_alignment The alignment of the data sample.
     /// \return A pair containing the data storage pointer (void*) and the control composite.
-    std::pair<void*, EventDataControlComposite<>> CreateEventDataInCreatedSharedMemory(
-        const ElementFqId element_fq_id,
-        const SkeletonEventProperties& element_properties,
-        size_t sample_size,
-        size_t sample_alignment) noexcept;
+    auto CreateGenericEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
+                                                     const SkeletonEventProperties& element_properties,
+                                                     size_t sample_size,
+                                                     size_t sample_alignment) noexcept -> void*;
 
+    /// \brief Opens an EventDataControlComposite and TransactionLogSet for a specific event that were created by a
+    /// previous skeleton.
+    ///
+    /// The EventDataControlComposite and TransactionLogSet are retrieved from the ServiceDataControl in the shared
+    /// memory region that was opened with OpenExistingSharedMemory.
+    auto OpenEventDataControlCompositeFromOpenedSharedMemory(const ElementFqId element_fq_id)
+        -> EventDataControlComposite<>;
+
+    /// \brief Opens an EventDataStorage for a specific event that was created by a previous skeleton.
+    ///
+    /// The EventDataStorage are retrieved from the ServiceDataStorage in the shared memory region that was opened with
+    /// OpenExistingSharedMemory.
     template <typename SampleType>
-    std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> OpenEventDataFromOpenedSharedMemory(
-        const ElementFqId element_fq_id);
+    auto OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id) -> EventDataStorage<SampleType>&;
 
+    /// \brief Rolls back any existing operations in the TransactionLog corresponding to a SkeletonEvent
+    ///
+    /// The TransactionLog would only exist if a SkeletonEvent in a crashed process had tracing enabled.
+    void RollbackSkeletonTracingTransactions(SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local,
+                                             TransactionLogSet& transaction_log_set);
+
+    /// \brief Remove the control and data shared memory regions
     void RemoveSharedMemory();
+
+    /// \brief Removes stale shared memory artefacts from the filesystem in case a process crashed while creating a
+    ///        SharedMemoryResource.
     void RemoveStaleSharedMemoryArtefacts() const;
 
     /// \brief Cleans up all allocated slots for this SkeletonEvent of any previous running instance
     /// \details Note: Only invoke _after_ a crash was detected!
     void CleanupSharedMemoryAfterCrash();
 
+    /// \brief Resets internal state of SkeletonMemoryManager.
     void Reset();
 
   private:
@@ -137,11 +176,12 @@ class SkeletonMemoryManager final
         SkeletonBinding::SkeletonEventBindings& events,
         SkeletonBinding::SkeletonFieldBindings& fields);
 
+    /// Functions for creating / opening / initializing shared memory within PrepareOffer.
     bool CreateSharedMemoryForData(
-        const LolaServiceInstanceDeployment&,
+        const LolaServiceInstanceDeployment& lola_service_instance_deployment,
         const std::size_t shm_size,
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
-    bool CreateSharedMemoryForControl(const LolaServiceInstanceDeployment& instance,
+    bool CreateSharedMemoryForControl(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
                                       const QualityType asil_level,
                                       const std::size_t shm_size);
     bool OpenSharedMemoryForData(
@@ -151,10 +191,24 @@ class SkeletonMemoryManager final
     void InitializeSharedMemoryForControl(const QualityType asil_level,
                                           const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory);
 
-    std::pair<std::reference_wrapper<EventControl>, std::reference_wrapper<SkeletonEventControlLocalView>>
-    InsertEventInServiceDataControl(const QualityType asil_level,
-                                    ElementFqId element_fq_id,
-                                    const SkeletonEventProperties& element_properties);
+    /// Functions for creating / opening event data controls and storages for events registered via Register() or
+    /// RegisterGeneric().
+    std::pair<std::reference_wrapper<SkeletonEventControlLocalView>, SkeletonEventControlLocalView*>
+    EmplaceQmAndAsilBEventControlAndLocalView(const ElementFqId element_fq_id,
+                                              const SkeletonEventProperties& element_properties);
+
+    SkeletonEventControlLocalView& EmplaceEventControlAndLocalView(const QualityType asil_level,
+                                                                   ElementFqId element_fq_id,
+                                                                   const SkeletonEventProperties& element_properties);
+
+    template <typename SampleType>
+    EventDataStorage<SampleType>& EmplaceEventDataStorage(const ElementFqId element_fq_id,
+                                                          const SkeletonEventProperties& element_properties);
+    ProxyEventControlLocalView* EmplaceTracingEventControl(const ElementFqId element_fq_id);
+
+    EventMetaInfo& EmplaceEventMetaInfo(const ElementFqId element_fq_id,
+                                        const DataTypeMetaInfo& sample_meta_info,
+                                        void* type_erased_event_data_storage);
 
     QualityType quality_type_;
     const IShmPathBuilder& shm_path_builder_;
@@ -191,28 +245,15 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(const ElementFqId element_fq_id,
                                                                  const SkeletonEventProperties& element_properties)
-    -> std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>>
+    -> EventDataStorage<SampleType>&
 {
-    auto* typed_event_data_storage_ptr = storage_resource_->construct<EventDataStorage<SampleType>>(
-        element_properties.number_of_slots,
-        memory::shared::PolymorphicOffsetPtrAllocator<SampleType>(*storage_resource_));
-
-    auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
-                                                         std::forward_as_tuple(element_fq_id),
-                                                         std::forward_as_tuple(typed_event_data_storage_ptr));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
-                                                "Couldn't register/emplace event-storage in data-section.");
+    auto& event_data_storage = EmplaceEventDataStorage<SampleType>(element_fq_id, element_properties);
 
     constexpr DataTypeMetaInfo sample_meta_info{sizeof(SampleType), static_cast<std::uint8_t>(alignof(SampleType))};
-    auto* event_data_raw_array = typed_event_data_storage_ptr->data();
-    auto inserted_meta_info =
-        storage_->events_metainfo_.emplace(std::piecewise_construct,
-                                           std::forward_as_tuple(element_fq_id),
-                                           std::forward_as_tuple(sample_meta_info, event_data_raw_array));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
-                                                "Couldn't register/emplace event-meta-info in data-section.");
+    auto* const event_data_raw_array = event_data_storage.data();
+    score::cpp::ignore = EmplaceEventMetaInfo(element_fq_id, sample_meta_info, event_data_raw_array);
 
-    return {typed_event_data_storage_ptr, CreateEventControlComposite(element_fq_id, element_properties)};
+    return event_data_storage;
 }
 
 template <typename SampleType>
@@ -224,7 +265,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_m3_2_2_violation]
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id)
-    -> std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>>
+    -> EventDataStorage<SampleType>&
 {
     // Suppress "AUTOSAR C++14 A15-5-3":
     // Justification: This is a false positive, std::less which is used by std::map::find could throw an exception if
@@ -239,27 +280,6 @@ auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqI
 
     score::cpp::ignore = find_element(storage_->events_metainfo_, element_fq_id);
     const auto event_data_storage_it = find_element(storage_->events_, element_fq_id);
-    const auto event_control_qm_it = find_element(skeleton_control_qm_local_->event_controls_, element_fq_id);
-
-    SkeletonEventDataControlLocalView<>* event_data_control_asil_b_local{nullptr};
-    if (quality_type_ == QualityType::kASIL_B)
-    {
-        const auto event_control_asil_b_it =
-            find_element(skeleton_control_asil_b_local_->event_controls_, element_fq_id);
-        // Suppress "AUTOSAR C++14 M7-5-1": Functions should not return references or pointers to automatic variables
-        // defined in the function.
-        // Suppress "AUTOSAR C++14 M7-5-2": Should not assign an object with automatic storage to another which could
-        // persist after the first objects has been destroyed.
-        // Suppress "AUTOSAR C++14 A3-8-1": Don't access an object before construction or after destruction.
-        // Jutification: The lifetime of the object whose address is assigned to "event_data_control_asil_b" is owned by
-        // the Skeleton itself. The pointer is passed to EventDataControlComposite which is then owned by a
-        // SkeletonEvent which is guaranteed to be destroyed before the Skeleton is destroyed (since it's a member of
-        // the parent Skeleton).
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        event_data_control_asil_b_local = &(event_control_asil_b_it->second.data_control);
-    }
 
     // Suppress "AUTOSAR C++14 A5-3-2": Don't dereference null pointers.
     // Justification: The "event_data_storage_it" variable is an iterator of interprocess map returned by the
@@ -271,30 +291,24 @@ auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqI
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event_data_storage_ptr != nullptr,
                                                 "Could not get EventDataStorage*");
 
-    ProxyEventDataControlLocalView<>* proxy_event_data_control_local{nullptr};
-    if (proxy_control_local_.has_value())
-    {
-        const auto proxy_event_control_local_it = find_element(proxy_control_local_->event_controls_, element_fq_id);
-        // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
-        // holder) is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        proxy_event_data_control_local = &(proxy_event_control_local_it->second.data_control);
-    }
+    return *typed_event_data_storage_ptr;
+}
 
-    // Suppress "AUTOSAR C++14 A3-8-1":
-    // Justification: The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even
-    // returned pointer to internal state until Skeleton object is alive.
-    // coverity[autosar_cpp14_a3_8_1_violation]
-    return {
-        typed_event_data_storage_ptr,
-        // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        EventDataControlComposite{
-            event_control_qm_it->second.data_control, event_data_control_asil_b_local, proxy_event_data_control_local}};
+template <typename SampleType>
+EventDataStorage<SampleType>& SkeletonMemoryManager::EmplaceEventDataStorage(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties)
+{
+    auto* typed_event_data_storage_ptr = storage_resource_->construct<EventDataStorage<SampleType>>(
+        element_properties.number_of_slots,
+        memory::shared::PolymorphicOffsetPtrAllocator<SampleType>(*storage_resource_));
+
+    auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
+                                                         std::forward_as_tuple(element_fq_id),
+                                                         std::forward_as_tuple(typed_event_data_storage_ptr));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
+                                                "Couldn't register/emplace event-storage in data-section.");
+    return *typed_event_data_storage_ptr;
 }
 
 }  // namespace score::mw::com::impl::lola
