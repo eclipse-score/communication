@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
@@ -96,6 +97,26 @@ std::uint64_t CalculateMemoryResourceId(const LolaServiceTypeDeployment::Service
             (static_cast<std::uint64_t>(lola_instance_id) << 8U) + static_cast<std::uint8_t>(object_type));
 }
 
+SkeletonEventDataControlLocalView<>* GetEventDataControlViewFromEventControlView(
+    SkeletonEventControlLocalView* event_control_local_view)
+{
+    if (event_control_local_view == nullptr)
+    {
+        return nullptr;
+    }
+    return &event_control_local_view->data_control;
+}
+
+ProxyEventDataControlLocalView<>* GetEventDataControlViewFromEventControlView(
+    ProxyEventControlLocalView* event_control_local_view)
+{
+    if (event_control_local_view == nullptr)
+    {
+        return nullptr;
+    }
+    return &event_control_local_view->data_control;
+}
+
 }  // namespace
 
 SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
@@ -123,26 +144,6 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
       control_qm_resource_{},
       control_asil_resource_{}
 {
-}
-
-auto SkeletonMemoryManager::OpenExistingSharedMemory(
-    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> ResultBlank
-{
-    if (!OpenSharedMemoryForControl(QualityType::kASIL_QM))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control QM");
-    }
-
-    if ((quality_type_ == QualityType::kASIL_B) && (!OpenSharedMemoryForControl(QualityType::kASIL_B)))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control ASIL-B");
-    }
-
-    if (!OpenSharedMemoryForData(std::move(register_shm_object_trace_callback)))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for data");
-    }
-    return {};
 }
 
 auto SkeletonMemoryManager::CreateSharedMemory(
@@ -176,55 +177,49 @@ auto SkeletonMemoryManager::CreateSharedMemory(
     return {};
 }
 
-EventDataControlComposite<> SkeletonMemoryManager::CreateEventControlComposite(
-    const ElementFqId element_fq_id,
-    const SkeletonEventProperties& element_properties) noexcept
+auto SkeletonMemoryManager::OpenExistingSharedMemory(
+    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> ResultBlank
 {
-    auto [event_data_control_qm, skeleton_event_data_control_local_qm] =
-        InsertEventInServiceDataControl(QualityType::kASIL_QM, element_fq_id, element_properties);
-
-    SkeletonEventDataControlLocalView<>* control_asil_local_result{nullptr};
-    if (control_asil_resource_ != nullptr)
+    if (!OpenSharedMemoryForControl(QualityType::kASIL_QM))
     {
-        auto [_, skeleton_event_data_control_local_asil_b] =
-            InsertEventInServiceDataControl(QualityType::kASIL_B, element_fq_id, element_properties);
-
-        // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
-        // holder) is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        control_asil_local_result = &skeleton_event_data_control_local_asil_b.get().data_control;
+        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control QM");
     }
 
-    ProxyEventDataControlLocalView<>* proxy_event_data_control_local{nullptr};
-    if (proxy_control_local_.has_value())
+    if ((quality_type_ == QualityType::kASIL_B) && (!OpenSharedMemoryForControl(QualityType::kASIL_B)))
     {
-        auto control_qm_local =
-            proxy_control_local_->event_controls_.emplace(std::piecewise_construct,
-                                                          std::forward_as_tuple(element_fq_id),
-                                                          std::forward_as_tuple(event_data_control_qm.get()));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-            control_qm_local.second, "Couldn't register/emplace ProxyEventControlLocalView in control-section.");
-
-        // Suppressions rationale: The result pointer is still valid outside this method until Skeleton object (as a
-        // holder) is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        proxy_event_data_control_local = &control_qm_local.first->second.data_control;
+        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control ASIL-B");
     }
 
-    // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
-    // coverity[autosar_cpp14_m7_5_1_violation]
-    // coverity[autosar_cpp14_m7_5_2_violation]
-    // coverity[autosar_cpp14_a3_8_1_violation]
-    return EventDataControlComposite{skeleton_event_data_control_local_qm.get().data_control,
-                                     control_asil_local_result,
-                                     proxy_event_data_control_local};
+    if (!OpenSharedMemoryForData(std::move(register_shm_object_trace_callback)))
+    {
+        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for data");
+    }
+    return {};
 }
 
-std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEventDataInCreatedSharedMemory(
+auto SkeletonMemoryManager::CreateEventDataControlCompositeInCreatedSharedMemory(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties) -> EventDataControlComposite<>
+{
+    auto event_control_views_result = EmplaceQmAndAsilBEventControlAndLocalView(element_fq_id, element_properties);
+    auto& skeleton_event_control_local_view_qm = event_control_views_result.first.get();
+    auto* const skeleton_event_control_local_view_asil = event_control_views_result.second;
+
+    // Since we only need ProxyEventDataControlLocalView for tracing which is only supported for QM, we only emplace it
+    // if the proxy_control_local_ has a value which is only the case if tracing is enabled.
+    auto* const tracing_proxy_event_control_local_view = EmplaceTracingEventControl(element_fq_id);
+
+    return
+        // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        EventDataControlComposite{skeleton_event_control_local_view_qm.data_control,
+                                  GetEventDataControlViewFromEventControlView(skeleton_event_control_local_view_asil),
+                                  GetEventDataControlViewFromEventControlView(tracing_proxy_event_control_local_view)};
+}
+
+void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     size_t sample_size,
@@ -267,7 +262,78 @@ std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEvent
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                 "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
+    return data_storage;
+}
+
+auto SkeletonMemoryManager::OpenEventDataControlCompositeFromOpenedSharedMemory(const ElementFqId element_fq_id)
+    -> EventDataControlComposite<>
+{
+    // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
+    // called implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception
+    // if the key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()'
+    // to throw an exception.
+    // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+    auto find_element = [](auto& map, const ElementFqId& target_element_fq_id) -> auto {
+        const auto it = map.find(target_element_fq_id);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(it != map.cend(), "Could not find element fq id in map");
+        return it;
+    };
+
+    const auto event_control_qm_it = find_element(skeleton_control_qm_local_->event_controls_, element_fq_id);
+
+    SkeletonEventDataControlLocalView<>* event_data_control_asil_b_local{nullptr};
+    if (quality_type_ == QualityType::kASIL_B)
+    {
+        const auto event_control_asil_b_it =
+            find_element(skeleton_control_asil_b_local_->event_controls_, element_fq_id);
+        // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
+        // holder) is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        event_data_control_asil_b_local = &(event_control_asil_b_it->second.data_control);
+    }
+
+    ProxyEventDataControlLocalView<>* proxy_event_data_control_local{nullptr};
+    if (proxy_control_local_.has_value())
+    {
+        const auto proxy_event_control_local_it = find_element(proxy_control_local_->event_controls_, element_fq_id);
+
+        // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
+        // holder) is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        proxy_event_data_control_local = &(proxy_event_control_local_it->second.data_control);
+    }
+
+    // Suppress "AUTOSAR C++14 A3-8-1" rule findings.
+    // The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even returned pointer
+    // to internal state until Skeleton object is alive.
+    return
+        // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        EventDataControlComposite{
+            event_control_qm_it->second.data_control, event_data_control_asil_b_local, proxy_event_data_control_local};
+}
+
+void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(
+    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local,
+    TransactionLogSet& transaction_log_set)
+{
+    auto rollback_result = transaction_log_set.RollbackSkeletonTracingTransactions(
+        [&skeleton_event_data_control_local](const TransactionLog::SlotIndexType slot_index) {
+            skeleton_event_data_control_local.DereferenceEventWithoutTransactionLogging(slot_index);
+        });
+    if (!rollback_result.has_value())
+    {
+        ::score::mw::log::LogWarn("lola")
+            << "SkeletonEvent: PrepareOffer failed: Could not rollback tracing consumer after "
+               "crash. Disabling tracing.";
+        impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
+    }
 }
 
 void SkeletonMemoryManager::RemoveSharedMemory()
@@ -318,6 +384,7 @@ void SkeletonMemoryManager::CleanupSharedMemoryAfterCrash()
         }
     }
 }
+
 void SkeletonMemoryManager::Reset()
 {
     storage_ = nullptr;
@@ -474,12 +541,12 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 bool SkeletonMemoryManager::CreateSharedMemoryForData(
-    const LolaServiceInstanceDeployment& instance,
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
     const std::size_t shm_size,
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback)
 {
     memory::shared::SharedMemoryFactory::UserPermissionsMap permissions{};
-    for (const auto& allowed_consumer : instance.allowed_consumer_)
+    for (const auto& allowed_consumer : lola_service_instance_deployment.allowed_consumer_)
     {
         for (const auto& user_identifier : allowed_consumer.second)
         {
@@ -490,7 +557,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
     const auto path = shm_path_builder_.GetDataChannelShmName(lola_instance_id_);
     const bool use_typed_memory = register_shm_object_trace_callback.has_value();
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (instance.strict_permissions_ == false)
+        (permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false)
             ? memory::shared::SharedMemoryFactory::WorldReadable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     const auto memory_resource = score::memory::shared::SharedMemoryFactory::Create(
@@ -538,18 +605,19 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
     return true;
 }
 
-bool SkeletonMemoryManager::CreateSharedMemoryForControl(const LolaServiceInstanceDeployment& instance,
-                                                         const QualityType asil_level,
-                                                         const std::size_t shm_size)
+bool SkeletonMemoryManager::CreateSharedMemoryForControl(
+    const LolaServiceInstanceDeployment& lola_service_instance_deployment,
+    const QualityType asil_level,
+    const std::size_t shm_size)
 {
     const auto path = shm_path_builder_.GetControlChannelShmName(lola_instance_id_, asil_level);
 
-    const auto consumer = instance.allowed_consumer_.find(asil_level);
+    const auto consumer = lola_service_instance_deployment.allowed_consumer_.find(asil_level);
     auto& control_resource = (asil_level == QualityType::kASIL_QM) ? control_qm_resource_ : control_asil_resource_;
     auto& data_control_path = (asil_level == QualityType::kASIL_QM) ? data_control_qm_path_ : data_control_asil_path_;
 
     memory::shared::SharedMemoryFactory::UserPermissionsMap permissions{};
-    if (consumer != instance.allowed_consumer_.cend())
+    if (consumer != lola_service_instance_deployment.allowed_consumer_.cend())
     {
         for (const auto& user_identifier : consumer->second)
         {
@@ -559,7 +627,7 @@ bool SkeletonMemoryManager::CreateSharedMemoryForControl(const LolaServiceInstan
     }
 
     const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (instance.strict_permissions_ == false)
+        (permissions.empty()) && (lola_service_instance_deployment.strict_permissions_ == false)
             ? memory::shared::SharedMemoryFactory::WorldWritable{}
             : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
     control_resource = score::memory::shared::SharedMemoryFactory::Create(
@@ -704,10 +772,29 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
     }
 }
 
-std::pair<std::reference_wrapper<EventControl>, std::reference_wrapper<SkeletonEventControlLocalView>>
-SkeletonMemoryManager::InsertEventInServiceDataControl(const QualityType asil_level,
-                                                       ElementFqId element_fq_id,
-                                                       const SkeletonEventProperties& element_properties)
+std::pair<std::reference_wrapper<SkeletonEventControlLocalView>, SkeletonEventControlLocalView*>
+SkeletonMemoryManager::EmplaceQmAndAsilBEventControlAndLocalView(const ElementFqId element_fq_id,
+                                                                 const SkeletonEventProperties& element_properties)
+{
+    auto& skeleton_event_control_local_qm =
+        EmplaceEventControlAndLocalView(QualityType::kASIL_QM, element_fq_id, element_properties);
+
+    if (control_asil_resource_ == nullptr)
+
+    {
+        return {skeleton_event_control_local_qm, nullptr};
+    }
+
+    auto& skeleton_event_control_local_asil_b =
+        EmplaceEventControlAndLocalView(QualityType::kASIL_B, element_fq_id, element_properties);
+
+    return {skeleton_event_control_local_qm, &skeleton_event_control_local_asil_b};
+}
+
+SkeletonEventControlLocalView& SkeletonMemoryManager::EmplaceEventControlAndLocalView(
+    const QualityType asil_level,
+    ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties)
 {
     auto* const service_data_control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
     auto& skeleton_service_data_control_local =
@@ -735,7 +822,52 @@ SkeletonMemoryManager::InsertEventInServiceDataControl(const QualityType asil_le
                                                                      std::forward_as_tuple(control_qm.first->second));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         control_qm_local.second, "Couldn't register/emplace SkeletonEventControlLocalView in control-section.");
-    return {control_qm.first->second, control_qm_local.first->second};
+
+    return control_qm_local.first->second;
+}
+
+ProxyEventControlLocalView* SkeletonMemoryManager::EmplaceTracingEventControl(const ElementFqId element_fq_id)
+{
+    ProxyEventControlLocalView* proxy_event_control_local{nullptr};
+    if (proxy_control_local_.has_value())
+    {
+        // Note. technically, this lookup would not be needed if we returned an iterator to the underlying
+        // EventDataControl in EmplaceEventDataControlAndLocalView which we got when emplacing the EventDataControl into
+        // the ServiceDataControl. However, having to pass around this iterator around would complicate the function
+        // signatures and this code is not called frequently, so we currently do this extra lookup here with the option
+        // to optimise it in the future if we see that it is a performance bottleneck.
+        auto event_data_control_qm_it = control_qm_->event_controls_.find(element_fq_id);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_data_control_qm_it != control_qm_->event_controls_.end(),
+            "EventDataControl should have been created in EmplaceEventDataControlAndLocalView!");
+
+        auto& event_data_control = event_data_control_qm_it->second;
+        auto control_qm_local = proxy_control_local_->event_controls_.emplace(
+            std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(event_data_control));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            control_qm_local.second, "Couldn't register/emplace ProxyEventControlLocalView in control-section.");
+
+        // Suppressions rationale: The result pointer is still valid outside this method until Skeleton object (as a
+        // holder) is alive.
+        // coverity[autosar_cpp14_m7_5_1_violation]
+        // coverity[autosar_cpp14_m7_5_2_violation]
+        // coverity[autosar_cpp14_a3_8_1_violation]
+        proxy_event_control_local = &control_qm_local.first->second;
+    }
+    return proxy_event_control_local;
+}
+
+EventMetaInfo& SkeletonMemoryManager::EmplaceEventMetaInfo(const ElementFqId element_fq_id,
+                                                           const DataTypeMetaInfo& sample_meta_info,
+                                                           void* type_erased_event_data_storage)
+{
+    auto inserted_meta_info =
+        storage_->events_metainfo_.emplace(std::piecewise_construct,
+                                           std::forward_as_tuple(element_fq_id),
+                                           std::forward_as_tuple(sample_meta_info, type_erased_event_data_storage));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
+                                                "Couldn't register/emplace event-meta-info in data-section.");
+    return inserted_meta_info.first->second;
 }
 
 }  // namespace score::mw::com::impl::lola
