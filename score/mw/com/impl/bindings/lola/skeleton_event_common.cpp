@@ -21,12 +21,10 @@ namespace score::mw::com::impl::lola
 SkeletonEventCommon::SkeletonEventCommon(Skeleton& parent,
                                          const ElementFqId& event_fqn,
                                          std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
-                                         EventSlotStatus::EventTimeStamp& current_timestamp_ref,
                                          impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     : parent_{parent},
       event_fqn_{event_fqn},
       event_data_control_composite_ref_{event_data_control_composite_ref},
-      current_timestamp_ref_{current_timestamp_ref},
       tracing_data_{tracing_data}
 {
 }
@@ -51,8 +49,6 @@ void SkeletonEventCommon::PrepareOfferCommon() noexcept
         EmplaceTransactionLogRegistrationGuard();
         EmplaceTypeErasedSamplePtrsGuard();
     }
-
-    UpdateCurrentTimestamp();
 
     // Register callbacks to be notified when event notification existence changes.
     // This allows us to optimise the Send() path by skipping NotifyEvent() when no handlers are registered.
@@ -109,13 +105,6 @@ void SkeletonEventCommon::EmplaceTransactionLogRegistrationGuard()
 void SkeletonEventCommon::EmplaceTypeErasedSamplePtrsGuard()
 {
     score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
-}
-
-void SkeletonEventCommon::UpdateCurrentTimestamp()
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
-                                                "EventDataControlComposite must be initialized.");
-    current_timestamp_ref_ = event_data_control_composite_ref_.value().GetLatestTimestamp();
 }
 
 void SkeletonEventCommon::SetQmNotificationsRegistered(bool value)

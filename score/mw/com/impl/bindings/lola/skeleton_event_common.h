@@ -51,7 +51,6 @@ class SkeletonEventCommon
     SkeletonEventCommon(Skeleton& parent,
                         const ElementFqId& event_fqn,
                         std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
-                        EventSlotStatus::EventTimeStamp& current_timestamp_ref,
                         impl::tracing::SkeletonEventTracingData tracing_data = {}) noexcept;
 
     SkeletonEventCommon(const SkeletonEventCommon&) = delete;
@@ -86,8 +85,7 @@ class SkeletonEventCommon
     Skeleton& parent_;
     const ElementFqId event_fqn_;
     std::optional<EventDataControlComposite<>>&
-        event_data_control_composite_ref_;                    // Reference to the optional in derived class
-    EventSlotStatus::EventTimeStamp& current_timestamp_ref_;  // Reference to the timestamp in derived class
+        event_data_control_composite_ref_;  // Reference to the optional in derived class
     impl::tracing::SkeletonEventTracingData tracing_data_;
 
     /// \brief Atomic flags indicating whether any receive handlers are currently registered for this event
@@ -110,7 +108,6 @@ class SkeletonEventCommon
 
     void EmplaceTransactionLogRegistrationGuard();
     void EmplaceTypeErasedSamplePtrsGuard();
-    void UpdateCurrentTimestamp();
     void SetQmNotificationsRegistered(bool value);
     void SetAsilBNotificationsRegistered(bool value);
     void ResetGuards() noexcept;

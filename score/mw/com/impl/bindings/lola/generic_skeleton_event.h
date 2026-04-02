@@ -60,7 +60,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     DataTypeMetaInfo size_info_;
     const SkeletonEventProperties event_properties_;
     std::optional<EventDataControlComposite<>> control_{};
-    EventSlotStatus::EventTimeStamp current_timestamp_{1U};
+    EventSlotStatus::EventTimeStamp current_timestamp_{EventSlotStatus::InvalidTimestamp};
     std::uint8_t* data_storage_{nullptr};
     bool qm_disconnect_{false};
 

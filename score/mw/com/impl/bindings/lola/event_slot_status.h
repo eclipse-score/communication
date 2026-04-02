@@ -47,6 +47,12 @@ class EventSlotStatus final
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
     static constexpr EventTimeStamp TIMESTAMP_MAX = std::numeric_limits<EventTimeStamp>::max();
 
+    /// \brief Timestamp value indicating that a slot is invalid / was never written.
+    static constexpr EventTimeStamp InvalidTimestamp{0U};
+
+    /// \brief First valid timestamp value that can appear in shared memory.
+    static constexpr EventTimeStamp FirstValidTimestamp{1U};
+
     /// \brief If default constructed, SlotStatus is invalid
     EventSlotStatus() noexcept = default;
     explicit EventSlotStatus(const value_type init_val) noexcept;
