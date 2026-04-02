@@ -958,6 +958,7 @@ cc_test(
     deps = [
         ":impl",
         ":runtime",
+        "@score_baselibs://score/utils/meyer_singleton/test:single_test_per_process_fixture",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_logging//score/mw/log",
