@@ -11,11 +11,18 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+// This demo app writing and reading tire pressure data using producer and consumer respectively.
+// It is demonstrating the composition of consumer and producer in one struct,
+// but they can be used separately as well.
+// The example is using Lola runtime, but it can be used with any runtime by changing the runtime initialization part.
+// Note: The example is using unwrap and panic in some places for simplicity,
+// but it is recommended to handle errors properly in production code.
+
 use clap::Parser;
 use std::path::PathBuf;
 
 use com_api::{
-    Builder, Error, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
+    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
     OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
@@ -88,7 +95,7 @@ impl<R: Runtime> VehicleMonitor<R> {
         let mut sample_buf = SampleContainer::new(3);
 
         match self.tire_subscriber.try_receive(&mut sample_buf, 1) {
-            Ok(0) => Err(Error::Fail),
+            Ok(0) => Ok("No tire data received".to_string()),
             Ok(x) => {
                 let sample = sample_buf.pop_front().unwrap();
                 Ok(format!("{} samples received: sample[0] = {:?}", x, *sample))
@@ -119,16 +126,20 @@ impl<R: Runtime> VehicleMonitor<R> {
 fn create_consumer<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleConsumer<R> {
     let consumer_discovery =
         runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
-    let available_service_instances = consumer_discovery.get_available_instances().unwrap();
+    let available_service_instances = consumer_discovery
+        .get_available_instances()
+        .expect("Failed to get available service instances");
 
     // Select service instance at specific handle_index
     let handle_index = 0; // or any index you need from vector of instances
     let consumer_builder = available_service_instances
         .into_iter()
         .nth(handle_index)
-        .unwrap();
+        .expect("Failed to get consumer builder at specified handle index");
 
-    consumer_builder.build().unwrap()
+    consumer_builder
+        .build()
+        .expect("Failed to build consumer instance")
 }
 
 #[allow(dead_code)]
@@ -142,16 +153,16 @@ async fn create_consumer_async<R: Runtime>(
     let available_service_instances = consumer_discovery
         .get_available_instances_async()
         .await
-        .unwrap();
+        .expect("Failed to get available service instances asynchronously");
 
     // Select service instance at specific handle_index
     let handle_index = 0; // or any index you need from vector of instances
     let consumer_builder = available_service_instances
         .into_iter()
         .nth(handle_index)
-        .unwrap();
+        .expect("Failed to get consumer builder at specified handle index");
 
-    consumer_builder.build().unwrap()
+    consumer_builder.build().expect("Failed to build consumer instance")
 }
 
 // Create a producer for the specified service identifier
@@ -160,8 +171,10 @@ fn create_producer<R: Runtime>(
     service_id: InstanceSpecifier,
 ) -> VehicleOfferedProducer<R> {
     let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
-    let producer = producer_builder.build().unwrap();
-    producer.offer().unwrap()
+    let producer = producer_builder
+        .build()
+        .expect("Failed to build producer instance");
+    producer.offer().expect("Failed to offer producer instance")
 }
 
 // Run the example with the specified runtime
@@ -176,12 +189,22 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     let tire_pressure = 5.0;
     println!("Setting tire pressure to {tire_pressure}");
     for i in 0..5 {
-        monitor
-            .write_tire_data(Tire {
-                pressure: tire_pressure + i as f32,
-            })
-            .unwrap();
-        let tire_data = monitor.read_tire_data().unwrap();
+        match monitor.write_tire_data(Tire {
+            pressure: tire_pressure + i as f32,
+        }) {
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("Failed to write tire data: {:?}", e);
+                continue;
+            }
+        }
+        let tire_data = match monitor.read_tire_data() {
+            Ok(data) => data,
+            Err(e) => {
+                eprintln!("Failed to read tire data: {:?}", e);
+                continue;
+            }
+        };
         println!("{tire_data}");
     }
     //unoffer returns producer back, so if needed it can be used further
@@ -338,15 +361,21 @@ mod test {
         offered_producer: VehicleOfferedProducer<R>,
     ) -> VehicleOfferedProducer<R> {
         for i in 0..10 {
-            let uninit_sample = offered_producer.left_tire.allocate().unwrap();
+            let uninit_sample = match offered_producer.left_tire.allocate() {
+                Ok(sample) => sample,
+                Err(e) => {
+                    eprintln!("Failed to allocate sample: {:?}", e);
+                    continue;
+                }
+            };
             let sample = uninit_sample.write(Tire {
                 pressure: 1.0 + i as f32,
             });
-            sample.send().unwrap();
-            println!(
-                "[SENDER] Sent sample with pressure: {:.2} psi",
-                1.0 + i as f32
-            );
+            match sample.send() {
+                Ok(_) => (),
+                Err(e) => eprintln!("Failed to send sample: {:?}", e),
+            }
+            println!("Sent sample with pressure: {}", 1.0 + i as f32);
             tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
         }
         offered_producer

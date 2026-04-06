@@ -1062,7 +1062,6 @@ EventDataControlComposite<> Skeleton::CreateEventControlComposite(
         // coverity[autosar_cpp14_a3_8_1_violation]
         control_asil_result = &iterator.first->second.data_control;
     }
-    // clang-format off
     // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
     // coverity[autosar_cpp14_m7_5_1_violation]
     // coverity[autosar_cpp14_m7_5_2_violation]
@@ -1070,8 +1069,7 @@ EventDataControlComposite<> Skeleton::CreateEventControlComposite(
     return EventDataControlComposite{&control_qm.first->second.data_control, control_asil_result};
 }
 
-std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>>
-Skeleton::CreateEventDataFromOpenedSharedMemory(
+std::pair<void*, EventDataControlComposite<>> Skeleton::CreateEventDataFromOpenedSharedMemory(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     size_t sample_size,
@@ -1082,11 +1080,11 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     if (sample_alignment > alignof(std::max_align_t))
     {
         score::mw::log::LogFatal("Skeleton")
-            << "Requested sample alignment (" << sample_alignment
-            << ") exceeds max_align_t (" << alignof(std::max_align_t)
-            << "). Safe shared memory layout cannot be guaranteed.";
+            << "Requested sample alignment (" << sample_alignment << ") exceeds max_align_t ("
+            << alignof(std::max_align_t) << "). Safe shared memory layout cannot be guaranteed.";
 
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_alignment <= alignof(std::max_align_t),"Requested sample alignment exceeds maximum supported alignment.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(sample_alignment <= alignof(std::max_align_t),
+                                                    "Requested sample alignment exceeds maximum supported alignment.");
     }
 
     // Calculate the aligned size for a single sample to ensure proper padding between slots
@@ -1097,30 +1095,28 @@ Skeleton::CreateEventDataFromOpenedSharedMemory(
     const size_t num_max_align_elements =
         (total_data_size_bytes + sizeof(std::max_align_t) - 1) / sizeof(std::max_align_t);
 
-    auto* data_storage = storage_resource_->construct<EventDataStorage<std::max_align_t>>(
-        num_max_align_elements,
-        memory::shared::PolymorphicOffsetPtrAllocator<std::max_align_t>(*storage_resource_));
+    auto* const data_storage = storage_resource_->construct<EventDataStorage<std::max_align_t>>(
+        num_max_align_elements, memory::shared::PolymorphicOffsetPtrAllocator<std::max_align_t>(*storage_resource_));
 
-    auto inserted_data_slots = storage_->events_.emplace(std::piecewise_construct,
-                                                         std::forward_as_tuple(element_fq_id),
-                                                         std::forward_as_tuple(data_storage));
+    auto inserted_data_slots = storage_->events_.emplace(
+        std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(data_storage));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_data_slots.second,
-                                               "Couldn't register/emplace event-storage in data-section.");
-
+                                                "Couldn't register/emplace event-storage in data-section.");
 
     const DataTypeMetaInfo sample_meta_info{sample_size, static_cast<std::uint8_t>(sample_alignment)};
     void* const event_data_raw_array = data_storage->data();
 
-    auto inserted_meta_info = storage_->events_metainfo_.emplace(
-        std::piecewise_construct,
-        std::forward_as_tuple(element_fq_id),
-        std::forward_as_tuple(sample_meta_info, event_data_raw_array));
+    auto inserted_meta_info =
+        storage_->events_metainfo_.emplace(std::piecewise_construct,
+                                           std::forward_as_tuple(element_fq_id),
+                                           std::forward_as_tuple(sample_meta_info, event_data_raw_array));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
-                                               "Couldn't register/emplace event-meta-info in data-section.");
+                                                "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {score::memory::shared::OffsetPtr<void>(data_storage), CreateEventControlComposite(element_fq_id, element_properties)};
+    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
 }
-std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>> Skeleton::RegisterGeneric(
+
+std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
     const ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties,
     const size_t sample_size,
@@ -1145,11 +1141,8 @@ std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite<>> S
 
         return {data_storage, control_composite};
     }
-    else
-    {
-        return CreateEventDataFromOpenedSharedMemory(
-            element_fq_id, element_properties, sample_size, sample_alignment);
-    }
+
+    return CreateEventDataFromOpenedSharedMemory(element_fq_id, element_properties, sample_size, sample_alignment);
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,

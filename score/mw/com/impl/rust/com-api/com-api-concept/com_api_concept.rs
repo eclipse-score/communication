@@ -48,6 +48,7 @@
 //! - Structures
 //! - Tuples
 
+use crate::error::*;
 use crate::Reloc;
 pub use com_api_concept_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
@@ -55,16 +56,6 @@ use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 use std::path::Path;
-
-/// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
-#[derive(Debug)]
-pub enum Error {
-    /// TODO: To be replaced, dummy value for "something went wrong"
-    Fail,
-    Timeout,
-    AllocateFailed,
-    SubscribeFailed,
-}
 
 /// Result type alias with `std::result::Result` using `com_api::Error` as error type
 pub type Result<T> = core::result::Result<T, Error>;
@@ -270,7 +261,7 @@ impl InstanceSpecifier {
     /// an `Error` on failure.
     ///
     /// # Errors
-    /// Returns `Error::Fail` if the provided string does not conform to the required format.
+    /// Returns `Error::InstanceSpecifierInvalid` if the provided string does not conform to the required format.
     pub fn new(service_name: impl AsRef<str>) -> Result<InstanceSpecifier> {
         let service_name = service_name.as_ref();
         if Self::check_str(service_name) {
@@ -278,7 +269,7 @@ impl InstanceSpecifier {
                 specifier: service_name.to_string(),
             })
         } else {
-            Err(Error::Fail)
+            Err(Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))
         }
     }
 }
@@ -712,11 +703,11 @@ impl<S> SampleContainer<S> {
     /// A `Result` indicating success or failure.
     ///
     /// # Errors
-    /// Returns 'Error' if container is already full.
+    /// Returns 'Error::AllocateError' if container is already full.
     pub fn push_back(&mut self, new: S) -> Result<()> {
-        self.inner
-            .push_back(new)
-            .map_err(|_| Error::AllocateFailed)?;
+        self.inner.push_back(new).map_err(|_| {
+            Error::AllocateError(AllocationFailureReason::OutOfMemory)
+        })?;
         Ok(())
     }
 

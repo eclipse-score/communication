@@ -131,7 +131,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     class ResourceManagerConnection : private iofunc_ocb_t
     {
       public:
-        ResourceManagerConnection() noexcept : iofunc_ocb_t{}, rcvid_{}, select_event_{} {}
+        ResourceManagerConnection() noexcept : iofunc_ocb_t{}, rcvid_{}, select_event_{}, ping_event_{} {}
 
         virtual ~ResourceManagerConnection() = default;
 
@@ -148,6 +148,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
       protected:
         rcvid_t rcvid_;
         sigevent select_event_;
+        sigevent ping_event_;
 
       private:
         // Suppress "AUTOSAR C++14 A11-3-1" rule finding: "Friend declarations shall not be used."
@@ -324,7 +325,7 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     struct PollEndpoint
     {
         PosixEndpointEntry* endpoint;
-        std::uint32_t nonce;
+        std::uint16_t nonce;  // incremented each time the endpoint slot is reused, to filter out stale events
     };
 
     score::cpp::pmr::vector<PollEndpoint> poll_endpoints_;

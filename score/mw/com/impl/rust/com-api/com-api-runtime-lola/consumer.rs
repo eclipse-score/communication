@@ -34,6 +34,7 @@ use core::future::Future;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
+use core::panic;
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
 use std::pin::Pin;
@@ -41,8 +42,9 @@ use std::sync::atomic::{AtomicBool, AtomicUsize};
 use std::sync::Arc;
 
 use com_api_concept::{
-    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, Error, InstanceSpecifier,
-    Interface, Result, SampleContainer, ServiceDiscovery, Subscriber, Subscription,
+    Builder, CommData, Consumer, ConsumerBuilder, ConsumerDescriptor, ConsumerFailedReason, Error,
+    EventFailedReason, InstanceSpecifier, Interface, ReceiveFailedReason, Result, SampleContainer,
+    ServiceDiscovery, ServiceFailedReason, Subscriber, Subscription,
 };
 
 use bridge_ffi_rs::*;
@@ -223,11 +225,16 @@ impl std::fmt::Debug for NativeProxyBase {
 }
 
 impl NativeProxyBase {
-    pub fn new(interface_id: &str, handle: &HandleType) -> Self {
+    pub fn new(interface_id: &str, handle: &HandleType) -> Result<Self> {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id
         let proxy = unsafe { bridge_ffi_rs::create_proxy(interface_id, handle) };
-        Self { proxy }
+        if proxy.is_null() {
+            return Err(Error::ConsumerError(
+                ConsumerFailedReason::ProxyCreationFailed,
+            ));
+        }
+        Ok(Self { proxy })
     }
 }
 
@@ -249,12 +256,15 @@ pub struct NativeProxyEventBase {
 unsafe impl Send for NativeProxyEventBase {}
 
 impl NativeProxyEventBase {
-    pub fn new(proxy: *mut ProxyBase, interface_id: &str, identifier: &str) -> Self {
+    pub fn new(proxy: *mut ProxyBase, interface_id: &str, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
         let proxy_event_ptr =
             unsafe { bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
-        Self { proxy_event_ptr }
+        if proxy_event_ptr.is_null() {
+            return Err(Error::EventError(EventFailedReason::EventCreationFailed));
+        }
+        Ok(Self { proxy_event_ptr })
     }
 
     /// Provides access to the underlying proxy event base.
@@ -286,8 +296,10 @@ pub struct SubscribableImpl<T> {
 impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(identifier: &'static str, instance_info: LolaConsumerInfo) -> Result<Self> {
-        let handle = instance_info.get_handle().ok_or(Error::Fail)?;
-        let native_proxy = NativeProxyBase::new(instance_info.interface_id, handle);
+        let handle = instance_info.get_handle().ok_or(Error::ConsumerError(
+            ConsumerFailedReason::ServiceHandleNotFound,
+        ))?;
+        let native_proxy = NativeProxyBase::new(instance_info.interface_id, handle)?;
         let proxy_instance = ProxyInstanceManager(Arc::new(native_proxy));
         Ok(Self {
             identifier,
@@ -302,8 +314,7 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             self.proxy_instance.0.proxy,
             self.instance_info.interface_id,
             self.identifier,
-        );
-
+        )?;
         //SAFETY: It is safe to subscribe to event because event_instance is valid
         // which was obtained from valid proxy instance
         let status = unsafe {
@@ -313,7 +324,7 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             )
         };
         if !status {
-            return Err(Error::Fail);
+            return Err(Error::EventError(EventFailedReason::EventNotAvailable));
         }
         // Store in SubscriberImpl with event, max_num_samples
         Ok(SubscriberImpl {
@@ -511,7 +522,12 @@ where
     ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
         async move {
             if max_samples > self.max_num_samples || new_samples > self.max_num_samples {
-                return Err(Error::Fail);
+                return Err(Error::ReceiveError(
+                    ReceiveFailedReason::SampleCountOutOfBounds {
+                        max: self.max_num_samples,
+                        requested: max_samples.max(new_samples),
+                    },
+                ));
             }
             // Get the event guard to ensure no concurrent receive calls
             // on the same subscriber instance.
@@ -522,7 +538,9 @@ where
                 .load(std::sync::atomic::Ordering::Relaxed)
             {
                 if let Err(_e) = self.init_async_receive(&mut event_guard) {
-                    return Err(Error::Fail);
+                    return Err(Error::ReceiveError(
+                        ReceiveFailedReason::InitializationFailed,
+                    ));
                 }
                 self.async_init_status
                     .store(true, std::sync::atomic::Ordering::Relaxed);
@@ -582,10 +600,10 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     self.scratch = Some(scratch);
                     result
                 } else {
-                    Err(Error::Fail)
+                    Err(Error::ReceiveError(ReceiveFailedReason::ReceiveError))
                 }
             } else {
-                Err(Error::Fail)
+                Err(Error::ReceiveError(ReceiveFailedReason::BufferUnavailable))
             }
         };
         match samples_received {
@@ -597,7 +615,10 @@ impl<'a, T: CommData + Debug> Future for ReceiveFuture<'a, T> {
                     //event_guard will be dropped here, allowing new receive calls to access the
                     // proxy event
                     self.event_guard = None;
-                    return Poll::Ready(self.scratch.take().ok_or(Error::Fail));
+                    return Poll::Ready(Ok(self
+                        .scratch
+                        .take()
+                        .expect("SampleContainer is not available when returning Future result")));
                 }
                 // Have some samples but not enough yet, wait for more via waker
                 Poll::Pending
@@ -658,12 +679,13 @@ where
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
+        //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
             mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
-                .map_err(|_| Error::Fail)?;
+                .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))?;
 
-        let service_handle =
-            mw_com::proxy::find_service(instance_specifier_lola).map_err(|_| Error::Fail)?;
+        let service_handle = mw_com::proxy::find_service(instance_specifier_lola)
+            .map_err(|_| Error::ServiceError(ServiceFailedReason::ServiceNotFound))?;
 
         let service_handle_arc = Arc::new(service_handle);
         let available_instances = (0..service_handle_arc.len())
@@ -696,9 +718,10 @@ where
         let instance_specifier = self.instance_specifier.clone();
 
         // Convert to Lola InstanceSpecifier early
+        //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_lola =
             mw_com::InstanceSpecifier::try_from(instance_specifier.as_ref())
-                .map_err(|_| Error::Fail);
+                .map_err(|_| Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid));
 
         let waker_storage = Arc::new(futures::task::AtomicWaker::new());
 
@@ -740,7 +763,9 @@ where
             // stop_find_service is always called in Drop.
             let raw_handle = unsafe { bridge_ffi_rs::start_find_service(&fat_ptr, spec) };
             if raw_handle.is_null() {
-                Err(Error::Fail)
+                Err(Error::ServiceError(
+                    ServiceFailedReason::FailedToStartDiscovery,
+                ))
             } else {
                 // Single authoritative source of find_handle — return value only.
                 // Callback's find_handle argument is ignored to prevent double-write.
@@ -856,7 +881,10 @@ impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
         //if InstanceSpecifier::ANY support enable by lola
         //then this API should get InstanceSpecifier from FFI Call
-        todo!()
+        panic!(
+            "InstanceSpecifier::ANY is not supported in LolaRuntimeImpl,
+        Please use FindServiceSpecifier::Specific with a valid instance specifier."
+        );
     }
 }
 
@@ -877,7 +905,12 @@ fn try_receive_samples<T: CommData + Debug>(
     max_samples: usize,
 ) -> Result<usize> {
     if max_samples > max_num_samples {
-        return Err(Error::Fail);
+        return Err(Error::ReceiveError(
+            ReceiveFailedReason::SampleCountOutOfBounds {
+                max: max_num_samples,
+                requested: max_samples,
+            },
+        ));
     }
     // Create a callback that will be called by the C++ side for each new sample arrival
     let mut callback = create_sample_callback(scratch, max_samples);
@@ -897,7 +930,12 @@ fn try_receive_samples<T: CommData + Debug>(
         )
     };
     if count > max_num_samples as u32 {
-        return Err(Error::Fail);
+        return Err(Error::ReceiveError(
+            ReceiveFailedReason::SampleCountOutOfBounds {
+                max: max_num_samples,
+                requested: count as usize,
+            },
+        ));
     }
     Ok(count as usize)
 }
