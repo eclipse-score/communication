@@ -1,0 +1,97 @@
+{
+    "serviceTypes": [
+        {
+            "serviceTypeName": "/test/methods/methods_test_resources/MultiMethodProvider",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "bindings": [
+                {
+                    "binding": "SHM",
+                    "serviceId": 3000,
+                    "methods": [
+                        {
+                            "methodName": "method0",
+                            "methodId": 1
+                        },
+                        {
+                            "methodName": "method1",
+                            "methodId": 2
+                        },
+                        {
+                            "methodName": "method2",
+                            "methodId": 3
+                        },
+                        {
+                            "methodName": "method3",
+                            "methodId": 4
+                        },
+                        {
+                            "methodName": "method4",
+                            "methodId": 5
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "methods_test_resources/MultiMethodProvider",
+            "serviceTypeName": "/test/methods/methods_test_resources/MultiMethodProvider",
+            "version": {
+                "major": 1,
+                "minor": 0
+            },
+            "instances": [
+                {
+                    "instanceId": 1,
+                    "asil-level": "QM",
+                    "binding": "SHM",
+                    "methods": [
+                        {
+                            "methodName": "method0",
+                            "queueSize": 5
+                        },
+                        {
+                            "methodName": "method1",
+                            "queueSize": 5
+                        },
+                        {
+                            "methodName": "method2",
+                            "queueSize": 5
+                        },
+                        {
+                            "methodName": "method3",
+                            "queueSize": 5
+                        },
+                        {
+                            "methodName": "method4",
+                            "queueSize": 5
+                        }
+                    ],
+                    "allowedConsumer": {
+                        "QM": [
+                            0
+                        ],
+                        "B": [
+                            0
+                        ]
+                    },
+                    "allowedProvider": {
+                        "QM": [
+                            0
+                        ],
+                        "B": [
+                            0
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "global": {
+        "asil-level": "QM"
+    }
+}
