@@ -667,6 +667,11 @@ class DummyField : public SkeletonFieldBase
     {
         return ResultBlank{};
     };
+
+    bool IsSetHandlerRegistered() const noexcept override
+    {
+        return false;
+    }
 };
 const auto kServiceIdentifier = make_ServiceIdentifierType("foo", 13, 37);
 const LolaServiceInstanceId kLolaInstanceId{23U};

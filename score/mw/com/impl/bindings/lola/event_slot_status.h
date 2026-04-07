@@ -45,7 +45,7 @@ class EventSlotStatus final
     // variables being given values that are not subsequently used"
     // Variable is used in EventDataControlImpl.
     // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
-    static constexpr EventTimeStamp TIMESTSCORE_LANGUAGE_FUTURECPP_MAX = std::numeric_limits<EventTimeStamp>::max();
+    static constexpr EventTimeStamp TIMESTAMP_MAX = std::numeric_limits<EventTimeStamp>::max();
 
     /// \brief If default constructed, SlotStatus is invalid
     EventSlotStatus() noexcept = default;

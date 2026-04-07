@@ -72,7 +72,7 @@ bool ProxyContainer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier,
             return;
         }
         handle_ = std::make_unique<typename Proxy::HandleType>(service_handle_container[0]);
-        Proxy::StopFindService(find_service_handle);
+        score::cpp::ignore = Proxy::StopFindService(find_service_handle);
         callback_called = true;
         proxy_creation_condition_variable_.notify_all();
     };

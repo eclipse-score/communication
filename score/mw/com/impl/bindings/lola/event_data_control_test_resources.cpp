@@ -18,7 +18,7 @@ namespace score::mw::com::impl::lola
 {
 
 EventDataControlCompositeAttorney::EventDataControlCompositeAttorney(
-    EventDataControlComposite& event_data_control_composite) noexcept
+    EventDataControlComposite<>& event_data_control_composite) noexcept
     : event_data_control_composite_{event_data_control_composite}
 {
 }

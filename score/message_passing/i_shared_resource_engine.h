@@ -76,6 +76,7 @@ class ISharedResourceEngine
         std::int32_t fd{-1};
         std::uint32_t max_receive_size{0};
         EndpointCallback input{};       // Called when fd is ready to read
+        EndpointCallback ping{};        // Called when a peer sends a wakeup event without payload (if supported)
         EndpointCallback output{};      // TODO: reserved for future use
         EndpointCallback disconnect{};  // called when endpoint is deactivated by UnregisterPosixEndpoint()
                                         // or CleanUpOwner()

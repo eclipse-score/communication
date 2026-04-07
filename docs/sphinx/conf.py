@@ -118,7 +118,7 @@ html_css_files = [
 # Doxygen XML output path (provided by sphinx_docs_library)
 # Path is relative to each .rst file location
 breathe_projects = {
-    "com": "../../design/doxygen_build/xml",
+    "com": "../../score/mw/com/design/doxygen_build/xml",
 }
 
 # Set the default project for breathe directives

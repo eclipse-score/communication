@@ -58,6 +58,18 @@ const memory::shared::ISharedMemoryResource::FileDescriptor kDummyShmObjectFileD
 class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
 {
   protected:
+    SkeletonTestMockedSharedMemoryFixture() : SkeletonMockedMemoryFixture()
+    {
+        // Default behaviour for get the usable base addresses of the mocked memory resources using the constructed
+        // ServiceDataControl / Storage created above.
+        ON_CALL(*control_qm_shared_memory_resource_mock_, getUsableBaseAddress())
+            .WillByDefault(Return(static_cast<void*>(&existing_service_data_control_qm_)));
+        ON_CALL(*control_asil_b_shared_memory_resource_mock_, getUsableBaseAddress())
+            .WillByDefault(Return(static_cast<void*>(&existing_service_data_control_b_)));
+        ON_CALL(*data_shared_memory_resource_mock_, getUsableBaseAddress())
+            .WillByDefault(Return(static_cast<void*>(&existing_service_data_storage_)));
+    }
+
     const LolaServiceTypeDeployment* GetLolaServiceTypeDeployment(const ServiceTypeDeployment& service_type_deployment)
     {
         const auto* const lola_service_type_deployment =
@@ -78,6 +90,13 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
 
         return *this;
     }
+
+    ServiceDataControl existing_service_data_control_qm_{
+        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_QM)};
+    ServiceDataControl existing_service_data_control_b_{
+        CreateServiceDataControlWithEvent(test::kDummyElementFqId, QualityType::kASIL_B)};
+    ServiceDataStorage existing_service_data_storage_{
+        CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId)};
 
     const ElementFqId fooo_method_fq_id_{10U, test::kFooMethodId, 3U, ServiceElementType::METHOD};
     const ElementFqId dumb_method_fq_id_{1U, test::kDumbMethodId, 2U, ServiceElementType::METHOD};
@@ -364,11 +383,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningServiceUsageMarker
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemoryIfFLockingServiceUsageMarkerFilefails)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT(service_data_control_qm_ != nullptr);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT(service_data_control_asil_b_ != nullptr);
-    auto& event_control_qm = GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_);
+    auto& event_control_qm =
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
     auto& event_control_asil_b =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_asil_b_);
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_);
 
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
     InitialiseSkeleton(GetValidASILInstanceIdentifier());
@@ -461,7 +479,7 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillUpdateThePidInTheDataSegment
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // and the ServiceDataStorage contains the PID returned by the lola runtime
-    EXPECT_EQ(service_data_storage_->skeleton_pid_, pid);
+    EXPECT_EQ(existing_service_data_storage_.skeleton_pid_, pid);
 }
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferWillCallRegisterShmObjectTraceCallbackWhenOpeningSharedMemory)
@@ -812,11 +830,12 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
 
     // Then the Register call should return pointers to the opened control and data sections in the opened shared
     // memory region
-    auto& event_control_qm = GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_);
+    auto& event_control_qm =
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
     auto& event_control_asil_b =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_asil_b_);
-    auto& event_data_storage =
-        GetEventStorageFromServiceDataStorage<test::TestSampleType>(test::kDummyElementFqId, *service_data_storage_);
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_);
+    auto& event_data_storage = GetEventStorageFromServiceDataStorage<test::TestSampleType>(
+        test::kDummyElementFqId, existing_service_data_storage_);
 
     EXPECT_EQ(&event_data_control_composite.GetQmEventDataControl(), &event_control_qm.data_control);
     ASSERT_TRUE(event_data_control_composite.GetAsilBEventDataControl().has_value());
@@ -828,7 +847,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledIfShmRegionWasO
 {
     // Given a QM ServiceDataControl which contains a TransactionLogSet with valid transactions
     auto& event_data_control_qm =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_).data_control;
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_).data_control;
     InsertSkeletonTransactionLogWithValidTransactions(event_data_control_qm);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
 
@@ -867,7 +886,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillOnlyBeCalledOnQmControl
 
     // Given an Asil B ServiceDataControl which contains a TransactionLogSet with valid transactions
     auto& event_data_control_asil_b =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_asil_b_).data_control;
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_).data_control;
     InsertSkeletonTransactionLogWithValidTransactions(event_data_control_asil_b);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_asil_b));
 
@@ -906,7 +925,7 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
 
     // Given a QM ServiceDataControl which contains a TransactionLogSet with invalid transactions
     auto& event_data_control_qm =
-        GetEventControlFromServiceDataControl(test::kDummyElementFqId, *service_data_control_qm_).data_control;
+        GetEventControlFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_).data_control;
     InsertSkeletonTransactionLogWithInvalidTransactions(event_data_control_qm);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(event_data_control_qm));
 
@@ -1156,11 +1175,11 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
     ASSERT_TRUE(event_foo_meta_info_ptr.has_value());
     ASSERT_TRUE(event_dumb_meta_info_ptr.has_value());
     // and they have the expected properties
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.size_of_, sizeof(std::uint8_t));
-    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.align_of_, alignof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.size, sizeof(std::uint8_t));
+    ASSERT_EQ(event_foo_meta_info_ptr->data_type_info_.alignment, alignof(std::uint8_t));
 
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.size_of_, sizeof(VeryComplexType));
-    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.align_of_, alignof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.size, sizeof(VeryComplexType));
+    ASSERT_EQ(event_dumb_meta_info_ptr->data_type_info_.alignment, alignof(VeryComplexType));
 
     const auto GetEventSlotsArraySize = [](const std::size_t sample_size,
                                            const std::size_t sample_alignment,
@@ -1170,13 +1189,13 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
         return aligned_size * number_of_sample_slots;
     };
 
-    const auto foo_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size_of_,
-                                                             event_foo_meta_info_ptr->data_type_info_.align_of_,
+    const auto foo_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
+                                                             event_foo_meta_info_ptr->data_type_info_.alignment,
                                                              test::kDefaultEventProperties.number_of_slots);
     ASSERT_EQ(event_foo_meta_info_ptr->event_slots_raw_array_.get(foo_event_slots_size), foo_event_data_storage);
 
-    const auto dumb_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size_of_,
-                                                              event_foo_meta_info_ptr->data_type_info_.align_of_,
+    const auto dumb_event_slots_size = GetEventSlotsArraySize(event_foo_meta_info_ptr->data_type_info_.size,
+                                                              event_foo_meta_info_ptr->data_type_info_.alignment,
                                                               test::kDefaultEventProperties.number_of_slots);
     ASSERT_EQ(event_dumb_meta_info_ptr->event_slots_raw_array_.get(dumb_event_slots_size), dumb_event_data_storage);
 

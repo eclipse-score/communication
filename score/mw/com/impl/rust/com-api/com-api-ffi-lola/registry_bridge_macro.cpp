@@ -430,7 +430,7 @@ void mw_com_proxy_clear_event_receive_handler(ProxyEventBase* event_ptr)
     {
         return;
     }
-    event_ptr->UnsetReceiveHandler();
+    score::cpp::ignore = event_ptr->UnsetReceiveHandler();
 }
 
 /// \brief Start asynchronous service discovery with a callback

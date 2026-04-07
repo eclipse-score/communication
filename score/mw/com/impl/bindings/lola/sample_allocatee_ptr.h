@@ -76,7 +76,7 @@ class SampleAllocateePtr
     /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_index index of event slot
     explicit SampleAllocateePtr(pointer ptr,
-                                const EventDataControlComposite& event_data_ctrl,
+                                const EventDataControlComposite<>& event_data_ctrl,
                                 ControlSlotCompositeIndicator slot_indicator) noexcept
         : managed_object_{ptr}, event_slot_indicator_{slot_indicator}, event_data_control_{event_data_ctrl}
     {
@@ -186,7 +186,7 @@ class SampleAllocateePtr
 
     pointer managed_object_;
     ControlSlotCompositeIndicator event_slot_indicator_;
-    std::optional<EventDataControlComposite> event_data_control_;
+    std::optional<EventDataControlComposite<>> event_data_control_;
 };
 
 /// \brief Specializes the std::swap algorithm for SampleAllocateePtr. Swaps the contents of lhs and rhs. Calls
@@ -204,7 +204,7 @@ class SampleAllocateePtrView
   public:
     explicit SampleAllocateePtrView(const SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    const std::optional<EventDataControlComposite>& GetEventDataControlComposite() const noexcept
+    const std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() const noexcept
     {
         return ptr_.event_data_control_;
     }
@@ -225,7 +225,7 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    const std::optional<EventDataControlComposite>& GetEventDataControlComposite() const noexcept
+    const std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() const noexcept
     {
         return ptr_.event_data_control_;
     }

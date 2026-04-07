@@ -100,7 +100,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
             .WillByDefault(Return(ByMove(std::move(client_connection_mock_facade))));
 
         ON_CALL(client_connection_mock_, SendWaitReply(_, _))
-            .WillByDefault(Return(CreateSerializedMethodReply(score::cpp::blank{}, method_reply_buffer_)));
+            .WillByDefault(Return(CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_)));
         ON_CALL(client_connection_mock_, GetState()).WillByDefault(testing::Return(IClientConnection::State::kReady));
 
         ON_CALL(*unistd_mock_, getpid()).WillByDefault(Return(kLocalPid));
@@ -110,7 +110,7 @@ class MessagePassingServiceInstanceMethodsFixture : public ::testing::Test
             executor_task_ = std::forward<decltype(task)>(task);
         });
 
-        ON_CALL(mock_subscribe_method_handler_, Call(_, _, _)).WillByDefault(Return(score::cpp::blank{}));
+        ON_CALL(mock_subscribe_method_handler_, Call(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
     }
 
     MessagePassingServiceInstanceMethodsFixture& GivenAMessagePassingServiceInstance(
@@ -352,7 +352,7 @@ TEST_F(MessagePassingServiceInstanceRemoteCallMethodTest, CallingWithOtherProces
         EXPECT_EQ(actual_payload.queue_position, kQueuePosition);
         EXPECT_EQ(actual_payload.proxy_method_instance_identifier, kProxyMethodInstanceIdentifier);
 
-        return CreateSerializedMethodReply(score::cpp::blank{}, method_reply_buffer_);
+        return CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_);
     })));
 
     // and expecting that the registered method call handler will NOT be called (which would happen when the client is
@@ -574,7 +574,7 @@ TEST_F(MessagePassingServiceInstanceRemoteSubscribeMethodTest, CallingWithOtherP
         EXPECT_EQ(actual_payload.skeleton_instance_identifier, kSkeletonInstanceIdentifier);
         EXPECT_EQ(actual_payload.proxy_instance_identifier, kProxyInstanceIdentifier);
 
-        return CreateSerializedMethodReply(score::cpp::blank{}, method_reply_buffer_);
+        return CreateSerializedMethodReply(score::ResultBlank{}, method_reply_buffer_);
     })));
 
     // and expecting that the registered method subscribe handler will NOT be called (which would happen when the client

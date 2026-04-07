@@ -13,7 +13,7 @@ This directory contains a custom Bazel rule for generating Sphinx RST documentat
 ## Usage
 
 ```python
-load("//score/mw/com/doc/sphinx/utils:defs.bzl", "generate_api_rst")
+load("//docs/sphinx/utils:defs.bzl", "generate_api_rst")
 
 generate_api_rst(
     name = "api_rst_files",

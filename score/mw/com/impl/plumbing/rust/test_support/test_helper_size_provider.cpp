@@ -86,8 +86,8 @@ SizeInfo TestSizeProvider::GetControlSlotCompositeIndicatorSize() noexcept
 
 SizeInfo TestSizeProvider::GetEventDataControlCompositeSize() noexcept
 {
-    return {sizeof(score::mw::com::impl::lola::EventDataControlComposite),
-            alignof(score::mw::com::impl::lola::EventDataControlComposite)};
+    return {sizeof(score::mw::com::impl::lola::EventDataControlComposite<>),
+            alignof(score::mw::com::impl::lola::EventDataControlComposite<>)};
 }
 
 SizeInfo TestSizeProvider::GetStdUniquePtrSize() noexcept

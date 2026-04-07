@@ -14,8 +14,6 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_H
 
 #include "score/mw/com/impl/bindings/lola/event_control.h"
-#include "score/mw/com/impl/bindings/lola/event_subscription_control.h"
-#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_helpers.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_base.h"
@@ -33,8 +31,6 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include <queue>
-#include <utility>
 
 namespace score::mw::com::impl::lola
 {

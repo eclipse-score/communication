@@ -49,6 +49,14 @@ score_gcc.toolchain(
     version = "12.2.0",
 )
 score_gcc.toolchain(
+    name = "score_gcc_aarch64_toolchain",
+    target_cpu = "aarch64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
+score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
     sdp_version = "8.0.0",
     target_cpu = "x86_64",
@@ -66,6 +74,7 @@ score_gcc.toolchain(
 )
 use_repo(
     score_gcc,
+    "score_gcc_aarch64_toolchain",
     "score_gcc_x86_64_toolchain",
     "score_qcc_aarch64_toolchain",
     "score_qcc_x86_64_toolchain",
@@ -164,14 +173,16 @@ download_file(
 bazel_dep(name = "rules_cc", version = "0.1.5")
 
 bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
-bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
+
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
 
-bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "score_communication_crate_index")
+bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
 bazel_dep(name = "boost.program_options", version = "1.87.0")
 bazel_dep(name = "boost.interprocess", version = "1.87.0")
 
@@ -222,7 +233,7 @@ single_version_override(
 bazel_dep(name = "score_baselibs", version = "0.2.4")
 git_override(
     module_name = "score_baselibs",
-    commit = "052c2f271be4239f97182b164f4903b8c88d6c72",
+    commit = "8cc55a97a772c217840bd7ea5a40789b250dd684",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
@@ -282,7 +293,7 @@ pip.parse(
 )
 use_repo(pip, "lobster_dependencies")
 
-bazel_dep(name = "score_bazel_platforms", version = "0.1.1")
+bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 
 bazel_dep(name = "rules_oci", version = "1.8.0", dev_dependency = True)
 

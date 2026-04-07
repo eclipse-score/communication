@@ -138,6 +138,7 @@ def integration_test(name, srcs, filesystem, **kwargs):
             pytest_bootstrap,
         ] + srcs,
         main = pytest_bootstrap,
+        env_inherit = ["DOCKER_HOST"],
         deps = [
             requirement("bazel-runfiles"),
             requirement("pytest"),
@@ -167,6 +168,12 @@ def integration_test(name, srcs, filesystem, **kwargs):
         kwargs,
         "target_compatible_with",
         ["//quality/sanitizer/constraints:no_tsan"],
+    )
+
+    _extend_list_in_kwargs_without_duplicates(
+        kwargs,
+        "env_inherit",
+        ["DOCKER_HOST"],
     )
 
     test_as_exec(

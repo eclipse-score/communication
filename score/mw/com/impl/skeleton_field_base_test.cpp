@@ -83,6 +83,11 @@ class MyDummyField : public SkeletonFieldBase
         return {};
     }
 
+    bool IsSetHandlerRegistered() const noexcept override
+    {
+        return true;
+    }
+
     bool was_deferred_update_called_{false};
     bool is_initial_value_saved_{true};
 };
@@ -93,6 +98,11 @@ class MyDummyFieldFailingDeferredUpdate final : public MyDummyField
     ResultBlank DoDeferredUpdate() noexcept override
     {
         return MakeUnexpected(ComErrc::kCommunicationLinkError);
+    }
+
+    bool IsSetHandlerRegistered() const noexcept override
+    {
+        return true;
     }
 };
 

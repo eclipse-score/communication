@@ -11,13 +11,33 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+// This demo app writing and reading tire pressure data using producer and consumer respectively.
+// It is demonstrating the composition of consumer and producer in one struct,
+// but they can be used separately as well.
+// The example is using Lola runtime, but it can be used with any runtime by changing the runtime initialization part.
+// Note: The example is using unwrap and panic in some places for simplicity,
+// but it is recommended to handle errors properly in production code.
+
+use clap::Parser;
+use std::path::PathBuf;
+
 use com_api::{
-    Builder, Error, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
+    Builder, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeBuilderImpl,
     OfferedProducer, Producer, Publisher, Result, Runtime, RuntimeBuilder, SampleContainer,
     SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
 };
 
 use com_api_gen::{Exhaust, Tire, VehicleInterface};
+
+#[derive(Parser)]
+struct Arguments {
+    #[arg(
+        short,
+        long,
+        default_value = "./score/mw/com/example/com-api-example/etc/mw_com_config.json"
+    )]
+    service_instance_manifest: PathBuf,
+}
 
 // Type aliases for generated consumer and offered producer types for the Vehicle interface
 // VehicleConsumer is the consumer type generated for the Vehicle interface, parameterized by the runtime R
@@ -75,7 +95,7 @@ impl<R: Runtime> VehicleMonitor<R> {
         let mut sample_buf = SampleContainer::new(3);
 
         match self.tire_subscriber.try_receive(&mut sample_buf, 1) {
-            Ok(0) => Err(Error::Fail),
+            Ok(0) => Ok("No tire data received".to_string()),
             Ok(x) => {
                 let sample = sample_buf.pop_front().unwrap();
                 Ok(format!("{} samples received: sample[0] = {:?}", x, *sample))
@@ -106,16 +126,20 @@ impl<R: Runtime> VehicleMonitor<R> {
 fn create_consumer<R: Runtime>(runtime: &R, service_id: InstanceSpecifier) -> VehicleConsumer<R> {
     let consumer_discovery =
         runtime.find_service::<VehicleInterface>(FindServiceSpecifier::Specific(service_id));
-    let available_service_instances = consumer_discovery.get_available_instances().unwrap();
+    let available_service_instances = consumer_discovery
+        .get_available_instances()
+        .expect("Failed to get available service instances");
 
     // Select service instance at specific handle_index
     let handle_index = 0; // or any index you need from vector of instances
     let consumer_builder = available_service_instances
         .into_iter()
         .nth(handle_index)
-        .unwrap();
+        .expect("Failed to get consumer builder at specified handle index");
 
-    consumer_builder.build().unwrap()
+    consumer_builder
+        .build()
+        .expect("Failed to build consumer instance")
 }
 
 #[allow(dead_code)]
@@ -129,16 +153,16 @@ async fn create_consumer_async<R: Runtime>(
     let available_service_instances = consumer_discovery
         .get_available_instances_async()
         .await
-        .unwrap();
+        .expect("Failed to get available service instances asynchronously");
 
     // Select service instance at specific handle_index
     let handle_index = 0; // or any index you need from vector of instances
     let consumer_builder = available_service_instances
         .into_iter()
         .nth(handle_index)
-        .unwrap();
+        .expect("Failed to get consumer builder at specified handle index");
 
-    consumer_builder.build().unwrap()
+    consumer_builder.build().expect("Failed to build consumer instance")
 }
 
 // Create a producer for the specified service identifier
@@ -147,8 +171,10 @@ fn create_producer<R: Runtime>(
     service_id: InstanceSpecifier,
 ) -> VehicleOfferedProducer<R> {
     let producer_builder = runtime.producer_builder::<VehicleInterface>(service_id);
-    let producer = producer_builder.build().unwrap();
-    producer.offer().unwrap()
+    let producer = producer_builder
+        .build()
+        .expect("Failed to build producer instance");
+    producer.offer().expect("Failed to offer producer instance")
 }
 
 // Run the example with the specified runtime
@@ -163,12 +189,22 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
     let tire_pressure = 5.0;
     println!("Setting tire pressure to {tire_pressure}");
     for i in 0..5 {
-        monitor
-            .write_tire_data(Tire {
-                pressure: tire_pressure + i as f32,
-            })
-            .unwrap();
-        let tire_data = monitor.read_tire_data().unwrap();
+        match monitor.write_tire_data(Tire {
+            pressure: tire_pressure + i as f32,
+        }) {
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("Failed to write tire data: {:?}", e);
+                continue;
+            }
+        }
+        let tire_data = match monitor.read_tire_data() {
+            Ok(data) => data,
+            Err(e) => {
+                eprintln!("Failed to read tire data: {:?}", e);
+                continue;
+            }
+        };
         println!("{tire_data}");
     }
     //unoffer returns producer back, so if needed it can be used further
@@ -180,16 +216,22 @@ fn run_with_runtime<R: Runtime>(name: &str, runtime: &R) {
 }
 
 // Initialize Lola runtime builder with configuration
-fn init_lola_runtime_builder() -> LolaRuntimeBuilderImpl {
+fn init_lola_runtime_builder(config_path: &std::path::Path) -> LolaRuntimeBuilderImpl {
     let mut lola_runtime_builder = LolaRuntimeBuilderImpl::new();
-    lola_runtime_builder.load_config(std::path::Path::new(
-        "score/mw/com/example/com-api-example/etc/config.json",
-    ));
+    if config_path.exists() {
+        lola_runtime_builder.load_config(config_path);
+    } else {
+        eprintln!(
+            "Provided config path does not exist: {}",
+            config_path.display()
+        );
+    }
     lola_runtime_builder
 }
 
 fn main() {
-    let lola_runtime_builder = init_lola_runtime_builder();
+    let args = Arguments::parse();
+    let lola_runtime_builder = init_lola_runtime_builder(&args.service_instance_manifest);
     let lola_runtime = lola_runtime_builder.build().unwrap();
     run_with_runtime("Lola", &lola_runtime);
 }
@@ -199,11 +241,13 @@ mod test {
     use super::*;
     use std::thread;
     use std::time::Duration;
+    const TEST_CONFIG_PATH: &str = "./score/mw/com/example/com-api-example/etc/mw_com_config.json";
 
     #[test]
     fn integration_test() {
         println!("Starting integration test with Lola runtime");
-        let lola_runtime_builder = init_lola_runtime_builder();
+        let lola_runtime_builder =
+            init_lola_runtime_builder(std::path::Path::new(TEST_CONFIG_PATH));
         let lola_runtime = lola_runtime_builder.build().unwrap();
         run_with_runtime("Lola", &lola_runtime);
     }
@@ -223,7 +267,8 @@ mod test {
         let service_id_sender = service_id.clone();
         let sender_handle = std::thread::spawn(move || {
             // Each thread creates its own runtime instance
-            let lola_runtime_builder = init_lola_runtime_builder();
+            let lola_runtime_builder =
+                init_lola_runtime_builder(std::path::Path::new(TEST_CONFIG_PATH));
             let lola_runtime = lola_runtime_builder.build().unwrap();
 
             let producer = create_producer(&lola_runtime, service_id_sender);
@@ -242,7 +287,7 @@ mod test {
                     sample.send().unwrap();
 
                     // Simulate async work delay
-                    std::thread::sleep(Duration::from_millis(1000));
+                    std::thread::sleep(Duration::from_millis(500));
                 }
                 println!("[SENDER] All samples sent");
             });
@@ -254,7 +299,8 @@ mod test {
             // Ensure sender starts first
             std::thread::sleep(Duration::from_millis(500));
             // Each thread creates its own runtime instance
-            let lola_runtime_builder = init_lola_runtime_builder();
+            let lola_runtime_builder =
+                init_lola_runtime_builder(std::path::Path::new(TEST_CONFIG_PATH));
             let lola_runtime = lola_runtime_builder.build().unwrap();
 
             let consumer = create_consumer(&lola_runtime, service_id_receiver);
@@ -310,21 +356,27 @@ mod test {
         println!("=== Async sender and receiver threads test completed ===");
     }
 
-    //sender will send data in each 2 milliseconds
+    //sender will send data in each 1 second
     async fn async_data_sender_fn<R: Runtime>(
         offered_producer: VehicleOfferedProducer<R>,
     ) -> VehicleOfferedProducer<R> {
         for i in 0..10 {
-            let uninit_sample = offered_producer.left_tire.allocate().unwrap();
+            let uninit_sample = match offered_producer.left_tire.allocate() {
+                Ok(sample) => sample,
+                Err(e) => {
+                    eprintln!("Failed to allocate sample: {:?}", e);
+                    continue;
+                }
+            };
             let sample = uninit_sample.write(Tire {
                 pressure: 1.0 + i as f32,
             });
-            sample.send().unwrap();
-            println!(
-                "[SENDER] Sent sample with pressure: {:.2} psi",
-                1.0 + i as f32
-            );
-            tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
+            match sample.send() {
+                Ok(_) => (),
+                Err(e) => eprintln!("Failed to send sample: {:?}", e),
+            }
+            println!("Sent sample with pressure: {}", 1.0 + i as f32);
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
         }
         offered_producer
     }
@@ -366,16 +418,20 @@ mod test {
             .expect("Failed to create InstanceSpecifier");
         let service_id_clone = service_id.clone();
         //consumer create
-        let lola_runtime_builder = LolaRuntimeBuilderImpl::new();
-        let lola_runtime = lola_runtime_builder.build().unwrap();
+        //creating runtime for consumer and producer separately,
+        //it simulates the real case where producer and consumer are in different processes
+        let consumer_runtime_builder =
+            init_lola_runtime_builder(std::path::Path::new(TEST_CONFIG_PATH));
+        let consumer_runtime = consumer_runtime_builder.build().unwrap();
         //starting service discovery in async way, so that it can be discovered when producer offer service after some delay, and consumer is waiting for discovery result
-        let consumer = tokio::spawn(create_consumer_async(lola_runtime, service_id));
+        let consumer = tokio::spawn(create_consumer_async(consumer_runtime, service_id));
         //simulate some delay before producer offer service, so that consumer is waiting for discovery
         tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
         //Producer create
-        let lola_runtime_builder_ = LolaRuntimeBuilderImpl::new();
-        let lola_runtime_ = lola_runtime_builder_.build().unwrap();
-        let producer = create_producer(&lola_runtime_, service_id_clone);
+        let producer_runtime_builder =
+            init_lola_runtime_builder(std::path::Path::new(TEST_CONFIG_PATH));
+        let producer_runtime = producer_runtime_builder.build().unwrap();
+        let producer = create_producer(&producer_runtime, service_id_clone);
         // Spawn async data sender
         let sender_join_handle = tokio::spawn(async_data_sender_fn(producer));
         // Await consumer creation and subscribe to events

@@ -490,7 +490,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
     // handler when the service has been reoffered which succeeds
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
         .Times(2)
-        .WillRepeatedly(Return(score::cpp::blank{}));
+        .WillRepeatedly(Return(score::ResultBlank{}));
 
     // Given that SetupMethods was called
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
@@ -636,7 +636,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, ProxyMethodsMarkedAsSubscribedWhe
               kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called and returns a valid result
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::cpp::blank{}));
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::ResultBlank{}));
 
     // When calling SetupMethods with the name of the registered ProxyMethods
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});

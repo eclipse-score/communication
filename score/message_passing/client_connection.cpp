@@ -411,6 +411,12 @@ void ClientConnection::TryConnect() noexcept
             engine_->UnregisterPosixEndpoint(posix_endpoint_);
         }
     };
+    posix_endpoint_.ping = [this]() noexcept {
+        if (!notify_callback_.empty())
+        {
+            notify_callback_({});
+        }
+    };
     posix_endpoint_.output = {};
     posix_endpoint_.disconnect = [this]() noexcept {
         SwitchToStopState();

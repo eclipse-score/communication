@@ -22,6 +22,9 @@ on:
   merge_group:
     types: [checks_requested]
   workflow_call:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request'}}
 jobs:
     build_and_test_asan_ubsan_lsan:
       runs-on: ubuntu-24.04
@@ -31,7 +34,7 @@ jobs:
         - name: Checkout repository
           uses: actions/checkout@v4.2.2
         - name: Free Disk Space (Ubuntu)
-          uses: ./actions/free_disk_space
+          uses: eclipse-score/cicd-workflows/.github/actions/free_disk_space@7e109c9e97670ec621adaea1c21721c18212a96d
         - uses: bazel-contrib/setup-bazel@0.18.0
           with:
             bazelisk-cache: true

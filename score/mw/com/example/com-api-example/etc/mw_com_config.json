@@ -24,6 +24,9 @@
       ]
     }
   ],
+  "global": {
+    "applicationID": 4001
+  },
   "serviceInstances": [
     {
       "instanceSpecifier": "/Vehicle/Service1/Instance",

@@ -62,7 +62,7 @@ score::Result<score::mw::com::test::BigDataProxy> CreateProxy(
     auto handles_result = score::mw::com::test::BigDataProxy::StartFindService(
         [moved_service_discovery_promise = std::move(service_discovery_promise)](auto handles, auto handle) mutable {
             moved_service_discovery_promise.set_value(handles);
-            score::mw::com::test::BigDataProxy::StopFindService(handle);
+            score::cpp::ignore = score::mw::com::test::BigDataProxy::StopFindService(handle);
         },
         std::move(instance_specifier));
     if (!handles_result.has_value())

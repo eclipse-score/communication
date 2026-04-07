@@ -150,8 +150,8 @@ class SkeletonTrait
     template <typename SampleType>
     using Event = SkeletonEvent<SampleType>;
 
-    template <typename SampleType>
-    using Field = SkeletonField<SampleType>;
+    template <typename SampleType, bool EnableSet = false, bool EnableNotifier = false>
+    using Field = SkeletonField<SampleType, EnableSet, EnableNotifier>;
 
     template <typename MethodSignature>
     using Method = SkeletonMethod<MethodSignature>;
@@ -189,7 +189,8 @@ class SkeletonWrapperClass : public Interface<Trait>
         const auto instance_identifier_result = GetInstanceIdentifier(specifier);
         if (!instance_identifier_result.has_value())
         {
-            score::mw::log::LogError("lola") << "Failed to resolve instance identifier from instance specifier";
+            score::mw::log::LogError("lola")
+                << "Failed to resolve instance identifier from instance specifier:" << specifier.ToString();
             return MakeUnexpected(ComErrc::kInvalidInstanceIdentifierString);
         }
         return Create(instance_identifier_result.value());
