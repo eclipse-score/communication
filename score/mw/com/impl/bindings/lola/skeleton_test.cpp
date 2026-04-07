@@ -85,8 +85,8 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
 
         InitialiseSkeleton(instance_identifier);
 
-        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_method_fq_id_);
-        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_method_fq_id_);
+        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_unique_method_id_);
+        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id_);
 
         return *this;
     }
@@ -98,8 +98,8 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
     ServiceDataStorage existing_service_data_storage_{
         CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId)};
 
-    const ElementFqId fooo_method_fq_id_{10U, test::kFooMethodId, 3U, ServiceElementType::METHOD};
-    const ElementFqId dumb_method_fq_id_{1U, test::kDumbMethodId, 2U, ServiceElementType::METHOD};
+    const UniqueMethodIdentifier fooo_unique_method_id_{test::kFooMethodId, MethodType::kMethod};
+    const UniqueMethodIdentifier dumb_unique_method_id_{test::kDumbMethodId, MethodType::kMethod};
 
     std::unique_ptr<SkeletonMethod> fooo_method_{nullptr};
     std::unique_ptr<SkeletonMethod> dumb_method_{nullptr};

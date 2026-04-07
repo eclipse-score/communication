@@ -64,8 +64,8 @@ constexpr gid_t kRemoteGid{40};
 
 const ProxyInstanceIdentifier kProxyInstanceIdentifier{kLocalUid, 1U};
 
-const ProxyMethodInstanceIdentifier kProxyMethodInstanceIdentifier{kProxyInstanceIdentifier, LolaMethodId{35U}};
-const ProxyMethodInstanceIdentifier kProxyMethodInstanceIdentifier2{kProxyInstanceIdentifier, LolaMethodId{36U}};
+const ProxyMethodInstanceIdentifier kProxyMethodInstanceIdentifier{kProxyInstanceIdentifier, {LolaMethodId{35U}}};
+const ProxyMethodInstanceIdentifier kProxyMethodInstanceIdentifier2{kProxyInstanceIdentifier, {LolaMethodId{36U}}};
 
 const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier{LolaServiceId{12U},
                                                              LolaServiceInstanceId::InstanceId{22U}};
