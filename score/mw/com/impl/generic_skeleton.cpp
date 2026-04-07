@@ -127,7 +127,7 @@ const GenericSkeleton::EventMap& GenericSkeleton::GetEvents() const noexcept
     return events_;
 }
 
-Result<score::Blank> GenericSkeleton::OfferService() noexcept
+ResultBlank GenericSkeleton::OfferService() noexcept
 {
     return SkeletonBase::OfferService();
 }

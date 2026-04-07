@@ -43,7 +43,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(SkeletonBase& skeleton_base,
     }
 }
 
-Result<score::Blank> GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcept
+ResultBlank GenericSkeletonEvent::Send(SampleAllocateePtr<void> sample) noexcept
 {
     if (!service_offered_flag_.IsSet())
     {

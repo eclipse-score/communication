@@ -27,7 +27,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     //  Use explicit 'score::mw::com::impl::SampleAllocateePtr' to avoid ambiguity
     // with the 'mock_binding::SampleAllocateePtr' alias (which is a unique_ptr).
 
-    MOCK_METHOD(Result<score::Blank>, Send, (score::mw::com::impl::SampleAllocateePtr<void>), (noexcept, override));
+    MOCK_METHOD(ResultBlank, Send, (score::mw::com::impl::SampleAllocateePtr<void>), (noexcept, override));
 
     MOCK_METHOD(Result<score::mw::com::impl::SampleAllocateePtr<void>>, Allocate, (), (noexcept, override));
 

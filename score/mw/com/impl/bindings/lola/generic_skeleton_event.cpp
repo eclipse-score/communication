@@ -42,7 +42,7 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
     return {};
 }
 
-Result<score::Blank> GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
+ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());
     const impl::SampleAllocateePtrView<void> view{sample};
