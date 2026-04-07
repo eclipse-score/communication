@@ -27,6 +27,9 @@
 
 namespace score::mw::com::test
 {
+
+using CommandLineArgsMapType = boost::program_options::variables_map;
+
 template <typename ParsedType>
 auto GetValueIfProvided(const boost::program_options::variables_map& args, const std::string& arg_string)
     -> Result<ParsedType>
@@ -58,7 +61,7 @@ auto GetValueIfProvided(const boost::program_options::variables_map& args, const
 
 auto ParseCommandLineArguments(int argc,
                                const char** argv,
-                               const std::vector<std::pair<std::string_view, std::string_view>>& param_names)
+                               const std::vector<std::pair<std::string, std::string>>& param_names)
     -> boost::program_options::variables_map;
 
 }  // namespace score::mw::com::test

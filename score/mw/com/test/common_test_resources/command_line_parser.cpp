@@ -12,18 +12,14 @@
  *******************************************************************************/
 
 #include "score/mw/com/test/common_test_resources/command_line_parser.h"
-
-#include <cstdint>
-#include <string_view>
 #include <vector>
 
 namespace score::mw::com::test
 {
-
 auto ParseCommandLineArguments(int argc,
                                const char** argv,
-                               const std::vector<std::pair<std::string_view, std::string_view>>& param_names)
-    -> boost::program_options::variables_map
+                               const std::vector<std::pair<std::string, std::string>>& param_names)
+    -> CommandLineArgsMapType
 {
     // uid is needed internally by sctftestrunner
 
@@ -40,6 +36,7 @@ auto ParseCommandLineArguments(int argc,
     const auto parsed_args =
         po::command_line_parser{argc, argv}
             .options(options)
+            .allow_unregistered()
             .style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
             .run();
     po::store(parsed_args, args);
