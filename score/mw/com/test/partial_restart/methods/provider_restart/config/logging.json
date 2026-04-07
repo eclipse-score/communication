@@ -1,0 +1,7 @@
+{
+  "appId": "PR",
+  "appDesc": "provider_restart",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}
