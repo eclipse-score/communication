@@ -22,12 +22,14 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 
 namespace score::mw::com::test
 {
 
 std::optional<ProcessSynchronizer> ProcessSynchronizer::Create(const std::string& interprocess_notification_shm_path)
 {
+    std::thread bla;
     auto interprocess_notification_result =
         SharedMemoryObjectCreator<os::InterprocessNotification>::CreateOrOpenObject(interprocess_notification_shm_path);
     if (!interprocess_notification_result.has_value())
@@ -40,6 +42,23 @@ std::optional<ProcessSynchronizer> ProcessSynchronizer::Create(const std::string
     }
 
     return std::optional<ProcessSynchronizer>{std::in_place_t{}, std::move(interprocess_notification_result).value()};
+}
+
+auto ProcessSynchronizer::CreateUniquePtr(const std::string& interprocess_notification_shm_path)
+    -> std::unique_ptr<ProcessSynchronizer>
+{
+    auto interprocess_notification_result =
+        SharedMemoryObjectCreator<os::InterprocessNotification>::CreateOrOpenObject(interprocess_notification_shm_path);
+    if (!interprocess_notification_result.has_value())
+    {
+        std::stringstream ss;
+        ss << "Consumer: Creating or opening interprocess notification object failed:"
+           << interprocess_notification_result.error();
+        std::cerr << ss.str() << std::endl;
+        return nullptr;
+    }
+
+    return std::make_unique<ProcessSynchronizer>(std::move(interprocess_notification_result).value());
 }
 
 ProcessSynchronizer::ProcessSynchronizer(
