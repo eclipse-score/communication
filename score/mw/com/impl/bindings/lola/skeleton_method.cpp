@@ -36,14 +36,14 @@
 namespace score::mw::com::impl::lola
 {
 
-SkeletonMethod::SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_id)
+SkeletonMethod::SkeletonMethod(Skeleton& skeleton, UniqueMethodIdentifier unique_method_identifier)
     : in_args_type_erased_info_{},
       return_type_type_erased_info_{},
       type_erased_callback_{},
       registration_guards_{},
       registration_guards_mutex_{}
 {
-    skeleton.RegisterMethod(element_fq_id.element_id_, *this);
+    skeleton.RegisterMethod(unique_method_identifier, *this);
 }
 
 ResultBlank SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)

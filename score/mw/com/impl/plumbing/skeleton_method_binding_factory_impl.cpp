@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory_impl.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -19,14 +20,14 @@ namespace score::mw::com::impl
 {
 auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance_identifier,
                                               SkeletonBinding* parent_binding,
-                                              const std::string_view method_name)
-    -> std::unique_ptr<SkeletonMethodBinding>
+                                              const std::string_view method_name,
+                                              MethodType method_type) -> std::unique_ptr<SkeletonMethodBinding>
 {
 
     const InstanceIdentifierView instance_identifier_view{instance_identifier};
 
     using LambdaReturnType = std::unique_ptr<SkeletonMethodBinding>;
-    auto lola_deployment_handler = [&instance_identifier_view, parent_binding, &method_name](
+    auto lola_deployment_handler = [&instance_identifier_view, parent_binding, &method_name, method_type](
                                        const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
         auto* const lola_parent = dynamic_cast<lola::Skeleton*>(parent_binding);
         if (lola_parent == nullptr)
@@ -50,10 +51,9 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         constexpr auto element_type{ServiceElementType::METHOD};
 
         const auto lola_method_id = GetServiceElementId<element_type>(lola_type_deployment, std::string{method_name});
-        const lola::ElementFqId element_fq_id{
-            lola_type_deployment.service_id_, lola_method_id, lola_service_instance_id->GetId(), element_type};
 
-        return std::make_unique<lola::SkeletonMethod>(*lola_parent, element_fq_id);
+        lola::UniqueMethodIdentifier unique_method_identifier{lola_method_id, method_type};
+        return std::make_unique<lola::SkeletonMethod>(*lola_parent, unique_method_identifier);
     };
 
     auto deployment_info_visitor = score::cpp::overload(

@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_RETURN_TYPE_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_RETURN_TYPE_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"

@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_AND_RETURN_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_AND_RETURN_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
@@ -57,7 +58,8 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
               proxy_base,
               ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
                                                                          ProxyBaseView{proxy_base}.GetBinding(),
-                                                                         method_name),
+                                                                         method_name,
+                                                                         MethodType::kMethod),
               method_name),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {

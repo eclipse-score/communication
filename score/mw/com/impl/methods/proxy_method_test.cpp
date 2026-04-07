@@ -258,7 +258,8 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture,
     auto proxy_method_binding = std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_);
 
     // expecting that a binding factory can create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_, Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/))
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
         .WillOnce(testing::Return(testing::ByMove(std::move(proxy_method_binding))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
@@ -273,7 +274,8 @@ TYPED_TEST(
     TwoParameterConstructorCorrectlyCallsBindingFactoryButProxyMethodIsNotCreatedWhenTheBindingFactoryDoesNotReturnBinding)
 {
     // expecting that a binding factory cannot create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_, Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/))
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
         .WillOnce(testing::Return(testing::ByMove(nullptr)));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
