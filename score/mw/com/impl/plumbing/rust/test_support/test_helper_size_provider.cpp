@@ -92,7 +92,8 @@ SizeInfo TestSizeProvider::GetEventDataControlCompositeSize() noexcept
 
 SizeInfo TestSizeProvider::GetStdUniquePtrSize() noexcept
 {
-    return {sizeof(std::unique_ptr<int32_t>), alignof(std::unique_ptr<int32_t>)};
+    using MockSampleAllocateePtrInt32 = std::unique_ptr<int32_t, mock_binding::CustomDeleter<int32_t>>;
+    return {sizeof(MockSampleAllocateePtrInt32), alignof(MockSampleAllocateePtrInt32)};
 }
 
 SizeInfo TestSizeProvider::GetSampleAllocateePtrSize() noexcept
