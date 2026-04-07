@@ -53,8 +53,32 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
         : ProxyMethod(proxy_base,
                       ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
                                                                            ProxyBaseView{proxy_base}.GetBinding(),
-                                                                           method_name),
-                      method_name)
+                                                                           method_name,
+                                                                           MethodType::kMethod),
+                      method_name,
+                      MethodType::kMethod)
+    {
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, GetMethodTag) noexcept
+        : ProxyMethod(proxy_base,
+                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                           ProxyBaseView{proxy_base}.GetBinding(),
+                                                                           method_name,
+                                                                           MethodType::kGet),
+                      method_name,
+                      MethodType::kGet)
+    {
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, SetMethodTag) noexcept
+        : ProxyMethod(proxy_base,
+                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                           ProxyBaseView{proxy_base}.GetBinding(),
+                                                                           method_name,
+                                                                           MethodType::kSet),
+                      method_name,
+                      MethodType::kSet)
     {
     }
 

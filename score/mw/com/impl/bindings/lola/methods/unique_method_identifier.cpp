@@ -10,21 +10,24 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 
 namespace score::mw::com::impl::lola
 {
 
-bool operator==(const ProxyMethodInstanceIdentifier& lhs, const ProxyMethodInstanceIdentifier& rhs) noexcept
+bool operator==(const UniqueMethodIdentifier& lhs, const UniqueMethodIdentifier& rhs) noexcept
 {
-    return ((lhs.proxy_instance_identifier == rhs.proxy_instance_identifier) &&
-            (lhs.unique_method_identifier == rhs.unique_method_identifier));
+    return ((lhs.method_or_field_id == rhs.method_or_field_id) && (lhs.method_type == rhs.method_type));
 }
 
-mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyMethodInstanceIdentifier& value) noexcept
+bool operator!=(const UniqueMethodIdentifier& lhs, const UniqueMethodIdentifier& rhs) noexcept
 {
-    stream << "ProxyInstanceIdentifier:" << value.proxy_instance_identifier
-           << ".UniqueMethodIdentifier:" << value.unique_method_identifier;
+    return !(lhs == rhs);
+}
+
+mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const UniqueMethodIdentifier& value) noexcept
+{
+    stream << "MethodOrFieldId:" << value.method_or_field_id << ". MethodType:" << to_string(value.method_type);
     return stream;
 }
 

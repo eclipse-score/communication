@@ -58,7 +58,33 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
               method_name,
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
-                                                   method_name))
+                                                   method_name,
+                                                   ::score::mw::com::impl::MethodType::kMethod),
+              ::score::mw::com::impl::MethodType::kMethod)
+    {
+    }
+
+    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name, GetMethodTag)
+        : SkeletonMethod(
+              skeleton_base,
+              method_name,
+              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
+                                                   method_name,
+                                                   ::score::mw::com::impl::MethodType::kGet),
+              ::score::mw::com::impl::MethodType::kGet)
+    {
+    }
+
+    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name, SetMethodTag)
+        : SkeletonMethod(
+              skeleton_base,
+              method_name,
+              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
+                                                   method_name,
+                                                   ::score::mw::com::impl::MethodType::kSet),
+              ::score::mw::com::impl::MethodType::kSet)
     {
     }
 

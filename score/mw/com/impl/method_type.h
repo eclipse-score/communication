@@ -13,8 +13,6 @@
 #ifndef PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
 #define PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
 
-#include <score/assert.hpp>
-
 #include <cstdint>
 #include <string_view>
 

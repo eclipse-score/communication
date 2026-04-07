@@ -214,6 +214,9 @@ class SkeletonField : public SkeletonFieldBase
     SkeletonField(SkeletonBase& parent,
                   std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
                   const std::string_view field_name);
+
+    using GetMethodSignature = FieldType();
+    SkeletonMethod<GetMethodSignature> get_method_{skeleton_base_.get(), field_name_, kGetMethod};
 };
 
 /// \brief Public ctor — EnableSet=true: delegates to the private ctor that also creates the set method.
@@ -282,6 +285,7 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(
       skeleton_field_mock_{nullptr},
       set_method_{std::move(set_method)}
 {
+    set_method_ = std::make_unique<SkeletonMethod<SetMethodSignature>>(parent, field_name_, kSetMethod);
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
 }

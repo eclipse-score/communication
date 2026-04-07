@@ -62,7 +62,47 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, GetMethodTag) noexcept
+        : ProxyMethodBase(
+              proxy_base,
+              ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                         ProxyBaseView{proxy_base}.GetBinding(),
+                                                                         method_name,
+                                                                         MethodType::kGet),
+              method_name,
+              MethodType::kGet),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, SetMethodTag) noexcept
+        : ProxyMethodBase(
+              proxy_base,
+              ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                         ProxyBaseView{proxy_base}.GetBinding(),
+                                                                         method_name,
+                                                                         MethodType::kSet),
+              method_name,
+              MethodType::kSet),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();

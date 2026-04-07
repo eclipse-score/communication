@@ -147,6 +147,11 @@ class ProxyField final : public ProxyFieldBase
     static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
                   "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
+
+    using GetMethodSignature = FieldType();
+    using SetMethodSignature = FieldType(FieldType);
+    ProxyMethod<GetMethodSignature> get_method_{proxy_base_.get(), field_name_, kGetMethod};
+    ProxyMethod<SetMethodSignature> set_method_{proxy_base_.get(), field_name_, kSetMethod};
 };
 
 template <typename FieldType>
