@@ -103,21 +103,20 @@ interface!(
 
 // Test for primitive and complex data types, used in the com-api integration tests.
 
-// Macro to generate data types with CommData impl with Eq trait
-macro_rules! define_type {
-    (#[eq] struct $name:ident { $($field:ident: $field_type:ty),+ $(,)? }) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Reloc)]
-        #[repr(C)]
-        pub struct $name {
-            $(pub $field: $field_type,)*
-        }
-        impl CommData for $name {
-            const ID: &'static str = stringify!($name);
-        }
+// Macro to generate struct (types) with CommData impl.
+// Supports custom trait derivation via standard #[derive(...)] syntax.
+macro_rules! define_com_type {
+    (#[derive($($trait:path),+)] struct $name:ident $body:tt) => {
+        define_com_type_impl!($name $body [$($trait),+]);
     };
-    // Macro for types without Eq trait (e.g., with float fields)
-    (struct $name:ident { $($field:ident: $field_type:ty),+ $(,)? }) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Reloc)]
+    (struct $name:ident $body:tt) => {
+        define_com_type_impl!($name $body []);
+    };
+}
+
+macro_rules! define_com_type_impl {
+    ($name:ident { $($field:ident: $field_type:ty),+ $(,)? } [$($trait:path),*]) => {
+        #[derive(Debug, Clone, Copy, PartialEq $(, $trait)*, Reloc)]
         #[repr(C)]
         pub struct $name {
             $(pub $field: $field_type,)*
@@ -129,7 +128,7 @@ macro_rules! define_type {
 }
 
 // Combined primitive payload – all primitive types packed into one struct.
-define_type!(
+define_com_type!(
     struct MixedPrimitivesPayload {
         u64_val: u64,
         i64_val: i64,
@@ -145,14 +144,67 @@ define_type!(
 );
 
 // Complex struct types
-define_type!(#[eq] struct SimpleStruct { id: u32 });
-define_type!(struct NestedStruct { id: u32, simple: SimpleStruct, value: f32 });
-define_type!(struct Point { x: f32, y: f32 });
-define_type!(struct Point3D { x: f32, y: f32, z: f32 });
-define_type!(struct SensorData { sensor_id: u16, temperature: f32, humidity: f32, pressure: f32 });
-define_type!(struct VehicleState { speed: f32, rpm: u16, fuel_level: f32, is_running: bool, mileage: u32 });
-define_type!(#[eq] struct ArrayStruct { values: [u32; 5] });
-define_type!(struct ComplexStruct { count: u32, simple: SimpleStruct, nested: NestedStruct, point: Point, point3d: Point3D, sensor: SensorData, vehicle: VehicleState, array: ArrayStruct });
+define_com_type!(
+    #[derive(Eq)]
+    struct SimpleStruct {
+        id: u32,
+    }
+);
+define_com_type!(
+    struct NestedStruct {
+        id: u32,
+        simple: SimpleStruct,
+        value: f32,
+    }
+);
+define_com_type!(
+    struct Point {
+        x: f32,
+        y: f32,
+    }
+);
+define_com_type!(
+    struct Point3D {
+        x: f32,
+        y: f32,
+        z: f32,
+    }
+);
+define_com_type!(
+    struct SensorData {
+        sensor_id: u16,
+        temperature: f32,
+        humidity: f32,
+        pressure: f32,
+    }
+);
+define_com_type!(
+    struct VehicleState {
+        speed: f32,
+        rpm: u16,
+        fuel_level: f32,
+        is_running: bool,
+        mileage: u32,
+    }
+);
+define_com_type!(
+    #[derive(Eq)]
+    struct ArrayStruct {
+        values: [u32; 5],
+    }
+);
+define_com_type!(
+    struct ComplexStruct {
+        count: u32,
+        simple: SimpleStruct,
+        nested: NestedStruct,
+        point: Point,
+        point3d: Point3D,
+        sensor: SensorData,
+        vehicle: VehicleState,
+        array: ArrayStruct,
+    }
+);
 
 interface!(interface MixedPrimitives, { Id = "MixedPrimitivesInterface", mixed_event: Event<MixedPrimitivesPayload> });
 interface!(interface ComplexStruct, { Id = "ComplexStructInterface", complex_event: Event<ComplexStruct> });
