@@ -16,7 +16,7 @@
 //! that can subscribe to events and receive data samples.
 //! It uses FFI to interact with the underlying C++ implementation.
 //! Main components include `LolaConsumerInfo`, `SubscribableImpl`,
-//! `SubscriberImpl`, `SampleConsumerDiscovery`, and `SampleConsumerBuilder`.
+//! `SubscriberImpl`, `LolaConsumerDiscovery`, and `LolaConsumerBuilder`.
 //! These components work together to enable consumers to discover services,
 //! subscribe to events, and receive data samples in a type-safe manner.
 //! The implementation ensures proper memory management and resource handling
@@ -679,12 +679,12 @@ impl std::fmt::Debug for DiscoveryStateData {
     }
 }
 
-pub struct SampleConsumerDiscovery<I> {
+pub struct LolaConsumerDiscovery<I> {
     pub instance_specifier: InstanceSpecifier,
     pub _interface: PhantomData<I>,
 }
 
-impl<I: Interface> SampleConsumerDiscovery<I> {
+impl<I: Interface> LolaConsumerDiscovery<I> {
     pub fn new(_runtime: &LolaRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
@@ -693,12 +693,12 @@ impl<I: Interface> SampleConsumerDiscovery<I> {
     }
 }
 
-impl<I: Interface + Send> ServiceDiscovery<I, LolaRuntimeImpl> for SampleConsumerDiscovery<I>
+impl<I: Interface + Send> ServiceDiscovery<I, LolaRuntimeImpl> for LolaConsumerDiscovery<I>
 where
-    SampleConsumerBuilder<I>: ConsumerBuilder<I, LolaRuntimeImpl>,
+    LolaConsumerBuilder<I>: ConsumerBuilder<I, LolaRuntimeImpl>,
 {
-    type ConsumerBuilder = SampleConsumerBuilder<I>;
-    type ServiceEnumerator = Vec<SampleConsumerBuilder<I>>;
+    type ConsumerBuilder = LolaConsumerBuilder<I>;
+    type ServiceEnumerator = Vec<LolaConsumerBuilder<I>>;
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
@@ -718,7 +718,7 @@ where
                     handle_index,
                     interface_id: I::INTERFACE_ID,
                 };
-                SampleConsumerBuilder {
+                LolaConsumerBuilder {
                     instance_info,
                     _interface: PhantomData,
                 }
@@ -840,7 +840,7 @@ impl<I: Interface> Drop for ServiceDiscoveryFuture<I> {
 }
 
 impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
-    type Output = Result<Vec<SampleConsumerBuilder<I>>>;
+    type Output = Result<Vec<LolaConsumerBuilder<I>>>;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
@@ -873,7 +873,7 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
                         handle_index,
                         interface_id: I::INTERFACE_ID,
                     };
-                    SampleConsumerBuilder {
+                    LolaConsumerBuilder {
                         instance_info,
                         _interface: PhantomData,
                     }
@@ -887,20 +887,20 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
     }
 }
 
-impl<I: Interface> ConsumerBuilder<I, LolaRuntimeImpl> for SampleConsumerBuilder<I> {}
+impl<I: Interface> ConsumerBuilder<I, LolaRuntimeImpl> for LolaConsumerBuilder<I> {}
 
-impl<I: Interface> Builder<I::Consumer<LolaRuntimeImpl>> for SampleConsumerBuilder<I> {
+impl<I: Interface> Builder<I::Consumer<LolaRuntimeImpl>> for LolaConsumerBuilder<I> {
     fn build(self) -> Result<I::Consumer<LolaRuntimeImpl>> {
         Ok(Consumer::new(self.instance_info))
     }
 }
 
-pub struct SampleConsumerBuilder<I: Interface> {
+pub struct LolaConsumerBuilder<I: Interface> {
     pub instance_info: LolaConsumerInfo,
     pub _interface: PhantomData<I>,
 }
 
-impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder<I> {
+impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for LolaConsumerBuilder<I> {
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
         //if InstanceSpecifier::ANY support enable by lola
         //then this API should get InstanceSpecifier from FFI Call
@@ -1099,11 +1099,11 @@ mod test {
 
     #[test]
     fn test_sample_consumer_discovery_creation() {
-        // Test that SampleConsumerDiscovery can be created with valid interface
+        // Test that LolaConsumerDiscovery can be created with valid interface
         let instance_specifier = com_api_concept::InstanceSpecifier::new("/test/vehicle")
             .expect("Failed to create instance specifier");
 
-        let _discovery = super::SampleConsumerDiscovery::<TestVehicleInterface>::new(
+        let _discovery = super::LolaConsumerDiscovery::<TestVehicleInterface>::new(
             &super::super::LolaRuntimeImpl {},
             instance_specifier,
         );
@@ -1117,7 +1117,7 @@ mod test {
         let instance_specifier = com_api_concept::InstanceSpecifier::new("/test/vehicle")
             .expect("Failed to create instance specifier");
 
-        let discovery = super::SampleConsumerDiscovery::<TestVehicleInterface>::new(
+        let discovery = super::LolaConsumerDiscovery::<TestVehicleInterface>::new(
             &super::super::LolaRuntimeImpl {},
             instance_specifier,
         );
