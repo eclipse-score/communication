@@ -13,8 +13,8 @@
 module(name = "score_communication")
 
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
-bazel_dep(name = "boost.interprocess", version = "1.87.0")
-bazel_dep(name = "boost.program_options", version = "1.87.0")
+bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
+bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -22,10 +22,10 @@ bazel_dep(name = "rules_cc", version = "0.1.5")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 bazel_dep(name = "score_baselibs", version = "0.2.4")
 
-# Apply patch to fix visibility issue with interprocess_notification target
+# TODO: Remove once new baselib release is available https://github.com/eclipse-score/baselibs/issues/138
 git_override(
     module_name = "score_baselibs",
-    commit = "8cc55a97a772c217840bd7ea5a40789b250dd684",
+    commit = "bd9a138245b7c8bb47bbb9745a3fabc978e3a1b1",
     remote = "https://github.com/eclipse-score/baselibs.git",
 )
 
@@ -33,6 +33,8 @@ bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
 bazel_dep(name = "score_logging", version = "0.1.0")
+
+# TODO: Remove once new logging release is available https://github.com/eclipse-score/logging/issues/80
 git_override(
     module_name = "score_logging",
     commit = "38e8762881d512c89ae5c2e5e5238fd791d327df",
