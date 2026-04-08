@@ -291,8 +291,8 @@ void SkeletonMemoryManager::RemoveStaleSharedMemoryArtefacts() const
     memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(data_path);
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, there is no way for calling std::terminate().
+// Suppress "AUTOSAR C++14 A15-5-3": std::terminate() should not be called implicitly.
+// This is a false positive, there is no way for calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void SkeletonMemoryManager::CleanupSharedMemoryAfterCrash()
 {
@@ -458,8 +458,8 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     return ShmResourceStorageSizes{control_data_size, control_qm_size, control_asil_b_size};
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
+// Suppress "AUTOSAR C++14 A15-5-3":
+// This is a false positive, all results which are accessed with '.value()' that could implicitly call
 // 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
 // throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
@@ -512,11 +512,9 @@ bool SkeletonMemoryManager::CreateSharedMemoryForData(
         // coverity[autosar_cpp14_a15_4_2_violation]
         register_shm_object_trace_callback.value()(
             tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
-            // Suppress "AUTOSAR C++14 A4-5-1" rule findings. This rule states: "Expressions with type enum or enum
-            // class shall not be used as operands to built-in and overloaded operators other than the subscript
-            // operator [ ], the assignment operator =, the equality operators == and ! =, the unary & operator, and the
-            // relational operators <,
-            // <=, >, >=.". The enum is not an operand, its a function parameter.
+            // Suppress "AUTOSAR C++14 A4-5-1": Enums should not be used as operands to operators (other than
+            // operator[], operator=, operator==, operator!=, * and relational operators).
+            // Justification: The enum is not an operator, it's a function parameter.
             // coverity[autosar_cpp14_a4_5_1_violation : FALSE]
             tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback,
             memory_resource->GetFileDescriptor(),

@@ -38,14 +38,14 @@
 namespace score::mw::com::impl::lola
 {
 
-/// \brief SkeletonMemoryManager manages are shared memory related functionality of a Skeleton.
+/// \brief SkeletonMemoryManager manages shared memory related functionality of a Skeleton.
 ///
 /// A SkeletonMemoryManager is owned and dispatched to by a Skeleton.
 class SkeletonMemoryManager final
 {
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // The "SkeletonAttorney" class is a helper, which sets the internal state of "Skeleton" accessing
-    // private members and used for testing purposes only.
+    // Suppress "AUTOSAR C++14 A11-3-1": Forbids the use of friend declarations.
+    // Justification: The "SkeletonMemoryManagerTestAttorney" class is a helper, which sets the internal state of
+    // "Skeleton" accessing private members and used for testing purposes only.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonMemoryManagerTestAttorney;
 
@@ -112,8 +112,8 @@ class SkeletonMemoryManager final
     class ShmResourceStorageSizes
     {
       public:
-        // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
-        // be private.". There are no class invariants to maintain which could be violated by directly accessing member
+        // Suppress "AUTOSAR C++14 M11-0-1": All non-POD class types should only have private member data.
+        // Justification: There are no class invariants to maintain which could be violated by directly accessing member
         // variables.
         // coverity[autosar_cpp14_m11_0_1_violation]
         std::size_t data_size;
@@ -169,12 +169,11 @@ class SkeletonMemoryManager final
 };
 
 template <typename SampleType>
-// Suppress "AUTOSAR C++14 M3-2-2" rule finding. This rule declares: "The One Definition Rule shall not be
-// violated.".
-// The "Skeleton" is a template class with its declaration and definition in different places within the same header
-// file, it does not violate the One Definition Rule
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, no way to throw std::bad_variant_access.
+// Suppress "AUTOSAR C++14 M3-2-2": ODR (One Definition Rule) must not be violated.
+// Justification: The "Skeleton" is a template class with its declaration and definition in different places within the
+// same header file, it does not violate the One Definition Rule.
+// Suppress "AUTOSAR C++14 A15-5-3": std::terminate() should not be called implicitly.
+// Justification: This is a false positive, no way to throw std::bad_variant_access.
 // coverity[autosar_cpp14_m3_2_2_violation]
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto SkeletonMemoryManager::CreateEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id,
@@ -204,22 +203,20 @@ auto SkeletonMemoryManager::CreateEventDataFromOpenedSharedMemory(const ElementF
 }
 
 template <typename SampleType>
-// Suppress "AUTOSAR C++14 M3-2-2" rule finding. This rule declares: "The One Definition Rule shall not be
-// violated.".
-// The "Skeleton" is a template class with its declaration and definition in different places within the same header
-// file, it does not violate the One Definition Rule
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". No way for 'OffsetPtr::get()' which called from 'event_data_storage_it->second.template' to throw an
+// Suppress "AUTOSAR C++14 M3-2-2":
+// Justification: Same justification as above.
+// Suppress "AUTOSAR C++14 A15-5-3":
+// Justification: No way for 'OffsetPtr::get()' which called from 'event_data_storage_it->second.template' to throw an
 // exception but we can't mark 'OffsetPtr::get()' as ''.
 // coverity[autosar_cpp14_m3_2_2_violation]
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id)
     -> std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>>
 {
-    // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
-    // called implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception
-    // if the key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()'
-    // to throw an exception.
+    // Suppress "AUTOSAR C++14 A15-5-3":
+    // Justification: This is a false positive, std::less which is used by std::map::find could throw an exception if
+    // the key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to
+    // throw an exception.
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     auto find_element = [](auto& map, const ElementFqId& target_element_fq_id) -> auto {
         const auto it = map.find(target_element_fq_id);
@@ -235,32 +232,34 @@ auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqI
     if (quality_type_ == QualityType::kASIL_B)
     {
         const auto event_control_asil_b_it = find_element(control_asil_b_->event_controls_, element_fq_id);
-        // Suppress "AUTOSAR C++14 M7-5-1" rule. This rule declares:
-        // A function shall not return a reference or a pointer to an automatic variable (including parameters), defined
-        // within the function.
-        // Suppress "AUTOSAR C++14 M7-5-2": The address of an object with automatic storage shall not be assigned to
-        // another object that may persist after the first object has ceased to exist.
-        // The result pointer is still valid outside this method until Skeleton object (as a holder) is alive.
+        // Suppress "AUTOSAR C++14 M7-5-1": Functions should not return references or pointers to automatic variables
+        // defined in the function.
+        // Suppress "AUTOSAR C++14 M7-5-2": Should not assign an object with automatic storage to another which could
+        // persist after the first objects has been destroyed.
+        // Suppress "AUTOSAR C++14 A3-8-1": Don't access an object before construction or after destruction.
+        // Jutification: The lifetime of the object whose address is assigned to "event_data_control_asil_b" is owned by
+        // the Skeleton itself. The pointer is passed to EventDataControlComposite which is then owned by a
+        // SkeletonEvent which is guaranteed to be destroyed before the Skeleton is destroyed (since it's a member of
+        // the parent Skeleton).
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
         event_data_control_asil_b = &(event_control_asil_b_it->second.data_control);
     }
 
-    // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
-    // The "event_data_storage_it" variable is an iterator of interprocess map returned by the "find_element" method.
-    // A check is made that the iterator is not equal to map.cend(). Therefore, the call to "event_data_storage_it->"
-    // does not return nullptr.
+    // Suppress "AUTOSAR C++14 A5-3-2": Don't dereference null pointers.
+    // Justification: The "event_data_storage_it" variable is an iterator of interprocess map returned by the
+    // "find_element" method. A check is made that the iterator is not equal to map.cend(). Therefore, the call to
+    // "event_data_storage_it->" does not return nullptr.
     // coverity[autosar_cpp14_a5_3_2_violation]
     auto* const typed_event_data_storage_ptr =
         event_data_storage_it->second.template get<EventDataStorage<SampleType>>();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(typed_event_data_storage_ptr != nullptr,
                                                 "Could not get EventDataStorage*");
 
-    // Suppress "AUTOSAR C++14 A3-8-1" rule findings. This rule declares:
-    // "An object shall not be accessed outside of its lifetime"
-    // The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even returned pointer
-    // to internal state until Skeleton object is alive.
+    // Suppress "AUTOSAR C++14 A3-8-1":
+    // Justification: The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even
+    // returned pointer to internal state until Skeleton object is alive.
     // coverity[autosar_cpp14_a3_8_1_violation]
     return {typed_event_data_storage_ptr,
             // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
