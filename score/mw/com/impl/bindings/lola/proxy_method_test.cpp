@@ -149,7 +149,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingWithoutMarkingSubscribedReturnsE
     unit_->SetInArgsAndReturnStorages(kValidInArgStorage, kEmptyReturnStorage);
 
     // When calling AllocateInArgs
-    const auto result = unit_->AllocateInArgs(kDummyQueuePosition);
+    const auto result = unit_->GetInArgsBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -167,7 +167,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterMarkingSubscribedThenUnsubs
     unit_->SetInArgsAndReturnStorages(kValidInArgStorage, kEmptyReturnStorage);
 
     // When calling AllocateInArgs
-    const auto result = unit_->AllocateInArgs(kDummyQueuePosition);
+    const auto result = unit_->GetInArgsBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -182,7 +182,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingValidStoragesWithVal
     unit_->SetInArgsAndReturnStorages(kValidInArgStorage, kEmptyReturnStorage);
 
     // When calling AllocateInArgs
-    const auto result = unit_->AllocateInArgs(kDummyQueuePosition);
+    const auto result = unit_->GetInArgsBuffer(kDummyQueuePosition);
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -197,7 +197,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingValidInArgsStorageWi
 
     // When calling AllocateInArgs
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateInArgs(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->GetInArgsBuffer(kDummyQueuePosition));
 }
 
 TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingEmptyInArgsStorageWithInArgsTypeInfoTerminates)
@@ -209,7 +209,7 @@ TEST_F(ProxyMethodAllocateInArgsFixture, CallingAfterSettingEmptyInArgsStorageWi
 
     // When calling AllocateInArgs
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateInArgs(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->GetInArgsBuffer(kDummyQueuePosition));
 }
 
 using ProxyMethodAllocateReturnTypeFixture = ProxyMethodFixture;
@@ -222,7 +222,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingWithoutMarkingSubscribedRetu
     unit_->SetInArgsAndReturnStorages(kEmptyInArgStorage, kValidReturnStorage);
 
     // When calling AllocateReturnType
-    const auto result = unit_->AllocateReturnType(kDummyQueuePosition);
+    const auto result = unit_->GetReturnValueBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -240,7 +240,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterMarkingSubscribedThenUn
     unit_->SetInArgsAndReturnStorages(kEmptyInArgStorage, kValidReturnStorage);
 
     // When calling AllocateReturnType
-    const auto result = unit_->AllocateReturnType(kDummyQueuePosition);
+    const auto result = unit_->GetReturnValueBuffer(kDummyQueuePosition);
 
     // Then an error is returned
     EXPECT_FALSE(result.has_value());
@@ -255,7 +255,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidStoragesWit
     unit_->SetInArgsAndReturnStorages(kEmptyInArgStorage, kValidReturnStorage);
 
     // When calling AllocateReturnType
-    const auto result = unit_->AllocateReturnType(kDummyQueuePosition);
+    const auto result = unit_->GetReturnValueBuffer(kDummyQueuePosition);
 
     // Then a valid result is returned
     EXPECT_TRUE(result.has_value());
@@ -271,7 +271,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidReturnStora
     // When calling AllocateReturnType
     // Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          unit_->AllocateReturnType(kDummyQueuePosition));
+                                                          unit_->GetReturnValueBuffer(kDummyQueuePosition));
 }
 
 TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStorageWithReturnTypeInfoTerminates)
@@ -284,7 +284,7 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStora
     // When calling AllocateReturnType
     // Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
-                                                          unit_->AllocateReturnType(kDummyQueuePosition));
+                                                          unit_->GetReturnValueBuffer(kDummyQueuePosition));
 }
 
 using ProxyMethodDoCallFixture = ProxyMethodFixture;

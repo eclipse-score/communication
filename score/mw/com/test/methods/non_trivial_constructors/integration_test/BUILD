@@ -36,4 +36,3 @@ test_suite(
         ":non_trivial_constructors_test",
     ],
 )
-

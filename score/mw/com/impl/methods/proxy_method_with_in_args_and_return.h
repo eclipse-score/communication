@@ -216,7 +216,7 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
     MethodInArgPtr<ArgTypes>... args)
 {
     auto queue_position = detail::GetCommonQueuePosition(args...);
-    auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
+    auto allocated_return_type_storage = binding_->GetReturnValueBuffer(queue_position);
     if (!allocated_return_type_storage.has_value())
     {
         return Unexpected(allocated_return_type_storage.error());

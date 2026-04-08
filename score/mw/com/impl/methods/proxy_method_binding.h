@@ -38,14 +38,14 @@ class ProxyMethodBinding
     /// \return span of bytes representing the allocated storage or an error.
     /// \note If the method has no in-arguments (i.e. in_args_type_erased_info_ is a std::nullopt), this method shall
     /// not be called.
-    virtual score::Result<score::cpp::span<std::byte>> AllocateInArgs(std::size_t queue_position) = 0;
+    virtual score::Result<score::cpp::span<std::byte>> GetInArgsBuffer(std::size_t queue_position) = 0;
 
     /// \brief Allocates storage for the return type of a method call at the given queue position.
     /// \param queue_position The call-queue position for which to allocate the return type storage.
     /// \return span of bytes representing the allocated storage or an error.
     /// \note If the method has no return type (i.e. void, thus return_type_type_erased_info_ is a std::nullopt), this
     /// method shall not be called.
-    virtual score::Result<score::cpp::span<std::byte>> AllocateReturnType(std::size_t queue_position) = 0;
+    virtual score::Result<score::cpp::span<std::byte>> GetReturnValueBuffer(std::size_t queue_position) = 0;
 
     /// \brief Performs the actual method call at the given call-queue position.
     /// \details The in-arguments and return type storage must have been allocated before calling this method. The

@@ -40,8 +40,8 @@ cc_library(
     implementation_deps = [
         ":test_method_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/methods/methods_test_resources:proxy_container",
         "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
+        "//score/mw/com/test/methods/methods_test_resources:proxy_container",
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -56,8 +56,8 @@ cc_library(
     deps = [
         ":test_method_datatype",
         "//score/mw/com",
-        "//score/mw/com/test/methods/methods_test_resources:skeleton_container",
         "//score/mw/com/test/methods/methods_test_resources:process_synchronizer",
+        "//score/mw/com/test/methods/methods_test_resources:skeleton_container",
     ],
 )
 

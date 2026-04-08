@@ -163,7 +163,7 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
     }
 
     const auto queue_position = queue_position_result.value();
-    auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
+    auto allocated_return_type_storage = binding_->GetReturnValueBuffer(queue_position);
     if (!allocated_return_type_storage.has_value())
     {
         return Unexpected(allocated_return_type_storage.error());

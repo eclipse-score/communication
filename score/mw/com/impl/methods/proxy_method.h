@@ -133,7 +133,7 @@ score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> AllocateImpl(
         return Unexpected(available_queue_slot.error());
     }
     const std::size_t queue_index = available_queue_slot.value();
-    auto allocated_in_args_storage = binding.AllocateInArgs(queue_index);
+    auto allocated_in_args_storage = binding.GetInArgsBuffer(queue_index);
     if (!allocated_in_args_storage.has_value())
     {
         return Unexpected(allocated_in_args_storage.error());
