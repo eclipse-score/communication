@@ -335,7 +335,7 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             max_num_samples,
             instance_info,
             waker_storage: Arc::default(),
-            async_init_status: AtomicBool::new(false),
+            async_init_status: std::sync::Once::new(),
             _proxy: self.proxy_instance.clone(),
             _phantom: PhantomData,
         })
@@ -441,7 +441,7 @@ where
     max_num_samples: usize,
     instance_info: LolaConsumerInfo,
     waker_storage: Arc<AtomicWaker>,
-    async_init_status: AtomicBool,
+    async_init_status: std::sync::Once,
     _proxy: ProxyInstanceManager,
     _phantom: PhantomData<T>,
 }
@@ -455,9 +455,8 @@ impl<T: CommData + Debug> Drop for SubscriberImpl<T> {
         // and then unsubscribe from the event to clean up resources on the C++ side.
         let mut guard = self.event.get_proxy_event();
         unsafe {
-            if self
-                .async_init_status
-                .load(std::sync::atomic::Ordering::Relaxed)
+            if self.async_init_status.is_completed()
+            // Check if the async receive callback was initialized
             {
                 bridge_ffi_rs::clear_event_receive_handler(guard.deref_mut(), T::ID);
             }
@@ -564,18 +563,11 @@ where
             // on the same subscriber instance.
             let mut event_guard = self.event.get_proxy_event();
             // Initialize the async receive callback only once when the first receive call is made
-            if !self
-                .async_init_status
-                .load(std::sync::atomic::Ordering::Relaxed)
-            {
-                if let Err(_e) = self.init_async_receive(&mut event_guard) {
-                    return Err(Error::ReceiveError(
-                        ReceiveFailedReason::InitializationFailed,
-                    ));
-                }
-                self.async_init_status
-                    .store(true, std::sync::atomic::Ordering::Relaxed);
-            }
+            // We are using std::sync::Once to ensure that the callback is set only once.
+            self.async_init_status.call_once(|| {
+                self.init_async_receive(&mut event_guard)
+                    .expect("Failed to initialize async receive callback");
+            });
             ReceiveFuture {
                 event_guard: Some(event_guard),
                 waker_storage: Arc::clone(&self.waker_storage),
