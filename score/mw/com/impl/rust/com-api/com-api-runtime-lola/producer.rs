@@ -428,12 +428,12 @@ where
     }
 }
 
-pub struct SampleProducerBuilder<I: Interface> {
+pub struct LolaProducerBuilder<I: Interface> {
     pub instance_specifier: InstanceSpecifier,
     pub _interface: PhantomData<I>,
 }
 
-impl<I: Interface> SampleProducerBuilder<I> {
+impl<I: Interface> LolaProducerBuilder<I> {
     pub fn new(_runtime: &LolaRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
@@ -442,9 +442,9 @@ impl<I: Interface> SampleProducerBuilder<I> {
     }
 }
 
-impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder<I> {}
+impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for LolaProducerBuilder<I> {}
 
-impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
+impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for LolaProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
         //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
         let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(
