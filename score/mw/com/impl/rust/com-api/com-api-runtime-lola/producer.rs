@@ -33,6 +33,7 @@ use crate::Debug;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
+use std::ptr::NonNull;
 use std::sync::Arc;
 
 use com_api_concept::{
@@ -56,8 +57,9 @@ impl ProviderInfo for LolaProviderInfo {
     fn offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to offer service
         // the skeleton handle is created during building the provider info instance
-        let status =
-            unsafe { bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
+        let status = unsafe {
+            bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle.as_ptr())
+        };
         if !status {
             return Err(Error::ServiceError(ServiceFailedReason::OfferServiceFailed));
         }
@@ -67,7 +69,9 @@ impl ProviderInfo for LolaProviderInfo {
     fn stop_offer_service(&self) -> Result<()> {
         //SAFETY: it is safe as we are passing valid skeleton handle to stop offer service
         // the skeleton handle is created during building the provider info instance
-        unsafe { bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle) };
+        unsafe {
+            bridge_ffi_rs::skeleton_stop_offer_service(self.skeleton_handle.0.handle.as_ptr())
+        };
         Ok(())
     }
 }
@@ -287,7 +291,7 @@ impl std::fmt::Debug for SkeletonInstanceManager {
 /// And the lifetime is managed correctly
 /// As it has Send and Sync unsafe impls, it must not expose any mutable access to the skeleton handle
 pub struct NativeSkeletonHandle {
-    pub handle: *mut SkeletonBase,
+    pub handle: NonNull<SkeletonBase>,
 }
 
 //SAFETY: NativeSkeletonHandle is safe to share between threads because:
@@ -300,13 +304,10 @@ unsafe impl Send for NativeSkeletonHandle {}
 impl NativeSkeletonHandle {
     pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
-        let handle =
+        let raw =
             unsafe { bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native()) };
-        if handle.is_null() {
-            return Err(Error::ProducerError(
-                ProducerFailedReason::SkeletonCreationFailed,
-            ));
-        }
+        let handle = std::ptr::NonNull::new(raw)
+            .ok_or_else(|| Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed))?;
         Ok(Self { handle })
     }
 }
@@ -316,7 +317,7 @@ impl Drop for NativeSkeletonHandle {
         //SAFETY: It is safe as we are passing valid skeleton handle to destroy skeleton
         // the handle was created using create_skeleton
         unsafe {
-            bridge_ffi_rs::destroy_skeleton(self.handle);
+            bridge_ffi_rs::destroy_skeleton(self.handle.as_ptr());
         }
     }
 }
@@ -340,7 +341,7 @@ impl NativeSkeletonEventBase {
         // skeleton handle is created during producer offer call
         let skeleton_event_ptr = unsafe {
             bridge_ffi_rs::get_event_from_skeleton(
-                instance_info.skeleton_handle.0.handle,
+                instance_info.skeleton_handle.0.handle.as_ptr(),
                 instance_info.interface_id,
                 identifier,
             )
