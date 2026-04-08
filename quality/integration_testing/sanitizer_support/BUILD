@@ -11,16 +11,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Suppressions for the LeakSanitizer
-# See: https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer#suppressions
-# Every suppression requires a justification.
-# Suppressions that share the same justification may be organized in a single block.
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
-# Rust's standard runtime (std::rt::lang_start) allocates thread-local storage (TLS) that is not
-# cleaned up at the time LSan runs its atexit sweep. LSan reports this as a memory leak because
-# TLS destructors are invoked after LSan's atexit handler, so the memory appears live but
-# unreachable at leak-check time. This affects all Rust binaries regardless of async runtime used.
-# Rust sanitizer support upstream: https://github.com/rust-lang/rust/issues/39699.
-# We plan to re-verify the behavior and perform further analysis under Ticket-252536.
-
-leak:std::rt::lang_start
+pkg_tar(
+    name = "suppressions_pkg",
+    srcs = [
+        "//quality/sanitizer:repo_suppressions",
+        "@score_cpp_policies//sanitizers:suppressions",
+    ],
+    mode = "0444",
+    package_dir = "sanitizers/suppressions",
+    visibility = ["//visibility:public"],
+)

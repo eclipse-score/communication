@@ -15,16 +15,11 @@
 # Sanitizer Configurations (adapted from @score_cpp_policies)
 # ==============================================================================
 
-# Debug symbols for sanitizer stack traces
-test:with_debug_symbols --cxxopt=-g1
-test:with_debug_symbols --strip=never
-
 # ASan + UBSan + LSan (Combined)
 test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 test:asan_ubsan_lsan --features=asan_ubsan_lsan_link
 build:asan_ubsan_lsan --platform_suffix=asan_ubsan_lsan
-test:asan_ubsan_lsan --config=with_debug_symbols
 test:asan_ubsan_lsan --@score_cpp_policies//sanitizers/flags:sanitizer=asan_ubsan_lsan
 test:asan_ubsan_lsan --run_under=@score_cpp_policies//sanitizers:wrapper
 
@@ -38,6 +33,5 @@ test:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 test:tsan --features=tsan_link
 build:tsan --platform_suffix=tsan
-test:tsan --config=with_debug_symbols
 test:tsan --@score_cpp_policies//sanitizers/flags:sanitizer=tsan
 test:tsan --run_under=@score_cpp_policies//sanitizers:wrapper
