@@ -12,6 +12,7 @@
 # *******************************************************************************
 module(name = "score_communication")
 
+# Dependencies that will get propagated to our users as transitive dependencies
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
@@ -43,6 +44,7 @@ git_override(
 
 bazel_dep(name = "score_tooling", version = "1.1.2")
 
+# Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
