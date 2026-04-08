@@ -11,9 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event_common.h"
-#include "score/mw/com/impl/bindings/lola/i_runtime.h"                            // For GetBindingRuntime
-#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"  // For RegisterEventNotificationExistenceChangedCallback
+#include "score/mw/com/impl/bindings/lola/i_runtime.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -27,11 +28,12 @@ SkeletonEventCommon::SkeletonEventCommon(Skeleton& parent,
       event_fqn_{event_fqn},
       event_data_control_composite_ref_{event_data_control_composite_ref},
       current_timestamp_ref_{current_timestamp_ref},
-      tracing_data_{tracing_data}
+      tracing_data_{tracing_data},
+      transaction_log_registration_guard_{}
 {
 }
 
-void SkeletonEventCommon::PrepareOfferCommon() noexcept
+void SkeletonEventCommon::PrepareOfferCommon(TransactionLogSet& transaction_log_set) noexcept
 {
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
@@ -48,7 +50,7 @@ void SkeletonEventCommon::PrepareOfferCommon() noexcept
     // Ticket-188259).
     if (tracing_for_skeleton_event_enabled)
     {
-        EmplaceTransactionLogRegistrationGuard();
+        EmplaceTransactionLogRegistrationGuard(transaction_log_set);
         EmplaceTypeErasedSamplePtrsGuard();
     }
 
@@ -96,12 +98,12 @@ void SkeletonEventCommon::PrepareStopOfferCommon() noexcept
     ResetGuards();
 }
 
-void SkeletonEventCommon::EmplaceTransactionLogRegistrationGuard()
+void SkeletonEventCommon::EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
                                                 "EventDataControlComposite must be initialized.");
-    score::cpp::ignore = transaction_log_registration_guard_.emplace(
-        TransactionLogRegistrationGuard::Create(event_data_control_composite_ref_.value().GetQmEventDataControl()));
+    score::cpp::ignore = transaction_log_registration_guard_.emplace(transaction_log_set.RegisterSkeletonTracingElement(
+        event_data_control_composite_ref_->GetProxyEventDataControlLocalView()));
 }
 
 void SkeletonEventCommon::EmplaceTypeErasedSamplePtrsGuard()

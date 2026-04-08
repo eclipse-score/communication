@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_SUBSCRIPTION_STATE_BASE_H
 
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
-#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
 #include "score/result/result.h"
@@ -52,7 +52,6 @@ class SubscriptionStateBase
     virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
     virtual score::cpp::optional<SlotCollector>& GetSlotCollector() noexcept = 0;
     virtual const score::cpp::optional<SlotCollector>& GetSlotCollector() const noexcept = 0;
-    virtual score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept = 0;
 
     virtual void OnEntry() noexcept {};
     virtual void OnExit() noexcept {};

@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
@@ -33,10 +33,10 @@ const TransactionLog::MaxSampleCountType kSubscriptionMaxSampleCount{5U};
 const std::size_t kSlotIndex0{0U};
 const std::size_t kSlotIndex1{1U};
 
-class TransactionLogFixture : public ::testing::Test
+class TransactionLogLocalViewFixture : public ::testing::Test
 {
   protected:
-    TransactionLog::DereferenceSlotCallback GetDereferenceSlotCallbackWrapper() noexcept
+    TransactionLogLocalView::DereferenceSlotCallback GetDereferenceSlotCallbackWrapper() noexcept
     {
         // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only
         // stores a pointer to the MockFunction and therefore fits within the score::cpp::callback.
@@ -45,7 +45,7 @@ class TransactionLogFixture : public ::testing::Test
         };
     }
 
-    TransactionLog::UnsubscribeCallback GetUnsubscribeCallbackWrapper() noexcept
+    TransactionLogLocalView::DereferenceSlotCallback GetUnsubscribeCallbackWrapper() noexcept
     {
         // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only
         // stores a pointer to the MockFunction and therefore fits within the score::cpp::callback.
@@ -55,13 +55,44 @@ class TransactionLogFixture : public ::testing::Test
     }
 
     memory::shared::SharedMemoryResourceHeapAllocatorMock memory_resource_{1U};
-    TransactionLog unit_{kNumberOfSlots, memory_resource_};
+    TransactionLog transaction_log_{kNumberOfSlots, memory_resource_};
+    TransactionLogLocalView unit_{transaction_log_};
 
     StrictMock<MockFunction<void(TransactionLog::SlotIndexType)>> dereference_slot_callback_{};
     StrictMock<MockFunction<void(TransactionLog::MaxSampleCountType)>> unsubscribe_callback_{};
 };
 
-using TransactionLogProxyElementFixture = TransactionLogFixture;
+TEST_F(TransactionLogLocalViewFixture, SubscriptionTransactionUpdatesPointedToTransactionLog)
+{
+    // Given a TransactionLogLocalView pointing to a valid TransactionLog
+
+    // When calling SubscribeTransactionBegin on the TransactionLogLocalView
+    EXPECT_FALSE(transaction_log_.subscribe_transactions_.GetTransactionBegin());
+    EXPECT_FALSE(transaction_log_.subscribe_transactions_.GetTransactionEnd());
+    unit_.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
+
+    // Then the underlying TransactionLog being pointed to by the TransactionLogLocalView should be updated.
+    EXPECT_TRUE(transaction_log_.subscribe_transactions_.GetTransactionBegin());
+    EXPECT_FALSE(transaction_log_.subscribe_transactions_.GetTransactionEnd());
+}
+
+TEST_F(TransactionLogLocalViewFixture, ReferenceTransactionUpdatesPointedToTransactionLog)
+{
+    // Given a TransactionLogLocalView pointing to a valid TransactionLog
+
+    // When calling ReferenceTransactionBegin on the first slot in the TransactionLogLocalView
+    constexpr std::size_t slot_index{0U};
+    auto& slot = transaction_log_.reference_count_slots_.at(slot_index);
+    EXPECT_FALSE(slot.GetTransactionBegin());
+    EXPECT_FALSE(slot.GetTransactionEnd());
+    unit_.ReferenceTransactionBegin(slot_index);
+
+    // Then the underlying TransactionLog being pointed to by the TransactionLogLocalView should be updated.
+    EXPECT_TRUE(slot.GetTransactionBegin());
+    EXPECT_FALSE(slot.GetTransactionEnd());
+}
+
+using TransactionLogProxyElementFixture = TransactionLogLocalViewFixture;
 TEST_F(TransactionLogProxyElementFixture, RollbackWillNotCallCallbackWhenNoTransactionsRecorded)
 {
     // Given a valid TransactionLog
@@ -428,7 +459,7 @@ TEST_F(TransactionLogProxyElementFixture, RollbackWillReturnErrorIfUnsubscribeTr
     EXPECT_FALSE(rollback_result_2.has_value());
 }
 
-using TransactionLogSkeletonTracingElementFixture = TransactionLogFixture;
+using TransactionLogSkeletonTracingElementFixture = TransactionLogLocalViewFixture;
 TEST_F(TransactionLogSkeletonTracingElementFixture, RollbackWillNotCallCallbackWhenNoTransactionsRecorded)
 {
     // Given a valid TransactionLog
@@ -691,7 +722,7 @@ TEST_F(TransactionLogContainsTransactionsReferenceFixture, ReturnsFalseWhenDeref
 
 // Test for boundary condition: ReferenceTransactionBegin should retry and terminate
 // when transaction-END bit remains TRUE after max retries (indicating stuck dereference thread).
-class ReferenceTransactionBoundaryConditionFixture : public TransactionLogFixture
+class ReferenceTransactionBoundaryConditionFixture : public TransactionLogLocalViewFixture
 {
 };
 
@@ -699,7 +730,7 @@ TEST_F(ReferenceTransactionBoundaryConditionFixture, ReferenceTransactionBeginTe
 {
     // Given a TransactionLog with a slot where transaction-END bit is stuck TRUE
     // Set up the slot: BEGIN=false, END=true (boundary condition)
-    auto& slot = TransactionLogAttorney{unit_}.GetReferenceCountSlot(kSlotIndex0);
+    auto& slot = transaction_log_.reference_count_slots_.at(static_cast<std::size_t>(kSlotIndex0));
     slot.SetTransactionBegin(false);
     slot.SetTransactionEnd(true);
 
@@ -712,7 +743,7 @@ TEST_F(ReferenceTransactionBoundaryConditionFixture, ReferenceTransactionBeginSu
 {
     // Given a TransactionLog with a slot
     // Set up the slot: BEGIN=false, END=false
-    auto& slot = TransactionLogAttorney{unit_}.GetReferenceCountSlot(kSlotIndex0);
+    auto& slot = transaction_log_.reference_count_slots_.at(static_cast<std::size_t>(kSlotIndex0));
     slot.SetTransactionBegin(false);
     slot.SetTransactionEnd(false);
 

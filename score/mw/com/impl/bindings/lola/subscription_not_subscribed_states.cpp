@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/subscription_helpers.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine_states.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/com_error.h"
 
@@ -35,8 +36,9 @@ namespace score::mw::com::impl::lola
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count) noexcept
 {
-    auto transaction_log_registration_guard_result = TransactionLogRegistrationGuard::Create(
-        state_machine_.event_control_.data_control, state_machine_.transaction_log_id_);
+    auto transaction_log_registration_guard_result =
+        state_machine_.event_control_local_.transaction_log_set.get().RegisterProxyElement(
+            state_machine_.transaction_log_id_, state_machine_.event_control_local_.data_control);
     if (!(transaction_log_registration_guard_result.has_value()))
     {
         std::stringstream ss{};
@@ -49,10 +51,18 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
     score::cpp::ignore = state_machine_.transaction_log_registration_guard_.emplace(
         std::move(transaction_log_registration_guard_result).value());
 
-    auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
+    // Currently, we do the subscription via EventSubscriptionControl in shared memory. This currently does not work and
+    // we need to do the subscription via message passing (Bug ticket: SWP-174759). Since EventSubscriptionControl will
+    // be removed in the future, we don't create a EventSubscriptionControlLocalView which could cache the
+    // TransactionLogView and do the transaction log operations via EventSubscriptionControlLocalView. Instead, we
+    // directly create a TransactionLogLocalView and do the transaction log operations via TransactionLogLocalView.
+    // Since the subscription process is not called frequently, we are not concerned with the performance issue of
+    // creating a TransactionLogLocalView  from the TransactionLog in shared memory.
+    const auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
     auto& transaction_log =
-        state_machine_.event_control_.data_control.GetTransactionLogSet().GetTransactionLog(transaction_log_index);
-    transaction_log.SubscribeTransactionBegin(max_sample_count);
+        state_machine_.event_control_local_.transaction_log_set.get().GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{transaction_log};
+    transaction_log_local_view.SubscribeTransactionBegin(max_sample_count);
 
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
@@ -60,13 +70,13 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
     // coverity[autosar_cpp14_a4_7_1_violation]
     const auto max_sample_count_uint16 = static_cast<std::uint16_t>(max_sample_count);
     const auto subscription_result =
-        state_machine_.event_control_.subscription_control.Subscribe(max_sample_count_uint16);
+        state_machine_.event_control_local_.subscription_control.get().Subscribe(max_sample_count_uint16);
     if (subscription_result != SubscribeResult::kSuccess)
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
             subscription_result != SubscribeResult::kMaxSubscribersOverflow,
             "TransactionLogRegistrationGuard::Create will return an error if we have a subscriber overflow.");
-        transaction_log.SubscribeTransactionAbort();
+        transaction_log_local_view.SubscribeTransactionAbort();
         std::stringstream ss{};
         ss << "Subscribe was rejected by skeleton. Cannot complete SubscribeEvent() call due to "
            << ToString(subscription_result);
@@ -75,10 +85,10 @@ ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_coun
         state_machine_.transaction_log_registration_guard_.reset();
         return MakeUnexpected(ComErrc::kMaxSampleCountNotRealizable);
     }
-    transaction_log.SubscribeTransactionCommit();
+    transaction_log_local_view.SubscribeTransactionCommit();
 
-    SlotCollector slot_collector{
-        state_machine_.event_control_.data_control, static_cast<std::size_t>(max_sample_count), transaction_log_index};
+    SlotCollector slot_collector{state_machine_.event_control_local_.data_control,
+                                 static_cast<std::size_t>(max_sample_count)};
     if (state_machine_.event_receiver_handler_.has_value())
     {
         // Defer handler registration until provider is available to avoid failed registration attempts.
@@ -147,24 +157,17 @@ const score::cpp::optional<SlotCollector>& NotSubscribedState::GetSlotCollector(
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-score::cpp::optional<TransactionLogSet::TransactionLogIndex> NotSubscribedState::GetTransactionLogIndex() const noexcept
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
-        !state_machine_.transaction_log_registration_guard_.has_value(),
-        "TransactionLogRegistrationGuard should not be set until Subscribe is called.");
-    return {};
-}
-
 void NotSubscribedState::OnEntry() noexcept
 {
     const auto transaction_log_index = state_machine_.transaction_log_registration_guard_->GetTransactionLogIndex();
     auto& transaction_log =
-        state_machine_.event_control_.data_control.GetTransactionLogSet().GetTransactionLog(transaction_log_index);
+        state_machine_.event_control_local_.transaction_log_set.get().GetTransactionLog(transaction_log_index);
+    TransactionLogLocalView transaction_log_local_view{transaction_log};
 
-    transaction_log.UnsubscribeTransactionBegin();
-    state_machine_.event_control_.subscription_control.Unsubscribe(
+    transaction_log_local_view.UnsubscribeTransactionBegin();
+    state_machine_.event_control_local_.subscription_control.get().Unsubscribe(
         state_machine_.subscription_data_.max_sample_count_.value());
-    transaction_log.UnsubscribeTransactionCommit();
+    transaction_log_local_view.UnsubscribeTransactionCommit();
 
     state_machine_.event_receive_handler_manager_.Unregister();
     state_machine_.subscription_data_.Clear();

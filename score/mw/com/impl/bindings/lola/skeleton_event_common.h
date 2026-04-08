@@ -61,7 +61,7 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    void PrepareOfferCommon() noexcept;
+    void PrepareOfferCommon(TransactionLogSet& transaction_log_set) noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     // Accessors for members used by PrepareOfferCommon/PrepareStopOfferCommon
@@ -108,7 +108,7 @@ class SkeletonEventCommon
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
     std::optional<tracing::TypeErasedSamplePtrsGuard> type_erased_sample_ptrs_guard_{};
 
-    void EmplaceTransactionLogRegistrationGuard();
+    void EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set);
     void EmplaceTypeErasedSamplePtrsGuard();
     void UpdateCurrentTimestamp();
     void SetQmNotificationsRegistered(bool value);

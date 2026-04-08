@@ -39,7 +39,7 @@ namespace score::mw::com::impl::lola
 /// created in the same region).
 ///
 /// A detailed explanation of the how we handle partial restart in the context of methods and why this map is needed is
-/// in `platform/aas/docs/features/ipc/lola/method/README.md` (Specifically in the section about "Cleaning up old
+/// in `score/docs/features/ipc/lola/method/README.md` (Specifically in the section about "Cleaning up old
 /// method shared memory resources").
 class MethodResourceMap
 {

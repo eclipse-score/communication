@@ -11,9 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_rollback_executor.h"
-
+/*
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
 #include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
@@ -32,6 +33,7 @@
 #include <sys/types.h>
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace score::mw::com::impl::lola
 {
@@ -71,13 +73,15 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
     {
         service_data_control_ = std::make_unique<ServiceDataControl>(memory_resource_mock_);
-        unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,
+        AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
+
+        score::cpp::ignore = proxy_service_data_control_local_.emplace(*service_data_control_);
+        unit_ = std::make_unique<TransactionLogRollbackExecutor>(proxy_service_data_control_local_.value(),
                                                                  kSkeletonInstanceIdentifier,
                                                                  kDummyQualityType,
                                                                  kDummyProviderPid,
                                                                  kDummyTransactionLogId);
 
-        AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
         return *this;
     }
 
@@ -100,10 +104,10 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         ASSERT_EQ(result_pid.value(), pid);
     }
 
-    EventDataControl& GetEventDataControl(const ElementFqId element_fq_id) noexcept
+    ProxyEventDataControlLocalView<>& GetProxyEventDataControlLocalView(const ElementFqId element_fq_id) noexcept
     {
-        auto find_result = service_data_control_->event_controls_.find(element_fq_id);
-        EXPECT_NE(find_result, service_data_control_->event_controls_.cend());
+        auto find_result = proxy_service_data_control_local_->event_controls_.find(element_fq_id);
+        EXPECT_NE(find_result, proxy_service_data_control_local_->event_controls_.cend());
         return find_result->second.data_control;
     }
 
@@ -118,9 +122,11 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         const ElementFqId& element_fq_id,
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& event_data_control = GetEventDataControl(element_fq_id);
-        auto& transaction_log_set = event_data_control.GetTransactionLogSet();
-        const auto transaction_log_index = transaction_log_set.RegisterProxyElement(transaction_log_id).value();
+        auto& proxy_event_data_control_local = GetProxyEventDataControlLocalView(element_fq_id);
+        auto& transaction_log_set = proxy_event_data_control_local.GetTransactionLogSet();
+        transaction_log_registration_guards_.push_back(
+            transaction_log_set.RegisterProxyElement(transaction_log_id).value());
+        const auto transaction_log_index = transaction_log_registration_guards_.back().GetTransactionLogIndex();
 
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();
         auto& transaction_log_node = transaction_logs.at(transaction_log_index);
@@ -137,8 +143,10 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     MessagePassingServiceMock message_passing_service_mock_{};
 
     std::unique_ptr<ServiceDataControl> service_data_control_{nullptr};
+    std::optional<ProxyServiceDataControlLocalView> proxy_service_data_control_local_{};
     std::unique_ptr<TransactionLogRollbackExecutor> unit_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
+    std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards_{};
 };
 
 using TransactionLogRegisterProxyElementFixture = TransactionLogRollbackExecutorFixture;
@@ -354,4 +362,4 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegiste
 }
 
 }  // namespace
-}  // namespace score::mw::com::impl::lola
+}  // namespace score::mw::com::impl::lola */

@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 
+#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
@@ -24,7 +25,7 @@
 namespace score::mw::com::impl::lola
 {
 
-bool TransactionLogSet::TransactionLogNode::TryAcquire(TransactionLogId transaction_log_id) noexcept
+bool TransactionLogSet::TransactionLogNode::TryAcquire(TransactionLogId transaction_log_id)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(transaction_log_id != kInvalidTransactionLogId,
                                                 "Called TransactionLogNode::TryAcquire with kInvalidTransactionLogId");
@@ -32,7 +33,7 @@ bool TransactionLogSet::TransactionLogNode::TryAcquire(TransactionLogId transact
     return transaction_log_id_.GetUnderlying().compare_exchange_strong(expected_transaction_log_id, transaction_log_id);
 }
 
-bool TransactionLogSet::TransactionLogNode::TryAcquireForRead(TransactionLogId transaction_log_id) noexcept
+bool TransactionLogSet::TransactionLogNode::TryAcquireForRead(TransactionLogId transaction_log_id)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         transaction_log_id != kInvalidTransactionLogId,
@@ -40,23 +41,18 @@ bool TransactionLogSet::TransactionLogNode::TryAcquireForRead(TransactionLogId t
     return (transaction_log_id_ == transaction_log_id);
 }
 
-void TransactionLogSet::TransactionLogNode::Reset() noexcept
+void TransactionLogSet::TransactionLogNode::Reset()
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        !transaction_log_.ContainsTransactions(),
+        !GetTransactionLogLocalView().ContainsTransactions(),
         "Cannot Reset TransactionLog as it still contains some old transactions.");
     needs_rollback_.GetUnderlying() = false;
     Release();
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". The std::vector constructor we use is not marked as noexcept, in case TransactionLogNode is not
-// CopyInsertable into std::vector<T>, the behavior is undefined. As TransactionLogNode is CopyInsertable so no way for
-// throwing an exception which leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 TransactionLogSet::TransactionLogSet(const TransactionLogIndex max_number_of_logs,
                                      const std::size_t number_of_slots,
-                                     memory::shared::ManagedMemoryResource& resource) noexcept
+                                     memory::shared::ManagedMemoryResource& resource)
     : proxy_transaction_logs_(max_number_of_logs, TransactionLogNode{number_of_slots, resource}, resource),
       skeleton_tracing_transaction_log_{number_of_slots, resource}
 {
@@ -65,13 +61,7 @@ TransactionLogSet::TransactionLogSet(const TransactionLogIndex max_number_of_log
         "kSkeletonIndexSentinel is a reserved sentinel value so the max_number_of_logs must be reduced.");
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly".
-// The coverity tool reports: "An exception of type std::bad_optional_access is thrown but the throw list noexcept
-// doesn't allow it to be thrown. terminate() could be called implicitly."
-// This is a false-positive, no optional is involved in this function
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void TransactionLogSet::MarkTransactionLogsNeedRollback(const TransactionLogId& transaction_log_id) noexcept
+void TransactionLogSet::MarkTransactionLogsNeedRollback(const TransactionLogId& transaction_log_id)
 {
     for (auto& transaction_log_node : proxy_transaction_logs_)
     {
@@ -91,8 +81,8 @@ void TransactionLogSet::MarkTransactionLogsNeedRollback(const TransactionLogId& 
 
 ResultBlank TransactionLogSet::RollbackProxyTransactions(
     const TransactionLogId& transaction_log_id,
-    const TransactionLog::DereferenceSlotCallback dereference_slot_callback,
-    const TransactionLog::UnsubscribeCallback unsubscribe_callback) noexcept
+    const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback,
+    const TransactionLogLocalView::DereferenceSlotCallback unsubscribe_callback)
 {
     const auto transaction_log_node_iterators_to_be_rolled_back =
         FindTransactionLogNodesToBeRolledBack(transaction_log_id);
@@ -103,7 +93,7 @@ ResultBlank TransactionLogSet::RollbackProxyTransactions(
     ResultBlank rollback_result{};
     for (const auto transaction_log_node_it : transaction_log_node_iterators_to_be_rolled_back)
     {
-        rollback_result = transaction_log_node_it->GetTransactionLog().RollbackProxyElementLog(
+        rollback_result = transaction_log_node_it->GetTransactionLogLocalView().RollbackProxyElementLog(
             dereference_slot_callback, unsubscribe_callback);
         if (rollback_result.has_value())
         {
@@ -115,14 +105,14 @@ ResultBlank TransactionLogSet::RollbackProxyTransactions(
 }
 
 ResultBlank TransactionLogSet::RollbackSkeletonTracingTransactions(
-    const TransactionLog::DereferenceSlotCallback dereference_slot_callback) noexcept
+    const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback)
 {
     if (!skeleton_tracing_transaction_log_.IsActive())
     {
         return {};
     }
     const auto rollback_result =
-        skeleton_tracing_transaction_log_.GetTransactionLog().RollbackSkeletonTracingElementLog(
+        skeleton_tracing_transaction_log_.GetTransactionLogLocalView().RollbackSkeletonTracingElementLog(
             dereference_slot_callback);
     if (!rollback_result.has_value())
     {
@@ -132,12 +122,9 @@ ResultBlank TransactionLogSet::RollbackSkeletonTracingTransactions(
     return {};
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have a value but as we check
-// before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<TransactionLogSet::TransactionLogIndex> TransactionLogSet::RegisterProxyElement(
-    const TransactionLogId& transaction_log_id) noexcept
+score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyElement(
+    const TransactionLogId& transaction_log_id,
+    ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view)
 {
     const auto next_available_slot_result = AcquireNextAvailableSlot(transaction_log_id);
     if (!next_available_slot_result.has_value())
@@ -149,12 +136,17 @@ score::Result<TransactionLogSet::TransactionLogIndex> TransactionLogSet::Registe
             "value of max_subscribers.");
     }
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        !next_available_slot_result.value().first->GetTransactionLog().ContainsTransactions(),
+        !next_available_slot_result.value().first->GetTransactionLogLocalView().ContainsTransactions(),
         "Cannot reuse TransactionLog as it still contains some old transactions.");
-    return next_available_slot_result.value().second;
+    return TransactionLogRegistrationGuard{
+        *this, next_available_slot_result.value().second, proxy_event_data_control_local_view};
 }
 
-TransactionLogSet::TransactionLogIndex TransactionLogSet::RegisterSkeletonTracingElement() noexcept
+// 1. Create TransactionLog in TransactionLogSet.
+// 2. Inject TransactionLogLocalView of newly created TransactionLog into proxy ProxyEventDataControlLocalView.
+
+TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTracingElement(
+    ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view)
 {
     // we only do have one skeleton instance accessing the skeleton transaction log, so a dummy value is good enough,
     // we don't need e.g. an uid here.
@@ -164,15 +156,10 @@ TransactionLogSet::TransactionLogIndex TransactionLogSet::RegisterSkeletonTracin
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         skeleton_tracing_transaction_log_.TryAcquire(kDummyTransactionLogIdSkeleton),
         "Unexpected failure to acquire TransactionLogNode for SkeletonEvent!");
-    return kSkeletonIndexSentinel;
+    return TransactionLogRegistrationGuard{*this, kSkeletonIndexSentinel, proxy_event_data_control_local_view};
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'proxy_transaction_logs_.at()' which might throw
-// std::out_of_range. As we already do an index check before accessing, so no way for throwing std::out_of_rang which
-// leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void TransactionLogSet::Unregister(const TransactionLogIndex transaction_log_index) noexcept
+void TransactionLogSet::Unregister(const TransactionLogIndex transaction_log_index)
 {
     if (IsSkeletonElementTransactionLogIndex(transaction_log_index))
     {
@@ -186,12 +173,7 @@ void TransactionLogSet::Unregister(const TransactionLogIndex transaction_log_ind
     }
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'proxy_transaction_logs_.at()' which might throw
-// std::out_of_range As we already do an index check before accessing, so no way for throwing std::out_of_rang which
-// leds to calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-TransactionLog& TransactionLogSet::GetTransactionLog(const TransactionLogIndex transaction_log_index) noexcept
+TransactionLog& TransactionLogSet::GetTransactionLog(const TransactionLogIndex transaction_log_index)
 {
     if (IsSkeletonElementTransactionLogIndex(transaction_log_index))
     {
@@ -242,7 +224,7 @@ TransactionLogSet::FindTransactionLogNodesToBeRolledBack(const TransactionLogId&
     return found_node_iterators;
 }
 
-std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogSet::TransactionLogIndex>>
+std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogIndex>>
 TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
 {
     //  The size of the transaction logs reflects the size of max subscribers and therefore the potential upper-bound
@@ -252,7 +234,7 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
     while (retries < max_retry_count)
     {
         // we iterate using iterators as it minimizes bounds-checking to start/end!
-        TransactionLogSet::TransactionLogIndex index{0U};
+        TransactionLogIndex index{0U};
 
         // LCOV_EXCL_BR_START (Tool incorrectly marks the branch as "Decision couldn't be analyzed" despite all lines
         // within the for loop being covered. The case in which proxy_transaction_logs_.size() == 0 will never be
@@ -290,8 +272,7 @@ TransactionLogSet::AcquireNextAvailableSlot(TransactionLogId transaction_log_id)
     return {};
 }
 
-bool TransactionLogSet::IsSkeletonElementTransactionLogIndex(
-    const TransactionLogSet::TransactionLogIndex transaction_log_index)
+bool TransactionLogSet::IsSkeletonElementTransactionLogIndex(const TransactionLogIndex transaction_log_index)
 {
     return transaction_log_index == TransactionLogSet::kSkeletonIndexSentinel;
 }

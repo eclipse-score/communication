@@ -185,9 +185,9 @@ class "<<SharedMemory>>\nlola::SkeletonDataControl" {
   +SkeletonDataControl(proxy: score::memory::shared::MemoryResourceProxy* const)
 }
 
-class "<<SharedMemory>>\nlola::EventDataControlImpl" {
+class "<<SharedMemory>>\nlola::EventDataControl" {
   -state_slots: std::vector<std::atomic<EventSlotStatusType::value_type>, PolymorphicOffsetAllocator<std::atomic<EventSlotStatusType::value_type>>>
-  +EventDataControlImpl(ManagedMemoryResource&, SlotIndexType maxSlots)
+  +EventDataControl(ManagedMemoryResource&, SlotIndexType maxSlots)
   +AllocateNextSlot(): std::optional<SlotIndexType>
   +EventReady(SlotIndexType, EventTimestamp): void
   +Discard(SlotIndexType): void
@@ -236,10 +236,10 @@ ProxyEventBindingBase <|-- ProxyEventBinding
 ProxyEventBinding <|-- lola::ProxyEvent
 lola::Skeleton *-- SkeletonDataStorage : "1..1"
 lola::Skeleton *-- "<<SharedMemory>>\nlola::SkeletonDataControl" : "1..2"
-"<<SharedMemory>>\nlola::SkeletonDataControl" *-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "0..n"
+"<<SharedMemory>>\nlola::SkeletonDataControl" *-- "<<SharedMemory>>\nlola::EventDataControl" : "0..n"
 lola::SkeletonEvent o-- "EventDataStorage"
 lola::SkeletonEvent *-- EventDataControlComposite
-"<<SharedMemory>>\nlola::EventDataControlImpl" ..> "<<SharedMemory>>\nlola::EventSlotStatus"
+"<<SharedMemory>>\nlola::EventDataControl" ..> "<<SharedMemory>>\nlola::EventSlotStatus"
 SampleAllocateePtr o-- lola::SampleAllocateePtr
 SamplePtr o-- lola::SamplePtr
 lola::ProxyEvent *-- lola::ProxyEventCommon
@@ -247,17 +247,17 @@ lola::ProxyEventCommon *-- lola::SubscriptionStateMachine
 lola::ProxyEventCommon --* lola::SlotCollector
 ProxyEventBindingBase o-- SubscriptionState
 lola::SampleAllocateePtr *-- EventDataControlComposite
-EventDataControlComposite o-- "<<SharedMemory>>\nlola::EventDataControlImpl" : "2"
+EventDataControlComposite o-- "<<SharedMemory>>\nlola::EventDataControl" : "2"
 lola::Skeleton ..> lola::ShmPathBuilder : uses
 lola::Skeleton ..> EventDataControlComposite
 lola::SubscriptionStateMachine ..> lola::SlotCollector : <<creates>>
 SkeletonEventBinding ..> SampleAllocateePtr
 lola::ProxyEvent ..> lola::SamplePtr
 SkeletonDataStorage *-- "EventDataStorage" : "0..n"
-lola::SlotCollector o-- "<<SharedMemory>>\nlola::EventDataControlImpl"
+lola::SlotCollector o-- "<<SharedMemory>>\nlola::EventDataControl"
 ProxyEventBinding ..> SamplePtr
 lola::SkeletonEvent ..> lola::SampleAllocateePtr
-lola::SamplePtr ..> "<<SharedMemory>>\nlola::EventDataControlImpl"
-lola::SampleAllocateePtr ..> "<<SharedMemory>>\nlola::EventDataControlImpl"
+lola::SamplePtr ..> "<<SharedMemory>>\nlola::EventDataControl"
+lola::SampleAllocateePtr ..> "<<SharedMemory>>\nlola::EventDataControl"
 
 @enduml

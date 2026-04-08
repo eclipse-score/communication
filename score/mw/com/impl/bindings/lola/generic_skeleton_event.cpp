@@ -26,31 +26,36 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info),
       event_properties_(event_properties),
-      event_shared_impl_(parent, event_fqn, control_, current_timestamp_, tracing_data)
+      event_data_control_composite_{},
+      current_timestamp_{1U},
+      event_data_storage_{nullptr},
+      qm_disconnect_{false},
+      event_shared_impl_(parent, event_fqn, event_data_control_composite_, current_timestamp_, tracing_data)
 {
 }
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
-    void* data_storage;
-    std::tie(data_storage, control_) = event_shared_impl_.GetParent().RegisterGeneric(
+    const auto registration_result = event_shared_impl_.GetParent().RegisterGeneric(
         event_shared_impl_.GetElementFQId(), event_properties_, size_info_.size, size_info_.alignment);
-    data_storage_ = static_cast<std::uint8_t*>(data_storage);
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(data_storage_ != nullptr);
-    event_shared_impl_.PrepareOfferCommon();
+
+    event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
+    event_data_control_composite_ = registration_result.event_data_control_composite;
+
+    event_shared_impl_.PrepareOfferCommon(registration_result.transaction_log_set);
 
     return {};
 }
 
 ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_.has_value());
     const impl::SampleAllocateePtrView<void> view{sample};
     auto ptr = view.template As<lola::SampleAllocateePtr<void>>();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != ptr);
 
     auto control_slot_indicator = ptr->GetReferencedSlot();
-    control_.value().EventReady(control_slot_indicator, ++current_timestamp_);
+    event_data_control_composite_.value().EventReady(control_slot_indicator, ++current_timestamp_);
 
     // Only call NotifyEvent if there are any registered receive handlers for each quality level (QM and ASIL-B).
     // This avoids the expensive lock operation in the common case where no handlers are registered.
@@ -76,14 +81,15 @@ ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<
 
 Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 {
-    if (!control_.has_value())
+    if (!event_data_control_composite_.has_value())
     {
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    const auto slot = control_.value().AllocateNextSlot();
+    const auto allocated_slot_result = event_data_control_composite_.value().AllocateNextSlot();
 
-    if (!qm_disconnect_ && control_->GetAsilBEventDataControl().has_value() && !slot.IsValidQM())
+    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
+        allocated_slot_result.qm_misbehaved)
     {
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
@@ -93,24 +99,25 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
         event_shared_impl_.GetParent().DisconnectQmConsumers();
     }
 
-    if (slot.IsValidQM() || slot.IsValidAsilB())
+    if (!allocated_slot_result.allocated_slot_index.has_value())
     {
-        // Calculate the exact slot spacing based on alignment padding
-        const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
-        std::size_t offset = static_cast<std::size_t>(slot.GetIndex()) * aligned_size;
-        void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(data_storage_, offset));
-
-        auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
-        return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
+        if (!event_properties_.enforce_max_samples)
+        {
+            ::score::mw::log::LogError("lola")
+                << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
+                   "disabled by config. Might be the root cause!";
+        }
+        return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    if (!event_properties_.enforce_max_samples)
-    {
-        ::score::mw::log::LogError("lola")
-            << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
-               "disabled by config. Might be the root cause!";
-    }
-    return MakeUnexpected(ComErrc::kBindingFailure);
+    // Calculate the exact slot spacing based on alignment padding
+    const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
+    std::size_t offset = static_cast<std::size_t>(*allocated_slot_result.allocated_slot_index) * aligned_size;
+    void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
+
+    auto lola_ptr = lola::SampleAllocateePtr<void>(
+        data_ptr, event_data_control_composite_.value(), *allocated_slot_result.allocated_slot_index);
+    return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 
 std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
@@ -121,8 +128,8 @@ std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 void GenericSkeletonEvent::PrepareStopOffer() noexcept
 {
     event_shared_impl_.PrepareStopOfferCommon();
-    control_.reset();
-    data_storage_ = nullptr;
+    event_data_control_composite_.reset();
+    event_data_storage_ = nullptr;
 }
 
 BindingType GenericSkeletonEvent::GetBindingType() const noexcept

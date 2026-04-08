@@ -14,12 +14,16 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_SET_H
 
 #include "score/containers/dynamic_array.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_local_view.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/util/copyable_atomic.h"
 
-#include "score/memory/shared/memory_resource_proxy.h"
 #include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 #include "score/result/result.h"
 
@@ -62,36 +66,41 @@ class TransactionLogSet
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class TransactionLogSetAttorney;
 
-  public:
-    using TransactionLogIndex = LolaEventInstanceDeployment::SubscriberCountType;
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
+    // The "TransactionLogRegistrationGuard" is responsible for unregistering a TransactionLog that was registered with
+    // the TransactionLogSet. To make the semantics clearer, we make Unregister private so that a user cannot
+    // accidentally call it themselves.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend TransactionLogRegistrationGuard;
 
+  public:
     /// \brief Struct that stores the status of a given TransactionLog
     class TransactionLogNode
     {
       public:
-        TransactionLogNode(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource) noexcept
+        TransactionLogNode(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource)
             : needs_rollback_{false},
               transaction_log_id_{kInvalidTransactionLogId},
               transaction_log_(number_of_slots, resource)
         {
         }
 
-        bool IsActive() const noexcept
+        bool IsActive() const
         {
             return (transaction_log_id_.GetUnderlying().load() != kInvalidTransactionLogId);
         }
 
-        bool NeedsRollback() const noexcept
+        bool NeedsRollback() const
         {
             return needs_rollback_;
         }
 
         /// \brief tries to acquire a given TransactionLogNode for the given transaction_log_id
         /// \return false, if it was not assigned a kInvalidTransactionLogId before and therefore the change failed.
-        bool TryAcquire(TransactionLogId transaction_log_id) noexcept;
+        bool TryAcquire(TransactionLogId transaction_log_id);
 
         /// \brief Checks, whether the instance is currently assigned to transaction_log_id
-        bool TryAcquireForRead(TransactionLogId transaction_log_id) noexcept;
+        bool TryAcquireForRead(TransactionLogId transaction_log_id);
 
         void Release()
         {
@@ -101,12 +110,12 @@ class TransactionLogSet
             transaction_log_id_.GetUnderlying().store(kInvalidTransactionLogId);
         }
 
-        void MarkNeedsRollback(const bool needs_rollback) noexcept
+        void MarkNeedsRollback(const bool needs_rollback)
         {
             needs_rollback_.GetUnderlying() = needs_rollback;
         }
 
-        TransactionLogId GetTransactionLogId() const noexcept
+        TransactionLogId GetTransactionLogId() const
         {
             return transaction_log_id_;
         }
@@ -118,13 +127,23 @@ class TransactionLogSet
         // instance holder. API callers get the reference and use it in place without leaving the scope, so the
         // reference remains valid.
         // coverity[autosar_cpp14_a9_3_1_violation]
-        TransactionLog& GetTransactionLog() noexcept
+        TransactionLog& GetTransactionLog()
         {
             // coverity[autosar_cpp14_a9_3_1_violation] see above
             return transaction_log_;
         }
 
-        void Reset() noexcept;
+        // Since the TransactionLogNode is copyable / moveable, we can't store the TransactionLogLocalView in the
+        // TransactionLogNode itself as it will be invalidated whenever the TransactionLogNode (and the containing
+        // TransactionLog which the view points to) is copied / moved. Since this function is only called during
+        // rollback and registration, it's not called highly frequently so creating a new view every time should not
+        // impact performance.
+        TransactionLogLocalView GetTransactionLogLocalView()
+        {
+            return TransactionLogLocalView{transaction_log_};
+        }
+
+        void Reset();
 
       private:
         /// \brief Whether or not the TransactionLog was created before a process crash.
@@ -160,7 +179,7 @@ class TransactionLogSet
     /// \param proxy The MemoryResourceProxy that will be used by the DynamicArray of transaction logs
     TransactionLogSet(const TransactionLogIndex max_number_of_logs,
                       const std::size_t number_of_slots,
-                      memory::shared::ManagedMemoryResource& resource) noexcept;
+                      memory::shared::ManagedMemoryResource& resource);
     ~TransactionLogSet() noexcept = default;
 
     TransactionLogSet(const TransactionLogSet&) = delete;
@@ -168,7 +187,7 @@ class TransactionLogSet
     TransactionLogSet(TransactionLogSet&&) noexcept = delete;
     TransactionLogSet& operator=(TransactionLogSet&& other) noexcept = delete;
 
-    void MarkTransactionLogsNeedRollback(const TransactionLogId& transaction_log_id) noexcept;
+    void MarkTransactionLogsNeedRollback(const TransactionLogId& transaction_log_id);
 
     /// \brief Rolls back all Proxy TransactionLogs corresponding to the provided TransactionLogId.
     /// \return Returns an a blank result if the rollback succeeded or did not need to be done (because there's no
@@ -181,42 +200,63 @@ class TransactionLogSet
     /// rollbacks. This prevents one thread calling RollbackProxyTransactions and then registering a new TransactionLog.
     /// Then another thread with the same transaction_log_id calls RollbackProxyTransactions which would rollback and
     /// destroy the newly created TransactionLog.
-    ResultBlank RollbackProxyTransactions(const TransactionLogId& transaction_log_id,
-                                          const TransactionLog::DereferenceSlotCallback dereference_slot_callback,
-                                          const TransactionLog::UnsubscribeCallback unsubscribe_callback) noexcept;
+    ResultBlank RollbackProxyTransactions(
+        const TransactionLogId& transaction_log_id,
+        const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback,
+        const TransactionLogLocalView::DereferenceSlotCallback unsubscribe_callback);
 
     /// \brief If a Skeleton TransactionLog exists, performs a rollback on it.
     ResultBlank RollbackSkeletonTracingTransactions(
-        const TransactionLog::DereferenceSlotCallback dereference_slot_callback) noexcept;
+        const TransactionLogLocalView::DereferenceSlotCallback dereference_slot_callback);
 
     /// \brief Creates a new transaction log in the DynamicArray of transaction logs.
     ///
+    /// \param transaction_log_id The TransactionLogId corresponding to the ProxyEvent which is registering the
+    ///        TransactionLog.
+    /// \param proxy_event_data_control_local_view The ProxyEventDataControlLocalView used by the Proxy service element
+    ///        which registered a TransactionLog. A cached TransactionLogLocalView will be injected into this
+    ///        ProxyEventDataControlLocalView which it uses for recording reference transactions.
+    /// \return Returns TransactionLogRegistrationGuard which holds the index of the registered transaction log and will
+    ///         call TransactionLogSet::Unregister() and destroy the cached TransactionLogLocalView on destruction.
+    ///
     /// Will terminate if transaction_log_id already exists within the DynamicArray of transaction logs.
-    score::Result<TransactionLogSet::TransactionLogIndex> RegisterProxyElement(
-        const TransactionLogId& transaction_log_id) noexcept;
+    score::Result<TransactionLogRegistrationGuard> RegisterProxyElement(
+        const TransactionLogId& transaction_log_id,
+        ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view);
 
     /// \brief Creates a new skeleton tracing transaction log
-    /// \return Returns kSkeletonIndexSentinel which is a special sentinel value which will return the registered
-    /// skeleton tracing transaction log when passing the sentinel value to GetTransactionLog.
+    ///
+    /// \param proxy_event_data_control_local_view The ProxyEventDataControlLocalView used by the SkeletonEvent
+    ///        which registered a TransactionLog. A cached TransactionLogLocalView will be injected into this
+    ///        ProxyEventDataControlLocalView which it uses for recording reference transactions. This is a
+    ///        ProxyEventDataControlLocalView even though it's provided by a Skeleton since it is used for referencing
+    ///        slots on the Skeleton side for tracing (so it behaves like a ProxyEvent within the SkeletonEvent).
+    /// \return Returns TransactionLogRegistrationGuard which holds a special sentinel index value which will return the
+    ///         registered skeleton tracing transaction log when passing the sentinel value to GetTransactionLog.
+    ///         The guard will call TransactionLogSet::Unregister() and destroy the cached TransactionLogLocalView on
+    ///         destruction.
     ///
     /// Will terminate if a skeleton tracing transaction log was already registered.
-    TransactionLogIndex RegisterSkeletonTracingElement() noexcept;
-
-    /// \brief Deletes the element (by resetting its TransactionLogId to initial/unused state) in the DynamicArray of
-    ///        transaction logs corresponding to the provided index.
-    ///
-    /// Must not be called concurrently with GetTransactionLog() with the same transaction_log_index.
-    void Unregister(const TransactionLogIndex transaction_log_index) noexcept;
+    TransactionLogRegistrationGuard RegisterSkeletonTracingElement(
+        ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view);
 
     /// \brief Returns a reference to a TransactionLog corresponding to the provided index.
     ///
     /// Must not be called concurrently with Unregister() with the same transaction_log_index.
-    TransactionLog& GetTransactionLog(const TransactionLogIndex transaction_log_index) noexcept;
+    TransactionLog& GetTransactionLog(const TransactionLogIndex transaction_log_index);
 
   private:
     using TransactionLogCollection =
         score::containers::DynamicArray<TransactionLogNode,
                                         memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>;
+
+    /// \brief Deletes the element (by resetting its TransactionLogId to initial/unused state) in the DynamicArray of
+    ///        transaction logs corresponding to the provided index.
+    ///
+    /// Must not be called concurrently with GetTransactionLog() with the same transaction_log_index. This function is
+    /// private and can only be called by the TransactionLogRegistrationGuard, which is returned by RegisterProxyElement
+    /// and RegisterSkeletonTracingElement.
+    void Unregister(const TransactionLogIndex transaction_log_index);
 
     /// \brief Returns iterators to all TransactionLogNodes for the given target_transaction_log_id, which needs roll
     /// back.
@@ -229,12 +269,10 @@ class TransactionLogSet
     /// \param transaction_log_id
     /// \return if slot could be acquired, the returned optional contains a pair of an iterator to the allocated slot
     ///         (TransactionLogNode) and its index, otherwise an empty optional
-    std::optional<
-        std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogSet::TransactionLogIndex>>
+    std::optional<std::pair<TransactionLogSet::TransactionLogCollection::iterator, TransactionLogIndex>>
     AcquireNextAvailableSlot(TransactionLogId transaction_log_id);
 
-    static bool IsSkeletonElementTransactionLogIndex(
-        const TransactionLogSet::TransactionLogIndex transaction_log_index);
+    static bool IsSkeletonElementTransactionLogIndex(const TransactionLogIndex transaction_log_index);
 
     TransactionLogCollection proxy_transaction_logs_;
     TransactionLogNode skeleton_tracing_transaction_log_;

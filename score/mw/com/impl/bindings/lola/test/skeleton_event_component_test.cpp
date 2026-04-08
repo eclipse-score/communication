@@ -10,6 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
@@ -142,11 +144,23 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto memory_control = score::memory::shared::SharedMemoryFactory::Open(path, false);
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
 
-        auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
-        event_data_control.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot_indicator = event_data_control.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
-        EXPECT_TRUE(slot_indicator.IsValid());
-        return values->at(slot_indicator.GetIndex());
+        auto& event_control = control_storage->event_controls_.find(fake_element_fq_id_)->second;
+
+        // To reference an event, we need to emulate what a ProxyEvent would do so we need to register a dummy
+        // TransactionLog, reference the event and then dereference the event. If we don't dereference the event, then
+        // the TransactionLogRegistrationGuard returned by RegisterProxyElement would crash since there would still be
+        // open transactions on destruction.
+        ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_control.data_control};
+        const TransactionLogId dummy_transaction_log_id{10};
+        auto registration_guard = event_control.transaction_log_set_.RegisterProxyElement(
+            dummy_transaction_log_id, proxy_event_data_control_local);
+        auto slot_index = proxy_event_data_control_local.ReferenceNextEvent(0);
+        EXPECT_TRUE(slot_index.has_value());
+        const auto value = values->at(slot_index.value());
+
+        proxy_event_data_control_local.DereferenceEvent(slot_index.value());
+
+        return value;
     }
 
     std::size_t GetFreeSampleSlots() const
@@ -165,11 +179,12 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
-        const auto* event_control = &search->second;
+        auto* event_control = &search->second;
+        ProxyEventControlLocalView proxy_event_control_local{*event_control};
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {
-            if ((*event_control).data_control[i].IsInvalid())
+            if (proxy_event_control_local.data_control[i].IsInvalid())
             {
                 result++;
             }
@@ -180,11 +195,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
     void AllocateQmSlots(const std::size_t number_of_slots_to_allocate)
     {
         auto& event_data_control_composite = SkeletonEventAttorney{skeleton_event_}.GetEventDataControlComposite();
-        auto& qm_event_data_control = event_data_control_composite.GetQmEventDataControl();
+        auto& qm_event_data_control_local = event_data_control_composite.GetQmEventDataControlLocal();
 
         for (std::size_t counter = 0U; counter < number_of_slots_to_allocate; ++counter)
         {
-            score::cpp::ignore = qm_event_data_control.AllocateNextSlot();
+            score::cpp::ignore = qm_event_data_control_local.AllocateNextSlot();
         }
     }
 
@@ -312,7 +327,7 @@ TEST_F(SkeletonEventComponentTestFixture, SkeletonWillCalculateEventMetaInfoFrom
     ASSERT_TRUE(prepare_offer_result.has_value());
 
     // When getting the EventMetaInfo for the skeleton event
-    const auto event_meta_info = parent_skeleton_->GetEventMetaInfo(fake_element_fq_id_);
+    const auto event_meta_info = SkeletonAttorney{*parent_skeleton_}.GetEventMetaInfo(fake_element_fq_id_);
 
     // Then the event meta info should correspond to the type of the skeleton event
     ASSERT_TRUE(event_meta_info.has_value());
