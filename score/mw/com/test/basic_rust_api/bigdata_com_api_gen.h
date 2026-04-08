@@ -95,19 +95,21 @@ struct ComplexStruct
     ArrayStruct array;
 };
 
-// Macro to generate interface classes
-#define CREATE_INTERFACE(ClassName, DataType, EventName)                       \
-    template <typename Trait>                                                  \
-    class ClassName : public Trait::Base                                       \
-    {                                                                          \
-      public:                                                                  \
-        using Trait::Base::Base;                                               \
-        typename Trait::template Event<DataType> EventName{*this, #EventName}; \
-    };
+template <typename Trait>
+class MixedPrimitivesInterface : public Trait::Base
+{
+  public:
+    using Trait::Base::Base;
+    typename Trait::template Event<MixedPrimitivesPayload> mixed_event{*this, "mixed_event"};
+};
 
-// payload interface
-CREATE_INTERFACE(MixedPrimitivesInterface, MixedPrimitivesPayload, mixed_event)
-CREATE_INTERFACE(ComplexStructInterface, ComplexStruct, complex_event)
+template <typename Trait>
+class ComplexStructInterface : public Trait::Base
+{
+  public:
+    using Trait::Base::Base;
+    typename Trait::template Event<ComplexStruct> complex_event{*this, "complex_event"};
+};
 
 // Type aliases for proxy and skeleton
 using MixedPrimitivesProxy = ::score::mw::com::AsProxy<MixedPrimitivesInterface>;

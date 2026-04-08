@@ -105,7 +105,7 @@ interface!(
 
 // Macro to generate data types with CommData impl with Eq trait
 macro_rules! define_type {
-    ($name:ident, eq, $($field:ident: $field_type:ty),+) => {
+    (#[eq] struct $name:ident { $($field:ident: $field_type:ty),+ $(,)? }) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Reloc)]
         #[repr(C)]
         pub struct $name {
@@ -116,7 +116,7 @@ macro_rules! define_type {
         }
     };
     // Macro for types without Eq trait (e.g., with float fields)
-    ($name:ident, $($field:ident: $field_type:ty),+) => {
+    (struct $name:ident { $($field:ident: $field_type:ty),+ $(,)? }) => {
         #[derive(Debug, Clone, Copy, PartialEq, Reloc)]
         #[repr(C)]
         pub struct $name {
@@ -130,28 +130,29 @@ macro_rules! define_type {
 
 // Combined primitive payload – all primitive types packed into one struct.
 define_type!(
-    MixedPrimitivesPayload,
-    u64_val: u64,
-    i64_val: i64,
-    u32_val: u32,
-    i32_val: i32,
-    f32_val: f32,
-    u16_val: u16,
-    i16_val: i16,
-    u8_val: u8,
-    i8_val: i8,
-    flag: bool
+    struct MixedPrimitivesPayload {
+        u64_val: u64,
+        i64_val: i64,
+        u32_val: u32,
+        i32_val: i32,
+        f32_val: f32,
+        u16_val: u16,
+        i16_val: i16,
+        u8_val: u8,
+        i8_val: i8,
+        flag: bool,
+    }
 );
 
 // Complex struct types
-define_type!(SimpleStruct, eq, id: u32);
-define_type!(NestedStruct, id: u32, simple: SimpleStruct, value: f32);
-define_type!(Point, x: f32, y: f32);
-define_type!(Point3D, x: f32, y: f32, z: f32);
-define_type!(SensorData, sensor_id: u16, temperature: f32, humidity: f32, pressure: f32);
-define_type!(VehicleState, speed: f32, rpm: u16, fuel_level: f32, is_running: bool, mileage: u32);
-define_type!(ArrayStruct, eq, values: [u32; 5]);
-define_type!(ComplexStruct, count: u32, simple: SimpleStruct, nested: NestedStruct, point: Point, point3d: Point3D, sensor: SensorData, vehicle: VehicleState, array: ArrayStruct);
+define_type!(#[eq] struct SimpleStruct { id: u32 });
+define_type!(struct NestedStruct { id: u32, simple: SimpleStruct, value: f32 });
+define_type!(struct Point { x: f32, y: f32 });
+define_type!(struct Point3D { x: f32, y: f32, z: f32 });
+define_type!(struct SensorData { sensor_id: u16, temperature: f32, humidity: f32, pressure: f32 });
+define_type!(struct VehicleState { speed: f32, rpm: u16, fuel_level: f32, is_running: bool, mileage: u32 });
+define_type!(#[eq] struct ArrayStruct { values: [u32; 5] });
+define_type!(struct ComplexStruct { count: u32, simple: SimpleStruct, nested: NestedStruct, point: Point, point3d: Point3D, sensor: SensorData, vehicle: VehicleState, array: ArrayStruct });
 
 interface!(interface MixedPrimitives, { Id = "MixedPrimitivesInterface", mixed_event: Event<MixedPrimitivesPayload> });
 interface!(interface ComplexStruct, { Id = "ComplexStructInterface", complex_event: Event<ComplexStruct> });

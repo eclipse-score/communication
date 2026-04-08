@@ -62,6 +62,138 @@ struct Args {
     test_case: TestCase,
 }
 
+fn run_send_loop(num_cycles: u32, mut send_one: impl FnMut(u32)) {
+    for x in 1..num_cycles {
+        send_one(x);
+        thread::sleep(SEND_INTERVAL_MS);
+    }
+}
+
+fn run_bigdata_test<R: Runtime>(runtime: &R, num_cycles: u32) {
+    println!(
+        "[bigdata-producer] Starting bigdata test with num_cycles={}",
+        num_cycles
+    );
+    let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
+        .expect("Invalid instance specifier");
+    // Sleep to allow the consumer to start first and demonstrate service discovery retries.
+    thread::sleep(SERVICE_OFFER_DELAY_MS);
+
+    let producer_builder = runtime.producer_builder::<BigDataInterface>(instance_specifier);
+    let producer = producer_builder.build().expect("Failed to build producer");
+    let offered = producer.offer().expect("Failed to offer service");
+
+    println!("[bigdata-producer] Service offered, starting send loop");
+    run_send_loop(num_cycles, |x| {
+        let uninit = offered
+            .map_api_lanes_stamped_
+            .allocate()
+            .expect("Failed to allocate sample");
+        let mut sample = MapApiLanesStamped::default();
+        sample.x = x;
+        let ready = uninit.write(sample);
+        ready.send().expect("Failed to send sample");
+        println!("[bigdata-producer] Sent sample x={}", x);
+    });
+}
+
+fn run_mixed_primitives_test<R: Runtime>(runtime: &R, num_cycles: u32) {
+    println!(
+        "[mixed-primitives-producer] Starting mixed_primitives test with num_cycles={}",
+        num_cycles
+    );
+    let instance_specifier = InstanceSpecifier::new("/IntegrationTest/MixedPrimitives")
+        .expect("Invalid instance specifier");
+    // Sleep to allow the consumer to start first and demonstrate service discovery retries.
+    thread::sleep(SERVICE_OFFER_DELAY_MS);
+
+    let producer_builder = runtime.producer_builder::<MixedPrimitivesInterface>(instance_specifier);
+    let producer = producer_builder.build().expect("Failed to build producer");
+    let offered = producer.offer().expect("Failed to offer service");
+
+    println!("[mixed-primitives-producer] Service offered, starting send loop");
+    run_send_loop(num_cycles, |x| {
+        let uninit = offered
+            .mixed_event
+            .allocate()
+            .expect("Failed to allocate sample");
+        let sample = MixedPrimitivesPayload {
+            u64_val: u64::from(x),
+            i64_val: i64::from(x),
+            u32_val: x,
+            i32_val: i32::try_from(x).expect("Failed to convert x to i32"),
+            f32_val: x as f32 / 2.0, // no stdlib alternative
+            u16_val: u16::try_from(x).expect("Failed to convert x to u16"),
+            i16_val: i16::try_from(x).expect("Failed to convert x to i16"),
+            u8_val: u8::try_from(x).expect("Failed to convert x to u8"),
+            i8_val: i8::try_from(x).expect("Failed to convert x to i8"),
+            flag: x % 2 == 0,
+        };
+        let ready = uninit.write(sample);
+        ready.send().expect("Failed to send sample");
+        println!("[mixed-primitives-producer] Sent sample u32_val={}", x);
+    });
+}
+
+fn run_complex_struct_test<R: Runtime>(runtime: &R, num_cycles: u32) {
+    println!(
+        "[complex-struct-producer] Starting complex_struct test with num_cycles={}",
+        num_cycles
+    );
+    let instance_specifier = InstanceSpecifier::new("/UserDefinedTest/ComplexStruct")
+        .expect("Invalid instance specifier");
+    // Sleep to allow the consumer to start first and demonstrate service discovery retries.
+    thread::sleep(SERVICE_OFFER_DELAY_MS);
+
+    let producer_builder = runtime.producer_builder::<ComplexStructInterface>(instance_specifier);
+    let producer = producer_builder.build().expect("Failed to build producer");
+    let offered = producer.offer().expect("Failed to offer service");
+
+    println!("[complex-struct-producer] Service offered, starting send loop");
+    run_send_loop(num_cycles, |x| {
+        let uninit = offered
+            .complex_event
+            .allocate()
+            .expect("Failed to allocate sample");
+        let x_f32 = x as f32;
+        let sample = ComplexStruct {
+            count: x,
+            simple: SimpleStruct { id: x },
+            nested: NestedStruct {
+                id: x,
+                simple: SimpleStruct { id: x },
+                value: x_f32 / 5.0,
+            },
+            point: Point {
+                x: x_f32 / 2.0,
+                y: x_f32 / 2.0,
+            },
+            point3d: Point3D {
+                x: x_f32 / 3.0,
+                y: x_f32 / 3.0,
+                z: x_f32 / 3.0,
+            },
+            sensor: SensorData {
+                sensor_id: u16::try_from(x).expect("Failed to convert x to u16"),
+                temperature: x_f32 / 2.0,
+                humidity: x_f32 / 2.0,
+                pressure: x_f32 / 2.0,
+            },
+            vehicle: VehicleState {
+                speed: x_f32 / 2.0,
+                rpm: u16::try_from(x).expect("Failed to convert x to u16"),
+                fuel_level: x_f32 / 2.0,
+                is_running: x % 2 == 0,
+                mileage: x,
+            },
+            array: ArrayStruct { values: [x; 5] },
+        };
+        let ready = uninit.write(sample);
+        ready.send().expect("Failed to send sample");
+        println!("[complex-struct-producer] Sent sample count={}", x);
+    });
+}
+
 fn main() {
     let args = Args::parse();
     let num_cycles = args.num_cycles;
@@ -74,136 +206,8 @@ fn main() {
         .expect("Failed to build Lola runtime");
 
     match args.test_case {
-        // The bigdata test uses the `BigDataInterface` and its `map_api_lanes_stamped_` event.
-        TestCase::Bigdata => {
-            println!(
-                "[bigdata-producer] Starting bigdata test with num_cycles={}",
-                num_cycles
-            );
-
-            let instance_specifier = InstanceSpecifier::new("/score/cp60/MapApiLanesStamped")
-                .expect("Invalid instance specifier");
-            // Sleep to allow the consumer to start first and demonstrate service discovery retries.
-            thread::sleep(SERVICE_OFFER_DELAY_MS);
-
-            let producer_builder = runtime.producer_builder::<BigDataInterface>(instance_specifier);
-            let producer = producer_builder.build().expect("Failed to build producer");
-            let offered = producer.offer().expect("Failed to offer service");
-
-            println!("[bigdata-producer] Service offered, starting send loop");
-            for x in 1..num_cycles {
-                let uninit = offered
-                    .map_api_lanes_stamped_
-                    .allocate()
-                    .expect("Failed to allocate sample");
-                let mut sample = MapApiLanesStamped::default();
-                sample.x = x;
-                let ready = uninit.write(sample);
-                ready.send().expect("Failed to send sample");
-                println!("[bigdata-producer] Sent sample x={}", x);
-                thread::sleep(SEND_INTERVAL_MS);
-            }
-        }
-        // The mixed_primitives test uses the `MixedPrimitivesInterface` and its `mixed_event` event.
-        TestCase::MixedPrimitives => {
-            println!(
-                "[mixed-primitives-producer] Starting mixed_primitives test with num_cycles={}",
-                num_cycles
-            );
-
-            let instance_specifier = InstanceSpecifier::new("/IntegrationTest/MixedPrimitives")
-                .expect("Invalid instance specifier");
-            thread::sleep(SERVICE_OFFER_DELAY_MS);
-
-            let producer_builder =
-                runtime.producer_builder::<MixedPrimitivesInterface>(instance_specifier);
-            let producer = producer_builder.build().expect("Failed to build producer");
-            let offered = producer.offer().expect("Failed to offer service");
-
-            println!("[mixed-primitives-producer] Service offered, starting send loop");
-            for x in 1..num_cycles {
-                let uninit = offered
-                    .mixed_event
-                    .allocate()
-                    .expect("Failed to allocate sample");
-                let sample = MixedPrimitivesPayload {
-                    u64_val: u64::from(x),
-                    i64_val: i64::from(x),
-                    u32_val: x,
-                    i32_val: i32::try_from(x).expect("Failed to convert x to i32"),
-                    f32_val: x as f32 / 2.0, // no stdlib alternative
-                    u16_val: u16::try_from(x).expect("Failed to convert x to u16"),
-                    i16_val: i16::try_from(x).expect("Failed to convert x to i16"),
-                    u8_val: u8::try_from(x).expect("Failed to convert x to u8"),
-                    i8_val: i8::try_from(x).expect("Failed to convert x to i8"),
-                    flag: x % 2 == 0,
-                };
-                let ready = uninit.write(sample);
-                ready.send().expect("Failed to send sample");
-                println!("[mixed-primitives-producer] Sent sample u32_val={}", x);
-                thread::sleep(SEND_INTERVAL_MS);
-            }
-        }
-        // The complex_struct test uses the `ComplexStructInterface` and its `complex_event` event.
-        TestCase::ComplexStruct => {
-            println!(
-                "[complex-struct-producer] Starting complex_struct test with num_cycles={}",
-                num_cycles
-            );
-
-            let instance_specifier = InstanceSpecifier::new("/UserDefinedTest/ComplexStruct")
-                .expect("Invalid instance specifier");
-            thread::sleep(SERVICE_OFFER_DELAY_MS);
-
-            let producer_builder =
-                runtime.producer_builder::<ComplexStructInterface>(instance_specifier);
-            let producer = producer_builder.build().expect("Failed to build producer");
-            let offered = producer.offer().expect("Failed to offer service");
-
-            println!("[complex-struct-producer] Service offered, starting send loop");
-            for x in 1..num_cycles {
-                let uninit = offered
-                    .complex_event
-                    .allocate()
-                    .expect("Failed to allocate sample");
-                let x_f32 = x as f32;
-                let sample = ComplexStruct {
-                    count: x,
-                    simple: SimpleStruct { id: x },
-                    nested: NestedStruct {
-                        id: x,
-                        simple: SimpleStruct { id: x },
-                        value: x_f32 / 5.0,
-                    },
-                    point: Point {
-                        x: x_f32 / 2.0,
-                        y: x_f32 / 2.0,
-                    },
-                    point3d: Point3D {
-                        x: x_f32 / 3.0,
-                        y: x_f32 / 3.0,
-                        z: x_f32 / 3.0,
-                    },
-                    sensor: SensorData {
-                        sensor_id: u16::try_from(x).expect("Failed to convert x to u16"),
-                        temperature: x_f32 / 2.0,
-                        humidity: x_f32 / 2.0,
-                        pressure: x_f32 / 2.0,
-                    },
-                    vehicle: VehicleState {
-                        speed: x_f32 / 2.0,
-                        rpm: u16::try_from(x).expect("Failed to convert x to u16"),
-                        fuel_level: x_f32 / 2.0,
-                        is_running: x % 2 == 0,
-                        mileage: x,
-                    },
-                    array: ArrayStruct { values: [x; 5] },
-                };
-                let ready = uninit.write(sample);
-                ready.send().expect("Failed to send sample");
-                println!("[complex-struct-producer] Sent sample count={}", x);
-                thread::sleep(SEND_INTERVAL_MS);
-            }
-        }
+        TestCase::Bigdata => run_bigdata_test(&runtime, num_cycles),
+        TestCase::MixedPrimitives => run_mixed_primitives_test(&runtime, num_cycles),
+        TestCase::ComplexStruct => run_complex_struct_test(&runtime, num_cycles),
     }
 }
