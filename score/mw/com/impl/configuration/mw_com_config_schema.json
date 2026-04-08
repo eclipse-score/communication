@@ -413,6 +413,11 @@
                                                 "description": "Optional Binding specific consumer/proxy side setting for maximum number of pending method requests that can be queued on the server side before new requests are rejected.",
                                                 "minimum": 1,
                                                 "maximum": 255
+                                            },
+                                            "enabled": {
+                                                "type": "boolean",
+                                                "description": "Optional flag to disable/enable method. Default value is true, which means the method is enabled.",
+                                                "default": true
                                             }
                                         }
                                     }

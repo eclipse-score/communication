@@ -67,6 +67,7 @@ constexpr auto kMethodsKey = "methods"sv;
 constexpr auto kMethodNameKey = "methodName"sv;
 constexpr auto kMethodIdKey = "methodId"sv;
 constexpr auto kMethodQueueSizeKey = "queueSize"sv;
+constexpr auto kMethodEnabledKey = "enabled"sv;
 constexpr auto kEventNumberOfSampleSlotsKey = "numberOfSampleSlots"sv;
 constexpr auto kEventMaxSamplesKey = "maxSamples"sv;
 constexpr auto kEventMaxSubscribersKey = "maxSubscribers"sv;
@@ -523,7 +524,8 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
         const auto& method_name = GetValueFromJson<std::string>(method_object, kMethodNameKey);
         const std::optional<LolaMethodInstanceDeployment::QueueSize> queue_size =
             GetOptionalValueFromJson<LolaMethodInstanceDeployment::QueueSize>(method_object, kMethodQueueSizeKey);
-        const LolaMethodInstanceDeployment method_deployment{queue_size};
+        const auto method_enabled = GetOptionalValueFromJson<bool>(method_object, kMethodEnabledKey);
+        const LolaMethodInstanceDeployment method_deployment{queue_size, method_enabled.value_or(true)};
 
         const auto emplace_result = service.methods_.emplace(
             std::piecewise_construct, std::forward_as_tuple(method_name), std::forward_as_tuple(method_deployment));
