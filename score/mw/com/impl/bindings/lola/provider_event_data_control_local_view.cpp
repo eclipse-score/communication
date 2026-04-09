@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
@@ -31,7 +31,7 @@ constexpr auto MAX_ALLOCATE_RETRIES = 100U;
 }  // namespace
 
 template <template <class> class AtomicIndirectorType>
-SkeletonEventDataControlLocalView<AtomicIndirectorType>::SkeletonEventDataControlLocalView(
+ProviderEventDataControlLocalView<AtomicIndirectorType>::ProviderEventDataControlLocalView(
     EventDataControl& event_data_control) noexcept
     : state_slots_{event_data_control.state_slots_.begin(), event_data_control.state_slots_.size()}
 {
@@ -43,7 +43,7 @@ template <template <class> class AtomicIndirectorType>
 // have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
 // to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept
     -> std::optional<SlotIndexType>
 {
     std::optional<SlotIndexType> selected_index{};
@@ -95,7 +95,7 @@ template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, no way for throwing std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSlot() const noexcept
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSlot() const noexcept
     -> std::optional<SlotIndexType>
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
@@ -136,7 +136,7 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
 }
 
 template <template <class> class AtomicIndirectorType>
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::EventReady(
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::EventReady(
     const SlotIndexType slot_index,
     const EventSlotStatus::EventTimeStamp time_stamp) noexcept -> void
 {
@@ -147,7 +147,7 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::EventReady(
 }
 
 template <template <class> class AtomicIndirectorType>
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::Discard(const SlotIndexType slot_index) -> void
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::Discard(const SlotIndexType slot_index) -> void
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
     auto slot = static_cast<EventSlotStatus>(state_slots_[slot_index].load(std::memory_order_acquire));
@@ -164,7 +164,7 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::operator[](const SlotIndexType slot_index) const noexcept
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::operator[](const SlotIndexType slot_index) const noexcept
     -> EventSlotStatus
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
@@ -175,7 +175,7 @@ template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, no way for throwing std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::RemoveAllocationsForWriting() noexcept -> void
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::RemoveAllocationsForWriting() noexcept -> void
 {
     // Suppres "AUTOSAR C++14 A5-3-2" finding rule. This rule states: "Null pointers shall not be dereferenced.".
     // The "slot" variable must never be a null pointer, since DynamicArray allocates its elements when it is created.
@@ -205,7 +205,7 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::RemoveAllocationsF
 }
 
 template <template <class> class AtomicIndirectorType>
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::DumpPerformanceCounters() -> void
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::DumpPerformanceCounters() -> void
 {
     std::cout << "EventDataControl performance breakdown\n"
               << "======================================\n"
@@ -219,13 +219,13 @@ auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::DumpPerformanceCou
 }
 
 template <template <class> class AtomicIndirectorType>
-auto SkeletonEventDataControlLocalView<AtomicIndirectorType>::ResetPerformanceCounters() -> void
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::ResetPerformanceCounters() -> void
 {
     num_alloc_misses.store(0U);
     num_alloc_retries.store(0U);
 }
 
-template class SkeletonEventDataControlLocalView<memory::shared::AtomicIndirectorReal>;
-template class SkeletonEventDataControlLocalView<memory::shared::AtomicIndirectorMock>;
+template class ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorReal>;
+template class ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>;
 
 }  // namespace score::mw::com::impl::lola

@@ -17,11 +17,11 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
@@ -451,10 +451,10 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     ServiceDataControl CreateServiceDataControlWithEvent(ElementFqId element_fq_id, QualityType quality_type) noexcept;
     static EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
                                                                ServiceDataControl& service_data_control) noexcept;
-    static SkeletonEventControlLocalView& GetSkeletonEventControlLocalFromServiceDataControlLocal(
+    static ProviderEventControlLocalView& GetSkeletonEventControlLocalFromServiceDataControlLocal(
         ElementFqId element_fq_id,
         SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept;
-    static ProxyEventControlLocalView& GetProxyEventControlLocalFromServiceDataControlLocal(
+    static ConsumerEventControlLocalView& GetProxyEventControlLocalFromServiceDataControlLocal(
         ElementFqId element_fq_id,
         ProxyServiceDataControlLocalView& proxy_service_data_control_local) noexcept;
 

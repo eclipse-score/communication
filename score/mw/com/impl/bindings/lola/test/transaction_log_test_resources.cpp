@@ -38,7 +38,7 @@ void AddSubscriptionToEventSubscriptionControl(EventSubscriptionControl<>& subsc
 }
 
 void InsertProxyTransactionLogWithValidTransactions(
-    ProxyEventControlLocalView& proxy_event_control_local,
+    ConsumerEventControlLocalView& consumer_event_control_local,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept
 {
@@ -49,16 +49,16 @@ void InsertProxyTransactionLogWithValidTransactions(
     // TransactionLog.
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
-    TransactionLogSet& transaction_log_set = proxy_event_control_local.transaction_log_set.get();
+    TransactionLogSet& transaction_log_set = consumer_event_control_local.transaction_log_set.get();
 
     // Modify the SubscriptionControl so that it currently has a record of a single subscriber which subscribed with
     // a sample count of subscription_max_sample_count_
     const EventSubscriptionControl<>::SubscriberCountType subscriber_count{1U};
     AddSubscriptionToEventSubscriptionControl(
-        proxy_event_control_local.subscription_control, subscriber_count, subscription_max_sample_count);
+        consumer_event_control_local.subscription_control, subscriber_count, subscription_max_sample_count);
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterProxyElement(transaction_log_id, proxy_event_control_local.data_control).value();
+        transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_control_local.data_control).value();
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
@@ -70,8 +70,9 @@ void InsertProxyTransactionLogWithValidTransactions(
     transaction_log_local_view.ReferenceTransactionCommit(slot_index);
 }
 
-void InsertSkeletonTransactionLogWithValidTransactions(ProxyEventDataControlLocalView<>& proxy_event_data_control_local,
-                                                       TransactionLogSet& transaction_log_set) noexcept
+void InsertSkeletonTransactionLogWithValidTransactions(
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    TransactionLogSet& transaction_log_set) noexcept
 {
     // We want to simulate that a previous process registered a TransactionLog, recorded some transactions and then
     // crashed. In this scenario, the destructor of the TransactionLogRegistrationGuard would never have been called
@@ -81,7 +82,7 @@ void InsertSkeletonTransactionLogWithValidTransactions(ProxyEventDataControlLoca
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterSkeletonTracingElement(proxy_event_data_control_local);
+        transaction_log_set.RegisterSkeletonTracingElement(consumer_event_data_control_local);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
@@ -92,7 +93,7 @@ void InsertSkeletonTransactionLogWithValidTransactions(ProxyEventDataControlLoca
 }
 
 void InsertProxyTransactionLogWithInvalidTransactions(
-    ProxyEventControlLocalView& proxy_event_control_local,
+    ConsumerEventControlLocalView& consumer_event_control_local,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept
 {
@@ -103,16 +104,16 @@ void InsertProxyTransactionLogWithInvalidTransactions(
     // TransactionLog.
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
-    TransactionLogSet& transaction_log_set = proxy_event_control_local.transaction_log_set.get();
+    TransactionLogSet& transaction_log_set = consumer_event_control_local.transaction_log_set.get();
 
     // Modify the SubscriptionControl so that it currently has a record of a single subscriber which subscribed with
     // a sample count of subscription_max_sample_count_
     const EventSubscriptionControl<>::SubscriberCountType subscriber_count{1U};
     AddSubscriptionToEventSubscriptionControl(
-        proxy_event_control_local.subscription_control.get(), subscriber_count, subscription_max_sample_count);
+        consumer_event_control_local.subscription_control.get(), subscriber_count, subscription_max_sample_count);
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterProxyElement(transaction_log_id, proxy_event_control_local.data_control).value();
+        transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_control_local.data_control).value();
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
@@ -124,7 +125,7 @@ void InsertProxyTransactionLogWithInvalidTransactions(
 }
 
 void InsertSkeletonTransactionLogWithInvalidTransactions(
-    ProxyEventDataControlLocalView<>& proxy_event_data_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
     TransactionLogSet& transaction_log_set) noexcept
 {
     // We want to simulate that a previous process registered a TransactionLog, recorded some transactions and then
@@ -135,7 +136,7 @@ void InsertSkeletonTransactionLogWithInvalidTransactions(
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterSkeletonTracingElement(proxy_event_data_control_local);
+        transaction_log_set.RegisterSkeletonTracingElement(consumer_event_data_control_local);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);

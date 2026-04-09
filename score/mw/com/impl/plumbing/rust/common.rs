@@ -80,12 +80,12 @@ pub struct EventDataControl {
 }
 
 #[repr(C)]
-pub struct ProxyEventDataControlLocalView {
+pub struct ConsumerEventDataControlLocalView {
     _dummy: [u8; 0],
 }
 
 #[repr(C)]
-pub struct SkeletonEventDataControlLocalView {
+pub struct ProviderEventDataControlLocalView {
     _dummy: [u8; 0],
 }
 

@@ -40,7 +40,7 @@ bool TransactionLogRegistrationGuard::deactivate_destruction_operation_{false};
 TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
     TransactionLogSet& transaction_log_set,
     const TransactionLogIndex transaction_log_index,
-    ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view)
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
     : transaction_log_index_{transaction_log_index},
       /// Justification for capturing references without using a ScopedFunction.
       /// Proxy side:
@@ -52,9 +52,9 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
       ///   memory and ends with munmap during Proxy destruction. Therefore, the TransactionLogRegistrationGuard will
       ///   always be destroyed before the TransactionLogSet is destroyed.
       ///
-      ///   The ProxyEventDataControlLocalView is created during Proxy creation when opening the shared memory and
+      ///   The ConsumerEventDataControlLocalView is created during Proxy creation when opening the shared memory and
       ///   creating a ProxyServiceDataControlLocalView. It is destroyed during Proxy destruction. Therefore, the
-      ///   TransactionLogRegistrationGuard will always be destroyed before the ProxyEventDataControlLocalView is
+      ///   TransactionLogRegistrationGuard will always be destroyed before the ConsumerEventDataControlLocalView is
       ///   destroyed.
       ///
       /// Skeleton side:
@@ -68,33 +68,34 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
       ///   SkeletonEvent::PrepareStopOffer. Therefore, the TransactionLogSet will always be destroyed after the
       ///   TransactionLogRegistrationGuard is destroyed.
       ///
-      ///   The ProxyEventDataControlLocalView is created during Skeleton::Register when creating the
+      ///   The ConsumerEventDataControlLocalView is created during Skeleton::Register when creating the
       ///   EventDataControlComposite. The EventDataControlComposite is owned by the Skeleton and destroyed when
       ///   destroying the Skeleton. Since PrepareStopOffer is always called before destroying the Skeleton, the
-      ///   TransactionLogRegistrationGuard will always be destroyed before the ProxyEventDataControlLocalView is
+      ///   TransactionLogRegistrationGuard will always be destroyed before the ConsumerEventDataControlLocalView is
       ///   destroyed.
       unregister_on_destruction_operation_{
-          [&proxy_event_data_control_local_view, &transaction_log_set, transaction_log_index]() {
+          [&consumer_event_data_control_local_view, &transaction_log_set, transaction_log_index]() {
               if (!deactivate_destruction_operation_)
               {
                   transaction_log_set.Unregister(transaction_log_index);
-                  proxy_event_data_control_local_view.ClearTransactionLogLocalView();
+                  consumer_event_data_control_local_view.ClearTransactionLogLocalView();
               }
           }}
 {
     auto& transaction_log = transaction_log_set.GetTransactionLog(transaction_log_index);
-    proxy_event_data_control_local_view.SetTransactionLogLocalView(transaction_log);
+    consumer_event_data_control_local_view.SetTransactionLogLocalView(transaction_log);
 
     constexpr bool is_transaction_log_set_movable_or_copyable = is_movable_or_copyable<TransactionLogSet>::value;
     static_assert(!is_transaction_log_set_movable_or_copyable,
                   "unregister_on_destruction_operation_ takes a reference to the TransactionLogSet, so we need to make "
                   "sure that TransactionLogSet is not movable or copyable to avoid dangling references.");
 
-    constexpr bool is_proxy_event_data_control_local_view_movable_or_copyable =
-        is_movable_or_copyable<ProxyEventDataControlLocalView<>>::value;
-    static_assert(!is_proxy_event_data_control_local_view_movable_or_copyable,
-                  "unregister_on_destruction_operation_ takes a reference to the ProxyEventDataControlLocalView, so we "
-                  "need to make sure that > is not movable or copyable to avoid dangling references.");
+    constexpr bool is_consumer_event_data_control_local_view_movable_or_copyable =
+        is_movable_or_copyable<ConsumerEventDataControlLocalView<>>::value;
+    static_assert(
+        !is_consumer_event_data_control_local_view_movable_or_copyable,
+        "unregister_on_destruction_operation_ takes a reference to the ConsumerEventDataControlLocalView, so we "
+        "need to make sure that it is not movable or copyable to avoid dangling references.");
 }
 
 TransactionLogIndex TransactionLogRegistrationGuard::GetTransactionLogIndex() const

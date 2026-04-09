@@ -741,7 +741,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains valid transactions
     InsertProxyTransactionLogWithValidTransactions(
-        *proxy_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
+        *consumer_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
     EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     ON_CALL(binding_runtime_, GetApplicationId()).WillByDefault(Return(transaction_log_id_));
@@ -784,7 +784,7 @@ TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransacti
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains invalid transactions
     InsertProxyTransactionLogWithInvalidTransactions(
-        *proxy_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
+        *consumer_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
     EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(transaction_log_id_));

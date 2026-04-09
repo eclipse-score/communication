@@ -28,17 +28,17 @@ constexpr std::size_t MAX_MULTI_ALLOCATE_RETRY_COUNT{100U};
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init): all members are initialized in the delegated constructor
 template <template <class> class AtomicIndirectorType>
 EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(
-    SkeletonEventDataControlLocalView<>& asil_qm_control_local,
-    ProxyEventDataControlLocalView<>* const proxy_control_local)
+    ProviderEventDataControlLocalView<>& asil_qm_control_local,
+    ConsumerEventDataControlLocalView<>* const proxy_control_local)
     : EventDataControlComposite{asil_qm_control_local, nullptr, proxy_control_local}
 {
 }
 
 template <template <class> class AtomicIndirectorType>
 EventDataControlComposite<AtomicIndirectorType>::EventDataControlComposite(
-    SkeletonEventDataControlLocalView<>& asil_qm_control_local,
-    SkeletonEventDataControlLocalView<>* const asil_b_control_local,
-    ProxyEventDataControlLocalView<>* const proxy_control_local)
+    ProviderEventDataControlLocalView<>& asil_qm_control_local,
+    ProviderEventDataControlLocalView<>* const asil_b_control_local,
+    ConsumerEventDataControlLocalView<>* const proxy_control_local)
     : asil_qm_control_local_{asil_qm_control_local},
       asil_b_control_local_{asil_b_control_local},
       proxy_control_local_{proxy_control_local},
@@ -58,8 +58,8 @@ auto EventDataControlComposite<AtomicIndirectorType>::GetNextFreeMultiSlot() con
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
     score::cpp::optional<SlotIndexType> possible_index{};
-    SkeletonEventDataControlLocalView<>::LocalEventControlSlots::iterator qm_slot_ptr{};
-    SkeletonEventDataControlLocalView<>::LocalEventControlSlots::iterator asil_b_slot_ptr{};
+    ProviderEventDataControlLocalView<>::LocalEventControlSlots::iterator qm_slot_ptr{};
+    ProviderEventDataControlLocalView<>::LocalEventControlSlots::iterator asil_b_slot_ptr{};
 
     for (SlotIndexType slot_index = 0U;
          // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
@@ -226,22 +226,22 @@ bool EventDataControlComposite<AtomicIndirectorType>::IsQmControlDisconnected() 
 }
 
 template <template <class> class AtomicIndirectorType>
-SkeletonEventDataControlLocalView<>& EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControlLocal()
+ProviderEventDataControlLocalView<>& EventDataControlComposite<AtomicIndirectorType>::GetQmEventDataControlLocal()
     const noexcept
 {
     return asil_qm_control_local_;
 }
 
 template <template <class> class AtomicIndirectorType>
-SkeletonEventDataControlLocalView<>*
+ProviderEventDataControlLocalView<>*
 EventDataControlComposite<AtomicIndirectorType>::GetAsilBEventDataControlLocal() noexcept
 {
     return asil_b_control_local_;
 }
 
 template <template <class> class AtomicIndirectorType>
-ProxyEventDataControlLocalView<>&
-EventDataControlComposite<AtomicIndirectorType>::GetProxyEventDataControlLocalView() noexcept
+ConsumerEventDataControlLocalView<>&
+EventDataControlComposite<AtomicIndirectorType>::GetConsumerEventDataControlLocalView() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(proxy_control_local_ != nullptr);
     return *proxy_control_local_;
@@ -274,7 +274,7 @@ template <template <class> class AtomicIndirectorType>
 EventSlotStatus::EventTimeStamp EventDataControlComposite<AtomicIndirectorType>::GetLatestTimestamp() const noexcept
 {
     EventSlotStatus::EventTimeStamp latest_time_stamp{1U};
-    SkeletonEventDataControlLocalView<>& control =
+    ProviderEventDataControlLocalView<>& control =
         (asil_b_control_local_ != nullptr) ? *asil_b_control_local_ : asil_qm_control_local_.get();
     for (SlotIndexType slot_index = 0U;
          // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to

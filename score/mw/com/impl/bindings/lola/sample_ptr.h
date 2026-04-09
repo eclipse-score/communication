@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_PTR_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_PTR_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/slot_decrementer.h"
 
 #include <optional>
@@ -45,7 +45,7 @@ class SamplePtr final
     /// \param event_data_ctrl event data control structure, which manages the underlying event/sample in shmem.
     /// \param slot_index index of event slot
     SamplePtr(pointer ptr,
-              ProxyEventDataControlLocalView<>& event_data_ctrl_local,
+              ConsumerEventDataControlLocalView<>& event_data_ctrl_local,
               const SlotIndexType slot_index) noexcept
         : SamplePtr{ptr, std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index)}
     {

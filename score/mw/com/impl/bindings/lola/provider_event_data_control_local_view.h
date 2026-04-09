@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
-#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROVIDER_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROVIDER_EVENT_DATA_CONTROL_LOCAL_VIEW_H
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
@@ -40,7 +40,7 @@ class EventDataControlComposite;
 /// which can negatively affect performance. Therefore, the data in EventDataControl is created / opened once during
 /// Skeleton / Proxy creation, and then is accessed during runtime via EventDataControlLocal.
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
-class SkeletonEventDataControlLocalView final
+class ProviderEventDataControlLocalView final
 {
     template <template <typename> class T>
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -53,14 +53,14 @@ class SkeletonEventDataControlLocalView final
   public:
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
-    SkeletonEventDataControlLocalView(EventDataControl& event_data_control) noexcept;
+    ProviderEventDataControlLocalView(EventDataControl& event_data_control) noexcept;
 
-    ~SkeletonEventDataControlLocalView() noexcept = default;
+    ~ProviderEventDataControlLocalView() noexcept = default;
 
-    SkeletonEventDataControlLocalView(const SkeletonEventDataControlLocalView&) = delete;
-    SkeletonEventDataControlLocalView& operator=(const SkeletonEventDataControlLocalView&) = delete;
-    SkeletonEventDataControlLocalView(SkeletonEventDataControlLocalView&&) noexcept = delete;
-    SkeletonEventDataControlLocalView& operator=(SkeletonEventDataControlLocalView&& other) noexcept = delete;
+    ProviderEventDataControlLocalView(const ProviderEventDataControlLocalView&) = delete;
+    ProviderEventDataControlLocalView& operator=(const ProviderEventDataControlLocalView&) = delete;
+    ProviderEventDataControlLocalView(ProviderEventDataControlLocalView&&) noexcept = delete;
+    ProviderEventDataControlLocalView& operator=(ProviderEventDataControlLocalView&& other) noexcept = delete;
 
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
@@ -111,4 +111,4 @@ class SkeletonEventDataControlLocalView final
 
 }  // namespace score::mw::com::impl::lola
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROVIDER_EVENT_DATA_CONTROL_LOCAL_VIEW_H

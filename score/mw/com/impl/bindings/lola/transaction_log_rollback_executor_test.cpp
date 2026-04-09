@@ -104,7 +104,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         ASSERT_EQ(result_pid.value(), pid);
     }
 
-    ProxyEventDataControlLocalView<>& GetProxyEventDataControlLocalView(const ElementFqId element_fq_id) noexcept
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id) noexcept
     {
         auto find_result = proxy_service_data_control_local_->event_controls_.find(element_fq_id);
         EXPECT_NE(find_result, proxy_service_data_control_local_->event_controls_.cend());
@@ -129,10 +129,10 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         const ElementFqId& element_fq_id,
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& proxy_event_data_control_local = GetProxyEventDataControlLocalView(element_fq_id);
+        auto& consumer_event_data_control_local = GetConsumerEventDataControlLocalView(element_fq_id);
         auto& transaction_log_set = GetTransactionLogSet(element_fq_id);
         transaction_log_registration_guards_.push_back(
-            transaction_log_set.RegisterProxyElement(transaction_log_id, proxy_event_data_control_local).value());
+            transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value());
         const auto transaction_log_index = transaction_log_registration_guards_.back().GetTransactionLogIndex();
 
         auto& transaction_logs = TransactionLogSetAttorney{transaction_log_set}.GetProxyTransactionLogs();

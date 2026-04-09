@@ -194,18 +194,18 @@ class SkeletonMemoryManager final
 
     /// Functions for creating / opening event data controls and storages for events registered via Register() or
     /// RegisterGeneric().
-    std::pair<std::reference_wrapper<SkeletonEventControlLocalView>, SkeletonEventControlLocalView*>
+    std::pair<std::reference_wrapper<ProviderEventControlLocalView>, ProviderEventControlLocalView*>
     EmplaceQmAndAsilBEventControlAndLocalView(const ElementFqId element_fq_id,
                                               const SkeletonEventProperties& element_properties);
 
-    SkeletonEventControlLocalView& EmplaceEventControlAndLocalView(const QualityType asil_level,
+    ProviderEventControlLocalView& EmplaceEventControlAndLocalView(const QualityType asil_level,
                                                                    ElementFqId element_fq_id,
                                                                    const SkeletonEventProperties& element_properties);
 
     template <typename SampleType>
     EventDataStorage<SampleType>& EmplaceEventDataStorage(const ElementFqId element_fq_id,
                                                           const SkeletonEventProperties& element_properties);
-    ProxyEventControlLocalView* EmplaceTracingEventControl(const ElementFqId element_fq_id);
+    ConsumerEventControlLocalView* EmplaceTracingEventControl(const ElementFqId element_fq_id);
 
     EventMetaInfo& EmplaceEventMetaInfo(const ElementFqId element_fq_id,
                                         const DataTypeMetaInfo& sample_meta_info,

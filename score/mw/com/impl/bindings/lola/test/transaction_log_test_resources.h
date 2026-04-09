@@ -121,18 +121,19 @@ void AddSubscriptionToEventSubscriptionControl(EventSubscriptionControl<>& subsc
                                                const EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                                const TransactionLog::MaxSampleCountType max_sample_count) noexcept;
 void InsertProxyTransactionLogWithValidTransactions(
-    ProxyEventControlLocalView& proxy_event_control_local,
+    ConsumerEventControlLocalView& consumer_event_control_local,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
-void InsertSkeletonTransactionLogWithValidTransactions(ProxyEventDataControlLocalView<>& proxy_event_data_control_local,
-                                                       TransactionLogSet& transaction_log_set) noexcept;
+void InsertSkeletonTransactionLogWithValidTransactions(
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    TransactionLogSet& transaction_log_set) noexcept;
 
 void InsertProxyTransactionLogWithInvalidTransactions(
-    ProxyEventControlLocalView& proxy_event_data_control_local,
+    ConsumerEventControlLocalView& consumer_event_data_control_local,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
 void InsertSkeletonTransactionLogWithInvalidTransactions(
-    ProxyEventDataControlLocalView<>& proxy_event_data_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
     TransactionLogSet& transaction_log_set) noexcept;
 
 bool IsProxyTransactionLogIdRegistered(TransactionLogSet& transaction_log_set,

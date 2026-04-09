@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
@@ -43,29 +43,30 @@ class TransactionLogRegistrationGuardTestAttorney
 };
 
 // While we generally try to only test the public API, checking whether the TransactionLogLocalView is correctly
-// injected and cleared in the ProxyEventDataControlLocalView during construction and destruction of the
+// injected and cleared in the ConsumerEventDataControlLocalView during construction and destruction of the
 // TransactionLogRegistrationGuard is convoluted and error prone if only checking via the public API. It would require
-// calling functions on ProxyEventDataControlLocalView which access the TransactionLog and ensuring that we take the
-// correct path to actually access the Transactionlog. This requires setting up a SkeletonEventDataControlLocalView,
+// calling functions on ConsumerEventDataControlLocalView which access the TransactionLog and ensuring that we take the
+// correct path to actually access the Transactionlog. This requires setting up a ProviderEventDataControlLocalView,
 // ensuring that we set up slots correctly and then using a death test to ensure that we crash when accessing the
 // TransactionLog after destruction of the guard. We then have no way of ensuring that we crash due to the
 // TransactionLog not being injected rather than anything else. For these reasons, it's simply to directly check that we
 // inject / clear the TransactionLog.
-class ProxyEventDataControlLocalViewTestAttorney
+class ConsumerEventDataControlLocalViewTestAttorney
 {
   public:
-    ProxyEventDataControlLocalViewTestAttorney(ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view)
-        : proxy_event_data_control_local_view_(proxy_event_data_control_local_view)
+    ConsumerEventDataControlLocalViewTestAttorney(
+        ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
+        : consumer_event_data_control_local_view_(consumer_event_data_control_local_view)
     {
     }
 
     std::optional<TransactionLogLocalView>& GetTransactionLogLocalView()
     {
-        return proxy_event_data_control_local_view_.transaction_log_local_view_;
+        return consumer_event_data_control_local_view_.transaction_log_local_view_;
     }
 
   private:
-    ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view_;
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view_;
 };
 
 namespace
@@ -81,7 +82,7 @@ class TransactionLogRegistrationGuardFixture : public TransactionLogSetHelperFix
     TransactionLogRegistrationGuardFixture& GivenATransactionLogRegistrationGuard()
     {
         auto transaction_log_registration_guard_result =
-            transaction_log_set_.RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_view_);
+            transaction_log_set_.RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_view_);
         SCORE_LANGUAGE_FUTURECPP_ASSERT(transaction_log_registration_guard_result.has_value());
         transaction_log_registration_guard_.emplace(std::move(transaction_log_registration_guard_result).value());
         return *this;
@@ -97,7 +98,7 @@ class TransactionLogRegistrationGuardFixture : public TransactionLogSetHelperFix
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
 
     EventDataControl event_data_control_{kMaxSlots, memory_};
-    ProxyEventDataControlLocalView<> proxy_event_data_control_local_view_{event_data_control_};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_view_{event_data_control_};
 };
 
 TEST_F(TransactionLogRegistrationGuardFixture, TransactionLogRegistrationGuardUsesScopeExit)
@@ -122,9 +123,10 @@ TEST_F(TransactionLogRegistrationGuardFixture,
     GivenATransactionLogRegistrationGuard();
 
     // Then a TransactionLogLocalView pointing to the TransactionLog that was just registered should have been injected
-    // into the ProxyEventDataControlLocalView.
-    ProxyEventDataControlLocalViewTestAttorney proxy_event_data_control_attorney{proxy_event_data_control_local_view_};
-    EXPECT_TRUE(proxy_event_data_control_attorney.GetTransactionLogLocalView().has_value());
+    // into the ConsumerEventDataControlLocalView.
+    ConsumerEventDataControlLocalViewTestAttorney consumer_event_data_control_attorney{
+        consumer_event_data_control_local_view_};
+    EXPECT_TRUE(consumer_event_data_control_attorney.GetTransactionLogLocalView().has_value());
 }
 
 TEST_F(TransactionLogRegistrationGuardFixture, CreatingTransactionLogRegistrationGuardDoesNotCallUnregister)
@@ -157,13 +159,14 @@ TEST_F(TransactionLogRegistrationGuardFixture, DestroyingTransactionLogRegistrat
     GivenATransactionLogRegistrationGuard();
 
     // When destroying the TransactionLogRegistrationGuard
-    ProxyEventDataControlLocalViewTestAttorney proxy_event_data_control_attorney{proxy_event_data_control_local_view_};
-    EXPECT_TRUE(proxy_event_data_control_attorney.GetTransactionLogLocalView().has_value());
+    ConsumerEventDataControlLocalViewTestAttorney consumer_event_data_control_attorney{
+        consumer_event_data_control_local_view_};
+    EXPECT_TRUE(consumer_event_data_control_attorney.GetTransactionLogLocalView().has_value());
     transaction_log_registration_guard_.reset();
 
     // Then a TransactionLogLocalView pointing to the TransactionLog that was just registered should have been cleared
-    // from the ProxyEventDataControlLocalView.
-    EXPECT_FALSE(proxy_event_data_control_attorney.GetTransactionLogLocalView().has_value());
+    // from the ConsumerEventDataControlLocalView.
+    EXPECT_FALSE(consumer_event_data_control_attorney.GetTransactionLogLocalView().has_value());
 }
 
 }  // namespace

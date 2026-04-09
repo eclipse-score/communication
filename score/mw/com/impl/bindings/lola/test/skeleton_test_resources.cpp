@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
-#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
@@ -337,7 +337,7 @@ EventControl& SkeletonMockedMemoryFixture::GetEventControlFromServiceDataControl
     return event_control;
 }
 
-SkeletonEventControlLocalView& SkeletonMockedMemoryFixture::GetSkeletonEventControlLocalFromServiceDataControlLocal(
+ProviderEventControlLocalView& SkeletonMockedMemoryFixture::GetSkeletonEventControlLocalFromServiceDataControlLocal(
     ElementFqId element_fq_id,
     SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept
 {
@@ -347,7 +347,7 @@ SkeletonEventControlLocalView& SkeletonMockedMemoryFixture::GetSkeletonEventCont
     return event_control_local;
 }
 
-ProxyEventControlLocalView& SkeletonMockedMemoryFixture::GetProxyEventControlLocalFromServiceDataControlLocal(
+ConsumerEventControlLocalView& SkeletonMockedMemoryFixture::GetProxyEventControlLocalFromServiceDataControlLocal(
     ElementFqId element_fq_id,
     ProxyServiceDataControlLocalView& proxy_service_data_control_local) noexcept
 {

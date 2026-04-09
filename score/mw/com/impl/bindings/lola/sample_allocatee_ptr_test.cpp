@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
 #include <gtest/gtest.h>
@@ -40,8 +40,8 @@ class SampleAllocateePtrFixture : public ::testing::Test
   public:
     FakeMemoryResource memory_{};
     EventDataControl control_block_{kMaxSlots, memory_};
-    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{control_block_};
-    EventDataControlComposite<> control_composite_{skeleton_event_data_control_local_, nullptr, nullptr};
+    ProviderEventDataControlLocalView<> provider_event_data_control_local_{control_block_};
+    EventDataControlComposite<> control_composite_{provider_event_data_control_local_, nullptr, nullptr};
 };
 
 TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)
@@ -56,7 +56,7 @@ TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given an SampleAllocateePtr on an allocated slot
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
     {
@@ -65,13 +65,13 @@ TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)
     // When it goes out of scope
 
     // Then the underlying slot is marked invalid
-    EXPECT_TRUE(skeleton_event_data_control_local_[slot.value()].IsInvalid());
+    EXPECT_TRUE(provider_event_data_control_local_[slot.value()].IsInvalid());
 }
 
 TEST_F(SampleAllocateePtrFixture, DoesNotMarkSlotAsInvalidOnMove)
 {
     // Given an SampleAllocateePtr on an allocated slot
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
     auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
@@ -80,15 +80,15 @@ TEST_F(SampleAllocateePtrFixture, DoesNotMarkSlotAsInvalidOnMove)
     auto unit2 = std::move(unit);
 
     // Then the underlying slot is _not_ marked invalid
-    EXPECT_FALSE(skeleton_event_data_control_local_[slot.value()].IsInvalid());
+    EXPECT_FALSE(provider_event_data_control_local_[slot.value()].IsInvalid());
 }
 
 TEST_F(SampleAllocateePtrFixture, ReadySlotIsNotMarkedInvalidOnDestruction)
 {
     // Given an SampleAllocateePtr on an allocated slot that is already marked as ready
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
-    skeleton_event_data_control_local_.EventReady(slot.value(), 0x42);
+    provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
     {
         auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
@@ -96,8 +96,8 @@ TEST_F(SampleAllocateePtrFixture, ReadySlotIsNotMarkedInvalidOnDestruction)
     // When it goes out of scope
 
     // Then the underlying slot is _not_ marked invalid
-    EXPECT_FALSE(skeleton_event_data_control_local_[slot.value()].IsInvalid());
-    EXPECT_EQ(skeleton_event_data_control_local_[slot.value()].GetTimeStamp(), 0x42);
+    EXPECT_FALSE(provider_event_data_control_local_[slot.value()].IsInvalid());
+    EXPECT_EQ(provider_event_data_control_local_[slot.value()].GetTimeStamp(), 0x42);
 }
 
 TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
@@ -109,9 +109,9 @@ TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given an SampleAllocateePtr on an allocated slot that is already marked as ready
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
-    skeleton_event_data_control_local_.EventReady(slot.value(), 0x42);
+    provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
     auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
 
@@ -120,7 +120,7 @@ TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
 
     // Then the underlying slot is the expected one and is valid
     EXPECT_EQ(referenced_slot, slot.value());
-    EXPECT_FALSE(skeleton_event_data_control_local_[referenced_slot].IsInvalid());
+    EXPECT_FALSE(provider_event_data_control_local_[referenced_slot].IsInvalid());
 }
 
 TEST_F(SampleAllocateePtrFixture, ObeysOwnershipProperties)
@@ -134,9 +134,9 @@ TEST_F(SampleAllocateePtrFixture, ObeysOwnershipProperties)
 TEST_F(SampleAllocateePtrFixture, MoveConstruct)
 {
     // Given an SampleAllocateePtr on an allocated slot that is already marked as ready
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
-    skeleton_event_data_control_local_.EventReady(slot.value(), 0x42);
+    provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
     auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
 
@@ -148,15 +148,15 @@ TEST_F(SampleAllocateePtrFixture, MoveConstruct)
     EXPECT_TRUE(unit2);
 
     // ... and the underlying slot is still valid.
-    EXPECT_FALSE(skeleton_event_data_control_local_[slot.value()].IsInvalid());
+    EXPECT_FALSE(provider_event_data_control_local_[slot.value()].IsInvalid());
 }
 
 TEST_F(SampleAllocateePtrFixture, MoveAssign)
 {
     // Given an SampleAllocateePtr on an allocated slot that is already marked as ready
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
-    skeleton_event_data_control_local_.EventReady(slot.value(), 0x42);
+    provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
     auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
 
@@ -168,7 +168,7 @@ TEST_F(SampleAllocateePtrFixture, MoveAssign)
     EXPECT_TRUE(unit2);
 
     // ... and the underlying slot is still valid.
-    EXPECT_FALSE(skeleton_event_data_control_local_[slot.value()].IsInvalid());
+    EXPECT_FALSE(provider_event_data_control_local_[slot.value()].IsInvalid());
 }
 
 TEST_F(SampleAllocateePtrFixture, ConstructFromNullptr)
@@ -185,7 +185,7 @@ TEST_F(SampleAllocateePtrFixture, ConstructFromNullptr)
 TEST_F(SampleAllocateePtrFixture, AssignNullptr)
 {
     // Given an SampleAllocateePtr on an allocated slot
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
     auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
@@ -194,7 +194,7 @@ TEST_F(SampleAllocateePtrFixture, AssignNullptr)
     unit = nullptr;
 
     // Then the underlying slot is marked invalid
-    EXPECT_TRUE(skeleton_event_data_control_local_[slot.value()].IsInvalid());
+    EXPECT_TRUE(provider_event_data_control_local_[slot.value()].IsInvalid());
     // and the SamplePtr doesn't hold a valid managed object.
     EXPECT_FALSE(unit);
 }
@@ -202,7 +202,7 @@ TEST_F(SampleAllocateePtrFixture, AssignNullptr)
 TEST_F(SampleAllocateePtrFixture, ArrayOp)
 {
     // Given an SampleAllocateePtr on an allocated slot
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     DummyStruct data{99, 42};
     auto unit = SampleAllocateePtr<DummyStruct>(&data, control_composite_, slot.value());
@@ -219,7 +219,7 @@ TEST_F(SampleAllocateePtrFixture, ArrayOp)
 TEST_F(SampleAllocateePtrFixture, StarOp)
 {
     // Given an SampleAllocateePtr on an allocated slot
-    auto slot = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     DummyStruct data{99, 42};
     auto unit = SampleAllocateePtr<DummyStruct>(&data, control_composite_, slot.value());
@@ -235,12 +235,12 @@ TEST_F(SampleAllocateePtrFixture, StarOp)
 TEST_F(SampleAllocateePtrFixture, SwapOp)
 {
     // Given two SampleAllocateePtrs on allocated slots
-    auto slot1 = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot1 = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot1.has_value());
     DummyStruct data1{99, 42};
     auto unit1 = SampleAllocateePtr<DummyStruct>(&data1, control_composite_, slot1.value());
 
-    auto slot2 = skeleton_event_data_control_local_.AllocateNextSlot();
+    auto slot2 = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot2.has_value());
     DummyStruct data2{10, 100};
     auto unit2 = SampleAllocateePtr<DummyStruct>(&data2, control_composite_, slot2.value());

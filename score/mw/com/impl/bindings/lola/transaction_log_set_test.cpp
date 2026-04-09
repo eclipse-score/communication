@@ -76,7 +76,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(unit_ != nullptr);
         auto transaction_log_registration_guard =
-            unit_->RegisterProxyElement(transaction_log_id, proxy_event_data_control_local_).value();
+            unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value();
         const auto transaction_log_index = transaction_log_registration_guard.GetTransactionLogIndex();
         TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
         transaction_log_local_view.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
@@ -97,7 +97,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(unit_ != nullptr);
         auto transaction_log_registration_guard =
-            unit_->RegisterProxyElement(transaction_log_id, proxy_event_data_control_local_).value();
+            unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value();
         const auto transaction_log_index = transaction_log_registration_guard.GetTransactionLogIndex();
         TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
         transaction_log_local_view.SubscribeTransactionBegin(kSubscriptionMaxSampleCount);
@@ -116,7 +116,7 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
 
     memory::shared::SharedMemoryResourceHeapAllocatorMock memory_resource_{1U};
     EventDataControl event_data_control_{kNumberOfLogs, memory_resource_};
-    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_};
 
     std::unique_ptr<TransactionLogSet> unit_{nullptr};
 
@@ -163,7 +163,7 @@ TEST_F(TransactionLogSetRollbackFixture, CallingRollbackOnRegisteredIdWithoutMar
 
     // When registering a TransactionLog
     const TransactionLogRegistrationGuard transaction_registration_guard =
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value();
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value();
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     // and MarkTransactionLogsNeedRollback is not called
@@ -325,7 +325,7 @@ TEST_F(TransactionLogSetRollbackFixture,
 
     // When registering a TransactionLog
     const TransactionLogRegistrationGuard transaction_registration_guard{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     // and a subscribe transaction is begun but never finished, indicating a crash
@@ -373,7 +373,8 @@ TEST_F(TransactionLogSetRollbackFixture,
     EXPECT_CALL(dereference_slot_callback_, Call(slot_index));
 
     // When registering a TransactionLog
-    const auto transaction_registration_guard = unit_->RegisterSkeletonTracingElement(proxy_event_data_control_local_);
+    const auto transaction_registration_guard =
+        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = unit_->GetTransactionLog(transaction_log_index);
@@ -408,7 +409,8 @@ TEST_F(TransactionLogSetRollbackFixture,
     EXPECT_CALL(dereference_slot_callback_, Call(slot_index)).Times(0);
 
     // When registering a TransactionLog
-    const auto transaction_registration_guard = unit_->RegisterSkeletonTracingElement(proxy_event_data_control_local_);
+    const auto transaction_registration_guard =
+        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     // and a reference transaction is begun but never finished, indicating a crash
@@ -436,7 +438,7 @@ TEST_F(TransactionLogSetRegisterFixture, RegisteringWhenMaxLogsIsZeroReturnsErro
 
     // When calling RegisterProxyElement
     const auto transaction_log_registration_result =
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_);
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_);
 
     // Then an error is returned
     EXPECT_FALSE(transaction_log_registration_result.has_value());
@@ -451,7 +453,7 @@ TEST_F(TransactionLogSetRegisterFixture, RegisteringLessThanTheMaxNumberPassedTo
     {
         const TransactionLogId transaction_log_id{static_cast<uid_t>(i)};
         transaction_log_registration_guards.push_back(
-            unit_->RegisterProxyElement(transaction_log_id, proxy_event_data_control_local_).value());
+            unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value());
     }
 }
 
@@ -464,12 +466,12 @@ TEST_F(TransactionLogSetRegisterFixture, RegisteringMoreThanTheMaxNumberPassedTo
     {
         const TransactionLogId transaction_log_id{static_cast<uid_t>(i)};
         transaction_log_registration_guards.push_back(
-            unit_->RegisterProxyElement(transaction_log_id, proxy_event_data_control_local_).value());
+            unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_).value());
     }
 
     const TransactionLogId transaction_log_id{static_cast<uid_t>(kNumberOfLogs)};
     const auto transaction_log_registration_result =
-        unit_->RegisterProxyElement(transaction_log_id, proxy_event_data_control_local_);
+        unit_->RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_);
     EXPECT_FALSE(transaction_log_registration_result.has_value());
 }
 
@@ -482,7 +484,7 @@ TEST_F(TransactionLogSetRegisterFixture,
 
     // When registering the proxy with the TransactionLogSet
     const TransactionLogRegistrationGuard transaction_registration_guard =
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value();
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value();
 
     // Then we get a valid TransactionLogRegistrationGuard which contains an index corresponding to a valid
     // TransactionLog
@@ -498,10 +500,10 @@ TEST_F(TransactionLogSetRegisterFixture, RegisterWithSameIdCanBeReCalledAfterUnr
     WithATransactionLogSet(kNumberOfLogs);
 
     std::optional<TransactionLogRegistrationGuard> transaction_registration_guard{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     transaction_registration_guard.reset();
     std::optional<TransactionLogRegistrationGuard> transaction_registration_guard_2{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     const auto transaction_log_index_2 = transaction_registration_guard_2->GetTransactionLogIndex();
     ExpectProxyTransactionLogExistsAtIndex(
         *unit_, kDummyTransactionLogId, transaction_log_index_2, expect_needs_rollback);
@@ -514,13 +516,13 @@ TEST_F(TransactionLogSetRegisterFixture, CallingRegisterWithSameIdWillReturnDiff
     WithATransactionLogSet(kNumberOfLogs);
 
     const TransactionLogRegistrationGuard transaction_registration_guard{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
     ExpectProxyTransactionLogExistsAtIndex(
         *unit_, kDummyTransactionLogId, transaction_log_index, expect_needs_rollback);
 
     const TransactionLogRegistrationGuard transaction_registration_guard_2{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     const auto transaction_log_index_2 = transaction_registration_guard_2.GetTransactionLogIndex();
     EXPECT_NE(transaction_log_index, transaction_log_index_2);
 
@@ -533,7 +535,8 @@ TEST_F(TransactionLogSetRegisterFixture, CallingRegisterSkeletonWillCreateATrans
 {
     WithATransactionLogSet(kNumberOfLogs);
 
-    const auto transaction_registration_guard = unit_->RegisterSkeletonTracingElement(proxy_event_data_control_local_);
+    const auto transaction_registration_guard =
+        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_);
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
     EXPECT_EQ(transaction_log_index, TransactionLogSet::kSkeletonIndexSentinel);
     EXPECT_TRUE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
@@ -544,7 +547,7 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveProxyTransac
     WithATransactionLogSet(kNumberOfLogs);
 
     std::optional<TransactionLogRegistrationGuard> transaction_registration_guard{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     transaction_registration_guard.reset();
     ExpectTransactionLogSetEmpty(*unit_);
 }
@@ -556,9 +559,9 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterAfterRegisteringTwiceW
     WithATransactionLogSet(kNumberOfLogs);
 
     std::optional<TransactionLogRegistrationGuard> transaction_registration_guard{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     std::optional<TransactionLogRegistrationGuard> transaction_registration_guard_2{
-        unit_->RegisterProxyElement(kDummyTransactionLogId, proxy_event_data_control_local_).value()};
+        unit_->RegisterProxyElement(kDummyTransactionLogId, consumer_event_data_control_local_).value()};
     const auto transaction_log_index_2 = transaction_registration_guard_2->GetTransactionLogIndex();
 
     transaction_registration_guard.reset();
@@ -574,7 +577,7 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveSkeletonTran
     WithATransactionLogSet(kNumberOfLogs);
 
     std::optional<TransactionLogRegistrationGuard> transaction_registration_guard{
-        unit_->RegisterSkeletonTracingElement(proxy_event_data_control_local_)};
+        unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_)};
     transaction_registration_guard.reset();
     EXPECT_FALSE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
@@ -590,7 +593,7 @@ TEST_F(TransactionLogSetRegisterFixtureDeathTest, CallingUnRegisterWhileTransact
 
         // When registering a TransactionLog
         TransactionLogRegistrationGuard transaction_registration_guard{
-            unit_->RegisterSkeletonTracingElement(proxy_event_data_control_local_)};
+            unit_->RegisterSkeletonTracingElement(consumer_event_data_control_local_)};
         const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
         // and a reference transaction is begun but never finished, indicating a crash
@@ -614,19 +617,19 @@ TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLo
     constexpr auto loop_count = 1U;
     // constexpr auto number_of_proxy_elements = thread_count * loop_count;
 
-    // In production, we have one ProxyEventDataControlLocalView per ProxyEvent. Therefore, we must create a vector of
-    // ProxyEventDataControlLocalViews to ensure that each call to RegisterProxyElement uses a different
-    // ProxyEventDataControlLocalView. We use a 2D vector here to make the indexing simpler (rather than creating a 1D
-    // vector of size thread_count * loop_count and then calculating the index manually). We use a NonRelocatableVector
-    // since ProxyEventDataControlLocalView is not copyable or movable.
-    containers::NonRelocatableVector<containers::NonRelocatableVector<ProxyEventDataControlLocalView<>>>
-        proxy_event_data_control_locals(thread_count);
+    // In production, we have one ConsumerEventDataControlLocalView per ProxyEvent. Therefore, we must create a vector
+    // of ConsumerEventDataControlLocalViews to ensure that each call to RegisterProxyElement uses a different
+    // ConsumerEventDataControlLocalView. We use a 2D vector here to make the indexing simpler (rather than creating a
+    // 1D vector of size thread_count * loop_count and then calculating the index manually). We use a
+    // NonRelocatableVector since ConsumerEventDataControlLocalView is not copyable or movable.
+    containers::NonRelocatableVector<containers::NonRelocatableVector<ConsumerEventDataControlLocalView<>>>
+        consumer_event_data_control_locals(thread_count);
     for (std::size_t i = 0; i < thread_count; ++i)
     {
-        proxy_event_data_control_locals.emplace_back(loop_count);
+        consumer_event_data_control_locals.emplace_back(loop_count);
         for (std::size_t j = 0; j < loop_count; ++j)
         {
-            proxy_event_data_control_locals.at(j).emplace_back(event_data_control_);
+            consumer_event_data_control_locals.at(j).emplace_back(event_data_control_);
         }
     }
 
@@ -637,12 +640,13 @@ TEST_F(TransactionLogSetRegisterFixture, RegisterUnregisterMultipleTransactionLo
         threads.emplace_back([this,
                               &unit,
                               thread_number = TransactionLogIndex(thread_idx + 1U),
-                              &proxy_event_data_control_locals,
+                              &consumer_event_data_control_locals,
                               thread_idx]() noexcept {
             for (auto loop_idx = 0U; loop_idx < loop_count; loop_idx++)
             {
-                auto& proxy_event_data_control_local = proxy_event_data_control_locals.at(thread_idx).at(loop_idx);
-                auto register_result = unit->RegisterProxyElement(thread_number, proxy_event_data_control_local);
+                auto& consumer_event_data_control_local =
+                    consumer_event_data_control_locals.at(thread_idx).at(loop_idx);
+                auto register_result = unit->RegisterProxyElement(thread_number, consumer_event_data_control_local);
                 ASSERT_TRUE(register_result.has_value());
                 auto transaction_registration_guard = std::move(register_result).value();
                 using namespace std::chrono_literals;
