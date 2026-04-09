@@ -1,0 +1,97 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: "Rebase on Dependency PR"
+description: "Rebases the current PR onto another PR specified via 'Depends-On: #<PR_NUMBER>' in the PR description"
+
+inputs:
+  token:
+    description: "GitHub token with permissions to read PR information"
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  dependency_prs:
+    description: "Comma-separated list of PR numbers that this PR depends on (if found)"
+    value: ${{ steps.find-dependency.outputs.dependency_prs }}
+  dependency_count:
+    description: "Number of dependency PRs found"
+    value: ${{ steps.find-dependency.outputs.dependency_count }}
+  rebased:
+    description: "Whether a rebase was performed"
+    value: ${{ steps.rebase.outputs.rebased }}
+  rebased_count:
+    description: "Number of PRs successfully rebased onto"
+    value: ${{ steps.rebase.outputs.rebased_count }}
+
+runs:
+  using: composite
+  steps:
+    - name: Find dependency PR from description
+      id: find-dependency
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        EVENT_NAME: ${{ github.event_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: python3 "${ACTION_PATH}/scripts/find_dependencies.py"
+
+    - name: Rebase on dependency PR
+      id: rebase
+      if: steps.find-dependency.outputs.dependency_prs != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        DEPENDENCY_PRS: ${{ steps.find-dependency.outputs.dependency_prs }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: python3 "${ACTION_PATH}/scripts/rebase_on_prs.py" "${DEPENDENCY_PRS}"
+
+    - name: Summary
+      if: always()
+      shell: bash
+      env:
+        DEPENDENCY_PRS: ${{ steps.find-dependency.outputs.dependency_prs || 0 }}
+        DEPENDENCY_COUNT: ${{ steps.find-dependency.outputs.dependency_count || 0}}
+        REBASED: ${{ steps.rebase.outputs.rebased || 0 }}
+        REBASED_COUNT: ${{ steps.rebase.outputs.rebased_count || 0 }}
+        SKIPPED_PRS: ${{ steps.rebase.outputs.skipped_prs || 0}}
+        FAILED_PRS: ${{ steps.rebase.outputs.failed_prs || 0}}
+      run: |
+        echo "### Dependency Check" >> $GITHUB_STEP_SUMMARY
+
+        if [[ -z "$DEPENDENCY_PRS" ]]; then
+          echo "No dependency found in PR description." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To declare dependencies, add \`Depends-On: #<PR_NUMBER>\` to your PR description." >> $GITHUB_STEP_SUMMARY
+          echo "You can add multiple \`Depends-On:\` lines for multiple dependencies." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Found **${DEPENDENCY_COUNT}** dependency PR(s): ${DEPENDENCY_PRS}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${REBASED_COUNT:-0}" -gt 0 ]]; then
+            echo "✅ Successfully rebased onto **${REBASED_COUNT}** PR(s)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ -n "$SKIPPED_PRS" ]]; then
+            echo "ℹ️ Skipped PRs (already merged or closed): ${SKIPPED_PRS}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ -n "$FAILED_PRS" ]]; then
+            echo "❌ Failed to rebase onto PR(s): ${FAILED_PRS}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$REBASED" != "true" && -z "$FAILED_PRS" ]]; then
+            echo "ℹ️ No rebase was needed (all dependency PRs are merged or closed)" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi

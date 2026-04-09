@@ -35,7 +35,10 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4.2.2
-
+        with:
+          fetch-depth: 0  # Required for rebasing
+      - name: Rebase on dependency PR
+        uses: ./actions/rebase_on_dependency
       - name: Free Disk Space (Ubuntu)
         uses: eclipse-score/more-disk-space@v1
         with:
