@@ -501,13 +501,18 @@ auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
         auto opened_result =
             memory_manager_.OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(element_fq_id);
         EventDataControlComposite<>& event_data_control_composite = opened_result.first;
-        auto& transaction_log_set = opened_result.second;
+        auto& event_control = opened_result.second.get();
 
-        auto& skeleton_event_data_control_local_qm = event_data_control_composite.GetQmEventDataControlLocal();
-        memory_manager_.RollbackSkeletonTracingTransactions(skeleton_event_data_control_local_qm, transaction_log_set);
+        // We rollback any transactions in the TransactionLog that correspond to the SkeletonEvent even if tracing is
+        // disabled in the current process. It's possible that we could have tracing disabled in this process but the
+        // crashed process had tracing enabled and therefore may have transactions that need to be rolled back. If
+        // tracing was also disabled in the previous process or if there are no transactions to rollback,
+        // RollbackSkeletonTracingTransactions will simply do nothing.
+        memory_manager_.RollbackSkeletonTracingTransactions(event_control);
 
         auto& event_data_storage = memory_manager_.OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
-        return {static_cast<void*>(&event_data_storage), event_data_control_composite, transaction_log_set};
+        return {
+            static_cast<void*>(&event_data_storage), event_data_control_composite, event_control.transaction_log_set_};
     }
 
     auto* const type_erased_event_data_storage = memory_manager_.CreateGenericEventDataInCreatedSharedMemory(
