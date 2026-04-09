@@ -11,12 +11,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
-load("//score/mw/com/test:pkg_application.bzl", "pkg_application")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 rust_binary(
-    name = "bigdata-consumer",
-    srcs = ["consumer_app.rs"],
+    name = "bigdata-producer",
+    srcs = ["producer_app.rs"],
     features = ["link_std_cpp_lib"],
     # linux_x86_64_score_gcc_12_2_0_posix toolchain is built without --enable-default-pie, so its static C++ libs are non-PIC.
     # When Bazel builds this binary in exec config (py_test build with rule cfg=exec), the Rust linker
@@ -27,27 +26,11 @@ rust_binary(
         "-Clink-arg=-lstdc++",
     ],
     visibility = [
-        "//score/mw/com/test/com_api:__subpackages__",
+        "//score/mw/com/test/basic_rust_api:__subpackages__",
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api",
-        "//score/mw/com/test/com_api:bigdata_com_api_gen_rs",
+        "//score/mw/com/test/basic_rust_api:bigdata_com_api_gen_rs",
         "@score_communication_crate_index//:clap",
-    ],
-)
-
-pkg_application(
-    name = "bigdata-com-api-sync-pkg",
-    app_name = "bigdata-com-api-sync",
-    bin = [
-        ":bigdata-consumer",
-        "//score/mw/com/test/com_api/producer_app:bigdata-producer",
-    ],
-    etc = [
-        "//score/mw/com/test/com_api/etc:config",
-        "//score/mw/com/test/bigdata:logging.json",
-    ],
-    visibility = [
-        "//score/mw/com/test/com_api:__subpackages__",
     ],
 )

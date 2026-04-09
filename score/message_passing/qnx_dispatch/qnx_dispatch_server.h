@@ -93,7 +93,9 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
             score::cpp::pmr::vector<std::uint8_t> message;
             std::uint8_t code;
         };
+        std::mutex send_mutex_;  // protects access to send_queue_ if Reply() or Notify() are called from other thead
         SendMessage reply_message_;
+        std::size_t max_notify_size_;
         score::cpp::pmr::vector<SendMessage> notify_storage_;
         // coverity[autosar_cpp14_a2_10_6_violation] false-positive: there is nothing with the same name
         score::containers::intrusive_list<SendMessage> notify_pool_;

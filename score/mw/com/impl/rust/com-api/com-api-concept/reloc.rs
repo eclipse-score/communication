@@ -16,8 +16,8 @@
 /// - usage of pointers to other members of the struct itself (akin to !Unpin structs)
 /// - usage of Rust pointers or references to other data
 ///
-/// This trait provides the necessary bounds to ensure that the implementing type can be safely sent across address boundaries
-/// and does not contain any non-static references.
+/// This trait provides the necessary bounds to ensure that the implementing type can be safely
+/// sent across address boundaries and does not contain any non-static references.
 /// This can be trivially achieved by not using any sort of reference. In case a reference (either
 /// to self or to other data) is required, the following options exist:
 /// - Use indices into other data members of the same structure

@@ -42,6 +42,7 @@ cc_library(
     name = "bridge_macros",
     srcs = ["bridge_macros.cpp"],
     hdrs = ["bridge_macros.h"],
+    deprecation = "Please adopt the new Rust API (Library). For more details, see //score/mw/com/impl/rust/com-api documentation.",
     features = COMPILER_WARNING_FEATURES,
     visibility = [
         "//visibility:public",  # platform_only
@@ -58,7 +59,7 @@ cc_library(
 cc_library(
     name = "proxy_bridge_macros",
     hdrs = ["proxy_bridge_macros.h"],
-    deprecation = "Please change your dependency to //score/mw/com/impl/rust:bridge_macros",
+    deprecation = "Please adopt the new Rust API (Library). For more details, see //score/mw/com/impl/rust/com-api documentation.",
     visibility = [
         "//visibility:public",  # platform_only
         # "@xyz//platform/aas:__subpackages__",
@@ -108,6 +109,7 @@ rust_library(
 rust_library(
     name = "mw_com",
     srcs = ["mw_com.rs"],
+    deprecation = "Please adopt the new Rust API (Library). For more details, see //score/mw/com/impl/rust/com-api documentation.",
     visibility = [
         "//visibility:public",  # platform_only
     ],

@@ -36,7 +36,7 @@ namespace score::mw::com::impl
 
 // False Positive: this is a normal forward declaration.
 // coverity[autosar_cpp14_m3_2_3_violation]
-template <typename>
+template <typename SampleDataType, const bool EnableSet, const bool EnableNotifier>
 class SkeletonField;
 
 template <typename SampleDataType>
@@ -51,7 +51,8 @@ class SkeletonEvent : public SkeletonEventBase
     // SkeletonField uses composition pattern to reuse code from SkeletonEvent. These two classes also have shared
     // private APIs which necessitates the use of the friend keyword.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class SkeletonField<SampleDataType>;
+    template <typename T, bool ES, bool EN>
+    friend class SkeletonField;
 
     // Empty struct that is used to make the second constructor only accessible to SkeletonEvent and SkeletonField (as
     // the latter is a friend).

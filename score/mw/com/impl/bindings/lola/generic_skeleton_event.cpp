@@ -32,14 +32,17 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
-    std::tie(data_storage_, control_) = event_shared_impl_.GetParent().RegisterGeneric(
+    void* data_storage;
+    std::tie(data_storage, control_) = event_shared_impl_.GetParent().RegisterGeneric(
         event_shared_impl_.GetElementFQId(), event_properties_, size_info_.size, size_info_.alignment);
+    data_storage_ = static_cast<std::uint8_t*>(data_storage);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(data_storage_ != nullptr);
     event_shared_impl_.PrepareOfferCommon();
 
     return {};
 }
 
-Result<score::Blank> GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
+ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(control_.has_value());
     const impl::SampleAllocateePtrView<void> view{sample};
@@ -92,31 +95,22 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
 
     if (slot.IsValidQM() || slot.IsValidAsilB())
     {
-        //  Get the actual CONTAINER object (using the max_align_t type we allocated it with!)
-        using StorageType = lola::EventDataStorage<std::max_align_t>;
-        StorageType* storage_ptr = data_storage_.get<StorageType>();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(storage_ptr != nullptr);
-
-        std::uint8_t* byte_ptr = reinterpret_cast<std::uint8_t*>(storage_ptr->data());
-
         // Calculate the exact slot spacing based on alignment padding
         const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
         std::size_t offset = static_cast<std::size_t>(slot.GetIndex()) * aligned_size;
-        void* data_ptr = byte_ptr + offset;
+        void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(data_storage_, offset));
 
         auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, control_.value(), slot);
         return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
     }
-    else
+
+    if (!event_properties_.enforce_max_samples)
     {
-        if (!event_properties_.enforce_max_samples)
-        {
-            ::score::mw::log::LogError("lola")
-                << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
-                   "disabled by config. Might be the root cause!";
-        }
-        return MakeUnexpected(ComErrc::kBindingFailure);
+        ::score::mw::log::LogError("lola")
+            << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
+               "disabled by config. Might be the root cause!";
     }
+    return MakeUnexpected(ComErrc::kBindingFailure);
 }
 
 std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept

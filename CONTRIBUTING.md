@@ -91,6 +91,15 @@ bazel run //:copyright.check
 bazel run //:copyright.fix
 ```
 
+C++ and Bazel files formatter:
+```bash
+# Check Sources
+bazel run //:format.check
+
+# Fix Sources
+bazel run //:format
+```
+
 ### Testing Instructions
 
 The Communication Module includes extensive tests. Use the following commands:

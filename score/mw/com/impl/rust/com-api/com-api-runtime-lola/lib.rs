@@ -20,6 +20,7 @@
 //! - `runtime`: Contains the runtime implementation for Lola.
 //! - `producer`: Contains the producer builder and related structures for Lola.
 //! - `consumer`: Contains the consumer discovery and subscriber implementations for Lola.
+//!
 //! Each module is designed to encapsulate specific functionalities, promoting modularity and maintainability.
 //! The crate is structured to facilitate easy integration and usage of the Lola middleware within applications
 //! that utilize the COM API abstractions.

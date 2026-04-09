@@ -245,7 +245,7 @@ int run_receiver(SharedState& shared_state,
             [moved_service_discovery_promise = std::move(service_discovery_promise)](auto found_handles,
                                                                                      auto handle) mutable {
                 moved_service_discovery_promise.set_value(found_handles);
-                DataProxy::StopFindService(handle);
+                score::cpp::ignore = DataProxy::StopFindService(handle);
             },
             std::move(instance_specifier_result).value());
         if (!handles_result.has_value())

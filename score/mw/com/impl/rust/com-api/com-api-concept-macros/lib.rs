@@ -74,7 +74,8 @@ pub fn derive_comm_data(input: TokenStream) -> TokenStream {
     let generics = input_args.generics.clone();
     let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
 
-    // Generate ID string: use user-provided ID if available, otherwise use fully qualified type name
+    // Generate ID string: use user-provided ID if available,
+    // otherwise use fully qualified type name
     let id_str = match extract_id_from_attribute(&input_args.attrs) {
         Ok(Some(user_id)) => {
             // User-provided ID
@@ -95,9 +96,7 @@ pub fn derive_comm_data(input: TokenStream) -> TokenStream {
             const ID: &'static str = #id_str;
         }
     };
-    // Merge the TokenStreams
-    let result = TokenStream::from(quote! { #comm_data_impl });
-    result
+    TokenStream::from(quote! { #comm_data_impl })
 }
 
 /// Extract custom ID from #[comm_data(id = "...")] attribute
@@ -109,35 +108,35 @@ fn extract_id_from_attribute(attrs: &[syn::Attribute]) -> Result<Option<String>,
 
         let Meta::List(list) = &attr.meta else {
             return Err(syn::Error::new_spanned(
-                &attr,
+                attr,
                 "Expected #[comm_data(id = \"...\")]",
             ));
         };
 
         let Ok(Meta::NameValue(nv)) = list.parse_args::<Meta>() else {
             return Err(syn::Error::new_spanned(
-                &attr,
+                attr,
                 "Expected #[comm_data(id = \"...\")]",
             ));
         };
 
         if !nv.path.is_ident("id") {
             return Err(syn::Error::new_spanned(
-                &nv.path,
+                nv.path,
                 "Expected #[comm_data(id = \"...\")]",
             ));
         }
 
         let syn::Expr::Lit(expr_lit) = &nv.value else {
             return Err(syn::Error::new_spanned(
-                &nv.value,
+                nv.value,
                 "Expected a string literal value",
             ));
         };
 
         let syn::Lit::Str(lit_str) = &expr_lit.lit else {
             return Err(syn::Error::new_spanned(
-                &expr_lit,
+                expr_lit,
                 "Expected a string literal value",
             ));
         };
@@ -145,7 +144,7 @@ fn extract_id_from_attribute(attrs: &[syn::Attribute]) -> Result<Option<String>,
         let id_value = lit_str.value();
         if id_value.is_empty() {
             return Err(syn::Error::new_spanned(
-                &expr_lit,
+                expr_lit,
                 "The id cannot be an empty string",
             ));
         }
@@ -237,7 +236,7 @@ pub fn derive_reloc(input: TokenStream) -> TokenStream {
     // Ensure #[repr(C)] on the struct itself
     if !has_repr_c(&input_args.attrs) {
         return syn::Error::new_spanned(
-            &ident_name,
+            ident_name,
             "The #[derive(Reloc)] macro requires #[repr(C)] on the type",
         )
         .to_compile_error()
@@ -246,7 +245,8 @@ pub fn derive_reloc(input: TokenStream) -> TokenStream {
 
     let mut generics = create_bounds_with_reloc(input_args.generics.clone());
 
-    // Collect field types. Since we cannot check if given field type has implemented given trait we will use compiler
+    // Collect field types. Since we cannot check if given field type has implemented given trait
+    // we will use compiler
     // to check that generating trait bounds on fields like below:
     //
     // struct Example {
@@ -255,14 +255,17 @@ pub fn derive_reloc(input: TokenStream) -> TokenStream {
     // }
     // unsafe impl Reloc for Example where SomeType: Reloc, AnotherType: Reloc {}
     //
-    let field_types = match collect_field_types(&input_args.data){
+    let field_types = match collect_field_types(&input_args.data) {
         Ok(types) => types,
-        Err(()) => return syn::Error::new_spanned(
-            &ident_name,
-            "The #[derive(Reloc)] macro is supported only for enums(C like), structs and tuple structs",
-        )
-        .to_compile_error()
-        .into(),
+        Err(()) => {
+            return syn::Error::new_spanned(
+                ident_name,
+                "The #[derive(Reloc)] macro is supported only for enums(C like), structs and \
+                 tuple structs",
+            )
+            .to_compile_error()
+            .into()
+        }
     };
 
     {
@@ -306,7 +309,7 @@ fn has_repr_c(attrs: &[syn::Attribute]) -> bool {
 }
 
 /// Collect field types, skipping generic parameters and primitives
-fn collect_field_types<'a>(data: &'a Data) -> Result<Vec<&'a Type>, ()> {
+fn collect_field_types(data: &Data) -> Result<Vec<&Type>, ()> {
     let mut out = Vec::new();
 
     match data {
@@ -657,6 +660,7 @@ fn comm_data_fails_with_attribute_on_field() {}
 ///  C,
 /// }
 /// ```
-/// This will fail because #[comm_data(...)] is not allowed on enum variants, only on the enum type itself
+/// This will fail because #[comm_data(...)] is not allowed on enum variants,
+/// only on the enum type itself
 #[cfg(doctest)]
 fn comm_data_fails_with_attribute_on_enum_variant() {}

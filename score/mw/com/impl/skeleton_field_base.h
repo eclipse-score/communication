@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_SKELETON_FIELD_BASE_H
 
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 
 #include "score/mw/log/logging.h"
@@ -61,6 +62,15 @@ class SkeletonFieldBase
         // after calling PrepareOffer() on the binding
         if (!was_prepare_offer_called_)
         {
+            // If the field is configured with a setter, the application must register
+            // a set handler before calling OfferService(), otherwise Offer() shall fail.
+            if (!IsSetHandlerRegistered())
+            {
+                score::mw::log::LogWarn("lola")
+                    << "Set handler must be registered before offering field: " << field_name_;
+                return MakeUnexpected(ComErrc::kSetHandlerNotSet);
+            }
+
             if (!IsInitialValueSaved())
             {
                 score::mw::log::LogWarn("lola") << "Initial value must be set before offering field: " << field_name_;
@@ -120,6 +130,9 @@ class SkeletonFieldBase
   private:
     /// \brief Returns whether the initial value has been saved by the user to be used by DoDeferredUpdate
     virtual bool IsInitialValueSaved() const noexcept = 0;
+
+    /// \brief Returns whether a set handler has been registered.
+    virtual bool IsSetHandlerRegistered() const noexcept = 0;
 
     /// \brief Sets the initial value of the field.
     ///

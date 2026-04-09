@@ -35,7 +35,7 @@ rust_library(
     crate_name = "bigdata_com_api_gen",
     features = ["link_std_cpp_lib"],
     visibility = [
-        "//score/mw/com/test/com_api:__subpackages__",
+        "//score/mw/com/test/basic_rust_api:__subpackages__",
     ],
     deps = [
         ":bigdata_com_api_gen_cpp",

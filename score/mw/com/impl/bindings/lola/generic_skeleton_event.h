@@ -37,7 +37,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
                          const DataTypeMetaInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
 
-    Result<score::Blank> Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
+    ResultBlank Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
 
     Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate() noexcept override;
 
@@ -61,7 +61,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     const SkeletonEventProperties event_properties_;
     std::optional<EventDataControlComposite<>> control_{};
     EventSlotStatus::EventTimeStamp current_timestamp_{1U};
-    score::memory::shared::OffsetPtr<void> data_storage_{nullptr};
+    std::uint8_t* data_storage_{nullptr};
     bool qm_disconnect_{false};
 
     SkeletonEventCommon event_shared_impl_;

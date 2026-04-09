@@ -11,6 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//third_party/traceability/bazel:traceability.bzl", "safety_software_seooc", "safety_software_unit")
 
 cc_library(

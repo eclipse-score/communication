@@ -12,8 +12,40 @@
 # *******************************************************************************
 module(name = "score_communication")
 
+# Dependencies that will get propagated to our users as transitive dependencies
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
+bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "rules_python", version = "1.5.1")
+bazel_dep(name = "rules_rust", version = "0.68.1-score")
+bazel_dep(name = "score_baselibs", version = "0.2.4")
 
+# TODO: Remove once new baselib release is available https://github.com/eclipse-score/baselibs/issues/138
+git_override(
+    module_name = "score_baselibs",
+    commit = "bd9a138245b7c8bb47bbb9745a3fabc978e3a1b1",
+    remote = "https://github.com/eclipse-score/baselibs.git",
+)
+
+bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
+bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
+bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
+bazel_dep(name = "score_logging", version = "0.1.0")
+
+# TODO: Remove once new logging release is available https://github.com/eclipse-score/logging/issues/80
+git_override(
+    module_name = "score_logging",
+    commit = "38e8762881d512c89ae5c2e5e5238fd791d327df",
+    remote = "https://github.com/eclipse-score/logging.git",
+)
+
+bazel_dep(name = "score_tooling", version = "1.1.2")
+
+# Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
 
 gcc_toolchains = use_extension("@gcc_toolchain//toolchain:module_extensions.bzl", "gcc_toolchains", dev_dependency = True)
@@ -170,20 +202,9 @@ download_file(
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
 )
 
-bazel_dep(name = "rules_cc", version = "0.1.5")
-
 bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
-bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
-
-bazel_dep(name = "rules_rust", version = "0.68.1-score")
-
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
-
-bazel_dep(name = "score_crates", version = "0.0.7", repo_name = "score_communication_crate_index")
-bazel_dep(name = "boost.program_options", version = "1.87.0")
-bazel_dep(name = "boost.interprocess", version = "1.87.0")
-
 bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
@@ -208,17 +229,7 @@ download_archive(
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
-bazel_dep(name = "nlohmann_json", version = "3.11.3")
-bazel_dep(name = "bazel_skylib", version = "1.8.1")
-
 bazel_dep(name = "rules_doxygen", version = "2.6.1", dev_dependency = True)
-bazel_dep(name = "score_docs_as_code", version = "3.0.1", dev_dependency = True)
-
-# Force score_docs_as_code to 3.0.1 to resolve compatibility conflict between score_logging and score_baselibs
-single_version_override(
-    module_name = "score_docs_as_code",
-    version = "3.0.1",
-)
 
 # Apply patch to fix Doxyfile template for our use cases
 single_version_override(
@@ -227,29 +238,17 @@ single_version_override(
     patches = ["//third_party/rule_doxygen:Doxyfile.patch"],
 )
 
-# Apply patch to fix visibility issue with interprocess_notification target
-bazel_dep(name = "score_baselibs", version = "0.2.4")
-git_override(
-    module_name = "score_baselibs",
-    commit = "052c2f271be4239f97182b164f4903b8c88d6c72",
-    remote = "https://github.com/eclipse-score/baselibs.git",
-)
+bazel_dep(name = "score_docs_as_code", version = "3.0.1", dev_dependency = True)
 
-bazel_dep(name = "score_logging", version = "0.1.0")
-git_override(
-    module_name = "score_logging",
-    commit = "38e8762881d512c89ae5c2e5e5238fd791d327df",
-    remote = "https://github.com/eclipse-score/logging.git",
+# Force score_docs_as_code to 3.0.1 to resolve compatibility conflict between score_logging and score_baselibs
+single_version_override(
+    module_name = "score_docs_as_code",
+    version = "3.0.1",
 )
-
-bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 
 # Doxygen extension for documentation generation
 doxygen_extension = use_extension("@rules_doxygen//:extensions.bzl", "doxygen_extension", dev_dependency = True)
 use_repo(doxygen_extension, "doxygen")
-
-# Python 3.12 toolchain for Bazel
-bazel_dep(name = "rules_python", version = "1.5.1")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python", dev_dependency = True)
 python.toolchain(
@@ -291,8 +290,6 @@ pip.parse(
 )
 use_repo(pip, "lobster_dependencies")
 
-bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
-
 bazel_dep(name = "rules_oci", version = "1.8.0", dev_dependency = True)
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci", dev_dependency = True)
@@ -320,8 +317,6 @@ apt.install(
 use_repo(apt, "ubuntu24_04")
 
 bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
-
-bazel_dep(name = "score_tooling", version = "1.1.2")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

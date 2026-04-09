@@ -16,39 +16,50 @@
 // DESIGN DECISION:  FFI Bridge for Compile-time decoupling of COM-API and Lola
 //
 // Problem with macros.rs approach:
-// - macros.rs file provides static, compile-time bindings tightly coupled with specific runtime implementations
+// - macros.rs file provides static, compile-time bindings tightly coupled with specific runtime
+//   implementations
 // - This violates COM-API design principle of being independent of any specific runtime
-// - We cannot invoke macros defined in runtime-specific crates (like Lola, Mock) from COM-API library which is runtime-agnostic
-// - macros.rs mixes two concerns: API abstraction (what to communicate) and runtime binding (how to communicate)
+// - We cannot invoke macros defined in runtime-specific crates (like Lola, Mock) from COM-API
+//   library which is runtime-agnostic
+// - macros.rs mixes two concerns: API abstraction (what to communicate)
+//   and runtime binding (how to communicate)
 //
 // Why this file exists:
 // - This file provides FFI bindings and bridge functions for COM API that work with Lola runtime
 // - COM-API library is independent of any specific runtime implementation
-// - bridge_ffi_rs.rs enables Rust COM-API to work with Lola's C++ implementation via FFI without compile-time coupling
-// - It uses type erasure and dynamic type resolution on C++ side to decouple compile-time dependencies while still enabling type-safe communication
+// - bridge_ffi_rs.rs enables Rust COM-API to work with Lola's C++ implementation via FFI without
+//   compile-time coupling
+// - It uses type erasure and dynamic type resolution on C++ side to decouple compile-time
+//   dependencies while still enabling type-safe communication
 //
 // Key design elements:
-// - It defines opaque structs for Proxy and Skeleton base types (ProxyBase, SkeletonBase, SkeletonEventBase)
+// - It defines opaque structs for Proxy and Skeleton base types (ProxyBase, SkeletonBase,
+//   SkeletonEventBase)
 // - Opaque types hide C++ implementation details and prevent accidental field access from Rust
 // - It defines FFI functions for creating, destroying, and interacting with proxies and skeletons
 // - String-based type identifiers (interface_id, event_id, event_type) enable runtime type checking
-// - It provides Rust closure invocation function (mw_com_impl_call_dyn_ref_fnmut_sample) for callbacks from C++
-// - This allows C++ code to call back into Rust closures in type-erased manner using FatPtr trait objects
+// - It provides Rust closure invocation function (mw_com_impl_call_dyn_ref_fnmut_sample) for
+//   callbacks from C++
+// - This allows C++ code to call back into Rust closures in type-erased manner using
+//   FatPtr trait objects
 // - Overall, this file serves as the FFI bridge layer for COM-API functionality
 //
 // How it works with C++:
 // - extern "C" functions defined here are called via Lola APIs implemented in C++
-// - FFI for C++ functions are implemented in registry_bridge_macro.cpp, which uses the type registry to resolve operations at runtime
+// - FFI for C++ functions are implemented in registry_bridge_macro.cpp, which uses the type
+//   registry to resolve operations at runtime
 // - FFI C++ implementations are in registry_bridge_macro.cpp file
 // - C++ side maintains type registry built by macros defined in registry_bridge_macro.h file
-// - Registry is populated at application build time via auto-generated code for each interface and type
+// - Registry is populated at application build time via-
+//   auto-generated code for each interface and type
 // - When Rust calls FFI functions with type name strings, C++ resolves type at runtime via registry
 // - This enables type-safe communication without C++ needing to know Rust types at compile time
 //
 // Dependencies:
 // - It relies on proxy_bridge_rs crate for FatPtr and ProxyWrapperClass definitions
 // - FatPtr provides binary representation of dyn trait objects (data pointer + vtable pointer)
-// - ProxyWrapperClass and related types provide necessary abstractions for proxy and skeleton handling
+// - ProxyWrapperClass and related types provide necessary abstractions for
+//   proxy and skeleton handling
 //
 // StringView:
 // - StringView implementation is inspired by C++ std::string_view
@@ -89,7 +100,8 @@ pub struct FindServiceHandle {
     dummy: [u8; 0],
 }
 
-/// This struct wraps the raw pointer to FindServiceHandle returned by C++ and provides safe access to it
+/// This struct wraps the raw pointer to FindServiceHandle returned
+/// by C++ and provides safe access to it
 pub struct NativeFindServiceHandle {
     handle: *mut FindServiceHandle,
 }
@@ -103,7 +115,8 @@ impl NativeFindServiceHandle {
 
 impl AsMut<FindServiceHandle> for NativeFindServiceHandle {
     fn as_mut(&mut self) -> &mut FindServiceHandle {
-        // SAFETY: self.handle is guaranteed to be a valid pointer to FindServiceHandle as per the contract of NativeFindServiceHandle.
+        // SAFETY: self.handle is guaranteed to be a valid pointer to FindServiceHandle as per
+        // the contract of NativeFindServiceHandle.
         unsafe { &mut *self.handle }
     }
 }
@@ -112,7 +125,8 @@ impl AsMut<FindServiceHandle> for NativeFindServiceHandle {
 // It is created by FFI call and there is no state associated with the current thread.
 // The pointer can be safely moved to another thread without thread-local concerns.
 // And the lifetime is managed safely through ServiceDiscoveryFuture
-// which ensures the handle is not used after discovery completes and the handle is cleaned up properly.
+// which ensures the handle is not used after discovery completes and
+// the handle is cleaned up properly.
 unsafe impl Send for NativeFindServiceHandle {}
 
 /// Opaque skeleton event base struct
@@ -180,8 +194,16 @@ pub unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_sample(
 }
 
 /// Rust closure invocation for C++ callbacks for FindService
-/// This function is called by C++ to invoke a Rust closure for finding services, passing a vector of service handles.
+/// This function is called by C++ to invoke a Rust closure for finding services,
+/// passing a vector of service handles.
 /// This function invokes a Rust closure that takes a HandleContainer and a FindServiceHandle.
+/// # Safety
+/// - `ptr` must point to a valid FatPtr representing a closure of type
+///   FnMut(HandleContainer, NativeFindServiceHandle).
+/// - `service_handles` must point to valid NativeHandleContainer data that can be safely wrapped
+///   in a HandleContainer.
+/// - `find_service_handle` must point to valid FindServiceHandle data that can be safely wrapped
+///   in a NativeFindServiceHandle.
 #[no_mangle]
 pub unsafe extern "C" fn mw_com_impl_call_dyn_ref_fnmut_find_service(
     ptr: *const FatPtr,
@@ -450,6 +472,12 @@ extern "C" {
     /// # Arguments
     /// * `handle` - Opaque pointer to FindServiceHandle returned by mw_com_start_find_service
     fn mw_com_stop_find_service(handle: *mut FindServiceHandle);
+
+    /// Unsubscribe from event to stop receiving samples
+    ///
+    /// # Arguments
+    /// * `event_ptr` - Opaque event pointer
+    fn mw_com_proxy_event_unsubscribe(event_ptr: *mut ProxyEventBase);
 }
 
 /// Get allocatee pointer from skeleton event of specific type
@@ -463,7 +491,8 @@ extern "C" {
 /// True if allocatee pointer was retrieved successfully, false otherwise
 ///
 /// # Safety
-/// event_ptr must point to a valid SkeletonEventBase, allocatee_ptr must point to valid memory for the allocatee,
+/// event_ptr must point to a valid SkeletonEventBase,
+/// allocatee_ptr must point to valid memory for the allocatee,
 /// and event_type must be a valid UTF-8 string representing the event type.
 pub unsafe fn get_allocatee_ptr(
     event_ptr: *mut SkeletonEventBase,
@@ -485,7 +514,8 @@ pub unsafe fn get_allocatee_ptr(
 /// # Safety
 /// allocatee_ptr must point to a valid SampleAllocateePtr<T> of the specified type.
 pub unsafe fn delete_allocatee_ptr(allocatee_ptr: *mut std::ffi::c_void, type_name: &str) {
-    // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and type_name is constructed using static str.
+    // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
+    // type_name is constructed using static str.
     let type_name = StringView::from(type_name);
     mw_com_delete_allocatee_ptr(allocatee_ptr, type_name);
 }
@@ -505,7 +535,8 @@ pub unsafe fn get_allocatee_data_ptr(
     allocatee_ptr: *const std::ffi::c_void,
     type_name: &str,
 ) -> *mut std::ffi::c_void {
-    // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and type_name is constructed using static str.
+    // SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
+    // type_name is constructed using static str.
     let type_name = StringView::from(type_name);
     mw_com_get_allocatee_data_ptr(allocatee_ptr, type_name)
 }
@@ -521,14 +552,16 @@ pub unsafe fn get_allocatee_data_ptr(
 /// True if event was sent successfully, false otherwise
 ///
 /// # Safety
-/// event_ptr must point to a valid SkeletonEventBase, allocatee_ptr must point to a valid SampleAllocateePtr<T>,
+/// event_ptr must point to a valid SkeletonEventBase,
+/// allocatee_ptr must point to a valid SampleAllocateePtr<T>,
 /// and event_type must be a valid UTF-8 string representing the event type.
 pub unsafe fn skeleton_event_send_sample_allocatee(
     event_ptr: *mut SkeletonEventBase,
     event_type: &str,
     allocatee_ptr: *const std::ffi::c_void,
 ) -> bool {
-    // SAFETY: event_ptr is valid which is created using create_skeleton() and allocatee_ptr is valid which is created using get_allocatee_ptr().
+    // SAFETY: event_ptr is valid which is created using create_skeleton() and allocatee_ptr is
+    // valid which is created using get_allocatee_ptr().
     let event_type = StringView::from(event_type);
     mw_com_skeleton_send_event_allocatee(event_ptr, event_type, allocatee_ptr)
 }
@@ -576,7 +609,8 @@ pub unsafe fn sample_ptr_delete(sample_ptr: *mut std::ffi::c_void, type_name: &s
 /// true if offer was successful, false otherwise
 ///
 /// # Safety
-/// skeleton_ptr must be a valid pointer to a SkeletonBase previously created with create_skeleton().
+/// skeleton_ptr must be a valid pointer to a SkeletonBase previously created
+/// with create_skeleton().
 /// The pointer must remain valid for the duration of this call.
 pub unsafe fn skeleton_offer_service(skeleton_ptr: *mut SkeletonBase) -> bool {
     // SAFETY: skeleton_ptr is guaranteed to be valid per the caller's contract.
@@ -590,7 +624,8 @@ pub unsafe fn skeleton_offer_service(skeleton_ptr: *mut SkeletonBase) -> bool {
 /// * `skeleton_ptr` - Opaque skeleton pointer
 ///
 /// # Safety
-/// skeleton_ptr must be a valid pointer to a SkeletonBase previously created with create_skeleton().
+/// skeleton_ptr must be a valid pointer to a SkeletonBase previously created
+/// with create_skeleton().
 /// The pointer must remain valid for the duration of this call.
 pub unsafe fn skeleton_stop_offer_service(skeleton_ptr: *mut SkeletonBase) {
     // SAFETY: skeleton_ptr is guaranteed to be valid per the caller's contract.
@@ -611,7 +646,8 @@ pub unsafe fn skeleton_stop_offer_service(skeleton_ptr: *mut SkeletonBase) {
 /// handle_ptr must be a valid reference to a HandleType.
 /// The returned pointer must eventually be destroyed via destroy_proxy().
 pub unsafe fn create_proxy(interface_id: &str, handle_ptr: &HandleType) -> *mut ProxyBase {
-    // SAFETY: interface_id is a valid string reference and handle_ptr is guaranteed to be valid per the caller's contract.
+    // SAFETY: interface_id is a valid string reference and handle_ptr is guaranteed to be valid
+    // per the caller's contract.
     // The C++ implementation creates and returns a valid proxy pointer or nullptr on failure.
     let c_uid = StringView::from(interface_id);
     mw_com_create_proxy(c_uid, handle_ptr)
@@ -633,7 +669,8 @@ pub unsafe fn create_skeleton(
     interface_id: &str,
     instance_spec: *const NativeInstanceSpecifier,
 ) -> *mut SkeletonBase {
-    // SAFETY: interface_id is a valid string reference and instance_spec is guaranteed to be valid per the caller's contract.
+    // SAFETY: interface_id is a valid string reference and instance_spec is guaranteed to be
+    // valid per the caller's contract.
     // The C++ implementation creates and returns a valid skeleton pointer or nullptr on failure.
     let c_uid = StringView::from(interface_id);
     mw_com_create_skeleton(c_uid, instance_spec)
@@ -659,7 +696,8 @@ pub unsafe fn destroy_proxy(proxy_ptr: *mut ProxyBase) {
 /// * `skeleton_ptr` - Opaque skeleton pointer to destroy
 ///
 /// # Safety
-/// skeleton_ptr must be a valid pointer returned from create_skeleton() that has not been destroyed yet.
+/// skeleton_ptr must be a valid pointer returned from create_skeleton()-
+/// that has not been destroyed yet.
 /// The caller must ensure no other references to this skeleton exist after calling this function.
 pub unsafe fn destroy_skeleton(skeleton_ptr: *mut SkeletonBase) {
     // SAFETY: skeleton_ptr is guaranteed to be valid per the caller's contract.
@@ -703,7 +741,8 @@ pub unsafe fn get_event_from_proxy(
 /// Opaque event pointer, or nullptr if not found
 ///
 /// # Safety
-/// skeleton_ptr must be a valid pointer to a SkeletonBase previously created with create_skeleton().
+/// skeleton_ptr must be a valid pointer to a SkeletonBase previously created
+/// with create_skeleton().
 /// The returned pointer remains valid only as long as the skeleton remains alive.
 pub unsafe fn get_event_from_skeleton(
     skeleton_ptr: *mut SkeletonBase,
@@ -729,7 +768,8 @@ pub unsafe fn get_event_from_skeleton(
 /// Number of samples retrieved, or u32::MAX on error
 ///
 /// # Safety
-/// event_ptr must be a valid pointer to a ProxyEventBase previously obtained from get_event_from_proxy().
+/// event_ptr must be a valid pointer to a ProxyEventBase previously obtained
+/// from get_event_from_proxy().
 /// callback must be a valid FatPtr referencing a callable compatible with the event type.
 /// The event must have been subscribed to via subscribe_to_event() before calling this function.
 pub unsafe fn get_samples_from_event(
@@ -738,7 +778,8 @@ pub unsafe fn get_samples_from_event(
     callback: &FatPtr,
     max_samples: u32,
 ) -> u32 {
-    // SAFETY: event_ptr, callback, and event_type are guaranteed to be valid per the caller's contract.
+    // SAFETY: event_ptr, callback, and event_type are guaranteed
+    // to be valid per the caller's contract.
     // The C++ implementation handles sample retrieval and callback invocation safely.
     let c_name = StringView::from(event_type);
     mw_com_type_registry_get_samples_from_event(event_ptr, c_name, callback, max_samples)
@@ -752,7 +793,8 @@ pub unsafe fn get_samples_from_event(
 /// * `data_ptr` - Pointer to event data of the matching type
 ///
 /// # Safety
-/// event_ptr must be a valid pointer to a SkeletonEventBase previously obtained from get_event_from_skeleton().
+/// event_ptr must be a valid pointer to a SkeletonEventBase previously obtained
+/// from get_event_from_skeleton().
 /// data_ptr must point to valid data whose type matches the event_type.
 /// The lifetime of the data must extend through this function call.
 pub unsafe fn skeleton_send_event(
@@ -776,12 +818,27 @@ pub unsafe fn skeleton_send_event(
 /// true if subscription was successful, false otherwise
 ///
 /// # Safety
-/// event_ptr must be a valid pointer to a ProxyEventBase previously obtained from get_event_from_proxy().
+/// event_ptr must be a valid pointer to a ProxyEventBase previously obtained
+/// from get_event_from_proxy().
 /// This function must be called before attempting to retrieve samples via get_samples_from_event().
 pub unsafe fn subscribe_to_event(event_ptr: *mut ProxyEventBase, max_sample_count: u32) -> bool {
     // SAFETY: event_ptr is guaranteed to be valid per the caller's contract.
     // The C++ implementation handles subscription and buffer allocation safely.
     mw_com_proxy_event_subscribe(event_ptr, max_sample_count)
+}
+
+/// Unsafe wrapper around mw_com_proxy_event_unsubscribe
+///
+/// # Arguments
+/// * `event_ptr` - Opaque event pointer
+///
+/// # Safety
+/// event_ptr must be a valid pointer to a ProxyEventBase previously obtained from get_event_from_proxy().
+/// This function should be called only when no `SamplePtr` is held by the user for this event.
+pub unsafe fn unsubscribe_to_event(event_ptr: *mut ProxyEventBase) {
+    // SAFETY: event_ptr is guaranteed to be valid per the caller's contract.
+    // The C++ implementation handles unsubscription and buffer cleanup safely.
+    mw_com_proxy_event_unsubscribe(event_ptr);
 }
 
 /// Unsafe wrapper around mw_com_proxy_set_event_receive_handler
@@ -794,7 +851,8 @@ pub unsafe fn subscribe_to_event(event_ptr: *mut ProxyEventBase, max_sample_coun
 /// true if handler was set successfully, false otherwise
 ///
 /// # Safety
-/// proxy_event_ptr must be a valid pointer to a ProxyEventBase previously obtained from get_event_from_proxy().
+/// proxy_event_ptr must be a valid pointer to a ProxyEventBase previously obtained
+/// from get_event_from_proxy().
 /// handler must be a valid FatPtr which is used for notifying the proxy of incoming events.
 pub unsafe fn set_event_receive_handler(
     proxy_event_ptr: *mut ProxyEventBase,
@@ -802,7 +860,8 @@ pub unsafe fn set_event_receive_handler(
     event_type: &str,
 ) -> bool {
     // SAFETY: proxy_event_ptr must be valid per the caller's contract,
-    //and handler must be a valid FatPtr referencing a callable compatible with the callback signature expected by the C++ implementation.
+    // and handler must be a valid FatPtr referencing a callable compatible with the callback
+    // signature expected by the C++ implementation.
     let c_name = StringView::from(event_type);
     mw_com_proxy_set_event_receive_handler(proxy_event_ptr, handler, c_name)
 }
@@ -814,7 +873,8 @@ pub unsafe fn set_event_receive_handler(
 /// * `event_type` - Event type name string
 ///
 /// # Safety
-/// proxy_event_ptr must be a valid pointer to a ProxyEventBase previously obtained from get_event_from_proxy().
+/// proxy_event_ptr must be a valid pointer to a ProxyEventBase previously obtained
+/// from get_event_from_proxy().
 /// event_type must be a valid string corresponding to the event type.
 pub unsafe fn clear_event_receive_handler(proxy_event_ptr: *mut ProxyEventBase, event_type: &str) {
     // SAFETY: proxy_event_ptr must be valid per the caller's contract.

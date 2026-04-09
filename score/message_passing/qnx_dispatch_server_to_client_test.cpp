@@ -213,6 +213,30 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
         ASSERT_TRUE(server_->StartListening(connect_callback, {}, {}, {}).has_value());
     }
 
+    void WhenFastNotifyingServerStartsListening()
+    {
+        auto connect_callback = [this](IServerConnection& connection) -> std::uintptr_t {
+            ++server_connections_started_;
+            connection.Notify({});
+            const pid_t client_pid = connection.GetClientIdentity().pid;
+            return static_cast<std::uintptr_t>(client_pid);
+        };
+        auto disconnect_callback = [this](IServerConnection& connection) {
+            ++server_connections_finished_;
+        };
+        auto sent_callback = [](IServerConnection& connection,
+                                score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
+            return {};
+        };
+        auto sent_with_reply_callback = [](IServerConnection& connection,
+                                           score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
+            return {};
+        };
+        ASSERT_TRUE(
+            server_->StartListening(connect_callback, disconnect_callback, sent_callback, sent_with_reply_callback)
+                .has_value());
+    }
+
     void WhenClientStarted(bool delete_on_stop = false)
     {
         delete_on_stop_ = delete_on_stop;
@@ -354,6 +378,30 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
         WaitClientConnected();
     }
 
+    void WithFastNotifyingServerSetup()
+    {
+        WhenServerAndClientFactoriesConstructed(false, GetParam());
+        WhenClientStarted();
+
+        ExpectClientStillConnecting();
+
+        WhenServerCreated();
+        WhenFastNotifyingServerStartsListening();
+
+        // the server will send empty notify message as soon as client connects
+        // (supposed to test the scenario whne the client is slow with Sticky Select message)
+        std::promise<bool> promise;
+        client_notify_callback_ = [&promise](score::cpp::span<const std::uint8_t> notify_message) {
+            promise.set_value(0 == static_cast<std::size_t>(notify_message.size()));
+        };
+
+        WaitClientConnected();
+
+        auto future = promise.get_future();
+        ASSERT_EQ(future.wait_for(kFutureWaitTimeout), std::future_status::ready);
+        EXPECT_TRUE(future.get());
+    }
+
     void WhenClientSendsMessageItReceivesEchoReply()
     {
         std::array<std::uint8_t, 6U> message = {1U, 2U, 3U, 4U, 5U, 6U};
@@ -394,6 +442,18 @@ class ServerToClientQnxFixture : public ::testing::Test, public testing::WithPar
             ASSERT_EQ(future.wait_for(kFutureWaitTimeout), std::future_status::ready);
             EXPECT_TRUE(future.get());
         }
+    }
+
+    void WhenClientSendsEmptyMessageItReceivesEmptyNotify()
+    {
+        std::promise<bool> promise;
+        client_notify_callback_ = [&promise](score::cpp::span<const std::uint8_t> notify_message) {
+            promise.set_value(0 == static_cast<std::size_t>(notify_message.size()));
+        };
+        auto send_expected = client_->Send({});
+        auto future = promise.get_future();
+        ASSERT_EQ(future.wait_for(kFutureWaitTimeout), std::future_status::ready);
+        EXPECT_TRUE(future.get());
     }
 
     Promises promises_;
@@ -507,6 +567,16 @@ TEST_P(ServerToClientQnxFixture, EchoServerSetup)
     WithStandardEchoServerSetup();
 
     WhenClientSendsMessageItReceivesEchoReply();
+
+    WhenClientSendsEmptyMessageItReceivesEmptyNotify();
+
+    client_->Stop();
+    WaitClientStoppedExpectStatusStopped();
+}
+
+TEST_P(ServerToClientQnxFixture, FastNotifyingServerSetup)
+{
+    WithFastNotifyingServerSetup();
 
     client_->Stop();
     WaitClientStoppedExpectStatusStopped();

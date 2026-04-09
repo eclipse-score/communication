@@ -17,9 +17,11 @@
 //!
 //! # API Design principles
 //!
-//! - We stick to the builder pattern down to a single service (TODO: Should this be introduced to the C++ API?)
+//! - We stick to the builder pattern down to a single service
+//!   (TODO: Should this be introduced to the C++ API?)
 //! - We make all elements mockable. This means we provide traits for the building blocks.
-//!   We strive for enabling trait objects for mockable entities. (TODO: Inspect all consuming methods for adherence to this rule)
+//!   We strive for enabling trait objects for mockable entities.
+//!   (TODO: Inspect all consuming methods for adherence to this rule)
 //! - We allow for the allocation of heap memory during initialization phase (offer, connect, ...)
 //!   but prevent heap memory usage during the running phase. Any heap memory allocations during the
 //!   run phase must happen on preallocated memory chunks.
@@ -46,6 +48,7 @@
 //! - Structures
 //! - Tuples
 
+use crate::error::*;
 use crate::Reloc;
 pub use com_api_concept_macros::CommData;
 use containers::fixed_capacity::FixedCapacityQueue;
@@ -53,16 +56,6 @@ use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
 use std::path::Path;
-
-/// Error enumeration for different failure cases in the Consumer/Producer/Runtime APIs.
-#[derive(Debug)]
-pub enum Error {
-    /// TODO: To be replaced, dummy value for "something went wrong"
-    Fail,
-    Timeout,
-    AllocateFailed,
-    SubscribeFailed,
-}
 
 /// Result type alias with `std::result::Result` using `com_api::Error` as error type
 pub type Result<T> = core::result::Result<T, Error>;
@@ -93,7 +86,8 @@ pub trait Builder<Output> {
 /// This represents the com implementation and acts as a root for all types and objects provided by
 /// the implementation.
 pub trait Runtime {
-    /// `ServiceDiscovery<I>` types for Discovers available service instances of a specific interface
+    /// `ServiceDiscovery<I>` types for Discovers available service instances of
+    /// a specific interface
     type ServiceDiscovery<I: Interface + Send>: ServiceDiscovery<I, Self>;
 
     /// `Subscriber<T>` types for Manages subscriptions to event notifications
@@ -118,8 +112,8 @@ pub trait Runtime {
     /// the runtime's service discovery mechanism.
     ///
     /// # Parameters
-    /// * `instance_specifier` - Target service instance identifier; use `InstanceSpecifier::MATCH_ANY`
-    ///   to discover all available instances
+    /// * `instance_specifier` - Target service instance identifier; use
+    ///   `InstanceSpecifier::MATCH_ANY` to discover all available instances
     ///
     /// # Returns
     /// Service discovery handle for querying available instances
@@ -197,16 +191,20 @@ where
 
 /// Defines the necessary properties for data types that can be communicated over the COM API.
 /// This trait ensures that data types are suitable for IPC communication by enforcing properties
-/// such as being relocatable. The Reloc trait provides Send + Unpin + 'static bounds which are necessary for safe cross-address-space usage.
+/// such as being relocatable. The Reloc trait provides Send + Unpin + 'static bounds which are
+/// necessary for safe cross-address-space usage.
 /// # Important
 /// Users must NOT implement the `CommData` trait manually. Always use the derive macros instead.
 /// Since `Reloc` is a supertrait of `CommData`, both must be derived explicitly:
 /// `#[derive(Reloc, CommData)]` on type definitions.
-/// This is to ensure that all necessary trait bounds and metadata are correctly applied to the communication data types.
+/// This is to ensure that all necessary trait bounds and metadata are correctly applied to the
+/// communication data types.
 /// Also if user wants to specify a custom ID for the communication data type,
 /// they can use the `#[comm_data(id = "CustomID")]` attribute on the type definition.
-/// The custom ID must be unique across all communication data types to avoid conflicts in the system.
-/// If no custom ID is provided, the type name will be used as the default ID with module path as prefix to ensure uniqueness.
+/// The custom ID must be unique across all communication data types to
+/// avoid conflicts in the system.
+/// If no custom ID is provided, the type name will be used as the default ID with module path as
+/// prefix to ensure uniqueness.
 pub trait CommData: Reloc {
     const ID: &'static str;
 }
@@ -253,16 +251,17 @@ impl InstanceSpecifier {
     /// Create a new instance specifier, using the string-like input as the path to the
     /// instance.
     ///
-    /// The returned instance specifier will only match if the instance exactly matches the given
-    /// string.
+    /// The returned instance specifier will only match if the instance exactly
+    /// matches the given string.
     /// # Parameters
     /// * `service_name` - The string representing the instance path
     ///
     /// # Returns
-    /// A `Result` containing the constructed `InstanceSpecifier` on success and an `Error` on failure.
+    /// A `Result` containing the constructed `InstanceSpecifier` on success and
+    /// an `Error` on failure.
     ///
     /// # Errors
-    /// Returns `Error::Fail` if the provided string does not conform to the required format.
+    /// Returns `Error::InstanceSpecifierInvalid` if the provided string does not conform to the required format.
     pub fn new(service_name: impl AsRef<str>) -> Result<InstanceSpecifier> {
         let service_name = service_name.as_ref();
         if Self::check_str(service_name) {
@@ -270,7 +269,7 @@ impl InstanceSpecifier {
                 specifier: service_name.to_string(),
             })
         } else {
-            Err(Error::Fail)
+            Err(Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))
         }
     }
 }
@@ -303,7 +302,8 @@ impl From<InstanceSpecifier> for FindServiceSpecifier {
 
 /// A `Sample` provides a reference to a memory buffer of an event with immutable value.
 ///
-/// By implementing the `Deref` trait implementations of the trait support the `.` operator for dereferencing.
+/// By implementing the `Deref` trait implementations of the trait support the `.` operator for
+/// dereferencing.
 /// The buffers with its data lives as long as there are references to it existing in the framework.
 ///
 /// The ordering of `SamplePtrs` is total over the reception order
@@ -318,7 +318,8 @@ where
 
 /// A `SampleMut` provides a reference to a memory buffer of an event with mutable value.
 ///
-/// By implementing the `DerefMut` trait implementations of the trait support the `.` operator for dereferencing.
+/// By implementing the `DerefMut` trait implementations of the trait support the `.` operator for
+/// dereferencing.
 /// The buffers with its data lives as long as there are references to it existing in the framework.
 ///
 /// # Type Parameters
@@ -338,16 +339,15 @@ where
     fn send(self) -> Result<()>;
 }
 
-/// A `SampleMaybeUninit` provides a reference to a memory buffer of an event with a `MaybeUninit` value.
+/// A `SampleMaybeUninit` provides a reference to a memory buffer of
+/// an event with a `MaybeUninit` value.
 ///
-/// The buffer can be assumed initialized with mutable access by calling `assume_init` which returns a `SampleMut`.
+/// The buffer can be assumed initialized with mutable access by calling `assume_init` which
+/// returns a `SampleMut`.
 /// The buffers with its data lives as long as there are references to it existing in the framework.
 ///
 /// # Type Parameters
 /// * `T` - The relocatable event data type
-///
-/// TODO: Shall we also require `DerefMut`<Target=MaybeUninit<T>> from implementing types? How to deal
-/// TODO: with the ambiguous `assume_init()` then?
 pub trait SampleMaybeUninit<T>: Debug + AsMut<core::mem::MaybeUninit<T>>
 where
     T: CommData + Debug,
@@ -377,7 +377,8 @@ where
     /// A `SampleMut` instance providing mutable access to the initialized data.
     fn write(self, value: T) -> Self::SampleMut;
 
-    /// Writes in place (skipping intermediate moves) the default value directly into the buffer and renders it initialized.
+    /// Writes in place (skipping intermediate moves) the default value directly into the buffer
+    /// and renders it initialized.
     /// This requires that T implements `PlacementDefault`.
     fn write_default(mut self) -> Self::SampleMut
     where
@@ -411,7 +412,8 @@ pub trait Interface {
 ///
 /// # Type Parameters
 /// * `R` - The runtime implementation managing this offered service
-#[must_use = "if a service is offered it will be unoffered and dropped immediately, causing unexpected behavior in the system"]
+#[must_use = "if a service is offered it will be unoffered and dropped immediately, causing \
+              unexpected behavior in the system"]
 pub trait OfferedProducer<R: Runtime + ?Sized> {
     /// Interface type of the producer
     type Interface: Interface;
@@ -483,11 +485,11 @@ where
     /// # Errors
     ///
     /// Returns 'Error' if the allocation fails.
-    //Since &self is the only parameter with a lifetime,
-    // Rust's Lifetime Elision Rules automatically bind the return type's lifetime to the implicit lifetime of &self,
-    // This is Elision Rule: When there's exactly one input lifetime,
-    // it's automatically used for all elided output lifetimes The compiler implicitly expands this to:
-    // fn allocate(&'a self) -> Result<Self::SampleMaybeUninit<'a>>
+    // Since &self is the only parameter with a lifetime,
+    // Rust's Lifetime Elision Rules automatically bind the return type's lifetime to the implicit
+    // lifetime of &self. This is Elision Rule: When there's exactly one input lifetime,
+    // it's automatically used for all elided output lifetimes. The compiler implicitly expands
+    // this to: fn allocate(&'a self) -> Result<Self::SampleMaybeUninit<'a>>
     fn allocate(&self) -> Result<Self::SampleMaybeUninit<'_>>;
 
     /// Allocate, initialize, and send an event sample in one step.
@@ -632,7 +634,8 @@ pub trait Subscriber<T: CommData + Debug, R: Runtime + ?Sized> {
     ///
     /// # Errors
     ///
-    /// Returns an error if the consumer cannot be created with the given identifier and instance info.
+    /// Returns an error if the consumer cannot be created with
+    /// the given identifier and instance info.
     fn new(identifier: &'static str, instance_info: R::ConsumerInfo) -> Result<Self>
     where
         Self: Sized;
@@ -700,11 +703,11 @@ impl<S> SampleContainer<S> {
     /// A `Result` indicating success or failure.
     ///
     /// # Errors
-    /// Returns 'Error' if container is already full.
+    /// Returns 'Error::AllocateError' if container is already full.
     pub fn push_back(&mut self, new: S) -> Result<()> {
-        self.inner
-            .push_back(new)
-            .map_err(|_| Error::AllocateFailed)?;
+        self.inner.push_back(new).map_err(|_| {
+            Error::AllocateError(AllocationFailureReason::OutOfMemory)
+        })?;
         Ok(())
     }
 
@@ -803,18 +806,22 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
     /// # Parameters
     /// * `scratch` - Container for events from this subscription
     /// * `new_samples` - Minimum number of new events before resolution
-    /// * `max_samples` - Maximum number of events that shall be received from the communication buffer and transferred to the container
+    /// * `max_samples` - Maximum number of events that shall be received from the communication
+    ///   buffer and transferred to the container
     ///
     /// # Returns
-    /// Future that resolves to the number of newly added events to the container with at least `new_samples` number of new events.
+    /// Future that resolves to the number of newly added events to the container with at least
+    /// `new_samples` number of new events.
     ///
     /// # Important Notes
-    /// User can not concurrenly call `receive` on the same subscription instance from multiple threads or tasks.
+    /// User can not concurrenly call `receive` on the same subscription instance from
+    /// multiple threads or tasks.
     /// The subscription instance must be used from a single thread or task at a time.
-    /// If concurrent calls to `receive` are made on the same subscription instance, it will lead to panic.
-    /// If user want to process samples concurrenly, then user should spwan to sample processing once the samples are received and stored in the container.
+    /// If concurrent calls to `receive` are made on the same subscription instance,
+    /// it will lead to panic.
+    /// If user want to process samples concurrenly, then user should spwan to sample processing
+    /// once the samples are received and stored in the container.
     /// The `receive` method itself should be called sequentially on the same subscription instance.
-
     //Notes for developers
     // The `Future` cannot have a `'static` lifetime. If we enforced `'static`, then `self` would
     // also need to be `'static`, which is not semantically correct for this use case.

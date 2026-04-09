@@ -48,7 +48,7 @@ int run_client(const std::size_t num_retries, const std::chrono::milliseconds re
     auto lola_proxy_handles_result = TestDataProxy::StartFindService(
         [moved_service_discovery_promise = std::move(service_discovery_promise)](auto handles, auto handle) mutable {
             moved_service_discovery_promise.set_value(handles);
-            TestDataProxy::StopFindService(handle);
+            score::cpp::ignore = TestDataProxy::StopFindService(handle);
         },
         std::move(instance_specifier));
 

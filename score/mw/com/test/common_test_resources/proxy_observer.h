@@ -72,7 +72,7 @@ class ProxyObserver
             {
                 std::cout << "Requested number of proxies created" << std::endl;
                 promise_.SetValue();
-                Proxy::StopFindService(find_service_handle);
+                score::cpp::ignore = Proxy::StopFindService(find_service_handle);
             }
         };
 

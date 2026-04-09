@@ -150,8 +150,8 @@ class SkeletonTrait
     template <typename SampleType>
     using Event = SkeletonEvent<SampleType>;
 
-    template <typename SampleType>
-    using Field = SkeletonField<SampleType>;
+    template <typename SampleType, bool EnableSet = false, bool EnableNotifier = false>
+    using Field = SkeletonField<SampleType, EnableSet, EnableNotifier>;
 
     template <typename MethodSignature>
     using Method = SkeletonMethod<MethodSignature>;

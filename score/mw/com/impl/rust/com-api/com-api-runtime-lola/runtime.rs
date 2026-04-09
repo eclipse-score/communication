@@ -39,7 +39,10 @@ impl Runtime for LolaRuntimeImpl {
     ) -> Self::ServiceDiscovery<I> {
         SampleConsumerDiscovery {
             instance_specifier: match instance_specifier {
-                FindServiceSpecifier::Any => todo!(), // TODO:[eclipse-score/communication/issues/133]Add error msg or panic like "ANY not supported by Lola"
+                FindServiceSpecifier::Any => panic!(
+                    "FindServiceSpecifier::Any is not supported in LolaRuntimeImpl,
+                Please use FindServiceSpecifier::Specific with a valid instance specifier."
+                ),
                 FindServiceSpecifier::Specific(spec) => spec,
             },
             _interface: PhantomData,

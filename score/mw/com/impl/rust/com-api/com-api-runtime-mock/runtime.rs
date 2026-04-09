@@ -17,7 +17,8 @@
 //! It is only meant to be used for testing and development.
 
 #![allow(dead_code)]
-//lifetime warning for all the Sample struct impl block . it is required for the Sample struct event lifetime parameter
+//lifetime warning for all the Sample struct impl block . it is required for the Sample struct
+// event lifetime parameter
 // and mentaining lifetime of instances and data reference
 // As of supressing clippy::needless_lifetimes
 //TODO: revist this once com-api is stable - Ticket-234827
@@ -354,7 +355,8 @@ impl<T> Publisher<T>
 where
     T: CommData + Debug,
 {
-    #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
+    #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be \
+                  assigned or used in some way"]
     pub fn new() -> Self {
         Self { _data: PhantomData }
     }

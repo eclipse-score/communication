@@ -91,20 +91,7 @@ Camera App ──► [Video Frame] ──┬──► Display App
 
 ### Building the Project
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd communication
-
-# Build all targets
-bazel build //...
-
-# Run tests
-bazel test //...
-
-# Build specific component
-bazel build //score/mw/com:all
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Project Structure
 

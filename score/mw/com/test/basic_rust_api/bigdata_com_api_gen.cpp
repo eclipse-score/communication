@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/
 
-#include "score/mw/com/test/com_api/bigdata_com_api_gen.h"
+#include "score/mw/com/test/basic_rust_api/bigdata_com_api_gen.h"
 #include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
 
 // Register the BigData interface with the com-api FFI bridge.
@@ -25,3 +25,20 @@ END_EXPORT_MW_COM_INTERFACE()
 // Export data types so that the Rust-side CommData::ID can resolve them.
 EXPORT_MW_COM_TYPE(MapApiLanesStamped, ::score::mw::com::test::MapApiLanesStamped)
 EXPORT_MW_COM_TYPE(DummyDataStamped, ::score::mw::com::test::DummyDataStamped)
+
+// Test for primitive and complex data types, used in the com-api integration tests.
+BEGIN_EXPORT_MW_COM_INTERFACE(MixedPrimitivesInterface,
+                              ::score::mw::com::test::MixedPrimitivesProxy,
+                              ::score::mw::com::test::MixedPrimitivesSkeleton)
+EXPORT_MW_COM_EVENT(::score::mw::com::test::MixedPrimitivesPayload, mixed_event)
+END_EXPORT_MW_COM_INTERFACE()
+
+BEGIN_EXPORT_MW_COM_INTERFACE(ComplexStructInterface,
+                              ::score::mw::com::test::ComplexStructProxy,
+                              ::score::mw::com::test::ComplexStructSkeleton)
+EXPORT_MW_COM_EVENT(::score::mw::com::test::ComplexStruct, complex_event)
+END_EXPORT_MW_COM_INTERFACE()
+
+// Export all types
+EXPORT_MW_COM_TYPE(MixedPrimitivesPayload, ::score::mw::com::test::MixedPrimitivesPayload)
+EXPORT_MW_COM_TYPE(ComplexStruct, ::score::mw::com::test::ComplexStruct)
