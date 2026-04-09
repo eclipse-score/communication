@@ -102,7 +102,7 @@ class EventDataControlComposite
     /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
     SkeletonEventDataControlLocalView<>* GetAsilBEventDataControlLocal() noexcept;
 
-    /// \brief Returns a reference to ProxyEventDataControlLocalView for which is used for tracing
+    /// \brief Returns a reference to ProxyEventDataControlLocalView, which is used for tracing
     /// \pre only called if EventDataControlComposite was constructed with a valid ProxyEventDataControlLocalView
     ProxyEventDataControlLocalView<>& GetProxyEventDataControlLocalView() noexcept;
 

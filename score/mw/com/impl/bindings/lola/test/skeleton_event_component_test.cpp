@@ -169,8 +169,8 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
-        auto* event_control = &search->second;
-        ProxyEventControlLocalView proxy_event_control_local{*event_control};
+        auto& event_control = search->second;
+        ProxyEventControlLocalView proxy_event_control_local{event_control};
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {

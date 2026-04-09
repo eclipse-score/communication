@@ -92,14 +92,14 @@ TEST_F(ServiceDataControlLocalFixture, ConstructsEventControlLocalPointingToEach
     // Slots should initially be all 0
     auto& event_data_control_0{GetEventControl(service_data_control_, element_fq_id_0_).data_control};
     auto& event_data_control_1{GetEventControl(service_data_control_, element_fq_id_1_).data_control};
-    std::all_of(
+    EXPECT_TRUE(std::all_of(
         event_data_control_0.state_slots_.begin(), event_data_control_0.state_slots_.end(), [](const auto& slot_value) {
             return slot_value == 0U;
-        });
-    std::all_of(
+        }));
+    EXPECT_TRUE(std::all_of(
         event_data_control_1.state_slots_.begin(), event_data_control_1.state_slots_.end(), [](const auto& slot_value) {
             return slot_value == 0U;
-        });
+        }));
 
     auto& event_data_control_local_0 = GetEventControlLocal(service_data_control_local, element_fq_id_0_).data_control;
     auto& event_data_control_local_1 = GetEventControlLocal(service_data_control_local, element_fq_id_1_).data_control;
