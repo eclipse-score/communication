@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
 #include <gtest/gtest.h>
@@ -32,9 +32,9 @@ class SlotCollectorWithFakeMem : public ::testing::Test
   protected:
     SlotIndexType AllocateSlot(const EventSlotStatus::EventTimeStamp timestamp = 1)
     {
-        const auto allocated_slot = skeleton_event_data_control_local_.AllocateNextSlot();
+        const auto allocated_slot = provider_event_data_control_local_.AllocateNextSlot();
         EXPECT_TRUE(allocated_slot.has_value());
-        skeleton_event_data_control_local_.EventReady(allocated_slot.value(), timestamp);
+        provider_event_data_control_local_.EventReady(allocated_slot.value(), timestamp);
         return allocated_slot.value();
     }
 
@@ -46,14 +46,14 @@ class SlotCollectorWithFakeMem : public ::testing::Test
     FakeMemoryResource fake_memory_resource_;
     EventDataControl event_data_control_{kMaxSlots, fake_memory_resource_};
     TransactionLog transaction_log_{kMaxSlots, fake_memory_resource_};
-    ProxyEventDataControlLocalView<> proxy_event_data_control_local_{event_data_control_, transaction_log_};
-    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local_{event_data_control_};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
+    ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
 };
 
 TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
 {
     AllocateSlot();
-    SlotCollector slot_collector{proxy_event_data_control_local_, 1U};
+    SlotCollector slot_collector{consumer_event_data_control_local_, 1U};
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 1);
 
     const std::size_t max_count{1};
@@ -73,7 +73,7 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
         send_time++;
     }
 
-    SlotCollector slot_collector{proxy_event_data_control_local_, 3U};
+    SlotCollector slot_collector{consumer_event_data_control_local_, 3U};
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 3);
 
     const std::size_t max_count{3};
@@ -96,7 +96,7 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
 
 TEST_F(SlotCollectorWithFakeMem, DoNotReceiveEventsFromThePast)
 {
-    SlotCollector slot_collector{proxy_event_data_control_local_, 2U};
+    SlotCollector slot_collector{consumer_event_data_control_local_, 2U};
 
     AllocateSlot(17);
     EXPECT_EQ(slot_collector.GetNumNewSamplesAvailable(), 1);
@@ -121,7 +121,7 @@ TEST_F(SlotCollectorWithFakeMemDeathTest, CreatingSlotCollectorWith0MaxSlotsTerm
 
     // When creating a SlotCollector with max_slots of 0
     // Then the program terminates
-    EXPECT_DEATH(SlotCollector(proxy_event_data_control_local_, 0U), ".*");
+    EXPECT_DEATH(SlotCollector(consumer_event_data_control_local_, 0U), ".*");
 }
 
 }  // namespace

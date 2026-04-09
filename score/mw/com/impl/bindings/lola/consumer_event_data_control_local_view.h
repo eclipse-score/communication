@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_DATA_CONTROL_LOCAL_VIEW_H
-#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_CONSUMER_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#define SCORE_MW_COM_IMPL_BINDINGS_LOLA_CONSUMER_EVENT_DATA_CONTROL_LOCAL_VIEW_H
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
@@ -36,41 +36,41 @@ namespace score::mw::com::impl::lola
 /// which can negatively affect performance. Therefore, the data in EventDataControl is created / opened once during
 /// Skeleton / Proxy creation, and then is accessed during runtime via EventDataControlLocal.
 template <template <class> class AtomicIndirectorType = memory::shared::AtomicIndirectorReal>
-class ProxyEventDataControlLocalView final
+class ConsumerEventDataControlLocalView final
 {
     // Suppress "AUTOSAR C++14 A11-3-1"
-    // Certain members of ProxyEventDataControlLocalView are only intended to be accessed by
+    // Certain members of ConsumerEventDataControlLocalView are only intended to be accessed by
     // TransactionLogRegistrationGuard. Therefore, to make the API clearer, we make those functions private and make the
     // TransactionLogRegistrationGuard a friend class.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class TransactionLogRegistrationGuard;
 
     // Suppress "AUTOSAR C++14 A11-3-1",
-    // The "ProxyEventDataControlLocalViewTestAttorney" is used to access internals of this class during testing. While
-    // we generally only test the public API, in some cases, it makes sense to check internal state directly. Specific
-    // justification is provided in the definition of the Attorney. coverity[autosar_cpp14_a11_3_1_violation]
-    friend class ProxyEventDataControlLocalViewTestAttorney;
+    // The "ConsumerEventDataControlLocalViewTestAttorney" is used to access internals of this class during testing.
+    // While we generally only test the public API, in some cases, it makes sense to check internal state directly.
+    // Specific justification is provided in the definition of the Attorney. coverity[autosar_cpp14_a11_3_1_violation]
+    friend class ConsumerEventDataControlLocalViewTestAttorney;
 
   public:
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
-    ProxyEventDataControlLocalView(EventDataControl& event_data_control_shared) noexcept;
+    ConsumerEventDataControlLocalView(EventDataControl& event_data_control_shared) noexcept;
 
     /// Test-only constructor which allows to directly set the TransactionLogLocalView. This avoids having to
     /// inject the TransactionLogLocalView via the production code path which would require creating a
     /// TransactionLogSet, registering a TransactionLog and storing the TransactionLogRegistrationGuard in the test.
     ///
-    /// In production, this cannot be used since the ProxyEventDataControlLocalView is created before the TransactionLog
-    /// is created, so it must be injected later.
-    ProxyEventDataControlLocalView(EventDataControl& event_data_control_shared,
-                                   TransactionLogLocalView transaction_log_local_view) noexcept;
+    /// In production, this cannot be used since the ConsumerEventDataControlLocalView is created before the
+    /// TransactionLog is created, so it must be injected later.
+    ConsumerEventDataControlLocalView(EventDataControl& event_data_control_shared,
+                                      TransactionLogLocalView transaction_log_local_view) noexcept;
 
-    ~ProxyEventDataControlLocalView() noexcept = default;
+    ~ConsumerEventDataControlLocalView() noexcept = default;
 
-    ProxyEventDataControlLocalView(const ProxyEventDataControlLocalView&) = delete;
-    ProxyEventDataControlLocalView& operator=(const ProxyEventDataControlLocalView&) = delete;
-    ProxyEventDataControlLocalView(ProxyEventDataControlLocalView&&) noexcept = delete;
-    ProxyEventDataControlLocalView& operator=(ProxyEventDataControlLocalView&& other) noexcept = delete;
+    ConsumerEventDataControlLocalView(const ConsumerEventDataControlLocalView&) = delete;
+    ConsumerEventDataControlLocalView& operator=(const ConsumerEventDataControlLocalView&) = delete;
+    ConsumerEventDataControlLocalView(ConsumerEventDataControlLocalView&&) noexcept = delete;
+    ConsumerEventDataControlLocalView& operator=(ConsumerEventDataControlLocalView&& other) noexcept = delete;
 
     /// \brief Will search for the next slot that shall be read, after the last time and mark it for reading
     /// \param last_search_time The time stamp the last time a search for an event was performed
@@ -170,4 +170,4 @@ class ProxyEventDataControlLocalView final
 
 }  // namespace score::mw::com::impl::lola
 
-#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_DATA_CONTROL_LOCAL_VIEW_H
+#endif  // SCORE_MW_COM_IMPL_BINDINGS_LOLA_CONSUMER_EVENT_DATA_CONTROL_LOCAL_VIEW_H

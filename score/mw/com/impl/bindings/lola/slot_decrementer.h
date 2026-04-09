@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SLOT_DECREMENTER_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SLOT_DECREMENTER_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -22,7 +22,7 @@ namespace score::mw::com::impl::lola
 class SlotDecrementer
 {
   public:
-    SlotDecrementer(ProxyEventDataControlLocalView<>& event_data_control,
+    SlotDecrementer(ConsumerEventDataControlLocalView<>& event_data_control,
                     const SlotIndexType event_slot_index) noexcept;
     ~SlotDecrementer() noexcept;
 
@@ -34,7 +34,7 @@ class SlotDecrementer
   private:
     void internal_delete() noexcept;
 
-    ProxyEventDataControlLocalView<>* event_data_control_local_;
+    ConsumerEventDataControlLocalView<>* event_data_control_local_;
     SlotIndexType event_slot_index_;
 };
 

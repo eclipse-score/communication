@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
@@ -150,15 +150,15 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         // TransactionLog, reference the event and then dereference the event. If we don't dereference the event, then
         // the TransactionLogRegistrationGuard returned by RegisterProxyElement would crash since there would still be
         // open transactions on destruction.
-        ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_control.data_control};
+        ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_control.data_control};
         const TransactionLogId dummy_transaction_log_id{10};
         auto registration_guard = event_control.transaction_log_set_.RegisterProxyElement(
-            dummy_transaction_log_id, proxy_event_data_control_local);
-        auto slot_index = proxy_event_data_control_local.ReferenceNextEvent(0);
+            dummy_transaction_log_id, consumer_event_data_control_local);
+        auto slot_index = consumer_event_data_control_local.ReferenceNextEvent(0);
         EXPECT_TRUE(slot_index.has_value());
         const auto value = values->at(slot_index.value());
 
-        proxy_event_data_control_local.DereferenceEvent(slot_index.value());
+        consumer_event_data_control_local.DereferenceEvent(slot_index.value());
 
         return value;
     }
@@ -180,11 +180,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
         auto& event_control = search->second;
-        ProxyEventControlLocalView proxy_event_control_local{event_control};
+        ConsumerEventControlLocalView consumer_event_control_local{event_control};
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {
-            if (proxy_event_control_local.data_control[i].IsInvalid())
+            if (consumer_event_control_local.data_control[i].IsInvalid())
             {
                 result++;
             }

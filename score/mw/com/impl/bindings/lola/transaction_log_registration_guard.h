@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 
 #include "score/scope_exit/scope_exit.h"
@@ -32,15 +32,15 @@ void SetDeactiveDestructionOperation(bool deactivate_destruction_operation);
 class TransactionLogSet;
 
 /// \brief RAII helper class that will inject the TransactionLogLocalView of the registered TransactionLog (that was
-/// just registered in the TransactionLogSet) in the ProxyEventDataControlLocalView and will unset the
+/// just registered in the TransactionLogSet) in the ConsumerEventDataControlLocalView and will unset the
 /// TransactionLogLocalView and call TransactionLogSet::Unregister on destruction.
 ///
-/// In theory, the injection of the cached TransactionLogLocalView in the ProxyEventDataControlLocalView could also have
-/// been done by the TransactionLogSet. We make this class responsible for both injecting and destroying the cached
+/// In theory, the injection of the cached TransactionLogLocalView in the ConsumerEventDataControlLocalView could also
+/// have been done by the TransactionLogSet. We make this class responsible for both injecting and destroying the cached
 /// TransactionLogLocalView to keep the injection / destruction logic in one class. Furthermore, those functions are
-/// private and this class is made a friend of ProxyEventDataControlLocalView to ensure that noone else can affect
+/// private and this class is made a friend of ConsumerEventDataControlLocalView to ensure that noone else can affect
 /// the lifetime of the cached TransactionLogLocalView. This way, TransactionLogSet does not also have to be made a
-/// friend of ProxyEventDataControlLocalView.
+/// friend of ConsumerEventDataControlLocalView.
 ///
 /// Class must not be destroyed concurrently with a call to TransactionLogSet::GetTransactionLog with the same
 /// transaction_log_index.
@@ -57,7 +57,7 @@ class TransactionLogRegistrationGuard
   public:
     TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
                                     const TransactionLogIndex transaction_log_index,
-                                    ProxyEventDataControlLocalView<>& proxy_event_control_local_view_variant);
+                                    ConsumerEventDataControlLocalView<>& consumer_event_control_local_view_variant);
 
     [[nodiscard]] TransactionLogIndex GetTransactionLogIndex() const;
 

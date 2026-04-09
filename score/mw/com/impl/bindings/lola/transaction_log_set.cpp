@@ -124,7 +124,7 @@ ResultBlank TransactionLogSet::RollbackSkeletonTracingTransactions(
 
 score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyElement(
     const TransactionLogId& transaction_log_id,
-    ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view)
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
 {
     const auto next_available_slot_result = AcquireNextAvailableSlot(transaction_log_id);
     if (!next_available_slot_result.has_value())
@@ -139,11 +139,11 @@ score::Result<TransactionLogRegistrationGuard> TransactionLogSet::RegisterProxyE
         !next_available_slot_result.value().first->GetTransactionLogLocalView().ContainsTransactions(),
         "Cannot reuse TransactionLog as it still contains some old transactions.");
     return TransactionLogRegistrationGuard{
-        *this, next_available_slot_result.value().second, proxy_event_data_control_local_view};
+        *this, next_available_slot_result.value().second, consumer_event_data_control_local_view};
 }
 
 TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTracingElement(
-    ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view)
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view)
 {
     // we only do have one skeleton instance accessing the skeleton transaction log, so a dummy value is good enough,
     // we don't need e.g. an uid here.
@@ -153,7 +153,7 @@ TransactionLogRegistrationGuard TransactionLogSet::RegisterSkeletonTracingElemen
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         skeleton_tracing_transaction_log_.TryAcquire(kDummyTransactionLogIdSkeleton),
         "Unexpected failure to acquire TransactionLogNode for SkeletonEvent!");
-    return TransactionLogRegistrationGuard{*this, kSkeletonIndexSentinel, proxy_event_data_control_local_view};
+    return TransactionLogRegistrationGuard{*this, kSkeletonIndexSentinel, consumer_event_data_control_local_view};
 }
 
 void TransactionLogSet::Unregister(const TransactionLogIndex transaction_log_index)

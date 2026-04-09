@@ -14,8 +14,8 @@
 #define SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_SERVICE_DATA_CONTROL_LOCAL_VIEW_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
 
 #include <score/assert.hpp>
 
@@ -58,7 +58,7 @@ class SkeletonServiceDataControlLocalView
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::memory::shared::Map<ElementFqId, SkeletonEventControlLocalView> event_controls_;
+    score::memory::shared::Map<ElementFqId, ProviderEventControlLocalView> event_controls_;
 };
 
 }  // namespace score::mw::com::impl::lola

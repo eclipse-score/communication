@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
@@ -97,8 +97,8 @@ std::uint64_t CalculateMemoryResourceId(const LolaServiceTypeDeployment::Service
             (static_cast<std::uint64_t>(lola_instance_id) << 8U) + static_cast<std::uint8_t>(object_type));
 }
 
-SkeletonEventDataControlLocalView<>* GetEventDataControlViewFromEventControlView(
-    SkeletonEventControlLocalView* event_control_local_view)
+ProviderEventDataControlLocalView<>* GetEventDataControlViewFromEventControlView(
+    ProviderEventControlLocalView* event_control_local_view)
 {
     if (event_control_local_view == nullptr)
     {
@@ -107,8 +107,8 @@ SkeletonEventDataControlLocalView<>* GetEventDataControlViewFromEventControlView
     return &event_control_local_view->data_control;
 }
 
-ProxyEventDataControlLocalView<>* GetEventDataControlViewFromEventControlView(
-    ProxyEventControlLocalView* event_control_local_view)
+ConsumerEventDataControlLocalView<>* GetEventDataControlViewFromEventControlView(
+    ConsumerEventControlLocalView* event_control_local_view)
 {
     if (event_control_local_view == nullptr)
     {
@@ -202,23 +202,24 @@ auto SkeletonMemoryManager::CreateEventDataControlCompositeAndTransactionLogSetI
     const SkeletonEventProperties& element_properties) -> std::pair<EventDataControlComposite<>, TransactionLogSet&>
 {
     auto event_control_views_result = EmplaceQmAndAsilBEventControlAndLocalView(element_fq_id, element_properties);
-    auto& skeleton_event_control_local_view_qm = event_control_views_result.first.get();
-    auto* const skeleton_event_control_local_view_asil = event_control_views_result.second;
+    auto& provider_event_control_local_view_qm = event_control_views_result.first.get();
+    auto* const provider_event_control_local_view_asil = event_control_views_result.second;
 
-    auto& transaction_log_set = skeleton_event_control_local_view_qm.transaction_log_set.get();
+    auto& transaction_log_set = provider_event_control_local_view_qm.transaction_log_set.get();
 
-    // Since we only need ProxyEventDataControlLocalView for tracing which is only supported for QM, we only emplace it
-    // if the proxy_control_local_ has a value which is only the case if tracing is enabled.
-    auto* const tracing_proxy_event_control_local_view = EmplaceTracingEventControl(element_fq_id);
+    // Since we only need ConsumerEventDataControlLocalView for tracing which is only supported for QM, we only emplace
+    // it if the proxy_control_local_ has a value which is only the case if tracing is enabled.
+    auto* const tracing_consumer_event_control_local_view = EmplaceTracingEventControl(element_fq_id);
 
     return
         // The lifetime of the "control_asil_result" object lasts as long as the Skeleton is alive.
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
-        {EventDataControlComposite{skeleton_event_control_local_view_qm.data_control,
-                                   GetEventDataControlViewFromEventControlView(skeleton_event_control_local_view_asil),
-                                   GetEventDataControlViewFromEventControlView(tracing_proxy_event_control_local_view)},
+        {EventDataControlComposite{
+             provider_event_control_local_view_qm.data_control,
+             GetEventDataControlViewFromEventControlView(provider_event_control_local_view_asil),
+             GetEventDataControlViewFromEventControlView(tracing_consumer_event_control_local_view)},
          transaction_log_set};
 }
 
@@ -284,7 +285,7 @@ auto SkeletonMemoryManager::OpenEventDataControlCompositeAndTransactionLogSetFro
 
     const auto event_control_qm_local_it = find_element(skeleton_control_qm_local_->event_controls_, element_fq_id);
 
-    SkeletonEventDataControlLocalView<>* event_data_control_asil_b_local{nullptr};
+    ProviderEventDataControlLocalView<>* event_data_control_asil_b_local{nullptr};
     if (quality_type_ == QualityType::kASIL_B)
     {
         const auto event_control_asil_b_it =
@@ -304,17 +305,17 @@ auto SkeletonMemoryManager::OpenEventDataControlCompositeAndTransactionLogSetFro
         event_data_control_asil_b_local = &(event_control_asil_b_it->second.data_control);
     }
 
-    ProxyEventDataControlLocalView<>* proxy_event_data_control_local{nullptr};
+    ConsumerEventDataControlLocalView<>* consumer_event_data_control_local{nullptr};
     if (proxy_control_local_.has_value())
     {
-        const auto proxy_event_control_local_it = find_element(proxy_control_local_->event_controls_, element_fq_id);
+        const auto consumer_event_control_local_it = find_element(proxy_control_local_->event_controls_, element_fq_id);
 
         // Suppression rationale: The result pointer is still valid outside this method until Skeleton object (as a
         // holder) is alive.
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
-        proxy_event_data_control_local = &(proxy_event_control_local_it->second.data_control);
+        consumer_event_data_control_local = &(consumer_event_control_local_it->second.data_control);
     }
 
     const auto event_control_qm_it = find_element(control_qm_->event_controls_, element_fq_id);
@@ -330,16 +331,16 @@ auto SkeletonMemoryManager::OpenEventDataControlCompositeAndTransactionLogSetFro
             // coverity[autosar_cpp14_a3_8_1_violation]
             EventDataControlComposite{event_control_qm_local_it->second.data_control,
                                       event_data_control_asil_b_local,
-                                      proxy_event_data_control_local},
+                                      consumer_event_data_control_local},
             event_control};
 }
 
 void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(EventControl& event_control)
 {
-    ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_control.data_control};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local{event_control.data_control};
     auto rollback_result = event_control.transaction_log_set_.RollbackSkeletonTracingTransactions(
-        [&proxy_event_data_control_local](const TransactionLog::SlotIndexType slot_index) {
-            proxy_event_data_control_local.DereferenceEventWithoutTransactionLogging(slot_index);
+        [&consumer_event_data_control_local](const TransactionLog::SlotIndexType slot_index) {
+            consumer_event_data_control_local.DereferenceEventWithoutTransactionLogging(slot_index);
         });
     if (!rollback_result.has_value())
     {
@@ -786,26 +787,26 @@ void SkeletonMemoryManager::InitializeSharedMemoryForControl(
     }
 }
 
-std::pair<std::reference_wrapper<SkeletonEventControlLocalView>, SkeletonEventControlLocalView*>
+std::pair<std::reference_wrapper<ProviderEventControlLocalView>, ProviderEventControlLocalView*>
 SkeletonMemoryManager::EmplaceQmAndAsilBEventControlAndLocalView(const ElementFqId element_fq_id,
                                                                  const SkeletonEventProperties& element_properties)
 {
-    auto& skeleton_event_control_local_qm =
+    auto& provider_event_control_local_qm =
         EmplaceEventControlAndLocalView(QualityType::kASIL_QM, element_fq_id, element_properties);
 
     if (control_asil_resource_ == nullptr)
 
     {
-        return {skeleton_event_control_local_qm, nullptr};
+        return {provider_event_control_local_qm, nullptr};
     }
 
-    auto& skeleton_event_control_local_asil_b =
+    auto& provider_event_control_local_asil_b =
         EmplaceEventControlAndLocalView(QualityType::kASIL_B, element_fq_id, element_properties);
 
-    return {skeleton_event_control_local_qm, &skeleton_event_control_local_asil_b};
+    return {provider_event_control_local_qm, &provider_event_control_local_asil_b};
 }
 
-SkeletonEventControlLocalView& SkeletonMemoryManager::EmplaceEventControlAndLocalView(
+ProviderEventControlLocalView& SkeletonMemoryManager::EmplaceEventControlAndLocalView(
     const QualityType asil_level,
     ElementFqId element_fq_id,
     const SkeletonEventProperties& element_properties)
@@ -835,14 +836,14 @@ SkeletonEventControlLocalView& SkeletonMemoryManager::EmplaceEventControlAndLoca
                                                                      std::forward_as_tuple(element_fq_id),
                                                                      std::forward_as_tuple(control_qm.first->second));
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        control_qm_local.second, "Couldn't register/emplace SkeletonEventControlLocalView in control-section.");
+        control_qm_local.second, "Couldn't register/emplace ProviderEventControlLocalView in control-section.");
 
     return control_qm_local.first->second;
 }
 
-ProxyEventControlLocalView* SkeletonMemoryManager::EmplaceTracingEventControl(const ElementFqId element_fq_id)
+ConsumerEventControlLocalView* SkeletonMemoryManager::EmplaceTracingEventControl(const ElementFqId element_fq_id)
 {
-    ProxyEventControlLocalView* proxy_event_control_local{nullptr};
+    ConsumerEventControlLocalView* consumer_event_control_local{nullptr};
     if (proxy_control_local_.has_value())
     {
         // Note. technically, this lookup would not be needed if we returned an iterator to the underlying
@@ -859,16 +860,16 @@ ProxyEventControlLocalView* SkeletonMemoryManager::EmplaceTracingEventControl(co
         auto control_qm_local = proxy_control_local_->event_controls_.emplace(
             std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(event_data_control));
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-            control_qm_local.second, "Couldn't register/emplace ProxyEventControlLocalView in control-section.");
+            control_qm_local.second, "Couldn't register/emplace ConsumerEventControlLocalView in control-section.");
 
         // Suppressions rationale: The result pointer is still valid outside this method until Skeleton object (as a
         // holder) is alive.
         // coverity[autosar_cpp14_m7_5_1_violation]
         // coverity[autosar_cpp14_m7_5_2_violation]
         // coverity[autosar_cpp14_a3_8_1_violation]
-        proxy_event_control_local = &control_qm_local.first->second;
+        consumer_event_control_local = &control_qm_local.first->second;
     }
-    return proxy_event_control_local;
+    return consumer_event_control_local;
 }
 
 EventMetaInfo& SkeletonMemoryManager::EmplaceEventMetaInfo(const ElementFqId element_fq_id,

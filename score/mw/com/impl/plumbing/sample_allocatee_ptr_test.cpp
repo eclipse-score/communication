@@ -13,7 +13,7 @@
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
 
 #include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"
@@ -53,7 +53,7 @@ class SampleAllocateePtrFixture : public ::testing::Test
     std::uint8_t value_{0x42};
     lola::FakeMemoryResource fake_memory_resource_{};
     lola::EventDataControl event_data_ctrl_qm_{0, fake_memory_resource_};
-    lola::SkeletonEventDataControlLocalView<> skeleton_event_data_ctrl_qm_local_{event_data_ctrl_qm_};
+    lola::ProviderEventDataControlLocalView<> skeleton_event_data_ctrl_qm_local_{event_data_ctrl_qm_};
     lola::EventDataControlComposite<> event_data_ctrl_{skeleton_event_data_ctrl_qm_local_, nullptr};
     lola::SlotIndexType event_data_slot_index_{std::numeric_limits<lola::SlotIndexType>::max()};
     lola::SampleAllocateePtr<std::uint8_t> lola_allocatee_ptr_{&value_, event_data_ctrl_, event_data_slot_index_};

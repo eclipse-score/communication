@@ -10,13 +10,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/skeleton_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
 
 namespace score::mw::com::impl::lola
 {
 
-SkeletonEventControlLocalView::SkeletonEventControlLocalView(EventControl& event_control_shared_mem) noexcept
+ConsumerEventControlLocalView::ConsumerEventControlLocalView(EventControl& event_control_shared_mem) noexcept
     : data_control{event_control_shared_mem.data_control},
+      subscription_control{event_control_shared_mem.subscription_control},
       transaction_log_set{event_control_shared_mem.transaction_log_set_}
 {
 }

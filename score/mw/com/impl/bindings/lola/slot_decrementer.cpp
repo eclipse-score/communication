@@ -18,7 +18,7 @@
 namespace score::mw::com::impl::lola
 {
 
-SlotDecrementer::SlotDecrementer(ProxyEventDataControlLocalView<>& event_data_control_local,
+SlotDecrementer::SlotDecrementer(ConsumerEventDataControlLocalView<>& event_data_control_local,
                                  const SlotIndexType event_slot_index) noexcept
     : event_data_control_local_{&event_data_control_local}, event_slot_index_{event_slot_index}
 {

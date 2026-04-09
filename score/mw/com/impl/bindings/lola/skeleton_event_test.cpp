@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
@@ -421,8 +421,8 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 
     // THEN its timestamp should be a valid, non-zero value
     auto* event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
-    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local{event_control->data_control};
-    const EventSlotStatus first_final_slot_status{skeleton_event_data_control_local[first_slot_index]};
+    ProviderEventDataControlLocalView<> provider_event_data_control_local{event_control->data_control};
+    const EventSlotStatus first_final_slot_status{provider_event_data_control_local[first_slot_index]};
     // AND the first timestamp should be 2, as it's the first one after initialization.
     const auto first_timestamp = first_final_slot_status.GetTimeStamp();
     EXPECT_EQ(first_timestamp, 2U);
@@ -439,7 +439,7 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     ASSERT_TRUE(second_send_result.has_value());
 
     // THEN its timestamp should be exactly one greater than the first one
-    const EventSlotStatus second_final_slot_status{skeleton_event_data_control_local[second_slot_index]};
+    const EventSlotStatus second_final_slot_status{provider_event_data_control_local[second_slot_index]};
     const auto second_timestamp = second_final_slot_status.GetTimeStamp();
     EXPECT_EQ(second_timestamp, first_timestamp + 1U)
         << "The second timestamp should be exactly one greater than the first.";

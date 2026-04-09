@@ -20,8 +20,8 @@ use std::mem::ManuallyDrop;
 use common_rs::{
     BlankBinding,
     CxxOptional,
-    ProxyEventDataControlLocalView, 
-    SkeletonEventDataControlLocalView,
+    ConsumerEventDataControlLocalView, 
+    ProviderEventDataControlLocalView,
     SlotIndexType,
     UniquePtr,
     CustomDeleter
@@ -29,9 +29,9 @@ use common_rs::{
 
 #[repr(C)]
 struct EventDataControlComposite {
-    _asil_qm_control_local_: *mut SkeletonEventDataControlLocalView,
-    _asil_b_control_local_: *mut SkeletonEventDataControlLocalView,
-    _proxy_control_local_: *mut ProxyEventDataControlLocalView,
+    _asil_qm_control_local_: *mut ProviderEventDataControlLocalView,
+    _asil_b_control_local_: *mut ProviderEventDataControlLocalView,
+    _proxy_control_local_: *mut ConsumerEventDataControlLocalView,
     _ignore_qm_control_: bool,
 }
 

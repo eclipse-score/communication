@@ -112,11 +112,11 @@ class StateMachineEventsFixture : public LolaProxyEventResources
     void RegisterTransactionLog(const TransactionLogId& transaction_log_id) noexcept
     {
         auto& event_control_local = proxy_->GetEventControlLocal(element_fq_id_);
-        ProxyEventDataControlLocalView<>& proxy_event_data_control_local_view{event_control_local.data_control};
+        ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view{event_control_local.data_control};
         auto& transaction_log_set = proxy_->GetEventControlLocal(element_fq_id_).transaction_log_set;
         transaction_log_registration_guards_.push_back(
             transaction_log_set.get()
-                .RegisterProxyElement(transaction_log_id, proxy_event_data_control_local_view)
+                .RegisterProxyElement(transaction_log_id, consumer_event_data_control_local_view)
                 .value());
     }
 

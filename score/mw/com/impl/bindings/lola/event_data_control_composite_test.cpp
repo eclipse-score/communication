@@ -12,10 +12,10 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 
 #include "score/memory/shared/atomic_indirector.h"
 #include "score/memory/shared/atomic_mock.h"
@@ -152,10 +152,10 @@ class EventDataControlCompositeFixture : public ::testing::Test
 
     std::unique_ptr<EventDataControl> asil_{nullptr};
     std::unique_ptr<EventDataControl> qm_{nullptr};
-    std::optional<SkeletonEventDataControlLocalView<>> skeleton_qm_local_{};
-    std::optional<SkeletonEventDataControlLocalView<>> skeleton_asil_local_{};
-    std::optional<ProxyEventDataControlLocalView<>> proxy_qm_local_{};
-    std::optional<ProxyEventDataControlLocalView<>> proxy_asil_local_{};
+    std::optional<ProviderEventDataControlLocalView<>> skeleton_qm_local_{};
+    std::optional<ProviderEventDataControlLocalView<>> skeleton_asil_local_{};
+    std::optional<ConsumerEventDataControlLocalView<>> proxy_qm_local_{};
+    std::optional<ConsumerEventDataControlLocalView<>> proxy_asil_local_{};
 
     std::unique_ptr<EventDataControlComposite<>> unit_{nullptr};
 
@@ -583,8 +583,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     constexpr auto MAX_SUBSCRIBERS = 10;
     EventDataControl asil{MAX_SLOTS, memory};
     EventDataControl qm{MAX_SLOTS, memory};
-    SkeletonEventDataControlLocalView skeleton_asil_local{asil};
-    SkeletonEventDataControlLocalView skeleton_qm_local{qm};
+    ProviderEventDataControlLocalView skeleton_asil_local{asil};
+    ProviderEventDataControlLocalView skeleton_qm_local{qm};
 
     EventDataControlComposite unit{skeleton_qm_local, &skeleton_asil_local, nullptr};
 
@@ -625,8 +625,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
     auto receiver = [&last_send_time_stamp, &qm, &asil, &memory]() {
         TransactionLog transaction_log_qm{MAX_SLOTS, memory};
         TransactionLog transaction_log_asil{MAX_SLOTS, memory};
-        ProxyEventDataControlLocalView proxy_asil_local{asil, transaction_log_asil};
-        ProxyEventDataControlLocalView proxy_qm_local{qm, transaction_log_qm};
+        ConsumerEventDataControlLocalView proxy_asil_local{asil, transaction_log_asil};
+        ConsumerEventDataControlLocalView proxy_qm_local{qm, transaction_log_qm};
         std::set<SlotIndexType> used_slots_qm{};
         std::set<SlotIndexType> used_slots_asil{};
 
@@ -746,49 +746,49 @@ TEST_F(EventDataControlCompositeFixture, GetEmptyAsilBEventDataControl)
     EXPECT_EQ(asil_b_event_data_control, nullptr);
 }
 
-TEST_F(EventDataControlCompositeFixture, GetProxyEventDataControlLocalView)
+TEST_F(EventDataControlCompositeFixture, GetConsumerEventDataControlLocalView)
 {
-    // Given an EventDataControlComposite constructed with a ProxyEventDataControlLocalView
+    // Given an EventDataControlComposite constructed with a ConsumerEventDataControlLocalView
     EventDataControl qm{kMaxSlots, memory_};
-    SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
-    ProxyEventDataControlLocalView<> proxy_qm_local{qm};
+    ProviderEventDataControlLocalView<> skeleton_qm_local{qm};
+    ConsumerEventDataControlLocalView<> proxy_qm_local{qm};
     EventDataControlComposite<> unit{skeleton_qm_local, &proxy_qm_local};
 
     // When getting the QM event data control
-    auto& returned_proxy_qm_local = unit.GetProxyEventDataControlLocalView();
+    auto& returned_proxy_qm_local = unit.GetConsumerEventDataControlLocalView();
 
-    // Then the same ProxyEventDataControlLocalView that was passed to the constructor is returned
+    // Then the same ConsumerEventDataControlLocalView that was passed to the constructor is returned
     EXPECT_EQ(&proxy_qm_local, &returned_proxy_qm_local);
 }
 
-TEST_F(EventDataControlCompositeFixture, GetProxyEventDataControlLocalViewWithAsilB)
+TEST_F(EventDataControlCompositeFixture, GetConsumerEventDataControlLocalViewWithAsilB)
 {
-    // Given an EventDataControlComposite constructed with a ProxyEventDataControlLocalView
+    // Given an EventDataControlComposite constructed with a ConsumerEventDataControlLocalView
     EventDataControl qm{kMaxSlots, memory_};
     EventDataControl asil_b{kMaxSlots, memory_};
-    SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
-    SkeletonEventDataControlLocalView<> skeleton_asil_b_local{asil_b};
-    ProxyEventDataControlLocalView<> proxy_qm_local{qm};
+    ProviderEventDataControlLocalView<> skeleton_qm_local{qm};
+    ProviderEventDataControlLocalView<> skeleton_asil_b_local{asil_b};
+    ConsumerEventDataControlLocalView<> proxy_qm_local{qm};
     EventDataControlComposite<> unit{skeleton_qm_local, &skeleton_asil_b_local, &proxy_qm_local};
 
     // When getting the ASIL-B event data control
-    auto& returned_proxy_qm_local = unit.GetProxyEventDataControlLocalView();
+    auto& returned_proxy_qm_local = unit.GetConsumerEventDataControlLocalView();
 
-    // Then the same ProxyEventDataControlLocalView that was passed to the constructor is returned
+    // Then the same ConsumerEventDataControlLocalView that was passed to the constructor is returned
     EXPECT_EQ(&proxy_qm_local, &returned_proxy_qm_local);
 }
 
 TEST_F(EventDataControlCompositeFixture,
-       CallingGetProxyEventDataControlLocalViewWhenCompositeNotConstructedWithOneTerminates)
+       CallingGetConsumerEventDataControlLocalViewWhenCompositeNotConstructedWithOneTerminates)
 {
-    // Given an EventDataControlComposite constructed without a ProxyEventDataControlLocalView
+    // Given an EventDataControlComposite constructed without a ConsumerEventDataControlLocalView
     EventDataControl qm{kMaxSlots, memory_};
-    SkeletonEventDataControlLocalView<> skeleton_qm_local{qm};
+    ProviderEventDataControlLocalView<> skeleton_qm_local{qm};
     EventDataControlComposite<> unit{skeleton_qm_local, nullptr};
 
     // When getting the ASIL-B event data control
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = unit.GetProxyEventDataControlLocalView(), ".*");
+    EXPECT_DEATH(score::cpp::ignore = unit.GetConsumerEventDataControlLocalView(), ".*");
 }
 
 using EventDataControlCompositeGetTimestampFixture = EventDataControlCompositeFixture;

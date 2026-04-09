@@ -26,7 +26,7 @@ namespace score::mw::com::impl::lola
 SubscriptionStateMachine::SubscriptionStateMachine(const QualityType quality_type,
                                                    const ElementFqId element_fq_id,
                                                    const pid_t event_source_pid,
-                                                   ProxyEventControlLocalView& event_control_local,
+                                                   ConsumerEventControlLocalView& event_control_local,
                                                    const TransactionLogId& transaction_log_id) noexcept
     : std::enable_shared_from_this<SubscriptionStateMachine>{},
       state_mutex_{},

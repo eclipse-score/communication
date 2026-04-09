@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
@@ -32,17 +32,17 @@ constexpr auto MAX_REFERENCE_RETRIES = 100U;
 }  // namespace
 
 template <template <class> class AtomicIndirectorType>
-ProxyEventDataControlLocalView<AtomicIndirectorType>::ProxyEventDataControlLocalView(
+ConsumerEventDataControlLocalView<AtomicIndirectorType>::ConsumerEventDataControlLocalView(
     EventDataControl& event_data_control_shared) noexcept
     : state_slots_{event_data_control_shared.state_slots_.begin(), event_data_control_shared.state_slots_.size()}
 {
 }
 
 template <template <class> class AtomicIndirectorType>
-ProxyEventDataControlLocalView<AtomicIndirectorType>::ProxyEventDataControlLocalView(
+ConsumerEventDataControlLocalView<AtomicIndirectorType>::ConsumerEventDataControlLocalView(
     EventDataControl& event_data_control_shared,
     TransactionLogLocalView transaction_log_local_view) noexcept
-    : ProxyEventDataControlLocalView{event_data_control_shared}
+    : ConsumerEventDataControlLocalView{event_data_control_shared}
 {
     SetTransactionLogLocalView(transaction_log_local_view);
 }
@@ -53,7 +53,7 @@ template <template <class> class AtomicIndirectorType>
 // have a value but as we check before with 'has_value()' so no way for throwing std::bad_optional_access which leds
 // to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
+auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ReferenceNextEvent(
     const EventSlotStatus::EventTimeStamp last_search_time,
     const EventSlotStatus::EventTimeStamp upper_limit) noexcept -> std::optional<SlotIndexType>
 {
@@ -152,7 +152,7 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(const SlotIndexType slot_index)
+auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(const SlotIndexType slot_index)
     -> void
 {
     // Sanity check that the slot is currently ready for reading:
@@ -194,7 +194,7 @@ template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, no way for throwing std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-std::size_t ProxyEventDataControlLocalView<AtomicIndirectorType>::GetNumNewEvents(
+std::size_t ConsumerEventDataControlLocalView<AtomicIndirectorType>::GetNumNewEvents(
     const EventSlotStatus::EventTimeStamp reference_time) const noexcept
 {
     std::size_t result{0U};
@@ -218,7 +218,7 @@ std::size_t ProxyEventDataControlLocalView<AtomicIndirectorType>::GetNumNewEvent
 }
 
 template <template <class> class AtomicIndirectorType>
-auto ProxyEventDataControlLocalView<AtomicIndirectorType>::DereferenceEvent(
+auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::DereferenceEvent(
     const SlotIndexType event_slot_index) noexcept -> void
 {
     transaction_log_local_view_->DereferenceTransactionBegin(event_slot_index);
@@ -232,7 +232,7 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void ProxyEventDataControlLocalView<AtomicIndirectorType>::DereferenceEventWithoutTransactionLogging(
+void ConsumerEventDataControlLocalView<AtomicIndirectorType>::DereferenceEventWithoutTransactionLogging(
     const SlotIndexType event_slot_index) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(event_slot_index) < state_slots_.size());
@@ -245,7 +245,7 @@ template <template <class> class AtomicIndirectorType>
 // in case the index goes outside the range. As we already do an index check before accessing, so no way for
 // segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-auto ProxyEventDataControlLocalView<AtomicIndirectorType>::operator[](const SlotIndexType slot_index) const noexcept
+auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::operator[](const SlotIndexType slot_index) const noexcept
     -> EventSlotStatus
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
@@ -253,7 +253,7 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::operator[](const Slot
 }
 
 template <template <class> class AtomicIndirectorType>
-auto ProxyEventDataControlLocalView<AtomicIndirectorType>::DumpPerformanceCounters() -> void
+auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::DumpPerformanceCounters() -> void
 {
     std::cout << "EventDataControl performance breakdown\n"
               << "======================================\n"
@@ -267,13 +267,13 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::DumpPerformanceCounte
 }
 
 template <template <class> class AtomicIndirectorType>
-auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ResetPerformanceCounters() -> void
+auto ConsumerEventDataControlLocalView<AtomicIndirectorType>::ResetPerformanceCounters() -> void
 {
     num_ref_misses.store(0U);
     num_ref_retries.store(0U);
 }
 
-template class ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorReal>;
-template class ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorMock>;
+template class ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorReal>;
+template class ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorMock>;
 
 }  // namespace score::mw::com::impl::lola

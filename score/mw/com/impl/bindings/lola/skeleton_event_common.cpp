@@ -103,7 +103,7 @@ void SkeletonEventCommon::EmplaceTransactionLogRegistrationGuard(TransactionLogS
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
                                                 "EventDataControlComposite must be initialized.");
     score::cpp::ignore = transaction_log_registration_guard_.emplace(transaction_log_set.RegisterSkeletonTracingElement(
-        event_data_control_composite_ref_->GetProxyEventDataControlLocalView()));
+        event_data_control_composite_ref_->GetConsumerEventDataControlLocalView()));
 }
 
 void SkeletonEventCommon::EmplaceTypeErasedSamplePtrsGuard()

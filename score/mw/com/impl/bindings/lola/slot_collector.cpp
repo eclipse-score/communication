@@ -19,7 +19,7 @@
 namespace score::mw::com::impl::lola
 {
 
-SlotCollector::SlotCollector(ProxyEventDataControlLocalView<>& event_data_control_local,
+SlotCollector::SlotCollector(ConsumerEventDataControlLocalView<>& event_data_control_local,
                              const std::size_t max_slots) noexcept
     : event_data_control_local_{event_data_control_local}, last_ts_{0U}, collected_slots_(max_slots)
 {
