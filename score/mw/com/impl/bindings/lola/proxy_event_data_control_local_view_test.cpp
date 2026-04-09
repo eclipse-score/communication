@@ -113,7 +113,6 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
         SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_event_data_control_local_ != nullptr);
         const auto slot_index = skeleton_event_data_control_local_->AllocateNextSlot();
         EXPECT_TRUE(slot_index.has_value());
-        std::cout << "slot index : " << slot_index.value() << std::endl;
         skeleton_event_data_control_local_->EventReady(slot_index.value(), timestamp);
         return slot_index.value();
     }
