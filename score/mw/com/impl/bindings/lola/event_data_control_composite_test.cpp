@@ -756,7 +756,7 @@ TEST_F(EventDataControlCompositeFixture, GetProxyEventDataControlLocalView)
     ProxyEventDataControlLocalView<> proxy_qm_local{qm};
     EventDataControlComposite<> unit{skeleton_qm_local, &proxy_qm_local};
 
-    // When getting the ASIL-B event data control
+    // When getting the QM event data control
     auto& returned_proxy_qm_local = unit.GetProxyEventDataControlLocalView();
 
     // Then the same ProxyEventDataControlLocalView that was passed to the constructor is returned

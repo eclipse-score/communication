@@ -27,9 +27,9 @@ namespace score::mw::com::impl::lola
 
 /// SkeletonServiceDataControlLocalView is a view class which stores views to the individual objects in shared memory.
 ///
-/// This class will be created by a Proxy on construction. It provides a local view into all the elements within
+/// This class will be created by a Skeleton on PrepareOffer. It provides a local view into all the elements within
 /// ServiceDataControl. Since the memory layout of ServiceDataControl will never change after construction (e.g. the
-/// event_controls_ map will never be resized after construction), each Proxy can simply create a
+/// event_controls_ map will never be resized after construction), each Skeleton can simply create a
 /// SkeletonServiceDataControlLocalView to avoid accessing the shared memory via OffsetPtr. Additional information about
 /// the performance impacts of OffsetPtr are described in EventDataControl.
 class SkeletonServiceDataControlLocalView
