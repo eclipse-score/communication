@@ -1,0 +1,28 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# With this instrumentation filter for our two main components, we ensure that `bazel coverage //...` is yielding the correct results
+coverage --instrumentation_filter="^//score/message_passing[/:],^//score/mw/com[/:],-//score/mw/com/performance_benchmarks[/:],-//score/mw/.*/test[/:]".
+coverage --experimental_generate_llvm_lcov
+coverage --experimental_use_llvm_covmap
+coverage --combined_report=lcov
+coverage --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main
+coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+coverage --test_env=COVERAGE_GCOV_OPTIONS=-bcu
+# TODO set toolchain feature once possible
+# These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM
+# LLVM provided these compile-time options in combination with a specific profile setting which is enabled in bazel via `LLVM_PROFILE_CONTINUOUS_MODE`
+coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
+coverage --cxxopt -mllvm
+coverage --cxxopt -runtime-counter-relocation
