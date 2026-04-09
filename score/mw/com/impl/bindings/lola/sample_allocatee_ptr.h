@@ -174,14 +174,12 @@ class SampleAllocateePtr
         managed_object_ = nullptr;
         if (event_slot_index_ < kUninitialisedEventSlotIndex)
         {
-            // LCOV_EXCL_BR_START: Defensive programming: The only time that event_data_control_ does not have a value
-            // is if the SampleAllocateePtr is default initialised or initialised with a nullptr. In both these, cases
-            // event_slot_index_ == kUninitialisedEventSlotIndex so we will never enter this branch.
-            if (event_data_control_.has_value())
-            {
-                // LCOV_EXCL_BR_STOP
-                event_data_control_->Discard(event_slot_index_);
-            }
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+                event_data_control_.has_value(),
+                "The only time that event_data_control_ does not have a value is if the SampleAllocateePtr is default "
+                "initialised or initialised with a nullptr. In both these, cases event_slot_index_ == "
+                "kUninitialisedEventSlotIndex so we will never enter this branch.");
+            event_data_control_->Discard(event_slot_index_);
             event_slot_index_ = kUninitialisedEventSlotIndex;
         }
     }
