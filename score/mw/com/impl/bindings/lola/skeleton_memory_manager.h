@@ -121,7 +121,7 @@ class SkeletonMemoryManager final
     /// The EventDataControlComposite and TransactionLogSet are retrieved from the ServiceDataControl in the shared
     /// memory region that was opened with OpenExistingSharedMemory.
     auto OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(const ElementFqId element_fq_id)
-        -> std::pair<EventDataControlComposite<>, TransactionLogSet&>;
+        -> std::pair<EventDataControlComposite<>, std::reference_wrapper<EventControl>>;
 
     /// \brief Opens an EventDataStorage for a specific event that was created by a previous skeleton.
     ///
@@ -132,9 +132,9 @@ class SkeletonMemoryManager final
 
     /// \brief Rolls back any existing operations in the TransactionLog corresponding to a SkeletonEvent
     ///
-    /// The TransactionLog would only exist if a SkeletonEvent in a crashed process had tracing enabled.
-    void RollbackSkeletonTracingTransactions(SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local,
-                                             TransactionLogSet& transaction_log_set);
+    /// The TransactionLog would only exist if a SkeletonEvent in a crashed process had tracing enabled. If tracing was
+    /// not enabled, then this function will simply do nothing.
+    void RollbackSkeletonTracingTransactions(EventControl& event_control);
 
     /// \brief Remove the control and data shared memory regions
     void RemoveSharedMemory();
@@ -228,7 +228,8 @@ class SkeletonMemoryManager final
     std::optional<SkeletonServiceDataControlLocalView> skeleton_control_qm_local_;
     std::optional<SkeletonServiceDataControlLocalView> skeleton_control_asil_b_local_;
 
-    // Used for tracing. Only created if tracing is enabled in the current process.
+    // Used for tracing. Only created if tracing is enabled in the current process. This will be used by SkeletonEvents
+    // to reference / dereference a slot when tracing that slot.
     std::optional<ProxyServiceDataControlLocalView> proxy_control_local_;
 
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;

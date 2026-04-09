@@ -269,7 +269,7 @@ void* SkeletonMemoryManager::CreateGenericEventDataInCreatedSharedMemory(
 }
 
 auto SkeletonMemoryManager::OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(
-    const ElementFqId element_fq_id) -> std::pair<EventDataControlComposite<>, TransactionLogSet&>
+    const ElementFqId element_fq_id) -> std::pair<EventDataControlComposite<>, std::reference_wrapper<EventControl>>
 {
     // Suppress "AUTOSAR C++14 A15-5-3":
     // Justification: This is a false positive, std::less which is used by std::map::find could throw an exception if
@@ -282,7 +282,7 @@ auto SkeletonMemoryManager::OpenEventDataControlCompositeAndTransactionLogSetFro
         return it;
     };
 
-    const auto event_control_qm_it = find_element(skeleton_control_qm_local_->event_controls_, element_fq_id);
+    const auto event_control_qm_local_it = find_element(skeleton_control_qm_local_->event_controls_, element_fq_id);
 
     SkeletonEventDataControlLocalView<>* event_data_control_asil_b_local{nullptr};
     if (quality_type_ == QualityType::kASIL_B)
@@ -317,29 +317,29 @@ auto SkeletonMemoryManager::OpenEventDataControlCompositeAndTransactionLogSetFro
         proxy_event_data_control_local = &(proxy_event_control_local_it->second.data_control);
     }
 
-    auto& transaction_log_set = event_control_qm_it->second.transaction_log_set.get();
+    const auto event_control_qm_it = find_element(control_qm_->event_controls_, element_fq_id);
+    EventControl& event_control = event_control_qm_it->second;
 
     // Suppress "AUTOSAR C++14 A3-8-1":
     // Justification: The "event_data_control_asil_b" and "typed_event_data_storage_ptr" are still valid lifetime even
     // returned pointer to internal state until Skeleton object is alive.
     // coverity[autosar_cpp14_a3_8_1_violation]
-    return {
-        // The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
-        // coverity[autosar_cpp14_m7_5_1_violation]
-        // coverity[autosar_cpp14_m7_5_2_violation]
-        // coverity[autosar_cpp14_a3_8_1_violation]
-        EventDataControlComposite{
-            event_control_qm_it->second.data_control, event_data_control_asil_b_local, proxy_event_data_control_local},
-        transaction_log_set};
+    return {// The lifetime of the "event_data_control_asil_b" object lasts as long as the Skeleton is alive.
+            // coverity[autosar_cpp14_m7_5_1_violation]
+            // coverity[autosar_cpp14_m7_5_2_violation]
+            // coverity[autosar_cpp14_a3_8_1_violation]
+            EventDataControlComposite{event_control_qm_local_it->second.data_control,
+                                      event_data_control_asil_b_local,
+                                      proxy_event_data_control_local},
+            event_control};
 }
 
-void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(
-    SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local,
-    TransactionLogSet& transaction_log_set)
+void SkeletonMemoryManager::RollbackSkeletonTracingTransactions(EventControl& event_control)
 {
-    auto rollback_result = transaction_log_set.RollbackSkeletonTracingTransactions(
-        [&skeleton_event_data_control_local](const TransactionLog::SlotIndexType slot_index) {
-            skeleton_event_data_control_local.DereferenceEventWithoutTransactionLogging(slot_index);
+    ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_control.data_control};
+    auto rollback_result = event_control.transaction_log_set_.RollbackSkeletonTracingTransactions(
+        [&proxy_event_data_control_local](const TransactionLog::SlotIndexType slot_index) {
+            proxy_event_data_control_local.DereferenceEventWithoutTransactionLogging(slot_index);
         });
     if (!rollback_result.has_value())
     {
