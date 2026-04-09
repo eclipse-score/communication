@@ -102,14 +102,13 @@ auto EventDataControlComposite<AtomicIndirectorType>::TryLockSlot(
 
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) <
                                         asil_qm_control_local_.get().state_slots_.size());
-    auto& slot_value_qm = asil_qm_control_local_.get().state_slots_[slot_index];
-    auto& slot_value_asil_b = asil_b_control_local_->state_slots_[slot_index];
+    auto& slot_value_qm_atomic = asil_qm_control_local_.get().state_slots_[slot_index];
+    auto& slot_value_asil_b_atomic = asil_b_control_local_->state_slots_[slot_index];
 
-    EventSlotStatus asil_qm_old{slot_value_qm.load(std::memory_order_acquire)};
-    EventSlotStatus asil_b_old{slot_value_asil_b.load(std::memory_order_acquire)};
+    EventSlotStatus asil_qm_old{slot_value_qm_atomic.load(std::memory_order_acquire)};
+    EventSlotStatus asil_b_old{slot_value_asil_b_atomic.load(std::memory_order_acquire)};
 
-    if ((asil_qm_old.IsUsed() || (asil_qm_old.GetTimeStamp() > expected_time_stamp)) ||
-        (asil_b_old.IsUsed() || (asil_b_old.GetTimeStamp() > expected_time_stamp)))
+    if (asil_qm_old.IsUsed() || asil_b_old.IsUsed())
     {
         return false;
     }
@@ -120,17 +119,17 @@ auto EventDataControlComposite<AtomicIndirectorType>::TryLockSlot(
     auto asil_qm_old_value_type = static_cast<EventSlotStatus::value_type&>(asil_qm_old);
     auto in_writing_value_type = static_cast<EventSlotStatus::value_type&>(in_writing);
     if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
-            slot_value_qm, asil_qm_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
+            slot_value_qm_atomic, asil_qm_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
     {
         return false;
     }
 
     auto asil_b_old_value_type = static_cast<EventSlotStatus::value_type&>(asil_b_old);
     if (AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
-            slot_value_asil_b, asil_b_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
+            slot_value_asil_b_atomic, asil_b_old_value_type, in_writing_value_type, std::memory_order_acq_rel) == false)
     {
         // Roll back write lock on asil qm since lock on b failed
-        slot_value_qm.store(static_cast<EventSlotStatus::value_type>(asil_qm_old), std::memory_order_release);
+        slot_value_qm_atomic.store(static_cast<EventSlotStatus::value_type>(asil_qm_old), std::memory_order_release);
         return false;
     }
 
