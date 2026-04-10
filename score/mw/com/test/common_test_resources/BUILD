@@ -52,6 +52,20 @@ cc_library(
 )
 
 cc_library(
+    name = "fail_test",
+    srcs = [
+        "fail_test.cpp",
+    ],
+    hdrs = [
+        "fail_test.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test:__subpackages__",
+    ],
+)
+
+cc_library(
     name = "shared_memory_object_guard",
     srcs = [
         "shared_memory_object_guard.cpp",
@@ -126,6 +140,25 @@ cc_library(
     deps = [
         "@score_baselibs//score/language/futurecpp",
         "@score_logging//score/mw/log",
+    ],
+)
+
+cc_library(
+    name = "command_line_parser",
+    srcs = [
+        "command_line_parser.cpp",
+    ],
+    hdrs = [
+        "command_line_parser.h",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com",
+        "//score/mw/com/test/common_test_resources:test_error_domain",
+        "@boost.program_options",
     ],
 )
 

@@ -304,6 +304,10 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
     const SkeletonInstanceIdentifier skeleton_instance_identifier{lola_service_id_, lola_instance_id_};
 
+    // Once StopOfferService is called these scopes are expired, thus we need to reinitialize them here
+    on_service_method_subscribed_handler_scope_ = score::safecpp::Scope<>();
+    method_call_handler_scope_ = score::safecpp::Scope<>();
+
     // Register a handler with message passing which will open methods shared memory regions when the proxy notifies via
     // message passing that it has finished setting up the regions. We always register a handler for QM proxies and also
     // register a handler for ASIL-B proxies if this skeleton is ASIL-B.

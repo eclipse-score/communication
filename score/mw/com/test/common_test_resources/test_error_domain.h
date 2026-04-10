@@ -24,6 +24,7 @@ enum class TestErrorCode : score::result::ErrorCode
 {
     kCreateInstanceSpecifierFailed = 1,
     kCreateSkeletonFailed = 2,
+    kParsingCommandLineArgumentFailed = 3,
 };
 
 class TestErrorDomain final : public score::result::ErrorDomain
