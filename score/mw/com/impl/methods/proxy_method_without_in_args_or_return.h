@@ -86,6 +86,11 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     ProxyMethod(ProxyMethod&&) noexcept;
     ProxyMethod& operator=(ProxyMethod&&) noexcept;
 
+    ResultBlank InitializeInArgsAndReturnValues() override
+    {
+        return {};
+    }
+
     /// \brief This is the call-operator of ProxyMethod with no arguments and a void ReturnType.
     score::ResultBlank operator()();
 

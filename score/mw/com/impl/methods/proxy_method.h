@@ -146,6 +146,52 @@ score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> AllocateImpl(
         std::move(method_in_arg_ptr_tuple));
 }
 
+/// \brief Initializes all InArgs by calling the default constructor for each argument.
+///
+/// This step is important to avoid undefined behaviour (interpreting uninitialized memory) and also to ensure that any
+/// non-trivially constructible types are properly initialized.
+template <typename... ArgTypes>
+ResultBlank InitializeInArgs(ProxyMethodBinding& binding, const std::size_t queue_size)
+{
+    for (std::size_t queue_index = 0U; queue_index < queue_size; ++queue_index)
+    {
+        auto allocated_in_args_storage = binding.GetInArgsBuffer(queue_index);
+        if (!allocated_in_args_storage.has_value())
+        {
+            return Unexpected(allocated_in_args_storage.error());
+        }
+        const auto deserialized_arg_pointers = impl::Deserialize<ArgTypes...>(allocated_in_args_storage.value());
+
+        // std::apply takes a callable and a tuple. It calls the callable with the arguments from the unpacked tuple.
+        // E.g. In this case, it will call the lambda, fn, with: `fn(get<0>(args), get<1>(args), ..., get<n>(args))`
+        std::apply(
+            [](typename std::add_pointer<ArgTypes>::type... arg_pointers) {
+                ((score::cpp::ignore = new (arg_pointers) ArgTypes{}), ...);
+            },
+            deserialized_arg_pointers);
+    }
+    return {};
+}
+
+/// \brief Initializes all Return values by calling the default constructor for each argument.
+///
+/// This step is important to avoid undefined behaviour (interpreting uninitialized memory) and also to ensure that any
+/// non-trivially constructible types are properly initialized.
+template <typename ReturnType>
+ResultBlank InitializeReturnValue(ProxyMethodBinding& binding, const std::size_t queue_size)
+{
+    for (std::size_t queue_index = 0U; queue_index < queue_size; ++queue_index)
+    {
+        auto allocated_return_value_storage = binding.GetReturnValueBuffer(queue_index);
+        if (!allocated_return_value_storage.has_value())
+        {
+            return Unexpected(allocated_return_value_storage.error());
+        }
+        score::cpp::ignore = new (allocated_return_value_storage->data()) ReturnType{};
+    }
+    return {};
+}
+
 /// \brief Checks, that all MethodInArgPtr arguments have the same queue_position_ and returns this common value.
 /// \details Will assert/terminate, if the queue_position_ values differ.
 /// \tparam MethodInArgPtrs Variadic template parameter pack for MethodInArgPtr types.

@@ -158,6 +158,22 @@ score::ResultBlank ProxyBase::StopFindService(const FindServiceHandle handle) no
     return stop_find_service_result;
 }
 
+ResultBlank ProxyBase::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+{
+    const auto result = proxy_binding_->SetupMethods(enabled_method_names);
+    if (!result.has_value())
+    {
+        return MakeUnexpected<Blank>(result.error());
+    }
+
+    for (auto& method_key_value_pair : methods_)
+    {
+        auto& method = method_key_value_pair.second.get();
+        method.InitializeInArgsAndReturnValues();
+    }
+    return {};
+}
+
 ProxyBaseView::ProxyBaseView(ProxyBase& proxy_base) noexcept : proxy_base_(proxy_base) {}
 
 ProxyBinding* ProxyBaseView::GetBinding() noexcept

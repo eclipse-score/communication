@@ -58,6 +58,15 @@ class TestProxyBase : public ProxyBase
     }
 };
 
+struct NonTriviallyConstructibleType
+{
+    NonTriviallyConstructibleType() : value{kInitialValue} {}
+
+    static constexpr std::int32_t kInitialValue{21};
+
+    std::int32_t value;
+};
+
 template <typename MethodType>
 class ProxyMethodTestFixture : public ::testing::Test
 {
@@ -116,6 +125,11 @@ using WithInArgs = ::testing::Types<InArgsAndReturn, InArgsOnly>;
 using WithoutInArgs = ::testing::Types<ReturnOnly, NoInArgsOrReturn>;
 using WithResult = ::testing::Types<InArgsAndReturn, ReturnOnly>;
 
+using NonTrivialConstructibleInArgsAndReturn = NonTriviallyConstructibleType(NonTriviallyConstructibleType,
+                                                                             NonTriviallyConstructibleType);
+using NonTrivialConstructibleInArgsOnly = void(NonTriviallyConstructibleType, NonTriviallyConstructibleType);
+using NonTrivialConstructibleReturnOnly = NonTriviallyConstructibleType();
+
 template <typename T>
 using ProxyMethodAllArgCombinationsTestFixture = ProxyMethodTestFixture<T>;
 TYPED_TEST_SUITE(ProxyMethodAllArgCombinationsTestFixture, AllArgCombinations, );
@@ -128,14 +142,17 @@ template <typename T>
 using ProxyMethodWithoutInArgsTestFixture = ProxyMethodTestFixture<T>;
 TYPED_TEST_SUITE(ProxyMethodWithoutInArgsTestFixture, WithoutInArgs, );
 
-template <typename T>
-using ProxyMethodWithResultTestFixture = ProxyMethodTestFixture<T>;
-TYPED_TEST_SUITE(ProxyMethodWithResultTestFixture, WithResult, );
-
 using ProxyMethodWithInArgsAndReturnFixture = ProxyMethodTestFixture<InArgsAndReturn>;
 using ProxyMethodWithReturnOnlyFixture = ProxyMethodTestFixture<ReturnOnly>;
 using ProxyMethodWithNoInArgsOrReturnFixture = ProxyMethodTestFixture<NoInArgsOrReturn>;
 using ProxyMethodWithInArgsOnlyFixture = ProxyMethodTestFixture<InArgsOnly>;
+
+using ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture =
+    ProxyMethodTestFixture<NonTrivialConstructibleInArgsAndReturn>;
+using ProxyMethodWithNonTrivialConstructibleReturnOnlyFixture =
+    ProxyMethodTestFixture<NonTrivialConstructibleReturnOnly>;
+using ProxyMethodWithNonTrivialConstructibleInArgsOnlyFixture =
+    ProxyMethodTestFixture<NonTrivialConstructibleInArgsOnly>;
 
 TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture, Construction)
 {
@@ -805,6 +822,175 @@ TEST(DetermineNextAvailableQueueSlot, DetermineNextAvailableQueueSlotCanFail)
 
     // Then an error code is returned
     EXPECT_EQ(result, MakeUnexpected(ComErrc::kCallQueueFull));
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture, InitializeInArgsAndReturnValuesInitializesInArgs)
+{
+    this->GivenAValidProxyMethod();
+
+    // When calling InitializeInArgsAndReturnValues
+    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then a valid result is returned
+    EXPECT_TRUE(result.has_value());
+
+    // and Allocate returns a pointer pointing to an initialized object (i.e. the non-trivial default constructor was
+    // called, initializing value to NonTriviallyConstructibleType::kInitialValue
+    auto method_in_arg_ptr_tuple = this->unit_->Allocate();
+    ASSERT_TRUE(method_in_arg_ptr_tuple.has_value());
+
+    auto& method_in_arg_ptr_0 = std::get<0>(method_in_arg_ptr_tuple.value());
+    NonTriviallyConstructibleType& in_arg_0{*method_in_arg_ptr_0};
+    EXPECT_EQ(in_arg_0.value, NonTriviallyConstructibleType::kInitialValue);
+
+    auto& method_in_arg_ptr_1 = std::get<1>(method_in_arg_ptr_tuple.value());
+    NonTriviallyConstructibleType& in_arg_1{*method_in_arg_ptr_1};
+    EXPECT_EQ(in_arg_1.value, NonTriviallyConstructibleType::kInitialValue);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
+       InitializeInArgsAndReturnValuesPropagatesErrorFromGetInArgsBuffer)
+{
+    this->GivenAValidProxyMethod();
+
+    // Expect that GetInArgsBuffer is called once on the binding mock and returns an error.
+    EXPECT_CALL(this->proxy_method_binding_mock_, GetInArgsBuffer(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When calling InitializeInArgsAndReturnValues
+    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
+       InitializeInArgsAndReturnValuesPropagatesErrorFromGetReturnValueBuffer)
+{
+    this->GivenAValidProxyMethod();
+
+    // Expect that GetReturnValueBuffer is called once on the binding mock and returns an error.
+    EXPECT_CALL(this->proxy_method_binding_mock_, GetReturnValueBuffer(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When calling InitializeInArgsAndReturnValues
+    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
+       CallOperator_ZeroCopy_InitializeInArgsAndReturnValuesInitializesInReturn)
+{
+    this->GivenAValidProxyMethod();
+
+    // When calling InitializeInArgsAndReturnValues
+    this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then the zero copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
+    // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
+    auto method_in_arg_ptr_tuple = this->unit_->Allocate();
+    ASSERT_TRUE(method_in_arg_ptr_tuple.has_value());
+
+    auto& method_in_arg_ptr_0 = std::get<0>(method_in_arg_ptr_tuple.value());
+    auto& method_in_arg_ptr_1 = std::get<1>(method_in_arg_ptr_tuple.value());
+    auto method_return_ptr = this->unit_->operator()(std::move(method_in_arg_ptr_0), std::move(method_in_arg_ptr_1));
+    ASSERT_TRUE(method_return_ptr.has_value());
+
+    NonTriviallyConstructibleType& return_value{*(method_return_ptr.value())};
+    EXPECT_EQ(return_value.value, NonTriviallyConstructibleType::kInitialValue);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsAndReturnFixture,
+       CallOperator_WithCopy_InitializeInArgsAndReturnValuesInitializesInReturn)
+{
+    this->GivenAValidProxyMethod();
+
+    // When calling InitializeInArgsAndReturnValues
+    this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then the copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
+    // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
+    auto method_return_ptr = this->unit_->operator()(NonTriviallyConstructibleType{}, NonTriviallyConstructibleType{});
+    ASSERT_TRUE(method_return_ptr.has_value());
+
+    NonTriviallyConstructibleType& return_value{*(method_return_ptr.value())};
+    EXPECT_EQ(return_value.value, NonTriviallyConstructibleType::kInitialValue);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsOnlyFixture, InitializeInArgsAndReturnValuesInitializesInArgs)
+{
+    this->GivenAValidProxyMethod();
+
+    // When calling InitializeInArgsAndReturnValues
+    this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then Allocate returns a pointer pointing to an initialized object (i.e. the non-trivial default constructor was
+    // called, initializing value to NonTriviallyConstructibleType::kInitialValue
+    auto method_in_arg_ptr_tuple = this->unit_->Allocate();
+    ASSERT_TRUE(method_in_arg_ptr_tuple.has_value());
+
+    auto& method_in_arg_ptr_0 = std::get<0>(method_in_arg_ptr_tuple.value());
+    NonTriviallyConstructibleType& in_arg_0{*method_in_arg_ptr_0};
+    EXPECT_EQ(in_arg_0.value, NonTriviallyConstructibleType::kInitialValue);
+
+    auto& method_in_arg_ptr_1 = std::get<1>(method_in_arg_ptr_tuple.value());
+    NonTriviallyConstructibleType& in_arg_1{*method_in_arg_ptr_1};
+    EXPECT_EQ(in_arg_1.value, NonTriviallyConstructibleType::kInitialValue);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleInArgsOnlyFixture,
+       InitializeInArgsAndReturnValuesPropagatesErrorFromBinding)
+{
+    this->GivenAValidProxyMethod();
+
+    // Expect that GetInArgsBuffer is called once on the binding mock and returns an error.
+    EXPECT_CALL(this->proxy_method_binding_mock_, GetInArgsBuffer(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When calling InitializeInArgsAndReturnValues
+    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleReturnOnlyFixture,
+       CallOperator_WithCopy_InitializeInArgsAndReturnValuesInitializesInReturn)
+{
+    this->GivenAValidProxyMethod();
+
+    // When calling InitializeInArgsAndReturnValues
+    this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then the copy call operator returns a pointer pointing to an initialized object (i.e. the non-trivial
+    // default constructor was called, initializing value to NonTriviallyConstructibleType::kInitialValue
+    auto method_return_ptr = this->unit_->operator()();
+    ASSERT_TRUE(method_return_ptr.has_value());
+
+    NonTriviallyConstructibleType& return_value{*(method_return_ptr.value())};
+    EXPECT_EQ(return_value.value, NonTriviallyConstructibleType::kInitialValue);
+}
+
+TEST_F(ProxyMethodWithNonTrivialConstructibleReturnOnlyFixture,
+       InitializeInArgsAndReturnValuesPropagatesErrorFromBinding)
+{
+    this->GivenAValidProxyMethod();
+
+    // Expect that GetReturnValueBuffer is called once on the binding mock and returns an error.
+    EXPECT_CALL(this->proxy_method_binding_mock_, GetReturnValueBuffer(0U))
+        .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+
+    // When calling InitializeInArgsAndReturnValues
+    const auto result = this->unit_->InitializeInArgsAndReturnValues();
+
+    // Then an error is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
 }
 
 }  // namespace
