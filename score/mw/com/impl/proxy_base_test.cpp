@@ -567,6 +567,8 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
     const std::string field_name_1_{"field_name_1"};
     const std::string method_name_0_{"method_name_0"};
     const std::string method_name_1_{"method_name_1"};
+    const UniqueMethodIdentifier method_id_0_{method_name_0_, MethodType::kMethod};
+    const UniqueMethodIdentifier method_id_1_{method_name_1_, MethodType::kMethod};
 
     const ConfigurationStore config_store_{kInstanceSpecifier,
                                            kServiceIdentifier,
@@ -612,8 +614,8 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStores
     ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_);
     ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
     ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_0_, method_0_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_1_, method_1_);
 
     // Then the proxy's reference maps should contain references to the registered elements
     const auto& events = proxy_.GetEvents();
@@ -628,8 +630,8 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStores
 
     const auto& methods = proxy_.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_id_0_).get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_id_1_).get(), &method_1_);
 }
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferencesToServiceElements)
@@ -645,8 +647,8 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
     ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_);
     ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
     ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_0_, method_0_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_1_, method_1_);
 
     // When move constructing a new MyProxy object
     MyProxy moved_to_proxy{std::move(proxy_)};
@@ -664,8 +666,8 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
 
     const auto& methods = moved_to_proxy.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_id_0_).get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_id_1_).get(), &method_1_);
 }
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
@@ -679,15 +681,16 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     constexpr auto other_event_name{"other_event"};
     constexpr auto other_field_name{"other_field"};
     constexpr auto other_method_name{"other_method"};
+    const UniqueMethodIdentifier other_method_id{other_method_name, MethodType::kMethod};
     mock_binding::Proxy proxy_binding_mock{};
 
     // Given a valid MyProxy object on which 2 Events, Fields and Methods were registered
     ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
     ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_0_, method_0_);
     ProxyBaseView{proxy_}.RegisterEvent(event_name_1_, event_1_);
     ProxyBaseView{proxy_}.RegisterField(field_name_1_, field_1_);
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_1_, method_1_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_1_, method_1_);
 
     // and given a second valid MyProxy object
     MyProxy proxy_2{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock), handle_};
@@ -701,7 +704,7 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     ProxyMethodBase method{proxy_2, std::make_unique<mock_binding::ProxyMethod>(), other_method_name};
     ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event);
     ProxyBaseView{proxy_2}.RegisterField(other_field_name, field);
-    ProxyBaseView{proxy_2}.RegisterMethod(other_method_name, method);
+    ProxyBaseView{proxy_2}.RegisterMethod(other_method_id, method);
 
     // When move assigning the first MyProxy object to the second
     proxy_2 = std::move(proxy_);
@@ -719,8 +722,8 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
 
     const auto& methods = proxy_2.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_id_0_).get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_id_1_).get(), &method_1_);
 }
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoAnything)
@@ -789,13 +792,13 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateFieldTerminatesOnFailiure
 TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodUpdatesCorrectly)
 {
     // Given a proxy with a registered method
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_0_, method_0_);
 
     // When we update the method with a new method value
-    ProxyBaseView{proxy_}.UpdateMethod(method_name_0_, method_1_);
+    ProxyBaseView{proxy_}.UpdateMethod(method_id_0_, method_1_);
 
     // Then we expect the proxy to contain the new method under the old name
-    auto& updated_method = proxy_.GetMethods().find(method_name_0_)->second.get();
+    auto& updated_method = proxy_.GetMethods().find(method_id_0_)->second.get();
 
     EXPECT_EQ(&updated_method, &method_1_);
     EXPECT_NE(&updated_method, &method_0_);
@@ -804,10 +807,10 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodUpdatesCorrectly)
 TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodTerminatesOnFailiure)
 {
     // Given a proxy with a registered event
-    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
+    ProxyBaseView{proxy_}.RegisterMethod(method_id_0_, method_0_);
 
     // When we try to update the even but use a wrong name, then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        ProxyBaseView{proxy_}.UpdateMethod("wrong_method_name", method_0_));
+    const UniqueMethodIdentifier wrong_method_id{"wrong_method_name", MethodType::kMethod};
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateMethod(wrong_method_id, method_0_));
 }
 }  // namespace score::mw::com::impl

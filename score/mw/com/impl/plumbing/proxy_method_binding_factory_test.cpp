@@ -131,8 +131,9 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
     auto proxy_binding = this->CreateBindingFromHandle(handle);
 
     // When creating a ProxyMethod using MethodBindingFactory
-    using MethodType = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodType>::Create(handle, proxy_binding, kDummyMethodName);
+    using MethodSignature = TypeParam;
+    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
+        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
 
     // Then a valid binding can be created
     ASSERT_NE(proxy_method, nullptr);
@@ -146,8 +147,9 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotCreateProxyServiceWhenProxyBind
     auto proxy_binding{nullptr};
 
     // When creating a ProxyMethod using MethodBindingFactory
-    using MethodType = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodType>::Create(handle, proxy_binding, kDummyMethodName);
+    using MethodSignature = TypeParam;
+    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
+        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     ASSERT_EQ(proxy_method, nullptr);
@@ -162,8 +164,9 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromSomeIpBinding
     auto proxy_binding = this->CreateBindingFromHandle(handle);
 
     // When creating a ProxyMethod using MethodBindingFactory
-    using MethodType = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodType>::Create(handle, proxy_binding, kDummyMethodName);
+    using MethodSignature = TypeParam;
+    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
+        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     EXPECT_EQ(proxy_method, nullptr);
@@ -177,8 +180,9 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
     auto proxy_binding = this->CreateBindingFromHandle(handle);
 
     // When creating a ProxyMethod using MethodBindingFactory
-    using MethodType = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodType>::Create(handle, proxy_binding, kDummyMethodName);
+    using MethodSignature = TypeParam;
+    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
+        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
 
     // Then a nullptr is returned
     EXPECT_EQ(proxy_method, nullptr);

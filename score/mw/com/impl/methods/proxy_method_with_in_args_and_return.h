@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_AND_RETURN_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_AND_RETURN_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
@@ -57,12 +58,54 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
               proxy_base,
               ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
                                                                          ProxyBaseView{proxy_base}.GetBinding(),
-                                                                         method_name),
-              method_name),
+                                                                         method_name,
+                                                                         MethodType::kMethod),
+              method_name,
+              MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, GetMethodTag) noexcept
+        : ProxyMethodBase(
+              proxy_base,
+              ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                         ProxyBaseView{proxy_base}.GetBinding(),
+                                                                         method_name,
+                                                                         MethodType::kGet),
+              method_name,
+              MethodType::kGet),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, SetMethodTag) noexcept
+        : ProxyMethodBase(
+              proxy_base,
+              ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                         ProxyBaseView{proxy_base}.GetBinding(),
+                                                                         method_name,
+                                                                         MethodType::kSet),
+              method_name,
+              MethodType::kSet),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -73,11 +116,11 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name),
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -142,7 +185,7 @@ ProxyMethod<ReturnType(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
 {
     // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
+    proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
 }
 
 template <typename ReturnType, typename... ArgTypes>
@@ -156,7 +199,7 @@ auto ProxyMethod<ReturnType(ArgTypes...)>::operator=(ProxyMethod&& other) noexce
 
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
+        proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
     }
     return *this;
 }

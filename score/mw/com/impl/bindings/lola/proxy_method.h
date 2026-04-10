@@ -38,7 +38,7 @@ class ProxyMethod : public ProxyMethodBinding
 {
   public:
     ProxyMethod(Proxy& proxy,
-                const ElementFqId element_fq_id,
+                ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
                 const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info);
 
     /// \brief Allocates storage for the in-arguments of a method call at the given queue position.

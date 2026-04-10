@@ -689,6 +689,8 @@ class SkeletonBaseServiceElementReferencesFixture : public ::testing::Test
     const std::string field_name_1_{"field_name_1"};
     const std::string method_name_0_{"method_name_0"};
     const std::string method_name_1_{"method_name_1"};
+    const UniqueMethodIdentifier method_id_0_{method_name_0_, MethodType::kMethod};
+    const UniqueMethodIdentifier method_id_1_{method_name_1_, MethodType::kMethod};
 
     ConfigurationStore config_store_{kInstanceSpecifier,
                                      kServiceIdentifier,
@@ -729,8 +731,8 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, RegisteringServiceElementSto
     SkeletonBaseView{skeleton_}.RegisterEvent(event_name_1_, event_1_);
     SkeletonBaseView{skeleton_}.RegisterField(field_name_0_, field_0_);
     SkeletonBaseView{skeleton_}.RegisterField(field_name_1_, field_1_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_0_, method_0_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_1_, method_1_);
+    SkeletonBaseView{skeleton_}.RegisterMethod(method_id_0_, method_0_);
+    SkeletonBaseView{skeleton_}.RegisterMethod(method_id_1_, method_1_);
 
     // Then the skeleton's reference maps should contain references to the registered elements
     const auto& events = skeleton_.GetEvents();
@@ -745,8 +747,8 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, RegisteringServiceElementSto
 
     const auto& methods = skeleton_.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_id_0_).get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_id_1_).get(), &method_1_);
 }
 
 TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferencesToServiceElements)
@@ -756,8 +758,8 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveConstructingUpdatesRefer
     SkeletonBaseView{skeleton_}.RegisterEvent(event_name_1_, event_1_);
     SkeletonBaseView{skeleton_}.RegisterField(field_name_0_, field_0_);
     SkeletonBaseView{skeleton_}.RegisterField(field_name_1_, field_1_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_0_, method_0_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_1_, method_1_);
+    SkeletonBaseView{skeleton_}.RegisterMethod(method_id_0_, method_0_);
+    SkeletonBaseView{skeleton_}.RegisterMethod(method_id_1_, method_1_);
 
     // When move constructing a new MySkeleton object
     MySkeleton moved_to_skeleton{std::move(skeleton_)};
@@ -775,8 +777,8 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveConstructingUpdatesRefer
 
     const auto& methods = moved_to_skeleton.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_id_0_).get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_id_1_).get(), &method_1_);
 }
 
 TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
@@ -791,15 +793,16 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferenc
     constexpr auto other_event_name{"other_event"};
     constexpr auto other_field_name{"other_field"};
     constexpr auto other_method_name{"other_method"};
+    const UniqueMethodIdentifier other_method_id{other_method_name, MethodType::kMethod};
     mock_binding::Skeleton skeleton_binding_mock{};
 
     // Given a valid MySkeleton object on which 2 Events, Fields and Methods were registered
     SkeletonBaseView{skeleton_}.RegisterEvent(event_name_0_, event_0_);
     SkeletonBaseView{skeleton_}.RegisterField(field_name_0_, field_0_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_0_, method_0_);
+    SkeletonBaseView{skeleton_}.RegisterMethod(method_id_0_, method_0_);
     SkeletonBaseView{skeleton_}.RegisterEvent(event_name_1_, event_1_);
     SkeletonBaseView{skeleton_}.RegisterField(field_name_1_, field_1_);
-    SkeletonBaseView{skeleton_}.RegisterMethod(method_name_1_, method_1_);
+    SkeletonBaseView{skeleton_}.RegisterMethod(method_id_1_, method_1_);
 
     // and given a second valid MySkeleton object
     MySkeleton skeleton_2{std::make_unique<mock_binding::SkeletonFacade>(skeleton_binding_mock), instance_identifier_};
@@ -815,7 +818,7 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferenc
     SkeletonMethodBase method{skeleton_2, other_method_name, std::make_unique<mock_binding::SkeletonMethod>()};
     SkeletonBaseView{skeleton_2}.RegisterEvent(other_event_name, event);
     SkeletonBaseView{skeleton_2}.RegisterField(other_field_name, field);
-    SkeletonBaseView{skeleton_2}.RegisterMethod(other_method_name, method);
+    SkeletonBaseView{skeleton_2}.RegisterMethod(other_method_id, method);
 
     // When move assigning the first MySkeleton object to the second
     skeleton_2 = std::move(skeleton_);
@@ -833,8 +836,8 @@ TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferenc
 
     const auto& methods = skeleton_2.GetMethods();
     EXPECT_EQ(methods.size(), 2U);
-    EXPECT_EQ(&methods.at(method_name_0_).get(), &method_0_);
-    EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
+    EXPECT_EQ(&methods.at(method_id_0_).get(), &method_0_);
+    EXPECT_EQ(&methods.at(method_id_1_).get(), &method_1_);
 }
 
 TEST_F(SkeletonBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoAnything)

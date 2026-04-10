@@ -19,6 +19,8 @@
 #include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
+#include "score/mw/com/impl/method_identifier.h"
+#include "score/mw/com/impl/method_type.h"
 
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/result/result.h"
@@ -85,7 +87,8 @@ class ProxyMethodTestFixture : public ::testing::Test
     auto GetMethodReferenceFromParent()
     {
         auto methods = this->proxy_base_.GetMethods();
-        auto moved_method = methods.find(kMethodName);
+        auto moved_method =
+            methods.find(UniqueMethodIdentifier{kMethodName, score::mw::com::impl::MethodType::kMethod});
 
         EXPECT_NE(moved_method, methods.end());
         return &moved_method->second.get();
@@ -258,7 +261,8 @@ TYPED_TEST(ProxyMethodAllArgCombinationsTestFixture,
     auto proxy_method_binding = std::make_unique<mock_binding::ProxyMethodFacade>(this->proxy_method_binding_mock_);
 
     // expecting that a binding factory can create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_, Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/))
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
         .WillOnce(testing::Return(testing::ByMove(std::move(proxy_method_binding))));
 
     // When the 2-parameter constructor of the ProxyMethod class is called
@@ -273,7 +277,8 @@ TYPED_TEST(
     TwoParameterConstructorCorrectlyCallsBindingFactoryButProxyMethodIsNotCreatedWhenTheBindingFactoryDoesNotReturnBinding)
 {
     // expecting that a binding factory cannot create a binding
-    EXPECT_CALL(this->proxy_method_binding_factory_mock_, Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/))
+    EXPECT_CALL(this->proxy_method_binding_factory_mock_,
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
         .WillOnce(testing::Return(testing::ByMove(nullptr)));
 
     // When the 2-parameter constructor of the ProxyMethod class is called

@@ -169,7 +169,7 @@ auto ProxyField<FieldType>::operator=(ProxyField&& other) & noexcept -> ProxyFie
 {
     if (this != &other)
     {
-        ProxyField::operator=(std::move(other));
+        ProxyFieldBase::operator=(std::move(other));
 
         // Since the address of this field has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};

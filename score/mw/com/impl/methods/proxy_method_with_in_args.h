@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
@@ -53,15 +54,40 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
         : ProxyMethod(proxy_base,
                       ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
                                                                            ProxyBaseView{proxy_base}.GetBinding(),
-                                                                           method_name),
-                      method_name)
+                                                                           method_name,
+                                                                           MethodType::kMethod),
+                      method_name,
+                      MethodType::kMethod)
+    {
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, GetMethodTag) noexcept
+        : ProxyMethod(proxy_base,
+                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                           ProxyBaseView{proxy_base}.GetBinding(),
+                                                                           method_name,
+                                                                           MethodType::kGet),
+                      method_name,
+                      MethodType::kGet)
+    {
+    }
+
+    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, SetMethodTag) noexcept
+        : ProxyMethod(proxy_base,
+                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
+                                                                           ProxyBaseView{proxy_base}.GetBinding(),
+                                                                           method_name,
+                                                                           MethodType::kSet),
+                      method_name,
+                      MethodType::kSet)
     {
     }
 
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name),
+                std::string_view method_name,
+                MethodType method_type = MethodType::kMethod) noexcept
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, method_type),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
@@ -70,7 +96,7 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
             proxy_base_view.MarkServiceElementBindingInvalid();
             return;
         }
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
     }
 
     ~ProxyMethod() final = default;
@@ -127,7 +153,7 @@ ProxyMethod<void(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
 {
     // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
+    proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
 }
 
 template <typename... ArgTypes>
@@ -140,7 +166,7 @@ auto ProxyMethod<void(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept -> 
 
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
+        proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
     }
     return *this;
 }

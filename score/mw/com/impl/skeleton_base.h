@@ -16,6 +16,8 @@
 #include "score/mw/com/impl/flag_owner.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/method_identifier.h"
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
@@ -49,7 +51,7 @@ class SkeletonBase
   public:
     using SkeletonEvents = std::map<std::string_view, std::reference_wrapper<SkeletonEventBase>>;
     using SkeletonFields = std::map<std::string_view, std::reference_wrapper<SkeletonFieldBase>>;
-    using SkeletonMethods = std::map<std::string_view, std::reference_wrapper<SkeletonMethodBase>>;
+    using SkeletonMethods = std::map<UniqueMethodIdentifier, std::reference_wrapper<SkeletonMethodBase>>;
 
     /// \brief Creation of service skeleton with provided Skeleton binding
     ///
@@ -143,9 +145,9 @@ class SkeletonBaseView
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
     }
 
-    void RegisterMethod(const std::string_view method_name, SkeletonMethodBase& method)
+    void RegisterMethod(UniqueMethodIdentifier method_id, SkeletonMethodBase& method)
     {
-        const auto result = skeleton_base_.methods_.emplace(method_name, method);
+        const auto result = skeleton_base_.methods_.emplace(method_id, method);
         const bool was_method_inserted = result.second;
         SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted,
                                                 "Method cannot be registered as it already exists.");
@@ -181,16 +183,16 @@ class SkeletonBaseView
         field_name_it->second = field;
     }
 
-    void UpdateMethod(const std::string_view method_name, SkeletonMethodBase& method) noexcept
+    void UpdateMethod(UniqueMethodIdentifier method_id, SkeletonMethodBase& method) noexcept
     {
-        auto method_name_it = skeleton_base_.methods_.find(method_name);
-        if (method_name_it == skeleton_base_.methods_.cend())
+        auto method_it = skeleton_base_.methods_.find(method_id);
+        if (method_it == skeleton_base_.methods_.cend())
         {
             score::mw::log::LogError("lola")
                 << "SkeletonBaseView::UpdateMethod failed to update method because the requested method doesn't exist";
             std::terminate();
         }
-        method_name_it->second = method;
+        method_it->second = method;
     }
 
     const SkeletonBase::SkeletonEvents& GetEvents() const noexcept

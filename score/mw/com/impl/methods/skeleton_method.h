@@ -12,6 +12,7 @@
  ********************************************************************************/
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
@@ -58,14 +59,41 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
               method_name,
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
-                                                   method_name))
+                                                   method_name,
+                                                   ::score::mw::com::impl::MethodType::kMethod),
+              ::score::mw::com::impl::MethodType::kMethod)
+    {
+    }
+
+    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name, GetMethodTag)
+        : SkeletonMethod(
+              skeleton_base,
+              method_name,
+              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
+                                                   method_name,
+                                                   ::score::mw::com::impl::MethodType::kGet),
+              ::score::mw::com::impl::MethodType::kGet)
+    {
+    }
+
+    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name, SetMethodTag)
+        : SkeletonMethod(
+              skeleton_base,
+              method_name,
+              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
+                                                   method_name,
+                                                   ::score::mw::com::impl::MethodType::kSet),
+              ::score::mw::com::impl::MethodType::kSet)
     {
     }
 
     /// \brief testonly constructor, which allows for direct injection of a mock binding
     SkeletonMethod(SkeletonBase& skeleton_base,
                    const std::string_view method_name,
-                   std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding);
+                   std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
+                   ::score::mw::com::impl::MethodType method_type = ::score::mw::com::impl::MethodType::kMethod);
 
     ~SkeletonMethod() = default;
 
@@ -87,11 +115,12 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
 template <typename ReturnType, typename... ArgTypes>
 SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonBase& skeleton_base,
                                                         const std::string_view method_name,
-                                                        std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding)
-    : SkeletonMethodBase(skeleton_base, method_name, std::move(skeleton_method_binding))
+                                                        std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
+                                                        ::score::mw::com::impl::MethodType method_type)
+    : SkeletonMethodBase(skeleton_base, method_name, std::move(skeleton_method_binding), method_type)
 {
     auto skeleton_base_view = SkeletonBaseView{skeleton_base};
-    skeleton_base_view.RegisterMethod(method_name_, *this);
+    skeleton_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
 }
 
 template <typename ReturnType, typename... ArgTypes>
@@ -99,7 +128,7 @@ SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonMethod&& other) 
     : SkeletonMethodBase(std::move(other))
 {
     SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-    skeleton_base_view.UpdateMethod(method_name_, *this);
+    skeleton_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
 }
 
 template <typename ReturnType, typename... ArgTypes>
@@ -110,7 +139,7 @@ SkeletonMethod<ReturnType(ArgTypes...)>& SkeletonMethod<ReturnType(ArgTypes...)>
     {
         SkeletonMethodBase::operator=(std::move(other));
         SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-        skeleton_base_view.UpdateMethod(method_name_, *this);
+        skeleton_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
     }
     return *this;
 }
