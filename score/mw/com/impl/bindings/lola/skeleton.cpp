@@ -472,9 +472,13 @@ void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMe
 
 bool Skeleton::VerifyAllMethodsRegistered() const
 {
-    for (const auto& [ignorable, method_reference] : skeleton_methods_)
+    for (const auto& [method_id, method_reference] : skeleton_methods_)
     {
-        score::cpp::ignore = ignorable;
+        // TODO: Remove this skip once the field Get handler is auto-registered in SkeletonField.
+        if (method_id.method_type == ::score::mw::com::impl::MethodType::kGet)
+        {
+            continue;
+        }
         if (!method_reference.get().IsRegistered())
         {
             return false;
