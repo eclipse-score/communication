@@ -188,6 +188,7 @@ cc_gtest_unit_test(
         ":skeleton_method",
         "//score/mw/com/impl/bindings/mock_binding",
         "//score/mw/com/impl/plumbing:skeleton_method_binding_factory_mock",
+        "//score/mw/com/impl/test:binding_factory_resources",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
