@@ -41,6 +41,7 @@ struct SlotDecrementer {
 struct LolaBinding<T> {
     _managed_object: *const T,
     _slot_decrementer: CxxOptional<SlotDecrementer>,
+    _timestamp: u32,
 }
 
 #[repr(C)]
