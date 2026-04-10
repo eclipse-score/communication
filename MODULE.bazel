@@ -22,15 +22,7 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.1.5")
 bazel_dep(name = "rules_python", version = "1.5.1")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
-bazel_dep(name = "score_baselibs", version = "0.2.4")
-
-# TODO: Remove once new baselib release is available https://github.com/eclipse-score/baselibs/issues/138
-git_override(
-    module_name = "score_baselibs",
-    commit = "bd9a138245b7c8bb47bbb9745a3fabc978e3a1b1",
-    remote = "https://github.com/eclipse-score/baselibs.git",
-)
-
+bazel_dep(name = "score_baselibs", version = "0.2.5")
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
