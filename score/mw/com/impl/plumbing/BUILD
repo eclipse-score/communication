@@ -302,6 +302,7 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":i_proxy_field_binding_factory",
+        ":proxy_method_binding_factory",
         ":proxy_service_element_binding_factory_impl",
         "@score_baselibs//score/language/futurecpp",
     ],
