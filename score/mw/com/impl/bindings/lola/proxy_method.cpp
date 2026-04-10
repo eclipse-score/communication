@@ -48,7 +48,7 @@ ProxyMethod::ProxyMethod(Proxy& proxy,
     proxy.RegisterMethod(element_fq_id.element_id_, *this);
 }
 
-score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateInArgs(std::size_t queue_position)
+score::Result<score::cpp::span<std::byte>> ProxyMethod::GetInArgsBuffer(std::size_t queue_position)
 {
     if (!is_subscribed_)
     {
@@ -65,7 +65,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateInArgs(std::size
     return GetInArgValuesElementStorage(queue_position, in_args_storage_.value(), type_erased_element_info_);
 }
 
-score::Result<score::cpp::span<std::byte>> ProxyMethod::AllocateReturnType(std::size_t queue_position)
+score::Result<score::cpp::span<std::byte>> ProxyMethod::GetReturnValueBuffer(std::size_t queue_position)
 {
     if (!is_subscribed_)
     {

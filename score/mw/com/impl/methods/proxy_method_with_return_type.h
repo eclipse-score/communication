@@ -87,6 +87,8 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     ProxyMethod(ProxyMethod&&) noexcept;
     ProxyMethod& operator=(ProxyMethod&&) noexcept;
 
+    ResultBlank InitializeInArgsAndReturnValues() override;
+
     /// \brief This is the call-operator of ProxyMethod with no arguments for a non-void ReturnType.
     score::Result<MethodReturnTypePtr<ReturnType>> operator()();
 
@@ -135,7 +137,7 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
     }
 
     const auto queue_position = queue_position_result.value();
-    auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
+    auto allocated_return_type_storage = binding_->GetReturnValueBuffer(queue_position);
     if (!allocated_return_type_storage.has_value())
     {
         return Unexpected(allocated_return_type_storage.error());
@@ -161,6 +163,18 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
         *(reinterpret_cast<ReturnType*>(allocated_return_type_storage.value().data())),
         is_return_type_ptr_active_[queue_position],
         queue_position};
+}
+
+template <typename ReturnType>
+ResultBlank ProxyMethod<ReturnType()>::InitializeInArgsAndReturnValues()
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    const auto init_return_result = detail::InitializeReturnValue<ReturnType>(*binding_, kCallQueueSize);
+    if (!init_return_result.has_value())
+    {
+        return Unexpected(init_return_result.error());
+    }
+    return {};
 }
 
 }  // namespace score::mw::com::impl

@@ -53,6 +53,17 @@ class ProxyMethodBase
         proxy_base_ = proxy_base;
     }
 
+    /// \brief Default initializes each method InArg and Return value (if they exist)
+    ///
+    /// This function is called on creation of a Proxy during ProxyBase::SetupMethods. Since the binding creates a type
+    /// erased buffer in which the InArgs and Return value are created, each value must be explicitly instantiated to
+    /// begin the object lifetime and also perform the correct initialization (in case the type cannot be trivially
+    /// default constructed). We do this once on startup instead of in a call to Allocate() to prevent the type being
+    /// reinitialized on every method call. This potentially would have performance benefits but more importantly this
+    /// allows us to support "semi-dynamic" types in which a type dynamically allocates once on construction and the
+    /// constructor is then never called again.
+    virtual ResultBlank InitializeInArgsAndReturnValues() = 0;
+
   protected:
     /// \brief Size of the call-queue is currently fixed to 1! As soon as we are going to support larger call-queues,
     /// the call-queue-size shall be taken from configuration and handed over to ProxyMethod ctor.

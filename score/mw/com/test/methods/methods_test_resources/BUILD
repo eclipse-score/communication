@@ -27,6 +27,19 @@ cc_library(
 )
 
 cc_library(
+    name = "skeleton_container",
+    srcs = ["skeleton_container.cpp"],
+    hdrs = ["skeleton_container.h"],
+    features = COMPILER_WARNING_FEATURES,
+    visibility = [
+        "//score/mw/com/test/methods:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com",
+    ],
+)
+
+cc_library(
     name = "method_provider",
     srcs = ["method_provider.cpp"],
     hdrs = ["method_provider.h"],

@@ -44,12 +44,12 @@ class ProxyMethod : public ProxyMethodBinding
     /// \brief Allocates storage for the in-arguments of a method call at the given queue position.
     ///
     /// See ProxyMethodBinding for details
-    score::Result<score::cpp::span<std::byte>> AllocateInArgs(std::size_t queue_position) override;
+    score::Result<score::cpp::span<std::byte>> GetInArgsBuffer(std::size_t queue_position) override;
 
     /// \brief Allocates storage for the return type of a method call at the given queue position.
     ///
     /// See ProxyMethodBinding for details
-    score::Result<score::cpp::span<std::byte>> AllocateReturnType(std::size_t queue_position) override;
+    score::Result<score::cpp::span<std::byte>> GetReturnValueBuffer(std::size_t queue_position) override;
 
     /// \brief Performs the actual method call at the given call-queue position.
     ///

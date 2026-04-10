@@ -319,7 +319,7 @@ TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm
     // can allocate InArgs without crashing, since the allocation is using the inserted storages)
     for (auto& method : proxy_method_storage_)
     {
-        score::cpp::ignore = method.AllocateInArgs(0);
+        score::cpp::ignore = method.GetInArgsBuffer(0);
     }
 }
 
