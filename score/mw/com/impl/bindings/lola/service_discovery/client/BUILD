@@ -43,19 +43,13 @@ cc_gtest_unit_test(
     srcs = [
         "service_discovery_client_find_service_test.cpp",
         "service_discovery_client_offer_service_test.cpp",
+        "service_discovery_client_sequence_test.cpp",
         "service_discovery_client_start_find_service_test.cpp",
         "service_discovery_client_stop_find_service_test.cpp",
         "service_discovery_client_stop_offer_service_test.cpp",
         "service_discovery_client_worker_thread_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES,
-    # TODO: Ticket-253098
-    target_compatible_with = select({
-        "@score_bazel_platforms//settings:x86_64-qnx": [
-            "@score_bazel_platforms//version:sdp_7.1.0",
-        ],
-        "//conditions:default": [],
-    }),
     visibility = [
         "//score/mw/com/impl/bindings/lola/service_discovery/client:__pkg__",
     ],
