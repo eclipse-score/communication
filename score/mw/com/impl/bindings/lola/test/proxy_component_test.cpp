@@ -272,9 +272,6 @@ class ProxyServiceDiscoveryFixture : public ProxyWithRealMemFixture
 // Test to check that race condition in Ticket-169333 does not occur.
 TEST_F(ProxyServiceDiscoveryFixture, CallingStartFindServiceInHandlerAndStartFindServiceInMainThreadDoesNotDeadLock)
 {
-#if defined(__QNX__) && __QNX__ >= 800 && defined(__x86_64__)
-    GTEST_SKIP() << "TODO: Ticket-253098 Inotify not supported on QNX 8 x86_64 filesystem";
-#else
     MockFunction<void(ServiceHandleContainer<HandleType>, FindServiceHandle)> find_service_handler_2{};
 
     // Given a real ServiceDiscovery and a configuration that contains no events
@@ -303,15 +300,11 @@ TEST_F(ProxyServiceDiscoveryFixture, CallingStartFindServiceInHandlerAndStartFin
 
     // Then we expect that both calls to StartFindService are called without a dead lock and both handlers are called
     handler_done_notifier_.waitWithAbort(stop_token_);
-#endif
 }
 
 // Test to check that race condition in Ticket-169333 does not occur.
 TEST_F(ProxyServiceDiscoveryFixture, CallingStartFindServiceInHandlerAndStopFindServiceInMainThreadDoesNotDeadLock)
 {
-#if defined(__QNX__) && __QNX__ >= 800 && defined(__x86_64__)
-    GTEST_SKIP() << "TODO: Ticket-253098 Inotify not supported on QNX 8 x86_64 filesystem";
-#else
     // Given a real ServiceDiscovery and a configuration that contains no events
     WithARealServiceDiscovery().WithAConfigurationContainingNoEvents();
     const InstanceIdentifier instance_identifier{config_store_->GetInstanceIdentifier()};
@@ -335,15 +328,11 @@ TEST_F(ProxyServiceDiscoveryFixture, CallingStartFindServiceInHandlerAndStopFind
     // Then we expect that both the call to StartFindService in the handler and the call to StopFindService are called
     // without a dead lock and that the handler are finishes
     handler_done_notifier_.waitWithAbort(stop_token_);
-#endif
 }
 
 // Test to check that race condition in Ticket-169333 does not occur.
 TEST_F(ProxyServiceDiscoveryFixture, CallingStopFindServiceInHandlerAndStartFindServiceInMainThreadDoesNotDeadLock)
 {
-#if defined(__QNX__) && __QNX__ >= 800 && defined(__x86_64__)
-    GTEST_SKIP() << "TODO: Ticket-253098 Inotify not supported on QNX 8 x86_64 filesystem";
-#else
     MockFunction<void(ServiceHandleContainer<HandleType>, FindServiceHandle)> find_service_handler_2{};
 
     // Given a real ServiceDiscovery and a configuration that contains no events
@@ -372,15 +361,11 @@ TEST_F(ProxyServiceDiscoveryFixture, CallingStopFindServiceInHandlerAndStartFind
 
     // Then we expect that both calls to StartFindService are called without a dead lock and both handlers are called
     handler_done_notifier_.waitWithAbort(stop_token_);
-#endif
 }
 
 // Test to check that race condition in Ticket-169333 does not occur.
 TEST_F(ProxyServiceDiscoveryFixture, CallingStopFindServiceInHandlerAndStopFindServiceInMainThreadDoesNotDeadLock)
 {
-#if defined(__QNX__) && __QNX__ >= 800 && defined(__x86_64__)
-    GTEST_SKIP() << "TODO: Ticket-253098 Inotify not supported on QNX 8 x86_64 filesystem";
-#else
     // Given a real ServiceDiscovery and a configuration that contains no events
     WithARealServiceDiscovery().WithAConfigurationContainingNoEvents();
     const InstanceIdentifier instance_identifier{config_store_->GetInstanceIdentifier()};
@@ -404,7 +389,6 @@ TEST_F(ProxyServiceDiscoveryFixture, CallingStopFindServiceInHandlerAndStopFindS
     // Then we expect that both the call to StartFindService in the handler and the call to StopFindService are called
     // without a dead lock and that the handler are finishes
     handler_done_notifier_.waitWithAbort(stop_token_);
-#endif
 }
 
 }  // namespace
