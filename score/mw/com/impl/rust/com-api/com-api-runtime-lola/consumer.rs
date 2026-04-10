@@ -35,6 +35,7 @@ use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use core::panic;
+use core::ptr::NonNull;
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
 use std::pin::Pin;
@@ -197,7 +198,7 @@ impl std::fmt::Debug for ProxyInstanceManager {
 /// it must not expose any mutable access to the proxy instance
 /// Or must not provide any method to access the proxy instance directly
 pub struct NativeProxyBase {
-    proxy: *mut ProxyBase, // Stores the proxy instance
+    proxy: NonNull<ProxyBase>, // Stores the proxy instance
 }
 
 //SAFETY: NativeProxyBase is safe to share between threads because:
@@ -213,7 +214,7 @@ impl Drop for NativeProxyBase {
         //SAFETY: It is safe to destroy the proxy because it was created by FFI
         // and proxy pointer received at the time of create_proxy called
         unsafe {
-            bridge_ffi_rs::destroy_proxy(self.proxy);
+            bridge_ffi_rs::destroy_proxy(self.proxy.as_ptr());
         }
     }
 }
@@ -228,12 +229,10 @@ impl NativeProxyBase {
     pub fn new(interface_id: &str, handle: &HandleType) -> Result<Self> {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id
-        let proxy = unsafe { bridge_ffi_rs::create_proxy(interface_id, handle) };
-        if proxy.is_null() {
-            return Err(Error::ConsumerError(
-                ConsumerFailedReason::ProxyCreationFailed,
-            ));
-        }
+        let raw_proxy_ptr = unsafe { bridge_ffi_rs::create_proxy(interface_id, handle) };
+        let proxy = std::ptr::NonNull::new(raw_proxy_ptr).ok_or(Error::ConsumerError(
+            ConsumerFailedReason::ProxyCreationFailed,
+        ))?;
         Ok(Self { proxy })
     }
 }
@@ -245,7 +244,7 @@ impl NativeProxyBase {
 /// And the proxy event lifetime is managed safely through Drop of the parent proxy instance
 /// user can get the raw pointer using 'get_proxy_event_base' method
 pub struct NativeProxyEventBase {
-    proxy_event_ptr: *mut ProxyEventBase,
+    proxy_event_ptr: NonNull<ProxyEventBase>,
 }
 
 //SAFETY: NativeProxyEventBase is to send between threads because:
@@ -259,11 +258,10 @@ impl NativeProxyEventBase {
     pub fn new(proxy: *mut ProxyBase, interface_id: &str, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
-        let proxy_event_ptr =
+        let raw_event_ptr =
             unsafe { bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
-        if proxy_event_ptr.is_null() {
-            return Err(Error::EventError(EventFailedReason::EventCreationFailed));
-        }
+        let proxy_event_ptr = std::ptr::NonNull::new(raw_event_ptr)
+            .ok_or(Error::EventError(EventFailedReason::EventCreationFailed))?;
         Ok(Self { proxy_event_ptr })
     }
 
@@ -271,11 +269,7 @@ impl NativeProxyEventBase {
     pub fn get_proxy_event_base(&self) -> &ProxyEventBase {
         // SAFETY: proxy_event_ptr is valid for the entire lifetime of NativeProxyEventBase
         // and was created by FFI during get_event_from_proxy()
-        unsafe {
-            self.proxy_event_ptr
-                .as_ref()
-                .expect("Event pointer is null")
-        }
+        unsafe { self.proxy_event_ptr.as_ref() }
     }
 }
 
@@ -311,7 +305,7 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
         let instance_info = self.instance_info.clone();
         let event_instance = NativeProxyEventBase::new(
-            self.proxy_instance.0.proxy,
+            self.proxy_instance.0.proxy.as_ptr(),
             self.instance_info.interface_id,
             self.identifier,
         )?;

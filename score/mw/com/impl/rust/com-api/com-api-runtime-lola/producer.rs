@@ -186,7 +186,7 @@ where
         // FFI call will complete before drop run on AllocateePtrWrapper and NativeSkeletonEventBase
         let status = unsafe {
             bridge_ffi_rs::skeleton_event_send_sample_allocatee(
-                self.skeleton_event.skeleton_event_ptr,
+                self.skeleton_event.skeleton_event_ptr.as_ptr(),
                 T::ID,
                 std::ptr::from_ref(self.allocatee_ptr.as_ref()) as *const std::ffi::c_void,
             )
@@ -304,9 +304,9 @@ unsafe impl Send for NativeSkeletonHandle {}
 impl NativeSkeletonHandle {
     pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
-        let raw =
+        let raw_handle =
             unsafe { bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native()) };
-        let handle = std::ptr::NonNull::new(raw)
+        let handle = std::ptr::NonNull::new(raw_handle)
             .ok_or_else(|| Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed))?;
         Ok(Self { handle })
     }
@@ -326,7 +326,7 @@ impl Drop for NativeSkeletonHandle {
 /// Manages the lifetime of the SkeletonEventBase pointer
 /// Drop is not required as the skeleton event lifetime is managed by skeleton instance
 pub struct NativeSkeletonEventBase {
-    pub skeleton_event_ptr: *mut SkeletonEventBase,
+    pub skeleton_event_ptr: NonNull<SkeletonEventBase>,
 }
 
 //SAFETY: NativeSkeletonEventBase is safe to send between threads because:
@@ -339,18 +339,16 @@ impl NativeSkeletonEventBase {
     pub fn new(instance_info: &LolaProviderInfo, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
         // skeleton handle is created during producer offer call
-        let skeleton_event_ptr = unsafe {
+        let raw_event_ptr = unsafe {
             bridge_ffi_rs::get_event_from_skeleton(
                 instance_info.skeleton_handle.0.handle.as_ptr(),
                 instance_info.interface_id,
                 identifier,
             )
         };
-        if skeleton_event_ptr.is_null() {
-            return Err(Error::ProducerError(
-                ProducerFailedReason::SkeletonCreationFailed,
-            ));
-        }
+        let skeleton_event_ptr = std::ptr::NonNull::new(raw_event_ptr).ok_or(
+            Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed),
+        )?;
         Ok(Self { skeleton_event_ptr })
     }
 }
@@ -396,7 +394,7 @@ where
             let mut sample =
                 core::mem::MaybeUninit::<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>::uninit();
             let status = bridge_ffi_rs::get_allocatee_ptr(
-                self.skeleton_event.skeleton_event_ptr,
+                self.skeleton_event.skeleton_event_ptr.as_ptr(),
                 sample.as_mut_ptr() as *mut std::ffi::c_void,
                 T::ID,
             );
