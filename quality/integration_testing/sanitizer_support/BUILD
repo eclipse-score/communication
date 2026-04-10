@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,17 +11,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-cc_test(
-    name = "asan_fail_heap_out_of_bounds",
-    srcs = ["asan_fail_heap_out_of_bounds.cpp"],
-)
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
-cc_test(
-    name = "lsan_fail_leak",
-    srcs = ["lsan_fail_leak.cpp"],
-)
-
-cc_test(
-    name = "tsan_fail_data_race",
-    srcs = ["tsan_fail_data_race.cpp"],
+pkg_tar(
+    name = "suppressions_pkg",
+    srcs = [
+        "//quality/sanitizer:repo_suppressions",
+        "@score_cpp_policies//sanitizers:suppressions",
+    ],
+    mode = "0444",
+    package_dir = "sanitizers/suppressions",
+    visibility = ["//visibility:public"],
 )
