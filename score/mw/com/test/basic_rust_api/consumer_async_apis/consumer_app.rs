@@ -34,7 +34,6 @@ use std::path::Path;
 const CONFIG_PATH: &str = "etc/config.json";
 const MAX_SAMPLES_PER_CALL: usize = 5;
 
-
 #[derive(Parser)]
 struct Args {
     /// Number of samples to receive before exiting

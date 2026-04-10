@@ -37,7 +37,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
                          const DataTypeMetaInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
 
-    Result<score::Blank> Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
+    ResultBlank Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
 
     Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate() noexcept override;
 

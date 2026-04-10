@@ -138,6 +138,18 @@ bool mw_com_proxy_event_subscribe(ProxyEventBase* event_ptr, uint32_t max_sample
     return true;
 }
 
+/// \brief Unsubscribe from a proxy event to release sample buffers
+/// \details Must be called only after no `SamplePtr` instances are held on the Rust side
+/// \param event_ptr Opaque event pointer (ProxyEventBase*)
+void mw_com_proxy_event_unsubscribe(ProxyEventBase* event_ptr)
+{
+    if (event_ptr == nullptr)
+    {
+        return;
+    }
+    event_ptr->Unsubscribe();
+}
+
 /// \brief Create proxy instance dynamically
 /// \details Creates a proxy for the given interface UID using the provided handle.
 /// \param interface_id UTF-8 string view of interface UID (e.g., "mw_com_IpcBridge")

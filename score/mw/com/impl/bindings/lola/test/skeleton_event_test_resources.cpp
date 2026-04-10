@@ -29,7 +29,6 @@ using ::testing::ReturnRef;
 
 SkeletonEventFixture::SkeletonEventFixture() : SkeletonMockedMemoryFixture{}
 {
-    ON_CALL(lola_runtime_mock_, GetLolaMessaging).WillByDefault(ReturnRef(message_passing_service_mock_));
     ON_CALL(runtime_mock_, GetServiceDiscovery()).WillByDefault(ReturnRef(service_discovery_mock_));
 
     InitialiseSkeleton(GetValidInstanceIdentifier());

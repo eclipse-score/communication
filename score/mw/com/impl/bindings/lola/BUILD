@@ -271,6 +271,7 @@ cc_library(
         "skeleton_event.cpp",
         "skeleton_event_common.cpp",
         "skeleton_event_properties.cpp",
+        "skeleton_memory_manager.cpp",
         "skeleton_method.cpp",
     ],
     hdrs = [
@@ -278,6 +279,7 @@ cc_library(
         "skeleton_event.h",
         "skeleton_event_common.h",
         "skeleton_event_properties.h",
+        "skeleton_memory_manager.h",
         "skeleton_method.h",
     ],
     features = COMPILER_WARNING_FEATURES,
