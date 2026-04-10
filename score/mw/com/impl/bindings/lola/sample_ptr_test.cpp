@@ -51,6 +51,19 @@ class SamplePtrTest : public ::testing::Test
         event_data_control_.EventReady(slot, timestamp);
         return slot.GetIndex();
     }
+
+    SamplePtr<std::uint8_t> CreateSamplePtr(const EventSlotStatus::EventTimeStamp timestamp,
+                                            const std::size_t slot_index)
+    {
+        AllocateSlot(timestamp);
+        auto slot_indicator = event_data_control_.ReferenceNextEvent(slot_index, transaction_log_index_);
+        EXPECT_TRUE(slot_indicator.IsValid());
+
+        dummy_storage_.push_back(std::make_unique<std::uint8_t>(0U));
+        return SamplePtr<std::uint8_t>{
+            dummy_storage_.back().get(), event_data_control_, slot_indicator, transaction_log_index_};
+    }
+    std::vector<std::unique_ptr<std::uint8_t>> dummy_storage_;
 };
 
 /// \brief Templated test fixture for SamplePtr functionality that works for both void and non-void types
@@ -183,5 +196,148 @@ TEST_F(SamplePtrTest, StarOp)
     EXPECT_EQ(val1.member2_, 44);
 }
 
+TEST_F(SamplePtrTest, GreaterThanReturnsTrueWhenLeftSampleHasNewerTimestamp)
+{
+    constexpr EventSlotStatus::EventTimeStamp kOlderTimestamp{10U};
+    constexpr EventSlotStatus::EventTimeStamp kNewerTimestamp{42U};
+
+    auto older_sample = CreateSamplePtr(kOlderTimestamp, 0U);
+    auto newer_sample = CreateSamplePtr(kNewerTimestamp, 1U);
+
+    const bool result = newer_sample > older_sample;
+
+    EXPECT_TRUE(result);
+}
+
+TEST_F(SamplePtrTest, GreaterThanReturnsFalseWhenLeftSampleHasOlderTimestamp)
+{
+    constexpr EventSlotStatus::EventTimeStamp kOlderTimestamp{10U};
+    constexpr EventSlotStatus::EventTimeStamp kNewerTimestamp{42U};
+
+    auto older_sample = CreateSamplePtr(kOlderTimestamp, 0U);
+    auto newer_sample = CreateSamplePtr(kNewerTimestamp, 1U);
+
+    const bool result = older_sample > newer_sample;
+
+    EXPECT_FALSE(result);
+}
+
+TEST_F(SamplePtrTest, SortByTimestampOrdersSamplesFromNewestToOldest)
+{
+    constexpr EventSlotStatus::EventTimeStamp kOldestTimestamp{10U};
+    constexpr EventSlotStatus::EventTimeStamp kMiddleTimestamp{42U};
+    constexpr EventSlotStatus::EventTimeStamp kNewestTimestamp{43U};
+
+    std::vector<SamplePtr<std::uint8_t>> samples{};
+    samples.emplace_back(CreateSamplePtr(kOldestTimestamp, 0U));
+    samples.emplace_back(CreateSamplePtr(kMiddleTimestamp, 1U));
+    samples.emplace_back(CreateSamplePtr(kNewestTimestamp, 2U));
+
+    std::sort(samples.begin(), samples.end(), [](const auto& lhs, const auto& rhs) {
+        return lhs > rhs;
+    });
+
+    EXPECT_TRUE(samples[0] > samples[1]);
+    EXPECT_TRUE(samples[0] > samples[2]);
+    EXPECT_TRUE(samples[1] > samples[2]);
+    EXPECT_FALSE(samples[2] > samples[0]);
+    EXPECT_FALSE(samples[2] > samples[1]);
+}
+
+TEST_F(SamplePtrTest, LessThanReturnsTrueWhenLeftSampleHasOlderTimestamp)
+{
+    constexpr EventSlotStatus::EventTimeStamp kOlderTimestamp{10U};
+    constexpr EventSlotStatus::EventTimeStamp kNewerTimestamp{42U};
+
+    auto older_sample = CreateSamplePtr(kOlderTimestamp, 0U);
+    auto newer_sample = CreateSamplePtr(kNewerTimestamp, 1U);
+
+    const bool result = older_sample < newer_sample;
+
+    EXPECT_TRUE(result);
+}
+
+TEST_F(SamplePtrTest, LessThanReturnsFalseWhenLeftSampleHasNewerTimestamp)
+{
+    constexpr EventSlotStatus::EventTimeStamp kOlderTimestamp{10U};
+    constexpr EventSlotStatus::EventTimeStamp kNewerTimestamp{42U};
+
+    auto older_sample = CreateSamplePtr(kOlderTimestamp, 0U);
+    auto newer_sample = CreateSamplePtr(kNewerTimestamp, 1U);
+
+    const bool result = newer_sample < older_sample;
+
+    EXPECT_FALSE(result);
+}
+
+TEST_F(SamplePtrTest, SortByTimestampOrdersSamplesFromOldestToNewest)
+{
+    constexpr EventSlotStatus::EventTimeStamp kOldestTimestamp{10U};
+    constexpr EventSlotStatus::EventTimeStamp kMiddleTimestamp{42U};
+    constexpr EventSlotStatus::EventTimeStamp kNewestTimestamp{43U};
+
+    std::vector<SamplePtr<std::uint8_t>> samples{};
+    samples.emplace_back(CreateSamplePtr(kOldestTimestamp, 0U));
+    samples.emplace_back(CreateSamplePtr(kMiddleTimestamp, 1U));
+    samples.emplace_back(CreateSamplePtr(kNewestTimestamp, 2U));
+
+    std::sort(samples.begin(), samples.end(), [](const auto& lhs, const auto& rhs) {
+        return lhs < rhs;
+    });
+
+    EXPECT_TRUE(samples[0] < samples[1]);
+    EXPECT_TRUE(samples[0] < samples[2]);
+    EXPECT_TRUE(samples[1] < samples[2]);
+    EXPECT_FALSE(samples[2] < samples[0]);
+    EXPECT_FALSE(samples[2] < samples[1]);
+}
+
+TEST_F(SamplePtrTest, GreaterThanReturnsFalseWhenLeftSampleIsInvalid)
+{
+    constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
+
+    SamplePtr<std::uint8_t> invalid_sample{};
+    auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
+
+    const bool result = invalid_sample > valid_sample;
+
+    EXPECT_FALSE(result);
+}
+
+TEST_F(SamplePtrTest, GreaterThanReturnsFalseWhenRightSampleIsInvalid)
+{
+    constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
+
+    auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
+    SamplePtr<std::uint8_t> invalid_sample{};
+
+    const bool result = valid_sample > invalid_sample;
+
+    EXPECT_FALSE(result);
+}
+
+TEST_F(SamplePtrTest, LessThanReturnsFalseWhenLeftSampleIsInvalid)
+{
+    constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
+
+    SamplePtr<std::uint8_t> invalid_sample{};
+    auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
+
+    const bool result = invalid_sample < valid_sample;
+
+    EXPECT_FALSE(result);
+}
+
+TEST_F(SamplePtrTest, LessThanReturnsFalseWhenRightSampleIsInvalid)
+{
+    constexpr EventSlotStatus::EventTimeStamp kTimestamp{42U};
+
+    auto valid_sample = CreateSamplePtr(kTimestamp, 0U);
+    SamplePtr<std::uint8_t> invalid_sample{};
+
+    const bool result = valid_sample < invalid_sample;
+
+    EXPECT_FALSE(result);
+}
 }  // namespace
 }  // namespace score::mw::com::impl::lola

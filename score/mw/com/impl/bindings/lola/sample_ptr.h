@@ -51,6 +51,7 @@ class SamplePtr final
               TransactionLogSet::TransactionLogIndex transaction_log_idx) noexcept
         : SamplePtr{ptr, std::make_optional<SlotDecrementer>(&event_data_ctrl, slot_indicator, transaction_log_idx)}
     {
+        timestamp_ = (event_data_ctrl)[slot_indicator.GetIndex()].GetTimeStamp();
     }
 
     ~SamplePtr() noexcept = default;
@@ -103,6 +104,31 @@ class SamplePtr final
         return managed_object_;
     }
 
+    /// \brief Compares two SamplePtr instances based on their timestamp
+    /// \param other SamplePtr to compare against
+    /// \return true if this instance is older than \p other, false otherwise or if any of the SamplePtr are invalid
+    bool operator<(const SamplePtr& other) const noexcept
+    {
+        if (!(*this) || !other)
+        {
+            return false;
+        }
+
+        return timestamp_ < other.timestamp_;
+    }
+
+    /// \brief Compares two SamplePtr instances based on their timestamp
+    /// \param other SamplePtr to compare against
+    /// \return true if this instance is newer than \p other, false otherwise or if any of the SamplePtr are invalid
+    bool operator>(const SamplePtr& other) const noexcept
+    {
+        if (!(*this) || !other)
+        {
+            return false;
+        }
+        return timestamp_ > other.timestamp_;
+    }
+
   private:
     explicit SamplePtr(pointer managed_object, std::optional<SlotDecrementer>&& slog_decrementer) noexcept
         : managed_object_{managed_object}, slot_decrementer_{std::move(slog_decrementer)}
@@ -111,6 +137,7 @@ class SamplePtr final
 
     pointer managed_object_;
     std::optional<SlotDecrementer> slot_decrementer_;
+    EventSlotStatus::EventTimeStamp timestamp_;
 };
 
 }  // namespace score::mw::com::impl::lola
