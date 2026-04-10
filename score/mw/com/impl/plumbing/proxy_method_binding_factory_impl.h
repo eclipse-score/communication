@@ -71,7 +71,8 @@ class ProxyMethodBindingFactoryImpl<ReturnType(ArgTypes...)> : public IProxyMeth
 
 template <typename ReturnType, typename... ArgTypes>
 lola::TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo(HandleType parent_handle,
-                                                                          const std::string& method_name_str)
+                                                                          const std::string& method_name_str,
+                                                                          MethodType method_type)
 {
     std::optional<memory::DataTypeSizeInfo> in_arg_type_info{std::nullopt};
     std::optional<memory::DataTypeSizeInfo> return_type_info{std::nullopt};
@@ -84,7 +85,11 @@ lola::TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo(Handle
         in_arg_type_info = CreateDataTypeSizeInfoFromTypes<ArgTypes...>();
     }
 
-    auto queue_size = GetQueueSize(parent_handle, method_name_str);
+    // TODO : Field Get/Set methods use a fixed queue size of 1 for now, once it has been fully implemented, this should
+    // be configurable.
+    LolaMethodInstanceDeployment::QueueSize queue_size =
+        (method_type == MethodType::kMethod) ? GetQueueSize(parent_handle, method_name_str) : 1U;
+
     return lola::TypeErasedCallQueue::TypeErasedElementInfo{in_arg_type_info, return_type_info, queue_size};
 }
 
@@ -102,10 +107,10 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
     auto lola_deployment_handler = [&parent_handle, parent_binding, &method_name_str, method_type](
                                        const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
         auto* const lola_parent = dynamic_cast<lola::Proxy*>(parent_binding);
-        if (parent_binding == nullptr)
+        if (lola_parent == nullptr)
         {
             score::mw::log::LogError("lola") << "Proxy Method could not be created because parent proxy "
-                                                "binding is a nullptr.";
+                                                "binding is not a lola binding.";
             return nullptr;
         }
 
@@ -114,12 +119,20 @@ std::unique_ptr<ProxyMethodBinding> ProxyMethodBindingFactoryImpl<ReturnType(Arg
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
                                                     "ServiceInstanceId does not contain lola binding.");
 
-        constexpr auto element_type{ServiceElementType::METHOD};
-
-        const auto lola_service_element_id = GetServiceElementId<element_type>(lola_type_deployment, method_name_str);
+        LolaMethodOrFieldId lola_service_element_id{};
+        if (method_type == MethodType::kGet || method_type == MethodType::kSet)
+        {
+            lola_service_element_id =
+                GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, method_name_str);
+        }
+        else
+        {
+            lola_service_element_id =
+                GetServiceElementId<ServiceElementType::METHOD>(lola_type_deployment, method_name_str);
+        }
 
         lola::TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info =
-            GetTypeErasedElementInfo<ReturnType, ArgTypes...>(parent_handle, method_name_str);
+            GetTypeErasedElementInfo<ReturnType, ArgTypes...>(parent_handle, method_name_str, method_type);
 
         lola::ProxyMethodInstanceIdentifier proxy_method_instance_identifier{lola_parent->GetProxyInstanceIdentifier(),
                                                                              {lola_service_element_id, method_type}};

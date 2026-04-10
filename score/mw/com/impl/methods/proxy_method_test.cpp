@@ -19,6 +19,8 @@
 #include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
+#include "score/mw/com/impl/method_identifier.h"
+#include "score/mw/com/impl/method_type.h"
 
 #include "score/memory/shared/pointer_arithmetic_util.h"
 #include "score/result/result.h"
@@ -85,7 +87,8 @@ class ProxyMethodTestFixture : public ::testing::Test
     auto GetMethodReferenceFromParent()
     {
         auto methods = this->proxy_base_.GetMethods();
-        auto moved_method = methods.find(kMethodName);
+        auto moved_method =
+            methods.find(UniqueMethodIdentifier{kMethodName, score::mw::com::impl::MethodType::kMethod});
 
         EXPECT_NE(moved_method, methods.end());
         return &moved_method->second.get();

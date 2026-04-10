@@ -85,8 +85,9 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name),
+                std::string_view method_name,
+                MethodType method_type = MethodType::kMethod) noexcept
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, method_type),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
@@ -95,7 +96,7 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
             proxy_base_view.MarkServiceElementBindingInvalid();
             return;
         }
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
     }
 
     ~ProxyMethod() final = default;
@@ -152,7 +153,7 @@ ProxyMethod<void(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
 {
     // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
+    proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
 }
 
 template <typename... ArgTypes>
@@ -165,7 +166,7 @@ auto ProxyMethod<void(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept -> 
 
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
+        proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
     }
     return *this;
 }

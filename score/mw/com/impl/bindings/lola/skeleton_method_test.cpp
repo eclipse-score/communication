@@ -344,8 +344,8 @@ using SkeletonMethodUnregisterHandlersFixture = SkeletonMethodFixture;
 TEST_F(SkeletonMethodUnregisterHandlersFixture, CallingWillUnregisterAllHandlersRegisteredOnSubscribe)
 {
     const ProxyInstanceIdentifier proxy_instance_identifier_2{kDummyProxyInstanceCounter + 1, kDummyApplicationId + 1};
-    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2{
-        proxy_instance_identifier_2, {unique_method_identifier_.method_or_field_id}};
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2{proxy_instance_identifier_2,
+                                                                           unique_method_identifier_};
     GivenASkeletonMethod().WithARegisteredCallback();
 
     // Expecting that RegisterMethodCallHandler will be called on message passing for each call to
@@ -391,8 +391,8 @@ TEST_F(SkeletonMethodOnProxyMethodUnsubscribedFixture, CallingWillUnregisterHand
 {
     const ProxyInstanceIdentifier proxy_instance_identifier_2{kDummyProxyInstanceCounter + 1U,
                                                               kDummyApplicationId + 1U};
-    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2{
-        proxy_instance_identifier_2, {unique_method_identifier_.method_or_field_id}};
+    const ProxyMethodInstanceIdentifier proxy_method_instance_identifier_2{proxy_instance_identifier_2,
+                                                                           unique_method_identifier_};
     GivenASkeletonMethod().WithARegisteredCallback();
 
     // Expecting that RegisterMethodCallHandler will be called on message passing for each call to

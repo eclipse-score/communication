@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
+#include "score/mw/com/impl/method_identifier.h"
 #include "score/mw/com/impl/proxy_binding.h"
 
 #include "score/result/result.h"
@@ -119,7 +120,7 @@ class ProxyBase
   protected:
     using ProxyEvents = std::map<std::string_view, std::reference_wrapper<ProxyEventBase>>;
     using ProxyFields = std::map<std::string_view, std::reference_wrapper<ProxyFieldBase>>;
-    using ProxyMethods = std::map<std::string_view, std::reference_wrapper<ProxyMethodBase>>;
+    using ProxyMethods = std::map<UniqueMethodIdentifier, std::reference_wrapper<ProxyMethodBase>>;
 
     /// \brief A Proxy shall not be copyable
     /// \requirement SWS_CM_00136
@@ -179,13 +180,13 @@ class ProxyBaseView final
 
     void RegisterField(const std::string_view field_name, ProxyFieldBase& field);
 
-    void RegisterMethod(const std::string_view method_name, ProxyMethodBase& method);
+    void RegisterMethod(UniqueMethodIdentifier method_id, ProxyMethodBase& method);
 
     void UpdateEvent(const std::string_view event_name, ProxyEventBase& event);
 
     void UpdateField(const std::string_view field_name, ProxyFieldBase& field);
 
-    void UpdateMethod(const std::string_view method_name, ProxyMethodBase& method);
+    void UpdateMethod(UniqueMethodIdentifier method_id, ProxyMethodBase& method);
 
     bool AreBindingsValid() const;
 

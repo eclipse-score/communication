@@ -105,10 +105,10 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name)
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -147,7 +147,7 @@ ProxyMethod<ReturnType()>::ProxyMethod(ProxyMethod&& other) noexcept : ProxyMeth
 {
     // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(method_name_, *this);
+    proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
 }
 
 template <typename ReturnType>
@@ -159,7 +159,7 @@ auto ProxyMethod<ReturnType()>::operator=(ProxyMethod&& other) noexcept -> Proxy
 
         // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(method_name_, *this);
+        proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
     }
     return *this;
 }

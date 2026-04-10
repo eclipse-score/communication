@@ -24,7 +24,7 @@ bool operator==(const ProxyMethodInstanceIdentifier& lhs, const ProxyMethodInsta
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyMethodInstanceIdentifier& value) noexcept
 {
     stream << "ProxyInstanceIdentifier:" << value.proxy_instance_identifier
-           << ".UniqueMethodIdentifier:" << value.unique_method_identifier;
+           << ". UniqueMethodIdentifier:" << value.unique_method_identifier;
     return stream;
 }
 

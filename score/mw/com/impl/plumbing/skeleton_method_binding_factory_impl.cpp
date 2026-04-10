@@ -15,6 +15,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/service_element_type.h"
 
 namespace score::mw::com::impl
 {
@@ -48,11 +49,19 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
                                                     "ServiceInstanceId does not contain lola binding.");
 
-        constexpr auto element_type{ServiceElementType::METHOD};
+        LolaMethodOrFieldId lola_element_id{};
+        if (method_type == MethodType::kGet || method_type == MethodType::kSet)
+        {
+            lola_element_id =
+                GetServiceElementId<ServiceElementType::FIELD>(lola_type_deployment, std::string{method_name});
+        }
+        else
+        {
+            lola_element_id =
+                GetServiceElementId<ServiceElementType::METHOD>(lola_type_deployment, std::string{method_name});
+        }
 
-        const auto lola_method_id = GetServiceElementId<element_type>(lola_type_deployment, std::string{method_name});
-
-        lola::UniqueMethodIdentifier unique_method_identifier{lola_method_id, method_type};
+        lola::UniqueMethodIdentifier unique_method_identifier{lola_element_id, method_type};
         return std::make_unique<lola::SkeletonMethod>(*lola_parent, unique_method_identifier);
     };
 

@@ -631,11 +631,11 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
     {
         const auto field_id = GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
 
-        if (kUseGetIfAvailable)
+        if (kUseGetIfAvailable && proxy_methods_.count({field_id, MethodType::kGet}) != 0U)
         {
             enabled_method_data.push_back({{field_id, MethodType::kGet}, kFieldMethodQueueSize});
         }
-        if (kUseSetIfAvailable)
+        if (kUseSetIfAvailable && proxy_methods_.count({field_id, MethodType::kSet}) != 0U)
         {
             enabled_method_data.push_back({{field_id, MethodType::kSet}, kFieldMethodQueueSize});
         }

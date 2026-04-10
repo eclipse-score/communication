@@ -50,10 +50,11 @@ class ProxyMethod<void()> final : public ProxyMethodBase
                                                                     ProxyBaseView{proxy_base}.GetBinding(),
                                                                     method_name,
                                                                     MethodType::kMethod),
-                          method_name)
+                          method_name,
+                          MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -64,10 +65,10 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name)
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
-        proxy_base_view.RegisterMethod(method_name_, *this);
+        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
