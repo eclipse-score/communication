@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -33,7 +34,7 @@ const std::string kEventName{"my_event_name"};
 const std::string kFieldName{"my_field_name"};
 const auto kInstanceSpecifiersv = "abc/abc/TirePressurePort"sv;
 const ITracingFilterConfig::InstanceSpecifierView kInstanceSpecifierView{"my_instance_specifier"};
-const score::cpp::optional<ITracingFilterConfig::InstanceSpecifierView> kEnableAllInstanceSpecifiers{};
+const std::optional<ITracingFilterConfig::InstanceSpecifierView> kEnableAllInstanceSpecifiers{};
 constexpr auto kDummyTracePointType = SkeletonEventTracePointType::SEND;
 
 // Trace point type constants
@@ -705,7 +706,7 @@ class ConfigurationFixture : public ::testing::Test
         PrepareMinimalConfiguration(valid_instance_specifier, service_type_, events, fields);
     }
 
-    score::cpp::optional<Configuration> configuration_{};
+    std::optional<Configuration> configuration_{};
     TracingFilterConfig tracing_filter_config_{};
     const std::string_view service_type_ = "/score/ncar/services/TirePressureService";
     const std::string event_name_ = "CurrentPressureFrontLeft";

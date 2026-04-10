@@ -226,7 +226,7 @@ void TracingRuntime::CacheFileDescriptorForReregisteringShmObject(
     }
 }
 
-score::cpp::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>
+std::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>
 TracingRuntime::GetCachedFileDescriptorForReregisteringShmObject(
     const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view) const noexcept
 {
@@ -290,12 +290,12 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     if (service_element_type == impl::ServiceElementType::EVENT)
     {
         const auto lola_event_id = lola_service_type_deployment->events_.at(std::string{service_element_name});
-        output_service_instance_element.element_id = static_cast<ServiceInstanceElement::EventIdType>(lola_event_id);
+        output_service_instance_element.element_id = ServiceInstanceElement::EventIdType{lola_event_id};
     }
     else if (service_element_type == impl::ServiceElementType::FIELD)
     {
         const auto lola_field_id = lola_service_type_deployment->fields_.at(std::string{service_element_name});
-        output_service_instance_element.element_id = static_cast<ServiceInstanceElement::FieldIdType>(lola_field_id);
+        output_service_instance_element.element_id = ServiceInstanceElement::FieldIdType{lola_field_id};
     }
     else
     {
@@ -322,7 +322,7 @@ analysis::tracing::ServiceInstanceElement TracingRuntime::ConvertToTracingServic
     return output_service_instance_element;
 }
 
-score::cpp::optional<analysis::tracing::ShmObjectHandle> TracingRuntime::GetShmObjectHandle(
+std::optional<analysis::tracing::ShmObjectHandle> TracingRuntime::GetShmObjectHandle(
     const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view) const noexcept
 {
     impl::tracing::ServiceElementInstanceIdentifierView lolaBindingSpecificIdentifier =
@@ -336,7 +336,7 @@ score::cpp::optional<analysis::tracing::ShmObjectHandle> TracingRuntime::GetShmO
     return find_result->second.first;
 }
 
-score::cpp::optional<void*> TracingRuntime::GetShmRegionStartAddress(
+std::optional<void*> TracingRuntime::GetShmRegionStartAddress(
     const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view) const noexcept
 {
     impl::tracing::ServiceElementInstanceIdentifierView simplifiedIdentifier =
