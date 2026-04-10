@@ -57,7 +57,7 @@ class SamplePtrTest : public ::testing::Test
         return slot.value();
     }
 
-     SamplePtr<std::uint8_t> CreateSamplePtr(const EventSlotStatus::EventTimeStamp timestamp,
+    SamplePtr<std::uint8_t> CreateSamplePtr(const EventSlotStatus::EventTimeStamp timestamp,
                                             const std::size_t slot_index)
     {
         AllocateSlot(timestamp);
