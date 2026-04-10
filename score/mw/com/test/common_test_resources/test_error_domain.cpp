@@ -21,6 +21,8 @@ std::string_view score::mw::com::test::TestErrorDomain::MessageFor(const score::
             return "Failed to create instance specifier.";
         case score::mw::com::test::TestErrorCode::kCreateSkeletonFailed:
             return "Failed to create skeleton.";
+        case score::mw::com::test::TestErrorCode::kParsingCommandLineArgumentFailed:
+            return "Failed to parse command line argument.";
         default:
             return "Unknown Error!";
     }

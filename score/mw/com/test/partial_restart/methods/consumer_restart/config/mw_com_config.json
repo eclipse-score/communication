@@ -1,0 +1,49 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/methods/partial_restart/consumer_method_reenable/TestMethods",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 4002,
+          "methods": [
+            {
+              "methodName": "test_method",
+              "methodId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "partial_restart/methods/consumer_method_reenable",
+      "serviceTypeName": "/test/methods/partial_restart/consumer_method_reenable/TestMethods",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4002,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "methods": [
+            {
+              "methodName": "test_method",
+              "queueSize": 1
+            }
+          ],
+          "allowedConsumer": { "QM": [0], "B": [0] },
+          "allowedProvider": { "QM": [0], "B": [0] }
+        }
+      ]
+    }
+  ],
+  "global": { "asil-level": "QM" }
+}
