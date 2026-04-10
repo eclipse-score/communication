@@ -184,19 +184,71 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
     EXPECT_TRUE(allocation.IsValidQmAndAsilB());
 }
 
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsLatestReadySlotForQmOnly)
 {
-    // Given an EventDataControlComposite with 1 allocated slots that are set to ready
+    // Given an EventDataControlComposite with QM-only control and two ready slots
+    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+
+    auto first_slot = unit_->AllocateNextSlot();
+    auto second_slot = unit_->AllocateNextSlot();
+    unit_->EventReady(first_slot, 2U);
+    unit_->EventReady(second_slot, 3U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then the slot with the highest timestamp is returned
+    ASSERT_TRUE(latest_slot.IsValidQM());
+    EXPECT_EQ(latest_slot.GetIndex(), second_slot.GetIndex());
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotIncrementsReferenceCountForQmOnly)
+{
+    // Given an EventDataControlComposite with QM-only control and one ready slot
+    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+
+    auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot, 2U);
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then the slot is referenced once
+    ASSERT_TRUE(latest_slot.IsValidQM());
+    const EventSlotStatus slot_status{latest_slot.GetSlotQM().load(std::memory_order_acquire)};
+    EXPECT_EQ(slot_status.GetReferenceCount(), 1U);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotIncrementsReferenceCountForQmAndAsilB)
+{
+    // Given an EventDataControlComposite with QM and ASIL-B controls and one ready slot
     WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-    auto slot_indicator = unit_->AllocateNextSlot();
-    const EventSlotStatus::EventTimeStamp time_stamp{2};
-    unit_->EventReady(slot_indicator, time_stamp);
 
-    // When acquiring the latest timestamp
-    const auto time_stamp_obtained = unit_->GetLatestTimestamp();
+    auto slot = unit_->AllocateNextSlot();
+    unit_->EventReady(slot, 2U);
 
-    // Then the timestamp is equal to 2
-    EXPECT_EQ(time_stamp_obtained, time_stamp);
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then both control parts are referenced once
+    ASSERT_TRUE(latest_slot.IsValidQmAndAsilB());
+    const EventSlotStatus qm_slot_status{latest_slot.GetSlotQM().load(std::memory_order_acquire)};
+    const EventSlotStatus asil_b_slot_status{latest_slot.GetSlotAsilB().load(std::memory_order_acquire)};
+    EXPECT_EQ(qm_slot_status.GetReferenceCount(), 1U);
+    EXPECT_EQ(asil_b_slot_status.GetReferenceCount(), 1U);
+}
+
+TEST_F(EventDataControlCompositeFixture, GetLatestSlotReturnsInvalidIndicatorIfNoReadableSlotExists)
+{
+    // Given an EventDataControlComposite with no ready slot
+    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+
+    // When acquiring the latest slot
+    const auto latest_slot = unit_->GetLatestSlot();
+
+    // Then no valid slot is returned
+    EXPECT_FALSE(latest_slot.IsValidQM());
+    EXPECT_FALSE(latest_slot.IsValidAsilB());
 }
 
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
@@ -211,73 +263,6 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
     const auto allocation_slot_2 = unit_->AllocateNextSlot();
     const SlotIndexType slot_2_index{1};
     ASSERT_EQ(allocation_slot_2.GetIndex(), slot_2_index);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfOneSlotIsMarkedAsInvalid)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // When allocating 2 slots
-    auto slot_indicator_1 = unit_->AllocateNextSlot();
-    auto slot_indicator_2 = unit_->AllocateNextSlot();
-
-    // and set slot 1 to ready
-    EventSlotStatus::EventTimeStamp time_stamp{2};
-    unit_->EventReady(slot_indicator_1, time_stamp);
-
-    // and discarding slot 2
-    unit_->Discard(slot_indicator_2);
-
-    // Then the timestamp is equal to 2
-    time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{2};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfAllSlotAreInvalid)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // When allocating 2 slots
-    auto slot_indicator_1 = unit_->AllocateNextSlot();
-    auto slot_indicator_2 = unit_->AllocateNextSlot();
-
-    // and discarding them
-    unit_->Discard(slot_indicator_1);
-    unit_->Discard(slot_indicator_2);
-
-    // Then the timestamp equal to 1
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{1};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfNoSlotHaveBeenAllocated)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // Then the timestamp equal to 1
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{1};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
-}
-
-TEST_F(EventDataControlCompositeFixture,
-       GetLatestTimeStampReturnsDefaultValuesIfASlotHasBeenAllocatedButNotMarkedAsReady)
-{
-    // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
-
-    // When allocating 1 slot
-    score::cpp::ignore = unit_->AllocateNextSlot();
-
-    // Then the timestamp equal to 1
-    auto time_stamp = unit_->GetLatestTimestamp();
-    EventSlotStatus::EventTimeStamp expected_time_stamp{1};
-    EXPECT_EQ(time_stamp, expected_time_stamp);
 }
 
 TEST_F(EventDataControlCompositeFixture, FailingToLockQmMultiSlotAllocatesOnlyAsilBSlot)

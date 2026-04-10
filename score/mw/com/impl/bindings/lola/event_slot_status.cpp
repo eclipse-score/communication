@@ -16,9 +16,6 @@ namespace score::mw::com::impl::lola
 {
 namespace
 {
-/// \brief Indicates that the event was never written.
-constexpr EventSlotStatus::value_type INVALID_EVENT = 0U;
-
 /// \brief Indicates that the event data is altered and one should not increase the refcount.
 constexpr EventSlotStatus::value_type IN_WRITING = std::numeric_limits<EventSlotStatus::SubscriberCount>::max();
 }  // namespace
@@ -43,7 +40,7 @@ auto EventSlotStatus::GetTimeStamp() const noexcept -> EventTimeStamp
 
 auto EventSlotStatus::IsInvalid() const noexcept -> bool
 {
-    return data_ == INVALID_EVENT;
+    return data_ == static_cast<value_type>(InvalidTimestamp);
 }
 
 auto EventSlotStatus::IsInWriting() const noexcept -> bool
@@ -58,7 +55,7 @@ auto EventSlotStatus::MarkInWriting() noexcept -> void
 
 auto EventSlotStatus::MarkInvalid() noexcept -> void
 {
-    data_ = INVALID_EVENT;
+    data_ = static_cast<value_type>(InvalidTimestamp);
 }
 
 auto EventSlotStatus::SetTimeStamp(const EventTimeStamp time_stamp) noexcept -> void
