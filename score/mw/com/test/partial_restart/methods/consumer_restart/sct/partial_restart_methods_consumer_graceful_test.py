@@ -10,16 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+import sctf
+from partial_restart_methods_consumer_test_fixture import MethodsConsumerRestart
 
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/methods/basic_acceptance_test:component_tests",
-        "//score/mw/com/test/methods/edge_cases_test:component_tests",
-        "//score/mw/com/test/methods/mixed_criticality:component_tests",
-        "//score/mw/com/test/methods/multiple_proxies:component_tests",
-        "//score/mw/com/test/methods/signature_variations:component_tests",
-        "//score/mw/com/test/methods/stop_offer_during_call:component_tests",
-    ],
-    visibility = ["//score/mw/com/test:__pkg__"],
-)
+# Test configuration
+NUMBER_RESTART_CYCLES = 10
+KILL_CONSUMER = 0
+
+
+def test_partial_restart_methods_consumer_graceful(basic_sandbox):
+    """Test that a consumer can gracefully restart and continue calling methods on a provider."""
+    with MethodsConsumerRestart(basic_sandbox, NUMBER_RESTART_CYCLES, KILL_CONSUMER):
+        pass
+
+
+if __name__ == "__main__":
+    sctf.run(__file__)

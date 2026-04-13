@@ -11,15 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/methods/basic_acceptance_test:component_tests",
-        "//score/mw/com/test/methods/edge_cases_test:component_tests",
-        "//score/mw/com/test/methods/mixed_criticality:component_tests",
-        "//score/mw/com/test/methods/multiple_proxies:component_tests",
-        "//score/mw/com/test/methods/signature_variations:component_tests",
-        "//score/mw/com/test/methods/stop_offer_during_call:component_tests",
-    ],
-    visibility = ["//score/mw/com/test:__pkg__"],
-)
+def test_multiple_proxies(sut):
+    with sut.start_process("./bin/stop_offer_during_call",
+                           cwd="/opt/StopOfferDuringCallApp/") as process:
+        assert process.wait_for_exit() == 0

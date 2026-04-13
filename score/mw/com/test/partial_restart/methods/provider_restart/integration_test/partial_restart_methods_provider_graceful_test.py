@@ -11,15 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/methods/basic_acceptance_test:component_tests",
-        "//score/mw/com/test/methods/edge_cases_test:component_tests",
-        "//score/mw/com/test/methods/mixed_criticality:component_tests",
-        "//score/mw/com/test/methods/multiple_proxies:component_tests",
-        "//score/mw/com/test/methods/signature_variations:component_tests",
-        "//score/mw/com/test/methods/stop_offer_during_call:component_tests",
-    ],
-    visibility = ["//score/mw/com/test:__pkg__"],
-)
+from partial_restart_methods_provider_test_fixture import provider_restart
+
+NUMBER_RESTART_CYCLES = 10
+WITH_PROXY = 1
+KILL_PROVIDER = 0
+
+
+def test_partial_restart_methods_provider_graceful_no_proxy(sut):
+    """Test that methods work after provider graceful restart with proxy connected."""
+    provider_restart(sut, NUMBER_RESTART_CYCLES, WITH_PROXY, KILL_PROVIDER)

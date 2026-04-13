@@ -10,16 +10,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+from enum import Enum
 
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/methods/basic_acceptance_test:component_tests",
-        "//score/mw/com/test/methods/edge_cases_test:component_tests",
-        "//score/mw/com/test/methods/mixed_criticality:component_tests",
-        "//score/mw/com/test/methods/multiple_proxies:component_tests",
-        "//score/mw/com/test/methods/signature_variations:component_tests",
-        "//score/mw/com/test/methods/stop_offer_during_call:component_tests",
-    ],
-    visibility = ["//score/mw/com/test:__pkg__"],
-)
+
+class TestType(Enum):
+    DISABLED_METHOD = "disabled_method_test"
+    INCOMPLETE_HANDLERS = "incomplete_handlers_test"
+    PROXY_RECREATION = "proxy_recreation_test"
+    SKELETON_RECREATION = "skeleton_recreation_test"
+
+
+def edge_cases_test(sut, test_type: TestType, timeout_sec=60):
+    with sut.start_process(f"bin/edge_cases_test --test {test_type.value}",
+                           cwd="/opt/EdgeCasesTestApp") as provider:
+        assert provider.wait_for_exit(timeout_sec) == 0

@@ -11,15 +11,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-test_suite(
-    name = "component_tests",
-    tests = [
-        "//score/mw/com/test/methods/basic_acceptance_test:component_tests",
-        "//score/mw/com/test/methods/edge_cases_test:component_tests",
-        "//score/mw/com/test/methods/mixed_criticality:component_tests",
-        "//score/mw/com/test/methods/multiple_proxies:component_tests",
-        "//score/mw/com/test/methods/signature_variations:component_tests",
-        "//score/mw/com/test/methods/stop_offer_during_call:component_tests",
-    ],
-    visibility = ["//score/mw/com/test:__pkg__"],
-)
+def provider_restart(sut, number_restart_cycles, with_proxy, kill_provider):
+    args = [
+        "--kill",
+        f"{kill_provider}",
+        "--turns",
+        f"{number_restart_cycles}",
+        "--with-proxy",
+        f"{with_proxy}",
+        "--service_instance_manifest",
+        "etc/mw_com_config.json",
+    ]
+    with sut.start_process(
+        f"./bin/provider_restart_application {' '.join(args)}",
+        cwd="/opt/provider_restart_methods",
+    ) as process:
+        assert process.wait_for_exit() == 0
