@@ -1054,7 +1054,8 @@ cc_test(
         "proxy_event_data_control_local_view_test.cpp",
     ],
     features = COMPILER_WARNING_FEATURES + [
-        "aborts_upon_exception",
+        # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
+        "-aborts_upon_exception",
     ],
     tags = ["unit"],
     deps = [
@@ -1063,6 +1064,7 @@ cc_test(
         "//score/mw/com/impl/bindings/lola:event_data_control",
         "//score/mw/com/impl/bindings/lola/test_doubles:fake_memory_resource",
         "@googletest//:gtest_main",
+        "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/memory/shared:atomic_indirector_mock_binding",
     ],

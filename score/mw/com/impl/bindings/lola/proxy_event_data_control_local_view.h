@@ -100,7 +100,7 @@ class ProxyEventDataControlLocalView final
     ///          then it is safe.
     /// \param slot_index index of the slot to be referenced.
     void ReferenceSpecificEvent(const SlotIndexType slot_index,
-                                const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
+                                const TransactionLogSet::TransactionLogIndex transaction_log_index);
 
     /// \brief Returns number/count of events within event slots, which are newer than the given timestamp.
     /// \param reference_time given reference timestamp.
