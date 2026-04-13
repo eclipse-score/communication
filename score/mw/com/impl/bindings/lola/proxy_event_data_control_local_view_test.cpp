@@ -20,6 +20,7 @@
 #include "score/memory/shared/atomic_indirector.h"
 #include "score/memory/shared/atomic_mock.h"
 
+#include <score/assert_support.hpp>
 #include <score/utility.hpp>
 
 #include <gtest/gtest.h>
@@ -42,8 +43,6 @@ using ::testing::Return;
 constexpr std::size_t kMaxSubscribers{5U};
 const TransactionLogId kDummyTransactionLogId{10U};
 
-constexpr auto kSlotIsInWriting = std::numeric_limits<EventSlotStatus::SubscriberCount>::max();
-
 std::size_t RandomNumberBetween(std::size_t lower, std::size_t upper)
 {
     std::mt19937_64 random_number_generator{};
@@ -58,6 +57,21 @@ bool RandomTrueOrFalse()
 {
     return RandomNumberBetween(0, 1);
 }
+
+template <typename T>
+class AtomicIndirectorMockGuard final
+{
+  public:
+    explicit AtomicIndirectorMockGuard(memory::shared::AtomicMock<T>& mock)
+    {
+        memory::shared::AtomicIndirectorMock<T>::SetMockObject(&mock);
+    }
+
+    ~AtomicIndirectorMockGuard()
+    {
+        memory::shared::AtomicIndirectorMock<T>::SetMockObject(nullptr);
+    }
+};
 
 class ProxyEventDataControlLocalViewFixture : public ::testing::Test
 {
@@ -97,7 +111,8 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
         event_data_control_ = std::make_unique<EventDataControl>(max_slots, memory_, max_subscribers);
 
         atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
-        memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
+        atomic_indirector_mock_guard_ =
+            std::make_unique<AtomicIndirectorMockGuard<EventSlotStatus::value_type>>(*atomic_mock_);
 
         unit_with_mock_atomics_ =
             std::make_unique<ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
@@ -128,6 +143,8 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
     std::unique_ptr<ProxyEventDataControlLocalView<>> unit_{nullptr};
     std::unique_ptr<ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> unit_with_mock_atomics_{
         nullptr};
+
+    std::unique_ptr<AtomicIndirectorMockGuard<EventSlotStatus::value_type>> atomic_indirector_mock_guard_{nullptr};
 };
 
 TEST_F(ProxyEventDataControlLocalViewFixture, RegisterProxyElementReturnsValidTransactionLogIndex)
@@ -262,7 +279,8 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_S
 
     // When explicitly referencing (ref-count-incrementing) it
     // Then the program terminates
-    EXPECT_DEATH(unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index));
 }
 
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_StatusInWritingTerminates)
@@ -278,33 +296,38 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_S
 
     // When explicitly referencing (ref-count-incrementing) it
     // Then the program terminates
-    EXPECT_DEATH(unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        unit_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index));
 }
 
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_ReferenceCountOverFlowsTerminates)
 {
-    memory::shared::AtomicMock<EventSlotStatus::value_type> atomic_mock;
-    memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(&atomic_mock);
-
-    // Expecting that incrementing the current reference count overflows (i.e. the previous value returned by fetch_add
-    // was already the max possible value)
-    EventSlotStatus event_slot_status_in_writing{};
-    event_slot_status_in_writing.SetReferenceCount(kSlotIsInWriting);
-    ON_CALL(atomic_mock, fetch_add(_, _))
-        .WillByDefault(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing)));
-
     // Given an EventDataControl with one slot
     GivenAProxyEventDataControlLocalViewUsingMockedAtomics(1, kMaxSubscribers);
-    auto slot = skeleton_event_data_control_local_mocked_->AllocateNextSlot();
-    ASSERT_TRUE(slot.has_value());
+
+    // and given that the slot is in a valid state with a reference count which will not overflow when incrementing
+    // it within the context of ReferenceSpecificEvent.
+    EventSlotStatus event_slot_status_valid{};
+    event_slot_status_valid.SetReferenceCount(5U);
+    EXPECT_CALL(*atomic_mock_, load(_))
+        .WillOnce(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_valid)));
+
+    // Expecting that incrementing the current reference count overflows (i.e. the previous value returned by
+    // fetch_add was already the max possible value since addition consumers incremented it after the load() call
+    // above)
+    EventSlotStatus event_slot_status_max_possible_references{};
+    event_slot_status_max_possible_references.SetReferenceCount(
+        std::numeric_limits<EventSlotStatus::SubscriberCount>::max());
+    EXPECT_CALL(*atomic_mock_, fetch_add(_, _))
+        .WillOnce(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_max_possible_references)));
 
     const auto transaction_log_index =
         unit_with_mock_atomics_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When explicitly referencing (ref-count-incrementing) it which would lead to the ref count overflowing
     // Then the program terminates
-    EXPECT_DEATH(unit_with_mock_atomics_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index),
-                 ".*");
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        unit_with_mock_atomics_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index));
 }
 
 TEST_F(ProxyEventDataControlLocalViewFixture, GetNumNewEvents_Zero)

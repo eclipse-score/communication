@@ -148,12 +148,21 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEvent(
     const SlotIndexType slot_index,
-    const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept -> void
+    const TransactionLogSet::TransactionLogIndex transaction_log_index) -> void
 {
-    // Sanity check that the slot is currently ready for reading. It's up to the caller to ensure that this function is
-    // not called in a context in which the status can change to in writing or invalid while this function is running.
-    const auto slot_current_status =
-        static_cast<EventSlotStatus>(state_slots_[slot_index].load(std::memory_order_relaxed));
+    // Sanity check that the slot is currently ready for reading:
+    //    - Slot is not in writing or invalid. This would be a programming bug since ReferenceSpecificEvent is called by
+    //    a SkeletonEvent in Send() which should ensure that the slot is marked as ready before calling this function.
+    //    This would indicate a programming bug.
+    //    - Slot reference count is not equal to the maximum value which happens to be the sentinel value used when a
+    //    slot is in writing. This would occur if too many ProxyEvents have referenced the slot. In practice, this is
+    //    extremely unlikely because the period of time between the slot being marked as ready and this call is very
+    //    short.
+    // It's up to the caller to ensure that this function is not called in a context in which the status can change to
+    // in writing or invalid while this function is running.
+    const auto current_slot_value =
+        AtomicIndirectorType<EventSlotStatus::value_type>::load(state_slots_[slot_index], std::memory_order_relaxed);
+    const auto slot_current_status = static_cast<EventSlotStatus>(current_slot_value);
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         !(slot_current_status.IsInWriting() || slot_current_status.IsInvalid()),
         "An event slot can only be referenced once it's ready for reading.");
@@ -167,9 +176,11 @@ auto ProxyEventDataControlLocalView<AtomicIndirectorType>::ReferenceSpecificEven
     const auto old_slot_value = AtomicIndirectorType<EventSlotStatus::value_type>::fetch_add(
         state_slots_[slot_index], static_cast<EventSlotStatus::value_type>(1U), std::memory_order_acq_rel);
 
-    // If the slot value overflows then the value is completely invalid which is an unrecoverable error. If we try to
+    // If the slot value overflowed then the value is completely invalid which is an unrecoverable error. If we try to
     // restart the provider, then it should contain an uncommitted reference transaction which will cause the restart to
-    // fail.
+    // fail. We could use a compare_exchange_strong and abort the reference transaction in the TransactionLog, but
+    // fetch_add is more performant than compare_exchange_strong and the probability of an overflow is so low that we
+    // can accept that in this edge case, a restart will not be possible.
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(EventSlotStatus{old_slot_value}.GetReferenceCount() !=
                                                           std::numeric_limits<EventSlotStatus::SubscriberCount>::max(),
                                                       "Reference count overflowed which cannot be recovered from.");
