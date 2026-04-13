@@ -189,9 +189,9 @@ void ProxyBaseView::RegisterField(const std::string_view field_name, ProxyFieldB
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_field_inserted, "Field cannot be registered as it already exists.");
 }
 
-void ProxyBaseView::RegisterMethod(UniqueMethodIdentifier method_id, ProxyMethodBase& method)
+void ProxyBaseView::RegisterMethod(const std::string_view method_name, ProxyMethodBase& method)
 {
-    const auto result = proxy_base_.methods_.emplace(method_id, method);
+    const auto result = proxy_base_.methods_.emplace(method_name, method);
     const bool was_method_inserted = result.second;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(was_method_inserted, "Method cannot be registered as it already exists.");
 }
@@ -223,14 +223,14 @@ void ProxyBaseView::UpdateField(const std::string_view field_name, ProxyFieldBas
     field_it->second = field;
 }
 
-void ProxyBaseView::UpdateMethod(UniqueMethodIdentifier method_id, ProxyMethodBase& method)
+void ProxyBaseView::UpdateMethod(const std::string_view method_name, ProxyMethodBase& method)
 {
-    auto method_it = proxy_base_.methods_.find(method_id);
+    auto method_it = proxy_base_.methods_.find(method_name);
     if (method_it == proxy_base_.methods_.cend())
     {
         score::mw::log::LogFatal("lola")
-            << "ProxyBaseView::UpdateMethod failed to update, because the requested method " << method_id.name
-            << " (type=" << to_string(method_id.type) << ") doesn't exist";
+            << "ProxyBaseView::UpdateMethod failed to update, because the requested method " << method_name
+            << " doesn't exist";
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
     }
 

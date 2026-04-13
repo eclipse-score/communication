@@ -31,6 +31,9 @@
 namespace score::mw::com::impl
 {
 
+template <typename, bool, bool>
+class SkeletonField;
+
 template <typename Signature>
 class SkeletonMethod
 {
@@ -50,6 +53,14 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     static_assert(return_value_is_not_a_pointer,
                   "Return value can not be a pointer, since we can not put them in shared memory.");
 
+    template <typename, bool, bool>
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class SkeletonField;
+
+    struct FieldOnlyConstructorEnabler
+    {
+    };
+
   public:
     using MethodType = ReturnType(ArgTypes...);
 
@@ -65,27 +76,18 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     {
     }
 
-    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name, GetMethodTag)
-        : SkeletonMethod(
+    SkeletonMethod(SkeletonBase& skeleton_base,
+                   const std::string_view method_name,
+                   ::score::mw::com::impl::MethodType method_type,
+                   FieldOnlyConstructorEnabler) noexcept
+        : SkeletonMethodBase(
               skeleton_base,
               method_name,
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
                                                    method_name,
-                                                   ::score::mw::com::impl::MethodType::kGet),
-              ::score::mw::com::impl::MethodType::kGet)
-    {
-    }
-
-    SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name, SetMethodTag)
-        : SkeletonMethod(
-              skeleton_base,
-              method_name,
-              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
-                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
-                                                   method_name,
-                                                   ::score::mw::com::impl::MethodType::kSet),
-              ::score::mw::com::impl::MethodType::kSet)
+                                                   method_type),
+              method_type)
     {
     }
 
@@ -127,8 +129,11 @@ template <typename ReturnType, typename... ArgTypes>
 SkeletonMethod<ReturnType(ArgTypes...)>::SkeletonMethod(SkeletonMethod&& other) noexcept
     : SkeletonMethodBase(std::move(other))
 {
-    SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-    skeleton_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
+    if (method_type_ == ::score::mw::com::impl::MethodType::kMethod)
+    {
+        SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
+        skeleton_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
+    }
 }
 
 template <typename ReturnType, typename... ArgTypes>
@@ -138,8 +143,11 @@ SkeletonMethod<ReturnType(ArgTypes...)>& SkeletonMethod<ReturnType(ArgTypes...)>
     if (this != &other)
     {
         SkeletonMethodBase::operator=(std::move(other));
-        SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
-        skeleton_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
+        if (method_type_ == ::score::mw::com::impl::MethodType::kMethod)
+        {
+            SkeletonBaseView skeleton_base_view{skeleton_base_.get()};
+            skeleton_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
+        }
     }
     return *this;
 }

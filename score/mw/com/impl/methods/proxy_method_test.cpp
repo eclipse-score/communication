@@ -87,8 +87,7 @@ class ProxyMethodTestFixture : public ::testing::Test
     auto GetMethodReferenceFromParent()
     {
         auto methods = this->proxy_base_.GetMethods();
-        auto moved_method =
-            methods.find(UniqueMethodIdentifier{kMethodName, score::mw::com::impl::MethodType::kMethod});
+        auto moved_method = methods.find(kMethodName);
 
         EXPECT_NE(moved_method, methods.end());
         return &moved_method->second.get();

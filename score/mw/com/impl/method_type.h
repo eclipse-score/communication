@@ -19,6 +19,24 @@
 namespace score::mw::com::impl
 {
 
+namespace detail
+{
+
+struct EnableBothTag
+{
+};
+struct EnableGetOnlyTag
+{
+};
+struct EnableSetOnlyTag
+{
+};
+struct EnableNeitherTag
+{
+};
+
+}  // namespace detail
+
 /// \brief Enum used to differentiate between regular service methods and field Get/Set methods.
 enum class MethodType : std::uint8_t
 {
@@ -27,16 +45,6 @@ enum class MethodType : std::uint8_t
     kGet,
     kSet
 };
-
-/// \brief Tag types selecting the field-method ctor overloads on Proxy/SkeletonMethod.
-struct GetMethodTag
-{
-};
-struct SetMethodTag
-{
-};
-inline constexpr GetMethodTag kGetMethod{};
-inline constexpr SetMethodTag kSetMethod{};
 
 std::string_view to_string(MethodType method_type) noexcept;
 

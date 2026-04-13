@@ -35,17 +35,6 @@
 namespace score::mw::com::impl
 {
 
-namespace detail
-{
-/// Tag types for constructor overload disambiguation based on EnableSet template parameter.
-struct EnableSetOnlyTag
-{
-};
-struct EnableNeitherTag
-{
-};
-}  // namespace detail
-
 template <typename SampleDataType, const bool EnableSet = false, const bool EnableNotifier = false>
 class SkeletonField : public SkeletonFieldBase
 {
@@ -214,8 +203,14 @@ class SkeletonField : public SkeletonFieldBase
                   std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
                   const std::string_view field_name);
 
+    // TODO: Move get_method_ initialization into the delegating constructors (like set_method_) once the
+    // Get handler is implemented.
     using GetMethodSignature = FieldType();
-    SkeletonMethod<GetMethodSignature> get_method_{skeleton_base_.get(), field_name_, kGetMethod};
+    SkeletonMethod<GetMethodSignature> get_method_{
+        skeleton_base_.get(),
+        field_name_,
+        ::score::mw::com::impl::MethodType::kGet,
+        typename SkeletonMethod<GetMethodSignature>::FieldOnlyConstructorEnabler{}};
 };
 
 /// \brief Public ctor — EnableSet=true: delegates to the private ctor that also creates the set method.
@@ -281,7 +276,11 @@ SkeletonField<SampleDataType, EnableSet, EnableNotifier>::SkeletonField(
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr}
 {
-    set_method_ = std::make_unique<SkeletonMethod<SetMethodSignature>>(parent, field_name_, kSetMethod);
+    set_method_ = std::make_unique<SkeletonMethod<SetMethodSignature>>(
+        parent,
+        field_name_,
+        ::score::mw::com::impl::MethodType::kSet,
+        typename SkeletonMethod<SetMethodSignature>::FieldOnlyConstructorEnabler{});
     SkeletonBaseView skeleton_base_view{parent};
     skeleton_base_view.RegisterField(field_name, *this);
 }

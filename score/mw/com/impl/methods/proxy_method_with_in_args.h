@@ -56,47 +56,23 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
                                                                            ProxyBaseView{proxy_base}.GetBinding(),
                                                                            method_name,
                                                                            MethodType::kMethod),
-                      method_name,
-                      MethodType::kMethod)
-    {
-    }
-
-    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, GetMethodTag) noexcept
-        : ProxyMethod(proxy_base,
-                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
-                                                                           ProxyBaseView{proxy_base}.GetBinding(),
-                                                                           method_name,
-                                                                           MethodType::kGet),
-                      method_name,
-                      MethodType::kGet)
-    {
-    }
-
-    ProxyMethod(ProxyBase& proxy_base, std::string_view method_name, SetMethodTag) noexcept
-        : ProxyMethod(proxy_base,
-                      ProxyMethodBindingFactory<void(ArgTypes...)>::Create(proxy_base.GetHandle(),
-                                                                           ProxyBaseView{proxy_base}.GetBinding(),
-                                                                           method_name,
-                                                                           MethodType::kSet),
-                      method_name,
-                      MethodType::kSet)
+                      method_name)
     {
     }
 
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                std::string_view method_name,
-                MethodType method_type = MethodType::kMethod) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, method_type),
+                std::string_view method_name) noexcept
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
+        proxy_base_view.RegisterMethod(method_name_, *this);
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
             return;
         }
-        proxy_base_view.RegisterMethod(GetUniqueMethodIdentifier(), *this);
     }
 
     ~ProxyMethod() final = default;
@@ -151,9 +127,8 @@ template <typename... ArgTypes>
 ProxyMethod<void(ArgTypes...)>::ProxyMethod(ProxyMethod&& other) noexcept
     : ProxyMethodBase(std::move(other)), are_in_arg_ptrs_active_{std::move(other.are_in_arg_ptrs_active_)}
 {
-    // Since the address of this method has changed, we need update the address stored in the parent proxy.
     ProxyBaseView proxy_base_view{proxy_base_.get()};
-    proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
+    proxy_base_view.UpdateMethod(method_name_, *this);
 }
 
 template <typename... ArgTypes>
@@ -164,9 +139,8 @@ auto ProxyMethod<void(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept -> 
         ProxyMethodBase::operator=(std::move(other));
         are_in_arg_ptrs_active_ = std::move(other.are_in_arg_ptrs_active_);
 
-        // Since the address of this method has changed, we need update the address stored in the parent proxy.
         ProxyBaseView proxy_base_view{proxy_base_.get()};
-        proxy_base_view.UpdateMethod(GetUniqueMethodIdentifier(), *this);
+        proxy_base_view.UpdateMethod(method_name_, *this);
     }
     return *this;
 }
