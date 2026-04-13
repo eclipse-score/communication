@@ -82,6 +82,24 @@ by the service interface, from which the [service type identification](#service-
 Such a port instance also has (like a service interface) a fully qualified name (expressed via a short-name-path),
 which exactly reflects the `InstanceSpecifier`.
 
+## Application Id
+
+`applicationID` is an optional global configuration property used to uniquely identify an application process across
+restarts. Unlike a PID, which changes every time a process restarts, an `applicationID` remains stable and is always
+the same for a given application, regardless of how many times it has been restarted. One essential use case for this
+stable identity is partial restart: applications write crash-recovery information into shared memory that is also
+accessible to other applications. After a restart, an application must be able to identify and reclaim its own recovery
+information, which is only possible with a stable, restart-invariant identifier like `applicationID`.
+
+If `applicationID` is **not** configured, `LoLa` falls back to the process's OS-level user ID as an implicit
+identifier. This fallback is safe when every application runs as a distinct OS user, but **must not** be relied upon
+when multiple application processes share the same user ID in that case each process must be assigned a distinct
+`applicationID`, otherwise their recovery information in shared memory cannot be distinguished, which can lead to
+incorrect behavior and data race.
+
+**Note:** Further details on how the `applicationID` is used during partial restart and crash recovery are described
+in the [Partial Restart design](../partial_restart/README.md#identification-of-transaction-logs).
+
 ### Mapping to concrete (technical) instances
 As mentioned [above](#responsibility-for-servicetypedeploymentserviceinstancedeployment), it is the task of the
 integrator, to map those `InstanceSpecifier`s to concrete technical instances of the services.
@@ -152,7 +170,10 @@ An example of such a mapping is shown here:
                 }
             ]
         }
-    ]
+    ],
+    "global": {
+        "applicationID": 4321
+    }
 }
 ```
 As you can see in this example configuration, it provides both: A `ServiceTypeDeployment` (`service_types`) in the upper

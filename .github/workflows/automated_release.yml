@@ -35,7 +35,7 @@ jobs:
       release-tag: ${{ steps.release-tag.outputs.release-tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Set release tag from workflow dispatch input
         id: release-tag
@@ -99,7 +99,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Download coverage report artifact
         uses: actions/download-artifact@v4
@@ -128,7 +128,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Report success
         run: |
@@ -149,7 +149,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Delete draft release due to failure
         run: |
