@@ -791,10 +791,10 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRemovesOldRegionsFromCa
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceIdentifier and a different PID
     EXPECT_EQ(mock_method_memory_resource_qm_.use_count(), first_initial_shm_resource_ref_counter + 1U);
-    const auto scoped_handler_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                                                   proxy_instance_identifier_2,
-                                                   test::kAllowedQmMethodConsumer,
-                                                   pid_2);
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                     proxy_instance_identifier_2,
+                                     test::kAllowedQmMethodConsumer,
+                                     pid_2);
 
     // Then the reference counter for the first methods SharedMemoryResource should be have been decremented,
     // indicating that it's been removed from the Skeleton's state
