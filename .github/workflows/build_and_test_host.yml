@@ -105,3 +105,7 @@ jobs:
         - name: Bazel test communication targets
           run: |
             bazel test ${{ matrix.config }} //... --build_tests_only
+        - name: Bazel test integration as module
+          run: |
+            # for the beginning, we do this only with the default configuration
+            cd example && bazel build //...
