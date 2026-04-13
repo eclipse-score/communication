@@ -358,7 +358,6 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
         return EXIT_FAILURE;
     }
 
-    score::cpp::optional<char> last_received{};
     SampleReceiver receiver{instance_specifier, check_sample_hash};
     for (std::size_t cycle = 0U; cycle < num_cycles;)
     {

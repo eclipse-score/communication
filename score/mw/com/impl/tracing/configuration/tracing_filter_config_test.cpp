@@ -33,7 +33,6 @@ const std::string kEventName{"my_event_name"};
 const std::string kFieldName{"my_field_name"};
 const auto kInstanceSpecifiersv = "abc/abc/TirePressurePort"sv;
 const ITracingFilterConfig::InstanceSpecifierView kInstanceSpecifierView{"my_instance_specifier"};
-const score::cpp::optional<ITracingFilterConfig::InstanceSpecifierView> kEnableAllInstanceSpecifiers{};
 constexpr auto kDummyTracePointType = SkeletonEventTracePointType::SEND;
 
 // Trace point type constants
