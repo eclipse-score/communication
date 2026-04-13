@@ -189,15 +189,18 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
 }
 
 ProxyServiceDataControlLocalView GetProxyServiceDataControlLocalView(
-    const memory::shared::ManagedMemoryResource& control) noexcept
+    const memory::shared::ManagedMemoryResource& control_memory_resource) noexcept
 {
+    auto* const usable_base_address = control_memory_resource.getUsableBaseAddress();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        usable_base_address != nullptr,
+        "invalid memory resource for service_data_control -> has no usable base adress!");
+
     // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
     // An object with integer type or pointer to void type shall not be converted to an object with pointer type.
     // The "ServiceDataStorage" type is strongly defined as shared IPC data between Proxy and Skeleton.
     // coverity[autosar_cpp14_m5_2_8_violation]
-    auto* const service_data_control = static_cast<ServiceDataControl*>(control.getUsableBaseAddress());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_control != nullptr,
-                                                "Could not retrieve service data control.");
+    auto* const service_data_control = static_cast<ServiceDataControl*>(usable_base_address);
     return ProxyServiceDataControlLocalView{*service_data_control};
 }
 
