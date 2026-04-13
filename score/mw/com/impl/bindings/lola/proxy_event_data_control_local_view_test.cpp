@@ -78,7 +78,7 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(nullptr);
     }
 
-    ProxyEventDataControlLocalViewFixture& GivenARealProxyEventDataControlLocalView(
+    ProxyEventDataControlLocalViewFixture& GivenAProxyEventDataControlLocalViewUsingRealAtomics(
         const SlotIndexType max_slots,
         const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
     {
@@ -90,7 +90,7 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
         return *this;
     }
 
-    ProxyEventDataControlLocalViewFixture& GivenAMockedEventDataControl(
+    ProxyEventDataControlLocalViewFixture& GivenAProxyEventDataControlLocalViewUsingMockedAtomics(
         const SlotIndexType max_slots,
         const LolaEventInstanceDeployment::SubscriberCountType max_subscribers)
     {
@@ -99,8 +99,9 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
         atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
-        unit_mock_ = std::make_unique<ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
-            *event_data_control_);
+        unit_with_mock_atomics_ =
+            std::make_unique<ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
+                *event_data_control_);
         skeleton_event_data_control_local_mocked_ =
             std::make_unique<SkeletonEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
                 *event_data_control_);
@@ -125,13 +126,14 @@ class ProxyEventDataControlLocalViewFixture : public ::testing::Test
     std::unique_ptr<SkeletonEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>
         skeleton_event_data_control_local_mocked_{nullptr};
     std::unique_ptr<ProxyEventDataControlLocalView<>> unit_{nullptr};
-    std::unique_ptr<ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> unit_mock_{nullptr};
+    std::unique_ptr<ProxyEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> unit_with_mock_atomics_{
+        nullptr};
 };
 
 TEST_F(ProxyEventDataControlLocalViewFixture, RegisterProxyElementReturnsValidTransactionLogIndex)
 {
     // Given a EventDataControlUnit
-    GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(1, kMaxSubscribers);
 
     // When registering the proxy with the TransactionLogSet
     const auto transaction_log_index_result =
@@ -145,7 +147,7 @@ TEST_F(ProxyEventDataControlLocalViewFixture, RegisterProxyElementReturnsValidTr
 TEST_F(ProxyEventDataControlLocalViewFixture, FindNextSlotBlocksAllocation)
 {
     // Given a EventDataControlUnit with one ready slot
-    GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers).WithAnAllocatedSlot(1);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(1, kMaxSubscribers).WithAnAllocatedSlot(1);
 
     const auto transaction_log_index =
         unit_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
@@ -164,7 +166,7 @@ TEST_F(ProxyEventDataControlLocalViewFixture, DISABLED_MultipleReceiverRefCountC
     const std::size_t max_subscribers{10U};
 
     // Given an EventDataControl with one ready slot
-    GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers).WithAnAllocatedSlot(1);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(1, kMaxSubscribers).WithAnAllocatedSlot(1);
 
     auto receiver_tester = [this]() {
         const auto transaction_log_index =
@@ -202,7 +204,7 @@ TEST_F(ProxyEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesRefe
 
     constexpr auto max_reference_retries{100U};
 
-    GivenAMockedEventDataControl(1, kMaxSubscribers);
+    GivenAProxyEventDataControlLocalViewUsingMockedAtomics(1, kMaxSubscribers);
 
     // Given the operation to update the slot value fails max_reference_retries times
     EXPECT_CALL(*atomic_mock_, compare_exchange_weak(_, _, _))
@@ -215,10 +217,10 @@ TEST_F(ProxyEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesRefe
     skeleton_event_data_control_local_mocked_->EventReady(slot.value(), 1);
 
     const auto transaction_log_index =
-        unit_mock_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+        unit_with_mock_atomics_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When finding the next slot
-    auto event = unit_mock_->ReferenceNextEvent(0, transaction_log_index);
+    auto event = unit_with_mock_atomics_->ReferenceNextEvent(0, transaction_log_index);
 
     // No event will be found
     ASSERT_FALSE(event.has_value());
@@ -230,7 +232,7 @@ TEST_F(EventDataControlReferenceSpecificEventFixture, ReferenceSpecificEvents)
     const std::size_t subscription_slots{6U};
 
     // Given an EventDataControl with 6 ready slots
-    GivenARealProxyEventDataControlLocalView(max_number_slots, kMaxSubscribers);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(max_number_slots, kMaxSubscribers);
     for (unsigned int i = 0; i < 6; i++)
     {
         WithAnAllocatedSlot(i + 1);
@@ -252,7 +254,7 @@ using EventDataControlReferenceSpecificEventDeathTest = EventDataControlReferenc
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_StatusInvalidTerminates)
 {
     // Given an EventDataControl with one (initially invalid) slot
-    GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(1, kMaxSubscribers);
     EXPECT_TRUE((*unit_)[0].IsInvalid());
 
     const auto transaction_log_index =
@@ -266,7 +268,7 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_S
 TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_StatusInWritingTerminates)
 {
     // Given an EventDataControl with one in_writing slot
-    GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(1, kMaxSubscribers);
     auto slot = skeleton_event_data_control_local_->AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     EXPECT_TRUE((*unit_)[slot.value()].IsInWriting());
@@ -292,22 +294,23 @@ TEST_F(EventDataControlReferenceSpecificEventDeathTest, ReferenceSpecificEvent_R
         .WillByDefault(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing)));
 
     // Given an EventDataControl with one slot
-    GivenAMockedEventDataControl(1, kMaxSubscribers);
+    GivenAProxyEventDataControlLocalViewUsingMockedAtomics(1, kMaxSubscribers);
     auto slot = skeleton_event_data_control_local_mocked_->AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
 
     const auto transaction_log_index =
-        unit_mock_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
+        unit_with_mock_atomics_->GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
     // When explicitly referencing (ref-count-incrementing) it which would lead to the ref count overflowing
     // Then the program terminates
-    EXPECT_DEATH(unit_mock_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index), ".*");
+    EXPECT_DEATH(unit_with_mock_atomics_->ReferenceSpecificEvent(static_cast<SlotIndexType>(0), transaction_log_index),
+                 ".*");
 }
 
 TEST_F(ProxyEventDataControlLocalViewFixture, GetNumNewEvents_Zero)
 {
     // Given an EventDataControl with one ready slot
-    GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers).WithAnAllocatedSlot(1);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(1, kMaxSubscribers).WithAnAllocatedSlot(1);
 
     // When checking for new samples since timestamp 1 expect, that 0 is returned.
     EXPECT_EQ(unit_->GetNumNewEvents(1), 0);
@@ -316,7 +319,7 @@ TEST_F(ProxyEventDataControlLocalViewFixture, GetNumNewEvents_Zero)
 TEST_F(ProxyEventDataControlLocalViewFixture, GetNumNewEvents_One)
 {
     // Given an EventDataControl with one ready slot
-    GivenARealProxyEventDataControlLocalView(1, kMaxSubscribers).WithAnAllocatedSlot(1);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(1, kMaxSubscribers).WithAnAllocatedSlot(1);
 
     // When checking for new samples since start (timestamp 0) expect, that 1 is returned.
     EXPECT_EQ(unit_->GetNumNewEvents(0), 1);
@@ -325,7 +328,7 @@ TEST_F(ProxyEventDataControlLocalViewFixture, GetNumNewEvents_One)
 TEST_F(ProxyEventDataControlLocalViewFixture, GetNumNewEvents_Many)
 {
     // Given an EventDataControl with 6 ready slots
-    GivenARealProxyEventDataControlLocalView(6, kMaxSubscribers);
+    GivenAProxyEventDataControlLocalViewUsingRealAtomics(6, kMaxSubscribers);
     for (unsigned int i = 1; i <= 6; i++)
     {
         WithAnAllocatedSlot(i);
