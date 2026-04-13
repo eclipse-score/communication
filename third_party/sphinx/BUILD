@@ -18,3 +18,21 @@ alias(
     actual = requirement("sphinx"),
     visibility = ["//visibility:public"],
 )
+
+alias(
+    name = "sphinx-needs",
+    actual = requirement("sphinx-needs"),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "sphinx-design",
+    actual = requirement("sphinx-design"),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "sphinxcontrib-plantuml",
+    actual = requirement("sphinxcontrib-plantuml"),
+    visibility = ["//visibility:public"],
+)

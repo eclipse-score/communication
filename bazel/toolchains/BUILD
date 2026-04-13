@@ -24,6 +24,9 @@ py_binary(
         "//third_party/myst_parser",
         "//third_party/pydata_sphinx_theme",
         "//third_party/sphinx",
+        "//third_party/sphinx:sphinx-needs",
+        "//third_party/sphinx:sphinx-design",
+        "//third_party/sphinx:sphinxcontrib-plantuml",
         "//third_party/sphinx_rtd_theme",
     ],
 )

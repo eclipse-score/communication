@@ -35,11 +35,6 @@ extensions = [
     "sphinx_design",
     "myst_parser",
     "sphinxcontrib.plantuml",
-    "score_plantuml",
-    "score_metamodel",
-    "score_draw_uml_funcs",
-    "score_source_code_linker",
-    "score_layout",
 ]
 
 # MyST parser extensions
@@ -56,6 +51,49 @@ source_suffix = {
     ".rst": "restructuredtext",
     ".md": "markdown",
 }
+
+# -- Options for HTML output --
+html_theme = 'pydata_sphinx_theme'
+
+# Professional theme configuration inspired by modern open-source projects
+html_theme_options = {
+    # Navigation settings
+    'navigation_depth': 4,
+    'collapse_navigation': False,
+    'show_nav_level': 2,  # Depth of sidebar navigation
+    'show_toc_level': 2,  # Depth of page table of contents
+
+    # Header layout
+    'navbar_align': 'left',
+    'navbar_start': ['navbar-logo'],
+    'navbar_center': ['navbar-nav'],
+    'navbar_end': ['navbar-icon-links', 'theme-switcher'],
+
+    # Search configuration
+    'search_bar_text': 'Search documentation...',
+
+    # Footer configuration
+    'footer_start': ['copyright'],
+    'footer_end': ['sphinx-version'],
+
+    # Navigation buttons
+    'show_prev_next': True,
+
+    # Logo configuration
+    'logo': {
+        'text': 'Eclipse S-CORE',
+    },
+
+    # External links - S-CORE GitHub
+    'icon_links': [
+        {
+            'name': 'S-CORE GitHub',
+            'url': 'https://github.com/eclipse-score',
+            'icon': 'fab fa-github',
+        }
+    ],
+}
+
 
 # Enable numref for cross-references
 numfig = True

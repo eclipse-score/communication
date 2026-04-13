@@ -106,6 +106,7 @@ sphinx_module(
             "index.rst",
             "introduction.rst",
             "message_passing.rst",
+            "//score/mw/com:readme_md",
         ],
     index = "index.rst",
     visibility = ["//visibility:public"],
