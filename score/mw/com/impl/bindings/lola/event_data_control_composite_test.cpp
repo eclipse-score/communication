@@ -103,7 +103,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         return *this;
     }
 
-    EventDataControlCompositeFixture& WithRealEventDataControlComposite()
+    EventDataControlCompositeFixture& WithEventDataControlCompositeUsingRealAtomics()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_qm_local_.has_value());
 
@@ -112,16 +112,17 @@ class EventDataControlCompositeFixture : public ::testing::Test
         return *this;
     }
 
-    EventDataControlCompositeFixture& WithMockedEventDataControlComposite()
+    EventDataControlCompositeFixture& WithEventDataControlCompositeUsingMockedAtomics()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_qm_local_.has_value());
 
         atomic_mock_ = std::make_unique<memory::shared::AtomicMock<EventSlotStatus::value_type>>();
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
-        auto* const asil_control = skeleton_asil_local_.has_value() ? &skeleton_asil_local_.value() : nullptr;
-        unit_mock_ = std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(
-            skeleton_qm_local_.value(), asil_control, nullptr);
+        auto* const skeleton_asil_local_ptr =
+            skeleton_asil_local_.has_value() ? &skeleton_asil_local_.value() : nullptr;
+        unit_with_mock_atomics_ = std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(
+            skeleton_qm_local_.value(), skeleton_asil_local_ptr, nullptr);
 
         return *this;
     }
@@ -176,7 +177,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
     std::unique_ptr<EventDataControlComposite<>> unit_{nullptr};
 
     std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
-    std::unique_ptr<EventDataControlComposite<memory::shared::AtomicIndirectorMock>> unit_mock_{nullptr};
+    std::unique_ptr<EventDataControlComposite<memory::shared::AtomicIndirectorMock>> unit_with_mock_atomics_{nullptr};
 
     std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_qm_{nullptr};
     std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_asil_{nullptr};
@@ -187,7 +188,7 @@ TEST_F(EventDataControlCompositeFixture, CanCreateAndDestroyFixture) {}
 TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When allocating one slot
     const auto allocation = unit_->AllocateNextSlot();
@@ -202,7 +203,7 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
 {
     // Given an EventDataControlComposite with 1 allocated slots that are set to ready
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
     score::cpp::ignore = unit_->AllocateNextSlot();
     const EventSlotStatus::EventTimeStamp time_stamp{2};
     unit_->EventReady(SlotIndexType{0U}, time_stamp);
@@ -217,7 +218,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
 TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // Then it is possible to allocate 2 slots.
     const auto allocation_slot_1 = unit_->AllocateNextSlot();
@@ -231,7 +232,7 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfOneSlotIsMarkedAsInvalid)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When allocating 2 slots
     auto allocation_result = unit_->AllocateNextSlot();
@@ -253,7 +254,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfO
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfAllSlotAreInvalid)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When allocating 2 slots
     auto allocation_result = unit_->AllocateNextSlot();
@@ -272,7 +273,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesI
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfNoSlotHaveBeenAllocated)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // Then the timestamp equal to 1
     auto time_stamp = unit_->GetLatestTimestamp();
@@ -284,7 +285,7 @@ TEST_F(EventDataControlCompositeFixture,
        GetLatestTimeStampReturnsDefaultValuesIfASlotHasBeenAllocatedButNotMarkedAsReady)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When allocating 1 slot
     score::cpp::ignore = unit_->AllocateNextSlot();
@@ -300,7 +301,7 @@ TEST_F(EventDataControlCompositeFixture, FailingToLockQmMultiSlotAllocatesOnlyAs
     constexpr std::size_t max_multi_allocate_count{100U};
 
     // Given an EventDataControlComposite which mocks atomic operations with zero used slots
-    WithQmAndAsilBEventDataControls().WithMockedEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingMockedAtomics();
 
     // and given that the operation to update the QM slot value fails max_multi_allocate_count times
     EXPECT_CALL(*atomic_mock_, compare_exchange_strong(_, _, _))
@@ -308,7 +309,7 @@ TEST_F(EventDataControlCompositeFixture, FailingToLockQmMultiSlotAllocatesOnlyAs
         .WillRepeatedly(Return(false));
 
     // When allocating one slot
-    const auto allocation = unit_mock_->AllocateNextSlot();
+    const auto allocation = unit_with_mock_atomics_->AllocateNextSlot();
 
     // Then it tries to allocate the asil b slot again and the first slot is still used
     EXPECT_EQ(allocation.allocated_slot_index.value(), 0);
@@ -324,7 +325,7 @@ TEST_F(EventDataControlCompositeFixture, FailingToLockAsilMultiSlotStillAllocate
     constexpr std::size_t max_multi_allocate_count{100U};
 
     // Given an EventDataControlComposite which mocks atomic operations with zero used slots
-    WithQmAndAsilBEventDataControls().WithMockedEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingMockedAtomics();
 
     // Given the operation to update the QM slot value succeeds but the operation to update the asil B slot fails
     // max_multi_allocate_count times
@@ -335,7 +336,7 @@ TEST_F(EventDataControlCompositeFixture, FailingToLockAsilMultiSlotStillAllocate
     }
 
     // When allocating one slot
-    const auto allocation = unit_mock_->AllocateNextSlot();
+    const auto allocation = unit_with_mock_atomics_->AllocateNextSlot();
 
     // Then it tries to allocate the asil b slot again and the first slot is still used
     EXPECT_EQ(allocation.allocated_slot_index.value(), 0);
@@ -347,7 +348,7 @@ TEST_F(EventDataControlCompositeFixture, FailingToLockAsilMultiSlotStillAllocate
 TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlotOnlyForQm)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
 
     // When allocating one slot
     auto allocation = unit_->AllocateNextSlot();
@@ -359,7 +360,7 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlotOnlyForQm)
 TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlotWhenAlreadyOneIsAllocated)
 {
     // Given an EventDataControlComposite with only one used slot
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
     score::cpp::ignore = unit_->AllocateNextSlot();
 
     // When allocating one additional slot
@@ -372,7 +373,7 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlotWhenAlreadyOneIsAlloc
 TEST_F(EventDataControlCompositeFixture, OverWritesOldestSample)
 {
     // Given an EventDataControlComposite with all slots written at one time, and only one unused
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
     AllocateAllSlots();
     const SlotIndexType ready_slot_index{3U};
     unit_->EventReady(ready_slot_index, EventSlotStatus::EventTimeStamp{1});
@@ -387,7 +388,7 @@ TEST_F(EventDataControlCompositeFixture, OverWritesOldestSample)
 TEST_F(EventDataControlCompositeFixture, OverWritesDiscardedEvent)
 {
     // Given an EventDataControlComposite with all slots written at one time, and only one unused
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
     AllocateAllSlots();
     const SlotIndexType discarded_slot_index{3U};
     unit_->Discard(discarded_slot_index);
@@ -403,7 +404,7 @@ TEST_F(EventDataControlCompositeFixture, OverWritesOldestSampleOnlyForQm)
 {
 
     // Given an EventDataControlComposite with all slots written at one time, and only one unused
-    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
     AllocateAllSlots();
     const SlotIndexType ready_slot_index{3U};
     unit_->EventReady(ready_slot_index, EventSlotStatus::EventTimeStamp{1});
@@ -419,7 +420,7 @@ TEST_F(EventDataControlCompositeFixture, SkipsEventIfUsedInQmList)
 {
     // Given an EventDataControlComposite with all slots written at one time, and only one unused and a registered
     // transaction log
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite().WithARegisteredTransactionLog();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics().WithARegisteredTransactionLog();
     AllocateAllSlots();
     const SlotIndexType first_ready_slot_index{2U};
     const SlotIndexType second_ready_slot_index{4U};
@@ -440,7 +441,7 @@ TEST_F(EventDataControlCompositeFixture, SkipsEventIfUsedInQmList)
 TEST_F(EventDataControlCompositeFixture, SkipsEventIfUsedInAsilList)
 {
     // Given an EventDataControlComposite with all slots written at one time, and only one unused
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite().WithARegisteredTransactionLog();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics().WithARegisteredTransactionLog();
     AllocateAllSlots();
     const SlotIndexType first_ready_slot_index{2U};
     const SlotIndexType second_ready_slot_index{4U};
@@ -461,7 +462,7 @@ TEST_F(EventDataControlCompositeFixture, SkipsEventIfUsedInAsilList)
 TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsed)
 {
     // Given an EventDataControlComposite in which all slots are used
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
     AllocateAllSlots();
 
     // When allocating one additional slot
@@ -474,7 +475,7 @@ TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsed)
 TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsedQMOnly)
 {
     // Given an EventDataControlComposite containing only a QM EventDataControl in which all slots are used
-    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
     AllocateAllSlots();
 
     // When allocating one additional slot
@@ -493,7 +494,7 @@ TEST_F(EventDataControlCompositeFixture, QmConsumerViolation)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given an EventDataControlComposite with all slots ready
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite().WithARegisteredTransactionLog();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics().WithARegisteredTransactionLog();
     AllocateAllSlots();
     ReadyAllSlots();
     ASSERT_FALSE(unit_->IsQmControlDisconnected());
@@ -521,7 +522,7 @@ TEST_F(EventDataControlCompositeFixture, AllocationIgnoresQMAfterContractViolati
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given an EventDataControlComposite with all slots ready
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite().WithARegisteredTransactionLog();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics().WithARegisteredTransactionLog();
     AllocateAllSlots();
     ReadyAllSlots();
 
@@ -545,7 +546,7 @@ TEST_F(EventDataControlCompositeFixture, AllocationIgnoresQMAfterContractViolati
 TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsedAfterQmDisconnect)
 {
     // Given an EventDataControlComposite containing only a QM EventDataControl in which all slots are used
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
     AllocateAllSlots();
 
     // and given that QmControlDisconnect has occurred by trying to allocate a slot when all are currently occupied
@@ -561,7 +562,7 @@ TEST_F(EventDataControlCompositeFixture, ReturnsNoSlotIfAllUsedAfterQmDisconnect
 TEST_F(EventDataControlCompositeFixture, AsilBConsumerViolation)
 {
     // Given an EventDataControlComposite with all slots ready
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite().WithARegisteredTransactionLog();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics().WithARegisteredTransactionLog();
     AllocateAllSlots();
     ReadyAllSlots();
 
@@ -728,7 +729,7 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
 TEST_F(EventDataControlCompositeFixture, GetQmEventDataControl)
 {
     // Given an EventDataControlComposite with ASIL-QM and ASIL-B controls
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When getting the QM event data control
     auto& qm_event_data_control = unit_->GetQmEventDataControlLocal();
@@ -739,7 +740,7 @@ TEST_F(EventDataControlCompositeFixture, GetQmEventDataControl)
 TEST_F(EventDataControlCompositeFixture, GetAsilBEventDataControl)
 {
     // Given an EventDataControlComposite with ASIL-QM and ASIL-B controls
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When getting the ASIL-B event data control
     auto* const asil_b_event_data_control_local = unit_->GetAsilBEventDataControlLocal();
@@ -752,7 +753,7 @@ TEST_F(EventDataControlCompositeFixture, GetAsilBEventDataControl)
 TEST_F(EventDataControlCompositeFixture, GetEmptyAsilBEventDataControl)
 {
     // Given an EventDataControlComposite with only ASIL-QM
-    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
 
     // When getting the ASIL-B event data control
     auto* const asil_b_event_data_control = unit_->GetAsilBEventDataControlLocal();
@@ -809,7 +810,7 @@ using EventDataControlCompositeGetTimestampFixture = EventDataControlCompositeFi
 TEST_F(EventDataControlCompositeGetTimestampFixture, CanAllocateOneSlot)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When allocating one slot
     const auto allocation = unit_->AllocateNextSlot();
@@ -824,7 +825,7 @@ TEST_F(EventDataControlCompositeGetTimestampFixture, CanAllocateOneSlot)
 TEST_F(EventDataControlCompositeGetTimestampFixture, GetEventSlotTimestampReturnsTimestampOfAllocatedSlot)
 {
     // Given an EventDataControlComposite with a single allocated slot which is marked as ready
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
     const auto allocation = unit_->AllocateNextSlot();
     const auto slot = allocation.allocated_slot_index.value();
 
@@ -848,7 +849,7 @@ TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilB)
     const EventSlotStatus::EventTimeStamp in_writing_slot_timestamp_3{0U};
 
     // Given an EventDataControlComposite which only contains both a QM and ASIL B EventDataControl
-    WithQmAndAsilBEventDataControls().WithRealEventDataControlComposite();
+    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
 
     // When all slots are written at one time
     AllocateAllSlots();
@@ -880,7 +881,7 @@ TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilB)
 TEST_F(EventDataControlCompositeGetTimestampFixture, CanRetrieveTimestampsAsilQM)
 {
     // Given an EventDataControlComposite which only contains a QM EventDataControl
-    WithQmOnlyEventDataControl().WithRealEventDataControlComposite();
+    WithQmOnlyEventDataControl().WithEventDataControlCompositeUsingRealAtomics();
 
     const EventSlotStatus::EventTimeStamp slot_timestamp_0{10U};
     const EventSlotStatus::EventTimeStamp slot_timestamp_1{11U};
