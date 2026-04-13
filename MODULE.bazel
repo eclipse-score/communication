@@ -21,6 +21,7 @@ bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.1.5")
 bazel_dep(name = "rules_python", version = "1.5.1")
+bazel_dep(name = "aspect_rules_py", version = "1.4.0")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 bazel_dep(name = "score_baselibs", version = "0.2.5")
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
@@ -36,6 +37,11 @@ git_override(
 )
 
 bazel_dep(name = "score_tooling", version = "1.1.2")
+git_override(
+    module_name = "score_tooling",
+    commit = "d64a4421e66523d63a748f373ae255d168b14fd2",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies
 bazel_dep(name = "gcc_toolchain", version = "0.9.0", dev_dependency = True)
@@ -274,16 +280,12 @@ git_override(
     remote = "https://github.com/bmw-software-engineering/trlc.git",
 )
 
-lobster_ext = use_extension("//third_party/lobster:lobster.bzl", "lobster_ext")
-use_repo(lobster_ext, "lobster")
-
-# Use lobster's upstream requirements.txt directly for this module's Python hub
-pip.parse(
-    hub_name = "lobster_dependencies",
-    python_version = "3.12",
-    requirements_lock = "@lobster//:requirements.txt",
+bazel_dep(name = "lobster", version = "0.0.0")
+git_override(
+    module_name = "lobster",
+    commit = "56881461f9d3fde2918d1731aa5937aaf64cd67c",
+    remote = "https://github.com/bmw-software-engineering/lobster.git",
 )
-use_repo(pip, "lobster_dependencies")
 
 bazel_dep(name = "rules_oci", version = "1.8.0", dev_dependency = True)
 
@@ -330,3 +332,8 @@ git_repository(
     commit = "781f1eecfa2fc9970fb08447588a0b4d19a7908d",
     remote = "https://github.com/github/codeql-coding-standards.git",
 )
+
+register_toolchains(
+    "//bazel/toolchains:sphinx_toolchain",
+)
+

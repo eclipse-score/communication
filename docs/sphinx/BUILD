@@ -15,6 +15,10 @@ load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("//docs/sphinx/utils:defs.bzl", "generate_api_rst")
+load(
+    "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "sphinx_module",
+)
 
 # Create the sphinx-build binary with required dependencies
 # This wrapper approach is used for older environments (e.g. Sphinx <=7.2.* and rules_python 1.2)
@@ -92,4 +96,18 @@ sphinx_docs(
         ":doxygen_xml",
         "//score/mw/com:readme_md",
     ],
+)
+
+sphinx_module(
+    name = "sphinx_doc",
+    srcs = 
+        [
+            "how_to_document.rst",
+            "index.rst",
+            "introduction.rst",
+            "message_passing.rst",
+        ],
+    index = "index.rst",
+    visibility = ["//visibility:public"],
+    
 )
