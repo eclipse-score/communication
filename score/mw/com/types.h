@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_TYPES_H
 #define SCORE_MW_COM_TYPES_H
 
+#include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 
@@ -93,6 +94,11 @@ using SampleAllocateePtr = impl::SampleAllocateePtr<SampleType>;
 /// A pointer type which carries a pointer to the method return value in shared memory.
 template <typename ReturnType>
 using MethodReturnTypePtr = impl::MethodReturnTypePtr<ReturnType>;
+
+/// \api
+/// A pointer type which carries a pointer to a method input argument value in shared memory.
+template <typename ReturnType>
+using MethodInArgTypePtr = impl::MethodInArgPtr<ReturnType>;
 
 /// \api
 /// \brief Callback for event notifications on proxy side.
