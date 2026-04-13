@@ -12,10 +12,12 @@
 # *******************************************************************************
 import errno
 import os
+import shutil
 import sys
 import json
 import socket
 import logging
+import tempfile
 import subprocess
 import threading
 import time
@@ -31,9 +33,82 @@ class QemuException(Exception):
         return f"QEMU: {repr(self.value)}"
 
 
+class SerialChannel:
+    """Represents a dedicated QEMU serial port channel.
+
+    Each channel consists of a host-side Unix socket and a corresponding
+    guest-side device path (e.g. /dev/ser2).  QEMU acts as the server
+    (``-serial unix:<path>,server=on,wait=off``), and the host connects
+    as a client to read the guest process output.
+    """
+
+    def __init__(self, socket_path: str, guest_device: str) -> None:
+        self.socket_path = socket_path
+        self.guest_device = guest_device
+        self._connection: socket.socket | None = None
+
+    def connect(self, timeout: float = 30) -> None:
+        """Connect to the QEMU-created Unix socket (retry until available)."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(self.socket_path)
+                sock.setblocking(True)
+                self._connection = sock
+                return
+            except (ConnectionRefusedError, FileNotFoundError, OSError):
+                time.sleep(0.2)
+        raise QemuException(
+            f"Timed out connecting to QEMU serial socket: {self.socket_path}"
+        )
+
+    def makefile(self):
+        """Return a file-like object for line-oriented reading."""
+        return self._connection.makefile("rb")
+
+    def close(self) -> None:
+        if self._connection:
+            self._connection.close()
+
+
+class SerialChannelPool:
+    """Manages a fixed pool of extra QEMU serial channels.
+
+    Channels are pre-allocated at QEMU launch time.  Callers acquire a
+    channel before starting a guest process and release it when done.
+    """
+
+    def __init__(self, channels: list[SerialChannel]) -> None:
+        self._available = list(channels)
+        self._lock = threading.Lock()
+
+    def acquire(self) -> SerialChannel | None:
+        """Return an available channel, or None if all channels are in use."""
+        with self._lock:
+            if not self._available:
+                return None
+            return self._available.pop()
+
+    def release(self, channel: SerialChannel) -> None:
+        with self._lock:
+            self._available.append(channel)
+
+    def close_all(self) -> None:
+        with self._lock:
+            for ch in self._available:
+                ch.close()
+            self._available.clear()
+
+
 class QEMURunner:
     QMP_ADDRESS = ("127.0.0.1", 4242)
     QEMU_BINARY = "qemu-system-x86_64"
+    # QEMU x86_64 default machine type emulates up to four ISA 8250 UARTs
+    # at the standard COM port I/O addresses (COM1-COM4).
+    # COM1 (-serial stdio) is the main console; COM2-COM4 are available
+    # for dedicated process output channels (/dev/ser2 – /dev/ser4 in QNX).
+    NUM_EXTRA_SERIAL_PORTS = 3
 
     def _find_available_kvm_support(self):
         self._accelerator_support = "--enable-kvm"
@@ -62,9 +137,34 @@ class QEMURunner:
         self._qemu.wait()
         logging.info("QEMU has been stopped.\n")
 
+    def _create_serial_channels(self) -> tuple[list[SerialChannel], list[str]]:
+        """Pre-create Unix sockets and build QEMU args for extra serial ports.
+
+        Each extra port uses:
+          -serial unix:<path>,server=on,wait=off
+
+        QEMU x86_64 emulates ISA 8250 UARTs at the standard COM port I/O
+        addresses.  COM1 (stdio) is the main console; COM2-COM4 are available
+        for dedicated process output channels and appear inside the QNX
+        guest as /dev/ser2 – /dev/ser4.
+        """
+        self._tmpdir = tempfile.mkdtemp(prefix="qemu_serial_")
+        channels: list[SerialChannel] = []
+        qemu_args: list[str] = []
+        for i in range(self.NUM_EXTRA_SERIAL_PORTS):
+            sock_path = os.path.join(self._tmpdir, f"serial_{i}.sock")
+            # Guest device numbering: ser1 is the console, extras start at ser2
+            guest_dev = f"/dev/ser{i + 2}"
+            ch = SerialChannel(sock_path, guest_dev)
+            channels.append(ch)
+            qemu_args += ["-serial", f"unix:{sock_path},server=on,wait=off"]
+        return channels, qemu_args
+
     def __init__(self, firmware):
         self._find_available_kvm_support()
         self._check_kvm_readable_when_necessary()
+
+        channels, serial_args = self._create_serial_channels()
 
         qemu_options = ["-smp", "2",
                         "-m", "2G",
@@ -74,7 +174,7 @@ class QEMURunner:
                         "-device", "virtio-rng-pci,rng=rng0",
                         f"{self._accelerator_support}",
                         "-cpu", "Cascadelake-Server-v5"
-                        ]
+                        ] + serial_args
 
         self._listen_for_qmp_socket()
         self._start_qemu_in_background(
@@ -90,6 +190,11 @@ class QEMURunner:
         self._ensure_qmp_supported()
 
         self.console = PipeConsole("Qemu", self._qemu)
+
+        # Connect to each extra serial socket created by QEMU.
+        for ch in channels:
+            ch.connect()
+        self.channel_pool = SerialChannelPool(channels)
 
     def __enter__(self):
         return self
@@ -170,5 +275,8 @@ class QEMURunner:
         self._gracefully_terminate()
         self._force_terminate_if_necessary()
         self._worker_thread.join()
+        self.channel_pool.close_all()
         self._socket.close()
         self._socket_file_descriptor.close()
+        if hasattr(self, '_tmpdir') and os.path.isdir(self._tmpdir):
+            shutil.rmtree(self._tmpdir, ignore_errors=True)

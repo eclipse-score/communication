@@ -65,31 +65,33 @@ ProxyBase::ProxyBase(ProxyBase&& other) noexcept
 
 ProxyBase& ProxyBase::operator=(ProxyBase&& other) noexcept
 {
-    if (this != &other)
+    if (this == &other)
     {
-        proxy_binding_ = std::move(other.proxy_binding_);
-        handle_ = std::move(other.handle_);
-        are_service_element_bindings_valid_ = other.are_service_element_bindings_valid_;
-        events_ = std::move(other.events_);
-        fields_ = std::move(other.fields_);
-        methods_ = std::move(other.methods_);
+        return *this;
+    }
 
-        // Since the address of this proxy has changed, we need update the address stored in each of the events, fields
-        // and methods belonging to the proxy.
-        for (auto& event : events_)
-        {
-            event.second.get().UpdateProxyReference(*this);
-        }
+    proxy_binding_ = std::move(other.proxy_binding_);
+    handle_ = std::move(other.handle_);
+    are_service_element_bindings_valid_ = other.are_service_element_bindings_valid_;
+    events_ = std::move(other.events_);
+    fields_ = std::move(other.fields_);
+    methods_ = std::move(other.methods_);
 
-        for (auto& field : fields_)
-        {
-            field.second.get().UpdateProxyReference(*this);
-        }
+    // Since the address of this proxy has changed, we need update the address stored in each of the events, fields
+    // and methods belonging to the proxy.
+    for (auto& event : events_)
+    {
+        event.second.get().UpdateProxyReference(*this);
+    }
 
-        for (auto& method : methods_)
-        {
-            method.second.get().UpdateProxyReference(*this);
-        }
+    for (auto& field : fields_)
+    {
+        field.second.get().UpdateProxyReference(*this);
+    }
+
+    for (auto& method : methods_)
+    {
+        method.second.get().UpdateProxyReference(*this);
     }
     return *this;
 }
@@ -200,7 +202,7 @@ void ProxyBaseView::UpdateEvent(const std::string_view event_name, ProxyEventBas
     if (event_it == proxy_base_.events_.cend())
     {
         score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateEvent failed to update, because the requested event "
-                                       << event_name << " doesn't exist!";
+                                         << event_name << " doesn't exist!";
 
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
     }
@@ -214,7 +216,7 @@ void ProxyBaseView::UpdateField(const std::string_view field_name, ProxyFieldBas
     if (field_it == proxy_base_.fields_.cend())
     {
         score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateField failed to update, because the requested field "
-                                       << field_name << " doesn't exist";
+                                         << field_name << " doesn't exist";
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
     }
 
@@ -226,8 +228,9 @@ void ProxyBaseView::UpdateMethod(const std::string_view method_name, ProxyMethod
     auto method_it = proxy_base_.methods_.find(method_name);
     if (method_it == proxy_base_.methods_.cend())
     {
-        score::mw::log::LogFatal("lola") << "ProxyBaseView::UpdateMethod failed to update, because the requested method "
-                                       << method_name << " doesn't exist";
+        score::mw::log::LogFatal("lola")
+            << "ProxyBaseView::UpdateMethod failed to update, because the requested method " << method_name
+            << " doesn't exist";
         SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(false);
     }
 

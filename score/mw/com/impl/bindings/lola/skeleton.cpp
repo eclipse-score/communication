@@ -13,44 +13,33 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 
 #include "score/memory/shared/managed_memory_resource.h"
-#include "score/result/result.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
-#include "score/mw/com/impl/bindings/lola/service_data_control.h"
-#include "score/mw/com/impl/bindings/lola/service_data_storage.h"
-#include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/skeleton_event_binding.h"
-#include "score/mw/com/impl/util/arithmetic_utils.h"
+#include "score/result/result.h"
 
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
-#include "score/memory/shared/new_delete_delegate_resource.h"
 #include "score/memory/shared/shared_memory_factory.h"
-#include "score/memory/shared/shared_memory_resource.h"
-#include "score/os/acl.h"
-#include "score/os/stat.h"
 #include "score/mw/log/logging.h"
+#include "score/os/stat.h"
 
 #include <score/assert.hpp>
 #include <score/span.hpp>
 #include <sys/types.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <exception>
-#include <limits>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -84,49 +73,12 @@ const LolaServiceInstanceDeployment& GetLolaServiceInstanceDeployment(const Inst
         std::get_if<LolaServiceInstanceDeployment>(&instance_depl_info.bindingInfo_);
     if (lola_service_instance_deployment_ptr == nullptr)
     {
-        score::mw::log::LogError("lola") << "GetLolaServiceInstanceDeployment: Wrong Binding! ServiceInstanceDeployment "
-                                          "doesn't contain a LoLa deployment!";
+        score::mw::log::LogError("lola")
+            << "GetLolaServiceInstanceDeployment: Wrong Binding! ServiceInstanceDeployment "
+               "doesn't contain a LoLa deployment!";
         std::terminate();
     }
     return *lola_service_instance_deployment_ptr;
-}
-
-ServiceDataControl* GetServiceDataControlSkeletonSide(const memory::shared::ManagedMemoryResource& control)
-{
-    // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
-    // An object with integer type or pointer to void type shall not be converted to an object with pointer type.
-    // The "ServiceDataStorage" type is strongly defined as shared IPC data between Proxy and Skeleton.
-    // coverity[autosar_cpp14_m5_2_8_violation]
-    auto* const service_data_control = static_cast<ServiceDataControl*>(control.getUsableBaseAddress());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_control != nullptr, "Could not retrieve service data control.");
-    return service_data_control;
-}
-
-ServiceDataStorage* GetServiceDataStorageSkeletonSide(const memory::shared::ManagedMemoryResource& data)
-{
-    // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
-    // An object with integer type or pointer to void type shall not be converted to an object with pointer type.
-    // The "ServiceDataStorage" type is strongly defined as shared IPC data between Proxy and Skeleton.
-    // coverity[autosar_cpp14_m5_2_8_violation]
-    auto* const service_data_storage = static_cast<ServiceDataStorage*>(data.getUsableBaseAddress());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_storage != nullptr,
-                           "Could not retrieve service data storage within shared-memory.");
-    return service_data_storage;
-}
-
-enum class ShmObjectType : std::uint8_t
-{
-    kControl_QM = 0x00,
-    kControl_ASIL_B = 0x01,
-    kData = 0x02,
-};
-
-std::uint64_t CalculateMemoryResourceId(const LolaServiceTypeDeployment::ServiceId lola_service_id,
-                                        const LolaServiceInstanceId::InstanceId lola_instance_id,
-                                        const ShmObjectType object_type)
-{
-    return ((static_cast<std::uint64_t>(lola_service_id) << 24U) +
-            (static_cast<std::uint64_t>(lola_instance_id) << 8U) + static_cast<std::uint8_t>(object_type));
 }
 
 bool CreatePartialRestartDirectory(const score::filesystem::Filesystem& filesystem,
@@ -140,7 +92,7 @@ bool CreatePartialRestartDirectory(const score::filesystem::Filesystem& filesyst
     if (!create_dir_result.has_value())
     {
         score::mw::log::LogError("lola") << create_dir_result.error().Message()
-                                       << ":CreateDirectories failed:" << create_dir_result.error().UserMessage();
+                                         << ":CreateDirectories failed:" << create_dir_result.error().UserMessage();
         return false;
     }
     return true;
@@ -179,32 +131,14 @@ std::optional<memory::shared::LockFile> CreateOrOpenServiceInstanceUsageMarkerFi
     return memory::shared::LockFile::CreateOrOpen(service_instance_usage_marker_file_path, take_ownership);
 }
 
-std::string GetControlChannelShmPath(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
-                                     const QualityType quality_type,
-                                     const IShmPathBuilder& shm_path_builder)
+template <typename T>
+T& DereferenceWithNullCheck(std::unique_ptr<T>& ptr)
 {
-    const auto instance_id = lola_service_instance_deployment.instance_id_.value().GetId();
-    return shm_path_builder.GetControlChannelShmName(instance_id, quality_type);
-}
-
-std::string GetDataChannelShmPath(const LolaServiceInstanceDeployment& lola_service_instance_deployment,
-                                  const IShmPathBuilder& shm_path_builder)
-{
-    const auto instance_id = lola_service_instance_deployment.instance_id_.value().GetId();
-    return shm_path_builder.GetDataChannelShmName(instance_id);
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(ptr != nullptr, "Cannot dereference pointer as it is Null");
+    return *ptr;
 }
 
 }  // namespace
-
-namespace detail_skeleton
-{
-
-bool HasAsilBSupport(const InstanceIdentifier& identifier)
-{
-    return (InstanceIdentifierView{identifier}.GetServiceInstanceDeployment().asilLevel_ == QualityType::kASIL_B);
-}
-
-}  // namespace detail_skeleton
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". std::terminate() is implicitly called from 'service_instance_existence_marker_file.value()' in case the
@@ -217,7 +151,7 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
                                            std::unique_ptr<IPartialRestartPathBuilder> partial_restart_path_builder)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(partial_restart_path_builder != nullptr,
-                                 "Skeleton::Create: partial restart path builder pointer is Null");
+                                                      "Skeleton::Create: partial restart path builder pointer is Null");
     const auto partial_restart_dir_creation_result =
         CreatePartialRestartDirectory(filesystem, *partial_restart_path_builder);
     if (!partial_restart_dir_creation_result)
@@ -225,17 +159,16 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
         score::mw::log::LogError("lola") << "Could not create partial restart directory.";
         return nullptr;
     }
-
     const auto& lola_service_instance_deployment = GetLolaServiceInstanceDeployment(identifier);
     const auto lola_instance_id = lola_service_instance_deployment.instance_id_.value().GetId();
     auto service_instance_existence_marker_file =
         CreateOrOpenServiceInstanceExistenceMarkerFile(lola_instance_id, *partial_restart_path_builder);
+
     if (!service_instance_existence_marker_file.has_value())
     {
         score::mw::log::LogError("lola") << "Could not create or open service instance existence marker file.";
         return nullptr;
     }
-
     auto service_instance_existence_mutex_and_lock =
         std::make_unique<memory::shared::FlockMutexAndLock<memory::shared::ExclusiveFlockMutex>>(
             *service_instance_existence_marker_file);
@@ -246,7 +179,6 @@ std::unique_ptr<Skeleton> Skeleton::Create(const InstanceIdentifier& identifier,
                "actively offering the same service instance.";
         return nullptr;
     }
-
     const auto& lola_service_type_deployment = GetLolaServiceTypeDeployment(identifier);
     // Since we were able to flock the existence marker file, it means that either we created it or the skeleton that
     // created it previously crashed. Either way, we take ownership of the LockFile so that it's destroyed when this
@@ -273,20 +205,16 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
                        service_instance_existence_flock_mutex_and_lock)
     : SkeletonBinding{},
       identifier_{identifier},
-      lola_service_instance_deployment_{lola_service_instance_deployment},
-      lola_service_type_deployment_{lola_service_type_deployment},
-      lola_instance_id_{lola_service_instance_deployment_.instance_id_.value().GetId()},
+      quality_type_{InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_},
+      lola_instance_id_{lola_service_instance_deployment.instance_id_.value().GetId()},
       lola_service_id_{lola_service_type_deployment.service_id_},
-      data_storage_path_{},
-      data_control_qm_path_{},
-      data_control_asil_path_{},
-      storage_{nullptr},
-      control_qm_{nullptr},
-      control_asil_b_{nullptr},
-      storage_resource_{},
-      control_qm_resource_{},
-      control_asil_resource_{},
       shm_path_builder_{std::move(shm_path_builder)},
+      memory_manager_{GetInstanceQualityType(),
+                      DereferenceWithNullCheck(shm_path_builder_),
+                      lola_service_instance_deployment,
+                      lola_service_type_deployment,
+                      lola_instance_id_,
+                      lola_service_id_},
       partial_restart_path_builder_{std::move(partial_restart_path_builder)},
       service_instance_existence_marker_file_{std::move(service_instance_existence_marker_file)},
       service_instance_usage_marker_file_{},
@@ -301,6 +229,8 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
       method_call_handler_scope_{},
       on_service_method_subscribed_handler_scope_{}
 {
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(shm_path_builder_ != nullptr,
+                                                      "Shared memory path builder pointer is Null");
 }
 
 auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
@@ -308,8 +238,9 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
                             std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback)
     -> ResultBlank
 {
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(partial_restart_path_builder_ != nullptr,
-                                 "Skeleton::PrepareOffer: partial restart path builder pointer is Null");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        partial_restart_path_builder_ != nullptr,
+        "Skeleton::PrepareOffer: partial restart path builder pointer is Null");
     service_instance_usage_marker_file_ =
         CreateOrOpenServiceInstanceUsageMarkerFile(lola_instance_id_, *partial_restart_path_builder_);
     if (!service_instance_usage_marker_file_.has_value())
@@ -328,16 +259,17 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     {
 
         score::mw::log::LogDebug("lola") << "Recreating SHM of Skeleton (S:" << lola_service_id_
-                                       << "I:" << lola_instance_id_ << ")";
+                                         << "I:" << lola_instance_id_ << ")";
         // Since the previous shared memory region is not being currently used by proxies, this can mean 2 things: (1)
         // The previous shared memory was properly created and OfferService finished (the SkeletonBinding and all
         // Skeleton service elements finished their PrepareOffer calls) and either no Proxies subscribed or they have
         // all since unsubscribed. Or, (2), the previous Skeleton crashed while setting up the shared memory. Since we
         // don't differentiate between the 2 cases and because it's unused anyway, we simply remove the old memory
         // region and re-create it.
-        RemoveStaleSharedMemoryArtefacts();
+        memory_manager_.RemoveStaleSharedMemoryArtefacts();
 
-        const auto create_result = CreateSharedMemory(events, fields, std::move(register_shm_object_trace_callback));
+        const auto create_result =
+            memory_manager_.CreateSharedMemory(events, fields, std::move(register_shm_object_trace_callback));
         if (!(create_result.has_value()))
         {
             score::mw::log::LogError("lola") << "Could not create shared memory region for Skeleton.";
@@ -346,18 +278,19 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     }
     else
     {
-        score::mw::log::LogDebug("lola") << "Reusing SHM of Skeleton (S:" << lola_service_id_ << "I:" << lola_instance_id_
-                                       << ")";
+        score::mw::log::LogDebug("lola") << "Reusing SHM of Skeleton (S:" << lola_service_id_
+                                         << "I:" << lola_instance_id_ << ")";
         // Since the previous shared memory region is being currently used by proxies, it must have been properly
         // created and OfferService finished. Therefore, we can simply re-open it and cleanup any previous in-writing
         // transactions by the previous skeleton.
-        const auto open_result = OpenExistingSharedMemory(std::move(register_shm_object_trace_callback));
+        const auto open_result =
+            memory_manager_.OpenExistingSharedMemory(std::move(register_shm_object_trace_callback));
         if (!open_result.has_value())
         {
             score::mw::log::LogError("lola") << "Could not open existing shared memory region for Skeleton.";
             return open_result;
         }
-        CleanupSharedMemoryAfterCrash();
+        memory_manager_.CleanupSharedMemoryAfterCrash();
     }
 
     // If there are no registered SkeletonMethods, then we don't need to register a method subscribed handler and can
@@ -394,7 +327,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     }
     method_subscription_registration_guard_qm_ = std::move(qm_registration_result).value();
 
-    if (detail_skeleton::HasAsilBSupport(identifier_))
+    if (quality_type_ == QualityType::kASIL_B)
     {
         auto allowed_consumers_asil_b = GetAllowedConsumers(QualityType::kASIL_B);
         auto asil_b_registration_result = lola_message_passing.RegisterOnServiceMethodSubscribedHandler(
@@ -489,7 +422,7 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     {
         // Since we were able to exclusively lock the usage marker file, it means that no proxies are currently using
         // the shared memory region.
-        RemoveSharedMemory();
+        memory_manager_.RemoveSharedMemory();
         // We take ownership of the usage marker file so that it gets unlinked from the fs, when we destroy it.
         service_instance_usage_marker_file_.value().TakeOwnership();
         // Unlock the usage marker file before destroying it so that the destructor doesn't try to unlock an already
@@ -499,445 +432,12 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
         service_instance_usage_marker_file_.reset();
     }
 
-    storage_ = nullptr;
-    control_qm_ = nullptr;
-    control_asil_b_ = nullptr;
-}
-
-auto Skeleton::CreateSharedMemory(SkeletonEventBindings& events,
-                                  SkeletonFieldBindings& fields,
-                                  std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback)
-    -> ResultBlank
-{
-    const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields);
-
-    if (!CreateSharedMemoryForControl(
-            lola_service_instance_deployment_, QualityType::kASIL_QM, storage_size_calc_result.control_qm_size))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not create shared memory object for control QM");
-    }
-
-    if (detail_skeleton::HasAsilBSupport(identifier_) &&
-        (!CreateSharedMemoryForControl(lola_service_instance_deployment_,
-                                       QualityType::kASIL_B,
-                                       storage_size_calc_result.control_asil_b_size.value())))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle,
-                              "Could not create shared memory object for control ASIL-B");
-    }
-
-    if (!CreateSharedMemoryForData(lola_service_instance_deployment_,
-                                   storage_size_calc_result.data_size,
-                                   std::move(register_shm_object_trace_callback)))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not create shared memory object for data");
-    }
-    return {};
-}
-
-auto Skeleton::OpenExistingSharedMemory(
-    std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> ResultBlank
-{
-    if (!OpenSharedMemoryForControl(QualityType::kASIL_QM))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control QM");
-    }
-
-    if (detail_skeleton::HasAsilBSupport(identifier_) && (!OpenSharedMemoryForControl(QualityType::kASIL_B)))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for control ASIL-B");
-    }
-
-    if (!OpenSharedMemoryForData(std::move(register_shm_object_trace_callback)))
-    {
-        return MakeUnexpected(ComErrc::kErroneousFileHandle, "Could not open shared memory object for data");
-    }
-    return {};
-}
-
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
-// 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
-// throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
-// [Ticket-173043](broken_link_j/Ticket-173043)
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-bool Skeleton::CreateSharedMemoryForData(
-    const LolaServiceInstanceDeployment& instance,
-    const std::size_t shm_size,
-    std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback)
-{
-    memory::shared::SharedMemoryFactory::UserPermissionsMap permissions{};
-    for (const auto& allowed_consumer : instance.allowed_consumer_)
-    {
-        for (const auto& user_identifier : allowed_consumer.second)
-        {
-            permissions[score::os::Acl::Permission::kRead].push_back(user_identifier);
-        }
-    }
-
-    const auto path = shm_path_builder_->GetDataChannelShmName(lola_instance_id_);
-    const bool use_typed_memory = register_shm_object_trace_callback.has_value();
-    const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (instance.strict_permissions_ == false)
-            ? memory::shared::SharedMemoryFactory::WorldReadable{}
-            : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
-    const auto memory_resource = score::memory::shared::SharedMemoryFactory::Create(
-        path,
-        [this](std::shared_ptr<score::memory::shared::ISharedMemoryResource> memory) {
-            this->InitializeSharedMemoryForData(memory);
-        },
-        shm_size,
-        user_permissions,
-        use_typed_memory);
-    if (memory_resource == nullptr)
-    {
-        return false;
-    }
-    data_storage_path_ = path;
-    if (register_shm_object_trace_callback.has_value() && memory_resource->IsShmInTypedMemory())
-    {
-        // only if the memory_resource could be successfully allocated in typed-memory, we call back the
-        // register_shm_object_trace_callback, because only then the shm-object can be accessed by tracing
-        // subsystem.
-        // Since LoLa creates shm-objects on the granularity of whole service-instances (including ALL its service
-        // elements), we call register_shm_object_trace_callback once and hand over a dummy element name/type!
-        // Other bindings, which might create shm-objects per service-element would call
-        // register_shm_object_trace_callback for each service-element and then use their "real" name and type ...
-        // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
-        // , (true) or (<true condition>), then it shall not exit with an exception"
-        // we can't add  to score::cpp::callback signature.
-        // coverity[autosar_cpp14_a15_4_2_violation]
-        register_shm_object_trace_callback.value()(
-            tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
-            // Suppress "AUTOSAR C++14 A4-5-1" rule findings. This rule states: "Expressions with type enum or enum
-            // class shall not be used as operands to built-in and overloaded operators other than the subscript
-            // operator [ ], the assignment operator =, the equality operators == and ! =, the unary & operator, and the
-            // relational operators <,
-            // <=, >, >=.". The enum is not an operand, its a function parameter.
-            // coverity[autosar_cpp14_a4_5_1_violation : FALSE]
-            tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback,
-            memory_resource->GetFileDescriptor(),
-            memory_resource->getBaseAddress());
-    }
-
-    score::mw::log::LogDebug("lola") << "Created shared-memory-object for DATA (S: " << lola_service_id_
-                                   << " I:" << lola_instance_id_ << ")";
-    return true;
-}
-
-bool Skeleton::CreateSharedMemoryForControl(const LolaServiceInstanceDeployment& instance,
-                                            const QualityType asil_level,
-                                            const std::size_t shm_size)
-{
-    const auto path = shm_path_builder_->GetControlChannelShmName(lola_instance_id_, asil_level);
-
-    const auto consumer = instance.allowed_consumer_.find(asil_level);
-    auto& control_resource = (asil_level == QualityType::kASIL_QM) ? control_qm_resource_ : control_asil_resource_;
-    auto& data_control_path = (asil_level == QualityType::kASIL_QM) ? data_control_qm_path_ : data_control_asil_path_;
-
-    memory::shared::SharedMemoryFactory::UserPermissionsMap permissions{};
-    if (consumer != instance.allowed_consumer_.cend())
-    {
-        for (const auto& user_identifier : consumer->second)
-        {
-            permissions[score::os::Acl::Permission::kRead].push_back(user_identifier);
-            permissions[score::os::Acl::Permission::kWrite].push_back(user_identifier);
-        }
-    }
-
-    const memory::shared::SharedMemoryFactory::UserPermissions user_permissions =
-        (permissions.empty()) && (instance.strict_permissions_ == false)
-            ? memory::shared::SharedMemoryFactory::WorldWritable{}
-            : memory::shared::SharedMemoryFactory::UserPermissions{permissions};
-    control_resource = score::memory::shared::SharedMemoryFactory::Create(
-        path,
-        [this, asil_level](std::shared_ptr<score::memory::shared::ManagedMemoryResource> memory) {
-            this->InitializeSharedMemoryForControl(asil_level, memory);
-        },
-        shm_size,
-        user_permissions);
-    if (control_resource == nullptr)
-    {
-        return false;
-    }
-    data_control_path = path;
-    return true;
-}
-
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, all results which are accessed with '.value()' that could implicitly call
-// 'std::terminate()' (in case it doesn't have value) has a check in advance using '.has_value()', so no way for
-// throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
-// [Ticket-173043](broken_link_j/Ticket-173043)
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-bool Skeleton::OpenSharedMemoryForData(
-    const std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback)
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(shm_path_builder_ != nullptr,
-                                 "Skeleton::OpenSharedMemoryForData: shared memory path builder pointer is Null");
-    const auto path = GetDataChannelShmPath(lola_service_instance_deployment_, *shm_path_builder_);
-
-    const auto memory_resource = score::memory::shared::SharedMemoryFactory::Open(path, true);
-    if (memory_resource == nullptr)
-    {
-        return false;
-    }
-    data_storage_path_ = path;
-    storage_resource_ = memory_resource;
-
-    const auto& memory_resource_ref = *memory_resource.get();
-    storage_ = GetServiceDataStorageSkeletonSide(memory_resource_ref);
-
-    // Our pid will have changed after re-start and we now have to update it in the re-opened DATA section.
-    const auto pid = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetPid();
-    score::mw::log::LogDebug("lola") << "Updating PID of Skeleton (S: " << lola_service_id_ << " I:" << lola_instance_id_
-                                   << ") with:" << pid;
-    storage_->skeleton_pid_ = pid;
-
-    if (register_shm_object_trace_callback.has_value() && memory_resource->IsShmInTypedMemory())
-    {
-        // only if the memory_resource could be successfully allocated in typed-memory, we call back the
-        // register_shm_object_trace_callback, because only then the shm-object can be accessed by tracing
-        // subsystem.
-        // Suppress "AUTOSAR C++14 A15-4-2" rule finding. This rule states: "I a function is declared to be
-        // , (true) or (<true condition>), then it shall not exit with an exception"
-        // we can't add  to score::cpp::callback signature.
-        // coverity[autosar_cpp14_a15_4_2_violation]
-        register_shm_object_trace_callback.value()(
-            tracing::TracingRuntime::kDummyElementNameForShmRegisterCallback,
-            // Suppress "AUTOSAR C++14 A4-5-1" rule findings. This rule states: "Expressions with type enum or enum
-            // class shall not be used as operands to built-in and overloaded operators other than the subscript
-            // operator [ ], the assignment operator =, the equality operators == and ! =, the unary & operator, and the
-            // relational operators <,
-            // <=, >, >=.". The enum is not an operand, its a function parameter.
-            // coverity[autosar_cpp14_a4_5_1_violation : FALSE]
-            tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback,
-            memory_resource->GetFileDescriptor(),
-            memory_resource->getBaseAddress());
-    }
-    return true;
-}
-
-bool Skeleton::OpenSharedMemoryForControl(const QualityType asil_level)
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(shm_path_builder_ != nullptr,
-                                 "Skeleton::OpenSharedMemoryForControl: shared memory path builder pointer is Null");
-    const auto path = GetControlChannelShmPath(lola_service_instance_deployment_, asil_level, *shm_path_builder_);
-
-    auto& control_resource = (asil_level == QualityType::kASIL_QM) ? control_qm_resource_ : control_asil_resource_;
-    auto& data_control_path = (asil_level == QualityType::kASIL_QM) ? data_control_qm_path_ : data_control_asil_path_;
-
-    control_resource = score::memory::shared::SharedMemoryFactory::Open(path, true);
-    if (control_resource == nullptr)
-    {
-        return false;
-    }
-    data_control_path = path;
-
-    auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
-
-    const auto& control_resource_ref = *control_resource.get();
-    control = GetServiceDataControlSkeletonSide(control_resource_ref);
-
-    return true;
-}
-
-void Skeleton::RemoveSharedMemory()
-{
-    constexpr auto RemoveMemoryIfExists = [](const score::cpp::optional<std::string>& path) -> void {
-        if (path.has_value())
-        {
-            score::memory::shared::SharedMemoryFactory::Remove(path.value());
-        }
-    };
-    RemoveMemoryIfExists(data_control_qm_path_);
-    RemoveMemoryIfExists(data_control_asil_path_);
-    RemoveMemoryIfExists(data_storage_path_);
-
-    storage_resource_.reset();
-    control_qm_resource_.reset();
-    control_asil_resource_.reset();
-}
-
-void Skeleton::RemoveStaleSharedMemoryArtefacts() const
-{
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        shm_path_builder_ != nullptr,
-        "Skeleton::RemoveStaleSharedMemoryArtefacts: shared memory path builder pointer is Null");
-    const auto control_qm_path =
-        GetControlChannelShmPath(lola_service_instance_deployment_, QualityType::kASIL_QM, *shm_path_builder_);
-    const auto control_asil_b_path =
-        GetControlChannelShmPath(lola_service_instance_deployment_, QualityType::kASIL_B, *shm_path_builder_);
-    const auto data_path = GetDataChannelShmPath(lola_service_instance_deployment_, *shm_path_builder_);
-
-    memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(control_qm_path);
-    memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(control_asil_b_path);
-    memory::shared::SharedMemoryFactory::RemoveStaleArtefacts(data_path);
-}
-
-Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizesBySimulation(SkeletonEventBindings& events,
-                                                                                         SkeletonFieldBindings& fields)
-{
-    using NewDeleteDelegateMemoryResource = memory::shared::NewDeleteDelegateMemoryResource;
-
-    // we create up to 3 DryRun Memory Resources and then do the "normal" initialization of control and data
-    // shm-objects on it
-    control_qm_resource_ = std::make_shared<NewDeleteDelegateMemoryResource>(
-        CalculateMemoryResourceId(lola_service_id_, lola_instance_id_, ShmObjectType::kControl_QM));
-
-    storage_resource_ = std::make_shared<NewDeleteDelegateMemoryResource>(
-        CalculateMemoryResourceId(lola_service_id_, lola_instance_id_, ShmObjectType::kData));
-
-    // Note, that it is important to have all DryRun Memory Resources "active" in parallel as the upcoming calls to
-    // PrepareOffer() for the events triggers all SkeletonEvents to register themselves at their parent Skeleton
-    // (lola::Skeleton::Register()), which leads to updates/allocation within ctrl AND data resources!
-    InitializeSharedMemoryForControl(QualityType::kASIL_QM, control_qm_resource_);
-
-    if (detail_skeleton::HasAsilBSupport(identifier_))
-    {
-        control_asil_resource_ = std::make_shared<NewDeleteDelegateMemoryResource>(
-            CalculateMemoryResourceId(lola_service_id_, lola_instance_id_, ShmObjectType::kControl_ASIL_B));
-        InitializeSharedMemoryForControl(QualityType::kASIL_B, control_asil_resource_);
-    }
-    InitializeSharedMemoryForData(storage_resource_);
-
-    // Offer events to calculate the shared memory allocated for the control and data segments for each event
-    for (auto& event : events)
-    {
-        score::cpp::ignore = event.second.get().PrepareOffer();
-    }
-    for (auto& field : fields)
-    {
-        score::cpp::ignore = field.second.get().PrepareOffer();
-    }
-
-    const auto control_qm_size = control_qm_resource_->GetUserAllocatedBytes();
-    const auto control_data_size = storage_resource_->GetUserAllocatedBytes();
-
-    // PrepareStopOffer events to clean up the events/fields again for the real/next offer done after simulation.
-    for (auto& event : events)
-    {
-        event.second.get().PrepareStopOffer();
-    }
-    for (auto& field : fields)
-    {
-        field.second.get().PrepareStopOffer();
-    }
-
-    const auto control_asil_b_size = detail_skeleton::HasAsilBSupport(identifier_)
-                                         ? score::cpp::optional<std::size_t>{control_asil_resource_->GetUserAllocatedBytes()}
-                                         : score::cpp::optional<std::size_t>{};
-
-    return ShmResourceStorageSizes{control_data_size, control_qm_size, control_asil_b_size};
-}
-
-Skeleton::ShmResourceStorageSizes Skeleton::CalculateShmResourceStorageSizes(SkeletonEventBindings& events,
-                                                                             SkeletonFieldBindings& fields)
-{
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode() ==
-                               ShmSizeCalculationMode::kSimulation,
-                           "No other shm size calculation mode is currently suppored");
-    if ((lola_service_instance_deployment_.shared_memory_size_.has_value()) &&
-        (lola_service_instance_deployment_.control_asil_b_memory_size_.has_value()) &&
-        (lola_service_instance_deployment_.control_qm_memory_size_.has_value()))
-    {
-        score::mw::log::LogInfo("lola") << "shm-size, control-asil-b-shm-size and control-qm-shm-size manually specified "
-                                         "for service_id:instance_id "
-                                      << lola_service_id_
-                                      << ":"
-                                      // coverity[autosar_cpp14_a18_9_2_violation]
-                                      << lola_instance_id_
-                                      << "- Make sure that this value is sufficiently big to"
-                                         "avoid aborts at runtime.";
-        return {lola_service_instance_deployment_.shared_memory_size_.value(),
-                lola_service_instance_deployment_.control_qm_memory_size_.value(),
-                lola_service_instance_deployment_.control_asil_b_memory_size_.value()};
-    }
-
-    auto required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
-
-    const std::size_t control_asil_b_size_result = required_shm_storage_size.control_asil_b_size.has_value()
-                                                       ? required_shm_storage_size.control_asil_b_size.value()
-                                                       : 0U;
-
-    // Suppress "AUTOSAR C++14 A18-9-2" rule finding: "Forwarding values to other functions shall be done via:
-    // (1) std::move if the value is an rvalue reference, (2) std::forward if the value is forwarding
-    // reference".
-    // Passing result of std::move() as a const reference argument, no move will actually happen.
-    // coverity[autosar_cpp14_a18_9_2_violation]
-    score::mw::log::LogInfo("lola") << "Calculated sizes of shm-objects for service_id:instance_id " << lola_service_id_
-                                  << ":"
-                                  // coverity[autosar_cpp14_a18_9_2_violation]
-                                  << lola_instance_id_
-                                  << " are as follows:\nQM-Ctrl: " << required_shm_storage_size.control_qm_size
-                                  << ", ASIL_B-Ctrl: " << control_asil_b_size_result
-                                  << ", Data: " << required_shm_storage_size.data_size;
-
-    if (lola_service_instance_deployment_.shared_memory_size_.has_value())
-    {
-        score::mw::log::LogInfo("lola") << "shm-size manually specified for service_id:instance_id " << lola_service_id_
-                                      << ":"
-                                      // coverity[autosar_cpp14_a18_9_2_violation]
-                                      << lola_instance_id_
-                                      << "- Make sure that this value is sufficiently big to"
-                                         "avoid aborts at runtime.";
-        required_shm_storage_size.data_size = lola_service_instance_deployment_.shared_memory_size_.value();
-    }
-
-    if (lola_service_instance_deployment_.control_asil_b_memory_size_.has_value())
-    {
-        score::mw::log::LogInfo("lola") << "control-asil-b-shm-size manually specified for service_id:instance_id "
-                                      << lola_service_id_
-                                      << ":"
-                                      // coverity[autosar_cpp14_a18_9_2_violation]
-                                      << lola_instance_id_
-                                      << "- Make sure that this value is sufficiently big to"
-                                         "avoid aborts at runtime.";
-        required_shm_storage_size.control_asil_b_size =
-            lola_service_instance_deployment_.control_asil_b_memory_size_.value();
-    }
-
-    if (lola_service_instance_deployment_.control_qm_memory_size_.has_value())
-    {
-        score::mw::log::LogInfo("lola") << "control-qm-shm-size manually specified for service_id:instance_id "
-                                      << lola_service_id_
-                                      << ":"
-                                      // coverity[autosar_cpp14_a18_9_2_violation]
-                                      << lola_instance_id_
-                                      << "- Make sure that this value is sufficiently big to"
-                                         "avoid aborts at runtime.";
-        required_shm_storage_size.control_qm_size = lola_service_instance_deployment_.control_qm_memory_size_.value();
-    }
-
-    return required_shm_storage_size;
-}
-
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the
-// key value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw
-// an exception.
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::cpp::optional<EventMetaInfo> Skeleton::GetEventMetaInfo(const ElementFqId element_fq_id) const
-{
-    auto search = storage_->events_metainfo_.find(element_fq_id);
-    if (search == storage_->events_metainfo_.cend())
-    {
-        return score::cpp::nullopt;
-    }
-    else
-    {
-        // Suppress "AUTOSAR C++14 A5-3-2" rule finding. This rule declares: "Null pointers shall not be dereferenced.".
-        // The "search" variable is an iterator of interprocess map returned by "find" method.
-        // Performed the check, that iterator is not equal to map.end(). A check is made that the iterator is not equal
-        // to map.end(). Therefore, the call to "search->" does not return nullptr.
-        // coverity[autosar_cpp14_a5_3_2_violation]
-        return search->second;
-    }
+    memory_manager_.Reset();
 }
 
 QualityType Skeleton::GetInstanceQualityType() const
 {
-    return InstanceIdentifierView{identifier_}.GetServiceInstanceDeployment().asilLevel_;
+    return quality_type_;
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -945,24 +445,13 @@ QualityType Skeleton::GetInstanceQualityType() const
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void Skeleton::CleanupSharedMemoryAfterCrash()
 {
-    for (auto& event : control_qm_->event_controls_)
-    {
-        event.second.data_control.RemoveAllocationsForWriting();
-    }
-
-    if (control_asil_b_ != nullptr)
-    {
-        for (auto& event : control_asil_b_->event_controls_)
-        {
-            event.second.data_control.RemoveAllocationsForWriting();
-        }
-    }
+    memory_manager_.CleanupSharedMemoryAfterCrash();
 }
 
 void Skeleton::DisconnectQmConsumers()
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(GetInstanceQualityType() == QualityType::kASIL_B,
-                           "DisconnectQmConsumers() called on a QualityType::kASIL_QM instance!");
+                                                "DisconnectQmConsumers() called on a QualityType::kASIL_QM instance!");
 
     auto result = impl::Runtime::getInstance().GetServiceDiscovery().StopOfferService(
         identifier_, IServiceDiscovery::QualityTypeSelector::kAsilQm);
@@ -994,30 +483,35 @@ bool Skeleton::VerifyAllMethodsRegistered() const
     return true;
 }
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, there is no way for calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void Skeleton::InitializeSharedMemoryForData(const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory)
+std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
+    const ElementFqId element_fq_id,
+    const SkeletonEventProperties& element_properties,
+    const size_t sample_size,
+    const size_t sample_alignment) noexcept
 {
-    storage_ = memory->construct<ServiceDataStorage>(memory->getMemoryResourceProxy());
-    storage_resource_ = memory;
-    // Suppress "AUTOSAR C++14 A0-1-1", The rule states: "A project shall not contain instances of non-volatile
-    // variables being given values that are not subsequently used"
-    // There is no variable instantiation.
-    // coverity[autosar_cpp14_a0_1_1_violation : FALSE]
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(storage_resource_ != nullptr,
-                           "storage_resource_ must be no nullptr, otherwise the callback would not be invoked.");
-}
+    if (was_old_shm_region_reopened_)
+    {
+        auto [data_storage, control_composite] =
+            memory_manager_.OpenEventDataFromOpenedSharedMemory<std::uint8_t>(element_fq_id);
 
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, there is no way for calling std::terminate().
-// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-void Skeleton::InitializeSharedMemoryForControl(
-    const QualityType asil_level,
-    const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory)
-{
-    auto& control = (asil_level == QualityType::kASIL_QM) ? control_qm_ : control_asil_b_;
-    control = memory->construct<ServiceDataControl>(memory->getMemoryResourceProxy());
+        auto& event_data_control_qm = control_composite.GetQmEventDataControl();
+        auto rollback_result = event_data_control_qm.GetTransactionLogSet().RollbackSkeletonTracingTransactions(
+            [&event_data_control_qm](const TransactionLog::SlotIndexType slot_index) {
+                event_data_control_qm.DereferenceEventWithoutTransactionLogging(slot_index);
+            });
+        if (!rollback_result.has_value())
+        {
+            ::score::mw::log::LogWarn("lola")
+                << "SkeletonEvent: PrepareOffer failed: Could not rollback tracing consumer after "
+                   "crash. Disabling tracing.";
+            impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
+        }
+
+        return {data_storage, control_composite};
+    }
+
+    return memory_manager_.CreateEventDataFromOpenedSharedMemory(
+        element_fq_id, element_properties, sample_size, sample_alignment);
 }
 
 ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
@@ -1033,15 +527,17 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
     std::lock_guard lock{on_service_methods_subscribed_mutex_};
     if (method_resources_.Contains(proxy_instance_identifier, proxy_pid))
     {
-        score::mw::log::LogDebug("lola") << "Method" << proxy_instance_identifier.process_identifier << "/"
-                                       << proxy_instance_identifier.proxy_instance_counter << "with PID:" << proxy_pid
-                                       << "already subscribed. Not re-opening shared memory region";
+        score::mw::log::LogDebug("lola") << "Method" << proxy_instance_identifier.application_id << "/"
+                                         << proxy_instance_identifier.proxy_instance_counter << "with PID:" << proxy_pid
+                                         << "already subscribed. Not re-opening shared memory region";
         return {};
     }
 
     const auto method_channel_shm_name =
         shm_path_builder_->GetMethodChannelShmName(lola_instance_id_, proxy_instance_identifier);
     const bool is_read_write{true};
+
+    method_resources_.CleanUpOldRegions(proxy_instance_identifier, proxy_pid);  // Per Proxy
 
     const std::vector<uid_t> allowed_providers{proxy_uid};
     auto opened_shm_region =
@@ -1052,13 +548,12 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 
-    const auto [resource_it, _] =
-        method_resources_.InsertAndCleanUpOldRegions(proxy_instance_identifier, proxy_pid, opened_shm_region);
+    const auto resource_it = method_resources_.Insert(proxy_instance_identifier, proxy_pid, opened_shm_region);
 
     auto& method_data = GetMethodData(*(resource_it->second));
 
     const auto [subscription_result, method_ids_to_unsubscribe] =
-        SubscribeMethods(method_data, proxy_instance_identifier, proxy_uid, asil_level);
+        SubscribeMethods(method_data, proxy_instance_identifier, proxy_uid, proxy_pid, asil_level);
     if (!(subscription_result.has_value()))
     {
         UnsubscribeMethods(method_ids_to_unsubscribe, proxy_instance_identifier);
@@ -1070,6 +565,7 @@ ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& 
 auto Skeleton::SubscribeMethods(const MethodData& method_data,
                                 const ProxyInstanceIdentifier proxy_instance_identifier,
                                 const uid_t proxy_uid,
+                                const pid_t proxy_pid,
                                 const QualityType asil_level) -> std::pair<score::ResultBlank, MethodIdsToUnsubscribe>
 {
     const auto& method_call_queues = method_data.method_call_queues_;
@@ -1082,6 +578,7 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
             "Each method that was stored in shared memory by the proxy must be registered with the Skeleton!");
         auto& skeleton_method = skeleton_methods_.at(method_id);
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
+
         const auto result =
             skeleton_method.get().OnProxyMethodSubscribeFinished(type_erased_call_queue.GetTypeErasedElementInfo(),
                                                                  type_erased_call_queue.GetInArgValuesQueueStorage(),
@@ -1089,6 +586,7 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
                                                                  proxy_method_instance_identifier,
                                                                  method_call_handler_scope_,
                                                                  proxy_uid,
+                                                                 proxy_pid,
                                                                  asil_level);
         if (!(result.has_value()))
         {
@@ -1135,7 +633,7 @@ IMessagePassingService::AllowedConsumerUids Skeleton::GetAllowedConsumers(const 
         if (strict_permissions)
         {
             score::mw::log::LogDebug("lola") << "Quality type:" << ToString(asil_level)
-                                           << "does not exist in allowed_consumer list in configuration!";
+                                             << "does not exist in allowed_consumer list in configuration!";
             return std::set<uid_t>{};
         }
         else
@@ -1152,7 +650,8 @@ IMessagePassingService::AllowedConsumerUids Skeleton::GetAllowedConsumers(const 
 MethodData& Skeleton::GetMethodData(const memory::shared::ManagedMemoryResource& resource)
 {
     auto* const method_data_storage = static_cast<MethodData*>(resource.getUsableBaseAddress());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_data_storage != nullptr, "Could not retrieve method data within shared-memory.");
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(method_data_storage != nullptr,
+                                                "Could not retrieve method data within shared-memory.");
     return *method_data_storage;
 }
 

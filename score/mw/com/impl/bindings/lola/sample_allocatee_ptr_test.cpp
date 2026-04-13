@@ -38,8 +38,8 @@ class SampleAllocateePtrFixture : public ::testing::Test
 {
   public:
     FakeMemoryResource memory_{};
-    EventDataControl control_block_{kMaxSlots, memory_.getMemoryResourceProxy(), kMaxSubscribers};
-    EventDataControlComposite control_composite_{&control_block_};
+    EventDataControl control_block_{kMaxSlots, memory_, kMaxSubscribers};
+    EventDataControlComposite<> control_composite_{&control_block_};
 };
 
 TEST_F(SampleAllocateePtrFixture, PtrContainingInvalidSlotIsNotDestroyingAnything)

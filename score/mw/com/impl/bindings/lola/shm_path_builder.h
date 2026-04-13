@@ -14,7 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SHM_PATH_BUILDER_H
 
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 

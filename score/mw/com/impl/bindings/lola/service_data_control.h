@@ -13,12 +13,13 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_DATA_CONTROL_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_DATA_CONTROL_H
 
-#include "score/memory/shared/map.h"
-#include "score/memory/shared/memory_resource_proxy.h"
-#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
+
+#include "score/memory/shared/map.h"
+#include "score/memory/shared/memory_resource_proxy.h"
+#include "score/memory/shared/polymorphic_offset_ptr_allocator.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -37,8 +38,8 @@ class ServiceDataControl
     ///          memory resource, but this would be "uncommon")
     /// \param proxy MemoryResourceProxy pointing to the memory-resource to be used
 
-    explicit ServiceDataControl(const score::memory::shared::MemoryResourceProxy* const proxy)
-        : event_controls_(proxy), application_id_pid_mapping_(kMaxApplicationIdPidMappings, proxy)
+    explicit ServiceDataControl(score::memory::shared::ManagedMemoryResource& resource)
+        : event_controls_(resource), application_id_pid_mapping_(kMaxApplicationIdPidMappings, resource)
     {
     }
 

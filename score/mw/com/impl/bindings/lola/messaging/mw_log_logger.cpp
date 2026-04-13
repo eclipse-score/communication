@@ -25,14 +25,12 @@ score::message_passing::LoggingCallback GetMwLogLogger()
     return [](score::message_passing::LogSeverity severity, score::message_passing::LogItems items) -> void {
         using LogStreamFactoryPtr = score::mw::log::LogStream (*)(std::string_view) noexcept;
         constexpr auto kLogLevels = score::cpp::to_underlying(score::message_passing::LogSeverity::kVerbose) + 1U;
-        constexpr std::array<LogStreamFactoryPtr, kLogLevels> StreamFactories{{
-            &score::mw::log::LogFatal,
-            &score::mw::log::LogError,
-            &score::mw::log::LogWarn,
-            &score::mw::log::LogWarn,  // LogInfo - temporary replacement for Ticket-235378 debugging
-            &score::mw::log::LogWarn,  // LogDebug - temporary replacement for Ticket-235378 debugging
-            &score::mw::log::LogWarn   // LogVerbose - temporary replacement for Ticket-235378 debugging
-        }};
+        constexpr std::array<LogStreamFactoryPtr, kLogLevels> StreamFactories{{&score::mw::log::LogFatal,
+                                                                               &score::mw::log::LogError,
+                                                                               &score::mw::log::LogWarn,
+                                                                               &score::mw::log::LogInfo,
+                                                                               &score::mw::log::LogDebug,
+                                                                               &score::mw::log::LogVerbose}};
         auto severity_num = score::cpp::to_underlying(severity);
         if (severity_num >= kLogLevels)
         {

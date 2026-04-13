@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
@@ -30,8 +31,9 @@ class TransactionLogRollbackExecutor
     /// \param provider_pid pid/node-id of the service instance provider
     /// \param transaction_log_id id of transaction logs to be rolled back.
     TransactionLogRollbackExecutor(ServiceDataControl& service_data_control,
+                                   const SkeletonInstanceIdentifier skeleton_instance_identifier,
                                    const QualityType asil_level,
-                                   pid_t provider_pid,
+                                   const pid_t provider_pid,
                                    const TransactionLogId transaction_log_id) noexcept;
 
     /// \brief Does a rollback of all transaction logs (log per service element) related to service_data_control/
@@ -61,6 +63,7 @@ class TransactionLogRollbackExecutor
     /// pid of the provider of the service instance represented by service_data_control_
     const pid_t provider_pid_;
     TransactionLogId transaction_log_id_;
+    SkeletonInstanceIdentifier skeleton_instance_identifier_;
 };
 
 }  // namespace score::mw::com::impl::lola

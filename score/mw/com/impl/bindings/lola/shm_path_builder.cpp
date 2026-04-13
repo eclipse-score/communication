@@ -102,7 +102,7 @@ void EmitMethodFileName(std::ostream& out,
     AppendServiceAndInstance(out, service_id, instance_id);
 
     out << '-';
-    out << std::setfill('0') << std::setw(5) << proxy_instance_identifier.process_identifier << '-';
+    out << std::setfill('0') << std::setw(5) << proxy_instance_identifier.application_id << '-';
     out << std::setfill('0') << std::setw(5) << proxy_instance_identifier.proxy_instance_counter;
 }
 

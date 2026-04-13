@@ -30,9 +30,9 @@ namespace score::mw::com::impl::lola
 class ServiceDataStorage
 {
   public:
-    explicit ServiceDataStorage(const score::memory::shared::MemoryResourceProxy* const proxy)
-        : events_(proxy),
-          events_metainfo_(proxy),
+    explicit ServiceDataStorage(score::memory::shared::ManagedMemoryResource& resource)
+        : events_(resource),
+          events_metainfo_(resource),
           skeleton_pid_{impl::GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetPid()},
           skeleton_uid_{os::Unistd::instance().getuid()}
     {

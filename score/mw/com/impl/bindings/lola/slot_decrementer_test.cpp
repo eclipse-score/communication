@@ -66,7 +66,7 @@ class SlotDecrementerFixture : public ::testing::Test
     }
 
     FakeMemoryResource memory_{};
-    EventDataControl event_data_control_{kMaxSlots, memory_.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control_{kMaxSlots, memory_, kMaxSubscribers};
     TransactionLogSet::TransactionLogIndex transaction_log_index_{
         event_data_control_.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value()};
 

@@ -495,7 +495,7 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreTracedWhenEnabled
     this->CreateProxy();
 
     // and subscribe is called on the event
-    this->proxy_->my_service_element_.Subscribe(max_sample_count);
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
 }
 
 TYPED_TEST(ProxyEventTracingSubscribeFixture,
@@ -565,7 +565,7 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
     this->CreateProxy();
 
     // and subscribe is called on the event
-    this->proxy_->my_service_element_.Subscribe(max_sample_count);
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
 
     // Then the specific trace point instance should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -643,7 +643,7 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
     this->CreateProxy();
 
     // and subscribe is called on the event
-    this->proxy_->my_service_element_.Subscribe(max_sample_count);
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
 
     // Then all trace point instances should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -694,7 +694,7 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreNotTracedWhenDisa
     this->CreateProxy();
 
     // and subscribe is called on the event
-    this->proxy_->my_service_element_.Subscribe(max_sample_count);
+    std::ignore = this->proxy_->my_service_element_.Subscribe(max_sample_count);
 }
 
 TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreTracedWhenEnabled)
@@ -984,7 +984,7 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture, SetReceiveHandlerCallsAreT
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 }
 
 TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
@@ -1041,7 +1041,7 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 
     // Then the specific trace point instance should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -1105,7 +1105,7 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 
     // Then all trace point instances should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -1150,7 +1150,7 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture, SetReceiveHandlerCallsAreN
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 }
 
 TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture, ReceiveHandlerCallbackCallsAreTracedWhenEnabled)
@@ -1210,7 +1210,7 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture, ReceiveHandlerCallbac
 
     // and SetReceiveHandler is called on the event
     EventReceiveHandler handler = []() {};
-    this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
 
     // and the wrapped handler is called
     auto scoped_event_receive_handler_shared_ptr = scoped_event_receive_handler_weak_ptr.lock();
@@ -1279,7 +1279,7 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
 
     // and SetReceiveHandler is called on the event
     EventReceiveHandler handler = []() {};
-    this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
 
     // and the wrapped handler is called
     auto scoped_event_receive_handler_shared_ptr = scoped_event_receive_handler_weak_ptr.lock();
@@ -1355,7 +1355,7 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
 
     // and SetReceiveHandler is called on the event
     EventReceiveHandler handler = []() {};
-    this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
 
     // and the wrapped handler is called
     auto scoped_event_receive_handler_shared_ptr = scoped_event_receive_handler_weak_ptr.lock();
@@ -1412,7 +1412,7 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture, ReceiveHandlerCallbac
 
     // and SetReceiveHandler is called on the event
     EventReceiveHandler handler = []() {};
-    this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(std::move(handler));
 
     // and the wrapped handler is called
     auto scoped_event_receive_handler_shared_ptr = scoped_event_receive_handler_weak_ptr.lock();
@@ -1470,10 +1470,10 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture, UnsetReceiveHandlerCalls
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 
     // and UnsetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.UnsetReceiveHandler();
+    std::ignore = this->proxy_->my_service_element_.UnsetReceiveHandler();
 }
 
 TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
@@ -1530,10 +1530,10 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 
     // and UnsetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.UnsetReceiveHandler();
+    std::ignore = this->proxy_->my_service_element_.UnsetReceiveHandler();
 
     // Then the specific trace point instance should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -1597,10 +1597,10 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 
     // and UnsetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.UnsetReceiveHandler();
+    std::ignore = this->proxy_->my_service_element_.UnsetReceiveHandler();
 
     // Then all trace point instances should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -1645,10 +1645,10 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture, UnsetReceiveHandlerCalls
     this->CreateProxy();
 
     // and SetReceiveHandler is called on the event
-    this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
+    std::ignore = this->proxy_->my_service_element_.SetReceiveHandler(EventReceiveHandler{});
 
     // and unsubscribe is called on the event
-    this->proxy_->my_service_element_.UnsetReceiveHandler();
+    std::ignore = this->proxy_->my_service_element_.UnsetReceiveHandler();
 }
 
 TYPED_TEST(ProxyEventTracingGetNewSamplesFixture, GetNewSamplesCallsAreTracedWhenEnabled)
@@ -1700,7 +1700,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture, GetNewSamplesCallsAreTracedWhe
     this->CreateProxy();
 
     // and GetNewSamples is called on the event
-    this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
 }
 
 TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
@@ -1755,7 +1755,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
     this->CreateProxy();
 
     // and GetNewSamples is called on the event
-    this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
 
     // Then the specific trace point instance should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -1818,7 +1818,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
     this->CreateProxy();
 
     // and GetNewSamples is called on the event
-    this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
 
     // Then all trace point instances should now be disabled
     const ProxyEventTracingData actual_enabled_trace_points =
@@ -1862,7 +1862,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture, GetNewSamplesCallsAreNotTraced
     this->CreateProxy();
 
     // and unsubscribe is called on the event
-    this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples([](SamplePtr<TestSampleType>) {}, max_num_samples);
 }
 
 TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture, GetNewSamplesCallbackCallsAreTracedWhenEnabled)
@@ -1932,7 +1932,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture, GetNewSamplesCallbackC
 
     // and GetNewSamplesCallback is called on the event
     score::cpp::callback<void(SamplePtr<TestSampleType>)> callback = [](SamplePtr<TestSampleType>) noexcept {};
-    this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
 
     // and the wrapped handler is called
     wrapper_get_new_samples_callback(SamplePtr<TestSampleType>{}, timestamp);
@@ -2007,7 +2007,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture,
 
     // and GetNewSamplesCallback is called on the event
     score::cpp::callback<void(SamplePtr<TestSampleType>)> callback = [](SamplePtr<TestSampleType>) noexcept {};
-    this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
 
     // and the wrapped handler is called
     wrapper_get_new_samples_callback(SamplePtr<TestSampleType>{}, timestamp);
@@ -2089,7 +2089,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture,
 
     // and GetNewSamplesCallback is called on the event
     score::cpp::callback<void(SamplePtr<TestSampleType>)> callback = [](SamplePtr<TestSampleType>) noexcept {};
-    this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
 
     // and the wrapped handler is called
     wrapper_get_new_samples_callback(SamplePtr<TestSampleType>{}, timestamp);
@@ -2152,7 +2152,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesCallbackFixture, GetNewSamplesCallbackC
 
     // and GetNewSamplesCallback is called on the event
     score::cpp::callback<void(SamplePtr<TestSampleType>)> callback = [](SamplePtr<TestSampleType>) noexcept {};
-    this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
+    std::ignore = this->proxy_->my_service_element_.GetNewSamples(std::move(callback), max_num_samples);
 
     // and the wrapped handler is called
     wrapper_get_new_samples_callback(SamplePtr<TestSampleType>{}, timestamp);

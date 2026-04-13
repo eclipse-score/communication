@@ -42,7 +42,7 @@ score::cpp::callback<void(ServiceHandleContainer<HandleType>, FindServiceHandle)
 
 FileSystemGuard::~FileSystemGuard() noexcept
 {
-    filesystem_.standard->RemoveAll(kTmpPath);
+    std::ignore = filesystem_.standard->RemoveAll(kTmpPath);
 }
 
 }  // namespace score::mw::com::impl::lola

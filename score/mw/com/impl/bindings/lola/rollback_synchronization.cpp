@@ -16,10 +16,11 @@
 
 namespace score::mw::com::impl::lola
 {
-std::pair<std::mutex&, bool> RollbackSynchronization::GetMutex(const ServiceDataControl* proxy_element_control)
+std::pair<std::mutex&, bool> RollbackSynchronization::GetMutex(
+    const SkeletonInstanceIdentifier skeleton_instance_identifier)
 {
     const std::lock_guard<std::mutex> lock{map_mutex_};
-    auto search = synchronisation_data_map_.find(proxy_element_control);
+    auto search = synchronisation_data_map_.find(skeleton_instance_identifier);
     if (search != synchronisation_data_map_.end())
     {
         // Suppress "AUTOSAR C++14 A18-9-2" rule finding: "Forwarding values to other functions shall be done via: (1)
@@ -29,7 +30,7 @@ std::pair<std::mutex&, bool> RollbackSynchronization::GetMutex(const ServiceData
         return {search->second, true};
     }
     auto [iterator, inserted] = synchronisation_data_map_.emplace(
-        std::piecewise_construct, std::forward_as_tuple(proxy_element_control), std::forward_as_tuple());
+        std::piecewise_construct, std::forward_as_tuple(skeleton_instance_identifier), std::forward_as_tuple());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted, "Error inserting mutex into synchronisation_data_map_");
     // coverity[autosar_cpp14_a18_9_2_violation]
     return {iterator->second, false};

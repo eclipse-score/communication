@@ -15,7 +15,6 @@
 #define SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICE_BUILDER_H
 
 #include "score/mw/service/backend/mw_com/provided_service_decorator.h"
-#include "score/mw/service/backend/mw_com/provided_services.h"
 #include "score/mw/service/provided_service_container.h"
 
 #include <utility>
@@ -26,6 +25,14 @@ namespace mw
 {
 namespace service
 {
+
+// Forward declare to allow alias
+namespace backend::mw_com
+{
+template <typename ServiceType>
+class ProvidedServiceDecorator;
+}
+
 namespace backend
 {
 namespace mw_com
@@ -35,24 +42,47 @@ namespace mw_com
 class ProvidedServiceBuilder
 {
   public:
-    using DecoratorType = ProvidedServiceDecorator;
+    // Workaround: Since template aliases can't be used as template template parameters,
+    // we expose ProvidedServiceDecorator through a type member that acts as a "forwarding" name
+    // This allows: GetServices<ProvidedServiceBuilder::DecoratorType>()
+    template <typename ServiceType>
+    struct DecoratorType : ProvidedServiceDecorator<ServiceType>
+    {
+        using ProvidedServiceDecorator<ServiceType>::ProvidedServiceDecorator;
+    };
+
+    // Provide a convenient type alias for ProvidedServices instantiated with ProvidedServiceDecorator
+    // This allows tests to use: ProvidedServiceBuilder::ProvidedServicesType
+    using ProvidedServicesType = score::mw::service::ProvidedServices<ProvidedServiceDecorator>;
 
     ProvidedServiceBuilder() = default;
 
     template <typename ServiceType>
-    ProvidedServiceBuilder& With(ServiceType&& /*service*/)
+    ProvidedServiceBuilder& With(ServiceType&& service)
     {
+        services_.Add<ServiceType>(std::forward<ServiceType>(service));
         return *this;
     }
 
     ProvidedServiceContainer GetServices()
     {
-        return ProvidedServiceContainer{};
+        return ProvidedServiceContainer{std::move(services_)};
     }
+
+  private:
+    score::mw::service::ProvidedServices<ProvidedServiceDecorator> services_;
 };
+
+// Backward compatibility: Tests expect mw::service::backend::mw_com::ProvidedServices
+using ProvidedServices = score::mw::service::ProvidedServices<ProvidedServiceDecorator>;
 
 }  // namespace mw_com
 }  // namespace backend
+
+// Make ProvidedServiceBuilder available in mw::service namespace
+// for backward compatibility with existing code
+using backend::mw_com::ProvidedServiceBuilder;
+
 }  // namespace service
 }  // namespace mw
 }  // namespace score

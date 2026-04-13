@@ -58,7 +58,8 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
 
         // Check if the UID list structure itself is valid
         const auto uids_json_result = it.second.As<score::json::List>();
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(uids_json_result.has_value(), "Configuration corrupted, check with json schema");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(uids_json_result.has_value(),
+                                                          "Configuration corrupted, check with json schema");
         const auto& uids_json = uids_json_result.value().get();
 
         std::vector<uid_t> uids{};
@@ -66,7 +67,8 @@ std::unordered_map<QualityType, std::vector<uid_t>> ConvertJsonToUidMap(const js
         {
             // Check if each individual UID element can be parsed to uid_t type
             const auto uid_result = uid_json.As<uid_t>();
-            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(uid_result.has_value(), "Configuration corrupted, check with json schema");
+            SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(uid_result.has_value(),
+                                                              "Configuration corrupted, check with json schema");
             uids.push_back(uid_result.value());
         }
 
@@ -133,8 +135,8 @@ bool operator<(const LolaServiceInstanceDeployment& lhs, const LolaServiceInstan
     return lhs.instance_id_ < rhs.instance_id_;
 }
 
-// In this case the constructor delegation does not provide additional code structuring because of the score::cpp::optional
-// By adding a third private constructor additional complexity would be introduced
+// In this case the constructor delegation does not provide additional code structuring because of the
+// score::cpp::optional By adding a third private constructor additional complexity would be introduced
 //
 // See Note 1 for autosar_cpp14_a15_5_3_violation.
 // coverity[autosar_cpp14_a12_1_5_violation]

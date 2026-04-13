@@ -81,7 +81,12 @@ score::Result<TestDataSkeleton> offer_service(const std::string& instance_specif
         return MakeUnexpected(TestErrorCode::kCreateSkeletonFailed);
     }
     TestDataSkeleton& lola_service = service_result.value();
-    lola_service.test_field.Update(kTestValue);
+    const auto update_result = lola_service.test_field.Update(kTestValue);
+    if (!update_result.has_value())
+    {
+        std::cerr << "Unable to update test_field of TestDataSkeleton: " << update_result.error() << "\n";
+        return MakeUnexpected(TestErrorCode::kCreateSkeletonFailed);
+    }
     const auto offer_service_result = lola_service.OfferService();
     if (!offer_service_result.has_value())
     {

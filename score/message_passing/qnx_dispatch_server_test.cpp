@@ -89,7 +89,8 @@ TEST(QnxDispatchServerTest, RunningServerWithConnection)
         const auto client_pid = static_cast<pid_t>(std::get<std::uintptr_t>(connection.GetUserData()));
         std::cout << "EchoDisconnectCallback " << &connection << " " << client_pid << std::endl;
     };
-    auto sent_callback = [](IServerConnection& connection, score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
+    auto sent_callback = [](IServerConnection& connection,
+                            score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
         std::cout << "EchoSentCallback " << &connection << std::endl;
         connection.Notify(message);
         return {};

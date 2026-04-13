@@ -12,14 +12,17 @@
 # *******************************************************************************
 
 # Workflow configuration for automated release process
-# This workflow is triggered when a tag matching "trigger-release-vX.X.X" is pushed.
+# This workflow is triggered manually via workflow_dispatch and expects a release tag input.
 # It creates a draft release, runs all tests, and either leaves or removes the draft release based on results.
 
 name: Automated Release Process
 on:
-  push:
-    tags:
-      - 'trigger-release-v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to create (example: v1.2.3)"
+        required: true
+        type: string
 
 jobs:
   create-draft-release:
@@ -29,28 +32,23 @@ jobs:
     outputs:
       release-id: ${{ steps.create-release.outputs.id }}
       release-url: ${{ steps.create-release.outputs.url }}
-      release-tag: ${{ steps.extract-version.outputs.release-tag }}
+      release-tag: ${{ steps.release-tag.outputs.release-tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
-      - name: Extract version from trigger tag
-        id: extract-version
+      - name: Set release tag from workflow dispatch input
+        id: release-tag
         run: |
-          TRIGGER_TAG="${GITHUB_REF#refs/tags/}"
-          echo "Trigger tag: $TRIGGER_TAG"
-          
-          # Extract version from trigger-release-vX.X.X
-          RELEASE_VERSION="${TRIGGER_TAG#trigger-release-}"
-          echo "Release version tag: $RELEASE_VERSION"
-          echo "release-tag=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "Release version tag: ${{ github.event.inputs.release_tag }}"
+          echo "release-tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
 
       - name: Create draft release
         id: create-release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.extract-version.outputs.release-tag }}
-          name: ${{ steps.extract-version.outputs.release-tag }}
+          tag_name: ${{ steps.release-tag.outputs.release-tag }}
+          name: ${{ steps.release-tag.outputs.release-tag }}
           body_path: .github/RELEASE_TEMPLATE.md
           draft: true
           prerelease: false
@@ -59,13 +57,16 @@ jobs:
   run-build-and-test-host:
     needs: create-draft-release
     uses: ./.github/workflows/build_and_test_host.yml
+    with:
+      run_all_configurations: true
+    permissions:
+      contents: read
 
   run-build-and-test-qnx:
     needs: create-draft-release
     uses: ./.github/workflows/build_and_test_qnx.yml
     permissions:
       contents: read
-      pull-requests: read
     secrets:
       SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
       SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
@@ -74,18 +75,43 @@ jobs:
   run-thread-sanitizer:
     needs: create-draft-release
     uses: ./.github/workflows/thread_sanitizer.yml
+    permissions:
+      contents: read
 
   run-address-sanitizer:
     needs: create-draft-release
     uses: ./.github/workflows/address_undefined_behavior_leak_sanitizer.yml
+    permissions:
+      contents: read
 
   run-coverage-report:
     needs: create-draft-release
-    uses: ./.github/workflows/release_coverage_report.yml
-    with:
-      release_tag: ${{ needs.create-draft-release.outputs.release-tag }}
+    uses: ./.github/workflows/coverage_report.yml
+    permissions:
+      contents: read
+
+  upload-coverage-report:
+    needs:
+      - create-draft-release
+      - run-coverage-report
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Download coverage report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.run-coverage-report.outputs.artifact-name }}
+          path: ./
+
+      - name: Upload coverage report to existing draft release
+        run: |
+          gh release upload "${{ needs.create-draft-release.outputs.release-tag }}" "${{ needs.run-coverage-report.outputs.artifact-name }}.zip"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   finalize-release:
     runs-on: ubuntu-24.04
@@ -96,58 +122,42 @@ jobs:
       - run-thread-sanitizer
       - run-address-sanitizer
       - run-coverage-report
-    if: always()
+      - upload-coverage-report
+    if: ${{ success() }}
     permissions:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
-      - name: Check workflow results
-        id: check-results
+      - name: Report success
         run: |
-          RESULT_HOST="${{ needs.run-build-and-test-host.result }}"
-          RESULT_QNX="${{ needs.run-build-and-test-qnx.result }}"
-          RESULT_TSAN="${{ needs.run-thread-sanitizer.result }}"
-          RESULT_ASAN="${{ needs.run-address-sanitizer.result }}"
-          RESULT_COVERAGE="${{ needs.run-coverage-report.result }}"
-          
-          echo "Build and test host: $RESULT_HOST"
-          echo "Build and test QNX: $RESULT_QNX"
-          echo "Thread sanitizer: $RESULT_TSAN"
-          echo "Address sanitizer: $RESULT_ASAN"
-          echo "Coverage report: $RESULT_COVERAGE"
-          
-          if [[ "$RESULT_HOST" == "success" ]] && \
-             [[ "$RESULT_QNX" == "success" ]] && \
-             [[ "$RESULT_TSAN" == "success" ]] && \
-             [[ "$RESULT_ASAN" == "success" ]] && \
-             [[ "$RESULT_COVERAGE" == "success" ]]; then
-            echo "all-success=true" >> $GITHUB_OUTPUT
-          else
-            echo "all-success=false" >> $GITHUB_OUTPUT
-          fi
+          echo "All workflows succeeded. Draft release ${{ needs.create-draft-release.outputs.release-tag }} is ready for manual publishing."
 
-      - name: Delete trigger tag
-        run: |
-          gh api repos/${{ github.repository }}/git/refs/tags/${{ github.ref_name }} -X DELETE
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  delete-release-on-failure:
+    runs-on: ubuntu-24.04
+    needs:
+      - create-draft-release
+      - run-build-and-test-host
+      - run-build-and-test-qnx
+      - run-thread-sanitizer
+      - run-address-sanitizer
+      - run-coverage-report
+      - upload-coverage-report
+    if: ${{ failure() || cancelled() }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
 
-      - name: Delete draft release (on failure)
-        if: steps.check-results.outputs.all-success == 'false'
+      - name: Delete draft release due to failure
         run: |
           gh release delete ${{ needs.create-draft-release.outputs.release-tag }} --yes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Report failure
-        if: steps.check-results.outputs.all-success == 'false'
         run: |
-          echo "❌ One or more workflows failed. Draft release has been deleted."
+          echo "One or more workflows failed. Draft release has been deleted."
           exit 1
-
-      - name: Report success
-        if: steps.check-results.outputs.all-success == 'true'
-        run: |
-          echo "✅ All workflows succeeded. Draft release ${{ needs.create-draft-release.outputs.release-tag }} is ready for manual publishing."

@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_METHOD_RESOURCE_MAP_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_METHOD_RESOURCE_MAP_H
 
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
 
 #include "score/memory/shared/i_shared_memory_resource.h"
@@ -66,16 +66,18 @@ class MethodResourceMap
     ///        ProxyInstanceIdentifier AND pid.
     bool Contains(const ProxyInstanceIdentifier proxy_instance_identifier, const pid_t proxy_pid) const;
 
-    /// \brief Inserts a new ISharedMemoryResource and cleans up any resources corresponding to the provided
-    ///        ApplicationId but different pid.
+    /// \brief Inserts a new ISharedMemoryResource.
+    auto Insert(const ProxyInstanceIdentifier proxy_instance_identifier,
+                const pid_t proxy_pid,
+                const std::shared_ptr<memory::shared::ISharedMemoryResource>& methods_shm_resource) -> iterator;
+
+    /// \brief Cleans up any resources corresponding to the provided ApplicationId but different pid.
     ///
-    /// This function inserts a newly created region while cleaning up any resources corresponding to the same Proxy
-    /// instance which previously crashed and has restarted (i.e. it has the ApplicationId as the old Proxy instance
-    /// but different pid since the process restarted).
-    auto InsertAndCleanUpOldRegions(const ProxyInstanceIdentifier proxy_instance_identifier,
-                                    const pid_t proxy_pid,
-                                    const std::shared_ptr<memory::shared::ISharedMemoryResource>& methods_shm_resource)
-        -> std::pair<iterator, CleanUpResult>;
+    /// This function cleanis up any resources corresponding to the same Proxy instance which previously crashed and has
+    /// restarted (i.e. it has the ApplicationId as the old Proxy instance but different pid since the process
+    /// restarted).
+    auto CleanUpOldRegions(const ProxyInstanceIdentifier proxy_instance_identifier, const pid_t proxy_pid)
+        -> CleanUpResult;
 
     void Clear();
 

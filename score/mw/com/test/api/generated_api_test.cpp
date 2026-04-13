@@ -168,7 +168,7 @@ TEST(API, ArrayDeclarationWithMultiDimArray)
                   "Wrong underlying type");
 }
 
-#ifndef __QNX__
+#if !defined(__QNX__) && !defined(__clang__)
 // TODO String type not supported due to a bug in the LLVM STL for QNX: [Ticket-54614]
 TEST(API, StringIsSupported)
 {

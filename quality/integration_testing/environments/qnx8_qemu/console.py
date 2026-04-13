@@ -14,6 +14,7 @@ import logging
 import subprocess
 import time
 import re
+import threading
 from queue import Empty
 from typing import Optional
 
@@ -50,6 +51,7 @@ class Console:
     def __init__(self, name, reader, writer, print_logger=True, logfile=None):
         self.name = name
         self.writer = writer
+        self._cmd_lock = threading.Lock()
         self.line_reader = LineReader(
             readline_func=reader,
             name=self.name,
@@ -72,6 +74,10 @@ class Console:
         return None
 
     def write(self, command):
+        with self._cmd_lock:
+            self._write_unlocked(command)
+
+    def _write_unlocked(self, command):
         self.writer(command)
 
     def run_cmd(self, cmd):
@@ -82,12 +88,16 @@ class Console:
                 self.write(cmd)
 
     def run_sh_cmd_output(self, cmd, timeout=30):
+        with self._cmd_lock:
+            return self._run_sh_cmd_output_unlocked(cmd, timeout)
+
+    def _run_sh_cmd_output_unlocked(self, cmd, timeout=30):
         start_time = time.time()
 
         cmd_finish = "COMMAND_DONE"
 
         self.clear_history()
-        self.write(f"{cmd}; echo {cmd_finish}=$?")
+        self._write_unlocked(f"{cmd}; echo {cmd_finish}=$?")
 
         output = []
         while True:
@@ -107,17 +117,21 @@ class Console:
             if cmd_finish in line:
                 spl = line.split(f"{cmd_finish}=")
                 output.append(spl[0])
-                retcode = int(spl[1])
+                try:
+                    retcode = int(spl[1])
+                except ValueError:
+                    continue
                 return retcode, ('\n'.join(output)).strip()
 
             output.append(line)
 
     def run_sh_cmd_async(self, cmd, timeout=30):
-        self.clear_history()
-        self.write(f"{cmd} &")
-        exit_code, output = self.run_sh_cmd_output(f"echo CREATED_PID=$!", timeout=timeout)
-        assert exit_code == 0
-        return int(re.search(r'CREATED_PID=(\d+)', output).group(1))
+        with self._cmd_lock:
+            self.clear_history()
+            self._write_unlocked(f"{cmd} &")
+            exit_code, output = self._run_sh_cmd_output_unlocked(f"echo CREATED_PID=$!", timeout=timeout)
+            assert exit_code == 0
+            return int(re.search(r'CREATED_PID=(\d+)', output).group(1))
 
 
     def add_expr_cbk(self, expr, cbk, regex=False):

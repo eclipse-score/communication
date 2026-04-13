@@ -54,7 +54,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     if (!json_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
-                                       << "'. Configuration parsing failed. Terminating.";
+                                         << "'. Configuration parsing failed. Terminating.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return json_result.value();
@@ -70,7 +70,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     if (!json_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
-                                       << "'. Configuration parsing failed. Terminating.";
+                                         << "'. Configuration parsing failed. Terminating.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return json_result.value();
@@ -86,7 +86,7 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
     if (!json_result.has_value())
     {
         score::mw::log::LogFatal("lola") << "Failed to parse JSON configuration key '" << key
-                                       << "'. Configuration parsing failed. Terminating.";
+                                         << "'. Configuration parsing failed. Terminating.";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     }
     return json_result.value();
@@ -94,7 +94,8 @@ auto GetValueFromJson(const score::json::Object& json_object, std::string_view k
 
 template <typename element_type>
 // coverity[autosar_cpp14_a15_5_3_violation] false positive, ResultToOptionalOrElse checks before accessing the variant.
-auto GetOptionalValueFromJson(const score::json::Object& json_object, std::string_view key) -> std::optional<element_type>
+auto GetOptionalValueFromJson(const score::json::Object& json_object, std::string_view key)
+    -> std::optional<element_type>
 {
 
     const auto val_candidate = json_object.find(key);
@@ -105,7 +106,7 @@ auto GetOptionalValueFromJson(const score::json::Object& json_object, std::strin
 
     return ResultToOptionalOrElse(val_candidate->second.As<element_type>(), [key](auto) {
         score::mw::log::LogFatal("lola") << "provided key" << key
-                                       << "contains a value that can not be parsed. Terminating.\n";
+                                         << "contains a value that can not be parsed. Terminating.\n";
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
     });
 }

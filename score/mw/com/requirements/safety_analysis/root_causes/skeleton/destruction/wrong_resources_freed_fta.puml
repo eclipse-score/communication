@@ -13,7 +13,7 @@
 
 @startuml
 
-!include ../../fta_metamodel.puml
+!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
 
 $TopEvent("Wrong resources freed", "Communication.WrongResourcesFreed")
 

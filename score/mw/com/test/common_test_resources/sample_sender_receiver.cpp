@@ -78,18 +78,19 @@ void HashArray(const std::array<LaneIdType, 16U>& array, std::size_t& seed)
     const std::ptrdiff_t buffer_size =
         reinterpret_cast<const std::uint8_t*>(&*array.cend()) - reinterpret_cast<const std::uint8_t*>(&*array.cbegin());
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(buffer_size > 0);
-    seed = score::cpp::hash_bytes_fnv1a(static_cast<const void*>(array.data()), static_cast<std::size_t>(buffer_size), seed);
+    seed = score::cpp::hash_bytes_fnv1a(
+        static_cast<const void*>(array.data()), static_cast<std::size_t>(buffer_size), seed);
 }
 
 class MmanMock : public os::Mman
 {
   public:
     score::cpp::expected<void*, os::Error> mmap(void* addr,
-                                         const std::size_t length,
-                                         const Protection protection,
-                                         const Map flags,
-                                         const std::int32_t fd,
-                                         const std::int64_t offset) const noexcept override
+                                                const std::size_t length,
+                                                const Protection protection,
+                                                const Map flags,
+                                                const std::int32_t fd,
+                                                const std::int64_t offset) const noexcept override
     {
         // mmap calls are uninteresting and are forwarded directly
         return reinterpret_cast<os::internal::MmanImpl&>(
@@ -106,8 +107,8 @@ class MmanMock : public os::Mman
     };
 
     score::cpp::expected<std::int32_t, os::Error> shm_open(const char* pathname,
-                                                    const os::Fcntl::Open oflag,
-                                                    const os::Stat::Mode mode) const noexcept override
+                                                           const os::Fcntl::Open oflag,
+                                                           const os::Stat::Mode mode) const noexcept override
     {
         // shm_open calls are INTERESTING for this test - we memorize the pathname - and then forward
         std::strcpy(last_shm_open_path_, pathname);
@@ -363,7 +364,7 @@ void ModifySampleValue(const SamplePtr<void>& sample)
 
 template <typename ProxyType = BigDataProxy>
 score::Result<impl::HandleType> GetHandleFromSpecifier(const InstanceSpecifier& instance_specifier,
-                                                     const score::cpp::stop_token& stop_token)
+                                                       const score::cpp::stop_token& stop_token)
 {
     std::cout << ToString(instance_specifier, ": Running as proxy, looking for services\n");
     ServiceHandleContainer<impl::HandleType> handles{};
@@ -459,14 +460,25 @@ int EventSenderReceiver::RunAsProxy(const score::mw::com::InstanceSpecifier& ins
     concurrency::Notification event_received;
     if (!cycle_time.has_value())
     {
-        map_api_lanes_stamped_event.SetReceiveHandler([&event_received, &instance_specifier]() {
-            std::cout << ToString(instance_specifier, ": Callback called\n");
-            event_received.notify();
-        });
+        const auto set_receive_handler_result =
+            map_api_lanes_stamped_event.SetReceiveHandler([&event_received, &instance_specifier]() {
+                std::cout << ToString(instance_specifier, ": Callback called\n");
+                event_received.notify();
+            });
+        if (!set_receive_handler_result.has_value())
+        {
+            std::cerr << "Unable to set receive handler: " << set_receive_handler_result.error() << ", bailing!\n";
+            return EXIT_FAILURE;
+        }
     }
 
     std::cout << ToString(instance_specifier, ": Subscribing to service\n");
-    map_api_lanes_stamped_event.Subscribe(SAMPLES_PER_CYCLE);
+    const auto subscribe_result = map_api_lanes_stamped_event.Subscribe(SAMPLES_PER_CYCLE);
+    if (!subscribe_result.has_value())
+    {
+        std::cerr << "Unable to subscribe to event: " << subscribe_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
 
     SampleReceiver receiver{instance_specifier};
     for (std::size_t cycle = 0U; (cycle < num_cycles) && !stop_token.stop_requested();)
@@ -591,7 +603,12 @@ int EventSenderReceiver::RunAsSkeleton(const score::mw::com::InstanceSpecifier& 
 
         {
             std::lock_guard<std::mutex> lock{event_sending_mutex_};
-            bigdata.map_api_lanes_stamped_.Send(std::move(sample));
+            const auto send_result = bigdata.map_api_lanes_stamped_.Send(std::move(sample));
+            if (!send_result.has_value())
+            {
+                std::cerr << "Unable to send data. Exiting.\n";
+                return EXIT_FAILURE;
+            }
             event_published_ = true;
         }
         std::this_thread::sleep_for(cycle_time);
@@ -694,7 +711,12 @@ int EventSenderReceiver::RunAsSkeletonCheckEventSlots(const score::mw::com::Inst
             }
             else
             {
-                bigdata.map_api_lanes_stamped_.Send(std::move(sample_result).value());
+                const auto send_result = bigdata.map_api_lanes_stamped_.Send(std::move(sample_result).value());
+                if (!send_result.has_value())
+                {
+                    std::cerr << "Unable to send data. Exiting.\n";
+                    break;
+                }
             }
         }
         else  // All event slots have already been allocated
@@ -736,7 +758,8 @@ int EventSenderReceiver::RunAsSkeletonCheckEventSlots(const score::mw::com::Inst
 int EventSenderReceiver::RunAsSkeletonCheckValuesCreatedFromConfig(
     const score::mw::com::InstanceSpecifier& instance_specifier,
     const std::string& shared_memory_path,
-    score::os::InterprocessNotification& interprocess_notification,
+    score::os::InterprocessNotification& interprocess_notification_from_proxy,
+    score::os::InterprocessNotification& interprocess_notification_to_proxy,
     score::cpp::stop_source stop_source)
 {
     TestDestructor test_destructor(stop_source);
@@ -770,8 +793,10 @@ int EventSenderReceiver::RunAsSkeletonCheckValuesCreatedFromConfig(
         return EXIT_FAILURE;
     }
 
+    interprocess_notification_to_proxy.notify();
+
     // Wait until proxy has finished before exiting.
-    if (!interprocess_notification.waitWithAbort(stop_token))
+    if (!interprocess_notification_from_proxy.waitWithAbort(stop_token))
     {
         // Abort happened
         std::cerr << "Request stop on stop token. Exiting.\n";
@@ -790,13 +815,21 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
     const score::mw::com::impl::lola::ElementFqId map_api_lanes_element_fq_id_from_config,
     const score::mw::com::impl::lola::ElementFqId dummy_data_element_fq_id_from_config,
     const std::string& shared_memory_path,
-    score::os::InterprocessNotification& interprocess_notification,
+    score::os::InterprocessNotification& interprocess_notification_from_skeleton,
+    score::os::InterprocessNotification& interprocess_notification_to_skeleton,
     score::cpp::stop_token stop_token)
 {
     // create special mmap mock to intercept/catch shm_open calls
     MmanMock mman_mock{};
     // activate our mock BEFORE instantiating BigDataProxy, which will lead to opening/mapping shm.
     os::Mman::set_testing_instance(mman_mock);
+
+    if (!interprocess_notification_from_skeleton.waitWithAbort(stop_token))
+    {
+        // Abort happened
+        std::cerr << "Request stop on stop token. Exiting.\n";
+        return EXIT_FAILURE;
+    }
 
     auto handle_result = GetHandleFromSpecifier(instance_specifier, stop_token);
     if (!handle_result.has_value())
@@ -825,7 +858,12 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
         return EXIT_FAILURE;
     }
 
-    bigdata.map_api_lanes_stamped_.Subscribe(2);
+    const auto subscribe_result = bigdata.map_api_lanes_stamped_.Subscribe(2);
+    if (!subscribe_result.has_value())
+    {
+        std::cerr << "Unable to subscribe: " << subscribe_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
 
     // Check that the ElementFqId used for the events match the values manually generated from the configuration.
     if (!ElementFqIdMatchesConfigurationValue(bigdata.map_api_lanes_stamped_, map_api_lanes_element_fq_id_from_config))
@@ -852,7 +890,7 @@ int EventSenderReceiver::RunAsProxyCheckValuesCreatedFromConfig(
     std::cout << "and terminating, bye bye\n";
 
     // Tell the skeleton that the proxy has finished.
-    interprocess_notification.notify();
+    interprocess_notification_to_skeleton.notify();
 
     return EXIT_SUCCESS;
 }
@@ -880,13 +918,23 @@ int EventSenderReceiver::RunAsProxyReceiveHandlerOnly(const score::mw::com::Inst
     auto& bigdata = proxy_result.value();
 
     std::atomic<bool> callback_called{false};
-    bigdata.map_api_lanes_stamped_.SetReceiveHandler([&callback_called]() {
+    const auto set_receive_handler_result = bigdata.map_api_lanes_stamped_.SetReceiveHandler([&callback_called]() {
         callback_called = true;
         std::cout << "Callback called\n";
     });
+    if (!set_receive_handler_result.has_value())
+    {
+        std::cerr << "Unable to set receive handler: " << set_receive_handler_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
 
     std::cout << "Subscribing to service\n";
-    bigdata.map_api_lanes_stamped_.Subscribe(SAMPLES_PER_CYCLE);
+    const auto subscribe_result = bigdata.map_api_lanes_stamped_.Subscribe(SAMPLES_PER_CYCLE);
+    if (!subscribe_result.has_value())
+    {
+        std::cerr << "Unable to subscribe: " << subscribe_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
 
     // Make sure that callback is called at least once. If stop is called via the stop_token or the skeleton notifies
     // that it's finished publishing, exit with a failure code.
@@ -950,13 +998,23 @@ int EventSenderReceiver::RunAsProxyCheckEventSlots(const score::mw::com::Instanc
     auto& bigdata = proxy_result.value();
 
     concurrency::Notification event_received;
-    bigdata.map_api_lanes_stamped_.SetReceiveHandler([&event_received]() {
+    const auto set_receive_handler_result = bigdata.map_api_lanes_stamped_.SetReceiveHandler([&event_received]() {
         std::cout << "Callback called\n";
         event_received.notify();
     });
+    if (!set_receive_handler_result.has_value())
+    {
+        std::cerr << "Unable to set receive handler: " << set_receive_handler_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
 
     std::cout << "Subscribing to service\n";
-    bigdata.map_api_lanes_stamped_.Subscribe(num_proxy_slots);
+    const auto subscribe_result = bigdata.map_api_lanes_stamped_.Subscribe(num_proxy_slots);
+    if (!subscribe_result.has_value())
+    {
+        std::cerr << "Unable to subscribe: " << subscribe_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
 
     // Ensure that receive handler is set before the skeleton begins publishing events.
     proxy_ready_to_receive_.notify();
@@ -1022,7 +1080,12 @@ int EventSenderReceiver::RunAsProxyCheckSubscribeHandler(const score::mw::com::I
     }
     auto& bigdata = proxy_result.value();
 
-    bigdata.map_api_lanes_stamped_.Subscribe(SAMPLES_PER_CYCLE);
+    const auto subscribe_result = bigdata.map_api_lanes_stamped_.Subscribe(SAMPLES_PER_CYCLE);
+    if (!subscribe_result.has_value())
+    {
+        std::cerr << "Unable to subscribe: " << subscribe_result.error() << ", bailing!\n";
+        return EXIT_FAILURE;
+    }
     bigdata.map_api_lanes_stamped_.Unsubscribe();
 
     interprocess_notification.notify();

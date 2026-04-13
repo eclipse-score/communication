@@ -14,8 +14,9 @@ pub use macros::*;
 pub use proxy_bridge_rs::{initialize, InstanceSpecifier}; // TODO: Move to common
 pub mod proxy {
     pub use proxy_bridge_rs::{
-        find_service, FatPtr, HandleContainer, HandleType, NativeInstanceSpecifier, ProxyEventBase,
-        ProxyEventStream, ProxyManager, ProxyWrapperClass, SamplePtr, SubscribedProxyEvent,
+        find_service, FatPtr, HandleContainer, HandleType, NativeHandleContainer,
+        NativeInstanceSpecifier, ProxyEventBase, ProxyEventStream, ProxyManager, ProxyWrapperClass,
+        SamplePtr, SubscribedProxyEvent,
     };
 }
 pub mod skeleton {

@@ -80,7 +80,7 @@ void DoConsumerActions(score::mw::com::test::CheckPointControl& check_point_cont
         handle_notification_data.condition_variable.notify_all();
         std::cerr << "Consumer Step (C.1): FindServiceHandler handler done - found one service instance." << std::endl;
 
-        TestServiceProxy::StopFindService(find_service_handle);
+        std::ignore = TestServiceProxy::StopFindService(find_service_handle);
     };
 
     auto find_service_handle_result = StartFindService<TestServiceProxy>(

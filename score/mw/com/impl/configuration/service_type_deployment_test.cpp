@@ -140,8 +140,8 @@ TEST_F(ServiceTypeDeploymentDeathTest, GettingLolaBindingFromServiceTypeDeployme
 
     // When getting the LolaServiceTypeDeployment
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetServiceTypeDeploymentBinding<LolaServiceTypeDeployment>(service_type_deployment),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = GetServiceTypeDeploymentBinding<LolaServiceTypeDeployment>(service_type_deployment), ".*");
 }
 
 TEST_F(ServiceTypeDeploymentDeathTest, GettingBlankBindingFromServiceTypeDeploymentNotContainingBlankBindingTerminates)
@@ -152,7 +152,8 @@ TEST_F(ServiceTypeDeploymentDeathTest, GettingBlankBindingFromServiceTypeDeploym
 
     // When getting a blank binding
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetServiceTypeDeploymentBinding<score::cpp::blank>(service_type_deployment), ".*");
+    EXPECT_DEATH(score::cpp::ignore = GetServiceTypeDeploymentBinding<score::cpp::blank>(service_type_deployment),
+                 ".*");
 }
 
 class ServiceTypeDeploymentHashFixture

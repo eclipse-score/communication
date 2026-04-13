@@ -17,7 +17,8 @@
 //! It is only meant to be used for testing and development.
 
 #![allow(dead_code)]
-//lifetime warning for all the Sample struct impl block . it is required for the Sample struct event lifetime parameter
+//lifetime warning for all the Sample struct impl block . it is required for the Sample struct
+// event lifetime parameter
 // and mentaining lifetime of instances and data reference
 // As of supressing clippy::needless_lifetimes
 //TODO: revist this once com-api is stable - Ticket-234827
@@ -62,14 +63,14 @@ pub struct MockConsumerInfo {
 }
 
 impl Runtime for MockRuntimeImpl {
-    type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
-    type Subscriber<T: CommData> = SubscribableImpl<T>;
+    type ServiceDiscovery<I: Interface + Send> = SampleConsumerDiscovery<I>;
+    type Subscriber<T: CommData + Debug> = SubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
-    type Publisher<T: CommData> = Publisher<T>;
+    type Publisher<T: CommData + Debug> = Publisher<T>;
     type ProviderInfo = MockProviderInfo;
     type ConsumerInfo = MockConsumerInfo;
 
-    fn find_service<I: Interface>(
+    fn find_service<I: Interface + Send>(
         &self,
         _instance_specifier: FindServiceSpecifier,
     ) -> Self::ServiceDiscovery<I> {
@@ -100,12 +101,12 @@ where
     event: &'a MockEvent<T>,
 }
 
-unsafe impl<'a, T> Send for MockBinding<'a, T> where T: CommData {}
+unsafe impl<'a, T> Send for MockBinding<'a, T> where T: CommData + Debug {}
 
 #[derive(Debug)]
 enum SampleBinding<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     Mock(MockBinding<'a, T>),
     Test(Box<T>),
@@ -114,7 +115,7 @@ where
 #[derive(Debug)]
 pub struct Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     id: usize,
     inner: SampleBinding<'a, T>,
@@ -124,7 +125,7 @@ static ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl<'a, T> From<T> for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn from(value: T) -> Self {
         Self {
@@ -136,7 +137,7 @@ where
 
 impl<'a, T> Deref for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Target = T;
 
@@ -148,22 +149,22 @@ where
     }
 }
 
-impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: CommData {}
+impl<'a, T> com_api_concept::Sample<T> for Sample<'a, T> where T: CommData + Debug {}
 
 impl<'a, T> PartialEq for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl<'a, T> Eq for Sample<'a, T> where T: CommData {}
+impl<'a, T> Eq for Sample<'a, T> where T: CommData + Debug {}
 
 impl<'a, T> PartialOrd for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -172,7 +173,7 @@ where
 
 impl<'a, T> Ord for Sample<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id.cmp(&other.id)
@@ -182,7 +183,7 @@ where
 #[derive(Debug)]
 pub struct SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     data: T,
     lifetime: PhantomData<&'a T>,
@@ -190,7 +191,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn send(self) -> com_api_concept::Result<()> {
         todo!()
@@ -199,7 +200,7 @@ where
 
 impl<'a, T> Deref for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Target = T;
 
@@ -210,7 +211,7 @@ where
 
 impl<'a, T> DerefMut for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data
@@ -220,7 +221,7 @@ where
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     data: MaybeUninit<T>,
     lifetime: PhantomData<&'a T>,
@@ -228,7 +229,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMut = SampleMut<'a, T>;
 
@@ -249,7 +250,7 @@ where
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         &mut self.data
@@ -263,7 +264,7 @@ pub struct SubscribableImpl<T> {
     data: PhantomData<T>,
 }
 
-impl<T: CommData> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
+impl<T: CommData + Debug> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
     type Subscription = SubscriberImpl<T>;
     fn new(
         identifier: &'static str,
@@ -275,7 +276,7 @@ impl<T: CommData> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
             data: PhantomData,
         })
     }
-    fn subscribe(&self, _max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
+    fn subscribe(self, _max_num_samples: usize) -> com_api_concept::Result<Self::Subscription> {
         Ok(SubscriberImpl {
             identifier: self.identifier,
             instance_info: self.instance_info.clone(),
@@ -287,7 +288,7 @@ impl<T: CommData> Subscriber<T, MockRuntimeImpl> for SubscribableImpl<T> {
 #[derive(Debug)]
 pub struct SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     identifier: &'static str,
     instance_info: MockConsumerInfo,
@@ -296,7 +297,7 @@ where
 
 impl<T> SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub fn add_data(&mut self, data: T) {
         self.data.push_front(data);
@@ -305,7 +306,7 @@ where
 
 impl<T> Subscription<T, MockRuntimeImpl> for SubscriberImpl<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Subscriber = SubscribableImpl<T>;
     type Sample<'a> = Sample<'a, T>;
@@ -329,10 +330,10 @@ where
     #[allow(clippy::manual_async_fn)]
     fn receive<'a>(
         &'a self,
-        _scratch: &'_ mut SampleContainer<Self::Sample<'a>>,
+        _scratch: SampleContainer<Self::Sample<'a>>,
         _new_samples: usize,
         _max_samples: usize,
-    ) -> impl Future<Output = com_api_concept::Result<usize>> + Send {
+    ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
         async { todo!() }
     }
 }
@@ -343,7 +344,7 @@ pub struct Publisher<T> {
 
 impl<T> Default for Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn default() -> Self {
         Self::new()
@@ -352,9 +353,10 @@ where
 
 impl<T> Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
-    #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be assigned or used in some way"]
+    #[must_use = "creating a Publisher without using it is likely a mistake; the publisher must be \
+                  assigned or used in some way"]
     pub fn new() -> Self {
         Self { _data: PhantomData }
     }
@@ -362,7 +364,7 @@ where
 
 impl<T> com_api_concept::Publisher<T, MockRuntimeImpl> for Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>
@@ -393,7 +395,7 @@ impl<I> SampleConsumerDiscovery<I> {
     }
 }
 
-impl<I: Interface> ServiceDiscovery<I, MockRuntimeImpl> for SampleConsumerDiscovery<I>
+impl<I: Interface + Send> ServiceDiscovery<I, MockRuntimeImpl> for SampleConsumerDiscovery<I>
 where
     SampleConsumerBuilder<I>: ConsumerBuilder<I, MockRuntimeImpl>,
 {

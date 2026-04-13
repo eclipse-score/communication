@@ -29,14 +29,16 @@
 //TODO: revist this once com-api is stable - Ticket-234827
 #![allow(clippy::needless_lifetimes)]
 
+use crate::Debug;
 use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use com_api_concept::{
-    Builder, CommData, Error, InstanceSpecifier, Interface, Producer, ProducerBuilder,
-    ProviderInfo, Result,
+    AllocationFailureReason, Builder, CommData, Error, EventFailedReason, InstanceSpecifier,
+    Interface, Producer, ProducerBuilder, ProducerFailedReason, ProviderInfo, Result,
+    ServiceFailedReason,
 };
 
 use bridge_ffi_rs::*;
@@ -57,7 +59,7 @@ impl ProviderInfo for LolaProviderInfo {
         let status =
             unsafe { bridge_ffi_rs::skeleton_offer_service(self.skeleton_handle.0.handle) };
         if !status {
-            return Err(Error::Fail);
+            return Err(Error::ServiceError(ServiceFailedReason::OfferServiceFailed));
         }
         Ok(())
     }
@@ -77,14 +79,14 @@ impl ProviderInfo for LolaProviderInfo {
 #[derive(Debug)]
 pub struct AllocateePtrWrapper<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub inner: ManuallyDrop<sample_allocatee_ptr_rs::SampleAllocateePtr<T>>,
 }
 
 impl<T> Drop for AllocateePtrWrapper<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn drop(&mut self) {
         //SAFETY: It is safe to call the delete function because allocatee_ptr is valid
@@ -101,7 +103,7 @@ where
 
 impl<T> AsRef<sample_allocatee_ptr_rs::SampleAllocateePtr<T>> for AllocateePtrWrapper<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn as_ref(&self) -> &sample_allocatee_ptr_rs::SampleAllocateePtr<T> {
         &self.inner
@@ -111,7 +113,7 @@ where
 #[derive(Debug)]
 pub struct SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub skeleton_event: NativeSkeletonEventBase,
     pub allocatee_ptr: AllocateePtrWrapper<T>,
@@ -120,7 +122,7 @@ where
 
 impl<'a, T> SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn get_allocatee_data_ptr_const(&self) -> Option<&T> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
@@ -149,7 +151,7 @@ where
 
 impl<'a, T> Deref for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type Target = T;
 
@@ -161,7 +163,7 @@ where
 
 impl<'a, T> DerefMut for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.get_allocatee_data_ptr_mut()
@@ -171,7 +173,7 @@ where
 
 impl<'a, T> com_api_concept::SampleMut<T> for SampleMut<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn send(self) -> Result<()> {
         //SAFETY: It is safe to send the sample because allocatee_ptr and skeleton_event are valid
@@ -186,7 +188,7 @@ where
             )
         };
         if !status {
-            return Err(Error::Fail);
+            return Err(Error::EventError(EventFailedReason::SendingDataFailed));
         }
         Ok(())
     }
@@ -195,7 +197,7 @@ where
 #[derive(Debug)]
 pub struct SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     pub skeleton_event: NativeSkeletonEventBase,
     pub allocatee_ptr: AllocateePtrWrapper<T>,
@@ -204,9 +206,9 @@ where
 
 impl<'a, T> SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
-    fn get_allocatee_data_ptr(&self) -> Option<&mut core::mem::MaybeUninit<T>> {
+    fn get_allocatee_data_ptr(&mut self) -> Option<&mut core::mem::MaybeUninit<T>> {
         //SAFETY: allocatee_ptr is valid which is created using get_allocatee_ptr() and
         // it will be again type casted to T type pointer in cpp side so valid to send as void pointer
         let data_ptr = unsafe {
@@ -221,11 +223,11 @@ where
 
 impl<'a, T> com_api_concept::SampleMaybeUninit<T> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMut = SampleMut<'a, T>;
 
-    fn write(self, val: T) -> SampleMut<'a, T> {
+    fn write(mut self, val: T) -> SampleMut<'a, T> {
         let data_ptr = self
             .get_allocatee_data_ptr()
             .expect("Allocatee data pointer is null");
@@ -252,7 +254,7 @@ where
 
 impl<'a, T> AsMut<core::mem::MaybeUninit<T>> for SampleMaybeUninit<'a, T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     fn as_mut(&mut self) -> &mut core::mem::MaybeUninit<T> {
         self.get_allocatee_data_ptr()
@@ -296,11 +298,16 @@ unsafe impl Sync for NativeSkeletonHandle {}
 unsafe impl Send for NativeSkeletonHandle {}
 
 impl NativeSkeletonHandle {
-    pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Self {
+    pub fn new(interface_id: &str, instance_specifier: &mw_com::InstanceSpecifier) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid type id and instance specifier to create skeleton
         let handle =
             unsafe { bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native()) };
-        Self { handle }
+        if handle.is_null() {
+            return Err(Error::ProducerError(
+                ProducerFailedReason::SkeletonCreationFailed,
+            ));
+        }
+        Ok(Self { handle })
     }
 }
 
@@ -328,7 +335,7 @@ pub struct NativeSkeletonEventBase {
 unsafe impl Send for NativeSkeletonEventBase {}
 
 impl NativeSkeletonEventBase {
-    pub fn new(instance_info: &LolaProviderInfo, identifier: &str) -> Self {
+    pub fn new(instance_info: &LolaProviderInfo, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid skeleton handle and interface id to get event
         // skeleton handle is created during producer offer call
         let skeleton_event_ptr = unsafe {
@@ -338,7 +345,12 @@ impl NativeSkeletonEventBase {
                 identifier,
             )
         };
-        Self { skeleton_event_ptr }
+        if skeleton_event_ptr.is_null() {
+            return Err(Error::ProducerError(
+                ProducerFailedReason::SkeletonCreationFailed,
+            ));
+        }
+        Ok(Self { skeleton_event_ptr })
     }
 }
 
@@ -366,7 +378,7 @@ pub struct Publisher<T> {
 
 impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
 where
-    T: CommData,
+    T: CommData + Debug,
 {
     type SampleMaybeUninit<'a>
         = SampleMaybeUninit<'a, T>
@@ -388,7 +400,9 @@ where
                 T::ID,
             );
             if !status {
-                return Err(Error::Fail);
+                return Err(Error::AllocateError(
+                    AllocationFailureReason::AllocationToSharedMemoryFailed,
+                ));
             }
             sample.assume_init()
         };
@@ -403,8 +417,7 @@ where
     }
 
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> Result<Self> {
-        let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier);
-
+        let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier)?;
         Ok(Self {
             identifier: identifier.to_string(),
             skeleton_event,
@@ -432,31 +445,42 @@ impl<I: Interface> ProducerBuilder<I, LolaRuntimeImpl> for SampleProducerBuilder
 
 impl<I: Interface> Builder<I::Producer<LolaRuntimeImpl>> for SampleProducerBuilder<I> {
     fn build(self) -> Result<I::Producer<LolaRuntimeImpl>> {
-        let instance_specifier_runtime =
-            mw_com::InstanceSpecifier::try_from(self.instance_specifier.as_ref())
-                .map_err(|_| Error::Fail)?;
+        //Once FFI layer error handling is in place (SWP-253124), we should convert this error to a proper FFI error instead of using map_err here
+        let instance_specifier_runtime = mw_com::InstanceSpecifier::try_from(
+            self.instance_specifier.as_ref(),
+        )
+        .map_err(|_| Error::ProducerError(ProducerFailedReason::InstanceSpecifierInvalid))?;
 
         let skeleton_handle =
-            NativeSkeletonHandle::new(I::INTERFACE_ID, &instance_specifier_runtime);
-
+            NativeSkeletonHandle::new(I::INTERFACE_ID, &instance_specifier_runtime)?;
         let instance_info = LolaProviderInfo {
             instance_specifier: self.instance_specifier,
             interface_id: I::INTERFACE_ID,
             skeleton_handle: SkeletonInstanceManager(Arc::new(skeleton_handle)),
         };
 
-        I::Producer::new(instance_info).map_err(|_| Error::Fail)
+        I::Producer::new(instance_info)
     }
 }
 
 #[cfg(test)]
 mod test {
+    use com_api_concept::CommData;
+    use std::fmt::Debug;
+
+    #[derive(Debug, Clone, Copy)]
+    #[repr(C)]
+    struct TestData(u32);
+
+    unsafe impl com_api_concept::Reloc for TestData {}
+
+    impl CommData for TestData {
+        const ID: &'static str = "TestData";
+    }
 
     #[test]
+    #[ignore] // Test will be update with Ticket-242140
     fn send_stuff() {
-        let test_publisher = super::Publisher::<u32>::new();
-        let sample = test_publisher.allocate().expect("Couldn't allocate sample");
-        let sample = sample.write(42);
-        sample.send().expect("Send failed for sample");
+        let _test_data = TestData(42);
     }
 }

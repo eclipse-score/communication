@@ -14,6 +14,8 @@
 #ifndef SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICES_H
 #define SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICES_H
 
+#include "score/mw/service/provided_service_container.h"
+
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -28,14 +30,10 @@ namespace service
 {
 class ProvidedService;
 
-namespace backend
-{
-namespace mw_com
-{
-
 /// @brief Minimal stub for config_daemon testing
+/// @note This is at mw::service level to match BMW architecture
 template <template <typename> class ServiceDecorator>
-class ProvidedServices
+class ProvidedServices : public ProvidedServicesBase
 {
     using ProvidedServiceHolder = std::unique_ptr<ProvidedService>;
 
@@ -106,12 +104,26 @@ class ProvidedServices
         return services_.size();
     }
 
+    // Implement ProvidedServicesBase virtual methods
+    std::size_t Count() const noexcept override
+    {
+        return services_.size();
+    }
+
+    void StartAll() override
+    {
+        // Stub implementation - do nothing
+    }
+
+    void StopAll() override
+    {
+        // Stub implementation - do nothing
+    }
+
   private:
     std::vector<std::pair<std::string, ProvidedServiceHolder>> services_;
 };
 
-}  // namespace mw_com
-}  // namespace backend
 }  // namespace service
 }  // namespace mw
 }  // namespace score

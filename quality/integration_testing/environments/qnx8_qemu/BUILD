@@ -11,11 +11,19 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@score_communication_pip//:requirements.bzl", "requirement")
 
 filegroup(
     name = "init_build",
     srcs = ["init_x86_64.build"],
+    visibility = ["//:__subpackages__"],
+)
+
+pkg_tar(
+    name = "qnx_config",
+    srcs = ["qcrypto.conf"],
+    package_dir = "/etc",
     visibility = ["//:__subpackages__"],
 )
 

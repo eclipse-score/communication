@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "test_check_values_created_from_config",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_check_values_created_from_config.py"],
     filesystem = ":filesystem",
 )

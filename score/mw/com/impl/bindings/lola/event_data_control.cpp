@@ -33,15 +33,15 @@ constexpr auto MAX_REFERENCE_RETRIES = 100U;
 
 template <template <class> class AtomicIndirectorType>
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". we can't mark the constructor of 'score::containers::DynamicArray' as noexcept because this will generate
-// coverity findings in all users. The only way to throw exception by the constructor is that we run out of memory, and
-// as we assume that the user has memory so no way to throw std::terminate().
+// implicitly". we can't mark the constructor of 'score::containers::DynamicArray' as noexcept because this will
+// generate coverity findings in all users. The only way to throw exception by the constructor is that we run out of
+// memory, and as we assume that the user has memory so no way to throw std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation]
 EventDataControlImpl<AtomicIndirectorType>::EventDataControlImpl(
     const SlotIndexType max_slots,
-    const score::memory::shared::MemoryResourceProxy* const proxy,
+    score::memory::shared::ManagedMemoryResource& resource,
     const LolaEventInstanceDeployment::SubscriberCountType max_number_combined_subscribers) noexcept
-    : state_slots_{max_slots, proxy}, transaction_log_set_{max_number_combined_subscribers, max_slots, proxy}
+    : state_slots_{max_slots, resource}, transaction_log_set_{max_number_combined_subscribers, max_slots, resource}
 {
 }
 
@@ -106,7 +106,7 @@ template <template <class> class AtomicIndirectorType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto EventDataControlImpl<AtomicIndirectorType>::FindOldestUnusedSlot() noexcept -> ControlSlotIndicator
 {
-    EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX};
+    EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
 
     ControlSlotIndicator selected_slot{};
     // Suppress "AUTOSAR C++14 A5-2-2" finding rule. This rule states: "Traditional C-style casts shall not be used".
@@ -203,8 +203,9 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceSpecificEvent(
     // not called in a context in which the status can change to in writing or invalid while this function is running.
     const auto slot_current_status =
         static_cast<EventSlotStatus>(state_slots_[slot_index].load(std::memory_order_relaxed));
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(!(slot_current_status.IsInWriting() || slot_current_status.IsInvalid()),
-                                 "An event slot can only be referenced once it's ready for reading.");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        !(slot_current_status.IsInWriting() || slot_current_status.IsInvalid()),
+        "An event slot can only be referenced once it's ready for reading.");
 
     auto& transaction_log = transaction_log_set_.GetTransactionLog(transaction_log_index);
 
@@ -219,8 +220,8 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceSpecificEvent(
     // restart the provider, then it should contain an uncommitted reference transaction which will cause the restart to
     // fail.
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(EventSlotStatus{old_slot_value}.GetReferenceCount() !=
-                                     std::numeric_limits<EventSlotStatus::SubscriberCount>::max(),
-                                 "Reference count overflowed which cannot be recovered from.");
+                                                          std::numeric_limits<EventSlotStatus::SubscriberCount>::max(),
+                                                      "Reference count overflowed which cannot be recovered from.");
     transaction_log.ReferenceTransactionCommit(slot_index);
 }
 
@@ -287,9 +288,10 @@ auto EventDataControlImpl<AtomicIndirectorType>::ReferenceNextEvent(
                       "ReferenceNextEvent: status_new_val overflow dangerous.");
         // As status_new_val increment will take place and in case status_new_val has the maximum limit, an error
         // message logged and terminate to avoid status_new_val overflow.
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(status_new_val != std::numeric_limits<std::size_t>::max(),
-                               "EventDataControlImpl::ReferenceNextEvent failed: status_new_val reached the maximum "
-                               "value, an overflow dangerous");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            status_new_val != std::numeric_limits<std::size_t>::max(),
+            "EventDataControlImpl::ReferenceNextEvent failed: status_new_val reached the maximum "
+            "value, an overflow dangerous");
         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
         // not lead to data loss.".
         // No way for an overflow as long as both variables have same data type, and status_new_val doesn't reach the
@@ -340,7 +342,7 @@ std::size_t EventDataControlImpl<AtomicIndirectorType>::GetNumNewEvents(
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
         const EventSlotStatus slot_status{slot.load(std::memory_order_relaxed)};
-        if (slot_status.IsTimeStampBetween(reference_time, EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX))
+        if (slot_status.IsTimeStampBetween(reference_time, EventSlotStatus::TIMESTAMP_MAX))
         {
             // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
             // loss.". This is a false positive as the maximum number of slots is std::uint16_t, so there is no case for

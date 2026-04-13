@@ -14,6 +14,8 @@
 #ifndef SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICE_DECORATOR_H
 #define SCORE_MW_SERVICE_BACKEND_MW_COM_PROVIDED_SERVICE_DECORATOR_H
 
+#include "score/mw/service/provided_service.h"
+
 #include <memory>
 #include <utility>
 
@@ -31,12 +33,19 @@ namespace mw_com
 /// @brief Simplified stub decorator for provided services
 /// @tparam ServiceType The service implementation type
 template <typename ServiceType>
-class ProvidedServiceDecorator
+class ProvidedServiceDecorator : public ProvidedService
 {
   public:
     using ServiceHolder = std::unique_ptr<ServiceType>;
 
     ProvidedServiceDecorator() = default;
+
+    /// @brief Constructor that takes ownership of a service instance
+    explicit ProvidedServiceDecorator(ServiceType&& service)
+        : service_(std::make_unique<ServiceType>(std::move(service)))
+    {
+    }
+
     ~ProvidedServiceDecorator() = default;
 
     ProvidedServiceDecorator(const ProvidedServiceDecorator&) = delete;
@@ -63,6 +72,17 @@ class ProvidedServiceDecorator
     const ServiceType* GetService() const noexcept
     {
         return service_.get();
+    }
+
+    /// @brief Override for polymorphic lookup (stub-specific)
+    void* GetServicePtr() noexcept override
+    {
+        return static_cast<void*>(service_.get());
+    }
+
+    const void* GetServicePtr() const noexcept override
+    {
+        return static_cast<const void*>(service_.get());
     }
 
     /// @brief Check if a specific service type exists (stub - always returns false)

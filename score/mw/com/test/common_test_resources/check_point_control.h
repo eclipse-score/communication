@@ -162,8 +162,8 @@ bool CheckPointControl::WaitForCheckpointReachedOrError(const std::chrono::durat
 
     score::cpp::stop_source supervision_stop_source{};
     score::cpp::stop_callback stop_callback{external_stop_token, [&supervision_stop_source]() noexcept {
-                                         supervision_stop_source.request_stop();
-                                     }};
+                                                supervision_stop_source.request_stop();
+                                            }};
 
     const auto duration_in_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     auto supervision_timeout_callback = [&supervision_stop_source]() noexcept {

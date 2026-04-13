@@ -88,7 +88,7 @@ class LolaGetNumNewSamplesAvailableBenchmarkFixture : public benchmark::Fixture
                 }
                 auto sample = std::move(sample_alloc_result.value());
                 std::fill(sample->begin(), sample->end(), 1U);
-                skeleton_->test_event.Send(std::move(sample));
+                std::ignore = skeleton_->test_event.Send(std::move(sample));
                 std::this_thread::sleep_for(std::chrono::milliseconds{1});
             }
         });

@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
@@ -198,7 +198,8 @@ TEST_F(ProxyCreationFixture, ProxyCreationReturnsNullPtrWhenSharedLockOnUsageMar
     // Expecting that it fails even with retries to get shared lock on service instance usage marker file
     EXPECT_CALL(*fcntl_mock_, flock(_, _))
         .Times(3)
-        .WillRepeatedly(::testing::Return(score::cpp::make_unexpected(::score::os::Error::createFromErrno(EWOULDBLOCK))));
+        .WillRepeatedly(
+            ::testing::Return(score::cpp::make_unexpected(::score::os::Error::createFromErrno(EWOULDBLOCK))));
 
     // When creating a proxy
     const auto proxy_result = Proxy::Create(make_HandleType(identifier_, ServiceInstanceId{kLolaServiceInstanceId}));
@@ -267,8 +268,9 @@ TEST_F(ProxyCreationDeathTest, CreatingProxyWithoutLolaInstanceDeploymentTermina
 
     // When creating a proxy
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId})),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId})),
+        ".*");
 }
 
 TEST_F(ProxyCreationDeathTest, CreatingProxyWithoutLolaTypeDeploymentTerminates)
@@ -280,8 +282,9 @@ TEST_F(ProxyCreationDeathTest, CreatingProxyWithoutLolaTypeDeploymentTerminates)
 
     // When creating a proxy
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId})),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{kLolaServiceInstanceId})),
+        ".*");
 }
 
 TEST_F(ProxyCreationDeathTest, CreatingProxyWithoutLolaServiceInstanceIdTerminates)
@@ -297,7 +300,8 @@ TEST_F(ProxyCreationDeathTest, CreatingProxyWithoutLolaServiceInstanceIdTerminat
 
     // When creating a proxy with a handle which also does not contain a lola instance ID
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{score::cpp::blank{}})), ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = Proxy::Create(make_HandleType(identifier, ServiceInstanceId{score::cpp::blank{}})), ".*");
 }
 
 TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDataControlTerminates)
@@ -596,8 +600,8 @@ TEST_F(ProxyGetEventMetaInfoFixture, GetEventMetaInfoWillReturnDataForEventThatW
     const auto event_meta_info = proxy_->GetEventMetaInfo(kDummyElementFqId);
 
     // Then the EventMetaInfo will contain the meta info of the SkeletonEvent type
-    EXPECT_EQ(event_meta_info.data_type_info_.size_of_, sizeof(ProxyMockedMemoryFixture::SampleType));
-    EXPECT_EQ(event_meta_info.data_type_info_.align_of_, alignof(ProxyMockedMemoryFixture::SampleType));
+    EXPECT_EQ(event_meta_info.data_type_info_.size, sizeof(ProxyMockedMemoryFixture::SampleType));
+    EXPECT_EQ(event_meta_info.data_type_info_.alignment, alignof(ProxyMockedMemoryFixture::SampleType));
 }
 
 using ProxyGetEventMetaInfoDeathTest = ProxyGetEventMetaInfoFixture;

@@ -1,0 +1,35 @@
+@startuml com_api_consumer_initialization
+
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+title Create Consumer
+
+actor User
+participant "R: Runtime" as Runtime
+participant "ServiceDiscovery<I, R>" as ServiceDiscovery
+participant "Consumer<R>" as Consumer
+
+User -> Runtime: find_service::<Interface>(FindServiceSpecifier)
+Runtime --> ServiceDiscovery: ServiceDiscovery instance
+ServiceDiscovery --> User: ServiceDiscovery<I, R>
+
+User -> ServiceDiscovery: get_available_instances()
+ServiceDiscovery --> User: Result<ServiceEnumerator>\n(contains ConsumerBuilders)
+
+Note over User:  Select & build ConsumerBuilder\nfrom ServiceEnumerator\n.nth().build()
+
+User -> Consumer: Builder creates Consumer
+Consumer --> User: Result<Consumer<R>>
+
+Note over User: Consumer ready for\nsubscriber access
+
+@enduml

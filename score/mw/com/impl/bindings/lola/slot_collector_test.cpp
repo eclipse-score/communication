@@ -47,7 +47,7 @@ class SlotCollectorWithFakeMem : public ::testing::Test
 
 TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
 {
-    EventDataControl event_data_control{5, fake_memory_resource_.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control{5, fake_memory_resource_, kMaxSubscribers};
     const auto transaction_log_index =
         event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
@@ -64,7 +64,7 @@ TEST_F(SlotCollectorWithFakeMem, TestProperEventAcquisition)
 
 TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
 {
-    EventDataControl event_data_control{4, fake_memory_resource_.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control{4, fake_memory_resource_, kMaxSubscribers};
     const auto transaction_log_index =
         event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 
@@ -99,7 +99,7 @@ TEST_F(SlotCollectorWithFakeMem, ReceiveEventsInOrder)
 
 TEST_F(SlotCollectorWithFakeMem, DoNotReceiveEventsFromThePast)
 {
-    EventDataControl event_data_control{3, fake_memory_resource_.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control{3, fake_memory_resource_, kMaxSubscribers};
     const auto transaction_log_index =
         event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
     SlotCollector slot_collector{event_data_control, 2U, transaction_log_index};
@@ -124,7 +124,7 @@ using SlotCollectorWithFakeMemDeathTest = SlotCollectorWithFakeMem;
 TEST_F(SlotCollectorWithFakeMemDeathTest, CreatingSlotCollectorWith0MaxSlotsTerminates)
 {
     // Given an EventDataControl and registered TransactionLog
-    EventDataControl event_data_control{3, fake_memory_resource_.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control{3, fake_memory_resource_, kMaxSubscribers};
     const auto transaction_log_index =
         event_data_control.GetTransactionLogSet().RegisterProxyElement(kDummyTransactionLogId).value();
 

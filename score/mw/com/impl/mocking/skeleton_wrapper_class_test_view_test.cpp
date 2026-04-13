@@ -311,7 +311,7 @@ TEST_F(SkeletonWrapperTestClassEventsOnlyCreateFixture, CallingFunctionsOnMockSk
     // When calling OfferService on the skeleton and Allocate on the event
     score::cpp::ignore = skeleton.OfferService();
 
-    skeleton.some_event.Allocate();
+    std::ignore = skeleton.some_event.Allocate();
 }
 
 template <typename InterfaceTrait>
@@ -354,7 +354,7 @@ TEST_F(SkeletonWrapperTestClassFieldsOnlyCreateFixture, CallingFunctionsOnMockSk
     // When calling OfferService on the skeleton and Allocate on the field
     score::cpp::ignore = skeleton.OfferService();
 
-    skeleton.some_field.Allocate();
+    std::ignore = skeleton.some_field.Allocate();
 }
 
 }  // namespace

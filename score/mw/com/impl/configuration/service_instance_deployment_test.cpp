@@ -207,9 +207,9 @@ TEST_F(ServiceInstanceDeploymentDeathTest,
 
     // When getting the LolaServiceInstanceDeployment
     // Then the program terminates
-    EXPECT_DEATH(
-        score::cpp::ignore = GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment),
-        ".*");
+    EXPECT_DEATH(score::cpp::ignore =
+                     GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(service_instance_deployment),
+                 ".*");
 }
 
 TEST_F(ServiceInstanceDeploymentDeathTest,
@@ -222,9 +222,9 @@ TEST_F(ServiceInstanceDeploymentDeathTest,
 
     // When getting the SomeIpServiceInstanceDeployment
     // Then the program terminates
-    EXPECT_DEATH(
-        score::cpp::ignore = GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment),
-        ".*");
+    EXPECT_DEATH(score::cpp::ignore =
+                     GetServiceInstanceDeploymentBinding<SomeIpServiceInstanceDeployment>(service_instance_deployment),
+                 ".*");
 }
 
 TEST_F(ServiceInstanceDeploymentDeathTest,
@@ -237,7 +237,8 @@ TEST_F(ServiceInstanceDeploymentDeathTest,
 
     // When getting a blank binding
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = GetServiceInstanceDeploymentBinding<score::cpp::blank>(service_instance_deployment), ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = GetServiceInstanceDeploymentBinding<score::cpp::blank>(service_instance_deployment), ".*");
 }
 
 TEST_F(ServiceInstanceDeploymentDeathTest, CreatingFromSerializedObjectWithMismatchedSerializationVersionTerminates)
@@ -272,7 +273,8 @@ TEST(ServiceInstanceDeploymentTest, GetBindingTypeReturnsSomeIpForSomeIpBinding)
 TEST(ServiceInstanceDeploymentTest, GetBindingTypeReturnsFakeForBlankBinding)
 {
     // Given a ServiceInstanceDeployment
-    const auto unit = ServiceInstanceDeployment{kDummyService, score::cpp::blank{}, QualityType::kASIL_QM, kInstanceSpecifier};
+    const auto unit =
+        ServiceInstanceDeployment{kDummyService, score::cpp::blank{}, QualityType::kASIL_QM, kInstanceSpecifier};
 
     // When getting the binding type
     // Then it should return BindingType::kFake

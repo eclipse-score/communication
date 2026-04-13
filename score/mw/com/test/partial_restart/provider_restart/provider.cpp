@@ -49,7 +49,7 @@ class CyclicEventSender
     void Start()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(cyclic_send_thread_.joinable() == false,
-                               "cyclic event sender thread is already active!");
+                                                    "cyclic event sender thread is already active!");
         cyclic_send_thread_ = std::thread{&CyclicEventSender::CyclicSendActivity, this, stop_source_.get_token()};
     }
 

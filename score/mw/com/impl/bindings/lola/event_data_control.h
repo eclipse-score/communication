@@ -46,15 +46,12 @@ class EventDataControlAttorney;
 // coverity[autosar_cpp14_m3_2_3_violation]
 class EventDataControlCompositeAttorney;
 
-namespace detail_event_data_control_composite
-{
 // Suppress The rule AUTOSAR C++14 M3-2-3: "A type, object or function that is used in multiple translation units shall
 // be declared in one and only one file."
 // This is a forward declaration that does not vioalate this rule.
 // coverity[autosar_cpp14_m3_2_3_violation]
 template <template <class> class T>
-class EventDataControlCompositeImpl;
-}  // namespace detail_event_data_control_composite
+class EventDataControlComposite;
 
 namespace detail_event_data_control
 {
@@ -82,9 +79,18 @@ class EventDataControlImpl final
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class lola::EventDataControlCompositeAttorney;
 
+    template <template <typename> class T>
+    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
+    // In order that users do not depend on implementation details, we only expose on user facing classes the bare
+    // necessary. Thus, we have friend classes that expose internals for our implementation. Design decision for better
+    // encapsulation.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    friend class lola::EventDataControlComposite;
+
   public:
     using EventControlSlots =
-        score::containers::DynamicArray<ControlSlotType, memory::shared::PolymorphicOffsetPtrAllocator<ControlSlotType>>;
+        score::containers::DynamicArray<ControlSlotType,
+                                        memory::shared::PolymorphicOffsetPtrAllocator<ControlSlotType>>;
     static_assert(ControlSlotType::is_always_lock_free, "According to high level design, SlotType must be lock free.");
 
     /// \brief Will construct EventDataControlImpl and dynamically allocate memory on provided resource on
@@ -95,7 +101,7 @@ class EventDataControlImpl final
     ///        owning this EventDataControl at any one time.
     EventDataControlImpl(
         const SlotIndexType max_slots,
-        const score::memory::shared::MemoryResourceProxy* const proxy,
+        score::memory::shared::ManagedMemoryResource& resource,
         const LolaEventInstanceDeployment::SubscriberCountType max_number_combined_subscribers) noexcept;
     ~EventDataControlImpl() noexcept = default;
 
@@ -159,7 +165,7 @@ class EventDataControlImpl final
     ControlSlotIndicator ReferenceNextEvent(
         const EventSlotStatus::EventTimeStamp last_search_time,
         const TransactionLogSet::TransactionLogIndex transaction_log_index,
-        const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX) noexcept;
+        const EventSlotStatus::EventTimeStamp upper_limit = EventSlotStatus::TIMESTAMP_MAX) noexcept;
 
     /// \brief Returns number/count of events within event slots, which are newer than the given timestamp.
     /// \param reference_time given reference timestamp.
@@ -231,14 +237,6 @@ class EventDataControlImpl final
     static inline std::atomic_uint_fast64_t num_ref_misses{0U};
     static inline std::atomic_uint_fast64_t num_alloc_retries{0U};
     static inline std::atomic_uint_fast64_t num_ref_retries{0U};
-
-    template <template <typename> class T>
-    // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
-    // In order that users do not depend on implementation details, we only expose on user facing classes the bare
-    // necessary. Thus, we have friend classes that expose internals for our implementation. Design decision for better
-    // encapsulation.
-    // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class detail_event_data_control_composite::EventDataControlCompositeImpl;
 };
 
 }  // namespace detail_event_data_control

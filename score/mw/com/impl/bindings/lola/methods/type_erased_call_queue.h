@@ -39,7 +39,7 @@ class TypeErasedCallQueue final
         std::size_t queue_size;
     };
 
-    TypeErasedCallQueue(const memory::shared::MemoryResourceProxy& resource_proxy,
+    TypeErasedCallQueue(memory::shared::ManagedMemoryResource& resource,
                         const TypeErasedElementInfo& type_erased_element_info);
 
     ~TypeErasedCallQueue();
@@ -67,7 +67,7 @@ class TypeErasedCallQueue final
 
     std::pair<InArgQueueSpan, ReturnQueueSpan> AllocateQueue() const;
 
-    const memory::shared::MemoryResourceProxy& resource_proxy_;
+    memory::shared::ManagedMemoryResource& memory_resource_;
 
     TypeErasedElementInfo type_erased_element_info_;
 

@@ -81,7 +81,8 @@ void mw_com_impl_instance_specifier_delete(::score::mw::com::InstanceSpecifier* 
             std::move(*instance_specifier));
         result.has_value())
     {
-        return new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{std::move(result).value()};
+        return new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{
+            std::move(result).value()};
     }
     else
     {
@@ -118,7 +119,8 @@ std::uint32_t mw_com_impl_sample_ptr_get_size() noexcept
     return sizeof(::score::mw::com::impl::SamplePtr<std::uint32_t>);
 }
 
-bool mw_com_impl_proxy_event_subscribe(::score::mw::com::impl::ProxyEventBase* proxy_event, std::uint32_t max_num_events)
+bool mw_com_impl_proxy_event_subscribe(::score::mw::com::impl::ProxyEventBase* proxy_event,
+                                       std::uint32_t max_num_events)
 {
     return proxy_event->Subscribe(max_num_events).has_value();
 }
@@ -128,17 +130,27 @@ void mw_com_impl_proxy_event_unsubscribe(::score::mw::com::impl::ProxyEventBase*
     proxy_event->Unsubscribe();
 }
 
-void mw_com_impl_proxy_event_set_receive_handler(::score::mw::com::impl::ProxyEventBase* proxy_event,
+bool mw_com_impl_proxy_event_set_receive_handler(::score::mw::com::impl::ProxyEventBase* proxy_event,
                                                  const FatPtr* const boxed_handler)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(boxed_handler != nullptr,
-                           "Call to mw_com_impl_proxy_event_set_receive_handler with a nullptr for the handler");
-    proxy_event->SetReceiveHandler(RustFnMutCallable<RustBoxedCallable>{*boxed_handler});
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        boxed_handler != nullptr, "Call to mw_com_impl_proxy_event_set_receive_handler with a nullptr for the handler");
+    const auto result = proxy_event->SetReceiveHandler(RustFnMutCallable<RustBoxedCallable>{*boxed_handler});
+    if (!result.has_value())
+    {
+        return false;
+    }
+    return true;
 }
 
-void mw_com_impl_proxy_event_unset_receive_handler(::score::mw::com::impl::ProxyEventBase* proxy_event)
+bool mw_com_impl_proxy_event_unset_receive_handler(::score::mw::com::impl::ProxyEventBase* proxy_event)
 {
-    proxy_event->UnsetReceiveHandler();
+    const auto result = proxy_event->UnsetReceiveHandler();
+    if (!result.has_value())
+    {
+        return false;
+    }
+    return true;
 }
 }
 }  // namespace score::mw::com::impl::rust

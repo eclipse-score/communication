@@ -11,27 +11,35 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 # todo: Extract to toolchain feature once possible
-test:asan_ubsan_lsan --cxxopt -O0
-test:asan_ubsan_lsan --cxxopt -Og
+
+test:with_debug_symbols --cxxopt -gline-tables-only
+test:with_debug_symbols --cxxopt -gcolumn-info
+test:with_debug_symbols --strip=never
+
+test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+test:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+test:asan_ubsan_lsan --config=with_debug_symbols
+test:asan_ubsan_lsan --run_under=//quality/sanitizer:wrapper
+test:asan_ubsan_lsan --//quality/sanitizer/flags:sanitizer=asan_ubsan_lsan
 test:asan_ubsan_lsan --cxxopt -fsanitize=undefined,address,leak
-test:asan_ubsan_lsan --cxxopt -fno-optimize-sibling-calls
+test:asan_ubsan_lsan --cxxopt -fno-omit-frame-pointer
+test:asan_ubsan_lsan --cxxopt -fno-common
 test:asan_ubsan_lsan --linkopt -fsanitize=undefined,address,leak
 test:asan_ubsan_lsan --linkopt -fsanitize-link-c++-runtime
 test:asan_ubsan_lsan --platform_suffix=asan_ubsan
-test:asan_ubsan_lsan --test_env=ASAN_OPTIONS="exitcode=55 allow_addr2line=1 verbosity=1 coverage=1 check_initialization_order=1 detect_stack_use_after_return=1 print_stats=1 halt_on_error=1 allocator_may_return_null=1 detect_leaks=1"
-test:asan_ubsan_lsan --test_env=UBSAN_OPTIONS="exitcode=55 allow_addr2line=1 verbosity=1 coverage=1 print_stacktrace=1 halt_on_error=1"
 
 test:asan --config=asan_ubsan_lsan
 test:ubsan --config=asan_ubsan_lsan
 test:lsan --config=asan_ubsan_lsan
 
-test:tsan --cxxopt -O0
-test:tsan --cxxopt -Og
 test:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+test:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
+test:tsan --config=with_debug_symbols
+test:tsan --run_under=//quality/sanitizer:wrapper
+test:tsan --//quality/sanitizer/flags:sanitizer=tsan
 test:tsan --cxxopt -fsanitize=thread
+test:tsan --cxxopt -O1
 test:tsan --linkopt -fsanitize=thread
 test:tsan --linkopt -fsanitize-link-c++-runtime
 test:tsan --platform_suffix=tsan
-test:tsan --test_env=TSAN_OPTIONS="exitcode=55 allow_addr2line=1 verbosity=1 coverage=1 detect_deadlocks=1 second_deadlock_stack=1 halt_on_error=0"

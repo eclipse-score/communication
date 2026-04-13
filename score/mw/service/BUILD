@@ -25,6 +25,9 @@ cc_library(
     hdrs = ["provided_service_container.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
+    deps = [
+        ":provided_service",
+    ],
 )
 
 cc_library(

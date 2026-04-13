@@ -24,11 +24,13 @@
 #include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
+#include <sched.h>
 #include <score/assert.hpp>
 #include <score/callback.hpp>
 #include <score/span.hpp>
 
 #include <cstddef>
+#include <ctime>
 #include <optional>
 #include <unordered_map>
 
@@ -51,6 +53,7 @@ class SkeletonMethod : public SkeletonMethodBinding
         const ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
         const safecpp::Scope<>& method_call_handler_scope,
         uid_t allowed_proxy_uid,
+        pid_t proxy_pid,
         const QualityType asil_level);
 
     void OnProxyMethodUnsubscribe(const ProxyMethodInstanceIdentifier proxy_method_instance_identifier);
@@ -60,12 +63,27 @@ class SkeletonMethod : public SkeletonMethodBinding
     void UnregisterMethodCallHandlers();
 
   private:
-    void Call(const std::optional<score::cpp::span<std::byte>> in_args, const std::optional<score::cpp::span<std::byte>> return_arg);
+    void Call(const std::optional<score::cpp::span<std::byte>> in_args,
+              const std::optional<score::cpp::span<std::byte>> return_arg);
+    void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
-    std::unordered_map<ProxyMethodInstanceIdentifier, MethodCallRegistrationGuard> registration_guards_;
+
+    /// ToDo: We need to store the registration guard objects in a way that we can clean up old registration guards,
+    /// from old, crashed processes (e.g. by storing the PID of the process which registered the guards and checking if
+    /// the current pid is different). This is an intermetidate solution and should be revisited after changes are made
+    /// to the method_resource_map in the issue-250236.
+    struct MethodHandlerCleanupPackage
+    {
+        pid_t proxy_pid;
+        std::vector<MethodCallRegistrationGuard> registration_guards;
+    };
+    /// We store all registration guards associated with an application, since after the restart all old
+    /// MethodCallHandlers can be deleted, by the first method that happens to do the cleanup
+    std::unordered_map<GlobalConfiguration::ApplicationId, MethodHandlerCleanupPackage> registration_guards_;
+
     std::mutex registration_guards_mutex_;
 };
 

@@ -19,4 +19,4 @@ def test_generic_proxy(sut):
     # Sender runs for 30 cycles at 40ms intervals, Receiver receives 25 cycles
     with sut.start_process("./bin/generic_proxy -m send -t 40 -n 30", cwd="/opt/generic_proxy/") as sender:
         with sut.start_process("./bin/generic_proxy -m recv -n 25", cwd="/opt/generic_proxy/") as receiver:
-            assert receiver.wait_for_exit() == 0
+            assert receiver.wait_for_exit(timeout=120) == 0

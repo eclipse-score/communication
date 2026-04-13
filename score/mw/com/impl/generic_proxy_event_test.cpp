@@ -104,7 +104,7 @@ TEST(GenericProxyEventTest, SamplePtrsToSlotDataAreConst)
         static_assert(std::is_const<ArrowSlotType>::value, "SamplePtr should provide manage pointer to const.");
     };
 
-    proxy_event.Subscribe(max_num_samples);
+    std::ignore = proxy_event.Subscribe(max_num_samples);
 
     const auto get_result = proxy_event.GetNewSamples(get_new_samples_callback, max_num_samples);
     EXPECT_EQ(get_result.value(), 1U);
@@ -130,7 +130,7 @@ TEST(GenericProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
         .WillOnce(::testing::Return(SubscriptionState::kNotSubscribed));
 
     score::cpp::optional<SamplePtr<SampleType>> ptr{};
-    proxy_event->Subscribe(max_num_samples);
+    std::ignore = proxy_event->Subscribe(max_num_samples);
     Result<std::size_t> num_samples = proxy_event->GetNewSamples(
         [&ptr](SamplePtr<SampleType> new_sample) {
             ptr = std::move(new_sample);

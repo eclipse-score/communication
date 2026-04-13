@@ -1,0 +1,50 @@
+@startuml com_api_synchronous_receive_data
+
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+title Receive Data
+
+actor User
+participant "Subscription<T, R>" as Subscription
+participant "SampleContainer<Sample<T>>" as SampleContainer
+participant "Sample<T>" as Sample
+
+User -> SampleContainer: new(capacity)
+SampleContainer --> User: Empty SampleContainer
+
+User -> Subscription: try_receive(\n&mut sample_container,\nmax_samples)
+Subscription --> User: Result<usize>
+
+alt Samples Received (Ok(n))
+    Note over User: n samples added to container
+
+    User -> SampleContainer: pop_front()
+    SampleContainer --> User: Option<Sample<T>>
+
+    alt Sample is Some
+        User -> Sample: Deref (*sample)
+        Sample --> User: &T immutable reference
+
+        User -> User: Access event data fields
+        Note over User: Read-only access
+    end
+
+else No Samples (Ok(0))
+    Note over User: No new samples received
+    Note over User: try_receive again later
+
+else Error
+    Subscription --> User: Result::Err(Error)
+    Note over User: Handle error
+end
+
+@enduml

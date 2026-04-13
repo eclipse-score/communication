@@ -110,7 +110,8 @@ std::uint8_t GetNumberOfTracingSlots(const InstanceIdentifier& instance_identifi
     const auto service_element_instance_deployment_it = service_instance_map.find(service_element_name_str);
     if (service_element_instance_deployment_it == service_instance_map.end())
     {
-        score::mw::log::LogFatal() << "Lola: requested service element (" << service_element_name << ") does not exist.";
+        score::mw::log::LogFatal() << "Lola: requested service element (" << service_element_name
+                                   << ") does not exist.";
         std::terminate();
     }
 
@@ -147,7 +148,7 @@ SkeletonEventTracingData GenerateSkeletonTracingStructFromEventConfig(const Inst
     {
         const auto* const tracing_config = runtime.GetTracingFilterConfig();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(tracing_config != nullptr,
-                               "tracing filter config must exist, when tracing runtime exists!");
+                                                    "tracing filter config must exist, when tracing runtime exists!");
         const auto service_element_instance_identifier_view =
             GetServiceElementInstanceIdentifierView(instance_identifier, event_name, ServiceElementType::EVENT);
         const auto instance_specifier_view = service_element_instance_identifier_view.instance_specifier;

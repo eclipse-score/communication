@@ -13,7 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
@@ -270,7 +270,8 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingValidReturnStora
 
     // When calling AllocateReturnType
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateReturnType(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          unit_->AllocateReturnType(kDummyQueuePosition));
 }
 
 TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStorageWithReturnTypeInfoTerminates)
@@ -282,7 +283,8 @@ TEST_F(ProxyMethodAllocateReturnTypeFixture, CallingAfterSettingEmptyReturnStora
 
     // When calling AllocateReturnType
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = unit_->AllocateReturnType(kDummyQueuePosition));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          unit_->AllocateReturnType(kDummyQueuePosition));
 }
 
 using ProxyMethodDoCallFixture = ProxyMethodFixture;
@@ -322,8 +324,7 @@ TEST_F(ProxyMethodDoCallFixture, DispatchesToMessagePassingBinding)
         .WillOnce(WithArg<1>(Invoke([](auto proxy_method_instance_identifier) -> ResultBlank {
             // Then CallMethod is called with a ProxyMethodInstanceIdentifier containing the application id from the
             // configuration
-            EXPECT_EQ(proxy_method_instance_identifier.proxy_instance_identifier.process_identifier,
-                      kDummyApplicationId);
+            EXPECT_EQ(proxy_method_instance_identifier.proxy_instance_identifier.application_id, kDummyApplicationId);
             return ResultBlank{};
         })));
 

@@ -670,8 +670,8 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveConstructingUpdatesReferenc
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesToServiceElements)
 {
-    RecordProperty("Verifies", "SCR-17432438");
-    RecordProperty("Description", "skeleton is move assignable");
+    RecordProperty("Verifies", "SCR-21290799");
+    RecordProperty("Description", "Proxy is move assignable");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
@@ -723,13 +723,58 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
     EXPECT_EQ(&methods.at(method_name_1_).get(), &method_1_);
 }
 
+TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningToItselfDoesNotDoAnything)
+{
+    mock_binding::Proxy proxy_binding_mock{};
+    // Given a valid MyProxy object
+    MyProxy proxy_2{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock), handle_};
+    // When move assigning the MyProxy object to itself
+
+    auto other_name_same_proxy_p = &proxy_2;
+    proxy_2 = std::move(*other_name_same_proxy_p);
+    // Then nothing happens.
+    // In case of self assignement we would want to know that actually nothing happens and no sideffects occur.
+    // Abscence of sideeffects is not possible to test for. This test only validates that the self assignement branchcan
+    // be taken without crash.
+}
+
+TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateEventUpdatesCorrectly)
+{
+    // Given a proxy with a registered event
+    ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
+
+    // When we update the event with a new event value
+    ProxyBaseView{proxy_}.UpdateEvent(event_name_0_, event_1_);
+
+    // Then we expect the proxy to contain the new event under the old name
+    auto& updated_event = proxy_.GetEvents().find(event_name_0_)->second.get();
+
+    EXPECT_EQ(&updated_event, &event_1_);
+    EXPECT_NE(&updated_event, &event_0_);
+}
+
 TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateEventTerminatesOnFailiure)
 {
     // Given a proxy with a registered event
     ProxyBaseView{proxy_}.RegisterEvent(event_name_0_, event_0_);
 
-    // When we try to update the even but use a wrong name, then the program terminates
+    // When we try to update the event but use a wrong name, then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateEvent("wrong_event_name", event_0_));
+}
+
+TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateFieldUpdatesCorrectly)
+{
+    // Given a proxy with a registered field
+    ProxyBaseView{proxy_}.RegisterField(field_name_0_, field_0_);
+
+    // When we update the field with a new field value
+    ProxyBaseView{proxy_}.UpdateField(field_name_0_, field_1_);
+
+    // Then we expect the proxy to contain the new field under the old name
+    auto& updated_field = proxy_.GetFields().find(field_name_0_)->second.get();
+
+    EXPECT_EQ(&updated_field, &field_1_);
+    EXPECT_NE(&updated_field, &field_0_);
 }
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateFieldTerminatesOnFailiure)
@@ -741,12 +786,28 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateFieldTerminatesOnFailiure
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateField("wrong_field_name", field_0_));
 }
 
+TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodUpdatesCorrectly)
+{
+    // Given a proxy with a registered method
+    ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
+
+    // When we update the method with a new method value
+    ProxyBaseView{proxy_}.UpdateMethod(method_name_0_, method_1_);
+
+    // Then we expect the proxy to contain the new method under the old name
+    auto& updated_method = proxy_.GetMethods().find(method_name_0_)->second.get();
+
+    EXPECT_EQ(&updated_method, &method_1_);
+    EXPECT_NE(&updated_method, &method_0_);
+}
+
 TEST_F(ProxyBaseServiceElementReferencesFixture, UpdateMethodTerminatesOnFailiure)
 {
     // Given a proxy with a registered event
     ProxyBaseView{proxy_}.RegisterMethod(method_name_0_, method_0_);
 
     // When we try to update the even but use a wrong name, then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(ProxyBaseView{proxy_}.UpdateMethod("wrong_method_name", method_0_));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        ProxyBaseView{proxy_}.UpdateMethod("wrong_method_name", method_0_));
 }
 }  // namespace score::mw::com::impl

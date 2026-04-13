@@ -21,6 +21,6 @@ rust_library(
     ],
     deps = [
         "//score/mw/com/impl/rust/com-api/com-api-concept",
-        "@crate_index//:futures",
+        "@score_communication_crate_index//:futures",
     ],
 )

@@ -123,11 +123,11 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::CreateObj
 
     const auto mmap_result =
         ::score::os::Mman::instance().mmap(NULL,
-                                         sizeof(T),
-                                         ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
-                                         ::score::os::Mman::Map::kShared,
-                                         file_descriptor,
-                                         0);
+                                           sizeof(T),
+                                           ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
+                                           ::score::os::Mman::Map::kShared,
+                                           file_descriptor,
+                                           0);
     if (!mmap_result.has_value())
     {
         std::stringstream ss;
@@ -148,17 +148,24 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObjec
     const std::string& shared_memory_file_name) noexcept
 {
     const auto lock_file_path = detail_shared_memory_object_creator::CreateLockFilePath(shared_memory_file_name);
-    if (!detail_shared_memory_object_creator::WaitForFreeLockFile(lock_file_path))
+    // Hold the lock file during open to prevent racing with CreateObject.
+    auto lock_file = memory::shared::LockFile::Create(lock_file_path);
+    while (!lock_file.has_value())
     {
-        std::stringstream ss;
-        ss << "SharedMemoryObjectCreator: Lock file at (" << lock_file_path
-           << ") still present after timeout. Exiting.";
-        std::cout << ss.str() << std::endl;
-        return score::cpp::make_unexpected<os::Error>(os::Error::createFromErrno(EBUSY));
+        if (!detail_shared_memory_object_creator::WaitForFreeLockFile(lock_file_path))
+        {
+            std::stringstream ss;
+            ss << "SharedMemoryObjectCreator: Lock file at (" << lock_file_path
+               << ") still present after timeout. Exiting.";
+            std::cout << ss.str() << std::endl;
+            return score::cpp::make_unexpected<os::Error>(os::Error::createFromErrno(EBUSY));
+        }
+        lock_file = memory::shared::LockFile::Create(lock_file_path);
     }
 
-    const auto open_result = ::score::os::Mman::instance().shm_open(
-        shared_memory_file_name.data(), ::score::os::Fcntl::Open::kReadWrite, score::os::Stat::Mode::kReadWriteExecUser);
+    const auto open_result = ::score::os::Mman::instance().shm_open(shared_memory_file_name.data(),
+                                                                    ::score::os::Fcntl::Open::kReadWrite,
+                                                                    score::os::Stat::Mode::kReadWriteExecUser);
     if (!open_result.has_value())
     {
         return score::cpp::make_unexpected(open_result.error());
@@ -167,11 +174,11 @@ os::Result<SharedMemoryObjectCreator<T>> SharedMemoryObjectCreator<T>::OpenObjec
 
     const auto mmap_result =
         ::score::os::Mman::instance().mmap(NULL,
-                                         sizeof(T),
-                                         ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
-                                         ::score::os::Mman::Map::kShared,
-                                         file_descriptor,
-                                         0);
+                                           sizeof(T),
+                                           ::score::os::Mman::Protection::kRead | ::score::os::Mman::Protection::kWrite,
+                                           ::score::os::Mman::Map::kShared,
+                                           file_descriptor,
+                                           0);
     if (!mmap_result.has_value())
     {
         std::stringstream ss;

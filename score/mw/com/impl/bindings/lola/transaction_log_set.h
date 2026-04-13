@@ -69,11 +69,10 @@ class TransactionLogSet
     class TransactionLogNode
     {
       public:
-        TransactionLogNode(const std::size_t number_of_slots,
-                           const memory::shared::MemoryResourceProxy* const proxy) noexcept
+        TransactionLogNode(const std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource) noexcept
             : needs_rollback_{false},
               transaction_log_id_{kInvalidTransactionLogId},
-              transaction_log_(number_of_slots, proxy)
+              transaction_log_(number_of_slots, resource)
         {
         }
 
@@ -96,14 +95,15 @@ class TransactionLogSet
 
         void Release()
         {
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(transaction_log_id_.GetUnderlying().load() != kInvalidTransactionLogId,
-                                   "Trying to Release() TransactionLogNode, which was not acquired.");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                transaction_log_id_.GetUnderlying().load() != kInvalidTransactionLogId,
+                "Trying to Release() TransactionLogNode, which was not acquired.");
             transaction_log_id_.GetUnderlying().store(kInvalidTransactionLogId);
         }
 
         void MarkNeedsRollback(const bool needs_rollback) noexcept
         {
-            needs_rollback_ = needs_rollback;
+            needs_rollback_.GetUnderlying() = needs_rollback;
         }
 
         TransactionLogId GetTransactionLogId() const noexcept
@@ -131,7 +131,7 @@ class TransactionLogSet
         ///
         /// Will be set on Proxy::Create by the first Proxy in the same process with the same transaction_log_id. Will
         /// be cleared once Rollback is called on transaction_log.
-        bool needs_rollback_;
+        CopyableAtomic<bool> needs_rollback_;
 
         /// \brief Expresses, who (which proxy process) currently owns this transaction log. An (initially set) value
         ///        of kInvalidTransactionLogId means, that it is not yet owned by anybody.
@@ -160,7 +160,7 @@ class TransactionLogSet
     /// \param proxy The MemoryResourceProxy that will be used by the DynamicArray of transaction logs
     TransactionLogSet(const TransactionLogIndex max_number_of_logs,
                       const std::size_t number_of_slots,
-                      const memory::shared::MemoryResourceProxy* const proxy) noexcept;
+                      memory::shared::ManagedMemoryResource& resource) noexcept;
     ~TransactionLogSet() noexcept = default;
 
     TransactionLogSet(const TransactionLogSet&) = delete;
@@ -216,7 +216,7 @@ class TransactionLogSet
   private:
     using TransactionLogCollection =
         score::containers::DynamicArray<TransactionLogNode,
-                                      memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>;
+                                        memory::shared::PolymorphicOffsetPtrAllocator<TransactionLogNode>>;
 
     /// \brief Returns iterators to all TransactionLogNodes for the given target_transaction_log_id, which needs roll
     /// back.
@@ -238,7 +238,6 @@ class TransactionLogSet
 
     TransactionLogCollection proxy_transaction_logs_;
     TransactionLogNode skeleton_tracing_transaction_log_;
-    const memory::shared::MemoryResourceProxy* proxy_;
 };
 
 }  // namespace score::mw::com::impl::lola

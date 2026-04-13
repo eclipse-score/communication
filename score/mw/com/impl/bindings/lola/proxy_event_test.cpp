@@ -107,7 +107,7 @@ class LolaProxyEventFixture : public LolaProxyEventResources
 
     LolaProxyEventFixture& ThatIsSubscribedWithMaxSamples(const std::size_t max_sample_count)
     {
-        this->test_proxy_event_->Subscribe(max_sample_count);
+        std::ignore = this->test_proxy_event_->Subscribe(max_sample_count);
         sample_reference_tracker_ = std::make_unique<SampleReferenceTracker>(max_sample_count);
         return *this;
     }
@@ -624,7 +624,7 @@ TYPED_TEST(LolaProxyEventFixture, CallingSubscribeWillEnterSubscribedState)
 {
     // Given a mocked Proxy, Skeleton and proxy event which is subscribed
     this->GivenAProxyEvent(this->element_fq_id_, this->event_name_);
-    this->test_proxy_event_->Subscribe(kMaxSampleCount);
+    ASSERT_TRUE(this->test_proxy_event_->Subscribe(kMaxSampleCount));
 
     // When calling GetSubscriptionState
     const auto new_subscription_state = this->test_proxy_event_->GetSubscriptionState();

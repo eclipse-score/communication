@@ -171,8 +171,8 @@ class FlagFileCrawlerFixture : public ::testing::Test
                                     disambiguator_string;
         const filesystem::Path flag_file_path = instance_id_search_path / flag_file_name;
 
-        filesystem_factory_fake_.GetUtils().CreateDirectories(instance_id_search_path, kAllPerms);
-        filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path, kUserWriteRestRead);
+        EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(instance_id_search_path, kAllPerms));
+        EXPECT_TRUE(filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path, kUserWriteRestRead));
     }
 
     filesystem::FilesystemFactoryFake filesystem_factory_fake_{};
@@ -351,7 +351,7 @@ TEST_F(FlagFileCrawlerCrawlAnyInstanceFixture, IgnoresInvalidInstanceDirectories
     // instance id)
     const auto service_search_path = GetServiceIdSearchPath(kConfigStoreQmAny);
     const auto invalid_instance_directory = service_search_path / "invalid_directory_name";
-    filesystem_factory_fake_.GetUtils().CreateDirectories(invalid_instance_directory, kAllPerms);
+    EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(invalid_instance_directory, kAllPerms));
 
     GivenAFlagFileCrawler();
 
@@ -452,7 +452,7 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, AddsWatchForExistingInsta
 {
     // Given that an Instance ID directory already exists
     const auto instance_search_path = GetInstanceIdSearchPath(kConfigStoreQm1).Native();
-    filesystem_factory_fake_.GetUtils().CreateDirectories(instance_search_path, kAllPerms);
+    EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(instance_search_path, kAllPerms));
     GivenAFlagFileCrawler();
 
     // Expecting that a watch will be added on the service ID path
@@ -518,7 +518,7 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, ReturnsAddedExistingInsta
 
     // Given that an Instance ID directory already exists
     const auto instance__qm_1_search_path = GetInstanceIdSearchPath(kConfigStoreQm1).Native();
-    filesystem_factory_fake_.GetUtils().CreateDirectories(instance__qm_1_search_path, kAllPerms);
+    EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(instance__qm_1_search_path, kAllPerms));
 
     // and that a watch will be added on the service ID path which returns a valid descriptor
     const auto service_search_path = GetServiceIdSearchPath(kConfigStoreQmAny).Native();
@@ -555,9 +555,9 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, IgnoresDirectoriesInInsta
     const auto instance_search_path = GetInstanceIdSearchPath(kConfigStoreQm1);
     const auto broken_flag_file_path = instance_search_path / "1234_asil-b_5678";
 
-    filesystem_factory_fake_.GetUtils().CreateDirectories(broken_flag_file_path, kAllPerms);
-    filesystem_factory_fake_.GetStandard().CreateRegularFile(broken_flag_file_path / "1234_asil-b_5678",
-                                                             kUserWriteRestRead);
+    EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(broken_flag_file_path, kAllPerms));
+    EXPECT_TRUE(filesystem_factory_fake_.GetStandard().CreateRegularFile(broken_flag_file_path / "1234_asil-b_5678",
+                                                                         kUserWriteRestRead));
 
     const auto crawler_result = flag_file_crawler_->CrawlAndWatch(kConfigStoreQmAny.GetEnrichedInstanceIdentifier());
     ASSERT_TRUE(crawler_result.has_value());
@@ -571,8 +571,8 @@ TEST_F(FlagFileCrawlerCrawlAndWatchAnyInstanceFixture, IgnoresDirectoriesInInsta
 TEST_F(FlagFileCrawlerCrawlAndWatchSpecificInstanceFixture, IgnoresFilesOnInstanceIdDirectoryLevel)
 {
     const auto service_path = test::GetServiceDiscoveryPath() / "1";
-    filesystem_factory_fake_.GetUtils().CreateDirectories(service_path, kAllPerms);
-    filesystem_factory_fake_.GetStandard().CreateRegularFile(service_path / "1", kUserWriteRestRead);
+    EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(service_path, kAllPerms));
+    EXPECT_TRUE(filesystem_factory_fake_.GetStandard().CreateRegularFile(service_path / "1", kUserWriteRestRead));
     CreateFlagFile(kPid2, kConfigStoreAsilB2);
 
     GivenAFlagFileCrawler();
@@ -588,8 +588,8 @@ TEST_F(FlagFileCrawlerCrawlAndWatchSpecificInstanceFixture, IgnoresFilesOnInstan
 TEST_F(FlagFileCrawlerCrawlAndWatchSpecificInstanceFixture, IgnoresDirectoryOnInstanceIdIfCannotBeParsedToInstanceId)
 {
     const auto service_path = test::GetServiceDiscoveryPath() / "whatever";
-    filesystem_factory_fake_.GetUtils().CreateDirectories(service_path, kAllPerms);
-    filesystem_factory_fake_.GetUtils().CreateDirectories(service_path / "a", kAllPerms);
+    EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(service_path, kAllPerms));
+    EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(service_path / "a", kAllPerms));
     CreateFlagFile(kPid2, kConfigStoreAsilB2);
 
     GivenAFlagFileCrawler();

@@ -13,7 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"

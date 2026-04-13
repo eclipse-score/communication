@@ -158,8 +158,9 @@ class ServiceDiscoveryClient final : public IServiceDiscoveryClient
 
     void TransferObsoleteSearchRequest(const FindServiceHandle& find_service_handle) noexcept;
 
-    void HandleEvents(const score::cpp::expected<score::cpp::static_vector<os::InotifyEvent, os::InotifyInstance::max_events>,
-                                          os::Error>& expected_events) noexcept;
+    void HandleEvents(
+        const score::cpp::expected<score::cpp::static_vector<os::InotifyEvent, os::InotifyInstance::max_events>,
+                                   os::Error>& expected_events) noexcept;
 
     void HandleDeletionEvents(const std::vector<os::InotifyEvent>& events) noexcept;
     void HandleCreationEvents(const std::vector<os::InotifyEvent>& events) noexcept;

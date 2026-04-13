@@ -16,22 +16,6 @@ load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test", "cc_unit_te
 load("//score/mw:common_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
-    name = "proxy_instance_identifier",
-    srcs = ["proxy_instance_identifier.cpp"],
-    hdrs = ["proxy_instance_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl/bindings/lola:__pkg__",
-        "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
-    ],
-    deps = [
-        "//score/mw/com/impl/configuration",
-        "@score_logging//score/mw/log",
-    ],
-)
-
-cc_library(
     name = "proxy_method_instance_identifier",
     srcs = ["proxy_method_instance_identifier.cpp"],
     hdrs = ["proxy_method_instance_identifier.h"],
@@ -42,23 +26,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
     deps = [
-        ":proxy_instance_identifier",
-        "//score/mw/com/impl/configuration",
-        "@score_logging//score/mw/log",
-    ],
-)
-
-cc_library(
-    name = "skeleton_instance_identifier",
-    srcs = ["skeleton_instance_identifier.cpp"],
-    hdrs = ["skeleton_instance_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = [
-        "//score/mw/com/impl/bindings/lola:__pkg__",
-        "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
-    ],
-    deps = [
+        "//score/mw/com/impl/bindings/lola:proxy_instance_identifier",
         "//score/mw/com/impl/configuration",
         "@score_logging//score/mw/log",
     ],
@@ -101,7 +69,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
-        ":proxy_instance_identifier",
+        "//score/mw/com/impl/bindings/lola:proxy_instance_identifier",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/memory/shared",
     ],
@@ -175,26 +143,10 @@ cc_unit_test(
 )
 
 cc_gtest_unit_test(
-    name = "proxy_instance_identifier_test",
-    srcs = ["proxy_instance_identifier_test.cpp"],
-    deps = [
-        ":proxy_instance_identifier",
-    ],
-)
-
-cc_gtest_unit_test(
     name = "proxy_method_instance_identifier_test",
     srcs = ["proxy_method_instance_identifier_test.cpp"],
     deps = [
         ":proxy_method_instance_identifier",
-    ],
-)
-
-cc_gtest_unit_test(
-    name = "skeleton_instance_identifier_test",
-    srcs = ["skeleton_instance_identifier_test.cpp"],
-    deps = [
-        ":skeleton_instance_identifier",
     ],
 )
 
@@ -258,9 +210,7 @@ cc_unit_test(
 cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
-        ":proxy_instance_identifier_test",
         ":proxy_method_instance_identifier_test",
-        ":skeleton_instance_identifier_test",
         ":type_erased_call_queue_test",
         ":method_data_test",
         ":method_error_test",

@@ -19,6 +19,7 @@
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
@@ -26,8 +27,8 @@
 
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
 
-#include <score/jthread.hpp>
 #include <gtest/gtest.h>
+#include <score/jthread.hpp>
 #include <sys/types.h>
 #include <memory>
 #include <optional>
@@ -48,6 +49,8 @@ const pid_t kDummyOldConsumerPid{17U};
 const pid_t kDummyCurrentConsumerPid{155U};
 const QualityType kDummyQualityType{QualityType::kASIL_QM};
 const ElementFqId kDummyElementFqId{1U, 2U, 3U, ServiceElementType::EVENT};
+const SkeletonInstanceIdentifier kSkeletonInstanceIdentifier{kDummyElementFqId.service_id_,
+                                                             kDummyElementFqId.instance_id_};
 
 constexpr std::size_t kNumberOfSlots{20U};
 constexpr std::size_t kMaxSubscribers{20U};
@@ -67,9 +70,12 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     TransactionLogRollbackExecutorFixture& WithTransactionLogRollbackExecutor()
     {
-        service_data_control_ = std::make_unique<ServiceDataControl>(memory_resource_mock_.getMemoryResourceProxy());
-        unit_ = std::make_unique<TransactionLogRollbackExecutor>(
-            *service_data_control_, kDummyQualityType, kDummyProviderPid, kDummyTransactionLogId);
+        service_data_control_ = std::make_unique<ServiceDataControl>(memory_resource_mock_);
+        unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,
+                                                                 kSkeletonInstanceIdentifier,
+                                                                 kDummyQualityType,
+                                                                 kDummyProviderPid,
+                                                                 kDummyTransactionLogId);
 
         AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
         return *this;
@@ -83,7 +89,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
             std::forward_as_tuple(skeleton_event_properties.number_of_slots,
                                   skeleton_event_properties.max_subscribers,
                                   skeleton_event_properties.enforce_max_samples,
-                                  memory_resource_mock_.getMemoryResourceProxy()));
+                                  memory_resource_mock_));
         ASSERT_TRUE(emplace_result.second);
     }
 
@@ -103,7 +109,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
 
     void InsertServiceDataControl() noexcept
     {
-        auto rollback_mutex = rollback_synchronization_.GetMutex(service_data_control_.get());
+        auto rollback_mutex = rollback_synchronization_.GetMutex(kSkeletonInstanceIdentifier);
         // we expect that the mutex did not yet exist, but has been created by our call.
         ASSERT_FALSE(rollback_mutex.second);
     }
@@ -168,10 +174,10 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture,
     WithTransactionLogRollbackExecutor();
 
     // when RollbackTransactionLogs() has been called
-    unit_->RollbackTransactionLogs();
+    std::ignore = unit_->RollbackTransactionLogs();
 
     // expect, that the synchronization mutex for service_data_control_ exists afterward
-    auto [mutex, mutex_existed] = rollback_synchronization_.GetMutex(service_data_control_.get());
+    auto [mutex, mutex_existed] = rollback_synchronization_.GetMutex(kSkeletonInstanceIdentifier);
     EXPECT_EQ(mutex_existed, true);
 }
 
@@ -223,7 +229,7 @@ TEST_F(TransactionLogRollbackExecutorRollbackLogsFixture, RollbackTransactionLog
     for (std::size_t i = 0; i < kMaxSubscribers; ++i)
     {
         threads.emplace_back([this]() noexcept {
-            unit_->RollbackTransactionLogs();
+            std::ignore = unit_->RollbackTransactionLogs();
         });
     }
 
@@ -325,7 +331,7 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToGetLola
     WithTransactionLogRollbackExecutor();
 
     ON_CALL(runtime_mock_guard_.runtime_mock_, GetBindingRuntime(BindingType::kLoLa)).WillByDefault(Return(nullptr));
-    EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
+    EXPECT_DEATH(std::ignore = unit_->RollbackTransactionLogs(), ".*");
 }
 
 TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegisterPidTerminates)
@@ -341,7 +347,7 @@ TEST_F(TransactionLogRollbackExecutorMarkNeedRollbackDeathTest, FailingToRegiste
 
     // When calling RollbackTransactionLogs
     // Then the program terminates
-    EXPECT_DEATH(unit_->RollbackTransactionLogs(), ".*");
+    EXPECT_DEATH(std::ignore = unit_->RollbackTransactionLogs(), ".*");
 
     ApplicationIdPidMapping<
         score::memory::shared::PolymorphicOffsetPtrAllocator<ApplicationIdPidMappingEntry>>::ClearRegisterPidFake();

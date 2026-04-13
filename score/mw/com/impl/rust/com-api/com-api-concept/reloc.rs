@@ -16,6 +16,8 @@
 /// - usage of pointers to other members of the struct itself (akin to !Unpin structs)
 /// - usage of Rust pointers or references to other data
 ///
+/// This trait provides the necessary bounds to ensure that the implementing type can be safely
+/// sent across address boundaries and does not contain any non-static references.
 /// This can be trivially achieved by not using any sort of reference. In case a reference (either
 /// to self or to other data) is required, the following options exist:
 /// - Use indices into other data members of the same structure
@@ -25,7 +27,7 @@
 ///
 /// Since it is yet to be proven whether this trait can be implemented safely (assumption is: no) it
 /// is unsafe for now. The expectation is that very few users ever need to implement this manually.
-pub unsafe trait Reloc {}
+pub unsafe trait Reloc: Send + Unpin + 'static {}
 
 pub use com_api_concept_macros::Reloc;
 

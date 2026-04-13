@@ -17,8 +17,8 @@
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service_instance.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_client_cache.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
 #include "score/message_passing/i_client_factory.h"
@@ -185,17 +185,18 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
 
     void MessageCallback(const pid_t sender_pid, const score::cpp::span<const std::uint8_t> message) noexcept;
     score::ResultBlank MessageCallbackWithReply(const uid_t sender_uid,
-                                              const pid_t sender_pid,
-                                              const score::cpp::span<const std::uint8_t> message);
+                                                const pid_t sender_pid,
+                                                const score::cpp::span<const std::uint8_t> message);
     void HandleNotifyEventMsg(const score::cpp::span<const std::uint8_t> payload, const pid_t sender_node_id) noexcept;
     void HandleRegisterNotificationMsg(const score::cpp::span<const std::uint8_t> payload,
                                        const pid_t sender_node_id) noexcept;
     void HandleUnregisterNotificationMsg(const score::cpp::span<const std::uint8_t> payload,
                                          const pid_t sender_node_id) noexcept;
-    void HandleOutdatedNodeIdMsg(const score::cpp::span<const std::uint8_t> payload, const pid_t sender_node_id) noexcept;
+    void HandleOutdatedNodeIdMsg(const score::cpp::span<const std::uint8_t> payload,
+                                 const pid_t sender_node_id) noexcept;
     score::ResultBlank HandleSubscribeServiceMethodMsg(const score::cpp::span<const std::uint8_t> payload,
-                                                     const uid_t sender_uid,
-                                                     const pid_t sender_node_id);
+                                                       const uid_t sender_uid,
+                                                       const pid_t sender_node_id);
     score::ResultBlank HandleCallMethodMsg(const score::cpp::span<const std::uint8_t> payload, const uid_t sender_uid);
 
     std::uint32_t NotifyEventLocally(const ElementFqId event_id) noexcept;
@@ -207,12 +208,12 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     void SendRegisterEventNotificationMessage(const ElementFqId event_id, const pid_t target_node_id) noexcept;
 
     score::ResultBlank CallSubscribeServiceMethodLocally(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
-                                                       const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                                       const uid_t proxy_uid,
-                                                       const pid_t proxy_pid);
+                                                         const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                         const uid_t proxy_uid,
+                                                         const pid_t proxy_pid);
     score::ResultBlank CallServiceMethodLocally(const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
-                                              const std::size_t queue_position,
-                                              const uid_t proxy_uid);
+                                                const std::size_t queue_position,
+                                                const uid_t proxy_uid);
 
     ResultBlank CallSubscribeServiceMethodRemotely(const SkeletonInstanceIdentifier& skeleton_instance_identifier,
                                                    const ProxyInstanceIdentifier& proxy_instance_identifier,

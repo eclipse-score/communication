@@ -12,8 +12,8 @@
  *******************************************************************************/
 
 #include "score/filesystem/filesystem.h"
-#include "score/os/utils/inotify/inotify_instance_impl.h"
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
+#include "score/os/utils/inotify/inotify_instance_impl.h"
 
 #include <score/stop_token.hpp>
 

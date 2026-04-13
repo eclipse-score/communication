@@ -39,8 +39,8 @@ class MessagePassingServiceTest : public ::testing::Test
     MessagePassingServiceTest& WithAsilBAndQmInstance()
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(asil_qm_message_passing_service_instance_mock_ != nullptr &&
-                                   asil_b_message_passing_service_instance_mock_ != nullptr,
-                               "Dependencies invalid");
+                                                        asil_b_message_passing_service_instance_mock_ != nullptr,
+                                                    "Dependencies invalid");
 
         ON_CALL(*factory_, Create(ClientQualityType::kASIL_B, MatchesAsilSpecificConfig(asil_b_cfg_), _, _, _))
             .WillByDefault(Return(ByMove(std::move(asil_b_message_passing_service_instance_mock_))));
@@ -51,7 +51,8 @@ class MessagePassingServiceTest : public ::testing::Test
 
     MessagePassingServiceTest& WithAsilQmInstance()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(asil_qm_message_passing_service_instance_mock_ != nullptr, "Dependencies invalid");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG_MESSAGE(asil_qm_message_passing_service_instance_mock_ != nullptr,
+                                                    "Dependencies invalid");
 
         ON_CALL(*factory_, Create(ClientQualityType::kASIL_QM, MatchesAsilSpecificConfig(asil_qm_cfg_), _, _, _))
             .WillByDefault(Return(ByMove(std::move(asil_qm_message_passing_service_instance_mock_))));
@@ -403,6 +404,99 @@ TEST_F(MessagePassingServiceTest, UnregisterEventNotificationExistenceChangedCal
     WithAsilBAndQmInstance();
     MessagePassingService unit{asil_qm_cfg_, asil_qm_cfg_, std::move(factory_)};
     unit.UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_QM, event_id);
+}
+class MessagePassingServiceQMDelegationTest : public MessagePassingServiceTest
+{
+  protected:
+    MessagePassingService& GivenAMessagePassingServiceWithAsilBAndQm()
+    {
+        WithAsilBAndQmInstance();
+        unit_ = std::make_unique<MessagePassingService>(asil_qm_cfg_, asil_qm_cfg_, std::move(factory_));
+        return *unit_;
+    }
+
+    const ProxyInstanceIdentifier kProxyInstanceId{5U, 1U};
+    const ProxyMethodInstanceIdentifier kProxyMethodInstanceId{kProxyInstanceId, LolaMethodId{55U}};
+    const SkeletonInstanceIdentifier kSkeletonInstanceId{LolaServiceId{12U}, LolaServiceInstanceId::InstanceId{22U}};
+    const pid_t kTargetNodeId{7};
+    const uid_t kAllowedUid{42U};
+    const std::size_t kQueuePosition{2U};
+
+  private:
+    std::unique_ptr<MessagePassingService> unit_;
+};
+
+TEST_F(MessagePassingServiceQMDelegationTest, RegisterOnServiceMethodSubscribedHandlerCallReturnsAValue)
+{
+    // Given some input parameters to the tested function call
+    IMessagePassingService::ServiceMethodSubscribedHandler callback;
+    IMessagePassingService::AllowedConsumerUids allowed_uids;
+
+    // Expecting a call to RegisterOnServiceMethodSubscribedHandler of ASIL-QM mock instance and no call to the asil-b
+    // instance
+    EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
+                RegisterOnServiceMethodSubscribedHandler(kSkeletonInstanceId, _, allowed_uids))
+        .WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, RegisterOnServiceMethodSubscribedHandler(_, _, _))
+        .Times(0);
+
+    // When calling RegisterOnServiceMethodSubscribedHandler  with `QualityType::kASIL_QM`
+    const auto result = GivenAMessagePassingServiceWithAsilBAndQm().RegisterOnServiceMethodSubscribedHandler(
+        QualityType::kASIL_QM, kSkeletonInstanceId, std::move(callback), allowed_uids);
+
+    // Then the result should have a value
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceQMDelegationTest, RegisterMethodCallHandlerCallReturnsAValue)
+{
+    // Given some input parameters to the tested function call
+    IMessagePassingService::MethodCallHandler callback;
+
+    // Expecting a call to RegisterMethodCallHandler of ASIL-QM mock instance
+    EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
+                RegisterMethodCallHandler(kProxyMethodInstanceId, _, kAllowedUid))
+        .WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, RegisterMethodCallHandler(_, _, _)).Times(0);
+
+    // When calling RegisterMethodCallHandler
+    const auto result = GivenAMessagePassingServiceWithAsilBAndQm().RegisterMethodCallHandler(
+        QualityType::kASIL_QM, kProxyMethodInstanceId, std::move(callback), kAllowedUid);
+
+    // Then the result should have a value
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceQMDelegationTest, SubscribeServiceMethodReturnsAValue)
+{
+    // Expecting a call to SubscribeServiceMethod of ASIL-QM mock instance
+    EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
+                SubscribeServiceMethod(kSkeletonInstanceId, kProxyInstanceId, kTargetNodeId))
+        .WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, SubscribeServiceMethod(_, _, _)).Times(0);
+
+    // When calling SubscribeServiceMethod
+    const auto result = GivenAMessagePassingServiceWithAsilBAndQm().SubscribeServiceMethod(
+        QualityType::kASIL_QM, kSkeletonInstanceId, kProxyInstanceId, kTargetNodeId);
+
+    // Then the result should have a value
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(MessagePassingServiceQMDelegationTest, CallMethodReturnsAValue)
+{
+    // Expecting a call to CallMethod of ASIL-QM mock instance
+    EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
+                CallMethod(kProxyMethodInstanceId, kQueuePosition, kTargetNodeId))
+        .WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, CallMethod(_, _, _)).Times(0);
+
+    // When calling CallMethod
+    const auto result = GivenAMessagePassingServiceWithAsilBAndQm().CallMethod(
+        QualityType::kASIL_QM, kProxyMethodInstanceId, kQueuePosition, kTargetNodeId);
+
+    // Then the result should have a value
+    EXPECT_TRUE(result.has_value());
 }
 
 }  // namespace score::mw::com::impl::lola::test

@@ -278,7 +278,8 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTermina
 
     // When finding a service instance
     // Then the program terminates
-    EXPECT_DEATH({ score::cpp::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_); }, ".*");
+    EXPECT_DEATH(
+        { score::cpp::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_); }, ".*");
 }
 
 using ServiceDiscoveryFindServiceInstanceIdentifierFixture = ServiceDiscoveryTest;
@@ -345,7 +346,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()));
 
-    unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+    std::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
 }
 
 TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServiceReturnsHandleIfSuccessful)
@@ -383,7 +384,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
     EXPECT_CALL(service_discovery_client_, StopFindService(Eq(ByRef(handle4))));
 
     // When StartFindService is called
-    unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+    std::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
 }
 
 TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
@@ -434,7 +435,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
     EXPECT_CALL(service_discovery_client_, StopFindService(_)).Times(0);
 
     // When StartFindService is called
-    unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+    std::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
 }
 
 TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServiceForwardsCorrectHandler)
@@ -447,7 +448,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServic
     });
 
     std::int32_t value{0};
-    unit_->StartFindService(
+    std::ignore = unit_->StartFindService(
         [&value](auto, auto) noexcept {
             value++;
         },
@@ -561,7 +562,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture, StartFindServi
 
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()));
 
-    unit_->StartFindService([](auto, auto) noexcept {}, config_stores_[0].GetInstanceIdentifier());
+    score::cpp::ignore = unit_->StartFindService([](auto, auto) noexcept {}, config_stores_[0].GetInstanceIdentifier());
 }
 
 TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture, StartFindServiceReturnsHandleIfSuccessful)
@@ -622,7 +623,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture, StartFindServi
         });
 
     bool value{false};
-    unit_->StartFindService(
+    std::ignore = unit_->StartFindService(
         [&value](auto, auto) noexcept {
             value = true;
         },
@@ -667,7 +668,8 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture,
     auto find_service_handler = [destructor_notifier = std::move(destructor_notifier)](auto, auto) noexcept {};
 
     // When calling StartFindService with an InstanceSpecifier and the handler
-    score::cpp::ignore = unit_->StartFindService(std::move(find_service_handler), config_stores_[0].GetInstanceIdentifier());
+    score::cpp::ignore =
+        unit_->StartFindService(std::move(find_service_handler), config_stores_[0].GetInstanceIdentifier());
 
     // Then the handler should not have been destroyed by StartFindService, indicating that the handler has been stored
     // internally (since it's move-only)

@@ -42,8 +42,9 @@ void StopOfferServiceInServiceDiscovery(const InstanceIdentifier& instance_ident
     const auto result = Runtime::getInstance().GetServiceDiscovery().StopOfferService(instance_identifier);
     if (!result.has_value())
     {
-        score::mw::log::LogError("lola") << "SkeletonBinding::OfferService failed: service discovery could not stop offer"
-                                       << result.error().Message() << ": " << result.error().UserMessage();
+        score::mw::log::LogError("lola")
+            << "SkeletonBinding::OfferService failed: service discovery could not stop offer"
+            << result.error().Message() << ": " << result.error().UserMessage();
     }
 }
 
@@ -57,8 +58,8 @@ SkeletonBinding::SkeletonEventBindings GetSkeletonEventBindingsMap(const Skeleto
 
         auto skeleton_event_base_view = SkeletonEventBaseView{skeleton_event_base};
         auto* event_binding = skeleton_event_base_view.GetBinding();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_binding != nullptr,
-                               "Skeleton should not have been created if event binding failed to create.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_binding != nullptr, "Skeleton should not have been created if event binding failed to create.");
         score::cpp::ignore = event_bindings.insert({event_name, *event_binding});
     }
     return event_bindings;
@@ -74,8 +75,8 @@ SkeletonBinding::SkeletonFieldBindings GetSkeletonFieldBindingsMap(const Skeleto
 
         auto skeleton_field_base_view = SkeletonFieldBaseView{skeleton_field_base};
         auto* event_binding = skeleton_field_base_view.GetEventBinding();
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_binding != nullptr,
-                               "Skeleton should not have been created if event binding failed to create.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+            event_binding != nullptr, "Skeleton should not have been created if event binding failed to create.");
         score::cpp::ignore = field_bindings.insert({field_name, *event_binding});
     }
     return field_bindings;
@@ -128,31 +129,33 @@ SkeletonBase::SkeletonBase(SkeletonBase&& other) noexcept
 // coverity[autosar_cpp14_a6_2_1_violation]
 SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
 {
-    if (this != &other)
+    if (this == &other)
     {
-        binding_ = std::move(other.binding_);
-        events_ = std::move(other.events_);
-        fields_ = std::move(other.fields_);
-        methods_ = std::move(other.methods_);
-        instance_id_ = std::move(other.instance_id_);
-        skeleton_mock_ = std::move(other.skeleton_mock_);
-        service_offered_flag_ = std::move(other.service_offered_flag_);
+        return *this;
+    }
 
-        // Since the address of this skeleton has changed, we need update the address stored in each of the events and
-        // fields belonging to the skeleton.
-        for (auto& event : events_)
-        {
-            event.second.get().UpdateSkeletonReference(*this);
-        }
+    binding_ = std::move(other.binding_);
+    events_ = std::move(other.events_);
+    fields_ = std::move(other.fields_);
+    methods_ = std::move(other.methods_);
+    instance_id_ = std::move(other.instance_id_);
+    skeleton_mock_ = std::move(other.skeleton_mock_);
+    service_offered_flag_ = std::move(other.service_offered_flag_);
 
-        for (auto& field : fields_)
-        {
-            field.second.get().UpdateSkeletonReference(*this);
-        }
-        for (auto& method : methods_)
-        {
-            method.second.get().UpdateSkeletonReference(*this);
-        }
+    // Since the address of this skeleton has changed, we need update the address stored in each of the events and
+    // fields belonging to the skeleton.
+    for (auto& event : events_)
+    {
+        event.second.get().UpdateSkeletonReference(*this);
+    }
+
+    for (auto& field : fields_)
+    {
+        field.second.get().UpdateSkeletonReference(*this);
+    }
+    for (auto& method : methods_)
+    {
+        method.second.get().UpdateSkeletonReference(*this);
     }
     return *this;
 }
@@ -227,7 +230,7 @@ auto SkeletonBase::OfferService() noexcept -> ResultBlank
     if (!result.has_value())
     {
         score::mw::log::LogError("lola") << "SkeletonBinding::OfferService failed: " << result.error().Message() << ": "
-                                       << result.error().UserMessage();
+                                         << result.error().UserMessage();
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 

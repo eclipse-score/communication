@@ -34,6 +34,40 @@ To ensure a smooth contribution process, please follow the steps below:
 
 ## Development Setup
 
+### General Prerequisites
+
+- Bazel (Instructions for installing here: https://bazel.build/install)
+- Docker (Instructions for installing here: https://docs.docker.com/engine/install/)
+  - Note. Running Docker in rootless mode is not yet officially supported but may work. See https://docs.docker.com/engine/security/rootless/ for more information.
+
+### OS-specific Prerequisites
+
+We strive to be independent of the host platform via bazel sandboxing.
+Some host platforms come with limitations that bazel cannot sandbox sufficiently.
+For these platforms we collect instructions below.
+
+Please be aware, that while we officially support Ubuntu 24.04 as the host platform that we also test in our CI.
+While other platforms generally should work, we can give no such guarantee.
+Should you face issues with your host platform, feel free to raise an issue or discussion where we will try to support.
+
+#### Ubuntu 24.04 and newer
+
+Starting with Ubuntu 24.04 the security framework apparmor was introduced.
+The standard configuration of apparmor prohibits unprivileged user namespaces.
+This interferes with the bazel sandboxing mechanism and inhibits the linux-sandbox.
+Bazel falls back to a less powerful sandboxing mechanism that is insufficient for our project.
+This affects many bazel tests and potentially any bazel runnables.
+
+To work around this issue, you can run the following bash script:
+
+```bash
+bash actions/unblock_user_namespace_for_linux_sandbox/action_callable.sh
+```
+
+Note. This must be rerun whenever the bazel version is updated.
+
+### Build Instructions
+
 To build and test the Communication Module, follow the steps below from the project root:
 
 ```bash
@@ -44,7 +78,7 @@ bazel build //...
 bazel test //...
 ```
 
-**Prerequisites:** Install [Bazelisk](https://github.com/bazelbuild/bazelisk) to manage Bazel versions. See [Bazel tutorial](https://bazel.build/tutorials) for details.
+### Linting Instructions
 
 For Linting the Code following solutions are available:
 
@@ -57,22 +91,31 @@ bazel run //:copyright.check
 bazel run //:copyright.fix
 ```
 
-## Testing
+C++ and Bazel files formatter:
+```bash
+# Check Sources
+bazel run //:format.check
+
+# Fix Sources
+bazel run //:format
+```
+
+### Testing Instructions
 
 The Communication Module includes extensive tests. Use the following commands:
 
-### Run All Tests
+#### Run All Tests
 ```bash
 bazel test //...
 ```
 
-### Run Specific Test Suites
+#### Run Specific Test Suites
 ```bash
 bazel test //score/mw/com/impl:all
 bazel test //score/mw/com/message_passing:all
 ```
 
-### Test Categories
+#### Test Categories
 - **Unit Tests**: Component-level testing
 - **Integration Tests**: Cross-component interactions
 - **Performance Tests**: Latency and throughput benchmarks

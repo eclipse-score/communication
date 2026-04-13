@@ -273,7 +273,8 @@ void ParseEvent(const score::json::Any& json,
                 TracingFilterConfig& filter_config) noexcept
 {
     auto object_result = json.As<score::json::Object>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& object = object_result.value().get();
     const auto& shortname = object.find(kShortnameKey);
     if (shortname == object.cend())
@@ -285,7 +286,8 @@ void ParseEvent(const score::json::Any& json,
     }
 
     auto event_name_result = shortname->second.As<std::string>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(event_name_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(event_name_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& event_name = event_name_result.value().get();
     // check if event exists at all on our side. If not silently ignore it according to:
     // [SCR-18159328] Trace Filter Config reference to non-existing trace-point
@@ -349,7 +351,8 @@ void ParseEvents(const score::json::Any& json,
                  TracingFilterConfig& filter_config) noexcept
 {
     auto object_result = json.As<score::json::Object>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& object = object_result.value().get();
     const auto& events = object.find(kEventsKey);
     if (events == object.cend())
@@ -363,7 +366,8 @@ void ParseEvents(const score::json::Any& json,
             GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::EVENT, configuration);
 
         auto events_list = events->second.As<score::json::List>();
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(events_list.has_value(), "Configuration corrupted, check with json schema");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(events_list.has_value(),
+                                                          "Configuration corrupted, check with json schema");
         for (const auto& event : events_list.value().get())
         {
             ParseEvent(event, service_short_name_path, event_names, configuration, instance_specifiers, filter_config);
@@ -394,7 +398,8 @@ void AddTracePointsFromSubObject(const score::json::Object& json_object,
     if (block != json_object.cend())
     {
         auto block_result = block->second.As<score::json::Object>();
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(block_result.has_value(), "Configuration corrupted, check with json schema");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(block_result.has_value(),
+                                                          "Configuration corrupted, check with json schema");
         auto& block_object = block_result.value().get();
         // trace points for the proxy side
         for (auto& prop_mapping : property_name_trace_point_mappings)
@@ -418,7 +423,8 @@ void WarnNotImplementedTracePointsFromSubObject(const score::json::Object& json_
     if (block != json_object.cend())
     {
         auto block_result = block->second.As<score::json::Object>();
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(block_result.has_value(), "Configuration corrupted, check with json schema");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(block_result.has_value(),
+                                                          "Configuration corrupted, check with json schema");
         auto& block_object = block_result.value().get();
         for (auto& not_implemented_property_name : service_element_notifier_filter_properties_not_implemented_array)
         {
@@ -447,7 +453,8 @@ void ParseField(const score::json::Any& json,
                 TracingFilterConfig& filter_config) noexcept
 {
     auto object_result = json.As<score::json::Object>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& object = object_result.value().get();
     const auto& shortname = object.find(kShortnameKey);
     if (shortname == object.cend())
@@ -459,7 +466,8 @@ void ParseField(const score::json::Any& json,
     }
 
     auto field_name_result = shortname->second.As<std::string>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(field_name_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(field_name_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& field_name = field_name_result.value().get();
     // check if field exists at all on our side. If not silently ignore it according to:
     // [SCR-18159328] Trace Filter Config reference to non existing trace-point
@@ -545,7 +553,8 @@ void ParseFields(const score::json::Any& json,
                  TracingFilterConfig& filter_config) noexcept
 {
     auto object_result = json.As<score::json::Object>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& object = object_result.value().get();
     const auto& fields = object.find(kFieldsKey);
     if (fields == object.cend())
@@ -559,7 +568,8 @@ void ParseFields(const score::json::Any& json,
             GetElementNamesOfServiceType(service_short_name_path, ServiceElementType::FIELD, configuration);
 
         auto fields_list = fields->second.As<score::json::List>();
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(fields_list.has_value(), "Configuration corrupted, check with json schema");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(fields_list.has_value(),
+                                                          "Configuration corrupted, check with json schema");
         for (const auto& field : fields_list.value().get())
         {
             ParseField(field, service_short_name_path, field_names, configuration, instance_specifiers, filter_config);
@@ -581,7 +591,8 @@ void ParseMethods(const score::json::Any& json,
                   TracingFilterConfig& /*filter_config*/) noexcept
 {
     auto object_result = json.As<score::json::Object>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& object = object_result.value().get();
     const auto& methods = object.find(kMethodsKey);
     if (methods == object.cend())
@@ -613,7 +624,8 @@ void ParseService(const score::json::Any& json,
                   TracingFilterConfig& filter_config) noexcept
 {
     auto object_result = json.As<score::json::Object>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& object = object_result.value().get();
     const auto& shortname_path = object.find(kShortnamePathKey);
     if (shortname_path == object.cend())
@@ -623,7 +635,8 @@ void ParseService(const score::json::Any& json,
     }
 
     auto shortname_path_result = shortname_path->second.As<std::string>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(shortname_path_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(shortname_path_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& shortname_path_string = shortname_path_result.value().get();
     if (configured_service_types.count(shortname_path_string) > 0U)
     {
@@ -643,11 +656,13 @@ void ParseService(const score::json::Any& json,
 // std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json, const Configuration& configuration) noexcept
+score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json,
+                                                 const Configuration& configuration) noexcept
 {
     TracingFilterConfig tracing_filter_config{};
     auto object_result = json.As<score::json::Object>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(object_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     const auto& object = object_result.value().get();
     const auto& services = object.find(kServicesKey);
     if (services == object.cend())
@@ -665,7 +680,8 @@ score::Result<TracingFilterConfig> ParseServices(const score::json::Any& json, c
     }
 
     auto services_list = services->second.As<score::json::List>();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(services_list.has_value(), "Configuration corrupted, check with json schema");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(services_list.has_value(),
+                                                      "Configuration corrupted, check with json schema");
     for (const auto& service : services_list.value().get())
     {
 
@@ -691,9 +707,9 @@ score::Result<TracingFilterConfig> Parse(const std::string_view path, const Conf
     auto json_result = json_parser_obj.FromFile(path);
     if (!json_result.has_value())
     {
-        ::score::mw::log::LogFatal("lola") << "Parsing trace filter config file" << path
-                                         << "failed with error:" << json_result.error().Message() << ": "
-                                         << json_result.error().UserMessage() << " .";
+        ::score::mw::log::LogFatal("lola")
+            << "Parsing trace filter config file" << path << "failed with error:" << json_result.error().Message()
+            << ": " << json_result.error().UserMessage() << " .";
         return MakeUnexpected(TraceErrorCode::JsonConfigParseError, json_result.error().UserMessage());
     }
     return Parse(std::move(json_result).value(), configuration);

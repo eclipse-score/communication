@@ -20,8 +20,8 @@
 
 #include <score/assert_support.hpp>
 
-#include <score/utility.hpp>
 #include <gtest/gtest.h>
+#include <score/utility.hpp>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -68,12 +68,11 @@ class TypeErasedCallQueueFixture : public ::testing::Test
 
     TypeErasedCallQueueFixture& GivenATypeErasedCallQueue()
     {
-        unit_ = std::make_unique<TypeErasedCallQueue>(*memory_resource_proxy_, type_erased_element_info_);
+        unit_ = std::make_unique<TypeErasedCallQueue>(fake_memory_resource_, type_erased_element_info_);
         return *this;
     }
 
     memory::shared::test::MyBoundedMemoryResource fake_memory_resource_{2000U};
-    const memory::shared::MemoryResourceProxy* memory_resource_proxy_{fake_memory_resource_.getMemoryResourceProxy()};
 
     TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info_{{}, {}, kQueueSize};
 
@@ -354,8 +353,9 @@ TEST_F(TypeErasedCallQueueFixture, GetInArgValuesQueueStorageWithOutOfRangePosit
 
     // When calling GetInArgValuesElementStorage with an index which is out of the queue range
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = GetInArgValuesElementStorage(
-                                     kQueueSize, in_args_queue_storage.value(), in_args_type_erased_info));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore =
+            GetInArgValuesElementStorage(kQueueSize, in_args_queue_storage.value(), in_args_type_erased_info));
 }
 
 TEST_F(TypeErasedCallQueueFixture, GetReturnValueQueueStorageWithOutOfRangePositionTerminates)
@@ -369,8 +369,9 @@ TEST_F(TypeErasedCallQueueFixture, GetReturnValueQueueStorageWithOutOfRangePosit
 
     // When calling GetReturnValueElementStorage with an index which is out of the queue range
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = GetReturnValueElementStorage(
-                                     kQueueSize, return_value_queue_storage.value(), return_value_type_erased_info));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = GetReturnValueElementStorage(
+            kQueueSize, return_value_queue_storage.value(), return_value_type_erased_info));
 }
 
 }  // namespace

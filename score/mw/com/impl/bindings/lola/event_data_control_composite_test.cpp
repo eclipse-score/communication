@@ -80,14 +80,14 @@ class EventDataControlCompositeFixture : public ::testing::Test
 
     EventDataControlCompositeFixture& WithQmAndAsilBEventDataControls()
     {
-        qm_ = std::make_unique<EventDataControl>(kMaxSlots, memory_.getMemoryResourceProxy(), kMaxSubscribers);
-        asil_ = std::make_unique<EventDataControl>(kMaxSlots, memory_.getMemoryResourceProxy(), kMaxSubscribers);
+        qm_ = std::make_unique<EventDataControl>(kMaxSlots, memory_, kMaxSubscribers);
+        asil_ = std::make_unique<EventDataControl>(kMaxSlots, memory_, kMaxSubscribers);
         return *this;
     }
 
     EventDataControlCompositeFixture& WithQmOnlyEventDataControl()
     {
-        qm_ = std::make_unique<EventDataControl>(kMaxSlots, memory_.getMemoryResourceProxy(), kMaxSubscribers);
+        qm_ = std::make_unique<EventDataControl>(kMaxSlots, memory_, kMaxSubscribers);
         return *this;
     }
 
@@ -96,7 +96,7 @@ class EventDataControlCompositeFixture : public ::testing::Test
         SCORE_LANGUAGE_FUTURECPP_ASSERT(qm_ != nullptr);
 
         auto* const asil_control = asil_ != nullptr ? asil_.get() : nullptr;
-        unit_ = std::make_unique<EventDataControlComposite>(qm_.get(), asil_control);
+        unit_ = std::make_unique<EventDataControlComposite<>>(qm_.get(), asil_control);
         return *this;
     }
 
@@ -108,9 +108,8 @@ class EventDataControlCompositeFixture : public ::testing::Test
         memory::shared::AtomicIndirectorMock<EventSlotStatus::value_type>::SetMockObject(atomic_mock_.get());
 
         auto* const asil_control = asil_ != nullptr ? asil_.get() : nullptr;
-        unit_mock_ = std::make_unique<
-            detail_event_data_control_composite::EventDataControlCompositeImpl<memory::shared::AtomicIndirectorMock>>(
-            qm_.get(), asil_control);
+        unit_mock_ =
+            std::make_unique<EventDataControlComposite<memory::shared::AtomicIndirectorMock>>(qm_.get(), asil_control);
 
         return *this;
     }
@@ -159,12 +158,10 @@ class EventDataControlCompositeFixture : public ::testing::Test
 
     std::unique_ptr<EventDataControl> asil_{nullptr};
     std::unique_ptr<EventDataControl> qm_{nullptr};
-    std::unique_ptr<EventDataControlComposite> unit_{nullptr};
+    std::unique_ptr<EventDataControlComposite<>> unit_{nullptr};
 
     std::unique_ptr<memory::shared::AtomicMock<EventSlotStatus::value_type>> atomic_mock_{nullptr};
-    std::unique_ptr<
-        detail_event_data_control_composite::EventDataControlCompositeImpl<memory::shared::AtomicIndirectorMock>>
-        unit_mock_{nullptr};
+    std::unique_ptr<EventDataControlComposite<memory::shared::AtomicIndirectorMock>> unit_mock_{nullptr};
 
     std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_qm_{nullptr};
     std::unique_ptr<TransactionLogSet::TransactionLogIndex> transaction_log_index_asil_{nullptr};
@@ -479,7 +476,7 @@ TEST_F(EventDataControlCompositeFixture, QmConsumerViolation)
     ReadyAllSlots();
     ASSERT_FALSE(unit_->IsQmControlDisconnected());
     // and a QM consumer, which blocks/references ALL slots
-    auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
+    auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
         auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
@@ -509,7 +506,7 @@ TEST_F(EventDataControlCompositeFixture, AllocationIgnoresQMAfterContractViolati
     ReadyAllSlots();
 
     // and a QM consumer, which blocks/references ALL slots and thus already violated the contract
-    auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
+    auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
         auto slot_indicator = qm_->ReferenceNextEvent(0, *transaction_log_index_qm_, upper_limit);
@@ -550,7 +547,7 @@ TEST_F(EventDataControlCompositeFixture, AsilBConsumerViolation)
     ReadyAllSlots();
 
     // and an ASIL-B consumer, which blocks/references ALL slots
-    auto upper_limit = EventSlotStatus::TIMESTSCORE_LANGUAGE_FUTURECPP_MAX;
+    auto upper_limit = EventSlotStatus::TIMESTAMP_MAX;
     for (auto counter = 0; counter < 5; ++counter)
     {
         auto slot_indicator = asil_->ReferenceNextEvent(0, *transaction_log_index_asil_, upper_limit);
@@ -577,8 +574,8 @@ TEST(EventDataControlCompositeTest, DISABLED_fuzz)
 
     constexpr auto MAX_SLOTS = 100;
     constexpr auto MAX_SUBSCRIBERS = 10;
-    EventDataControl asil{MAX_SLOTS, memory.getMemoryResourceProxy(), MAX_SUBSCRIBERS};
-    EventDataControl qm{MAX_SLOTS, memory.getMemoryResourceProxy(), MAX_SUBSCRIBERS};
+    EventDataControl asil{MAX_SLOTS, memory, MAX_SUBSCRIBERS};
+    EventDataControl qm{MAX_SLOTS, memory, MAX_SUBSCRIBERS};
     EventDataControlComposite unit{&qm, &asil};
 
     std::mutex allocated_slots_mutex{};

@@ -145,7 +145,8 @@ class ServerToClientTestFixtureUnix : public ::testing::Test, public testing::Wi
             std::cout << "EchoDisconnectCallback " << &connection << std::endl;
             ++server_connections_finished_;
         };
-        auto sent_callback = [](IServerConnection& connection, score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
+        auto sent_callback = [](IServerConnection& connection,
+                                score::cpp::span<const std::uint8_t> message) -> score::cpp::blank {
             std::cout << "EchoSentCallback " << &connection << std::endl;
             connection.Notify(message);
             return {};
@@ -289,7 +290,8 @@ class ServerToClientTestFixtureUnix : public ::testing::Test, public testing::Wi
         {
             std::promise<bool> promise;
             auto reply_callback =
-                [&promise, &message](score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
+                [&promise, &message](
+                    score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
                     if (!message_expected.has_value())
                     {
                         promise.set_value(false);

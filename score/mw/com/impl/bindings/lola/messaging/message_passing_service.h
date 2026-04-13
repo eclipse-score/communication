@@ -19,8 +19,8 @@
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service_instance.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service_instance_factory.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/configuration/global_configuration.h"
 
 #include "score/concurrency/thread_pool.h"

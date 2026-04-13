@@ -16,8 +16,8 @@
 
 name: Bazel Build & Test communication module (target-platforms)
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  pull_request_target:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
   merge_group:
     types: [checks_requested]
   workflow_call:
@@ -28,42 +28,110 @@ on:
         required: true
       SCORE_QNX_PASSWORD:
         required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request_target'}}
+
 env:
   LICENSE_DIR: "/opt/score_qnx/license"
 jobs:
+    precheck:
+      runs-on: ubuntu-24.04
+      outputs:
+        should-run: ${{ steps.gate.outputs.should-run }}
+        require-approval: ${{ steps.gate.outputs.require-approval }}
+      permissions:
+        contents: read
+        pull-requests: read
+      steps:
+        - name: Evaluate QNX workflow gate
+          id: gate
+          env:
+            EVENT_NAME: ${{ github.event_name }}
+          run: |
+            python3 - <<'SCRIPT_END'
+            import json
+            import os
+
+            should_run = True
+            require_approval = False
+
+            with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as event_file:
+                event = json.load(event_file)
+
+            pr = event.get("pull_request") or {}
+            head_repo = (((pr.get("head") or {}).get("repo") or {}).get("full_name") or "")
+            base_repo = (((pr.get("base") or {}).get("repo") or {}).get("full_name") or "")
+            labels = {label.get("name", "") for label in (pr.get("labels") or [])}
+
+            if os.environ["EVENT_NAME"] == "pull_request_target" and head_repo != base_repo:
+                if "test-qnx" in labels:
+                    require_approval = True
+                else:
+                    should_run = False
+            
+            should_run_string = 'true' if should_run else 'false'
+            require_approval_string = 'true' if require_approval else 'false'
+
+            labels_display = ", ".join(sorted(label for label in labels if label)) or "(none)"
+            print(
+                "QNX gate evaluation: "
+                f"event_name='{os.environ['EVENT_NAME']}', "
+                f"head_repo='{head_repo}', "
+                f"base_repo='{base_repo}', "
+                f"labels=[{labels_display}], "
+                f"outputs: should-run={should_run_string}, "
+                f"require-approval={require_approval_string}"
+            )
+
+            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as github_output:
+                print(f"should-run={should_run_string}", file=github_output)
+                print(f"require-approval={require_approval_string}", file=github_output)
+            SCRIPT_END
+
+    approval:
+      needs: precheck
+      if: ${{ needs.precheck.outputs.require-approval == 'true' }}
+      environment: 'workflow-approval'
+      runs-on: ubuntu-24.04
+      permissions:
+        contents: read
+        pull-requests: read
+      steps:
+        - name: Blocking on approval
+          run: ''
+
     build_and_test_qnx:
-      strategy:
-        fail-fast: false
-        matrix:
-          bazel-config: ["qnx_x86_64", "qnx_arm64"]
-          include:
-            - bazel-config: "qnx_x86_64"
-              incompatible_targets:
-                - "-//score/mw/com/requirements/..." # Uninvestigated problem
-                - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
-            - bazel-config: "qnx_arm64"
-              incompatible_targets:
-                - "-//score/mw/com/requirements/..." # Uninvestigated problem
-                - "-//score/mw/com/performance_benchmarks/..." # Uninvestigated problem
+      name: build_and_test_qnx
+      needs:
+        - precheck
+        - approval
+      if: ${{ always() && needs.precheck.outputs.should-run == 'true' && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
       runs-on: ubuntu-24.04
       permissions:
         contents: read
         pull-requests: read
       steps:
         - name: Checkout repository
-          uses: actions/checkout@v4.2.2
+          uses: actions/checkout@v6.0.2
+          with:
+            ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
+            repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
         - name: Free Disk Space (Ubuntu)
-          uses: ./actions/free_disk_space
+          uses: eclipse-score/more-disk-space@v1
+          with:
+            level: 4
         - name: Setup Bazel
-          uses: bazel-contrib/setup-bazel@0.15.0
+          uses: bazel-contrib/setup-bazel@0.18.0
           with:
             bazelisk-cache: true
-            disk-cache: ${{ github.workflow }}-${{ matrix.bazel-config }}
+            disk-cache: build_and_test_qnx
             repository-cache: true
+            cache-save: ${{ github.event_name == 'merge_group' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Setup QNX License
-          if: ${{ contains(matrix.bazel-config, 'qnx') }}
           env:
             SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
           run: |
@@ -76,8 +144,8 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: |
-            bazel build --config ${{ matrix.bazel-config }} -- //score/... ${{ join(matrix.incompatible_targets, ' ') }}
+            bazel build --config qnx_arm64 -- //score/... -//score/mw/com/requirements/... -//score/mw/com/performance_benchmarks/... -//docs/... -//score/mw/com/design/...
         - name: Cleanup QNX License
-          if: ${{ contains(matrix.bazel-config, 'qnx') && !cancelled() }}
+          if: ${{ !cancelled() }}
           run: sudo rm -rf ${{ env.LICENSE_DIR }}
           # TODO Run tests on QNX QEMU

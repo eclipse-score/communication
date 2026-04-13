@@ -33,8 +33,9 @@ QnxDispatchClientFactory::QnxDispatchClientFactory(const std::shared_ptr<QnxDisp
 QnxDispatchClientFactory::~QnxDispatchClientFactory() noexcept = default;
 
 // coverity[autosar_cpp14_a2_10_4_violation] false-positive: name is not reused; system-specific implementation
-score::cpp::pmr::unique_ptr<IClientConnection> QnxDispatchClientFactory::Create(const ServiceProtocolConfig& protocol_config,
-                                                                         const ClientConfig& client_config) noexcept
+score::cpp::pmr::unique_ptr<IClientConnection> QnxDispatchClientFactory::Create(
+    const ServiceProtocolConfig& protocol_config,
+    const ClientConfig& client_config) noexcept
 {
     return score::cpp::pmr::make_unique<detail::ClientConnection>(
         engine_->GetMemoryResource(), engine_, protocol_config, client_config);

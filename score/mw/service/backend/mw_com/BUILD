@@ -20,7 +20,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":provided_service_decorator",
-        ":provided_services",
         "//score/mw/service:provided_service_container",
     ],
 )
@@ -30,13 +29,9 @@ cc_library(
     hdrs = ["provided_service_decorator.h"],
     features = COMPILER_WARNING_FEATURES,
     visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "provided_services",
-    hdrs = ["provided_services.h"],
-    features = COMPILER_WARNING_FEATURES,
-    visibility = ["//visibility:public"],
+    deps = [
+        "//score/mw/service:provided_service",
+    ],
 )
 
 cc_library(

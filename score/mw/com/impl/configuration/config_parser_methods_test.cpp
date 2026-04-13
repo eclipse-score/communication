@@ -560,7 +560,7 @@ TEST_F(ConfigParserFixture, MethodQueueSizeIsNulloptWhenNotProvided)
 
     // Then the queue size should be nullopt (not provided)
     const auto deployments =
-        config.GetServiceInstances().at(InstanceSpecifier::Create("abc/abc/TirePressurePort").value());
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
     const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
     EXPECT_FALSE(lola_deployment.methods_.at("SetPressure").queue_size_.has_value());
 }
@@ -626,7 +626,7 @@ TEST_F(ConfigParserFixture, MethodQueueSizeCanBeSpecified)
 
     // Then the queue size should be set to the specified value
     const auto deployments =
-        config.GetServiceInstances().at(InstanceSpecifier::Create("abc/abc/TirePressurePort").value());
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
     const auto& lola_deployment = std::get<LolaServiceInstanceDeployment>(deployments.bindingInfo_);
     EXPECT_EQ(lola_deployment.methods_.at("SetPressure").queue_size_, 5);
 }

@@ -21,6 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
@@ -350,7 +351,8 @@ const auto kDataChannelPath{"/lola-data-0000000000000001-00016"};
 static const std::string kServiceInstanceUsageFilePath{"/test_service_instance_usage_file_path"};
 static const std::int32_t kServiceInstanceUsageFileDescriptor{7890};
 
-static const score::os::Fcntl::Open kCreateOrOpenFlags{score::os::Fcntl::Open::kCreate | score::os::Fcntl::Open::kReadOnly};
+static const score::os::Fcntl::Open kCreateOrOpenFlags{score::os::Fcntl::Open::kCreate |
+                                                       score::os::Fcntl::Open::kReadOnly};
 
 static const os::Fcntl::Operation kNonBlockingExlusiveLockOperation =
     os::Fcntl::Operation::kLockExclusive | score::os::Fcntl::Operation::kLockNB;
@@ -360,6 +362,44 @@ static const ElementFqId kDummyElementFqId{1U, 2U, 3U, ServiceElementType::EVENT
 
 }  // namespace test
 
+class SkeletonMemoryManagerTestAttorney
+{
+  public:
+    SkeletonMemoryManagerTestAttorney(SkeletonMemoryManager& skeleton_memory_manager) noexcept
+        : skeleton_memory_manager_{skeleton_memory_manager}
+    {
+    }
+
+    ServiceDataControl* GetServiceDataControl(const QualityType quality_type) const noexcept
+    {
+        if (quality_type == QualityType::kASIL_QM)
+        {
+            return skeleton_memory_manager_.control_qm_;
+        }
+        if (quality_type == QualityType::kASIL_B)
+        {
+            return skeleton_memory_manager_.control_asil_b_;
+        }
+        return nullptr;
+    }
+
+    score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
+    {
+        auto search = skeleton_memory_manager_.storage_->events_metainfo_.find(element_fq_id);
+        if (search == skeleton_memory_manager_.storage_->events_metainfo_.cend())
+        {
+            return score::cpp::nullopt;
+        }
+        else
+        {
+            return search->second;
+        }
+    }
+
+  private:
+    SkeletonMemoryManager& skeleton_memory_manager_;
+};
+
 class SkeletonAttorney
 {
   public:
@@ -367,15 +407,12 @@ class SkeletonAttorney
 
     ServiceDataControl* GetServiceDataControl(const QualityType quality_type) const noexcept
     {
-        if (quality_type == QualityType::kASIL_QM)
-        {
-            return skeleton_.control_qm_;
-        }
-        if (quality_type == QualityType::kASIL_B)
-        {
-            return skeleton_.control_asil_b_;
-        }
-        return nullptr;
+        return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetServiceDataControl(quality_type);
+    }
+
+    score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
+    {
+        return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetEventMetaInfo(element_fq_id);
     }
 
   private:
@@ -416,10 +453,10 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept
     {
-        ServiceDataStorage service_data_storage{data_shared_memory_resource_mock_->getMemoryResourceProxy()};
+        ServiceDataStorage service_data_storage{*data_shared_memory_resource_mock_};
 
         auto* event_data_storage = data_shared_memory_resource_mock_->construct<EventDataStorage<SampleType>>(
-            10U, data_shared_memory_resource_mock_->getMemoryResourceProxy());
+            10U, *data_shared_memory_resource_mock_);
 
         auto inserted_data_slots = service_data_storage.events_.emplace(
             std::piecewise_construct, std::forward_as_tuple(element_fq_id), std::forward_as_tuple(event_data_storage));
@@ -479,12 +516,6 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
         data_shared_memory_resource_mock_{
             std::make_shared<::testing::NiceMock<memory::shared::SharedMemoryResourceHeapAllocatorMock>>(
                 test::kDataMemoryResourceId)};
-
-    // Since these objects rely on the default behaviour of some mocks (e.g. the mocked lola Runtime), we create them
-    // after setting the default mock behaviours in the body of the constructor.
-    std::unique_ptr<ServiceDataControl> service_data_control_qm_{nullptr};
-    std::unique_ptr<ServiceDataControl> service_data_control_asil_b_{nullptr};
-    std::unique_ptr<ServiceDataStorage> service_data_storage_{nullptr};
 
     std::unique_ptr<Skeleton> skeleton_{nullptr};
 };

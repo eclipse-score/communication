@@ -41,10 +41,11 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
 
         const auto instance_id_maybe = instance_identifier_view.GetServiceInstanceId();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(instance_id_maybe.has_value(),
-                               "Skeletons must always be configured with a valid InstanceId");
+                                                    "Skeletons must always be configured with a valid InstanceId");
         const auto* const lola_service_instance_id =
             std::get_if<LolaServiceInstanceId>(&(instance_id_maybe.value().binding_info_));
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr, "ServiceInstanceId does not contain lola binding.");
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
+                                                    "ServiceInstanceId does not contain lola binding.");
 
         constexpr auto element_type{ServiceElementType::METHOD};
 
@@ -58,9 +59,17 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
     auto deployment_info_visitor = score::cpp::overload(
         lola_deployment_handler,
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {
+            // coverage false positive. Covered by the test:
+            // SkeletonMethodFactoryFixture.CannotConstructEventFromSomeIpBinding
+            // inside score/mw/com/impl/plumbing/skeleton_method_binding_factory_test.cpp
+            // LCOV_EXCL_BR_LINE (false positive. See justification above).
             return nullptr;
         },
         [](const SomeIpServiceInstanceDeployment&) noexcept -> LambdaReturnType {
+            // coverage false positive. Covered by the test:
+            // SkeletonMethodFactoryFixture.CannotConstructEventFromBlankBinding
+            // inside score/mw/com/impl/plumbing/skeleton_method_binding_factory_test.cpp
+            // LCOV_EXCL_BR_LINE(false positive. See justification above).
             return nullptr;
         });
 

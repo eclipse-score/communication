@@ -21,19 +21,27 @@ on:
   merge_group:
     types: [checks_requested]
   workflow_call:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request'}}
 jobs:
     build_and_test_tsan:
       runs-on: ubuntu-24.04
+      permissions:
+        contents: read
       steps:
         - name: Checkout repository
-          uses: actions/checkout@v4.2.2
+          uses: actions/checkout@v6.0.2
         - name: Free Disk Space (Ubuntu)
-          uses: ./actions/free_disk_space
-        - uses: bazel-contrib/setup-bazel@0.15.0
+          uses: eclipse-score/more-disk-space@v1
+          with:
+            level: 4
+        - uses: bazel-contrib/setup-bazel@0.18.0
           with:
             bazelisk-cache: true
-            disk-cache: ${{ github.workflow }}
+            disk-cache: "build_and_test_tsan"
             repository-cache: true
+            cache-save: ${{ github.event_name == 'merge_group' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel test communication targets with thread sanitizer

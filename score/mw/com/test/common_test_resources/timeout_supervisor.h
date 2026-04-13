@@ -14,14 +14,14 @@
 #ifndef SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_TIMEOUT_SUPERVISOR_H
 #define SCORE_MW_COM_TEST_COMMON_TEST_RESOURCES_TIMEOUT_SUPERVISOR_H
 
-#include <score/callback.hpp>
-#include <score/optional.hpp>
+#include "score/concurrency/thread_pool.h"
+#include "score/concurrency/timed_executor/concurrent_timed_executor.h"
 
-#include <sys/types.h>
+#include <score/callback.hpp>
+#include <score/stop_token.hpp>
+
 #include <chrono>
-#include <condition_variable>
 #include <mutex>
-#include <thread>
 
 namespace score::mw::com::test
 {
@@ -33,21 +33,22 @@ namespace score::mw::com::test
 class TimeoutSupervisor
 {
   public:
-    TimeoutSupervisor();
+    TimeoutSupervisor() = default;
+    TimeoutSupervisor(const TimeoutSupervisor&) = delete;
+    TimeoutSupervisor(TimeoutSupervisor&&) = delete;
+    TimeoutSupervisor& operator=(const TimeoutSupervisor&) = delete;
+    TimeoutSupervisor& operator=(TimeoutSupervisor&&) = delete;
     ~TimeoutSupervisor();
 
     void StartSupervision(std::chrono::milliseconds timeout, score::cpp::callback<void(void)> timeout_callback);
     void StopSupervision();
 
   private:
-    void Supervision();
-
     std::mutex mutex_;
-    std::condition_variable cond_var_;
-    score::cpp::optional<std::chrono::milliseconds> timeout_;
-    bool shutdown_;
-    score::cpp::callback<void(void)> timeout_callback_{};
-    std::thread supervision_thread_;
+    score::cpp::stop_source abort_source_{};
+    score::concurrency::ConcurrentTimedExecutor<std::chrono::steady_clock> executor_{
+        score::cpp::pmr::new_delete_resource(),
+        score::cpp::pmr::make_unique<score::concurrency::ThreadPool>(score::cpp::pmr::new_delete_resource(), 1U)};
 };
 
 }  // namespace score::mw::com::test

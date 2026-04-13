@@ -22,6 +22,7 @@
 /// - C++ side: Template-based, type-erased implementation
 
 #include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
+#include "score/mw/com/impl/find_service_handler.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/proxy_event_base.h"
@@ -29,6 +30,7 @@
 #include "score/mw/com/impl/skeleton_event.h"
 #include "score/mw/com/impl/skeleton_event_base.h"
 #include "score/mw/com/types.h"
+#include "score/mw/log/logging.h"
 
 #include <limits>
 #include <string_view>
@@ -134,6 +136,18 @@ bool mw_com_proxy_event_subscribe(ProxyEventBase* event_ptr, uint32_t max_sample
     }
 
     return true;
+}
+
+/// \brief Unsubscribe from a proxy event to release sample buffers
+/// \details Must be called only after no `SamplePtr` instances are held on the Rust side
+/// \param event_ptr Opaque event pointer (ProxyEventBase*)
+void mw_com_proxy_event_unsubscribe(ProxyEventBase* event_ptr)
+{
+    if (event_ptr == nullptr)
+    {
+        return;
+    }
+    event_ptr->Unsubscribe();
 }
 
 /// \brief Create proxy instance dynamically
@@ -397,6 +411,100 @@ bool mw_com_skeleton_send_event_allocatee(SkeletonEventBase* event_ptr, StringVi
         return false;
     }
     return registry->SkeletonSendEventAllocatee(event_ptr, allocatee_ptr);
+}
+
+/// \brief Set event receive handler for proxy event
+/// \details Registers a Rust FnMut handler for a proxy event. The handler will be called when new samples are received.
+/// \param event_ptr Opaque proxy event pointer (ProxyEventBase*)
+/// \param boxed_handler Pointer to FatPtr containing the Rust FnMut handler
+/// @return True if handler was set successfully, false otherwise
+bool mw_com_proxy_set_event_receive_handler(ProxyEventBase* event_ptr, const FatPtr* boxed_handler)
+{
+    if (event_ptr == nullptr || boxed_handler == nullptr)
+    {
+        return false;
+    }
+
+    auto result = event_ptr->SetReceiveHandler(RustFnMutCallable<RustBoxedCallable>{*boxed_handler});
+    if (result.has_value() == false)
+    {
+        return false;
+    }
+    return true;
+}
+
+/// \brief Clear event receive handler for proxy event
+/// \details Unregisters the event receive handler for a proxy event, if any.
+/// \param event_ptr Opaque proxy event pointer (ProxyEventBase*)
+void mw_com_proxy_clear_event_receive_handler(ProxyEventBase* event_ptr)
+{
+    if (event_ptr == nullptr)
+    {
+        return;
+    }
+    score::cpp::ignore = event_ptr->UnsetReceiveHandler();
+}
+
+/// \brief Start asynchronous service discovery with a callback
+/// \details Initiates a service discovery operation using a Rust callback. The callback will be invoked
+/// when matching services are found. The callback signature is:
+/// void(ServiceHandleContainer<HandleType>, FindServiceHandle)
+///
+/// The callback can be invoked:
+/// - Synchronously: if matching services already exist when StartFindService is called
+/// - Asynchronously: if new services become available after the search starts (called from worker thread)
+///
+/// \param callback FatPtr to Rust FnMut closure that matches the FindServiceHandler signature
+/// \param instance_spec Pointer to InstanceSpecifier for service discovery criteria
+/// \return Opaque pointer to FindServiceHandle on success, nullptr on failure
+/// \note The FindServiceHandle returned is passed to the callback to allow StopFindService calls
+void* mw_com_start_find_service(const FatPtr* callback, InstanceSpecifier* instance_spec)
+{
+    if (callback == nullptr || instance_spec == nullptr)
+    {
+        return nullptr;
+    }
+
+    // Create a RustFnMutCallable with RustBoxedCallable handler
+    // Callback signature: void(ServiceHandleContainer<HandleType>, FindServiceHandle)
+    RustFnMutCallable<RustBoxedCallable, void, ServiceHandleContainer<HandleType>, FindServiceHandle> rust_callable{
+        *callback};
+
+    if (auto result = ::score::mw::com::impl::Runtime::getInstance().GetServiceDiscovery().StartFindService(
+            std::move(rust_callable), std::move(*instance_spec));
+        result.has_value())
+    {
+        return new FindServiceHandle{std::move(result).value()};
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+/// \brief Stop an ongoing service discovery operation and delete the handle
+/// \details Stops the service discovery operation associated with the provided FindServiceHandle
+/// and deallocates the handle. This is the only place where the handle should be deleted.
+/// \param find_service_handle_ptr Opaque pointer to FindServiceHandle returned by mw_com_start_find_service
+void mw_com_stop_find_service(void* find_service_handle_ptr)
+{
+    if (find_service_handle_ptr == nullptr)
+    {
+        return;
+    }
+
+    auto* find_service_handle = static_cast<FindServiceHandle*>(find_service_handle_ptr);
+
+    // Stop the service discovery
+    auto result =
+        ::score::mw::com::impl::Runtime::getInstance().GetServiceDiscovery().StopFindService(*find_service_handle);
+
+    if (!result.has_value())
+    {
+        mw::log::LogError("com-api") << "Failed to stop service discovery for handle: " << result.error();
+    }
+
+    delete find_service_handle;
 }
 
 }  // extern "C"

@@ -78,7 +78,7 @@ inline Result<std::size_t> GenericProxyEvent::GetNewSamples(Callback&& receiver,
 
 std::size_t GenericProxyEvent::GetSampleSize() const noexcept
 {
-    return meta_info_.data_type_info_.size_of_;
+    return meta_info_.data_type_info_.size;
 }
 
 bool GenericProxyEvent::HasSerializedFormat() const noexcept
@@ -129,14 +129,15 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
 
     auto& event_control = proxy_event_common_.GetEventControl();
 
-    const std::size_t sample_size = meta_info_.data_type_info_.size_of_;
-    const std::uint8_t sample_alignment = meta_info_.data_type_info_.align_of_;
+    const std::size_t sample_size = meta_info_.data_type_info_.size;
+    const std::size_t sample_alignment = meta_info_.data_type_info_.alignment;
     const std::size_t aligned_size =
         memory::shared::CalculateAlignedSize(sample_size, static_cast<std::size_t>(sample_alignment));
 
     auto transaction_log_index = proxy_event_common_.GetTransactionLogIndex();
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(transaction_log_index.has_value(),
-                                 "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+        transaction_log_index.has_value(),
+        "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
 
     const std::size_t max_number_of_sample_slots = event_control.data_control.GetMaxSampleSlots();
     const auto event_slots_raw_array_size = safe_math::Multiply(aligned_size, max_number_of_sample_slots);
@@ -146,6 +147,7 @@ Result<std::size_t> GenericProxyEvent::GetNewSamplesImpl(Callback&& receiver, Tr
         score::mw::log::LogFatal("lola") << "Could not calculate the event slots raw array size. Terminating.";
         std::terminate();
     }
+
     const void* const event_slots_raw_array = meta_info_.event_slots_raw_array_.get(event_slots_raw_array_size.value());
 
     // AMP assert that the event_slots_raw_array address is according to sample_alignment

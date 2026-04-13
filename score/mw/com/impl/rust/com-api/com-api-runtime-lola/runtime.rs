@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+use crate::Debug;
 use core::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
@@ -25,20 +26,23 @@ use com_api_concept::{
 pub struct LolaRuntimeImpl {}
 
 impl Runtime for LolaRuntimeImpl {
-    type ServiceDiscovery<I: Interface> = SampleConsumerDiscovery<I>;
-    type Subscriber<T: CommData> = SubscribableImpl<T>;
+    type ServiceDiscovery<I: Interface + Send> = SampleConsumerDiscovery<I>;
+    type Subscriber<T: CommData + Debug> = SubscribableImpl<T>;
     type ProducerBuilder<I: Interface> = SampleProducerBuilder<I>;
-    type Publisher<T: CommData> = Publisher<T>;
+    type Publisher<T: CommData + Debug> = Publisher<T>;
     type ProviderInfo = LolaProviderInfo;
     type ConsumerInfo = LolaConsumerInfo;
 
-    fn find_service<I: Interface>(
+    fn find_service<I: Interface + Send>(
         &self,
         instance_specifier: FindServiceSpecifier,
     ) -> Self::ServiceDiscovery<I> {
         SampleConsumerDiscovery {
             instance_specifier: match instance_specifier {
-                FindServiceSpecifier::Any => todo!(), // TODO:[eclipse-score/communication/issues/133]Add error msg or panic like "ANY not supported by Lola"
+                FindServiceSpecifier::Any => panic!(
+                    "FindServiceSpecifier::Any is not supported in LolaRuntimeImpl,
+                Please use FindServiceSpecifier::Specific with a valid instance specifier."
+                ),
                 FindServiceSpecifier::Specific(spec) => spec,
             },
             _interface: PhantomData,

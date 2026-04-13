@@ -39,8 +39,8 @@ const LolaServiceTypeDeployment& GetLolaServiceTypeDeploymentFromInstanceIdentif
     const auto* lola_service_type_deployment =
         std::get_if<LolaServiceTypeDeployment>(&service_type_depl_info.binding_info_);
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_type_deployment != nullptr,
-                           "GetLolaServiceTypeDeploymentFromInstanceIdentifier: failed to get "
-                           "LolaServiceTypeDeployment from binding_info_ variant.");
+                                                "GetLolaServiceTypeDeploymentFromInstanceIdentifier: failed to get "
+                                                "LolaServiceTypeDeployment from binding_info_ variant.");
     return *lola_service_type_deployment;
 }
 

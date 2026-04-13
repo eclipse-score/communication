@@ -57,6 +57,13 @@ ScoreReq.FeatReq Method {
     version = 1
 }
 
+ScoreReq.FeatReq Field {
+    description = "A field is a component of a communication interface and is defined by a name and a data type, along with dedicated getter and setter methods. The producer has the ability to assign a value to the field. Consumers can either subscribe to receive notifications when the field’s value changes or poll the cached values of fields that have not yet been seen. Additionally, consumers can retrieve the current value of the field using the getter method or update the field’s value through the setter method."
+    safety = ScoreReq.Asil.B
+    derived_from = [ AssumedSystemRequirements.InterProcessCommunication@1, AssumedSystemRequirements.SupportForRequestDrivenArchitecture@1, AssumedSystemRequirements.SafeCommunication@1 ]
+    version = 1
+}
+
 ScoreReq.FeatReq Signal {
     description = "A signal is part of a communication interface and has a name. A client can trigger the signal. The service instance offering the trigger can wait for the signal to be triggered or check if the signal was triggered. Signals can not transport data."
     safety = ScoreReq.Asil.QM

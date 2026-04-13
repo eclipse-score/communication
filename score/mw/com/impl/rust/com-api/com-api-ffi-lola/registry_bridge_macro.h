@@ -110,8 +110,8 @@ namespace details
 /// \return Result containing the number of samples processed on success, or error code on failure
 template <typename T>
 inline score::Result<std::uint32_t> GetSamplesFromEvent(::score::mw::com::impl::ProxyEvent<T>& proxy_event,
-                                                      const FatPtr& callback,
-                                                      std::uint32_t max_num_samples) noexcept
+                                                        const FatPtr& callback,
+                                                        std::uint32_t max_num_samples) noexcept
 {
     RustFnMutCallable<RustRefMutCallable, void, SamplePtr<T>> rust_callable{callback};
 
@@ -187,8 +187,6 @@ class TypeOperations
     /// \param allocatee_ptr Pointer SampleAllocateePtr (of type T)
     /// \return true if send successful, false otherwise
     virtual bool SkeletonSendEventAllocatee(SkeletonEventBase* event_ptr, void* allocatee_ptr) = 0;
-
-    // TODO: Allocate API need to add - Ticket-234824
 };
 
 /// \brief Template implementation of TypeOperations for a specific type T
@@ -565,7 +563,71 @@ extern "C" {
 /// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
 /// \param sample_ptr Pointer to SamplePtr<T> representing the sample data
 void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::FatPtr* boxed_fnmut, void* sample_ptr);
+
+/// \brief Rust closure invocation for events without sample data
+/// \details This function is called by C++ to invoke a Rust closure for events that do not have sample data (e.g.
+/// simple notifications).
+/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
+void mw_com_impl_call_dyn_fnmut(const FatPtr* boxed_fnmut) noexcept;
+
+/// \brief Rust closure deletion for all types
+/// \details This function is called by C++ to properly delete a Rust FnMut closure represented as a FatPtr.
+//  This is necessary to ensure that any resources owned by the closure are released correctly when the event receive
+//  handler is cleared or when the proxy is destroyed.
+/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure to be deleted
+void mw_com_impl_delete_boxed_fnmut(const FatPtr* boxed_fnmut) noexcept;
+
+/// \brief Rust closure invocation for FindServiceHandle with type erasure
+/// \details This function is called by C++ to invoke a Rust closure for finding services, passing a vector of service
+/// handles.
+/// \param boxed_fnmut Pointer to FatPtr representing the Rust FnMut closure
+/// \param service_handles Pointer to a vector of service handles (type-erased as void*)
+/// \param find_service_handle Opaque handle for the find service operation
+void mw_com_impl_call_dyn_ref_fnmut_find_service(
+    const ::score::mw::com::impl::rust::FatPtr* boxed_fnmut,
+    void* service_handles,
+    ::score::mw::com::impl::FindServiceHandle find_service_handle) noexcept;
 }
+
+/// \brief Template specialization of RustBoxedCallable for void return type
+/// \details This specialization is used for events that do not have sample data and therefore do not need to pass a
+/// SamplePtr to the Rust closure.
+// It simply calls the Rust FFI function for FnMut without sample data.
+// The dispose function calls the Rust FFI function to delete the
+template <>
+class RustBoxedCallable<void>
+{
+  public:
+    static void invoke(FatPtr ptr_) noexcept
+    {
+        mw_com_impl_call_dyn_fnmut(&ptr_);
+    }
+
+    static void dispose(FatPtr ptr_) noexcept
+    {
+        mw_com_impl_delete_boxed_fnmut(&ptr_);
+    }
+};
+
+/// Specialization of RustBoxedCallable for FindServiceHandle with type-erased service handles vector
+template <>
+class RustBoxedCallable<void,
+                        std::vector<::score::mw::com::impl::HandleType>,
+                        ::score::mw::com::impl::FindServiceHandle>
+{
+  public:
+    static void invoke(FatPtr ptr_,
+                       std::vector<::score::mw::com::impl::HandleType> service_handles,
+                       ::score::mw::com::impl::FindServiceHandle find_service_handle) noexcept
+    {
+        auto* placement_handles = new ::score::mw::com::ServiceHandleContainer<::score::mw::com::impl::HandleType>{
+            std::move(service_handles)};
+        // Call the Rust FFI function
+        mw_com_impl_call_dyn_ref_fnmut_find_service(&ptr_, static_cast<void*>(placement_handles), find_service_handle);
+    }
+
+    static void dispose(FatPtr) noexcept {}
+};
 
 /// \brief Macro to begin registration of interface operations
 /// \details Creates registry and type aliases for a specific interface. Uses a static struct to register
@@ -574,30 +636,30 @@ void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::F
 /// \param proxy_type Proxy class type for the interface
 /// \param skeleton_type Skeleton class type for the interface
 /// \note Example usage: BEGIN_EXPORT_MW_COM_INTERFACE(VehicleInterface, VehicleProxy, VehicleSkeleton)
-#define BEGIN_EXPORT_MW_COM_INTERFACE(id, proxy_type, skeleton_type)                                                 \
-    namespace id##_detail                                                                                            \
-    {                                                                                                                \
-        constexpr std::string_view id_interface = #id;                                                               \
-        /* Type aliases for event macros to use */                                                                   \
-        using ProxyType = proxy_type;                                                                                \
-        using SkeletonType = skeleton_type;                                                                          \
-                                                                                                                     \
-        /* Registration helper struct - constructor runs at startup */                                               \
-        struct id##_InterfaceRegistrationHelper                                                                      \
-        {                                                                                                            \
-            id##_InterfaceRegistrationHelper()                                                                       \
-            {                                                                                                        \
-                /*TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                               \
-                auto interface_event_ops =                                                                           \
+#define BEGIN_EXPORT_MW_COM_INTERFACE(id, proxy_type, skeleton_type)                                                   \
+    namespace id##_detail                                                                                              \
+    {                                                                                                                  \
+        constexpr std::string_view id_interface = #id;                                                                 \
+        /* Type aliases for event macros to use */                                                                     \
+        using ProxyType = proxy_type;                                                                                  \
+        using SkeletonType = skeleton_type;                                                                            \
+                                                                                                                       \
+        /* Registration helper struct - constructor runs at startup */                                                 \
+        struct id##_InterfaceRegistrationHelper                                                                        \
+        {                                                                                                              \
+            id##_InterfaceRegistrationHelper()                                                                         \
+            {                                                                                                          \
+                /*TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                              \
+                auto interface_event_ops =                                                                             \
                     std::make_shared<::score::mw::com::impl::rust::InterfaceOperationImpl<ProxyType, SkeletonType>>(); \
-                                                                                                                     \
-                /* Register interface factory for FFI layer */                                                       \
+                                                                                                                       \
+                /* Register interface factory for FFI layer */                                                         \
                 ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterInterfaceOperation(id_interface,          \
-                                                                                              interface_event_ops);  \
-            }                                                                                                        \
-        };                                                                                                           \
-                                                                                                                     \
-        /* Force instantiation at startup */                                                                         \
+                                                                                                interface_event_ops);  \
+            }                                                                                                          \
+        };                                                                                                             \
+                                                                                                                       \
+        /* Force instantiation at startup */                                                                           \
         static id##_InterfaceRegistrationHelper id##_interface_reg_instance;
 
 /// \brief Macro to register event member operations
@@ -606,27 +668,27 @@ void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::F
 /// \param event_type Data type of the event
 /// \param event_member Event member name in Proxy and Skeleton classes
 /// \note Example usage: EXPORT_MW_COM_EVENT(Tire, left_tire)
-#define EXPORT_MW_COM_EVENT(event_type, event_member)                                                             \
-    struct event_member##_EventRegistrationHelper                                                                 \
-    {                                                                                                             \
-        event_member##_EventRegistrationHelper()                                                                  \
-        {                                                                                                         \
-                                                                                                                  \
-            /* TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                               \
-            auto event_info =                                                                                     \
+#define EXPORT_MW_COM_EVENT(event_type, event_member)                                                               \
+    struct event_member##_EventRegistrationHelper                                                                   \
+    {                                                                                                               \
+        event_member##_EventRegistrationHelper()                                                                    \
+        {                                                                                                           \
+                                                                                                                    \
+            /* TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                              \
+            auto event_info =                                                                                       \
                 std::make_shared<::score::mw::com::impl::rust::MemberOperationImpl<ProxyType,                       \
-                                                                                 SkeletonType,                    \
-                                                                                 event_type,                      \
-                                                                                 &ProxyType::event_member,        \
-                                                                                 &SkeletonType::event_member>>(); \
-                                                                                                                  \
-            /* Register this event in the LOCAL interface registry (not global) */                                \
+                                                                                   SkeletonType,                    \
+                                                                                   event_type,                      \
+                                                                                   &ProxyType::event_member,        \
+                                                                                   &SkeletonType::event_member>>(); \
+                                                                                                                    \
+            /* Register this event in the LOCAL interface registry (not global) */                                  \
             ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterMemberOperation(                           \
-                std::string_view(id_interface), std::string_view(#event_member), event_info);                     \
-        }                                                                                                         \
-    };                                                                                                            \
-                                                                                                                  \
-    /* Force instantiation at startup */                                                                          \
+                std::string_view(id_interface), std::string_view(#event_member), event_info);                       \
+        }                                                                                                           \
+    };                                                                                                              \
+                                                                                                                    \
+    /* Force instantiation at startup */                                                                            \
     static event_member##_EventRegistrationHelper event_member##_event_reg_instance;
 
 #define END_EXPORT_MW_COM_INTERFACE() }  // namespace id##_detail
@@ -637,32 +699,32 @@ void mw_com_impl_call_dyn_ref_fnmut_sample(const ::score::mw::com::impl::rust::F
 /// \param type_tag Type name tag used in macros as the registry key
 /// \param type Actual C++ type for which operations are registered
 /// \note Example usage: EXPORT_MW_COM_TYPE(TireType, Tire)
-#define EXPORT_MW_COM_TYPE(type_tag, type)                                                                          \
-    template <>                                                                                                     \
-    class score::mw::com::impl::rust::RustRefMutCallable<void, ::score::mw::com::impl::SamplePtr<type>>                 \
-    {                                                                                                               \
-      public:                                                                                                       \
-        static void invoke(::score::mw::com::impl::rust::FatPtr ptr_,                                                 \
-                           ::score::mw::com::impl::SamplePtr<type> sample) noexcept                                   \
-        {                                                                                                           \
-            /* Wrap in placement-new and call the Rust FFI function for closure invocation */                       \
-            alignas(                                                                                                \
-                ::score::mw::com::impl::SamplePtr<type>) char storage[sizeof(::score::mw::com::impl::SamplePtr<type>)]; \
-            auto* placement_sample = new (storage)::score::mw::com::impl::SamplePtr<type>(std::move(sample));         \
-            ::score::mw::com::impl::rust::mw_com_impl_call_dyn_ref_fnmut_sample(&ptr_, placement_sample);             \
-        }                                                                                                           \
-        static void dispose(::score::mw::com::impl::rust::FatPtr) noexcept {}                                         \
-    };                                                                                                              \
-                                                                                                                    \
-    struct type_tag##_TypeRegistrationHelper                                                                        \
-    {                                                                                                               \
-        type_tag##_TypeRegistrationHelper()                                                                         \
-        { /* TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                                   \
-            auto type_ops = std::make_shared<::score::mw::com::impl::rust::TypeOperationImpl<type>>();                \
-            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterTypeOperation(#type_tag, type_ops);          \
-        }                                                                                                           \
-    };                                                                                                              \
-                                                                                                                    \
+#define EXPORT_MW_COM_TYPE(type_tag, type)                                                                    \
+    template <>                                                                                               \
+    class score::mw::com::impl::rust::RustRefMutCallable<void, ::score::mw::com::impl::SamplePtr<type>>       \
+    {                                                                                                         \
+      public:                                                                                                 \
+        static void invoke(::score::mw::com::impl::rust::FatPtr ptr_,                                         \
+                           ::score::mw::com::impl::SamplePtr<type> sample) noexcept                           \
+        {                                                                                                     \
+            /* Wrap in placement-new and call the Rust FFI function for closure invocation */                 \
+            alignas(::score::mw::com::impl::SamplePtr<type>) char                                             \
+                storage[sizeof(::score::mw::com::impl::SamplePtr<type>)];                                     \
+            auto* placement_sample = new (storage)::score::mw::com::impl::SamplePtr<type>(std::move(sample)); \
+            ::score::mw::com::impl::rust::mw_com_impl_call_dyn_ref_fnmut_sample(&ptr_, placement_sample);     \
+        }                                                                                                     \
+        static void dispose(::score::mw::com::impl::rust::FatPtr) noexcept {}                                 \
+    };                                                                                                        \
+                                                                                                              \
+    struct type_tag##_TypeRegistrationHelper                                                                  \
+    {                                                                                                         \
+        type_tag##_TypeRegistrationHelper()                                                                   \
+        { /* TODO: We will validate if we can use unique_ptr here - Ticket-219875 */                          \
+            auto type_ops = std::make_shared<::score::mw::com::impl::rust::TypeOperationImpl<type>>();        \
+            ::score::mw::com::impl::rust::GlobalRegistryMapping::RegisterTypeOperation(#type_tag, type_ops);  \
+        }                                                                                                     \
+    };                                                                                                        \
+                                                                                                              \
     static type_tag##_TypeRegistrationHelper type_tag##_type_reg_instance;
 }  // namespace score::mw::com::impl::rust
 

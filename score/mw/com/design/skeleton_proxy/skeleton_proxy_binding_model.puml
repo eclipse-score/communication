@@ -35,7 +35,7 @@ class "lola::Skeleton" as LolaSkeleton {
   +PrepareOffer(SkeletonBinding::SkeletonEventBindings&, SkeletonBinding::SkeletonFieldBindings&): ResultBlank
   +PrepareStopOffer(): void
 
-  +template <typename SampleType>\n Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*, EventDataControlComposite>
+  +template <typename SampleType>\n Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>>
 }
 
 class "SkeletonBindingFactory" {

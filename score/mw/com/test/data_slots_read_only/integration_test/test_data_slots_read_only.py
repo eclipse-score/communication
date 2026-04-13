@@ -24,6 +24,6 @@ def test_data_slots_read_only_basic(sut):
             "./bin/data_slots_read_only --mode send --cycle-time 10 --num-cycles 100 --should-modify-data-segment false",
             cwd="/opt/data_slots_read_only/",
         ) as sender:
-            assert receiver.wait_for_exit() == 0
+            assert sender.wait_for_exit() == 0
 
-        assert sender.wait_for_exit() == 0
+        assert receiver.wait_for_exit() == 0

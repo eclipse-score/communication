@@ -34,23 +34,25 @@ class MessagePassingServiceInstanceTest : public ::testing::Test
     void SetUp() override
     {
         ON_CALL(*server_mock_, StartListening(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-            .WillByDefault([this](ConnectCallback cc,
-                                  DisconnectCallback dc,
-                                  MessageCallback message_received_cb,
-                                  MessageCallback message_received_w_reply_cb) -> score::cpp::expected_blank<score::os::Error> {
-                connect_callback_ = std::move(cc);
-                disconnect_callback_ = std::move(dc);
-                received_send_message_callback_ = std::move(message_received_cb);
-                received_send_message_with_reply_callback_ = std::move(message_received_w_reply_cb);
+            .WillByDefault(
+                [this](ConnectCallback cc,
+                       DisconnectCallback dc,
+                       MessageCallback message_received_cb,
+                       MessageCallback message_received_w_reply_cb) -> score::cpp::expected_blank<score::os::Error> {
+                    connect_callback_ = std::move(cc);
+                    disconnect_callback_ = std::move(dc);
+                    received_send_message_callback_ = std::move(message_received_cb);
+                    received_send_message_with_reply_callback_ = std::move(message_received_w_reply_cb);
 
-                return {};
-            });
+                    return {};
+                });
 
         ON_CALL(server_factory_mock_, Create(::testing::_, ::testing::_))
             .WillByDefault(::testing::Return(::testing::ByMove(std::move(server_mock_))));
 
-        auto client_connection_mock_facade = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
-            score::cpp::pmr::new_delete_resource(), client_connection_mock_);
+        auto client_connection_mock_facade =
+            score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMockFacade>>(
+                score::cpp::pmr::new_delete_resource(), client_connection_mock_);
         ON_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
             .WillByDefault(::testing::Return(::testing::ByMove(std::move(client_connection_mock_facade))));
 
@@ -101,7 +103,8 @@ class MessagePassingServiceInstanceTest : public ::testing::Test
 
     ::testing::NiceMock<ClientConnectionMock> client_connection_mock_{};
     score::cpp::pmr::unique_ptr<::testing::NiceMock<ServerConnectionMock>> server_connection_mock_{
-        score::cpp::pmr::make_unique<::testing::NiceMock<ServerConnectionMock>>(score::cpp::pmr::new_delete_resource())};
+        score::cpp::pmr::make_unique<::testing::NiceMock<ServerConnectionMock>>(
+            score::cpp::pmr::new_delete_resource())};
 
     ConnectCallback connect_callback_{};
     DisconnectCallback disconnect_callback_{};
@@ -127,7 +130,8 @@ TEST_F(MessagePassingServiceInstanceDeathTest, TerminationOnStartListeningFail)
     // Given server mock that returns error on StartListening
     auto server = score::cpp::pmr::make_unique<ServerMock>(score::cpp::pmr::get_default_resource());
     ON_CALL(*server, StartListening(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .WillByDefault(::testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
+        .WillByDefault(
+            ::testing::Return(score::cpp::make_unexpected<score::os::Error>(os::Error::createFromErrno(ENOMEM))));
 
     // and server factory mock that returns the server mock
     ON_CALL(server_factory_mock_, Create(::testing::_, ::testing::_))
@@ -428,8 +432,8 @@ TEST_F(MessagePassingServiceInstanceTest,
     EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
         .Times(2)
         .WillRepeatedly(::testing::Invoke([](auto&&...) {
-            auto client_connection_mock =
-                score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource());
+            auto client_connection_mock = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource());
             EXPECT_CALL(*client_connection_mock, Send(::testing::_)).Times(1);
 
             return client_connection_mock;
@@ -633,8 +637,8 @@ TEST_F(MessagePassingServiceInstanceTest, NotifyEventRemoteNotifiesClientsExceed
     EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
         .Times(size)
         .WillRepeatedly(::testing::Invoke([&nums_called](auto&&...) {
-            auto mock =
-                score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource());
+            auto mock = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource());
 
             EXPECT_CALL(*mock, Send(::testing::_)).WillOnce(testing::Invoke([&nums_called]() {
                 ++nums_called;
@@ -926,9 +930,10 @@ TEST_F(MessagePassingServiceInstanceTest, ReregisterEventNotificationWithDiffere
     EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
         .Times(2)
         .WillRepeatedly(::testing::Invoke([](auto&&...) {
-            auto mock =
-                score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource());
-            EXPECT_CALL(*mock, Send(::testing::_)).WillOnce(::testing::Return(score::cpp::expected_blank<score::os::Error>{}));
+            auto mock = score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource());
+            EXPECT_CALL(*mock, Send(::testing::_))
+                .WillOnce(::testing::Return(score::cpp::expected_blank<score::os::Error>{}));
 
             return mock;
         }));

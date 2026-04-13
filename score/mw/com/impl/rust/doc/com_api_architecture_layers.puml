@@ -1,0 +1,93 @@
+@startuml
+
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam packageStyle rectangle
+skinparam defaultTextAlignment center
+skinparam maxMessageSize 300
+
+rectangle " APPLICATION LAYER " as LAYER1 #E1F5FE {
+  rectangle "User Application" as USER_APP {
+    card "main()" as USER_CODE
+    card "VehicleMonitor<R>" as USER_MONITOR
+  }
+}
+
+note bottom of LAYER1
+  Application code using generic runtime APIs,
+  which are platform-independent.
+  main() function initializes the runtime and sets up producers/consumers.
+end note
+
+rectangle " ABSTRACTION LAYER " as LAYER2 #C8E6C9 {
+  card "Concept Traits(com-api-concept)\nRuntime, Subscriber, Publisher" as TRAITS
+  card " Interface specific type(generated-code-interface-specific)\nConsumer, Producer, Interface" as GEN_API
+}
+
+note bottom of LAYER2
+  Abstraction layer defining generic traits and interfaces for COM API.
+  It includes concept traits for communication backends and
+  generated interface-specific types for consumers and producers.
+  It is independent of any specific runtime implementation, and interface oriented.
+end note
+
+rectangle " RUNTIME LAYER " as LAYER3 #FFCCBC {
+  card "LolaRuntimeImpl(com-api-runtime-lola)\nTrait Implementations" as RUNTIME_BUILD
+}
+
+note bottom of LAYER3
+  This contains the concrete LoLa runtime implementation,
+  This layer is responsible for all runtime operations of lola specific logic.
+  It implements consumer side find/subscribe/receive,
+  and producer side offer/allocate/publish operations.
+  It maintains the runtime lifecycle and resource management.
+end note
+
+rectangle " FFI BRIDGE LAYER " as LAYER4 #FFE0B2 {
+  card "Rust-C++ Bindings with help of \n Type Registry" as FFI_BRIDGE
+}
+
+note bottom of LAYER4
+  Rust-C++ FFI bridge layer that facilitates communication between Rust runtime and C++ middleware.
+  It contains the necessary bindings and type registry to enable seamless interoperability between the two languages.
+  Rust code in the runtime layer can invoke C++ middleware functions through this bridge, and C++ code can call back into Rust as needed.
+end note
+
+rectangle " C++ IMPLEMENTATION LAYER for FFI " as LAYER5 #D1C4E9 {
+  card "Generated C++ Code\nType Exports" as CPP_CODE
+  card "C++ Macro and Type Registry\nFFI Support" as FFI_SUPPORT
+  card "C++ mw::com API\nProxy/Skeleton, Events" as CPP_CLASSES
+}
+
+note bottom of LAYER5
+  Exports the C++ COM API as a Rust FFI compatible API.
+  Contains generated C++ code for type exports,
+  FFI support macros and type registry for managing Rust-C++ interactions,
+  And it calls the Core C++ middleware API for COM operations.
+end note
+
+USER_CODE --> RUNTIME_BUILD: instantiate
+USER_MONITOR --> TRAITS: uses
+USER_MONITOR --> GEN_API: parametrized by
+
+RUNTIME_BUILD --> TRAITS: implements
+GEN_API --> TRAITS: depends on
+
+RUNTIME_BUILD --> FFI_BRIDGE: bridges via
+FFI_BRIDGE --> FFI_SUPPORT: interacts with
+CPP_CODE --> FFI_SUPPORT: registers
+FFI_SUPPORT --> CPP_CLASSES: invokes
+
+@enduml

@@ -1,0 +1,65 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/methods/basic_acceptance_test/TestMethods",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 1000,
+          "methods": [
+            {
+              "methodName": "with_in_args_and_return",
+              "methodId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/methods/basic_acceptance_test/TestMethods",
+      "serviceTypeName": "/test/methods/basic_acceptance_test/TestMethods",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "methods": [
+            {
+              "methodName": "with_in_args_and_return",
+              "queueSize": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM"
+  }
+}

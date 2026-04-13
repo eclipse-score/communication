@@ -27,7 +27,7 @@ class IMessagePassingService;
 
 using MethodCallRegistrationGuard = std::unique_ptr<utils::ScopedOperation<safecpp::MoveOnlyScopedFunction<void()>>>;
 
-/// \brief RAII class which will call UnregisterMethodCallHandler on destruction.
+/// \brief creates registration guard with RAII semantics, which will call UnregisterMethodCallHandler on destruction.
 ///
 /// Will be returned by MessagePassingService::RegisterMethodCallHandler() to allow a user to unregister the registered
 /// handler.

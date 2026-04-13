@@ -3,6 +3,11 @@ MODULE.bazel.lock
 user.bazelrc
 .clwb_aspects
 .clwb
+# ignore folders created by IDEs
+.vscode
+.idea
+# Ignore clangd's config
+.clangd
 
 # Compilation databases for code completion in IDEs
 .cache/*

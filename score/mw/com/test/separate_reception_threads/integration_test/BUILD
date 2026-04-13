@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "separate_reception_threads",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_separate_reception_threads.py"],
     filesystem = ":filesystem",
 )

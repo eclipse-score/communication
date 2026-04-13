@@ -12,7 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
 
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 
 #include "score/memory/shared/shared_memory_resource.h"
 #include "score/memory/shared/shared_memory_resource_mock.h"
@@ -52,7 +52,7 @@ class MethodResourceMapFixture : public ::testing::Test
     MethodResourceMapFixture& WithAnInsertedRegion(const ProxyInstanceIdentifier proxy_instance_identifier,
                                                    const pid_t proxy_pid)
     {
-        method_resource_map_->InsertAndCleanUpOldRegions(
+        method_resource_map_->Insert(
             proxy_instance_identifier, proxy_pid, std::make_shared<memory::shared::SharedMemoryResourceMock>());
         return *this;
     }
@@ -67,7 +67,7 @@ TEST_F(MethodResourceMapInsertFixture, InsertReturnsIteratorToInsertedElement)
 
     // When inserting a new element
     const auto method_shm_resource = std::make_shared<memory::shared::SharedMemoryResourceMock>();
-    const auto [inserted_it, _] = method_resource_map_->InsertAndCleanUpOldRegions(
+    const auto inserted_it = method_resource_map_->Insert(
         ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1, method_shm_resource);
 
     // Then the result should contain an iterator to the inserted element
@@ -77,37 +77,35 @@ TEST_F(MethodResourceMapInsertFixture, InsertReturnsIteratorToInsertedElement)
 }
 
 TEST_F(MethodResourceMapInsertFixture,
-       InsertReturnsNoRegionsRemovedWhenNoElementsWithSameProcessIdentifierAndDifferentPidExist)
+       CleanUpOldRegionsReturnsNoRegionsRemovedWhenNoElementsWithSameProcessIdentifierAndDifferentPidExist)
 {
     GivenAMethodResourceMap().WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
                                                    kDummyPid1);
 
-    // When inserting a new element with a different proxy instance identifier and PID
+    // When when cleaning up an element with a different proxy instance identifier and PID
     const auto method_shm_resource = std::make_shared<memory::shared::SharedMemoryResourceMock>();
-    const auto [_, cleanup_result] = method_resource_map_->InsertAndCleanUpOldRegions(
-        ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter1}, kDummyPid2, method_shm_resource);
+    const auto cleanup_result = method_resource_map_->CleanUpOldRegions(
+        ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter1}, kDummyPid2);
 
     // Then the result should contain that no regions were removed
     EXPECT_EQ(cleanup_result, MethodResourceMap::CleanUpResult::NO_REGIONS_REMOVED);
 }
 
 TEST_F(MethodResourceMapInsertFixture,
-       InsertReturnsRegionsRemovedWhenElementWithSameProcessIdentifierAndDifferentPidExists)
+       CleanUpOldRegionsReturnsRegionsRemovedWhenElementWithSameProcessIdentifierAndDifferentPidExists)
 {
     GivenAMethodResourceMap().WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
                                                    kDummyPid1);
 
-    // When inserting a new element with the same proxy instance identifier but different PID
-    const auto [_, cleanup_result] = method_resource_map_->InsertAndCleanUpOldRegions(
-        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2},
-        kDummyPid2,
-        std::make_shared<memory::shared::SharedMemoryResourceMock>());
+    // When cleaning up an element with the same proxy instance identifier but different PID
+    const auto cleanup_result = method_resource_map_->CleanUpOldRegions(
+        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2}, kDummyPid2);
 
     // Then the result should contain that regions were removed
     EXPECT_EQ(cleanup_result, MethodResourceMap::CleanUpResult::OLD_REGIONS_REMOVED);
 }
 
-TEST_F(MethodResourceMapInsertFixture, InsertRemovesElementsContainingSameProcessIdentifierAndDifferentPid)
+TEST_F(MethodResourceMapInsertFixture, CleanUpOldRegionsRemovesElementsContainingSameProcessIdentifierAndDifferentPid)
 {
     GivenAMethodResourceMap()
         .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1)
@@ -115,11 +113,9 @@ TEST_F(MethodResourceMapInsertFixture, InsertRemovesElementsContainingSameProces
         .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter1}, kDummyPid1)
         .WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier2, kProxyInstanceCounter2}, kDummyPid1);
 
-    // When inserting a new element with the same proxy instance identifier but different PID
-    score::cpp::ignore = method_resource_map_->InsertAndCleanUpOldRegions(
-        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
-        kDummyPid2,
-        std::make_shared<memory::shared::SharedMemoryResourceMock>());
+    // When cleaning up an element with the same proxy instance identifier but different PID
+    score::cpp::ignore = method_resource_map_->CleanUpOldRegions(
+        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid2);
 
     // Then only the existing elements in the map with the same ProcessIdentifier but different PID should have been
     // removed
@@ -134,23 +130,29 @@ TEST_F(MethodResourceMapInsertFixture, InsertRemovesElementsContainingSameProces
 }
 
 TEST_F(MethodResourceMapInsertFixture,
-       InsertingElementsContainingDifferentInstanceCounterAfterCleanupDoesNotCleanupAgain)
+       InsartAndThenCleanUpOldRegionsElementsContainingDifferentInstanceCounterAfterCleanupDoesNotCleanupAgain)
 {
     GivenAMethodResourceMap().WithAnInsertedRegion(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
                                                    kDummyPid1);
 
-    // and given that a new element was inserted with the same proxy instance identifier but different PID which lead to
-    // a cleanup
-    score::cpp::ignore = method_resource_map_->InsertAndCleanUpOldRegions(
-        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
-        kDummyPid2,
-        std::make_shared<memory::shared::SharedMemoryResourceMock>());
+    // Given that we clean up ond reagions with the old PID (kDummyPid1) and insert a new region with the same
+    // application ID but different PID
+    score::cpp::ignore = method_resource_map_->CleanUpOldRegions(
+        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid2);
 
-    // When inserting a new element with the same application ID and PID but different instance counter
-    const auto [_, cleanup_result] = method_resource_map_->InsertAndCleanUpOldRegions(
-        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2},
-        kDummyPid2,
-        std::make_shared<memory::shared::SharedMemoryResourceMock>());
+    score::cpp::ignore =
+        method_resource_map_->Insert(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
+                                     kDummyPid2,
+                                     std::make_shared<memory::shared::SharedMemoryResourceMock>());
+
+    // When doing a new cleanup to insert a new element with the same application ID and PID but different instance
+    // counter
+    const auto cleanup_result = method_resource_map_->CleanUpOldRegions(
+        ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2}, kDummyPid2);
+    score::cpp::ignore =
+        method_resource_map_->Insert(ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter2},
+                                     kDummyPid2,
+                                     std::make_shared<memory::shared::SharedMemoryResourceMock>());
 
     // Then the result should contain that no regions were removed
     EXPECT_EQ(cleanup_result, MethodResourceMap::CleanUpResult::NO_REGIONS_REMOVED);
@@ -169,10 +171,9 @@ TEST_F(MethodResourceMapInsertFixture, InsertingAlreadyExistingElementTerminates
 
     // When inserting the same element that was already inserted
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = method_resource_map_->InsertAndCleanUpOldRegions(
-                                     ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1},
-                                     kDummyPid1,
-                                     std::make_shared<memory::shared::SharedMemoryResourceMock>()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::cpp::ignore = method_resource_map_->CleanUpOldRegions(
+            ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid1));
 }
 
 using MethodResourceMapContainsFixture = MethodResourceMapFixture;
@@ -234,7 +235,7 @@ TEST_F(MethodResourceMapContainsFixture, ContainsReturnsTrueWhenElementMatchingK
 
     // and given that a new element with the same application ID but different PID is inserted
     const auto method_shm_resource = std::make_shared<memory::shared::SharedMemoryResourceMock>();
-    score::cpp::ignore = method_resource_map_->InsertAndCleanUpOldRegions(
+    score::cpp::ignore = method_resource_map_->Insert(
         ProxyInstanceIdentifier{kProcessIdentifier1, kProxyInstanceCounter1}, kDummyPid2, method_shm_resource);
 
     // When checking if the map contains the element that was inserted

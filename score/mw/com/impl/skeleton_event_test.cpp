@@ -135,7 +135,7 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBind
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     // when PrepareOffer() is called on the event
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
 
     // and Allocate is called on the event.
     const auto allocated_slot_result = unit.my_dummy_event_.Allocate();
@@ -194,7 +194,7 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterStopOfferReturnsError)
 
     // Given a skeleton which has a mock skeleton-binding which has been offered and stop offered
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
     unit.my_dummy_event_.PrepareStopOffer();
 
     // When Allocate is called on the event
@@ -235,7 +235,7 @@ TEST(SkeletonEventAllocateTest, CallingAllocateAfterPrepareOfferWhenBindingFails
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     // when PrepareOffer() is called on the event
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
 
     // and Allocate is called on the event.
     const auto allocated_slot_result = unit.my_dummy_event_.Allocate();
@@ -282,7 +282,7 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendDispatchesToBinding)
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     // when PrepareOffer() is called on the event
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
 
     // and Allocate is called on the event.
     auto allocated_slot_result = unit.my_dummy_event_.Allocate();
@@ -323,7 +323,7 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendAfterStopOfferReturnsError)
 
     // Given a skeleton which has a mock skeleton-binding which has been offered
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
 
     // and given that Allocate has been called on the event.
     auto allocated_slot_result = unit.my_dummy_event_.Allocate();
@@ -377,7 +377,7 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendWhenBindingFailsReturnsError)
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     // when PrepareOffer() is called on the event
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
 
     // and Allocate is called on the event.
     auto allocated_slot_result = unit.my_dummy_event_.Allocate();
@@ -429,7 +429,7 @@ TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     // when PrepareOffer() is called on the event
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
 
     // and when calling Send() on the event
     const auto send_result = unit.my_dummy_event_.Send(test_value);
@@ -495,7 +495,7 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterStopOfferReturnsError)
 
     // Given a skeleton which has a mock skeleton-binding which has been offered and stop offered
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
     unit.my_dummy_event_.PrepareStopOffer();
 
     // When calling Send() on the event
@@ -537,7 +537,7 @@ TEST(SkeletonEventSendWithCopyTest, CallingSendAfterPrepareOfferWhenBindingFails
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
     // when PrepareOffer() is called on the event
-    unit.my_dummy_event_.PrepareOffer();
+    std::ignore = unit.my_dummy_event_.PrepareOffer();
 
     // and when calling Send() on the event
     const auto send_result = unit.my_dummy_event_.Send(test_value);

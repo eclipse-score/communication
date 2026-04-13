@@ -122,7 +122,7 @@ TEST_F(FlagFileTest, ExistingMatchingFlagFileIsRemovedAtConstructionAsilQm)
 
     ASSERT_TRUE(
         filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path1.ParentPath(), kAllPerms).has_value());
-    filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path1, kUserWriteRestRead);
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path1, kUserWriteRestRead));
     EXPECT_CALL(filesystem_factory_fake_.GetStandard(), Remove(flag_file_path1));
     EXPECT_CALL(filesystem_factory_fake_.GetStreams(), Open(flag_file_path1, std::ios_base::out));
 
@@ -139,7 +139,7 @@ TEST_F(FlagFileTest, ExistingMatchingFlagFileIsRemovedAtConstructionAsilB)
 
     ASSERT_TRUE(
         filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path2.ParentPath(), kAllPerms).has_value());
-    filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path2, kUserWriteRestRead);
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path2, kUserWriteRestRead));
     EXPECT_CALL(filesystem_factory_fake_.GetStandard(), Remove(flag_file_path2));
     EXPECT_CALL(filesystem_factory_fake_.GetStreams(), Open(flag_file_path2, std::ios_base::out));
 
@@ -209,7 +209,7 @@ TEST_F(FlagFileTest, FlagFileIsNotRemovedWhenMoving)
 TEST_F(FlagFileTest, ExistsReturnsTrueIfFlagFileDoesExist)
 {
     ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path1.ParentPath()).has_value());
-    filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path1, kUserWriteRestRead);
+    ASSERT_TRUE(filesystem_factory_fake_.GetStandard().CreateRegularFile(flag_file_path1, kUserWriteRestRead));
 
     EXPECT_TRUE(FlagFile::Exists(kEnrichedInstanceIdentifier1));
 }
@@ -270,7 +270,7 @@ TEST_F(FlagFileTest, CreateSearchPathReturnsPathIfItAppearsDuringBackoffTime)
 {
     EXPECT_CALL(filesystem_factory_fake_.GetUtils(), CreateDirectories(_, _))
         .WillOnce(InvokeWithoutArgs([this]() {
-            filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path1.ParentPath(), kAllPerms);
+            EXPECT_TRUE(filesystem_factory_fake_.GetUtils().CreateDirectories(flag_file_path1.ParentPath(), kAllPerms));
             return MakeUnexpected(filesystem::ErrorCode::kCouldNotCreateDirectory);
         }))
         .WillRepeatedly(DoDefault());
@@ -337,9 +337,9 @@ TEST_F(FlagFileTest, CreatePathReturnsValidPathWhenDirectoryAlreadyExists)
     // Given CreateDirectories returns error
     EXPECT_CALL(filesystem_factory_fake_.GetUtils(), CreateDirectories(_, _))
         .WillOnce(InvokeWithoutArgs([this]() {
-            filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path1.ParentPath());
-            filesystem_factory_fake_.GetStandard().Permissions(
-                flag_file_path1.ParentPath(), kAllPerms, filesystem::PermOptions::kReplace);
+            EXPECT_TRUE(filesystem_factory_fake_.GetStandard().CreateDirectories(flag_file_path1.ParentPath()));
+            EXPECT_TRUE(filesystem_factory_fake_.GetStandard().Permissions(
+                flag_file_path1.ParentPath(), kAllPerms, filesystem::PermOptions::kReplace));
             return MakeUnexpected(filesystem::ErrorCode::kCouldNotCreateDirectory);
         }))
         .WillRepeatedly(DoDefault());

@@ -1,0 +1,90 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/methods/signature_variations/MethodSignature",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 2000,
+          "methods": [
+            {
+              "methodName": "with_in_args_and_return",
+              "methodId": 1
+            },
+            {
+              "methodName": "with_in_args_only",
+              "methodId": 2
+            },
+            {
+              "methodName": "with_return_only",
+              "methodId": 3
+            },
+            {
+              "methodName": "without_args_or_return",
+              "methodId": 4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/methods/signature_variations/MethodSignature",
+      "serviceTypeName": "/test/methods/signature_variations/MethodSignature",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "methods": [
+            {
+              "methodName": "with_in_args_and_return",
+              "queueSize": 1
+            },
+            {
+              "methodName": "with_in_args_only",
+              "queueSize": 1
+            },
+            {
+              "methodName": "with_return_only",
+              "queueSize": 1
+            },
+            {
+              "methodName": "without_args_or_return",
+              "queueSize": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ],
+            "B": [
+              0
+            ]
+          }
+
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM"
+  }
+}

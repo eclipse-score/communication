@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_PROXY_METHOD_INSTANCE_IDENTIFIER_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_PROXY_METHOD_INSTANCE_IDENTIFIER_H
 
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 
 #include "score/mw/log/logging.h"
@@ -46,12 +46,12 @@ template <>
 class hash<score::mw::com::impl::lola::ProxyMethodInstanceIdentifier>
 {
   public:
-    std::size_t operator()(
-        const score::mw::com::impl::lola::ProxyMethodInstanceIdentifier& proxy_method_instance_identifier) const noexcept
+    std::size_t operator()(const score::mw::com::impl::lola::ProxyMethodInstanceIdentifier&
+                               proxy_method_instance_identifier) const noexcept
     {
         using ProxyMethodInstanceIdentifier = score::mw::com::impl::lola::ProxyMethodInstanceIdentifier;
         using ProxyInstanceIdentifier = score::mw::com::impl::lola::ProxyInstanceIdentifier;
-        static_assert((sizeof(ProxyInstanceIdentifier::process_identifier) +
+        static_assert((sizeof(ProxyInstanceIdentifier::application_id) +
                        sizeof(ProxyInstanceIdentifier::proxy_instance_counter) +
                        sizeof(ProxyMethodInstanceIdentifier::method_id)) <= sizeof(std::uint64_t));
 
@@ -60,7 +60,7 @@ class hash<score::mw::com::impl::lola::ProxyMethodInstanceIdentifier>
         constexpr auto method_id_bit_width =
             std::numeric_limits<decltype(proxy_method_instance_identifier.method_id)>::digits;
         return std::hash<std::uint64_t>{}(
-            (static_cast<std::uint64_t>(proxy_method_instance_identifier.proxy_instance_identifier.process_identifier)
+            (static_cast<std::uint64_t>(proxy_method_instance_identifier.proxy_instance_identifier.application_id)
              << (proxy_instance_counter_bit_width + method_id_bit_width)) |
             (static_cast<std::uint64_t>(
                  proxy_method_instance_identifier.proxy_instance_identifier.proxy_instance_counter)

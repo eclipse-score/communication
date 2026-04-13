@@ -55,7 +55,8 @@ class UnixDomainEngine final : public ISharedResourceEngine
         score::cpp::pmr::unique_ptr<score::os::Unistd> unistd{};
     };
 
-    UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource, LoggingCallback logger = GetCerrLogger()) noexcept;
+    UnixDomainEngine(score::cpp::pmr::memory_resource* memory_resource,
+                     LoggingCallback logger = GetCerrLogger()) noexcept;
     ~UnixDomainEngine() noexcept override;
 
     UnixDomainEngine(const UnixDomainEngine&) = delete;
@@ -84,7 +85,8 @@ class UnixDomainEngine final : public ISharedResourceEngine
 
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
 
-    score::cpp::expected<std::int32_t, score::os::Error> TryOpenClientConnection(std::string_view identifier) noexcept override;
+    score::cpp::expected<std::int32_t, score::os::Error> TryOpenClientConnection(
+        std::string_view identifier) noexcept override;
 
     void CloseClientConnection(std::int32_t client_fd) noexcept override;
 

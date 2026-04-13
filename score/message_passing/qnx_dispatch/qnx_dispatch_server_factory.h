@@ -38,7 +38,7 @@ class QnxDispatchServerFactory final : public IServerFactory
 
     // coverity[autosar_cpp14_m11_0_1_violation] false-positive: intentional public API
     score::cpp::pmr::unique_ptr<IServer> Create(const ServiceProtocolConfig& protocol_config,
-                                         const ServerConfig& server_config) noexcept override;
+                                                const ServerConfig& server_config) noexcept override;
 
     std::shared_ptr<QnxDispatchEngine> GetEngine() const noexcept
     {

@@ -21,8 +21,8 @@ rust_proc_macro(
         "//visibility:public",
     ],
     deps = [
-        "@crate_index//:quote",
-        "@crate_index//:syn",
+        "@score_communication_crate_index//:quote",
+        "@score_communication_crate_index//:syn",
     ],
 )
 

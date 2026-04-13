@@ -19,9 +19,9 @@
 #include "score/mw/com/impl/test/runtime_mock_guard.h"
 
 #include "score/mw/com/types.h"
-#include <score/jthread.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <score/jthread.hpp>
 #include <cstdint>
 #include <string>
 #include <thread>
@@ -167,7 +167,8 @@ TEST_F(RuntimeTestExternalJsonFixture, ResolveInstanceIdsIsThreadSafe)
             for (std::size_t j = 0; j < number_of_calls_per_thread; ++j)
             {
                 // Then the returned instance identifier should always be the same
-                auto actual_instance_identifiers_result = score::mw::com::runtime::ResolveInstanceIDs(kInstanceSpecifier);
+                auto actual_instance_identifiers_result =
+                    score::mw::com::runtime::ResolveInstanceIDs(kInstanceSpecifier);
                 ASSERT_TRUE(actual_instance_identifiers_result.has_value());
                 ASSERT_EQ(actual_instance_identifiers_result.value().size(), 1);
                 EXPECT_TRUE(actual_instance_identifiers_result.value()[0] == expected_instance_identifier);

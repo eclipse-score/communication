@@ -31,8 +31,8 @@ namespace
 // This allows Thread A to complete its dereference transaction before proceeding.
 void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
 {
-    constexpr std::uint8_t kRetryCount = 10;
-    constexpr std::chrono::milliseconds kRetryInterval(10U);
+    constexpr std::uint8_t kRetryCount = 10U;
+    constexpr std::chrono::milliseconds kRetryInterval(10);
     for (std::uint8_t retry = 0U; retry < kRetryCount; ++retry)
     {
         if (!slot.GetTransactionEnd())
@@ -42,7 +42,7 @@ void WaitForTransactionEndToBecomeFalse(TransactionLogSlot& slot) noexcept
         std::this_thread::sleep_for(kRetryInterval);
     }
     score::mw::log::LogFatal("lola") << "ReferenceTransactionBegin: Transaction-END bit remains TRUE after "
-                                   << kRetryCount * kRetryInterval.count() << "ms; terminating";
+                                     << kRetryCount * kRetryInterval.count() << "ms; terminating";
     std::terminate();
 }
 
@@ -67,8 +67,8 @@ bool DoesLogContainIncrementOrDecrementTransactions(
 
 }  // namespace
 
-TransactionLog::TransactionLog(std::size_t number_of_slots, const memory::shared::MemoryResourceProxy* proxy) noexcept
-    : reference_count_slots_{number_of_slots, proxy}, subscribe_transactions_{}, subscription_max_sample_count_{}
+TransactionLog::TransactionLog(std::size_t number_of_slots, memory::shared::ManagedMemoryResource& resource) noexcept
+    : reference_count_slots_{number_of_slots, resource}, subscribe_transactions_{}, subscription_max_sample_count_{}
 {
 }
 
@@ -181,8 +181,9 @@ ResultBlank TransactionLog::RollbackProxyElementLog(const DereferenceSlotCallbac
                                          !subscribe_transactions_.GetTransactionEnd()};
     if (was_no_subscribe_recorded)
     {
-        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE(!DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_),
-                                 "All slot increment transactions should be reversed before calling unsubscribe");
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_MESSAGE(
+            !DoesLogContainIncrementOrDecrementTransactions(reference_count_slots_),
+            "All slot increment transactions should be reversed before calling unsubscribe");
     }
 
     const auto rollback_increment_transactions_result = RollbackIncrementTransactions(dereference_slot_callback);

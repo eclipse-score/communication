@@ -1,0 +1,61 @@
+@startuml com_api_complete_publisher_subscriber_cycle
+
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+title Complete Publisher-Subscriber Cycle (User View)
+
+actor User
+participant "R: Runtime" as Runtime
+participant "OfferedProducer<R>" as OfferedProducer
+participant "Consumer<R>" as Consumer
+participant "Publisher<T, R>" as Publisher
+participant "Subscription<T, R>" as Subscription
+
+User -> Runtime: Build and initialize runtime
+Runtime --> User: R instance
+
+User -> Runtime: producer_builder() & build()
+Runtime --> OfferedProducer: OfferedProducer<R>
+
+User -> OfferedProducer: offer()
+OfferedProducer --> User: Offered (service discoverable)
+
+User -> Runtime: find_service() & get_available_instances()
+Runtime --> Consumer: Consumer<R>
+
+User -> Consumer: event.subscribe(capacity)
+Consumer --> User: Subscription<T, R>
+
+Note over User, Subscription: Data exchange phase
+
+loop Publish-Subscribe Cycle
+    User -> OfferedProducer: event_name
+    OfferedProducer --> Publisher: Publisher<T>
+
+    User -> Publisher: allocate() & write(data) & send()
+    Publisher --> User: Result<()>
+    Note over User: Data sample sent
+
+    User -> Subscription: try_receive(&mut container)
+    Subscription --> User: Result<usize>
+
+    User -> User: pop_front() & deref & read data
+end
+
+Note over User, Subscription: End of data exchange phase
+
+User -> OfferedProducer: unoffer()
+Note over User: Service unregistered
+OfferedProducer --> User: Producer<R>
+
+
+@enduml

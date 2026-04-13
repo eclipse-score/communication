@@ -414,9 +414,10 @@ void TraceCallReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
     }
 }
 
-score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(ProxyEventTracingData& proxy_event_tracing_data,
-                                                            const ProxyEventBindingBase& proxy_event_binding_base,
-                                                            EventReceiveHandler handler) noexcept
+score::cpp::callback<void(void), 128U> CreateTracingReceiveHandler(
+    ProxyEventTracingData& proxy_event_tracing_data,
+    const ProxyEventBindingBase& proxy_event_binding_base,
+    EventReceiveHandler handler) noexcept
 {
     if (proxy_event_tracing_data.enable_call_receive_handler)
     {

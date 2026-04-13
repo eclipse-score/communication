@@ -32,7 +32,7 @@ class MethodData
   public:
     explicit MethodData(const std::size_t number_of_method_call_queue_elements,
                         score::memory::shared::ManagedMemoryResource& memory_resource)
-        : method_call_queues_{number_of_method_call_queue_elements, memory_resource.getMemoryResourceProxy()}
+        : method_call_queues_{number_of_method_call_queue_elements, memory_resource}
     {
     }
 

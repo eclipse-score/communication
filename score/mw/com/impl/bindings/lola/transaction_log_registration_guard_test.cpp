@@ -33,7 +33,7 @@ using TransactionLogRegistrationGuardFixture = TransactionLogSetHelperFixture;
 TEST_F(TransactionLogRegistrationGuardFixture, CreatingGuardWithAvailableSlotsWillReturnGuard)
 {
     FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control{kMaxSlots, memory, kMaxSubscribers};
 
     auto unit = TransactionLogRegistrationGuard::Create(event_data_control, kDummyTransactionLogId);
     EXPECT_TRUE(unit.has_value());
@@ -44,7 +44,7 @@ TEST_F(TransactionLogRegistrationGuardFixture, CreatingGuardWithoutAvailableSlot
     constexpr std::size_t max_subscribers{1U};
 
     FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory.getMemoryResourceProxy(), max_subscribers};
+    EventDataControl event_data_control{kMaxSlots, memory, max_subscribers};
 
     auto unit = TransactionLogRegistrationGuard::Create(event_data_control, kDummyTransactionLogId);
     EXPECT_TRUE(unit.has_value());
@@ -58,7 +58,7 @@ TEST_F(TransactionLogRegistrationGuardFixture, DestroyingGuardWillUnregisterLog)
     const bool expect_needs_rollback{false};
 
     FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control{kMaxSlots, memory, kMaxSubscribers};
     auto& transaction_log_set = event_data_control.GetTransactionLogSet();
 
     {
@@ -76,7 +76,7 @@ TEST_F(TransactionLogRegistrationGuardFixture, MoveConstructingGuardWillNotUnreg
     const bool expect_needs_rollback{false};
 
     FakeMemoryResource memory{};
-    EventDataControl event_data_control{kMaxSlots, memory.getMemoryResourceProxy(), kMaxSubscribers};
+    EventDataControl event_data_control{kMaxSlots, memory, kMaxSubscribers};
     auto& transaction_log_set = event_data_control.GetTransactionLogSet();
 
     {

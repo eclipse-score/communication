@@ -227,6 +227,13 @@ class ClientConnectionTest : public ::testing::Test
         on_callback_thread_ = false;
     }
 
+    void InvokeEndpointPing()
+    {
+        on_callback_thread_ = true;
+        posix_endpoint_->ping();
+        on_callback_thread_ = false;
+    }
+
     void MakeSuccessfulConnection(detail::ClientConnection& connection,
                                   IClientConnection::StateCallback state_callback = {},
                                   IClientConnection::NotifyCallback notify_callback = {})
@@ -349,7 +356,8 @@ TEST_F(ClientConnectionTest, TryingToConnectOnceStoppingWhileConnecting)
     EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
         .WillOnce([this, &connection](auto&&) {
             StopConnectionInProgress(connection);
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));  // this error code would be ignored
+            return score::cpp::make_unexpected(
+                score::os::Error::createFromErrno(EIO));  // this error code would be ignored
         });
     ExpectCleanUpOwner(connection);
     InvokeConnectCommand();
@@ -366,7 +374,8 @@ TEST_F(ClientConnectionTest, TryingToSyncConnectOnceStoppingWhileConnecting)
     EXPECT_CALL(*engine_, TryOpenClientConnection(std::string_view{service_identifier_}))
         .WillOnce([this, &connection](auto&&) {
             StopConnectionInProgress(connection);
-            return score::cpp::make_unexpected(score::os::Error::createFromErrno(EIO));  // this error code would be ignored
+            return score::cpp::make_unexpected(
+                score::os::Error::createFromErrno(EIO));  // this error code would be ignored
         });
     ExpectCleanUpOwner(connection);
 
@@ -1060,6 +1069,33 @@ TEST_F(ClientConnectionTest, ConnectedReceivesNotifyInCallback)
 
     AtProtocolReceive_Return(score::cpp::to_underlying(detail::ServerToClient::NOTIFY), {});
     InvokeEndpointInput();
+    EXPECT_EQ(connection.GetState(), State::kReady);
+    EXPECT_EQ(call_counter, 1U);
+
+    StopCurrentConnection(connection);
+}
+
+TEST_F(ClientConnectionTest, ConnectedContinuesIfReceivesPingWithoutCallback)
+{
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    MakeSuccessfulConnection(connection);
+
+    InvokeEndpointPing();
+    EXPECT_EQ(connection.GetState(), State::kReady);
+
+    StopCurrentConnection(connection);
+}
+
+TEST_F(ClientConnectionTest, ConnectedReceivesPingInCallback)
+{
+    detail::ClientConnection connection(engine_, protocol_config_, client_config_);
+    std::uint32_t call_counter{0U};
+    MakeSuccessfulConnection(connection, IClientConnection::StateCallback{}, [&call_counter](auto&& message) noexcept {
+        EXPECT_EQ(message.size(), 0U);
+        ++call_counter;
+    });
+
+    InvokeEndpointPing();
     EXPECT_EQ(connection.GetState(), State::kReady);
     EXPECT_EQ(call_counter, 1U);
 

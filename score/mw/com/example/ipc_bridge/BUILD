@@ -24,6 +24,7 @@ cc_binary(
     ],
     data = ["etc/mw_com_config.json"],
     features = COMPILER_WARNING_FEATURES,
+    visibility = ["//examples:__pkg__"],
     deps = [
         ":sample_sender_receiver",
         "//score/mw/com",
@@ -73,7 +74,7 @@ rust_library(
     deps = [
         ":ipc_bridge_gen_cpp",
         "//score/mw/com/impl/rust:mw_com",
-        "@crate_index//:libc",
+        "@score_communication_crate_index//:libc",
     ],
 )
 
@@ -82,11 +83,12 @@ rust_binary(
     srcs = ["ipc_bridge.rs"],
     data = ["etc/mw_com_config.json"],
     features = ["link_std_cpp_lib"],
+    visibility = ["//examples:__pkg__"],
     deps = [
         ":ipc_bridge_gen_rs",
         "//score/mw/com/impl/rust:mw_com",
-        "@crate_index//:clap",
-        "@crate_index//:futures",
+        "@score_communication_crate_index//:clap",
+        "@score_communication_crate_index//:futures",
     ],
 )
 

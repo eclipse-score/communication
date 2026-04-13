@@ -40,7 +40,7 @@ class QnxDispatchClientFactory final : public IClientFactory
     QnxDispatchClientFactory& operator=(QnxDispatchClientFactory&&) = delete;
 
     score::cpp::pmr::unique_ptr<IClientConnection> Create(const ServiceProtocolConfig& protocol_config,
-                                                   const ClientConfig& client_config) noexcept override;
+                                                          const ClientConfig& client_config) noexcept override;
 
     std::shared_ptr<QnxDispatchEngine> GetEngine() const noexcept
     {

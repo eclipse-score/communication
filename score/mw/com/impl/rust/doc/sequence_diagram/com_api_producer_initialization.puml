@@ -1,0 +1,43 @@
+@startuml com_api_producer_initialization
+
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+title Create Producer
+
+actor User
+participant "RuntimeBuilder<R>" as RuntimeBuilder
+participant "R: Runtime" as Runtime
+participant "ProducerBuilder<I, R>" as ProducerBuilder
+participant "Producer<R>" as Producer
+
+User -> RuntimeBuilder: new()
+RuntimeBuilder --> User: RuntimeBuilder instance
+
+User -> RuntimeBuilder: load_config(path)
+RuntimeBuilder --> User: &mut RuntimeBuilder
+
+User -> RuntimeBuilder: build()
+RuntimeBuilder -> Runtime: Create Runtime instance
+Runtime --> RuntimeBuilder: Initialized
+RuntimeBuilder --> User: Result<R: Runtime>
+
+User -> Runtime: producer_builder::<Interface>(\nInstanceSpecifier)
+Runtime --> ProducerBuilder: ProducerBuilder instance
+ProducerBuilder --> User: ProducerBuilder<I, R>
+
+User -> ProducerBuilder: build()
+ProducerBuilder --> Producer: Producer instance created
+Producer --> User: Result<Producer<R>>
+
+Note over User: Producer ready for offer()
+
+@enduml

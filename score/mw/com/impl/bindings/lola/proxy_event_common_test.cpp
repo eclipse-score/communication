@@ -120,8 +120,8 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterEventHandlerBeforeSubscription)
     const std::size_t max_sample_count{1U};
     this->ExpectCallbackRegistration();
     auto mocked_receive_handler = FromMockFunction(event_receive_handler_scope, this->event_handler_);
-    this->proxy_event_->SetReceiveHandler(mocked_receive_handler);
-    this->proxy_event_->Subscribe(max_sample_count);
+    ASSERT_TRUE(this->proxy_event_->SetReceiveHandler(mocked_receive_handler));
+    ASSERT_TRUE(this->proxy_event_->Subscribe(max_sample_count));
 }
 
 TYPED_TEST(LolaProxyEventCommonFixture, RegisterEventHandlerAfterSubscription)
@@ -131,14 +131,15 @@ TYPED_TEST(LolaProxyEventCommonFixture, RegisterEventHandlerAfterSubscription)
     this->InitialiseProxyAndEvent();
     const std::size_t max_sample_count{1U};
     this->ExpectCallbackRegistration();
-    this->proxy_event_->Subscribe(max_sample_count);
-    this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
+    ASSERT_TRUE(this->proxy_event_->Subscribe(max_sample_count));
+    ASSERT_TRUE(
+        this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_)));
 }
 
 TYPED_TEST(LolaProxyEventCommonFixture, DoNotRegisterEventHandler)
 {
     this->InitialiseProxyAndEvent();
-    this->proxy_event_->Subscribe(1U);
+    ASSERT_TRUE(this->proxy_event_->Subscribe(1U));
 
     EXPECT_EQ(this->proxy_event_->GetSubscriptionState(), SubscriptionState::kSubscribed);
 }
@@ -182,7 +183,7 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribeImmediatelyAfterSubscribing)
     this->InitialiseProxyAndEvent();
 
     // When we subscribe (sending a subscribe message to the producer)
-    this->proxy_event_->Subscribe(max_sample_count);
+    std::ignore = this->proxy_event_->Subscribe(max_sample_count);
 
     // and we unsubscribe before the producer sends a response that it has changed state
     this->proxy_event_->Unsubscribe();
@@ -222,11 +223,12 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsubscribingWillUnregisterEventHandler)
     this->InitialiseProxyAndEvent();
 
     // When we subscribe (sending a subscribe message to the producer)
-    this->proxy_event_->Subscribe(max_sample_count);
+    std::ignore = this->proxy_event_->Subscribe(max_sample_count);
 
     // and Register a receive handler
     safecpp::Scope<> event_receive_handler_scope{};
-    this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
+    std::ignore =
+        this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
 
     // Then the receive handler should not be unregistered
     EXPECT_FALSE(handler_unregistered);
@@ -268,11 +270,12 @@ TYPED_TEST(LolaProxyEventCommonFixture, DestroyingTheProxyEventWillUnregisterEve
     this->InitialiseProxyAndEvent();
 
     // When we subscribe (sending a subscribe message to the producer)
-    this->proxy_event_->Subscribe(max_sample_count);
+    std::ignore = this->proxy_event_->Subscribe(max_sample_count);
 
     // and Register a receive handler
     safecpp::Scope<> event_receive_handler_scope{};
-    this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
+    std::ignore =
+        this->proxy_event_->SetReceiveHandler(FromMockFunction(event_receive_handler_scope, this->event_handler_));
 
     // Then the receive handler should not be unregistered
     EXPECT_FALSE(handler_unregistered);
@@ -319,12 +322,15 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsetReceiveHandlerWhileSubscribed)
 {
     // Given a valid proxy where we are only subscribed
     this->InitialiseProxyAndEvent();
-    this->proxy_event_->Subscribe(1U);
+    ASSERT_TRUE(this->proxy_event_->Subscribe(1U));
 
     // When removing an receive handler
-    this->proxy_event_->UnsetReceiveHandler();
+    const auto action = [this]() {
+        score::cpp::ignore = this->proxy_event_->UnsetReceiveHandler();
+    };
 
     // Then we don't crash
+    EXPECT_NO_FATAL_FAILURE(action());
 }
 
 TYPED_TEST(LolaProxyEventCommonFixture, UnsetReceiveHandlerWithoutBeingSubscribed)
@@ -333,9 +339,12 @@ TYPED_TEST(LolaProxyEventCommonFixture, UnsetReceiveHandlerWithoutBeingSubscribe
     this->InitialiseProxyAndEvent();
 
     // When removing an receive handler
-    this->proxy_event_->UnsetReceiveHandler();
+    const auto action = [this]() {
+        std::ignore = this->proxy_event_->UnsetReceiveHandler();
+    };
 
     // Then we don't crash
+    EXPECT_NO_FATAL_FAILURE(action());
 }
 
 }  // namespace

@@ -30,9 +30,9 @@ namespace
 {
 
 score::cpp::span<std::byte> GetElement(const std::size_t position,
-                                const memory::DataTypeSizeInfo& type_info,
-                                score::cpp::span<std::byte> queue_storage,
-                                const std::size_t queue_size)
+                                       const memory::DataTypeSizeInfo& type_info,
+                                       score::cpp::span<std::byte> queue_storage,
+                                       const std::size_t queue_size)
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD(position < queue_size);
 
@@ -74,9 +74,9 @@ score::cpp::span<std::byte> GetReturnValueElementStorage(
                       return_type_erased_info.queue_size);
 }
 
-TypeErasedCallQueue::TypeErasedCallQueue(const memory::shared::MemoryResourceProxy& resource_proxy,
+TypeErasedCallQueue::TypeErasedCallQueue(memory::shared::ManagedMemoryResource& memory_resource,
                                          const TypeErasedElementInfo& type_erased_element_info)
-    : resource_proxy_{resource_proxy},
+    : memory_resource_{memory_resource},
       type_erased_element_info_{type_erased_element_info},
       in_args_queue_start_address_{nullptr, 0U},
       return_queue_start_address_{nullptr, 0U}
@@ -94,11 +94,11 @@ TypeErasedCallQueue::~TypeErasedCallQueue()
 {
     if (in_args_queue_start_address_.data != nullptr)
     {
-        resource_proxy_.deallocate(in_args_queue_start_address_.data.get(), in_args_queue_start_address_.size);
+        memory_resource_.deallocate(in_args_queue_start_address_.data.get(), in_args_queue_start_address_.size);
     }
     if (return_queue_start_address_.data != nullptr)
     {
-        resource_proxy_.deallocate(return_queue_start_address_.data.get(), return_queue_start_address_.size);
+        memory_resource_.deallocate(return_queue_start_address_.data.get(), return_queue_start_address_.size);
     }
 }
 
@@ -134,7 +134,8 @@ std::pair<TypeErasedCallQueue::OffsetPtrSpan, TypeErasedCallQueue::OffsetPtrSpan
     {
         const auto& in_arg_type_info = type_erased_element_info_.in_arg_type_info.value();
         const auto required_size = in_arg_type_info.Size() * type_erased_element_info_.queue_size;
-        void* const in_args_queue_start_address = resource_proxy_.allocate(required_size, in_arg_type_info.Alignment());
+        void* const in_args_queue_start_address =
+            memory_resource_.allocate(required_size, in_arg_type_info.Alignment());
         in_args_queue_start_address_bytes = static_cast<std::byte*>(in_args_queue_start_address);
         in_args_queue_size = in_arg_type_info.Size() * type_erased_element_info_.queue_size;
     }
@@ -145,7 +146,7 @@ std::pair<TypeErasedCallQueue::OffsetPtrSpan, TypeErasedCallQueue::OffsetPtrSpan
     {
         const auto& return_type_info = type_erased_element_info_.return_type_info.value();
         const auto required_size = return_type_info.Size() * type_erased_element_info_.queue_size;
-        void* const return_queue_start_address = resource_proxy_.allocate(required_size, return_type_info.Alignment());
+        void* const return_queue_start_address = memory_resource_.allocate(required_size, return_type_info.Alignment());
         return_queue_start_address_bytes = static_cast<std::byte*>(return_queue_start_address);
         return_queue_size = return_type_info.Size() * type_erased_element_info_.queue_size;
     }

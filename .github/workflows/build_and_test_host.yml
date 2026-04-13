@@ -21,28 +21,87 @@ on:
   merge_group:
     types: [checks_requested]
   workflow_call:
+    inputs:
+      run_all_configurations:
+        description: Run all host build configurations instead of only the default one.
+        required: false
+        type: boolean
+        default: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request'}}
 jobs:
+    prepare_build_and_test_host_matrix:
+      runs-on: ubuntu-24.04
+      outputs:
+        matrix: ${{ steps.set-matrix.outputs.matrix }}
+      steps:
+        - name: Select host build configurations
+          id: set-matrix
+          env:
+            EVENT_NAME: ${{ github.event_name }}
+            RUN_ALL_CONFIGURATIONS: ${{ inputs.run_all_configurations }}
+          run: |
+            python3 - <<'PY'
+            import json
+            import os
+
+            default_configurations = [
+                {"identifier": "", "config": ""},
+            ]
+            extended_configurations = [
+                {
+                    "identifier": "_llvm",
+                    "config": "--extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux",
+                },
+                {
+                    "identifier": "_score_gcc12",
+                    "config": "--config=linux_x86_64_score_gcc_12_2_0_posix",
+                },
+            ]
+
+            event_name = os.environ.get("EVENT_NAME", "")
+            run_all_configurations = os.environ.get("RUN_ALL_CONFIGURATIONS", "false").lower() == "true"
+
+            matrix = list(default_configurations)
+            if event_name == "workflow_call" and run_all_configurations:
+                matrix.extend(extended_configurations)
+
+            matrix_json = json.dumps(matrix)
+            with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output_file:
+                output_file.write("matrix<<EOF\n")
+                output_file.write(f"{matrix_json}\n")
+                output_file.write("EOF\n")
+            PY
+
     build_and_test_host:
+      needs: prepare_build_and_test_host_matrix
+      name: build_and_test_host${{ matrix.identifier }}
       strategy:
         fail-fast: false
         matrix:
-          toolchain: ["@llvm_toolchain//:cc-toolchain-x86_64-linux", "@gcc_toolchain//:host_gcc_12"]
+          include: ${{ fromJSON(needs.prepare_build_and_test_host_matrix.outputs.matrix) }}
       runs-on: ubuntu-24.04
+      permissions:
+        contents: read
       steps:
         - name: Checkout repository
-          uses: actions/checkout@v4.2.2
+          uses: actions/checkout@v6.0.2
         - name: Free Disk Space (Ubuntu)
-          uses: ./actions/free_disk_space
-        - uses: bazel-contrib/setup-bazel@0.15.0
+          uses: eclipse-score/more-disk-space@v1
+          with:
+            level: 4
+        - uses: bazel-contrib/setup-bazel@0.18.0
           with:
             bazelisk-cache: true
-            disk-cache: ${{ github.workflow }}-${{ matrix.toolchain }}
+            disk-cache: build_and_test_host${{ matrix.identifier }}
             repository-cache: true
+            cache-save: ${{ github.event_name == 'merge_group' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel build communication targets
           run: |
-            bazel build --extra_toolchains=${{ matrix.toolchain }} //...
+            bazel build ${{ matrix.config }} //...
         - name: Bazel test communication targets
           run: |
-            bazel test --extra_toolchains=${{ matrix.toolchain }} //... --build_tests_only
+            bazel test ${{ matrix.config }} //... --build_tests_only

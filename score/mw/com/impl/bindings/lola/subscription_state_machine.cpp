@@ -12,7 +12,6 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 
-#include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 
 #include "score/mw/com/impl/bindings/lola/subscription_not_subscribed_states.h"
@@ -123,7 +122,8 @@ const score::cpp::optional<SlotCollector>& SubscriptionStateMachine::GetSlotColl
     return GetCurrentEventState().GetSlotCollector();
 }
 
-score::cpp::optional<TransactionLogSet::TransactionLogIndex> SubscriptionStateMachine::GetTransactionLogIndex() const noexcept
+score::cpp::optional<TransactionLogSet::TransactionLogIndex> SubscriptionStateMachine::GetTransactionLogIndex()
+    const noexcept
 {
     std::lock_guard<std::mutex> lock{state_mutex_};
     return GetCurrentEventState().GetTransactionLogIndex();

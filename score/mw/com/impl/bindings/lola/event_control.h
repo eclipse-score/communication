@@ -27,7 +27,7 @@ class EventControl
     EventControl(const SlotIndexType number_of_slots,
                  const SubscriberCountType max_subscribers,
                  const bool enforce_max_samples,
-                 const score::memory::shared::MemoryResourceProxy* const proxy) noexcept;
+                 score::memory::shared::ManagedMemoryResource& resource) noexcept;
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member

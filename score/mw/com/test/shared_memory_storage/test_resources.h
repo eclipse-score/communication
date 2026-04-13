@@ -20,8 +20,8 @@
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 
 #include "score/memory/shared/pointer_arithmetic_util.h"
-#include "score/os/utils/interprocess/interprocess_notification.h"
 #include "score/mw/com/test/common_test_resources/big_datatype.h"
+#include "score/os/utils/interprocess/interprocess_notification.h"
 
 #include <score/optional.hpp>
 
@@ -63,6 +63,30 @@ class ProxyTestAttorney
     Proxy& proxy_;
 };
 
+class SkeletonMemoryManagerTestAttorney
+{
+  public:
+    SkeletonMemoryManagerTestAttorney(SkeletonMemoryManager& skeleton_memory_manager) noexcept
+        : skeleton_memory_manager_{skeleton_memory_manager}
+    {
+    }
+
+    ServiceDataStorage& GetServiceDataStorage() const noexcept
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_memory_manager_.storage_ != nullptr);
+        return *skeleton_memory_manager_.storage_;
+    }
+
+    score::memory::shared::ManagedMemoryResource& GetServiceDataStorageResource() const noexcept
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(skeleton_memory_manager_.storage_resource_ != nullptr);
+        return *skeleton_memory_manager_.storage_resource_;
+    }
+
+  private:
+    SkeletonMemoryManager& skeleton_memory_manager_;
+};
+
 class SkeletonAttorney
 {
   public:
@@ -70,13 +94,18 @@ class SkeletonAttorney
 
     score::cpp::optional<uintptr_t> GetEventMetaInfoAddress(const ElementFqId element_fq_id) const noexcept
     {
-        auto search = skeleton_.storage_->events_metainfo_.find(element_fq_id);
-        if (search == skeleton_.storage_->events_metainfo_.cend())
+        SkeletonMemoryManagerTestAttorney skeleton_memory_manager_attorney{skeleton_.memory_manager_};
+
+        auto& service_data_storage = skeleton_memory_manager_attorney.GetServiceDataStorage();
+        auto search = service_data_storage.events_metainfo_.find(element_fq_id);
+        if (search == service_data_storage.events_metainfo_.cend())
         {
             return {};
         }
         void* const meta_info_address = &search->second;
-        return memory::shared::SubtractPointersBytes(meta_info_address, skeleton_.storage_resource_->getBaseAddress());
+
+        const auto& service_data_storage_resource = skeleton_memory_manager_attorney.GetServiceDataStorageResource();
+        return memory::shared::SubtractPointersBytes(meta_info_address, service_data_storage_resource.getBaseAddress());
     }
 
   private:

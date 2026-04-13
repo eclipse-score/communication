@@ -47,7 +47,12 @@ int run_service(const std::chrono::milliseconds& cycle_time, const score::cpp::s
 
     TestDataSkeleton& lola_service{service_result.value()};
 
-    lola_service.test_field.Update(kTestValue);
+    const auto update_result = lola_service.test_field.Update(kTestValue);
+    if (!update_result.has_value())
+    {
+        std::cerr << "Unable to update test field: " << update_result.error() << ", bailing!\n";
+        return -6;
+    }
     const auto offer_result = lola_service.OfferService();
     if (!offer_result.has_value())
     {

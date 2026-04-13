@@ -44,12 +44,15 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
         // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
         UserData& GetUserData() noexcept override;
 
-        score::cpp::expected_blank<score::os::Error> Reply(score::cpp::span<const std::uint8_t> message) noexcept override;
-        score::cpp::expected_blank<score::os::Error> Notify(score::cpp::span<const std::uint8_t> message) noexcept override;
+        score::cpp::expected_blank<score::os::Error> Reply(
+            score::cpp::span<const std::uint8_t> message) noexcept override;
+        score::cpp::expected_blank<score::os::Error> Notify(
+            score::cpp::span<const std::uint8_t> message) noexcept override;
         void RequestDisconnect() noexcept override;
 
         // ResourceManagerConnection methods
-        bool ProcessInput(const std::uint8_t code, const score::cpp::span<const std::uint8_t> message) noexcept override;
+        bool ProcessInput(const std::uint8_t code,
+                          const score::cpp::span<const std::uint8_t> message) noexcept override;
         bool HasSomethingToRead() noexcept override;
         std::int32_t ProcessReadRequest(resmgr_context_t* const ctp) noexcept override;
         void ProcessDisconnect() noexcept override;
@@ -90,7 +93,9 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
             score::cpp::pmr::vector<std::uint8_t> message;
             std::uint8_t code;
         };
+        std::mutex send_mutex_;  // protects access to send_queue_ if Reply() or Notify() are called from other thead
         SendMessage reply_message_;
+        std::size_t max_notify_size_;
         score::cpp::pmr::vector<SendMessage> notify_storage_;
         // coverity[autosar_cpp14_a2_10_6_violation] false-positive: there is nothing with the same name
         score::containers::intrusive_list<SendMessage> notify_pool_;
@@ -109,10 +114,11 @@ class QnxDispatchServer final : public IServer, private QnxDispatchEngine::Resou
     QnxDispatchServer& operator=(QnxDispatchServer&&) = delete;
 
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
-    score::cpp::expected_blank<score::os::Error> StartListening(ConnectCallback connect_callback,
-                                                       DisconnectCallback disconnect_callback,
-                                                       MessageCallback sent_callback,
-                                                       MessageCallback sent_with_reply_callback) noexcept override;
+    score::cpp::expected_blank<score::os::Error> StartListening(
+        ConnectCallback connect_callback,
+        DisconnectCallback disconnect_callback,
+        MessageCallback sent_callback,
+        MessageCallback sent_with_reply_callback) noexcept override;
 
     void StopListening() noexcept override;
 

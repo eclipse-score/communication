@@ -43,15 +43,14 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
   protected:
     TransactionLogSetFixture& WithATransactionLogSet(std::size_t number_of_logs)
     {
-        unit_ = std::make_unique<TransactionLogSet>(
-            number_of_logs, kDummyNumberOfSlots, memory_resource_.getMemoryResourceProxy());
+        unit_ = std::make_unique<TransactionLogSet>(number_of_logs, kDummyNumberOfSlots, memory_resource_);
         return *this;
     }
 
     TransactionLog::DereferenceSlotCallback GetDereferenceSlotCallbackWrapper() noexcept
     {
-        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only stores a
-        // pointer to the MockFunction and therefore fits within the score::cpp::callback.
+        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only
+        // stores a pointer to the MockFunction and therefore fits within the score::cpp::callback.
         return [this](const TransactionLog::SlotIndexType slot_index) noexcept {
             dereference_slot_callback_.AsStdFunction()(slot_index);
         };
@@ -59,8 +58,8 @@ class TransactionLogSetFixture : public TransactionLogSetHelperFixture
 
     TransactionLog::UnsubscribeCallback GetUnsubscribeCallbackWrapper() noexcept
     {
-        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only stores a
-        // pointer to the MockFunction and therefore fits within the score::cpp::callback.
+        // Since a MockFunction doesn't fit within an score::cpp::callback, we wrap it in a smaller lambda which only
+        // stores a pointer to the MockFunction and therefore fits within the score::cpp::callback.
         return [this](const TransactionLog::MaxSampleCountType subscription_max_sample_count) noexcept {
             unsubscribe_callback_.AsStdFunction()(subscription_max_sample_count);
         };
@@ -499,8 +498,8 @@ TEST_F(TransactionLogSetRegisterFixture, CallingUnRegisterWillRemoveSkeletonTran
     EXPECT_FALSE(TransactionLogSetAttorney{*unit_}.GetSkeletonTransactionLog().has_value());
 }
 
-/// TransactionLogNode::Reset() currently asserts (SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE), when called while containing
-/// transactions. So in this is a DEATH_TEST ensuring that the assert is hit and program terminates.
+/// TransactionLogNode::Reset() currently asserts (SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE), when called while
+/// containing transactions. So in this is a DEATH_TEST ensuring that the assert is hit and program terminates.
 /// Currently test is needed for full code coverage.
 using TransactionLogSetRegisterFixtureDeathTest = TransactionLogSetRegisterFixture;
 TEST_F(TransactionLogSetRegisterFixtureDeathTest, CallingUnRegisterWhileTransactionLogContainsTransactionsAsserts)

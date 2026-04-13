@@ -1,0 +1,7 @@
+{
+  "appId": "MBAT",
+  "appDesc": "basic_acceptance_test",
+  "logLevel": "kDebug",
+  "logLevelThresholdConsole": "kDebug",
+  "logMode": "kRemote|kConsole"
+}

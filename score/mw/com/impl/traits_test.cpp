@@ -314,8 +314,8 @@ TEST_F(GeneratedProxyCreationTestFixture, CallingSubscribeOnServiceElementsDispa
     auto& unit = proxy_result.value();
 
     // When calling subscribe on each event / field
-    unit.some_event.Subscribe(1);
-    unit.some_field.Subscribe(1);
+    std::ignore = unit.some_event.Subscribe(1);
+    std::ignore = unit.some_field.Subscribe(1);
 }
 
 TEST(GeneratedProxyFindServiceTest, GeneratedProxyUsesProxyBaseFindServiceWithInstanceSpecifier)
@@ -820,14 +820,14 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
     auto& unit = skeleton_result.value();
 
     // and updating the field value
-    unit.some_field.Update(field_value);
+    std::ignore = unit.some_field.Update(field_value);
 
     // and offering the service
     const auto result = unit.OfferService();
     EXPECT_TRUE(result.has_value());
 
     // and sending a new event value
-    unit.some_event.Send(event_value);
+    std::ignore = unit.some_event.Send(event_value);
 
     // Then we don't crash
 }

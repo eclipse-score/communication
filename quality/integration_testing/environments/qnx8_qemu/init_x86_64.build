@@ -32,10 +32,25 @@
     SYSNAME=nto
     TERM=qansi
 
-    # Open serial console for stdout/stderr/stdin
-    devc-ser8250 &
+    # Open serial console for stdout/stderr/stdin.
+    # Explicitly list all four COM ports so the driver creates
+    # /dev/ser1 – /dev/ser4.  COM1 is the interactive console;
+    # COM2-COM4 are dedicated process output channels backed by
+    # QEMU -serial unix: sockets on the host.
+    devc-ser8250 -e 3f8,4 2f8,3 3e8,4 2e8,3 &
     waitfor /dev/ser1
     reopen /dev/ser1
+
+    # Wait for extra serial ports used as dedicated process
+    # output channels by the test harness.
+    waitfor /dev/ser2
+    waitfor /dev/ser3
+    waitfor /dev/ser4
+
+    # Start random number generator service (provides /dev/urandom
+    # needed by C++ std::random_device and other consumers).
+    random &
+    waitfor /dev/urandom
 
     # Enable logging via slogger2
     slogger2 -m -s 253952 -G 7 -V -g 486
@@ -74,17 +89,22 @@ libc++.so.2                              # C++ standard library
 libc.so                                  # C standard library (essential)
 libc.so.6                                # Main C library (malloc, printf, file I/O, etc.)
 libcam.so.2                              # CAM library for device access
+libcrypto.so.3                           # OpenSSL 3 crypto library (needed by qcrypto-openssl-3 plugin)
 libfsnotify.so.1                         # File system notification library
 libgcc_s.so.1                            # GCC runtime support library
 libm.so                                  # Math library
 libqcrypto.so.1.0                        # QNX cryptographic library
-libqh.so                                 # QNX helper library
+libqh.so.1                               # QNX helper library
 libqnxnoexcept.so=${QNXNOEXCEPT_LIBRARY}
 libregex.so.1                            # Regular expression library
 libsecpol.so.1                           # Security policy library
 libslog2.so.1                            # System logging library (slog2_* functions)
 libslog2parse.so.1                       # System log parsing library
+libsocket.so.4                           # Socket library (needed by libcrypto)
 libz.so                                  # Zlib compression library
+
+# qcrypto plugin loaded by the random service at runtime
+[search=${QNX_TARGET}/x86_64/lib/dll] qcrypto-openssl-3.so
 
 [type=link] /bin/sh=/proc/boot/ksh       # Create symbolic link: sh -> ksh (standard shell link)
 [type=link] /bin/ls=/proc/boot/ls        # Link ls to IFS version for compatibility
@@ -193,6 +213,7 @@ toybox                                   # Minimal Unix utilities collection (re
 [type=link] ability=on                   # Create symbolic link: ability -> on (manages process abilities/privileges)
 [type=link] setconf=getconf              # Create symbolic link: setconf -> getconf (sets configuration parameters)
 [type=link] libslog2.so=libslog2.so.1    # Create version-neutral symbolic link
+[type=link] libqh.so=libqh.so.1          # Create version-neutral symbolic link
 
 #############################################
 ### Tools ###
@@ -208,9 +229,15 @@ on                                                                              
 pdebug                                                                          # Process debugger
 pidin                                                                           # Process information display - shows running processes (like 'ps' on Linux)
 pipe                                                                            # Named pipe manager
+random                                                                          # Random number generator service (/dev/random, /dev/urandom)
 slay                                                                            # Kill or modify a process by name or ID
 slog2info                                                                       # System log viewer - displays logged messages
 slogger2                                                                        # System logging daemon - collects and manages log messages
 
 # Package provided filesystem to root
 /=${FOLDER}
+
+# QEMU environment configuration (qcrypto.conf for the random service)
+/etc/qcrypto.conf=${QEMU_CONFIG}/etc/qcrypto.conf
+
+

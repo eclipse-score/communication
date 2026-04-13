@@ -31,7 +31,7 @@ class UnixDomainServerFactory final : public IServerFactory
     ~UnixDomainServerFactory() noexcept;
 
     score::cpp::pmr::unique_ptr<IServer> Create(const ServiceProtocolConfig& protocol_config,
-                                         const ServerConfig& server_config) noexcept override;
+                                                const ServerConfig& server_config) noexcept override;
 
     std::shared_ptr<UnixDomainEngine> GetEngine() const noexcept
     {

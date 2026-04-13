@@ -98,11 +98,11 @@ inline std::tuple<EventControl*, EventDataStorage<SampleType>*> FakeServiceData:
                                               std::forward_as_tuple(event_properties.number_of_slots,
                                                                     event_properties.max_subscribers,
                                                                     event_properties.enforce_max_samples,
-                                                                    control_memory->getMemoryResourceProxy()));
+                                                                    *control_memory));
     auto& event_control = std::get<EventControl>(*inserted_control);
 
-    EventDataStorage<SampleType>* event_data_slots = data_memory->construct<EventDataStorage<SampleType>>(
-        event_properties.number_of_slots, data_memory->getMemoryResourceProxy());
+    EventDataStorage<SampleType>* event_data_slots =
+        data_memory->construct<EventDataStorage<SampleType>>(event_properties.number_of_slots, *data_memory);
     const memory::shared::OffsetPtr<void> rel_event_data_buffer{static_cast<void*>(event_data_slots)};
     data_storage->events_.emplace(id, rel_event_data_buffer);
 

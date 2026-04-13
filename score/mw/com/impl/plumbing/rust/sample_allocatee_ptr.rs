@@ -37,7 +37,7 @@ struct EventDataControlComposite {
 struct LolaSampleAllocateePtrBinding<T> {
     _managed_object: *mut T,
     _event_slot_indicator: ControlSlotCompositeIndicator,
-    _event_data_control: CxxOptional<EventDataControlComposite>,
+    _event_data_control: CxxOptional<EventDataControlComposite<>>,
 }
 
 #[repr(C)]
@@ -68,7 +68,7 @@ struct AllocationVariant<T> {
     _index: u8,
 }
 
-#[repr(C)]
+#[repr(C, align(16))]
 pub struct SampleAllocateePtr<T> {
     _internal: AllocationVariant<T>,
 }

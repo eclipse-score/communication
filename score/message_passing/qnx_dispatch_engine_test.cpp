@@ -160,7 +160,8 @@ TEST_F(QnxDispatchEngineDeathTest, EngineCreation_CreateTimer)
     EXPECT_CALL(*timer_, TimerCreate).Times(AnyNumber()).WillOnce(Return(kFakeOsError));
 
     std::optional<QnxDispatchEngine> engine;
-    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()), "Unable to create timer");
+    EXPECT_DEATH(engine.emplace(score::cpp::pmr::get_default_resource(), MoveMockOsResources()),
+                 "Unable to create timer");
 }
 
 TEST_F(QnxDispatchEngineDeathTest, EngineCreation_SetUpResourceManager)
@@ -411,6 +412,7 @@ TEST_F(QnxDispatchEngineTestFixture, ServerIoMsgSuccessScenarios)
         {
             _io_msg hdr;
             sigevent select_event;
+            sigevent ping_event;
         };
 
         InSequence is;
@@ -453,9 +455,9 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpoint)
 {
     WithEngineRunning();
 
-    EXPECT_CALL(*channel_, MsgRegisterEvent).Times(1);
+    EXPECT_CALL(*channel_, MsgRegisterEvent).Times(2);
     EXPECT_CALL(*channel_, MsgSend).Times(1);
-    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(1);
+    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(2);
 
     // use the engine-provided way to run the code on the requirered thread
     ISharedResourceEngine::CommandQueueEntry command;
@@ -498,9 +500,9 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointEventFailures)
 
     WithEngineRunning(std::move(logger));
 
-    EXPECT_CALL(*channel_, MsgRegisterEvent).Times(1).WillOnce(Return(kFakeOsError));
+    EXPECT_CALL(*channel_, MsgRegisterEvent).Times(2).WillRepeatedly(Return(kFakeOsError));
     EXPECT_CALL(*channel_, MsgSend).Times(1).WillOnce(Return(kFakeOsError));
-    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(1);
+    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(2);
 
     // use the engine-provided way to run the code on the requirered thread
     ISharedResourceEngine::CommandQueueEntry command;
@@ -520,7 +522,7 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointEventFailures)
         this);
     done.get_future().wait();
 
-    EXPECT_EQ(register_error_counter, 1);
+    EXPECT_EQ(register_error_counter, 2);
     EXPECT_EQ(send_error_counter, 1);
 }
 
@@ -546,9 +548,9 @@ TEST_F(QnxDispatchEngineTestFixture, PosixEndpointCoidDeathPulse)
 
     WithEngineRunning(std::move(logger));
 
-    EXPECT_CALL(*channel_, MsgRegisterEvent).Times(1);
+    EXPECT_CALL(*channel_, MsgRegisterEvent).Times(2);
     EXPECT_CALL(*channel_, MsgSend).Times(1);
-    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(1);
+    EXPECT_CALL(*channel_, MsgUnregisterEvent).Times(2);
 
     EXPECT_CALL(*channel_, ConnectServerInfo)
         .WillOnce(Return(kTestCoid))

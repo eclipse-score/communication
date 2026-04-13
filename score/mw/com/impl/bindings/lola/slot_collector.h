@@ -13,13 +13,9 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_CLIENT_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_CLIENT_H
 
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control.h"
 #include "score/mw/com/impl/bindings/lola/event_slot_status.h"
-#include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
-
-#include "score/mw/com/impl/com_error.h"
 
 #include <functional>
 #include <vector>

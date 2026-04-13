@@ -13,6 +13,7 @@
 #include "score/mw/com/impl/configuration/config_parser.h"
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/assert_support.hpp>
 
@@ -140,7 +141,8 @@ TEST_F(ConfigParserFixture, InvalidPathWillDie)
 
     // When parsing the JSON
     // That the application will terminate
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(invalid_path)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::mw::com::impl::configuration::Parse(std::move(invalid_path)));
 }
 
 TEST_F(ConfigParserFixture, NoServiceInstanceWillDie)
@@ -2276,14 +2278,14 @@ TEST_P(InvalidProcessAsil, DieOnInvalidAsil)
 {
     score::json::JsonParser json_parser_obj;
     json::Any json{json_parser_obj.FromBuffer(GetParam()).value()};
-#if defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-value"  // Comming from gtest, try removing when gtest 1.12 or higher
-#endif
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{score::mw::com::impl::configuration::Parse(std::move(json))});
-#if defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
+
+    DISABLE_WARNING_PUSH
+    DISABLE_WARNING_UNUSED_VALUE  // Comming from gtest, try removing when gtest 1.12 or higher
+
+        SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+            Configuration{score::mw::com::impl::configuration::Parse(std::move(json))});
+
+    DISABLE_WARNING_POP
 }
 
 std::string inconsistent_asil_config = R"json(
@@ -2339,14 +2341,13 @@ TEST_P(InvalidMsgQueueSizeFixture, DieOnInvalidMessageQueueSize)
 {
     score::json::JsonParser json_parser_obj;
     json::Any json{json_parser_obj.FromBuffer(GetParam()).value()};
-#if defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-value"  // Comming from gtest, try removing when gtest 1.12 or higher
-#endif
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{configuration::Parse(std::move(json))});
-#if defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
+
+    DISABLE_WARNING_PUSH
+    DISABLE_WARNING_UNUSED_VALUE  // Comming from gtest, try removing when gtest 1.12 or higher
+
+        SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Configuration{configuration::Parse(std::move(json))});
+
+    DISABLE_WARNING_POP
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -2525,7 +2526,8 @@ TEST(ConfigParser, TerminateOnParsingSomeIP)
 
     // When parsing such a configuration
     // Fail and abort
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(json).value()));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::mw::com::impl::configuration::Parse(std::move(json).value()));
 }
 
 class ShmSizeCalcMode : public ::testing::TestWithParam<std::tuple<std::string, ShmSizeCalculationMode>>
@@ -3248,8 +3250,8 @@ TEST(ConfigParserTracing, NotProvidingServiceElementEnabledDisablesServiceElemen
 }
 
 score::json::Any generate_config_json(const std::string& instance_specifier,
-                                    const std::string& field_name,
-                                    const std::string& number_of_tracing_slots)
+                                      const std::string& field_name,
+                                      const std::string& number_of_tracing_slots)
 {
     std::stringstream config_json_strstr;
     config_json_strstr << R"(
@@ -3347,7 +3349,8 @@ TEST(TracingFilterConfigGetNumberOfTraceingSlots, FailParsingAJsonContainingNumb
     auto config_json = generate_config_json(instance_specifier_str, field_name_str, "256");
 
     // Then Expect parsing to fail
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(config_json)));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
+        score::mw::com::impl::configuration::Parse(std::move(config_json)));
 }
 
 TEST_F(ConfigParserFixture, DuplicateServiceInstanceEventsWillDie)
@@ -4690,8 +4693,9 @@ TEST_F(ConfigParserFixture, ParseWithMalformedAllowedUserHandledGracefully)
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_allowed_user)); });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
+        score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_allowed_user));
+    });
 }
 
 TEST_F(ConfigParserFixture, ParseWithMalformedPermissionChecksHandledGracefully)
@@ -4717,8 +4721,9 @@ TEST_F(ConfigParserFixture, ParseWithMalformedPermissionChecksHandledGracefully)
 
     // When parsing the JSON
     // Then it shall issue a contract violation
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        { score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_permissions)); });
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED({
+        score::cpp::ignore = score::mw::com::impl::configuration::Parse(std::move(config_with_invalid_permissions));
+    });
 }
 
 }  // namespace

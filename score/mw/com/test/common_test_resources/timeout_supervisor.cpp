@@ -13,85 +13,42 @@
 
 #include "score/mw/com/test/common_test_resources/timeout_supervisor.h"
 
-#include <sys/types.h>
-#include <chrono>
-#include <iostream>
-#include <mutex>
+#include "score/concurrency/timed_executor/delayed_task.h"
 
 namespace score::mw::com::test
 {
 
-TimeoutSupervisor::TimeoutSupervisor()
-    : timeout_{}, shutdown_{false}, supervision_thread_{&TimeoutSupervisor::Supervision, this}
-{
-}
-
 TimeoutSupervisor::~TimeoutSupervisor()
 {
-    {
-        std::lock_guard<std::mutex> lock_guard{mutex_};
-        shutdown_ = true;
-    }
-
-    cond_var_.notify_one();
-    supervision_thread_.join();
+    const std::scoped_lock lock{mutex_};
+    abort_source_.request_stop();
+    executor_.Shutdown();
 }
 
 void TimeoutSupervisor::StartSupervision(std::chrono::milliseconds timeout_milliseconds,
                                          score::cpp::callback<void(void)> timeout_callback)
 {
-    {
-        std::lock_guard<std::mutex> lock_guard{mutex_};
-        timeout_callback_ = std::move(timeout_callback);
-        if (timeout_.has_value())
-        {
-            std::cerr << "Error: Calling StartSupervision() although it is currently running. Stop it first!"
-                      << std::endl;
-        }
-        timeout_ = timeout_milliseconds;
-    }
-    cond_var_.notify_one();
+    const std::scoped_lock lock{mutex_};
+    auto abort_token = abort_source_.get_token();
+    auto task = score::concurrency::DelayedTaskFactory::Make<std::chrono::steady_clock>(
+        score::cpp::pmr::new_delete_resource(),
+        std::chrono::steady_clock::now() + timeout_milliseconds,
+        [abort_token, timeout_callback = std::move(timeout_callback)](const auto& stop_token, auto) -> void {
+            if (stop_token.stop_requested() || abort_token.stop_requested())
+            {
+                return;
+            }
+
+            timeout_callback();
+        });
+    executor_.Post(std::move(task));
 }
 
 void TimeoutSupervisor::StopSupervision()
 {
-    {
-        std::lock_guard<std::mutex> lock_guard{mutex_};
-        timeout_.reset();
-    }
-
-    cond_var_.notify_one();
-}
-
-void TimeoutSupervisor::Supervision()
-{
-    while (!shutdown_)
-    {
-        std::unique_lock lk(mutex_);
-        if (!timeout_.has_value())
-        {
-            cond_var_.wait(lk, [this]() {
-                return (shutdown_ || timeout_.has_value());
-            });
-        }
-        else
-        {
-            auto status = cond_var_.wait_for(lk, std::chrono::milliseconds{timeout_.value()});
-            lk.unlock();
-            if (status == std::cv_status::timeout)
-            {
-                if (!timeout_callback_.empty())
-                {
-                    timeout_callback_();
-                }
-                else
-                {
-                    std::cerr << "TimeoutSupervisor: Error - Empty timeout_callback_ in TimeoutSupervisor!"
-                              << std::endl;
-                }
-            }
-        }
-    }
+    const std::scoped_lock lock{mutex_};
+    abort_source_.request_stop();
+    abort_source_ = score::cpp::stop_source{};
 }
 
 }  // namespace score::mw::com::test

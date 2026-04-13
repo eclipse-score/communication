@@ -647,7 +647,7 @@ TYPED_TEST(AServiceElement,
     this->ThatCapturesTheReceiveHandlerGivenToBinding().WithAReceiveHandler();
 
     // When un-setting the receive-handler
-    this->service_element_->UnsetReceiveHandler();
+    std::ignore = this->service_element_->UnsetReceiveHandler();
 
     // Then the binding can't lock successfully its weak_ptr again.
     auto binding_event_receive_handler_weak_ptr = this->GetBindingDependentHandler();

@@ -15,10 +15,10 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
-#include "score/mw/com/impl/bindings/lola/methods/proxy_instance_identifier.h"
-#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
+#include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
@@ -98,7 +98,7 @@ class FakeMethodData
             score::cpp::ignore = method_data_.method_call_queues_.emplace_back(
                 std::piecewise_construct,
                 std::forward_as_tuple(method_id),
-                std::forward_as_tuple(*memory_resource_.getMemoryResourceProxy(), type_erased_element_info));
+                std::forward_as_tuple(memory_resource_, type_erased_element_info));
         }
     }
 
@@ -119,14 +119,14 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
         foo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, foo_element_fq_id);
         dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_element_fq_id);
 
-        foo_method_->RegisterHandler(
-            [this](std::optional<score::cpp::span<std::byte>> in_args, std::optional<score::cpp::span<std::byte>> return_arg) {
-                std::invoke(foo_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
-            });
-        dumb_method_->RegisterHandler(
-            [this](std::optional<score::cpp::span<std::byte>> in_args, std::optional<score::cpp::span<std::byte>> return_arg) {
-                std::invoke(dumb_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
-            });
+        std::ignore = foo_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
+                                                          std::optional<score::cpp::span<std::byte>> return_arg) {
+            std::invoke(foo_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
+        });
+        std::ignore = dumb_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
+                                                           std::optional<score::cpp::span<std::byte>> return_arg) {
+            std::invoke(dumb_mock_type_erased_callback_.AsStdFunction(), in_args, return_arg);
+        });
     }
 
   public:
@@ -461,9 +461,9 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferExpiresScopeOfMethodCall
     // and given that the registered method subscribed handler is called
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // and given that PrepareStopOffer was called
     skeleton_->PrepareStopOffer({});
@@ -502,9 +502,9 @@ TEST_F(SkeletonPrepareStopOfferFixture, PrepareStopOfferDestroysPointerToSharedM
     // When calling the registered method subscribed handler which will open the shared memory region
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // When calling PrepareStopOffer
     const auto shm_resource_ref_counter_after_opening = mock_method_memory_resource_qm_.use_count();
@@ -667,9 +667,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingOpensShmIfAlreadyCalled
     // Given that the registered method subscribed handler was called once
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceCounter and PID but a different application ID
@@ -698,9 +698,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
     // Given that the registered method subscribed handler was called once
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // application ID and PID but a different ProxyInstanceCounter
@@ -727,9 +727,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
     // Given that the registered method subscribed handler was called once
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceIdentifier but a different PID
@@ -752,9 +752,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingDoesNotOpenShmIfAlready
     // Given that the registered method subscribed handler was called once
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceIdentifier and the same PID
@@ -784,9 +784,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRemovesOldRegionsFromCa
     // Given that the registered method subscribed handler was called once
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // When calling the registered method subscribed handler with a ProxyInstanceIdentifier containing the same
     // ProxyInstanceIdentifier and a different PID
@@ -842,9 +842,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingRegistersAMethodCallHan
     // When calling the registered method subscribed handler
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingQmOpensSharedMemoryWithProxyUidAsAllowedProvider)
@@ -908,9 +908,9 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingStoresSharedMemoryInCla
     // When calling the registered method subscribed handler
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
     score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                              proxy_instance_identifier_qm_,
-                              test::kAllowedQmMethodConsumer,
-                              kDummyPid);
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
 
     // Then the reference counter for the methods SharedMemoryResource should be incremented, indicating that it's
     // been stored in the Skeleton's state
@@ -947,10 +947,11 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture, FailingToGetUsableBaseAddressF
     // When calling the registered method subscribed handler
     // Then the program terminates
     ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
-                                                           proxy_instance_identifier_qm_,
-                                                           test::kAllowedQmMethodConsumer,
-                                                           kDummyPid));
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                                                      proxy_instance_identifier_qm_,
+                                                                      test::kAllowedQmMethodConsumer,
+                                                                      kDummyPid));
 }
 
 TEST_F(SkeletonOnServiceMethodsSubscribedFixture, CallingAsilQmWithoutInArgsOrReturnStillOpensSharedMemory)

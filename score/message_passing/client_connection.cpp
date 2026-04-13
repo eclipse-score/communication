@@ -109,7 +109,8 @@ bool ClientConnection::TryQueueMessage(score::cpp::span<const std::uint8_t> mess
     return true;
 }
 
-score::cpp::expected_blank<score::os::Error> ClientConnection::Send(score::cpp::span<const std::uint8_t> message) noexcept
+score::cpp::expected_blank<score::os::Error> ClientConnection::Send(
+    score::cpp::span<const std::uint8_t> message) noexcept
 {
     if (message.size() > max_send_size_)
     {
@@ -169,7 +170,8 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
     score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> result{};
     NonAllocatingFuture future(send_mutex_, send_condition_, result);
 
-    auto callback = [&reply, &future](score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
+    auto callback = [&reply, &future](
+                        score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> message_expected) {
         if (!message_expected.has_value())
         {
             future.UpdateValueMarkReady(score::cpp::make_unexpected(message_expected.error()));
@@ -232,8 +234,9 @@ score::cpp::expected<score::cpp::span<const std::uint8_t>, score::os::Error> Cli
     return result;
 }
 
-score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(score::cpp::span<const std::uint8_t> message,
-                                                                       ReplyCallback callback) noexcept
+score::cpp::expected_blank<score::os::Error> ClientConnection::SendWithCallback(
+    score::cpp::span<const std::uint8_t> message,
+    ReplyCallback callback) noexcept
 {
     if (message.size() > max_send_size_)
     {
@@ -351,7 +354,7 @@ void ClientConnection::TryConnect() noexcept
 {
     // The order of access to these atomics is important, as stop_reason_ can change in background
     SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(((stop_reason_ == StopReason::kNone) && (state_ == State::kStarting)) ||
-                   ((state_ == State::kStopping) && (stop_reason_ == StopReason::kUserRequested)));
+                                        ((state_ == State::kStopping) && (stop_reason_ == StopReason::kUserRequested)));
 
     auto& logger = engine_->GetLogger();
 
@@ -406,6 +409,12 @@ void ClientConnection::TryConnect() noexcept
         {
             ProcessStateChange(State::kStopping);
             engine_->UnregisterPosixEndpoint(posix_endpoint_);
+        }
+    };
+    posix_endpoint_.ping = [this]() noexcept {
+        if (!notify_callback_.empty())
+        {
+            notify_callback_({});
         }
     };
     posix_endpoint_.output = {};
@@ -519,8 +528,8 @@ void ClientConnection::ProcessSendQueueUnderLock(std::unique_lock<std::mutex>& l
             // temporarily, as the other side of SendProtocolMessage is not under our control and it may cause
             // indefinite delay.
             lock.unlock();
-            const auto expected =
-                engine_->SendProtocolMessage(client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
+            const auto expected = engine_->SendProtocolMessage(
+                client_fd_, score::cpp::to_underlying(ClientToServer::REQUEST), send.message);
             lock.lock();
             if (expected.has_value())
             {

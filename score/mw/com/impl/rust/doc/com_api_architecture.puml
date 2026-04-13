@@ -1,0 +1,194 @@
+@startuml
+
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' <https://www.apache.org/licenses/LICENSE-2.0>
+'
+' SPDX-License-Identifier: Apache-2.0
+
+interface Deref<Target>
+
+interface DerefMut<Target>
+
+interface Builder<Output>{
+    + build()
+}
+
+interface CommData {
+    const ID: &'static str
+    ---
+    extend Reloc + Send + Debug + 'static
+}
+
+class InstanceSpecifier{
+    + new()
+}
+
+enum FindServiceSpecifier {
+    Specific(InstanceSpecifier)
+    Any
+}
+
+interface Runtime {
+    type ServiceDiscovery<I: Interface>
+    type Subscriber<T: CommData>
+    type ProducerBuilder<I: Interface>
+    type Publisher<T: CommData>
+    type ProviderInfo
+    type ConsumerInfo
+    ---
+    + find_service()
+    + producer_builder()
+}
+
+interface RuntimeBuilder<B: Runtime> {
+    + load_config()
+}
+
+interface ProviderInfo {
+    + offer_service()
+    + stop_offer_service()
+}
+
+interface ConsumerInfo
+
+interface Sample<T: CommData>
+
+interface SampleMut<T: CommData> {
+    + send()
+}
+
+interface SampleMaybeUninit<T: CommData> {
+    + assume_init()
+    + write()
+    + write_default()
+}
+
+interface PlacementDefault {
+    + placement_default()
+}
+
+interface Producer<R: Runtime + ?Sized> {
+    type Interface: Interface
+    type OfferedProducer: OfferedProducer<R>
+    ---
+    + offer()
+    + new()
+}
+
+interface OfferedProducer<R: Runtime + ?Sized> {
+    type Interface: Interface
+    type Producer: Producer<R>
+    ---
+    + unoffer()
+}
+
+interface ProducerBuilder<I: Interface, R: Runtime + ?Sized>
+
+interface Publisher<T: CommData, R: Runtime + ?Sized> {
+    + allocate()
+    + send()
+    + new()
+}
+
+interface Interface {
+    const INTERFACE_ID: &'static str
+    ---
+    type Consumer<R: Runtime + ?Sized>: Consumer<R>
+    type Producer<R: Runtime + ?Sized>: Producer<R>
+}
+
+interface Consumer<R: Runtime + ?Sized> {
+    + new()
+}
+
+interface ServiceDiscovery<I: Interface, R: Runtime + ?Sized> {
+    type ConsumerBuilder: ConsumerBuilder<I, R>
+    type ServiceEnumerator: IntoIterator<Item=ConsumerBuilder>
+    ---
+    + get_available_instances()
+    + get_available_instances_async()
+}
+
+interface ConsumerDescriptor<R: Runtime + ?Sized> {
+    + get_instance_identifier()
+}
+
+interface ConsumerBuilder<I: Interface, R: Runtime + ?Sized>
+
+interface Subscriber<T: CommData, R: Runtime + ?Sized> {
+    type Subscription: Subscription<T, R>
+    ---
+    + new()
+    + subscribe()
+}
+
+interface Subscription<T: CommData, R: Runtime + ?Sized> {
+    type Subscriber: Subscriber<T, R>
+    type Sample<'a>: Sample<T> where Self: 'a
+    ---
+    + unsubscribe()
+    + try_receive()
+    + receive()
+}
+
+class SampleContainer<S> {
+    + new()
+    + iter()
+    + pop_front()
+    + push_back()
+    + sample_count()
+    + front()
+}
+
+Runtime --> ServiceDiscovery : provides
+Runtime --> Subscriber : provides
+Runtime --> ProducerBuilder : provides
+Runtime --> Publisher : provides
+Runtime --> ProviderInfo : defines
+Runtime --> ConsumerInfo : defines
+Runtime --> FindServiceSpecifier : uses
+
+RuntimeBuilder --|> Builder
+
+InstanceSpecifier <.. FindServiceSpecifier : component
+
+Producer --> Interface : implements
+Producer --> OfferedProducer : offer()
+OfferedProducer --> Producer : unoffer()
+
+ProducerBuilder --|> Builder
+ProducerBuilder --> Producer : builds
+
+Publisher --> SampleMaybeUninit : allocate()
+
+Interface --> Producer : defines
+Interface --> Consumer : defines
+
+ServiceDiscovery --> ConsumerBuilder : provides
+ServiceDiscovery --> InstanceSpecifier : uses
+ServiceDiscovery --> FindServiceSpecifier : uses
+
+ConsumerBuilder --|> ConsumerDescriptor
+ConsumerBuilder --|> Builder
+ConsumerBuilder --> Consumer : builds
+
+ConsumerDescriptor --> InstanceSpecifier : provides
+
+Subscriber --> Subscription : subscribe()
+Subscription --> Subscriber : unsubscribe()
+Subscription --> SampleContainer : uses
+SampleContainer --> Sample : stores
+
+Deref <|-- Sample
+DerefMut <|-- SampleMut
+
+SampleMaybeUninit --> SampleMut : builds
+SampleMaybeUninit --> PlacementDefault : write_default()
+
+@enduml

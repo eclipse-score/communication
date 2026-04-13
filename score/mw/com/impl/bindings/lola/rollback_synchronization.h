@@ -13,6 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_ROLLBACK_SYNCHRONIZATION_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_ROLLBACK_SYNCHRONIZATION_H
 
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
+
 #include <mutex>
 #include <ostream>
 #include <unordered_map>
@@ -20,8 +22,6 @@
 
 namespace score::mw::com::impl::lola
 {
-
-class ServiceDataControl;
 
 /// \brief Manages the synchronization, when multiple Proxy instances (ProxyElements) for the same service instance
 ///        within one LoLa process are going to initiate their Proxy transaction log rollback.
@@ -32,14 +32,14 @@ class ServiceDataControl;
 class RollbackSynchronization
 {
   public:
-    /// \brief Returns a mutex for the given proxy_element_control. Either an existing one or creates one, if not yet
-    ///        existent.
+    /// \brief Returns a mutex for the given skeleton_instance_identifier. Either an existing one or creates one, if not
+    ///        yet existent.
     /// \return a pair, consisting of a ref to the mutex for the given proxy_element_control and a bool, indicating,
     ///         whether the mutex already existed (true) or had been created within the call (false)
-    std::pair<std::mutex&, bool> GetMutex(const ServiceDataControl* proxy_element_control);
+    std::pair<std::mutex&, bool> GetMutex(const SkeletonInstanceIdentifier skeleton_instance_identifier);
 
   private:
-    std::unordered_map<const ServiceDataControl*, std::mutex> synchronisation_data_map_{};
+    std::unordered_map<SkeletonInstanceIdentifier, std::mutex> synchronisation_data_map_{};
     /// \brief mutex to synchronize access to synchronisation_data_map_
     std::mutex map_mutex_{};
 };

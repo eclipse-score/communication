@@ -35,8 +35,8 @@ FakeMockedServiceData::FakeMockedServiceData(const pid_t skeleton_process_pid_in
         std::make_shared<::testing::NiceMock<SharedMemoryResourceHeapAllocatorMock>>(kControlMemoryResourceId);
     data_memory = std::make_shared<::testing::NiceMock<SharedMemoryResourceHeapAllocatorMock>>(kDataMemoryResourceId);
 
-    data_control = control_memory->construct<ServiceDataControl>(control_memory->getMemoryResourceProxy());
-    data_storage = data_memory->construct<ServiceDataStorage>(data_memory->getMemoryResourceProxy());
+    data_control = control_memory->construct<ServiceDataControl>(*control_memory);
+    data_storage = data_memory->construct<ServiceDataStorage>(*data_memory);
 
     data_storage->skeleton_pid_ = skeleton_process_pid_in;
     data_storage->skeleton_uid_ = skeleton_uid_in;

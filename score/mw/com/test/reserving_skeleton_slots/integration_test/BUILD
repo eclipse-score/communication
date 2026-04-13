@@ -23,7 +23,7 @@ pkg_tar(
 
 integration_test(
     name = "reserving_skeleton_slots",
-    size = "small",
+    timeout = "moderate",
     srcs = ["test_reserving_skeleton_slots.py"],
     filesystem = ":filesystem",
 )

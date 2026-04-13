@@ -1,0 +1,94 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+name: Coverage Report
+
+on:
+  workflow_call:
+    outputs:
+      artifact-name:
+        description: 'Name of the coverage report artifact'
+        value: ${{ jobs.coverage-report.outputs.artifact-name }}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request'}}
+
+jobs:
+  coverage_report:
+    runs-on: ubuntu-24.04
+    outputs:
+      artifact-name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Free Disk Space (Ubuntu)
+        uses: eclipse-score/more-disk-space@v1
+        with:
+          level: 4
+
+      - name: Install lcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+
+      - name: Setup Bazel with shared caching
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: "coverage_report"
+          repository-cache: true
+          cache-save: ${{ github.event_name == 'merge_group' }}
+
+      - name: Allow linux-sandbox
+        uses: ./actions/unblock_user_namespace_for_linux_sandbox
+
+      - name: Run Unit Test with Coverage for C++
+        run: |
+          bazel coverage //... --build_tests_only
+
+      - name: Generate HTML Coverage Report
+        # FIXME: "--ignore-errors category,inconsistent" is a workaround to cope with gcov messing up hit counts because of internal data races
+        run: |
+          genhtml "$(bazel info output_path)/_coverage/_coverage_report.dat" \
+            -o=cpp_coverage \
+            --show-details \
+            --legend \
+            --function-coverage \
+            --branch-coverage \
+            --ignore-errors category,inconsistent
+
+      - name: Create archive of test report
+        run: |
+          mkdir -p artifacts
+          find bazel-testlogs/score/ -name 'test.xml' -print0 | xargs -0 -I{} cp --parents {} artifacts/
+          cp -r cpp_coverage artifacts/
+          zip -r ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip artifacts/
+        shell: bash
+
+      - name: Set artifact name
+        id: set-artifact-name
+        run: |
+          echo "artifact-name=${{ github.event.repository.name }}_coverage_report_${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-artifact-name.outputs.artifact-name }}
+          path: ${{ github.event.repository.name }}_coverage_report_${{ github.sha }}.zip
+
+

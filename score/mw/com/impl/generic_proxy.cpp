@@ -98,7 +98,8 @@ void GenericProxy::FillEventMap(const std::vector<std::string_view>& event_names
         {
             const auto emplace_result = events_.emplace(
                 std::piecewise_construct, std::forward_as_tuple(event_name), std::forward_as_tuple(*this, event_name));
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second, "Could not emplace GenericProxyEvent in map.");
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second,
+                                                        "Could not emplace GenericProxyEvent in map.");
         }
         else
         {

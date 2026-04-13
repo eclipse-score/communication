@@ -22,7 +22,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -83,7 +82,7 @@ TEST_F(SkeletonEventAllocateFixture, AllocateErrorLeadsToNullptr)
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
 
     // Given an offered event in an offered service
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
     std::vector<impl::SampleAllocateePtr<test::TestSampleType>> pointer_collection{max_samples_};
     for (std::size_t counter = 0; counter < max_samples_; ++counter)
     {
@@ -112,7 +111,7 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
 
     // When offering the event
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
     std::vector<impl::SampleAllocateePtr<test::TestSampleType>> pointer_collection{max_samples_};
     for (std::size_t counter = 0; counter < max_samples_; ++counter)
     {
@@ -133,7 +132,70 @@ TEST_F(SkeletonEventAllocateFixture, SkeletonEventWithNotMaxSamplesEnforcementAl
     EXPECT_EQ(allocate_result.error(), ComErrc::kBindingFailure);
 }
 
+TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCalls)
+{
+    RecordProperty("Description", "Checks that multiple calls to Allocate() return unique memory pointers.");
+    RecordProperty("TestType", "Unit Test");
+
+    const bool enforce_max_samples{true};
+    const size_t num_allocations = 3;
+    ASSERT_LE(num_allocations, max_samples_);
+
+    // Given an offered event
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+    skeleton_event_->PrepareOffer();
+
+    // When allocating multiple samples without sending them
+    std::vector<impl::SampleAllocateePtr<test::TestSampleType>> allocated_pointers;
+    std::vector<void*> raw_pointers;
+
+    for (size_t i = 0; i < num_allocations; ++i)
+    {
+        auto alloc_result = skeleton_event_->Allocate();
+        ASSERT_TRUE(alloc_result.has_value()) << "Allocation " << i << " failed";
+
+        // Store the raw pointer to check for uniqueness
+        raw_pointers.push_back(alloc_result.value().Get());
+
+        // Keep the SampleAllocateePtr alive to keep the slot busy
+        allocated_pointers.push_back(std::move(alloc_result.value()));
+    }
+
+    // Then all allocated raw pointers should be unique
+    std::sort(raw_pointers.begin(), raw_pointers.end());
+    auto it = std::unique(raw_pointers.begin(), raw_pointers.end());
+    EXPECT_EQ(it, raw_pointers.end()) << "Duplicate memory addresses were allocated.";
+}
+
 using SkeletonEventPrepareOfferFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventPrepareOfferFixture, RegisterEventNotificationExistenceChangedCallback)
+{
+    constexpr bool enforce_max_samples{true};
+    constexpr std::size_t max_samples{5U};
+
+    // Given a valid skeleton event with max. sample count of 5, which as per default enforces the max sample count
+    // in subscriptions.
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
+
+    // Expect, that it registers a callback for tracking changes of existence of event-notifications for QM
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .Times(1);
+
+    // Expect, that in case the service has ASIL-B quality, it also registers a callback for tracking changes of
+    // existence of event-notifications for ASIL-B
+    if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        EXPECT_CALL(
+            message_passing_mock_,
+            RegisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_B, fake_element_fq_id_, _))
+            .Times(1);
+    }
+
+    // When offering a skeleton event
+    std::ignore = skeleton_event_->PrepareOffer();
+}
+
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeProvided)
 {
     RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14137270, SCR-17292398, SCR-14033248");
@@ -152,7 +214,7 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeP
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
 
     // When offering a skeleton event
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
 
     auto* const event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
     ASSERT_NE(event_control, nullptr);
@@ -184,7 +246,7 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfMaxSubscriptionCo
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
 
     // When offering a skeleton event
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
 
     auto* const event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
     ASSERT_NE(event_control, nullptr);
@@ -215,7 +277,7 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionAcceptedIfOversubscriptionA
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
 
     // When offering a skeleton event
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
 
     auto* const event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
     ASSERT_NE(event_control, nullptr);
@@ -248,7 +310,7 @@ TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionRejectedIfNumberOfSubscribe
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
 
     // When offering a skeleton event
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
 
     auto* const event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
     ASSERT_NE(event_control, nullptr);
@@ -287,7 +349,7 @@ TEST_F(SkeletonEventPrepareOfferFixture, UnsubscribeIncreasesAvailableSampleSlot
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
 
     // When offering a skeleton event
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
 
     auto* const event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
     ASSERT_NE(event_control, nullptr);
@@ -307,12 +369,27 @@ TEST_F(SkeletonEventPrepareOfferFixture, UnsubscribeIncreasesAvailableSampleSlot
 }
 
 using SkeletonEventPrepareStopOfferFixture = SkeletonEventFixture;
-TEST_F(SkeletonEventPrepareStopOfferFixture, StopOfferSkeletonEvent)
+TEST_F(SkeletonEventPrepareStopOfferFixture, UnregisterEventNotificationExistenceChangedCallback)
 {
     const bool enforce_max_samples{true};
 
     // Given an un-offered event in an offered service
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+
+    // Expect, that it unregisters the callback for tracking changes of existence of event-notifications for QM
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_))
+        .Times(1);
+
+    // Expect, that in case the service has ASIL-B quality, it also unregisters the callback for tracking changes of
+    // existence of event-notifications for ASIL-B
+    if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        EXPECT_CALL(
+            message_passing_mock_,
+            UnregisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_B, fake_element_fq_id_))
+            .Times(1);
+    }
 
     // When stop offering a skeleton event
     skeleton_event_->PrepareStopOffer();
@@ -327,7 +404,7 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
     InitialiseSkeletonEvent(
         fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples, tracing_data);
 
-    skeleton_event_->PrepareOffer();
+    std::ignore = skeleton_event_->PrepareOffer();
 
     // WHEN we allocate and send a first sample
     auto first_allocated_slot_result = skeleton_event_->Allocate();

@@ -198,17 +198,24 @@ TEST_F(ComErrorMessageForDeathTest, MessageForkInvalidTerminates)
 {
     // When calling MessageFor with the code kInvalid
     // Then the program terminates
-    EXPECT_DEATH(score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kInvalid)),
-                 ".*");
+    EXPECT_DEATH(
+        score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kInvalid)),
+        ".*");
 }
 
 TEST_F(ComErrorMessageForDeathTest, MessageForNumEnumElements)
 {
     // When calling MessageFor with the code kNumEnumElements
     // Then the program terminates
-    EXPECT_DEATH(
-        score::cpp::ignore = ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements)),
-        ".*");
+    EXPECT_DEATH(score::cpp::ignore =
+                     ComErrorDomainDummy.MessageFor(static_cast<score::result::ErrorCode>(ComErrc::kNumEnumElements)),
+                 ".*");
+}
+
+TEST_F(ComErrorMessageForFixture, MessageForDefaultClause)
+{
+    auto one_past_the_last_lable = static_cast<std::uint32_t>(ComErrc::kNumEnumElements) + 1;
+    testErrorMessage(static_cast<ComErrc>(one_past_the_last_lable), "unknown future error");
 }
 
 }  // namespace

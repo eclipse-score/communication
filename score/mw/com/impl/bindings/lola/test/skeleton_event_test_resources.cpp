@@ -29,7 +29,6 @@ using ::testing::ReturnRef;
 
 SkeletonEventFixture::SkeletonEventFixture() : SkeletonMockedMemoryFixture{}
 {
-    ON_CALL(lola_runtime_mock_, GetLolaMessaging).WillByDefault(ReturnRef(message_passing_service_mock_));
     ON_CALL(runtime_mock_, GetServiceDiscovery()).WillByDefault(ReturnRef(service_discovery_mock_));
 
     InitialiseSkeleton(GetValidInstanceIdentifier());
@@ -37,7 +36,7 @@ SkeletonEventFixture::SkeletonEventFixture() : SkeletonMockedMemoryFixture{}
     SkeletonBinding::SkeletonEventBindings events{};
     SkeletonBinding::SkeletonFieldBindings fields{};
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback{};
-    skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
+    std::ignore = skeleton_->PrepareOffer(events, fields, std::move(register_shm_object_trace_callback));
 }
 
 void SkeletonEventFixture::InitialiseSkeletonEvent(const ElementFqId element_fq_id,

@@ -13,7 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_METHOD_SUBSCRIPTION_REGISTRATION_GUARD_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_MESSAGING_METHOD_SUBSCRIPTION_REGISTRATION_GUARD_H
 
-#include "score/mw/com/impl/bindings/lola/methods/skeleton_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
 #include "score/language/safecpp/scoped_function/move_only_scoped_function.h"

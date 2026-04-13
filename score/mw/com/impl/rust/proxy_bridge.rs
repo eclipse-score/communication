@@ -54,7 +54,7 @@ mod ffi {
     /// `::score::mw::com::ServiceHandleContainer`<`::score::mw::com::impl::HandleType`> as an opaque
     /// struct. Note that this struct is empty as we only use references to it on Rust side.
     #[repr(C)]
-    pub(super) struct NativeHandleContainer {
+    pub struct NativeHandleContainer {
         _dummy: [u8; 0],
     }
 
@@ -153,10 +153,10 @@ mod ffi {
         pub(super) fn mw_com_impl_proxy_event_set_receive_handler(
             proxy_event: *mut ProxyEventBase,
             boxed_handler: *const FatPtr,
-        );
+        ) -> bool;
         pub(super) fn mw_com_impl_proxy_event_unset_receive_handler(
             proxy_event: *mut ProxyEventBase,
-        );
+        ) -> bool;
     }
 }
 
@@ -193,6 +193,7 @@ pub use ffi::NativeInstanceSpecifier;
 
 pub use ffi::FatPtr;
 pub use ffi::HandleType;
+pub use ffi::NativeHandleContainer;
 pub use ffi::ProxyEvent as NativeProxyEvent;
 pub use ffi::ProxyEventBase;
 pub use ffi::ProxyWrapperClass;
@@ -338,7 +339,7 @@ unsafe fn native_get_new_samples<T: EventOps>(
 ///
 /// This function must be called with a pointer to a valid event of the type `T`. The event behind
 /// the pointer must not have been deleted already.
-unsafe fn native_set_receive_handler<T: EventOps, F>(native: *mut NativeProxyEvent<T>, handler: F)
+unsafe fn native_set_receive_handler<T: EventOps, F>(native: *mut NativeProxyEvent<T>, handler: F) -> bool
 where
     F: FnMut() + Send + 'static,
 {
@@ -349,7 +350,7 @@ where
     // calls SetReceiveHandler on the event with the provided data, there is no undefined
     // behavior.
     unsafe {
-        ffi::mw_com_impl_proxy_event_set_receive_handler(&mut (*native).base, &fat_ptr);
+        ffi::mw_com_impl_proxy_event_set_receive_handler(&mut (*native).base, &fat_ptr)
     }
 }
 
@@ -359,11 +360,11 @@ where
 ///
 /// This function must be called with a pointer to a valid event of the type `T`. The event behind
 /// the pointer must not have been deleted already.
-unsafe fn native_unset_receive_handler<T>(native: *mut NativeProxyEvent<T>) {
+unsafe fn native_unset_receive_handler<T>(native: *mut NativeProxyEvent<T>) -> bool {
     // SAFETY: Since the pointer is unmodified from what we get from C++ and the FFI function
     // calls UnsetReceiveHandler on the event, there is no undefined behavior expected.
     unsafe {
-        ffi::mw_com_impl_proxy_event_unset_receive_handler(&mut (*native).base);
+        ffi::mw_com_impl_proxy_event_unset_receive_handler(&mut (*native).base)
     }
 }
 
@@ -535,7 +536,7 @@ impl<T: EventOps, P: Clone> SubscribedProxyEvent<T, P> {
     /// If the underlying C++ implementation makes sure that the callback is not called after the
     /// event got deleted, we might relax the lifetime from 'static to some lifetime that is
     /// limited by the lifetime of the event.
-    pub fn set_receive_handler<F>(&mut self, handler: F)
+    pub fn set_receive_handler<F>(&mut self, handler: F) -> bool
     where
         F: FnMut() + Send + 'static,
     {
@@ -546,12 +547,12 @@ impl<T: EventOps, P: Clone> SubscribedProxyEvent<T, P> {
     }
 
     /// Unset the receive handler, if any is set.
-    pub fn unset_receive_handler(&mut self) {
+    pub fn unset_receive_handler(&mut self) -> bool {
         // SAFETY: This call is safe since the pointer is unmodified from what we get from C++.
         // Since this is the same pointer that we received during initialization (which is, by its
         // signature) of the same type, we're allowed to use it here safely.
         unsafe {
-            native_unset_receive_handler(self.native);
+            native_unset_receive_handler(self.native)
         }
     }
 
@@ -563,8 +564,9 @@ impl<T: EventOps, P: Clone> SubscribedProxyEvent<T, P> {
         // SAFETY: This call is safe since the pointer is unmodified from what we get from C++.
         // Since this is the same pointer that we received during initialization (which is, by its
         // signature) of the same type, we're allowed to use it here safely.
-        unsafe {
-            native_set_receive_handler(self.native, waker_callback);
+        let status = unsafe { native_set_receive_handler(self.native, waker_callback) };
+        if !status {
+            return Err("Unable to set receive handler for event stream");
         }
 
         let sample_cache = VecDeque::with_capacity(self.max_num_events);
@@ -632,7 +634,9 @@ impl<T: EventOps, P> Drop for ProxyEventStream<'_, T, P> {
         // SAFETY: This call is safe since the pointer is unmodified from what we get from C++.
         // Since this is the same pointer that we received during initialization (which is, by its
         // signature) of the same type, we're allowed to use it here safely.
-        unsafe { native_unset_receive_handler(self.event.native) };
+        // In Drop, we cannot handle errors, so we ignore the result. The handler should be
+        // successfully unset since it was set during stream creation.
+        let _ = unsafe { native_unset_receive_handler(self.event.native) };
     }
 }
 
@@ -705,6 +709,10 @@ unsafe impl Send for HandleContainer {}
 unsafe impl Sync for HandleContainer {}
 
 impl HandleContainer {
+    /// Create a new handle container from a native handle container pointer.
+    pub fn new(inner: *mut ffi::NativeHandleContainer) -> Self {
+        Self { inner }
+    }
     /// Provides the number of handles in the container.
     #[allow(clippy::len_without_is_empty)]
     // Suppressing clippy::len_without_is_empty because length is returning from FFI
