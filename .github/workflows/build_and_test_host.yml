@@ -108,4 +108,4 @@ jobs:
         - name: Bazel test integration as module
           run: |
             # for the beginning, we do this only with the default configuration
-            cd example && bazel build //...
+            cd examples && bazel build //... && bazel mod deps --lockfile_mode=update

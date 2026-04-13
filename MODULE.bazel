@@ -189,6 +189,7 @@ download_file = use_repo_rule("@download_utils//download/file:defs.bzl", "downlo
 
 download_file(
     name = "clang_format",
+    dev_dependency = True,
     executable = True,
     output = "executable",
     urls = ["https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-2da3e7b/clang-format-19_linux-amd64"],
@@ -210,6 +211,7 @@ download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "
 download_archive(
     name = "json_schema_validator",
     build = "//third_party/json_schema_validator:json_schema_validator.BUILD",
+    dev_dependency = True,
     strip_prefix = "json-schema-validator-2.1.0",
     urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
 )
@@ -217,6 +219,7 @@ download_archive(
 download_archive(
     name = "jsonschema",
     build = "//third_party/jsonschema:jsonschema.BUILD",
+    dev_dependency = True,
     strip_prefix = "jsonschema-4.23.0",
     urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
