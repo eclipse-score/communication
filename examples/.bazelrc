@@ -1,0 +1,6 @@
+common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/refs/heads/main/
+common --registry=https://bcr.bazel.build
+
+common --@score_baselibs//score/json:base_library=nlohmann
+
+common --@score_communication//score/mw/com/flags:tracing_library=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
