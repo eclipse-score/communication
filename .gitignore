@@ -1,5 +1,5 @@
 bazel-*
-MODULE.bazel.lock
+#MODULE.bazel.lock
 user.bazelrc
 .clwb_aspects
 .clwb

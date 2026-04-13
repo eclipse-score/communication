@@ -45,4 +45,4 @@ jobs:
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel test communication targets with address and UB and leak sanitizer
           run: |
-            bazel test --config=asan_ubsan_lsan //... --build_tests_only
+            bazel test --lockfile_mode=error --config=asan_ubsan_lsan //... --build_tests_only

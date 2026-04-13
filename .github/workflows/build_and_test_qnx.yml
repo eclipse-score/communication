@@ -142,7 +142,7 @@ jobs:
             SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
             SCORE_QNX_PASSWORD: ${{ secrets.SCORE_QNX_PASSWORD }}
           run: |
-            bazel build --config qnx_arm64 -- //score/... -//score/mw/com/requirements/... -//score/mw/com/performance_benchmarks/... -//docs/... -//score/mw/com/design/...
+            bazel build --lockfile_mode=error --config qnx_arm64 -- //score/... -//score/mw/com/requirements/... -//score/mw/com/performance_benchmarks/... -//docs/... -//score/mw/com/design/...
         - name: Cleanup QNX License
           if: ${{ !cancelled() }}
           run: sudo rm -rf ${{ env.LICENSE_DIR }}

@@ -57,7 +57,7 @@ jobs:
 
       - name: Run Unit Test with Coverage for C++
         run: |
-          bazel coverage //... --build_tests_only
+          bazel coverage --lockfile_mode=error //... --build_tests_only
 
       - name: Generate HTML Coverage Report
         # FIXME: "--ignore-errors category,inconsistent" is a workaround to cope with gcov messing up hit counts because of internal data races

@@ -264,7 +264,6 @@ pip.parse(
     requirements_lock = "//:requirements_lock.txt",
 )
 use_repo(pip, "score_communication_pip")
-
 pip.parse(
     hub_name = "codeql_coding_standards_pip_hub",
     python_version = "3.12",

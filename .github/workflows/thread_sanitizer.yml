@@ -44,4 +44,4 @@ jobs:
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel test communication targets with thread sanitizer
           run: |
-            bazel test --config=tsan //... --build_tests_only
+            bazel test --lockfile_mode=error --config=tsan //... --build_tests_only

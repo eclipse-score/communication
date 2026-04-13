@@ -99,7 +99,7 @@ jobs:
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel build communication targets
           run: |
-            bazel build ${{ matrix.config }} //...
+            bazel build --lockfile_mode=error ${{ matrix.config }} //...
         - name: Bazel test communication targets
           run: |
             bazel test ${{ matrix.config }} //... --build_tests_only
