@@ -92,6 +92,8 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     Result<impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override;
 
+    Result<SampleType> GetLatestSample() noexcept override;
+
     /// @requirement SWS_CM_00700
     ResultBlank PrepareOffer() noexcept override;
 
@@ -129,13 +131,9 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
       event_properties_{properties},
       event_data_storage_{nullptr},
       event_data_control_composite_{},
-      current_timestamp_{1U},
+      current_timestamp_{EventSlotStatus::InvalidTimestamp},
       qm_disconnect_{false},
-      event_shared_impl_(parent,
-                         event_fqn,
-                         event_data_control_composite_,
-                         current_timestamp_,
-                         skeleton_event_tracing_data)
+      event_shared_impl_(parent, event_fqn, event_data_control_composite_, skeleton_event_tracing_data)
 {
 }
 
@@ -211,7 +209,8 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
 {
     if (event_data_control_composite_.has_value() == false)
     {
-        ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
+        ::score::mw::log::LogError("lola")
+            << "Tried to allocate event, but the EventDataControlComposite does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
     const auto slot = event_data_control_composite_->AllocateNextSlot();
@@ -247,6 +246,38 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
                 << "SkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
                    "disabled by config. Might be the root cause!";
         }
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+}
+
+template <typename SampleType>
+Result<SampleType> SkeletonEvent<SampleType>::GetLatestSample() noexcept
+{
+    if (event_data_control_composite_.has_value() == false)
+    {
+        ::score::mw::log::LogError("lola")
+            << "Tried to get the latest sample, but the EventDataControlComposite does not exist!";
+        return MakeUnexpected(ComErrc::kBindingFailure);
+    }
+    auto slot = event_data_control_composite_->GetLatestSlot();
+
+    if (slot.IsValidQM() || slot.IsValidAsilB())
+    {
+        const auto sample = event_data_storage_->at(static_cast<std::uint64_t>(slot.GetIndex()));
+
+        if (slot.IsValidQM())
+        {
+            score::cpp::ignore = slot.GetSlotQM().fetch_sub(1U, std::memory_order_acq_rel);
+        }
+        if (slot.IsValidAsilB())
+        {
+            score::cpp::ignore = slot.GetSlotAsilB().fetch_sub(1U, std::memory_order_acq_rel);
+        }
+
+        return sample;
+    }
+    else
+    {
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
 }

@@ -26,7 +26,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info),
       event_properties_(event_properties),
-      event_shared_impl_(parent, event_fqn, control_, current_timestamp_, tracing_data)
+      event_shared_impl_(parent, event_fqn, control_, tracing_data)
 {
 }
 
