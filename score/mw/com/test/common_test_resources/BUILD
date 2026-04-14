@@ -12,8 +12,8 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 load("@score_baselibs//:bazel/unit_tests.bzl", "cc_gtest_unit_test")
+load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 cc_library(
     name = "bigdata_type",
@@ -186,9 +186,9 @@ cc_library(
         "//score/mw/com/test:__subpackages__",
     ],
     deps = [
+        ":command_line_parser",
         ":stop_token_sig_term_handler",
         "//score/mw/com",
-        "@boost.program_options",
     ],
 )
 
