@@ -15,7 +15,9 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/plumbing/i_proxy_field_binding_factory.h"
+#include "score/mw/com/impl/plumbing/proxy_method_binding_factory.h"
 #include "score/mw/com/impl/plumbing/proxy_service_element_binding_factory_impl.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
@@ -42,6 +44,12 @@ class ProxyFieldBindingFactoryImpl final : public IProxyFieldBindingFactory<Samp
     std::unique_ptr<ProxyEventBinding<SampleType>> CreateEventBinding(
         ProxyBase& parent,
         const std::string_view field_name) noexcept override;
+
+    std::unique_ptr<ProxyMethodBinding> CreateGetMethodBinding(ProxyBase& parent,
+                                                               const std::string_view field_name) noexcept override;
+
+    std::unique_ptr<ProxyMethodBinding> CreateSetMethodBinding(ProxyBase& parent,
+                                                               const std::string_view field_name) noexcept override;
 };
 
 template <typename SampleType>
@@ -60,6 +68,24 @@ inline std::unique_ptr<ProxyEventBinding<SampleType>> ProxyFieldBindingFactoryIm
     return CreateProxyServiceElement<ProxyEventBinding<SampleType>,
                                      lola::ProxyEvent<SampleType>,
                                      ServiceElementType::FIELD>(parent, field_name);
+}
+
+template <typename SampleType>
+inline std::unique_ptr<ProxyMethodBinding> ProxyFieldBindingFactoryImpl<SampleType>::CreateGetMethodBinding(
+    ProxyBase& parent,
+    const std::string_view field_name) noexcept
+{
+    return ProxyMethodBindingFactory<SampleType()>::Create(
+        parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), field_name, MethodType::kGet);
+}
+
+template <typename SampleType>
+inline std::unique_ptr<ProxyMethodBinding> ProxyFieldBindingFactoryImpl<SampleType>::CreateSetMethodBinding(
+    ProxyBase& parent,
+    const std::string_view field_name) noexcept
+{
+    return ProxyMethodBindingFactory<SampleType(SampleType)>::Create(
+        parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), field_name, MethodType::kSet);
 }
 
 }  // namespace score::mw::com::impl

@@ -32,7 +32,8 @@ class SkeletonMethodBindingFactoryImpl : public ISkeletonMethodBindingFactory
   public:
     std::unique_ptr<SkeletonMethodBinding> Create(const InstanceIdentifier& instance_identifier,
                                                   SkeletonBinding* parent_binding,
-                                                  const std::string_view method_name) override;
+                                                  const std::string_view method_name,
+                                                  MethodType method_type) override;
 };
 
 }  // namespace score::mw::com::impl

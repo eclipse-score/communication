@@ -43,9 +43,10 @@ class ProxyMethodBindingFactory<ReturnType(ArgTypes...)> final
     /// \brief See documentation in IProxyMethodBindingFactory.
     static std::unique_ptr<ProxyMethodBinding> Create(HandleType parent_handle,
                                                       ProxyBinding* parent_binding,
-                                                      const std::string_view method_name) noexcept
+                                                      const std::string_view method_name,
+                                                      MethodType method_type) noexcept
     {
-        return instance().Create(parent_handle, parent_binding, method_name);
+        return instance().Create(parent_handle, parent_binding, method_name, method_type);
     }
 
     /// \brief Inject a mock IProxyMethodBindingFactory. If a mock is injected, then all calls on

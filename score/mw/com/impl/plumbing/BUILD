@@ -174,6 +174,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl/methods:proxy_method_binding",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -302,7 +303,9 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":i_proxy_field_binding_factory",
+        ":proxy_method_binding_factory",
         ":proxy_service_element_binding_factory_impl",
+        "//score/mw/com/impl:method_type",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
