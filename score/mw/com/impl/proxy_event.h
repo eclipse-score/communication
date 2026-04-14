@@ -40,7 +40,7 @@ namespace score::mw::com::impl
 // False Positive: this is a normal forward declaration.
 // Which is used to avoid cyclic dependency with proxy_field.h
 // coverity[autosar_cpp14_m3_2_3_violation]
-template <typename>
+template <typename, bool, bool, bool>
 class ProxyField;
 
 /// \brief This is the user-visible class of an event that is part of a proxy. It contains ProxyEvent functionality that
@@ -62,7 +62,8 @@ class ProxyEvent final : public ProxyEventBase
     // Design decission: ProxyField uses composition pattern to reuse code from ProxyEvent. These two classes also have
     // shared private APIs which necessitates the use of the friend keyword.
     // coverity[autosar_cpp14_a11_3_1_violation]
-    friend class ProxyField<SampleDataType>;
+    template <typename, bool, bool, bool>
+    friend class ProxyField;
 
     // Empty struct that is used to make the second constructor only accessible to ProxyField (as it is a friend).
     struct FieldOnlyConstructorEnabler

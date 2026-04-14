@@ -27,7 +27,7 @@ namespace
 using namespace ::testing;
 
 const QualityType kAsilLevel{QualityType::kASIL_B};
-const ProxyMethodInstanceIdentifier kProxyMethodInstanceIdentifier{{5U, 1U}, LolaMethodId{55U}};
+const ProxyMethodInstanceIdentifier kProxyMethodInstanceIdentifier{{5U, 1U}, {LolaMethodId{55U}}};
 
 class RegistrationGuardFixture : public ::testing::Test
 {

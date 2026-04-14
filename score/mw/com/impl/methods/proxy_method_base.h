@@ -14,6 +14,8 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_BASE_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_BASE_H
 
+#include "score/mw/com/impl/method_identifier.h"
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 
 #include "score/containers/dynamic_array.h"
@@ -32,9 +34,11 @@ class ProxyMethodBase
   public:
     ProxyMethodBase(ProxyBase& proxy_base,
                     std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                    std::string_view method_name) noexcept
+                    std::string_view method_name,
+                    MethodType method_type = MethodType::kMethod) noexcept
         : proxy_base_{proxy_base},
           method_name_{method_name},
+          method_type_{method_type},
           is_return_type_ptr_active_{kCallQueueSize, false},
           binding_{std::move(proxy_method_binding)}
     {
@@ -61,6 +65,7 @@ class ProxyMethodBase
     std::reference_wrapper<ProxyBase> proxy_base_;
 
     std::string_view method_name_;
+    MethodType method_type_;
 
     /// \brief Dynamic array containing queue-slot active flags: one entry per call-queue position.
     /// \details This array contains bool flags, which indicate, if the return value pointer

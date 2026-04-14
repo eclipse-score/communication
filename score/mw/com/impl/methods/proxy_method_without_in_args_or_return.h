@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITHOUT_IN_ARGS_OR_RETURN_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITHOUT_IN_ARGS_OR_RETURN_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
@@ -47,8 +48,10 @@ class ProxyMethod<void()> final : public ProxyMethodBase
         : ProxyMethodBase(proxy_base,
                           ProxyMethodBindingFactory<void()>::Create(proxy_base.GetHandle(),
                                                                     ProxyBaseView{proxy_base}.GetBinding(),
-                                                                    method_name),
-                          method_name)
+                                                                    method_name,
+                                                                    MethodType::kMethod),
+                          method_name,
+                          MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
@@ -62,7 +65,7 @@ class ProxyMethod<void()> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name)
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
