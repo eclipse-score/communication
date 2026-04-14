@@ -69,7 +69,7 @@ cc_library(
         "//score/mw/com/performance_benchmarks/common_test_resources:stop_token_sig_term_handler",
         "@boost.program_options",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -84,7 +84,7 @@ cc_library(
     deps = [
         ":common_resources",
         "@score_baselibs//score/json",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -102,7 +102,7 @@ cc_library(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:stop_token_sig_term_handler",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -143,7 +143,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_guard",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -176,7 +176,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_guard",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

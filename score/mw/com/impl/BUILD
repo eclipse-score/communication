@@ -49,7 +49,7 @@ cc_library(
         ":error",
         "//score/mw/com/impl/plumbing",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -83,7 +83,7 @@ cc_library(
         ":proxy_base",
         ":proxy_event_base",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -107,8 +107,8 @@ cc_library(
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -208,8 +208,8 @@ cc_library(
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "//score/mw/com/impl/tracing:skeleton_event_tracing",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -231,8 +231,8 @@ cc_library(
         "//score/mw/com/impl/plumbing:field",
         "//score/mw/com/impl/plumbing:sample_allocatee_ptr",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -328,8 +328,8 @@ cc_library(
         ":skeleton_event_base",
         "//score/mw/com/impl/methods:skeleton_method_base",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -364,7 +364,7 @@ cc_library(
     srcs = ["find_service_handle.cpp"],
     hdrs = ["find_service_handle.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_logging//score/mw/log"],
+    implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = [
         "//score/mw/com:__pkg__",
@@ -650,8 +650,8 @@ cc_library(
     ],
     deps = [
         ":error",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -680,7 +680,7 @@ cc_library(
     hdrs = ["service_element_type.h"],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = [
@@ -880,8 +880,8 @@ cc_library(
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared:types",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/utils/meyer_singleton",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -961,8 +961,8 @@ cc_test(
         ":runtime",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/utils/meyer_singleton/test:single_test_per_process_fixture",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -976,7 +976,7 @@ cc_gtest_unit_test(
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/configuration/test:configuration_store",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -1017,8 +1017,8 @@ cc_gtest_unit_test(
     srcs = ["service_element_type_test.cpp"],
     deps = [
         ":service_element_type",
-        "@score_logging//score/mw/log",
-        #"@score_logging//score/mw/log/test/fake_recorder_environment:auto_register_fake_recorder_env",
+        "@score_baselibs//score/mw/log",
+        #"@score_baselibs//score/mw/log/test/fake_recorder_environment:auto_register_fake_recorder_env",
     ],
 )
 
@@ -1043,7 +1043,7 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -1052,8 +1052,8 @@ cc_gtest_unit_test(
     srcs = ["find_service_handle_test.cpp"],
     deps = [
         ":find_service_handle",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
-        "@score_logging//score/mw/log",
     ],
 )
 

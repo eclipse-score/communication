@@ -30,7 +30,7 @@ cc_binary(
         "//score/mw/com",
         "@boost.program_options",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -46,7 +46,7 @@ cc_library(
     deps = [
         ":datatype",
         "//score/mw/com",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

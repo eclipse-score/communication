@@ -164,7 +164,7 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/tracing/configuration:service_element_instance_identifier_view",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -276,8 +276,8 @@ cc_gtest_unit_test(
         ":tracing_test_resources",
         "//score/mw/com/impl/bindings/mock_binding/tracing:tracing_runtime",
         "@score_baselibs//score/analysis/tracing/generic_trace_library/mock:trace_library_mock",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/mw/log:recorder_mock",
-        "@score_logging//score/mw/log",
     ],
 )
 

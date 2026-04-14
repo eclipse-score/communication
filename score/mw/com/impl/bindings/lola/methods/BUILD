@@ -28,7 +28,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl/bindings/lola:proxy_instance_identifier",
         "//score/mw/com/impl/configuration",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -64,7 +64,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
@@ -138,7 +138,7 @@ cc_unit_test(
         "@score_baselibs//score/memory/shared:memory_resource_proxy",
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

@@ -31,7 +31,7 @@ cc_library(
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/concurrency",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -134,7 +134,7 @@ cc_library(
         "@score_baselibs//score/concurrency:long_running_threads_container",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory/shared",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -416,12 +416,12 @@ cc_library(
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
         "@score_baselibs//score/memory/shared/flock:flock_mutex_and_lock",
         "@score_baselibs//score/memory/shared/flock:shared_flock_mutex",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os:errno_logging",
         "@score_baselibs//score/os:fcntl",
         "@score_baselibs//score/os:glob",
         "@score_baselibs//score/os:unistd",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -438,7 +438,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:service_element_type",
         "//score/mw/com/impl/configuration",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -525,7 +525,7 @@ cc_library(
     srcs = ["application_id_pid_mapping.cpp"],
     hdrs = ["application_id_pid_mapping.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_logging//score/mw/log"],
+    implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
@@ -542,7 +542,7 @@ cc_library(
     srcs = ["application_id_pid_mapping_entry.cpp"],
     hdrs = ["application_id_pid_mapping_entry.h"],
     features = COMPILER_WARNING_FEATURES,
-    implementation_deps = ["@score_logging//score/mw/log"],
+    implementation_deps = ["@score_baselibs//score/mw/log"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [],
@@ -670,7 +670,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/safecpp/safe_math",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -769,7 +769,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "//score/mw/com/impl:error",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -797,7 +797,7 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
@@ -825,8 +825,8 @@ cc_library(
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl/bindings/lola:runtime",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -886,7 +886,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl/configuration",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -901,7 +901,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl/configuration",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -1009,7 +1009,7 @@ cc_unit_test(
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
         "@score_baselibs//score/memory/shared:polymorphic_offset_ptr_allocator",
         "@score_baselibs//score/memory/shared/fake:fake_memory_resources",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -1219,7 +1219,7 @@ cc_gtest_unit_test(
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":element_fq_id",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -1232,7 +1232,7 @@ cc_gtest_unit_test(
     deps = [
         ":event_data_storage",
         "@score_baselibs//score/containers:dynamic_array",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -1499,8 +1499,8 @@ cc_unit_test(
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/memory:data_type_size_info",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/result",
-        "@score_logging//score/mw/log",
     ],
 )
 

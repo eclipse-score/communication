@@ -45,7 +45,7 @@ cc_binary(
         ":test_datatype",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -61,7 +61,7 @@ cc_binary(
         ":test_datatype",
         "//score/mw/com",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

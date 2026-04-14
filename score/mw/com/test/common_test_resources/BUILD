@@ -46,8 +46,8 @@ cc_library(
     deps = [
         ":bigdata_type",
         "//score/mw/com",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os/utils/interprocess:interprocess_notification",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -125,7 +125,7 @@ cc_library(
     ],
     deps = [
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

@@ -96,7 +96,7 @@ cc_library(
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/memory:string_literal",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -144,7 +144,7 @@ cc_gtest_unit_test(
         ":types",
         "//score/mw/com/impl:runtime_mock",
         "//score/mw/com/impl/test:runtime_mock_guard",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

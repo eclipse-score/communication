@@ -45,7 +45,7 @@ cc_library(
     ],
     features = COMPILER_WARNING_FEATURES,
     implementation_deps = [
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
@@ -218,8 +218,8 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         "@score_baselibs//score/memory/shared:pointer_arithmetic_util",
+        "@score_baselibs//score/mw/log",
         "@score_communication//score/message_passing",
-        "@score_logging//score/mw/log",
     ],
 )
 
@@ -236,8 +236,8 @@ cc_library(
         ":message_passing_service",
         ":message_passing_service_instance_factory",
         "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/mw/log",
         "@score_communication//score/message_passing",
-        "@score_logging//score/mw/log",
     ],
 )
 
