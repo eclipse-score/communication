@@ -114,9 +114,8 @@ class ConsumerEventDataControlLocalViewFixture : public ::testing::Test
         unit_with_mock_atomics_ =
             std::make_unique<ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
                 *event_data_control_, transaction_log);
-        provider_event_data_control_local_mocked_ =
-            std::make_unique<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>(
-                *event_data_control_);
+        provider_event_data_control_local_ =
+            std::make_unique<ProviderEventDataControlLocalView<>>(*event_data_control_);
 
         return *this;
     }
@@ -136,8 +135,6 @@ class ConsumerEventDataControlLocalViewFixture : public ::testing::Test
     std::optional<TransactionLog> transaction_log_{};
     std::unique_ptr<EventDataControl> event_data_control_{nullptr};
     std::unique_ptr<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{nullptr};
-    std::unique_ptr<ProviderEventDataControlLocalView<memory::shared::AtomicIndirectorMock>>
-        provider_event_data_control_local_mocked_{nullptr};
     std::unique_ptr<ConsumerEventDataControlLocalView<>> unit_{nullptr};
     std::unique_ptr<ConsumerEventDataControlLocalView<memory::shared::AtomicIndirectorMock>> unit_with_mock_atomics_{
         nullptr};
@@ -209,9 +206,9 @@ TEST_F(ConsumerEventDataControlLocalViewFixture, FailingToUpdateSlotValueCausesR
         .WillRepeatedly(Return(false));
 
     // and a EventDataControlUnit with one ready slot
-    auto slot = provider_event_data_control_local_mocked_->AllocateNextSlot();
+    auto slot = provider_event_data_control_local_->AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
-    provider_event_data_control_local_mocked_->EventReady(slot.value(), 1);
+    provider_event_data_control_local_->EventReady(slot.value(), 1);
 
     // When finding the next slot
     auto event = unit_with_mock_atomics_->ReferenceNextEvent(0);

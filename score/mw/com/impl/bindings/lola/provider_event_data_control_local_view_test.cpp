@@ -169,12 +169,35 @@ TEST_F(ProviderEventDataControlLocalViewFixture, CanAllocateOneSlotWhenReference
             return static_cast<EventSlotStatus::value_type>(invalid_event_slot_status);
         });
 
+    // and expecting that compare_exchange_weak will return that the slot was allocated successfully
+    EXPECT_CALL(*atomic_mock_, compare_exchange_weak(_, _, _)).WillOnce(Return(true));
+
     // When allocating a slot
     const auto slot = unit_mock_->AllocateNextSlot();
 
     EXPECT_TRUE(slot.has_value());
     // The expected (second) slot is returned
     EXPECT_EQ(slot.value(), 1);
+}
+
+TEST_F(ProviderEventDataControlLocalViewFixture, CannotAllocateSlotIfExceedingMaximumRetriesDueToContention)
+{
+    GivenAProviderEventDataControlLocalViewUsingMockedAtomics(kMaxSlots);
+
+    //  and given that load returns that the slot is currently unused
+    const EventSlotStatus::EventTimeStamp time_stamp{1};
+    const EventSlotStatus event_slot_status_ready_for_writing{time_stamp, 0U};
+    EXPECT_CALL(*atomic_mock_, load(_))
+        .WillRepeatedly(Return(static_cast<EventSlotStatus::value_type>(event_slot_status_ready_for_writing)));
+
+    // but that compare_exchange_weak returns false due to another thread modifying the atomic concurrently
+    EXPECT_CALL(*atomic_mock_, compare_exchange_weak(_, _, _)).WillRepeatedly(Return(false));
+
+    // When trying to allocate a slot
+    const auto slot = unit_mock_->AllocateNextSlot();
+
+    // Then an empty optional is returned
+    EXPECT_FALSE(slot.has_value());
 }
 
 TEST_F(ProviderEventDataControlLocalViewFixture, CanAllocateMultipleSlotWithoutContention)

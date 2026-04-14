@@ -46,6 +46,15 @@ template <template <class> class AtomicIndirectorType>
 auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot() noexcept
     -> std::optional<SlotIndexType>
 {
+    auto log_performance_metrics = [](std::uint64_t& retry_counter) {
+        score::cpp::ignore = num_alloc_retries.fetch_add(retry_counter);
+
+        if ((retry_counter >= MAX_ALLOCATE_RETRIES))
+        {
+            ++num_alloc_misses;
+        }
+    };
+
     std::optional<SlotIndexType> selected_index{};
     std::uint64_t retry_counter{0U};
 
@@ -74,21 +83,16 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot()
 
         auto status_value_type = static_cast<EventSlotStatus::value_type&>(status);
         auto status_new_value_type = static_cast<EventSlotStatus::value_type&>(status_new);
-        if (state_slots_[selected_index.value()].compare_exchange_weak(
-                status_value_type, status_new_value_type, std::memory_order_acq_rel))
+        const auto could_allocate_slot = AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_weak(
+            state_slots_[selected_index.value()], status_value_type, status_new_value_type, std::memory_order_acq_rel);
+        if (could_allocate_slot)
         {
-            break;
+            log_performance_metrics(retry_counter);
+            return selected_index;
         }
     }
-
-    score::cpp::ignore = num_alloc_retries.fetch_add(retry_counter);
-
-    if ((retry_counter >= MAX_ALLOCATE_RETRIES))
-    {
-        ++num_alloc_misses;
-    }
-
-    return selected_index;
+    log_performance_metrics(retry_counter);
+    return {};
 }
 
 template <template <class> class AtomicIndirectorType>
