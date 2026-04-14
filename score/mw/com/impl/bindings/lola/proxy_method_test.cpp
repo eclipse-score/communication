@@ -13,7 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
@@ -40,7 +40,7 @@ namespace
 
 using namespace ::testing;
 
-constexpr LolaMethodId kDummyMethodId{123U};
+constexpr LolaMethodOrFieldId kDummyMethodId{123U};
 constexpr std::size_t kDummyQueuePosition{3U};
 constexpr std::size_t kDummyQueueSize{10U};
 constexpr memory::DataTypeSizeInfo kValidInArgSizeInfo{sizeof(std::uint32_t), alignof(std::uint32_t)};
@@ -78,19 +78,22 @@ class ProxyMethodFixture : public ProxyMockedMemoryFixture
 
     ProxyMethodFixture& GivenAProxyMethod()
     {
-        unit_ = std::make_unique<ProxyMethod>(*proxy_, element_fq_id_, kTypeErasedInfoWithInArgsAndReturn);
+        const ProxyMethodInstanceIdentifier id{proxy_->GetProxyInstanceIdentifier(), unique_method_identifier_};
+        unit_ = std::make_unique<ProxyMethod>(*proxy_, id, kTypeErasedInfoWithInArgsAndReturn);
         return *this;
     }
 
     ProxyMethodFixture& GivenAProxyMethodWithoutInArgsTypeErasedElementInfo()
     {
-        unit_ = std::make_unique<ProxyMethod>(*proxy_, element_fq_id_, kTypeErasedInfoWithReturnOnly);
+        const ProxyMethodInstanceIdentifier id{proxy_->GetProxyInstanceIdentifier(), unique_method_identifier_};
+        unit_ = std::make_unique<ProxyMethod>(*proxy_, id, kTypeErasedInfoWithReturnOnly);
         return *this;
     }
 
     ProxyMethodFixture& GivenAProxyMethodWithoutReturnTypeErasedElementInfo()
     {
-        unit_ = std::make_unique<ProxyMethod>(*proxy_, element_fq_id_, kTypeErasedInfoWithInArgsOnly);
+        const ProxyMethodInstanceIdentifier id{proxy_->GetProxyInstanceIdentifier(), unique_method_identifier_};
+        unit_ = std::make_unique<ProxyMethod>(*proxy_, id, kTypeErasedInfoWithInArgsOnly);
         return *this;
     }
 
@@ -110,10 +113,7 @@ class ProxyMethodFixture : public ProxyMockedMemoryFixture
     std::unique_ptr<ProxyMethod> unit_{nullptr};
 
     score::cpp::stop_source stop_source_{};
-    const ElementFqId element_fq_id_{lola_service_id_,
-                                     kDummyMethodId,
-                                     lola_service_instance_id_.GetId(),
-                                     ServiceElementType::METHOD};
+    const UniqueMethodIdentifier unique_method_identifier_{kDummyMethodId, MethodType::kMethod};
 };
 
 TEST_F(ProxyMethodFixture, GetTypeErasedElementInfoReturnsValueSetOnConstruction)

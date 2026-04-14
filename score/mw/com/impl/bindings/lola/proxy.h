@@ -39,6 +39,7 @@
 #include "score/memory/shared/lock_file.h"
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/shared_memory_factory.h"
+#include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
 
@@ -191,7 +192,7 @@ class Proxy : public ProxyBinding
         return proxy_instance_identifier_;
     }
 
-    void RegisterMethod(const ElementFqId::ElementId method_id, ProxyMethod& proxy_method) noexcept;
+    void RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept;
 
   private:
     static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
@@ -199,7 +200,7 @@ class Proxy : public ProxyBinding
     void ServiceAvailabilityChangeHandler(const bool is_service_available);
     void InitializeSharedMemoryForMethods(
         memory::shared::ManagedMemoryResource& memory_resource,
-        const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& method_data,
+        const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& method_data,
         const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos);
 
     static bool DoElementInfosContainInArgsOrReturn(
@@ -208,10 +209,11 @@ class Proxy : public ProxyBinding
         std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos);
 
     memory::shared::SharedMemoryFactory::UserPermissions GetSkeletonShmPermissions() const;
-    std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>> GetMethodIdAndQueueSizeFromNames(
-        const std::vector<std::string_view>& enabled_method_names) const;
+    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>
+    GetMethodIdAndQueueSizeFromNames(const std::vector<std::string_view>& enabled_method_names) const;
     std::vector<TypeErasedCallQueue::TypeErasedElementInfo> GetTypeErasedElementInfoForEnabledMethods(
-        const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& enabled_method_data) const;
+        const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>&
+            enabled_method_data) const;
     std::string GetMethodChannelShmName() const;
 
     std::shared_ptr<memory::shared::ManagedMemoryResource> control_;
@@ -236,7 +238,8 @@ class Proxy : public ProxyBinding
     std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
         service_instance_usage_flock_mutex_and_lock_;
-    std::unordered_map<LolaMethodId, std::reference_wrapper<ProxyMethod>> proxy_methods_;
+    std::unordered_map<score::mw::com::impl::lola::UniqueMethodIdentifier, std::reference_wrapper<ProxyMethod>>
+        proxy_methods_;
     MethodData* method_data_;
     ProxyInstanceIdentifier proxy_instance_identifier_;
     OfferedStateMachine offered_state_machine_;

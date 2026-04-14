@@ -13,8 +13,8 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_PROXY_METHOD_INSTANCE_IDENTIFIER_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_METHODS_PROXY_METHOD_INSTANCE_IDENTIFIER_H
 
+#include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
-#include "score/mw/com/impl/configuration/lola_method_id.h"
 
 #include "score/mw/log/logging.h"
 
@@ -30,7 +30,7 @@ namespace score::mw::com::impl::lola
 struct ProxyMethodInstanceIdentifier
 {
     ProxyInstanceIdentifier proxy_instance_identifier;
-    LolaMethodId method_id;
+    UniqueMethodIdentifier unique_method_identifier;
 };
 
 bool operator==(const ProxyMethodInstanceIdentifier& lhs, const ProxyMethodInstanceIdentifier& rhs) noexcept;
@@ -49,23 +49,20 @@ class hash<score::mw::com::impl::lola::ProxyMethodInstanceIdentifier>
     std::size_t operator()(const score::mw::com::impl::lola::ProxyMethodInstanceIdentifier&
                                proxy_method_instance_identifier) const noexcept
     {
-        using ProxyMethodInstanceIdentifier = score::mw::com::impl::lola::ProxyMethodInstanceIdentifier;
+        using UniqueMethodIdentifier = score::mw::com::impl::lola::UniqueMethodIdentifier;
         using ProxyInstanceIdentifier = score::mw::com::impl::lola::ProxyInstanceIdentifier;
-        static_assert((sizeof(ProxyInstanceIdentifier::application_id) +
-                       sizeof(ProxyInstanceIdentifier::proxy_instance_counter) +
-                       sizeof(ProxyMethodInstanceIdentifier::method_id)) <= sizeof(std::uint64_t));
 
-        constexpr auto proxy_instance_counter_bit_width = std::numeric_limits<
-            decltype(proxy_method_instance_identifier.proxy_instance_identifier.proxy_instance_counter)>::digits;
-        constexpr auto method_id_bit_width =
-            std::numeric_limits<decltype(proxy_method_instance_identifier.method_id)>::digits;
-        return std::hash<std::uint64_t>{}(
-            (static_cast<std::uint64_t>(proxy_method_instance_identifier.proxy_instance_identifier.application_id)
-             << (proxy_instance_counter_bit_width + method_id_bit_width)) |
-            (static_cast<std::uint64_t>(
-                 proxy_method_instance_identifier.proxy_instance_identifier.proxy_instance_counter)
-             << method_id_bit_width) |
-            static_cast<std::uint64_t>(proxy_method_instance_identifier.method_id));
+        static constexpr std::size_t kGoldenRatioConstant = 0x9e3779b9U;
+        static constexpr unsigned int kLeftShiftBits = 6U;
+        static constexpr unsigned int kRightShiftBits = 2U;
+
+        // The previous implementation packed all fields into a single uint64_t, but with the addition of
+        // MethodType to UniqueMethodIdentifier, the total bit width (72 bits) exceeds 64 bits.
+        // We now combine the hashes of the sub-structs instead using the boost hash_combine pattern.
+        auto seed = std::hash<ProxyInstanceIdentifier>{}(proxy_method_instance_identifier.proxy_instance_identifier);
+        seed ^= std::hash<UniqueMethodIdentifier>{}(proxy_method_instance_identifier.unique_method_identifier) +
+                kGoldenRatioConstant + (seed << kLeftShiftBits) + (seed >> kRightShiftBits);
+        return seed;
     }
 };
 

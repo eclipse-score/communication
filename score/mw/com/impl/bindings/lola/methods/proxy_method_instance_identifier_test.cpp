@@ -13,7 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
-#include "score/mw/com/impl/configuration/lola_method_id.h"
+#include "score/mw/com/impl/configuration/lola_method_or_field_id.h"
 
 #include "score/mw/log/logging.h"
 
@@ -30,13 +30,16 @@ namespace
 
 constexpr GlobalConfiguration::ApplicationId kDummyProcessIdentifier{10U};
 constexpr ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{15U};
-constexpr LolaMethodId kDummyMethodId{20U};
+constexpr LolaMethodOrFieldId kDummyMethodOrFieldId{20U};
+const UniqueMethodIdentifier kDummyUniqueMethodIdentifier{kDummyMethodOrFieldId, MethodType::kMethod};
 
 TEST(ProxyMethodInstanceIdentifierTest, EqualObjectsReturnTheSameHash)
 {
     // Given two ProxyMethodInstanceIdentifier objects containing the same values
-    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
-    const ProxyMethodInstanceIdentifier unit_1{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
+    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
+                                               kDummyUniqueMethodIdentifier};
+    const ProxyMethodInstanceIdentifier unit_1{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
+                                               kDummyUniqueMethodIdentifier};
 
     // When hashing the two objects
     auto hash_result0 = std::hash<ProxyMethodInstanceIdentifier>{}(unit_0);
@@ -52,11 +55,11 @@ TEST(ProxyMethodInstanceIdentifierTest, EqualObjectsWithMaxValuesReturnTheSameHa
     const ProxyMethodInstanceIdentifier unit_0{
         {std::numeric_limits<GlobalConfiguration::ApplicationId>::max(),
          std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()},
-        std::numeric_limits<LolaMethodId>::max()};
+        {std::numeric_limits<LolaMethodOrFieldId>::max(), MethodType::kSet}};
     const ProxyMethodInstanceIdentifier unit_1{
         {std::numeric_limits<GlobalConfiguration::ApplicationId>::max(),
          std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()},
-        std::numeric_limits<LolaMethodId>::max()};
+        {std::numeric_limits<LolaMethodOrFieldId>::max(), MethodType::kSet}};
 
     // When hashing the two objects
     auto hash_result0 = std::hash<ProxyMethodInstanceIdentifier>{}(unit_0);
@@ -69,9 +72,10 @@ TEST(ProxyMethodInstanceIdentifierTest, EqualObjectsWithMaxValuesReturnTheSameHa
 TEST(ProxyMethodInstanceIdentifierTest, ObjectsWithDifferentProcessIdentifierReturnsDifferentHash)
 {
     // Given two ProxyMethodInstanceIdentifier objects containing different process identifiers
-    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
+    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
+                                               kDummyUniqueMethodIdentifier};
     const ProxyMethodInstanceIdentifier unit_1{{kDummyProcessIdentifier + 1U, kDummyProxyInstanceCounter},
-                                               kDummyMethodId};
+                                               kDummyUniqueMethodIdentifier};
 
     // When hashing the two objects
     auto hash_result0 = std::hash<ProxyMethodInstanceIdentifier>{}(unit_0);
@@ -85,8 +89,9 @@ TEST(ProxyMethodInstanceIdentifierTest, ObjectsWithDifferentProxyInstanceCounter
 {
     // Given two ProxyMethodInstanceIdentifier objects containing different proxy instance counters
     const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter + 1U},
-                                               kDummyMethodId};
-    const ProxyMethodInstanceIdentifier unit_1{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
+                                               kDummyUniqueMethodIdentifier};
+    const ProxyMethodInstanceIdentifier unit_1{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
+                                               kDummyUniqueMethodIdentifier};
 
     // When hashing the two objects
     auto hash_result0 = std::hash<ProxyMethodInstanceIdentifier>{}(unit_0);
@@ -99,9 +104,10 @@ TEST(ProxyMethodInstanceIdentifierTest, ObjectsWithDifferentProxyInstanceCounter
 TEST(ProxyMethodInstanceIdentifierTest, ObjectsWithDifferentMethodIdsReturnsDifferentHash)
 {
     // Given two ProxyMethodInstanceIdentifier objects containing different method ids
-    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
+    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
+                                               kDummyUniqueMethodIdentifier};
     const ProxyMethodInstanceIdentifier unit_1{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
-                                               kDummyMethodId + 1U};
+                                               {kDummyMethodOrFieldId + 1U, MethodType::kMethod}};
 
     // When hashing the two objects
     auto hash_result0 = std::hash<ProxyMethodInstanceIdentifier>{}(unit_0);
@@ -116,9 +122,10 @@ TEST(ProxyMethodInstanceIdentifierTest,
 {
     // Given two ProxyMethodInstanceIdentifier objects containing different process identifiers, proxy instance
     // counters and method IDs
-    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
+    const ProxyMethodInstanceIdentifier unit_0{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
+                                               kDummyUniqueMethodIdentifier};
     const ProxyMethodInstanceIdentifier unit_1{{kDummyProcessIdentifier + 1U, kDummyProxyInstanceCounter + 1U},
-                                               kDummyMethodId + 1U};
+                                               {kDummyMethodOrFieldId + 1U, MethodType::kMethod}};
 
     // When hashing the two objects
     auto hash_result0 = std::hash<ProxyMethodInstanceIdentifier>{}(unit_0);
@@ -131,7 +138,8 @@ TEST(ProxyMethodInstanceIdentifierTest,
 TEST(ProxyMethodInstanceIdentifierTest, OperatorStreamOutputsExpectedString)
 {
     // Given a ProxyMethodInstanceIdentifier
-    const ProxyMethodInstanceIdentifier unit{{kDummyProcessIdentifier, kDummyProxyInstanceCounter}, kDummyMethodId};
+    const ProxyMethodInstanceIdentifier unit{{kDummyProcessIdentifier, kDummyProxyInstanceCounter},
+                                             kDummyUniqueMethodIdentifier};
     testing::internal::CaptureStdout();
 
     // When streaming the ProxyMethodInstanceIdentifier to a log
@@ -140,8 +148,8 @@ TEST(ProxyMethodInstanceIdentifierTest, OperatorStreamOutputsExpectedString)
 
     // Then the output should contain the expected string
     EXPECT_THAT(output,
-                ::testing::HasSubstr(
-                    "ProxyInstanceIdentifier: Application ID: 10 . Proxy Instance Counter: 15 . Method ID: 20"));
+                ::testing::HasSubstr("ProxyInstanceIdentifier: Application ID: 10 . Proxy Instance Counter: 15 "
+                                     ". UniqueMethodIdentifier: MethodOrFieldId: 20 . MethodType: Method"));
 }
 
 }  // namespace

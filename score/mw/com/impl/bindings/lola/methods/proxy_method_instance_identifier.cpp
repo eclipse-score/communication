@@ -17,12 +17,14 @@ namespace score::mw::com::impl::lola
 
 bool operator==(const ProxyMethodInstanceIdentifier& lhs, const ProxyMethodInstanceIdentifier& rhs) noexcept
 {
-    return ((lhs.proxy_instance_identifier == rhs.proxy_instance_identifier) && (lhs.method_id == rhs.method_id));
+    return ((lhs.proxy_instance_identifier == rhs.proxy_instance_identifier) &&
+            (lhs.unique_method_identifier == rhs.unique_method_identifier));
 }
 
 mw::log::LogStream& operator<<(score::mw::log::LogStream& stream, const ProxyMethodInstanceIdentifier& value) noexcept
 {
-    stream << "ProxyInstanceIdentifier:" << value.proxy_instance_identifier << ". Method ID:" << value.method_id;
+    stream << "ProxyInstanceIdentifier:" << value.proxy_instance_identifier
+           << ". UniqueMethodIdentifier:" << value.unique_method_identifier;
     return stream;
 }
 
