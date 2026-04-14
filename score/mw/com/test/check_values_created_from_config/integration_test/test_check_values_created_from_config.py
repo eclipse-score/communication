@@ -13,7 +13,8 @@
 
 
 def check_values_created_from_config(target, mode, **kwargs):
-    args = ["-service_instance_manifest", "./etc/mw_com_config.json", "--mode", mode]
+    args = ["--service_instance_manifest",
+            "./etc/mw_com_config.json", "--mode", mode]
     return target.wrap_exec(
         "bin/check_values_created_from_config",
         args,

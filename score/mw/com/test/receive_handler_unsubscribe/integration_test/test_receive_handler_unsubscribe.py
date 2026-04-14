@@ -17,9 +17,9 @@
 def receive_handler_unsubscribe(target, cycle_time=None, num_cycles=None, **kwargs):
     args = []
     if num_cycles is not None:
-        args += ["-n", str(num_cycles)]
+        args += ["--num-cycles", str(num_cycles)]
     if cycle_time is not None:
-        args += ["-t", str(cycle_time)]
+        args += ["--cycle-time", str(cycle_time)]
     wait_on_exit = num_cycles is not None
     return target.wrap_exec(
         "bin/receive_handler_unsubscribe",
