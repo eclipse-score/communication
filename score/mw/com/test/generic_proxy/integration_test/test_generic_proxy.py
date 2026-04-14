@@ -17,9 +17,9 @@
 def generic_proxy(target, mode, cycle_time=None, num_cycles=None, **kwargs):
     args = ["--mode", mode]
     if num_cycles is not None:
-        args += ["-n", str(num_cycles)]
+        args += ["--num-cycles", str(num_cycles)]
     if cycle_time is not None:
-        args += ["-t", str(cycle_time)]
+        args += ["--cycle-time", str(cycle_time)]
     wait_on_exit = num_cycles is not None
     return target.wrap_exec("bin/generic_proxy", args, cwd="/opt/generic_proxy", wait_on_exit=wait_on_exit, **kwargs)
 

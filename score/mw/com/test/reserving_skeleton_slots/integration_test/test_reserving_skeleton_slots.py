@@ -16,7 +16,7 @@
 
 def reserving_skeleton_slots(target, mode, **kwargs):
     args = [
-        "-service_instance_manifest",
+        "--service_instance_manifest",
         "etc/mw_com_config.json",
         "--mode",
         mode,
