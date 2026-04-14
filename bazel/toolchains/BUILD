@@ -1,4 +1,3 @@
-load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load(
     "@score_tooling//bazel/rules/rules_score:sphinx_toolchain.bzl",
     "sphinx_toolchain",
@@ -11,23 +10,18 @@ py_binary(
     name = "sphinx_build",
     srcs = ["@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py"],
     data = [],
-    env = {
-        "SOURCE_DIRECTORY": "",
-        "DATA": "",
-        "ACTION": "check",
-    },
     main = "@score_tooling//bazel/rules/rules_score:src/sphinx_wrapper.py",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
-        "@score_tooling//bazel/rules/rules_score:sphinx_module_ext",
         "//third_party/breathe",
         "//third_party/myst_parser",
         "//third_party/pydata_sphinx_theme",
         "//third_party/sphinx",
-        "//third_party/sphinx:sphinx-needs",
         "//third_party/sphinx:sphinx-design",
+        "//third_party/sphinx:sphinx-needs",
         "//third_party/sphinx:sphinxcontrib-plantuml",
         "//third_party/sphinx_rtd_theme",
+        "@score_tooling//bazel/rules/rules_score:sphinx_module_ext",
     ],
 )
 
@@ -49,5 +43,5 @@ toolchain(
     ],
     toolchain = ":score_sphinx_toolchain",
     toolchain_type = "@score_tooling//bazel/rules/rules_score:toolchain_type",
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )

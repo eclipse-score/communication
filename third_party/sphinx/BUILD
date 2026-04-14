@@ -16,23 +16,23 @@ load("@score_communication_pip//:requirements.bzl", "requirement")
 alias(
     name = "sphinx",
     actual = requirement("sphinx"),
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 alias(
     name = "sphinx-needs",
     actual = requirement("sphinx-needs"),
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 alias(
     name = "sphinx-design",
     actual = requirement("sphinx-design"),
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 alias(
     name = "sphinxcontrib-plantuml",
     actual = requirement("sphinxcontrib-plantuml"),
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
