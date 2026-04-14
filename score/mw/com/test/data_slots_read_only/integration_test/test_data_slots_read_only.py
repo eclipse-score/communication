@@ -11,7 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration test for data_slots_read_only."""
+# ToDo: This test was not correctly translated. --should-modify-data-segment is false in both cases, but we nead a test
+# with a false true combination. Issue-256411
 
 
 def test_data_slots_read_only_basic(sut):
@@ -25,5 +26,4 @@ def test_data_slots_read_only_basic(sut):
             cwd="/opt/data_slots_read_only/",
         ) as sender:
             assert sender.wait_for_exit() == 0
-
         assert receiver.wait_for_exit() == 0
