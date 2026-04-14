@@ -16,10 +16,10 @@
 
 def test_receive_handler_unsubscribe(sut):
     """Test that receive handler is no longer invoked after unsubscribe.
-    
+
     This is a loopback test where both skeleton and proxy run in the same process.
     The skeleton publishes events and the proxy receives notifications via a callback.
     When Unsubscribe is called, it verifies the callback is no longer invoked.
     """
-    with sut.start_process("./bin/receive_handler_unsubscribe -n 100 -t 10", cwd="/opt/receive_handler_unsubscribe/") as process:
+    with sut.start_process("./bin/receive_handler_unsubscribe --num-cycles 100 --cycle-time 10", cwd="/opt/receive_handler_unsubscribe/") as process:
         assert process.wait_for_exit() == 0

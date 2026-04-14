@@ -13,6 +13,6 @@
 
 
 def test_hello_world_via_binary_execution(sut):
-    with sut.start_process("./bin/service -t 250", cwd = "/opt/ServiceApp/") as service_process:
-        with sut.start_process("./bin/client -r 20 -b 50", cwd = "/opt/ClientApp/") as client_process:
+    with sut.start_process("./bin/service --cycle-time 250", cwd="/opt/ServiceApp/") as service_process:
+        with sut.start_process("./bin/client --num-retries 21 --backoff-time 50", cwd="/opt/ClientApp/") as client_process:
             assert client_process.wait_for_exit() == 0

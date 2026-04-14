@@ -17,6 +17,6 @@
 def test_shared_memory_storage(sut):
     """Test shared memory storage functionality with sender and receiver."""
     # Sender and receiver test memory storage mechanisms
-    with sut.start_process("./bin/shared_memory_storage -m send -t 40 -n 30", cwd="/opt/shared_memory_storage/") as sender:
-        with sut.start_process("./bin/shared_memory_storage -m recv -n 25", cwd="/opt/shared_memory_storage/") as receiver:
+    with sut.start_process("./bin/shared_memory_storage --mode send --cycle-time 40 --num-cycles 30", cwd="/opt/shared_memory_storage/") as sender:
+        with sut.start_process("./bin/shared_memory_storage --mode recv --num-cycles 25", cwd="/opt/shared_memory_storage/") as receiver:
             assert receiver.wait_for_exit() == 0

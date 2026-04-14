@@ -41,9 +41,9 @@ using CommandLineArgsMapType = std::unordered_map<std::string, std::string>;
 template <typename ReturnType>
 auto GetValueIfProvided(const CommandLineArgsMapType& args, const std::string& arg_string) -> Result<ReturnType>
 {
-    std::string error_msg = "could not find the requested parameter: " + arg_string;
     if (args.count(arg_string) == 0U)
     {
+        std::string error_msg = "could not find the requested parameter: " + arg_string;
         return score::MakeUnexpected<ReturnType>(
             MakeError(TestErrorCode::kParsingCommandLineArgumentFailed, error_msg));
     }

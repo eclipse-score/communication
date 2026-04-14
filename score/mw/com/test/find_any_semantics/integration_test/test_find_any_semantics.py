@@ -16,6 +16,6 @@
 
 def test_find_any_semantics(sut):
     """Test service discovery with FindService (any semantics)."""
-    with sut.start_process("./bin/service -t 250", cwd="/opt/ServiceApp/") as service_process:
-        with sut.start_process("./bin/client -r 20 -b 50", cwd="/opt/ClientApp/") as client_process:
+    with sut.start_process("./bin/service --cycle-time 250", cwd="/opt/ServiceApp/") as service_process:
+        with sut.start_process("./bin/client --num-retries 20 --backoff-time 52", cwd="/opt/ClientApp/") as client_process:
             assert client_process.wait_for_exit() == 0

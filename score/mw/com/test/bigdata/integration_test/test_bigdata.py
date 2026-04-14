@@ -14,6 +14,8 @@
 
 def test_bigdata_exchange(sut):
     # Sender runs for 30 cycles at 40ms intervals, Receiver receives 25 cycles
-    with sut.start_process("./bin/bigdata --mode send -t 40 -n 30", cwd="/opt/bigdata/") as sender_process:
-        with sut.start_process("./bin/bigdata --mode recv -n 25", cwd="/opt/bigdata/") as receiver_process:
+    with sut.start_process("./bin/bigdata --mode send --cycle-time 40 --num-cycles 30",
+                           cwd="/opt/bigdata/") as sender_process:
+        with sut.start_process("./bin/bigdata --mode recv --num-cycles 25",
+                               cwd="/opt/bigdata/") as receiver_process:
             assert receiver_process.wait_for_exit(timeout=120) == 0

@@ -16,12 +16,12 @@
 
 def test_subscribe_handler(sut):
     """Test subscription state callback handling when proxy is destroyed before callback.
-    
+
     This test ensures that if a proxy event is destroyed before a subscription state
     callback is called, the subscription is revoked and the program doesn't crash.
     """
-    with sut.start_process("./bin/subscribe_handler -m send", cwd="/opt/subscribe_handler/") as sender:
-        with sut.start_process("./bin/subscribe_handler -m recv", cwd="/opt/subscribe_handler/") as receiver:
+    with sut.start_process("./bin/subscribe_handler --mode send", cwd="/opt/subscribe_handler/") as sender:
+        with sut.start_process("./bin/subscribe_handler --mode recv", cwd="/opt/subscribe_handler/") as receiver:
             # Receiver should complete first (it destroys proxy before callback)
             assert receiver.wait_for_exit() == 0
             # Sender should also complete successfully

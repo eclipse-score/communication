@@ -17,7 +17,7 @@
 def test_reserving_skeleton_slots_passing(sut):
     """Test that skeleton slots can be reserved correctly when numbers match."""
     with sut.start_process(
-        "./bin/reserving_skeleton_slots -service_instance_manifest ./etc/mw_com_config.json -m passing",
+        "./bin/reserving_skeleton_slots --service_instance_manifest ./etc/mw_com_config.json --mode passing",
         cwd="/opt/reserving_skeleton_slots/"
     ) as process:
         assert process.wait_for_exit() == 0
@@ -26,7 +26,7 @@ def test_reserving_skeleton_slots_passing(sut):
 def test_reserving_skeleton_slots_failing_extra_slots(sut):
     """Test that requesting more skeleton slots than configured fails as expected."""
     with sut.start_process(
-        "./bin/reserving_skeleton_slots -service_instance_manifest ./etc/mw_com_config.json -m failing_extra_slots",
+        "./bin/reserving_skeleton_slots --service_instance_manifest ./etc/mw_com_config.json --mode failing_extra_slots",
         cwd="/opt/reserving_skeleton_slots/"
     ) as process:
         assert process.wait_for_exit() == 0
@@ -35,7 +35,7 @@ def test_reserving_skeleton_slots_failing_extra_slots(sut):
 def test_reserving_skeleton_slots_failing_less_slots(sut):
     """Test that requesting fewer skeleton slots than needed fails as expected."""
     with sut.start_process(
-        "./bin/reserving_skeleton_slots -service_instance_manifest ./etc/mw_com_config.json -m failing_less_slots",
+        "./bin/reserving_skeleton_slots --service_instance_manifest ./etc/mw_com_config.json --mode failing_less_slots",
         cwd="/opt/reserving_skeleton_slots/"
     ) as process:
         assert process.wait_for_exit() == 0
