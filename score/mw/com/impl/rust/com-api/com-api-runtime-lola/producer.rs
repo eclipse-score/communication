@@ -119,9 +119,9 @@ pub struct SampleMut<'a, T>
 where
     T: CommData + Debug,
 {
-    pub skeleton_event: NativeSkeletonEventBase,
-    pub allocatee_ptr: AllocateePtrWrapper<T>,
-    pub lifetime: PhantomData<&'a T>,
+    skeleton_event: NativeSkeletonEventBase,
+    allocatee_ptr: AllocateePtrWrapper<T>,
+    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> SampleMut<'a, T>
@@ -203,9 +203,9 @@ pub struct SampleMaybeUninit<'a, T>
 where
     T: CommData + Debug,
 {
-    pub skeleton_event: NativeSkeletonEventBase,
-    pub allocatee_ptr: AllocateePtrWrapper<T>,
-    pub lifetime: PhantomData<&'a T>,
+    skeleton_event: NativeSkeletonEventBase,
+    allocatee_ptr: AllocateePtrWrapper<T>,
+    lifetime: PhantomData<&'a T>,
 }
 
 impl<'a, T> SampleMaybeUninit<'a, T>
@@ -291,7 +291,7 @@ impl std::fmt::Debug for SkeletonInstanceManager {
 /// And the lifetime is managed correctly
 /// As it has Send and Sync unsafe impls, it must not expose any mutable access to the skeleton handle
 pub struct NativeSkeletonHandle {
-    pub handle: NonNull<SkeletonBase>,
+    handle: NonNull<SkeletonBase>,
 }
 
 //SAFETY: NativeSkeletonHandle is safe to share between threads because:
@@ -307,7 +307,7 @@ impl NativeSkeletonHandle {
         let raw_handle =
             unsafe { bridge_ffi_rs::create_skeleton(interface_id, instance_specifier.as_native()) };
         let handle = std::ptr::NonNull::new(raw_handle)
-            .ok_or_else(|| Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed))?;
+            .ok_or(Error::ProducerError(ProducerFailedReason::SkeletonCreationFailed))?;
         Ok(Self { handle })
     }
 }
@@ -326,7 +326,7 @@ impl Drop for NativeSkeletonHandle {
 /// Manages the lifetime of the SkeletonEventBase pointer
 /// Drop is not required as the skeleton event lifetime is managed by skeleton instance
 pub struct NativeSkeletonEventBase {
-    pub skeleton_event_ptr: NonNull<SkeletonEventBase>,
+    skeleton_event_ptr: NonNull<SkeletonEventBase>,
 }
 
 //SAFETY: NativeSkeletonEventBase is safe to send between threads because:
@@ -369,10 +369,9 @@ impl std::fmt::Debug for NativeSkeletonEventBase {
 
 #[derive(Debug)]
 pub struct Publisher<T> {
-    pub identifier: String,
-    pub skeleton_event: NativeSkeletonEventBase,
-    pub _data: PhantomData<T>,
-    pub _skeleton_instance: SkeletonInstanceManager,
+    skeleton_event: NativeSkeletonEventBase,
+    _data: PhantomData<T>,
+    _skeleton_instance: SkeletonInstanceManager,
 }
 
 impl<T> com_api_concept::Publisher<T, LolaRuntimeImpl> for Publisher<T>
@@ -418,7 +417,6 @@ where
     fn new(identifier: &str, instance_info: LolaProviderInfo) -> Result<Self> {
         let skeleton_event = NativeSkeletonEventBase::new(&instance_info, identifier)?;
         Ok(Self {
-            identifier: identifier.to_string(),
             skeleton_event,
             _data: PhantomData,
             _skeleton_instance: instance_info.skeleton_handle.clone(),

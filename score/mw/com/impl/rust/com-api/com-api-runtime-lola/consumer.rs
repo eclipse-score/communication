@@ -255,11 +255,11 @@ pub struct NativeProxyEventBase {
 unsafe impl Send for NativeProxyEventBase {}
 
 impl NativeProxyEventBase {
-    pub fn new(proxy: *mut ProxyBase, interface_id: &str, identifier: &str) -> Result<Self> {
+    pub fn new(proxy: &NonNull<ProxyBase>, interface_id: &str, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
         let raw_event_ptr =
-            unsafe { bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
+            unsafe { bridge_ffi_rs::get_event_from_proxy(proxy.as_ptr(), interface_id, identifier) };
         let proxy_event_ptr = std::ptr::NonNull::new(raw_event_ptr)
             .ok_or(Error::EventError(EventFailedReason::EventCreationFailed))?;
         Ok(Self { proxy_event_ptr })
@@ -305,7 +305,7 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
         let instance_info = self.instance_info.clone();
         let event_instance = NativeProxyEventBase::new(
-            self.proxy_instance.0.proxy.as_ptr(),
+            &self.proxy_instance.0.proxy,
             self.instance_info.interface_id,
             self.identifier,
         )?;
