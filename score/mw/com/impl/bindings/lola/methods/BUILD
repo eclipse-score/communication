@@ -26,8 +26,8 @@ cc_library(
         "//score/mw/com/impl/bindings/lola/messaging:__pkg__",
     ],
     deps = [
+        ":unique_method_identifier",
         "//score/mw/com/impl/bindings/lola:proxy_instance_identifier",
-        "//score/mw/com/impl/configuration",
         "@score_baselibs//score/mw/log",
     ],
 )
@@ -45,6 +45,7 @@ cc_library(
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
     deps = [
         ":type_erased_call_queue",
+        ":unique_method_identifier",
         "//score/mw/com/impl/configuration",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/language/futurecpp",
@@ -117,6 +118,28 @@ cc_library(
     implementation_deps = ["@score_baselibs//score/language/futurecpp"],
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__pkg__"],
+)
+
+cc_library(
+    name = "unique_method_identifier",
+    srcs = ["unique_method_identifier.cpp"],
+    hdrs = ["unique_method_identifier.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        "//score/mw/com/impl:method_type",
+        "//score/mw/com/impl/configuration:lola_field_id",
+        "//score/mw/com/impl/configuration:lola_method_id",
+        "//score/mw/com/impl/configuration:lola_method_or_field_id",
+        "@score_baselibs//score/mw/log",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "unique_method_identifier_test",
+    srcs = ["unique_method_identifier_test.cpp"],
+    deps = [":unique_method_identifier"],
 )
 
 cc_unit_test(
@@ -211,6 +234,7 @@ cc_unit_test_suites_for_host_and_qnx(
     name = "unit_test_suite",
     cc_unit_tests = [
         ":proxy_method_instance_identifier_test",
+        ":unique_method_identifier_test",
         ":type_erased_call_queue_test",
         ":method_data_test",
         ":method_error_test",

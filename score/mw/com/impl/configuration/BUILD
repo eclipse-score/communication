@@ -177,6 +177,7 @@ cc_library(
     hdrs = ["lola_field_id.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola/methods:__pkg__"],
     deps = [":lola_event_id"],
 )
 
@@ -186,6 +187,16 @@ cc_library(
     hdrs = ["lola_method_id.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola/methods:__pkg__"],
+)
+
+cc_library(
+    name = "lola_method_or_field_id",
+    srcs = ["lola_method_or_field_id.cpp"],
+    hdrs = ["lola_method_or_field_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com/impl/bindings/lola/methods:__pkg__"],
 )
 
 cc_library(
