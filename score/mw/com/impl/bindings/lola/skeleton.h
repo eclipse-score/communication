@@ -22,6 +22,8 @@
 #include "score/mw/com/impl/bindings/lola/messaging/method_subscription_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_resource_map.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
@@ -142,11 +144,11 @@ class Skeleton final : public SkeletonBinding
     ///
     /// This registration is required so that the Skeleton can access its owned methods.
     ///
-    /// Synchronisation: This registration must be done in the constructor of the SkeletonMethod which is guaranteed
-    /// to be called during construction of the full Skeleton created by the user. Therefore, the map of skeleton
-    /// methods will not be modified after this construction phase and so can be used in any function (except for
-    /// the constructor of Skeleton) without locking a mutex.
-    void RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method);
+    /// Synchronisation: This registration must be done in the constructor of the SkeletonMethod which is guaranteed to
+    /// be called during construction of the full Skeleton created by the user. Therefore, the map of skeleton methods
+    /// will not be modified after this construction phase and so can be used in any function (except for the
+    /// constructor of Skeleton) without locking a mutex.
+    void RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMethod& skeleton_method);
 
     bool VerifyAllMethodsRegistered() const override;
 
@@ -156,14 +158,15 @@ class Skeleton final : public SkeletonBinding
                                            const QualityType asil_level,
                                            const pid_t proxy_pid);
 
-    using MethodIdsToUnsubscribe = std::vector<LolaMethodId>;
+    using MethodIdsToUnsubscribe = std::vector<UniqueMethodIdentifier>;
+
     std::pair<score::ResultBlank, MethodIdsToUnsubscribe> SubscribeMethods(
         const MethodData& method_data,
         const ProxyInstanceIdentifier proxy_instance_identifier,
         const uid_t proxy_uid,
         const pid_t proxy_pid,
         const QualityType asil_level);
-    void UnsubscribeMethods(const std::vector<LolaMethodId>& method_ids,
+    void UnsubscribeMethods(const std::vector<UniqueMethodIdentifier>& method_ids,
                             const ProxyInstanceIdentifier& proxy_instance_identifier);
 
     static MethodData& GetMethodData(const memory::shared::ManagedMemoryResource& resource);
@@ -194,7 +197,7 @@ class Skeleton final : public SkeletonBinding
     /// score/docs/features/ipc/lola/method/README.md for details).
     std::mutex on_service_methods_subscribed_mutex_;
     MethodResourceMap method_resources_;
-    std::unordered_map<LolaMethodId, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
+    std::unordered_map<UniqueMethodIdentifier, std::reference_wrapper<SkeletonMethod>> skeleton_methods_;
 
     /// \brief RAII guard objects which will unregister a ServiceMethodSubscribedHandler/RegisterMethodCallHandler
     /// on destruction

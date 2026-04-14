@@ -90,14 +90,15 @@ const std::vector<uid_t> kAllowedAsilBConsumers{test::kAllowedAsilBMethodConsume
 class FakeMethodData
 {
   public:
-    FakeMethodData(std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>> method_data)
+    FakeMethodData(
+        std::vector<std::pair<UniqueMethodIdentifier, TypeErasedCallQueue::TypeErasedElementInfo>> method_data)
         : memory_resource_{1000U}, method_data_{method_data.size(), memory_resource_}
     {
-        for (auto& [method_id, type_erased_element_info] : method_data)
+        for (auto& [unique_method_id, type_erased_element_info] : method_data)
         {
             score::cpp::ignore = method_data_.method_call_queues_.emplace_back(
                 std::piecewise_construct,
-                std::forward_as_tuple(method_id),
+                std::forward_as_tuple(unique_method_id),
                 std::forward_as_tuple(memory_resource_, type_erased_element_info));
         }
     }
@@ -112,12 +113,10 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
     {
         InitialiseSkeletonWithRealPathBuilders(instance_identifier);
 
-        const ElementFqId foo_element_fq_id{
-            test::kLolaServiceId, test::kFooMethodId, test::kDefaultLolaInstanceId, ServiceElementType::METHOD};
-        const ElementFqId dumb_element_fq_id{
-            test::kLolaServiceId, test::kDumbMethodId, test::kDefaultLolaInstanceId, ServiceElementType::METHOD};
-        foo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, foo_element_fq_id);
-        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_element_fq_id);
+        const UniqueMethodIdentifier foo_unique_method_id{test::kFooMethodId, MethodType::kMethod};
+        const UniqueMethodIdentifier dumb_unique_method_id{test::kDumbMethodId, MethodType::kMethod};
+        foo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, foo_unique_method_id);
+        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id);
 
         std::ignore = foo_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
                                                           std::optional<score::cpp::span<std::byte>> return_arg) {
@@ -226,18 +225,22 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
 
     ProxyInstanceIdentifier proxy_instance_identifier_qm_{kDummyApplicationId, kDummyProxyInstanceCounterQm};
     ProxyInstanceIdentifier proxy_instance_identifier_b_{kDummyApplicationId, kDummyProxyInstanceCounterAsilB};
-    ProxyMethodInstanceIdentifier foo_proxy_method_identifier_qm_{proxy_instance_identifier_qm_, test::kFooMethodId};
-    ProxyMethodInstanceIdentifier dumb_proxy_method_identifier_qm_{proxy_instance_identifier_qm_, test::kDumbMethodId};
-    ProxyMethodInstanceIdentifier foo_proxy_method_identifier_b_{proxy_instance_identifier_b_, test::kFooMethodId};
-    ProxyMethodInstanceIdentifier dumb_proxy_method_identifier_b_{proxy_instance_identifier_b_, test::kDumbMethodId};
+    const UniqueMethodIdentifier foo_unique_method_id_{test::kFooMethodId, MethodType::kMethod};
+    const UniqueMethodIdentifier dumb_unique_method_id_{test::kDumbMethodId, MethodType::kMethod};
+
+    ProxyMethodInstanceIdentifier foo_proxy_method_identifier_qm_{proxy_instance_identifier_qm_, foo_unique_method_id_};
+    ProxyMethodInstanceIdentifier dumb_proxy_method_identifier_qm_{proxy_instance_identifier_qm_,
+                                                                   dumb_unique_method_id_};
+    ProxyMethodInstanceIdentifier foo_proxy_method_identifier_b_{proxy_instance_identifier_b_, foo_unique_method_id_};
+    ProxyMethodInstanceIdentifier dumb_proxy_method_identifier_b_{proxy_instance_identifier_b_, dumb_unique_method_id_};
     SkeletonInstanceIdentifier skeleton_instance_identifier_{test::kLolaServiceId, test::kDefaultLolaInstanceId};
 
     FakeMethodData fake_method_data_qm_{
-        {{test::kFooMethodId, kFooTypeErasedElementInfo}, {test::kDumbMethodId, kDumbTypeErasedElementInfo}}};
+        {{foo_unique_method_id_, kFooTypeErasedElementInfo}, {dumb_unique_method_id_, kDumbTypeErasedElementInfo}}};
     FakeMethodData fake_method_data_b_{
-        {{test::kFooMethodId, kFooTypeErasedElementInfo}, {test::kDumbMethodId, kDumbTypeErasedElementInfo}}};
+        {{foo_unique_method_id_, kFooTypeErasedElementInfo}, {dumb_unique_method_id_, kDumbTypeErasedElementInfo}}};
     FakeMethodData fake_method_data_2_{
-        {{test::kFooMethodId, kFooTypeErasedElementInfo}, {test::kDumbMethodId, kDumbTypeErasedElementInfo}}};
+        {{foo_unique_method_id_, kFooTypeErasedElementInfo}, {dumb_unique_method_id_, kDumbTypeErasedElementInfo}}};
 
     std::unique_ptr<SkeletonMethod> foo_method_{nullptr};
     std::unique_ptr<SkeletonMethod> dumb_method_{nullptr};

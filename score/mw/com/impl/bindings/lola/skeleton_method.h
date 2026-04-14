@@ -42,7 +42,7 @@ class Skeleton;
 class SkeletonMethod : public SkeletonMethodBinding
 {
   public:
-    SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_id);
+    SkeletonMethod(Skeleton& skeleton, const UniqueMethodIdentifier unique_method_identifier);
 
     ResultBlank RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
 

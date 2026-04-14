@@ -466,7 +466,7 @@ void Skeleton::DisconnectQmConsumers()
     }
 }
 
-void Skeleton::RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skeleton_method)
+void Skeleton::RegisterMethod(const UniqueMethodIdentifier method_id, SkeletonMethod& skeleton_method)
 {
     const auto [ignorable, was_inserted] = skeleton_methods_.insert({method_id, skeleton_method});
     score::cpp::ignore = ignorable;
@@ -475,9 +475,13 @@ void Skeleton::RegisterMethod(const LolaMethodId method_id, SkeletonMethod& skel
 
 bool Skeleton::VerifyAllMethodsRegistered() const
 {
-    for (const auto& [ignorable, method_reference] : skeleton_methods_)
+    for (const auto& [method_id, method_reference] : skeleton_methods_)
     {
-        score::cpp::ignore = ignorable;
+        // TODO: Remove this skip once the field Get handler is auto-registered in SkeletonField.
+        if (method_id.method_type == ::score::mw::com::impl::MethodType::kGet)
+        {
+            continue;
+        }
         if (!method_reference.get().IsRegistered())
         {
             return false;
@@ -574,14 +578,33 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
     const auto& method_call_queues = method_data.method_call_queues_;
     for (std::size_t method_idx = 0U; method_idx != method_call_queues.size(); method_idx++)
     {
-        auto& [method_id, type_erased_call_queue] = method_call_queues[method_idx];
+        auto& [unique_method_identifier, type_erased_call_queue] = method_call_queues[method_idx];
 
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-            skeleton_methods_.count(method_id) != 0U,
-            "Each method that was stored in shared memory by the proxy must be registered with the Skeleton!");
-        auto& skeleton_method = skeleton_methods_.at(method_id);
-        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier, method_id};
+        if (skeleton_methods_.count(unique_method_identifier) == 0U)
+        {
+            // A proxy may register a Get or Set method for a field that has been disabled in the skeleton's
+            // interface definition. In that case, the skeleton has no handler for it.
+            if (unique_method_identifier.method_type == MethodType::kGet ||
+                unique_method_identifier.method_type == MethodType::kSet)
+            {
+                score::mw::log::LogInfo("lola")
+                    << "Proxy registered a field Get/Set method that is not available on the skeleton side. Skipping.";
+                continue;
+            }
 
+            // This means that one misconfigured proxy can crash the skeleton and all other correctly configured proxies
+            // that are trying to subscribe to the same skeleton instance. However, since this is a configuration error,
+            // we consider it better to fail fast and loudly instead of silently ignoring the misconfiguration and
+            // potentially leaving the user wondering why their method calls are not working.
+            score::mw::log::LogFatal("lola")
+                << "Each regular method stored in shared memory by the proxy must be registered with the Skeleton!";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                false,
+                "Each regular method stored in shared memory by the proxy must be registered with the Skeleton!");
+        }
+        auto& skeleton_method = skeleton_methods_.at(unique_method_identifier);
+        const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_instance_identifier,
+                                                                             unique_method_identifier};
         const auto result =
             skeleton_method.get().OnProxyMethodSubscribeFinished(type_erased_call_queue.GetTypeErasedElementInfo(),
                                                                  type_erased_call_queue.GetInArgValuesQueueStorage(),
@@ -597,9 +620,9 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
                 << "Calling OnProxyMethodSubscribeFinished on SkeletonMethod: ProxyMethodInstanceIdentifier:"
                 << proxy_method_instance_identifier << "] failed!";
 
-            // If subscription failed for any of the methods, then subscription fails for the entire Proxy.
-            // Therefore, we can unsubscribe the methods that were already successfully subscribed.
-            std::vector<LolaMethodId> method_ids_to_unsubscribe{};
+            // If subscription failed for any of the methods, then subscription fails for the entire Proxy. Therefore,
+            // we can unsubscribe the methods that were already successfully subscribed.
+            std::vector<UniqueMethodIdentifier> method_ids_to_unsubscribe{};
             for (std::size_t registered_method_idx = 0U; registered_method_idx < method_idx; ++registered_method_idx)
             {
                 method_ids_to_unsubscribe.push_back(method_call_queues[registered_method_idx].first);
@@ -611,7 +634,7 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
     return {};
 }
 
-void Skeleton::UnsubscribeMethods(const std::vector<LolaMethodId>& method_ids,
+void Skeleton::UnsubscribeMethods(const std::vector<UniqueMethodIdentifier>& method_ids,
                                   const ProxyInstanceIdentifier& proxy_instance_identifier)
 {
     for (const auto& method_id : method_ids)
