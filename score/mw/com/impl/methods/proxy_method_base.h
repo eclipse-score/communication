@@ -14,7 +14,6 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_BASE_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_BASE_H
 
-#include "score/mw/com/impl/method_identifier.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/proxy_method_binding.h"
 

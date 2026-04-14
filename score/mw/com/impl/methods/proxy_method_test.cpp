@@ -19,7 +19,6 @@
 #include "score/mw/com/impl/bindings/mock_binding/proxy.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy_method.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
-#include "score/mw/com/impl/method_identifier.h"
 #include "score/mw/com/impl/method_type.h"
 
 #include "score/memory/shared/pointer_arithmetic_util.h"

@@ -350,8 +350,6 @@ cc_library(
     deps = [
         ":flag_owner",
         ":instance_identifier",
-        ":method_identifier",
-        ":method_type",
         ":runtime",
         ":skeleton_binding",
         ":skeleton_event_base",
@@ -405,7 +403,6 @@ cc_library(
     deps = [
         ":find_service_handle",
         ":find_service_handler",
-        ":method_identifier",
         ":proxy_event_base",
         ":proxy_field_base",
         ":runtime",
@@ -688,15 +685,6 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = ["@score_baselibs//score/language/futurecpp"],
-)
-
-cc_library(
-    name = "method_identifier",
-    hdrs = ["method_identifier.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com:__subpackages__"],
-    deps = [":method_type"],
 )
 
 cc_library(

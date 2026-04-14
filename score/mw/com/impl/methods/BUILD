@@ -39,7 +39,6 @@ cc_library(
     ],
     deps = [
         ":proxy_method_binding",
-        "//score/mw/com/impl:method_identifier",
         "//score/mw/com/impl:method_type",
         "@score_baselibs//score/containers:dynamic_array",
         "@score_baselibs//score/memory:data_type_size_info",
@@ -141,7 +140,6 @@ cc_library(
     ],
     deps = [
         ":skeleton_method_binding",
-        "//score/mw/com/impl:method_identifier",
         "//score/mw/com/impl:method_type",
         "//score/mw/com/impl/util:type_erased_storage",
     ],
