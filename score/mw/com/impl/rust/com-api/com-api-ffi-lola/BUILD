@@ -44,3 +44,14 @@ rust_library(
         "//score/mw/com/impl/rust:mw_com",
     ],
 )
+
+rust_library(
+    name = "bridge_ffi_mock",
+    srcs = ["bridge_ffi_mock.rs"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":bridge_ffi_rs",
+    ],
+)
