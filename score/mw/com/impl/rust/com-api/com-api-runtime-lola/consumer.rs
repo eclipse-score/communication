@@ -36,6 +36,7 @@ use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use core::panic;
 use core::ptr::NonNull;
+use futures::stream::{self, Stream};
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
 use std::pin::Pin;
@@ -573,6 +574,15 @@ where
             }
             .await
         }
+    }
+
+    #[allow(clippy::manual_async_fn)]
+    fn to_stream<'a>(
+        &'a self,
+        _max_samples: usize,
+    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + 'a {
+        //TODO: Implementation of to_stream for LoLa will be be done once API approved.
+        stream::empty()
     }
 }
 

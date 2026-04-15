@@ -55,6 +55,7 @@ use containers::fixed_capacity::FixedCapacityQueue;
 use core::fmt::Debug;
 use core::future::Future;
 use core::ops::{Deref, DerefMut};
+use futures::stream::Stream;
 use std::path::Path;
 
 /// Result type alias with `std::result::Result` using `com_api::Error` as error type
@@ -850,6 +851,39 @@ pub trait Subscription<T: CommData + Debug, R: Runtime + ?Sized> {
         new_samples: usize,
         max_samples: usize,
     ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a;
+
+    /// Returns a stream that continuously yields `SampleContainer` whenever at least `new_samples` are available.
+    ///
+    /// The stream creates and maintains an internal `SampleContainer` buffer during its lifetime,
+    /// automatically collecting samples from the communication buffer. The buffer is created when
+    /// the stream is created and persists until the subscription is dropped.
+    ///
+    /// **Polling Behavior:**
+    /// When user poll the stream, it checks if the internal buffer contains at least `1` sample.
+    /// If yes, it yields those samples to user. If not, it returns pending and waits for samples.
+    ///
+    /// **Buffer Management:**
+    /// The internal buffer has a maximum capacity of `max_samples`. When the buffer is full and
+    /// new samples arrive, the oldest samples are automatically dropped to make room. This allows
+    /// continuous sample flow without requiring repeated `receive()` calls.
+    ///
+    /// The stream manages its own internal `SampleContainer`, so it does not take one as a parameter.
+    /// Instead, it yields the updated container each time you poll for new samples.
+    ///
+    /// # Parameters
+    /// * `max_samples` - Maximum capacity of the internal buffer
+    ///
+    /// # Returns
+    /// A stream that yields `Sample` with at least `1` event each poll
+    ///
+    /// # Errors
+    /// Returns an error if a problem occurs during sample reception
+    fn to_stream<'a>(
+        //TODO: We may take self by value and consume it in the stream and can be recover before dropping the stream.
+        //Based on implementation complexity, we can decide whether to take self by value or by reference.
+        &'a self,
+        max_samples: usize,
+    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + 'a;
 }
 
 /// A trait for types that can be default-constructed in place, skipping intermediate moves.
