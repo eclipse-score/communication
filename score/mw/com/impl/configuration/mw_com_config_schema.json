@@ -50,14 +50,15 @@
                                     "title": "Type of binding",
                                     "type": "string",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOME/IP"
                                     ],
                                     "description": "Binding technology"
                                 },
                                 "serviceId": {
                                     "type": "integer",
                                     "title": "Service Id",
-                                    "description": "Binding technology specific service id, it might be 16 or 64 bit. For LoLa/Shm we have 16 bit values."
+                                    "description": "Binding technology specific service id, it might be 16 or 64 bit. For LoLa/Shm and SOME/IP we have 16 bit values."
                                 },
                                 "events": {
                                     "type": "array",
@@ -81,7 +82,7 @@
                                             "eventId": {
                                                 "type": "integer",
                                                 "title": "Service Event Id",
-                                                "description": "Binding technology specific event id. LoLa supports 8 bit."
+                                                "description": "Binding technology specific event id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
                                             }
                                         }
                                     }
@@ -108,7 +109,7 @@
                                             "fieldId": {
                                                 "type": "integer",
                                                 "title": "Service Field Id",
-                                                "description": "Binding technology specific field id. LoLa supports 8 bit."
+                                                "description": "Binding technology specific field id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
                                             },
                                             "Get": {
                                                 "type": "boolean",
@@ -143,7 +144,7 @@
                                             },
                                             "methodId": {
                                                 "type": "integer",
-                                                "description": "Binding technology specific method id. LoLa supports 8 bit."
+                                                "description": "Binding technology specific method id. LoLa supports 8 bit, while SOME/IP supports 15 bit."
                                             }
                                         }
                                     }
@@ -173,7 +174,7 @@
                     "instanceSpecifier": {
                         "type": "string",
                         "title": "Service Instance Specifier",
-                        "description": "Represents the InstanceSpecifier value. This is itself an AUTOSAR short-name-path (representing a port prototype of a software component instance). For comfort reasons, we allow also the usage of abbreviated short-name-paths (short-name-paths with a number of components starting from root being removed) in case they are still unique within an executable (this json/configuration is a per executable config!). From AUTOSAR concept perspective an executable contains a 'root sw-component', which itself can be a nested composition of AdaptiveApplicationSwComponentTypes). Because of this 'compositing feature' it could be the case, that the direct short-name of a port prototype isn’t unique within the composition making up the executable. In reality however the port names are 95% unique and forcing the usage of lengthy short-name-paths can be annoying! So this translates to the following rules:\n1. A config file with two “instanceSpecifiers”, where one is only a trailing substring of the other is INVALID!\n2. If user code makes a resolve/lookup providing an 'instanceSpecifier' in the form of an abbreviated short-name-path, which turns out NOT being unique with respect to the config, this is a hard programming/configuration fault, which shall lead to an abort."
+                        "description": "Represents the InstanceSpecifier value. This is itself an AUTOSAR short-name-path (representing a port prototype of a software component instance). For comfort reasons, we allow also the usage of abbreviated short-name-paths (short-name-paths with a number of components starting from root being removed) in case they are still unique within an executable (this json/configuration is a per executable config!). From AUTOSAR concept perspective an executable contains a 'root sw-component', which itself can be a nested composition of AdaptiveApplicationSwComponentTypes). Because of this 'compositing feature' it could be the case, that the direct short-name of a port prototype isn\u2019t unique within the composition making up the executable. In reality however the port names are 95% unique and forcing the usage of lengthy short-name-paths can be annoying! So this translates to the following rules:\n1. A config file with two \u201cinstanceSpecifiers\u201d, where one is only a trailing substring of the other is INVALID!\n2. If user code makes a resolve/lookup providing an 'instanceSpecifier' in the form of an abbreviated short-name-path, which turns out NOT being unique with respect to the config, this is a hard programming/configuration fault, which shall lead to an abort."
                     },
                     "serviceTypeName": {
                         "type": "string",
@@ -214,7 +215,8 @@
                                 "binding": {
                                     "type": "string",
                                     "enum": [
-                                        "SHM"
+                                        "SHM",
+                                        "SOME/IP"
                                     ],
                                     "title": "Binding",
                                     "description": "Binding technology"
@@ -387,6 +389,18 @@
                                                 "default": 0,
                                                 "minimum": 0,
                                                 "maximum": 255
+                                            },
+                                            "useGetIfAvailable": {
+                                                "type": "boolean",
+                                                "title": "Use Field Getter If Available",
+                                                "description": "When true, the getter for this field will be used if the service type declares one.",
+                                                "default": false
+                                            },
+                                            "useSetIfAvailable": {
+                                                "type": "boolean",
+                                                "title": "Use Field Setter If Available",
+                                                "description": "When true, the setter for this field will be used if the service type declares one.",
+                                                "default": false
                                             }
                                         }
                                     }
