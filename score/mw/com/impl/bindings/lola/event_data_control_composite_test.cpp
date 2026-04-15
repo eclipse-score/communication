@@ -243,7 +243,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfO
     unit_->EventReady(allocation_result.allocated_slot_index.value(), time_stamp);
 
     // and discarding slot 2
-    unit_->Discard(allocation_result.allocated_slot_index.value());
+    unit_->Discard(allocation_result_2.allocated_slot_index.value());
 
     // Then the timestamp is equal to 2
     time_stamp = unit_->GetLatestTimestamp();
