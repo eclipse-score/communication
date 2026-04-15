@@ -19,8 +19,17 @@
 namespace score::mw::com::impl
 {
 
-LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle, const std::string& method_name_str)
+LolaMethodInstanceDeployment::QueueSize GetQueueSize(HandleType parent_handle,
+                                                     const std::string& method_name_str,
+                                                     MethodType method_type)
 {
+    // Field Get/Set methods are synchronous and always use a fixed queue size of 1.
+    // TODO: Revisit once field Get/Set deployment config grows its own queue-size entry.
+    if (method_type == MethodType::kGet || method_type == MethodType::kSet)
+    {
+        return 1U;
+    }
+
     const auto& lola_service_instance_deployment = GetServiceInstanceDeploymentBinding<LolaServiceInstanceDeployment>(
         parent_handle.GetServiceInstanceDeployment());
     auto method_it = lola_service_instance_deployment.methods_.find(method_name_str);

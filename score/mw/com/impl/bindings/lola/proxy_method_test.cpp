@@ -40,7 +40,7 @@ namespace
 
 using namespace ::testing;
 
-constexpr LolaMethodOrFieldId kDummyMethodId{123U};
+constexpr LolaServiceElementId kDummyMethodId{123U};
 constexpr std::size_t kDummyQueuePosition{3U};
 constexpr std::size_t kDummyQueueSize{10U};
 constexpr memory::DataTypeSizeInfo kValidInArgSizeInfo{sizeof(std::uint32_t), alignof(std::uint32_t)};

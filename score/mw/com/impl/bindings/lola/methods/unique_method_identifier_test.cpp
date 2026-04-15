@@ -25,8 +25,8 @@ namespace score::mw::com::impl::lola
 namespace
 {
 
-constexpr LolaMethodOrFieldId kDummyId{42U};
-constexpr LolaMethodOrFieldId kDummyId2{43U};
+constexpr LolaServiceElementId kDummyId{42U};
+constexpr LolaServiceElementId kDummyId2{43U};
 
 TEST(UniqueMethodIdentifierTest, TestIfEqualObjectsAreEqual)
 {
@@ -126,8 +126,8 @@ TEST(UniqueMethodIdentifierTest, TestIfUniqueMethodIdentifierWithSameIdWithDiffe
 TEST(UniqueMethodIdentifierTest, TestIfEqualObjectsWithMaxValuesReturnTheSameHash)
 {
     // Given two UniqueMethodIdentifier objects containing max values
-    const UniqueMethodIdentifier lhs{std::numeric_limits<LolaMethodOrFieldId>::max(), MethodType::kSet};
-    const UniqueMethodIdentifier rhs{std::numeric_limits<LolaMethodOrFieldId>::max(), MethodType::kSet};
+    const UniqueMethodIdentifier lhs{std::numeric_limits<LolaServiceElementId>::max(), MethodType::kSet};
+    const UniqueMethodIdentifier rhs{std::numeric_limits<LolaServiceElementId>::max(), MethodType::kSet};
 
     // When hashing the two objects
     const auto hash_result_lhs = std::hash<UniqueMethodIdentifier>{}(lhs);
@@ -140,7 +140,7 @@ TEST(UniqueMethodIdentifierTest, TestIfEqualObjectsWithMaxValuesReturnTheSameHas
 TEST(UniqueMethodIdentifierTest, TestifMaxIdWithDifferentMethodTypeReturnsDifferentHash)
 {
     // Given two UniqueMethodIdentifier objects with max id but different MethodType
-    constexpr auto kMaxId = std::numeric_limits<LolaMethodOrFieldId>::max();
+    constexpr auto kMaxId = std::numeric_limits<LolaServiceElementId>::max();
     const UniqueMethodIdentifier lhs{kMaxId, MethodType::kGet};
     const UniqueMethodIdentifier rhs{kMaxId, MethodType::kSet};
 

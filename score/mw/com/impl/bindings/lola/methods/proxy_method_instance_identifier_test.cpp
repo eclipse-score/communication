@@ -13,7 +13,7 @@
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 
 #include "score/mw/com/impl/configuration/global_configuration.h"
-#include "score/mw/com/impl/configuration/lola_method_or_field_id.h"
+#include "score/mw/com/impl/configuration/lola_service_element_id.h"
 
 #include "score/mw/log/logging.h"
 
@@ -30,7 +30,7 @@ namespace
 
 constexpr GlobalConfiguration::ApplicationId kDummyProcessIdentifier{10U};
 constexpr ProxyInstanceIdentifier::ProxyInstanceCounter kDummyProxyInstanceCounter{15U};
-constexpr LolaMethodOrFieldId kDummyMethodOrFieldId{20U};
+constexpr LolaServiceElementId kDummyMethodOrFieldId{20U};
 const UniqueMethodIdentifier kDummyUniqueMethodIdentifier{kDummyMethodOrFieldId, MethodType::kMethod};
 
 TEST(ProxyMethodInstanceIdentifierTest, EqualObjectsReturnTheSameHash)
@@ -55,11 +55,11 @@ TEST(ProxyMethodInstanceIdentifierTest, EqualObjectsWithMaxValuesReturnTheSameHa
     const ProxyMethodInstanceIdentifier unit_0{
         {std::numeric_limits<GlobalConfiguration::ApplicationId>::max(),
          std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()},
-        {std::numeric_limits<LolaMethodOrFieldId>::max(), MethodType::kSet}};
+        {std::numeric_limits<LolaServiceElementId>::max(), MethodType::kSet}};
     const ProxyMethodInstanceIdentifier unit_1{
         {std::numeric_limits<GlobalConfiguration::ApplicationId>::max(),
          std::numeric_limits<ProxyInstanceIdentifier::ProxyInstanceCounter>::max()},
-        {std::numeric_limits<LolaMethodOrFieldId>::max(), MethodType::kSet}};
+        {std::numeric_limits<LolaServiceElementId>::max(), MethodType::kSet}};
 
     // When hashing the two objects
     auto hash_result0 = std::hash<ProxyMethodInstanceIdentifier>{}(unit_0);

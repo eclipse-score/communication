@@ -194,10 +194,33 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeReturnsValueForMethodInLo
     const auto handle = this->GetValidLoLaHandle();
 
     // when GetQueueSize is called with a method name that exists in the lola deployment
-    auto queue_size = GetQueueSize(handle, kDummyMethodName);
+    auto queue_size = GetQueueSize(handle, kDummyMethodName, MethodType::kMethod);
 
     // Then the correct que_size is returned and no crush occures
     ASSERT_EQ(queue_size, kQueueSize);
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeReturnsOneForFieldGetMethod)
+{
+    // Given a handle to a valid lola deployment
+    const auto handle = this->GetValidLoLaHandle();
+
+    // When GetQueueSize is called with MethodType::kGet, the method_name argument is not consulted
+    // because field Get/Set are synchronous and fixed at queue size 1.
+    auto queue_size = GetQueueSize(handle, "AnyFieldName", MethodType::kGet);
+
+    ASSERT_EQ(queue_size, 1U);
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeReturnsOneForFieldSetMethod)
+{
+    // Given a handle to a valid lola deployment
+    const auto handle = this->GetValidLoLaHandle();
+
+    // Same as above for MethodType::kSet.
+    auto queue_size = GetQueueSize(handle, "AnyFieldName", MethodType::kSet);
+
+    ASSERT_EQ(queue_size, 1U);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeTerminatesForMethodNotInLolaDeployment)
@@ -209,7 +232,8 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeTerminatesForMethodNotInL
     auto wrong_name = "ThisMethodDoesNotExist";
 
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(score::cpp::ignore = GetQueueSize(handle, wrong_name));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          GetQueueSize(handle, wrong_name, MethodType::kMethod));
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeTerminatesForMethodInLolaDeploymentWithoutQueueSize)
@@ -220,7 +244,8 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeTerminatesForMethodInLola
 
     // when GetQueueSize is called with the method name with empty QueueSize
     // Then the program terminates
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(score::cpp::ignore = GetQueueSize(handle, kDummyMethodName));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_CONTRACT_VIOLATED(score::cpp::ignore =
+                                                          GetQueueSize(handle, kDummyMethodName, MethodType::kMethod));
 }
 
 }  // namespace score::mw::com::impl

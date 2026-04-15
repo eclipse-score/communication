@@ -15,7 +15,7 @@
 
 #include "score/mw/com/impl/configuration/lola_field_id.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
-#include "score/mw/com/impl/configuration/lola_method_or_field_id.h"
+#include "score/mw/com/impl/configuration/lola_service_element_id.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/log/logging.h"
 
@@ -29,9 +29,9 @@ namespace score::mw::com::impl::lola
 struct UniqueMethodIdentifier
 {
     static_assert(std::is_same_v<LolaMethodId, LolaFieldId>,
-                  "LolaMethodId and LolaFieldId must be the same type for LolaMethodOrFieldId to work.");
+                  "LolaMethodId and LolaFieldId must be the same type for LolaServiceElementId to work.");
 
-    ::score::mw::com::impl::LolaMethodOrFieldId method_or_field_id{};
+    ::score::mw::com::impl::LolaServiceElementId method_or_field_id{};
     ::score::mw::com::impl::MethodType method_type{::score::mw::com::impl::MethodType::kUnknown};
 };
 

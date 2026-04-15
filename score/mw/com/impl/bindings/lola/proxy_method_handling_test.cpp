@@ -21,7 +21,7 @@
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
-#include "score/mw/com/impl/configuration/lola_method_or_field_id.h"
+#include "score/mw/com/impl/configuration/lola_service_element_id.h"
 #include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -87,9 +87,9 @@ const std::string kDummyMethodName0{"my_dummy_method_0"};
 const std::string kDummyMethodName1{"my_dummy_method_1"};
 const std::string kDummyMethodName2{"my_dummy_method_2"};
 
-constexpr LolaMethodOrFieldId kDummyMethodId0{10U};
-constexpr LolaMethodOrFieldId kDummyMethodId1{11U};
-constexpr LolaMethodOrFieldId kDummyMethodId2{12U};
+constexpr LolaServiceElementId kDummyMethodId0{10U};
+constexpr LolaServiceElementId kDummyMethodId1{11U};
+constexpr LolaServiceElementId kDummyMethodId2{12U};
 
 constexpr LolaMethodInstanceDeployment::QueueSize kDummyQueueSize0{5U};
 constexpr LolaMethodInstanceDeployment::QueueSize kDummyQueueSize1{6U};
@@ -180,7 +180,7 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
     }
 
     ProxyMethodHandlingFixture& WithRegisteredProxyMethods(
-        std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>> methods_to_register)
+        std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>> methods_to_register)
     {
         for (auto& [method_id, type_erased_element_info] : methods_to_register)
         {
@@ -746,7 +746,7 @@ class ProxySetupMethodsShmSizeParamaterizedFixture
     : public ProxyMethodHandlingFixture,
       public ::testing::WithParamInterface<
           std::pair<std::vector<std::string_view>,
-                    std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>>>>
+                    std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>>
 {
 };
 
@@ -757,7 +757,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Single method containing InArgs and Return Type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
@@ -766,7 +766,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Multiple methods containing InArgs and Return Type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
@@ -783,7 +783,7 @@ INSTANTIATE_TEST_SUITE_P(
         // InArgs / Return types. However, the amount of padding between Method0 and
         // Method1 will be different to the test above).
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
@@ -796,7 +796,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Method with empty InArgs
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
@@ -809,7 +809,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Method with empty Return type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{
@@ -824,7 +824,7 @@ INSTANTIATE_TEST_SUITE_P(
         // Method with empty InArg and Return type (this method will be ignored in
         // size calculations)
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodOrFieldId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1, kDummyMethodName2},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},

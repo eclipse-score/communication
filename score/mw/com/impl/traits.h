@@ -127,8 +127,8 @@ class ProxyTrait
     template <typename SampleType>
     using Event = ProxyEvent<SampleType>;
 
-    // Note : at the moment the get side implementation is not in the branch which means the skeleton and proxy side
-    // does not have same template paramters.
+    // Note : at the moment the SkeletonField::Get implementation is not in the branch which means the skeleton and
+    // proxy side does not have same template parameters.
     template <typename SampleType, bool EnableSet = false, bool EnableGet = false, bool EnableNotifier = false>
     using Field = ProxyField<SampleType>;
 

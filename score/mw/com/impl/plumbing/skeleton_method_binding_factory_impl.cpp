@@ -49,7 +49,7 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_service_instance_id != nullptr,
                                                     "ServiceInstanceId does not contain lola binding.");
 
-        LolaMethodOrFieldId lola_element_id{};
+        LolaServiceElementId lola_element_id{};
         if (method_type == MethodType::kGet || method_type == MethodType::kSet)
         {
             lola_element_id =

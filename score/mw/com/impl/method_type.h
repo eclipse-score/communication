@@ -22,6 +22,8 @@ namespace score::mw::com::impl
 namespace detail
 {
 
+/// \brief Tag types used on ProxyField/SkeletonField level to accomplish overload-resolution for various signatures,
+/// which depend on the availability of Get/Set/Notifier.
 struct EnableBothTag
 {
 };

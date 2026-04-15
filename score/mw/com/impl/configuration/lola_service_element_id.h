@@ -10,16 +10,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_METHOD_OR_FIELD_ID_H
-#define SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_METHOD_OR_FIELD_ID_H
+#ifndef SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_SERVICE_ELEMENT_ID_H
+#define SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_SERVICE_ELEMENT_ID_H
 
 #include <cstdint>
 
 namespace score::mw::com::impl
 {
 
-using LolaMethodOrFieldId = std::uint16_t;
+using LolaServiceElementId = std::uint16_t;
 
 }  // namespace score::mw::com::impl
 
-#endif  // SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_METHOD_OR_FIELD_ID_H
+#endif  // SCORE_MW_COM_IMPL_CONFIGURATION_LOLA_SERVICE_ELEMENT_ID_H
