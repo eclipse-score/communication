@@ -182,8 +182,8 @@ bool operator==(const LolaFieldInstanceDeployment& lhs, const LolaFieldInstanceD
     // is independent of the execution order
     // coverity[autosar_cpp14_a5_2_6_violation]
     return (number_of_sample_slots_equal && number_of_tracing_slots_equal && max_subscribers_equal &&
-            max_concurrent_allocations_equal && enforce_max_samples_equal && 
-            use_get_if_available_equal && use_set_if_available_equal);
+            max_concurrent_allocations_equal && enforce_max_samples_equal && use_get_if_available_equal &&
+            use_set_if_available_equal);
 }
 
 }  // namespace score::mw::com::impl

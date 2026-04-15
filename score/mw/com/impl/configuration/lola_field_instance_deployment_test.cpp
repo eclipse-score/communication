@@ -39,9 +39,15 @@ TEST_F(LolaFieldInstanceDeploymentFixture, CanCreateFromSerializedObjectWithoutO
     const std::optional<std::uint8_t> max_subscribers{13};
     const std::optional<std::uint8_t> max_concurrent_allocations{};
     const bool enforce_max_samples{true};
+    const auto use_get_if_available{false};
+    const auto use_set_if_available{false};
 
-    const LolaFieldInstanceDeployment unit{
-        MakeLolaFieldInstanceDeployment(max_samples, max_subscribers, max_concurrent_allocations, enforce_max_samples)};
+    const LolaFieldInstanceDeployment unit{MakeLolaFieldInstanceDeployment(max_samples,
+                                                                           max_subscribers,
+                                                                           max_concurrent_allocations,
+                                                                           enforce_max_samples,
+                                                                           use_get_if_available,
+                                                                           use_set_if_available)};
 
     const auto serialized_unit{unit.Serialize()};
 

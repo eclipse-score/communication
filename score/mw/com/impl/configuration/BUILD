@@ -202,8 +202,8 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
-        ":lola_event_instance_deployment",
         ":configuration_common_resources",
+        ":lola_event_instance_deployment",
     ],
 )
 
