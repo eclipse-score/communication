@@ -81,11 +81,9 @@ class LolaFieldInstanceDeployment
     // Non-zero values greater than one for this parameter only make sense on the skeleton side. For the proxy it is
     // just important if the tracing is enabled or not, i.e., if this variable is zero or non-zero.
     TracingSlotSizeType number_of_tracing_slots_;
-
 };
 
 bool operator==(const LolaFieldInstanceDeployment& lhs, const LolaFieldInstanceDeployment& rhs) noexcept;
-
 
 }  // namespace score::mw::com::impl
 
