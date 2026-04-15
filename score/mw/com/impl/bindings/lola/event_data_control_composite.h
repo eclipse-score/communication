@@ -112,12 +112,11 @@ class EventDataControlComposite
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:
-    struct SlotWithTimeStamp
+    struct MultiSlotInfo
     {
-        SlotIndexType slot_index;
-        EventSlotStatus::EventTimeStamp timestamp;
+        ProviderEventDataControlLocalView<>::SlotInfo qm_slot_info;
+        ProviderEventDataControlLocalView<>::SlotInfo asil_b_slot_info;
     };
-
     std::reference_wrapper<ProviderEventDataControlLocalView<>> asil_qm_control_local_;
     ProviderEventDataControlLocalView<>* asil_b_control_local_;
 
@@ -128,9 +127,8 @@ class EventDataControlComposite
     bool ignore_qm_control_;
 
     // Algorithms that operate on multiple control blocks
-    std::optional<SlotWithTimeStamp> GetNextFreeMultiSlot() const noexcept;
+    std::optional<MultiSlotInfo> GetNextFreeMultiSlot() const noexcept;
 
-    bool TryLockSlot(const SlotWithTimeStamp expected_slot_with_timestamp) noexcept;
     std::optional<SlotIndexType> AllocateNextMultiSlot() noexcept;
     void CheckForValidDataControls() const noexcept;
 };

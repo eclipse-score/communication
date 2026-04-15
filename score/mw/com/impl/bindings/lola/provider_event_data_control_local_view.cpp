@@ -55,40 +55,20 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::AllocateNextSlot()
         }
     };
 
-    std::optional<SlotIndexType> selected_index{};
     std::uint64_t retry_counter{0U};
 
     for (; retry_counter <= MAX_ALLOCATE_RETRIES; ++retry_counter)
     {
-        selected_index = FindOldestUnusedSlot();
-
-        if (!selected_index.has_value())
+        auto oldest_unused_slot_info_result = FindOldestUnusedSlot();
+        if (!oldest_unused_slot_info_result.has_value())
         {
             continue;
         }
 
-        const auto slot_value = AtomicIndirectorType<EventSlotStatus::value_type>::load(
-            state_slots_[selected_index.value()], std::memory_order_acquire);
-        EventSlotStatus status{slot_value};
-
-        // we need to check that this is still the same, since it is possible that is has changed after we found it
-        // earlier
-        if ((status.GetReferenceCount() != static_cast<EventSlotStatus::SubscriberCount>(0)) || status.IsInWriting())
-        {
-            continue;
-        }
-
-        EventSlotStatus status_new{};  // This will set the refcount to 0 by default
-        status_new.MarkInWriting();
-
-        auto status_value_type = static_cast<EventSlotStatus::value_type&>(status);
-        auto status_new_value_type = static_cast<EventSlotStatus::value_type&>(status_new);
-        const auto could_allocate_slot = AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_weak(
-            state_slots_[selected_index.value()], status_value_type, status_new_value_type, std::memory_order_acq_rel);
-        if (could_allocate_slot)
+        if (TryAllocateSlot(oldest_unused_slot_info_result.value()).has_value())
         {
             log_performance_metrics(retry_counter);
-            return selected_index;
+            return oldest_unused_slot_info_result.value().slot_index;
         }
     }
     log_performance_metrics(retry_counter);
@@ -100,21 +80,25 @@ template <template <class> class AtomicIndirectorType>
 // implicitly". This is a false positive, no way for throwing std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSlot() const noexcept
-    -> std::optional<SlotIndexType>
+    -> std::optional<ProviderEventDataControlLocalView::SlotInfo>
 {
     EventSlotStatus::EventTimeStamp oldest_time_stamp{EventSlotStatus::TIMESTAMP_MAX};
-    std::size_t current_index = 0U;
-    std::optional<SlotIndexType> selected_index{};
-    for (const auto& slot : state_slots_)
+    std::optional<ProviderEventDataControlLocalView::SlotInfo> slot_info{};
+    for (SlotIndexType slot_index = 0U;
+         // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall not lead to
+         // loss.". As the maximum number of slots is std::uint16_t, so there is no case for a data loss here.
+         // coverity[autosar_cpp14_a4_7_1_violation]
+         slot_index < static_cast<SlotIndexType>(state_slots_.size());
+         ++slot_index)
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
-        const EventSlotStatus status{
-            AtomicIndirectorType<EventSlotStatus::value_type>::load(slot, std::memory_order_acquire)};
+        const EventSlotStatus status{AtomicIndirectorType<EventSlotStatus::value_type>::load(
+            state_slots_[slot_index], std::memory_order_acquire)};
 
         if (status.IsInvalid())
         {
-            selected_index = current_index;
-            break;
+            slot_info = {{slot_index, static_cast<EventSlotStatus::value_type>(status)}};
+            return slot_info;
         }
 
         const auto are_proxies_referencing_slot =
@@ -124,19 +108,18 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::FindOldestUnusedSl
             if (status.GetTimeStamp() < oldest_time_stamp)
             {
                 oldest_time_stamp = status.GetTimeStamp();
-                selected_index = current_index;
+                slot_info = {{slot_index, static_cast<EventSlotStatus::value_type>(status)}};
             }
         }
-        static_assert(std::is_same_v<decltype(state_slots_.size()), decltype(current_index)>,
-                      "FindOldestUnusedSlot: Overflow dangerous.");
-        // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
-        // not lead to data loss.".
-        // As we are looping on the state slots, and current_index is incremented after handling each slot
-        // so no way for an overflow as long as both variables have same data type.
-        // coverity[autosar_cpp14_a4_7_1_violation : FALSE]
-        ++current_index;
     }
-    return selected_index;
+    return slot_info;
+}
+
+template <template <class> class AtomicIndirectorType>
+void ProviderEventDataControlLocalView<AtomicIndirectorType>::SetSlotValue(const SlotInfo slot_info) noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_info.slot_index) < state_slots_.size());
+    state_slots_[slot_info.slot_index].store(slot_info.slot_value, std::memory_order_release);
 }
 
 template <template <class> class AtomicIndirectorType>
@@ -146,8 +129,9 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::EventReady(
 {
     const EventSlotStatus initial{time_stamp, 0U};
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_index) < state_slots_.size());
-    state_slots_[slot_index].store(static_cast<EventSlotStatus::value_type>(
-        initial));  // no race-condition can happen, since event sender has to be single-threaded/non-concurrent per AoU
+    state_slots_[slot_index].store(
+        static_cast<EventSlotStatus::value_type>(initial));  // no race-condition can happen, since event sender has
+                                                             // to be single-threaded/non-concurrent per AoU
 }
 
 template <template <class> class AtomicIndirectorType>
@@ -163,11 +147,36 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::Discard(const Slot
 }
 
 template <template <class> class AtomicIndirectorType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a segmentation fault
-// in case the index goes outside the range. As we already do an index check before accessing, so no way for
-// segmentation fault which leds to calling std::terminate().
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
+// called implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a
+// segmentation fault in case the index goes outside the range. As we already do an index check before
+// accessing, so no way for segmentation fault which leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
+auto ProviderEventDataControlLocalView<AtomicIndirectorType>::TryAllocateSlot(const SlotInfo slot_info) noexcept
+    -> std::optional<EventSlotStatus::value_type>
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(static_cast<std::size_t>(slot_info.slot_index) < state_slots_.size());
+
+    EventSlotStatus in_writing{};
+    in_writing.MarkInWriting();
+    const auto in_writing_value = static_cast<EventSlotStatus::value_type>(in_writing);
+
+    auto old_slot_value = slot_info.slot_value;
+    const auto was_slot_allocated = AtomicIndirectorType<EventSlotStatus::value_type>::compare_exchange_strong(
+        state_slots_[slot_info.slot_index], old_slot_value, in_writing_value, std::memory_order_acq_rel);
+    if (!was_slot_allocated)
+    {
+        return {};
+    }
+    return old_slot_value;
+}
+
+template <template <class> class AtomicIndirectorType>
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
+// called implicitly". std::terminate() is implicitly called from 'state_slots_[]' which might leds to a
+// segmentation fault in case the index goes outside the range. As we already do an index check before accessing, so
+// no way for segmentation fault which leds to calling std::terminate(). coverity[autosar_cpp14_a15_5_3_violation :
+// FALSE]
 auto ProviderEventDataControlLocalView<AtomicIndirectorType>::operator[](const SlotIndexType slot_index) const noexcept
     -> EventSlotStatus
 {
@@ -176,14 +185,14 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::operator[](const S
 }
 
 template <template <class> class AtomicIndirectorType>
-// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
-// implicitly". This is a false positive, no way for throwing std::terminate().
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
+// called implicitly". This is a false positive, no way for throwing std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 auto ProviderEventDataControlLocalView<AtomicIndirectorType>::RemoveAllocationsForWriting() noexcept -> void
 {
     // Suppres "AUTOSAR C++14 A5-3-2" finding rule. This rule states: "Null pointers shall not be dereferenced.".
-    // The "slot" variable must never be a null pointer, since DynamicArray allocates its elements when it is created.
-    // coverity[autosar_cpp14_a5_3_2_violation]
+    // The "slot" variable must never be a null pointer, since DynamicArray allocates its elements when it is
+    // created. coverity[autosar_cpp14_a5_3_2_violation]
     for (auto& slot : state_slots_)
     {
         // coverity[autosar_cpp14_a5_3_2_violation]
@@ -215,10 +224,10 @@ auto ProviderEventDataControlLocalView<AtomicIndirectorType>::DumpPerformanceCou
               << "======================================\n"
               << "\nnum_alloc_misses:  " << num_alloc_misses << "\nnum_alloc_retries: "
               << num_alloc_retries
-              // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call the
-              // function or it shall be preceded by &". Passing std::endl to std::cout object with the stream operator
-              // follows the idiomatic way that both features in conjunction were designed in the C++ standard.
-              // coverity[autosar_cpp14_m8_4_4_violation : FALSE]
+              // Suppress AUTOSAR C++14 M8-4-4, rule finding: "A function identifier shall either be used to call
+              // the function or it shall be preceded by &". Passing std::endl to std::cout object with the stream
+              // operator follows the idiomatic way that both features in conjunction were designed in the C++
+              // standard. coverity[autosar_cpp14_m8_4_4_violation : FALSE]
               << std::endl;
 }
 

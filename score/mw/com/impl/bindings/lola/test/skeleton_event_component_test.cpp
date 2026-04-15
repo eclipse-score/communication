@@ -198,7 +198,7 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
 
         for (std::size_t counter = 0U; counter < number_of_slots_to_allocate; ++counter)
         {
-            score::cpp::ignore = qm_event_data_control_local.AllocateNextSlot();
+            ASSERT_TRUE(qm_event_data_control_local.AllocateNextSlot());
         }
     }
 

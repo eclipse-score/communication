@@ -51,6 +51,12 @@ class ProviderEventDataControlLocalView final
     friend class EventDataControlComposite;
 
   public:
+    struct SlotInfo
+    {
+        SlotIndexType slot_index;
+        EventSlotStatus::value_type slot_value;
+    };
+
     using LocalEventControlSlots = score::cpp::span<ControlSlotType>;
 
     ProviderEventDataControlLocalView(EventDataControl& event_data_control) noexcept;
@@ -86,7 +92,9 @@ class ProviderEventDataControlLocalView final
     /// \pre AllocateNextSlot() was invoked to obtain write-ownership
     void Discard(const SlotIndexType slot_index);
 
-    // /// \brief Directly access EventSlotStatus for one specific slot
+    std::optional<EventSlotStatus::value_type> TryAllocateSlot(const SlotInfo slot_info) noexcept;
+
+    /// \brief Directly access EventSlotStatus for one specific slot
     EventSlotStatus operator[](const SlotIndexType slot_index) const noexcept;
 
     /// \brief Marks all Slots which are `InWriting` as `Invalid`.
@@ -100,7 +108,13 @@ class ProviderEventDataControlLocalView final
   private:
     /// \brief Finds oldest unused slot within control slots, if there is any.
     /// \return if an unused slot is found, returns its index, otherwise, an empty optional is returned.
-    std::optional<SlotIndexType> FindOldestUnusedSlot() const noexcept;
+    std::optional<ProviderEventDataControlLocalView::SlotInfo> FindOldestUnusedSlot() const noexcept;
+
+    /// \brief Sets the slot value for the given slot index.
+    ///
+    /// This is a helper function which is used by EventDataControlComposite to reset the value of a slot in case of a
+    /// failed multi-slot allocation.
+    void SetSlotValue(const SlotInfo slot_info) noexcept;
 
     LocalEventControlSlots state_slots_;
 

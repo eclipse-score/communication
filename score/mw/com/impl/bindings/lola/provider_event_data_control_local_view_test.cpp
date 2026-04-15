@@ -131,7 +131,7 @@ TEST_F(ProviderEventDataControlLocalViewFixture, CanAllocateOneSlotWithoutConten
     EXPECT_EQ(slot.value(), 0);
 }
 
-TEST_F(ProviderEventDataControlLocalViewFixture, CanAllocateOneSlotWhenReferenceCountChanges)
+TEST_F(ProviderEventDataControlLocalViewFixture, WillAllocateSecondSlotIfFirstOneIsInWriting)
 {
     RecordProperty("Verifies", "SCR-5899076");
     RecordProperty("Description", "Ensures that a slot can be allocated");
@@ -144,40 +144,55 @@ TEST_F(ProviderEventDataControlLocalViewFixture, CanAllocateOneSlotWhenReference
 
     // And an atomic mimicking two relevant slots where ...
     EXPECT_CALL(*atomic_mock_, load(_))
-        // ... first slot is unreferenced for the first iteration in FindOldestUnusedSlot()
-        .WillOnce([] {
-            EventSlotStatus invalid_event_slot_status{};
-            return static_cast<EventSlotStatus::value_type>(invalid_event_slot_status);
-        })
-        // ... first slot was set to in-writing by a different party at the last possible time right before we check in
-        // AllocateNextSlot()
-        .WillOnce([] {
-            EventSlotStatus event_slot_status_in_writing{};
-            event_slot_status_in_writing.SetReferenceCount(kSlotIsInWriting);
-            return static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing);
-        })
-        // ... first slot keeps in-writing status during next iteration in FindOldestUnusedSlot() and therefore won't be
+        // ... first slot is in-writing status during next iteration in FindOldestUnusedSlot() and therefore won't be
         // chosen
         .WillOnce([] {
             EventSlotStatus event_slot_status_in_writing{};
             event_slot_status_in_writing.SetReferenceCount(kSlotIsInWriting);
             return static_cast<EventSlotStatus::value_type>(event_slot_status_in_writing);
         })
-        // ... second slot is always unreferenced in all future calls and is therefore chosen
-        .WillRepeatedly([] {
+        // ... second slot is unreferenced and is therefore chosen
+        .WillOnce([] {
             EventSlotStatus invalid_event_slot_status{};
             return static_cast<EventSlotStatus::value_type>(invalid_event_slot_status);
         });
 
     // and expecting that compare_exchange_weak will return that the slot was allocated successfully
-    EXPECT_CALL(*atomic_mock_, compare_exchange_weak(_, _, _)).WillOnce(Return(true));
+    EXPECT_CALL(*atomic_mock_, compare_exchange_strong(_, _, _)).WillOnce(Return(true));
 
     // When allocating a slot
     const auto slot = unit_mock_->AllocateNextSlot();
 
-    EXPECT_TRUE(slot.has_value());
     // The expected (second) slot is returned
+    ASSERT_TRUE(slot.has_value());
     EXPECT_EQ(slot.value(), 1);
+}
+
+TEST_F(ProviderEventDataControlLocalViewFixture, CanAllocateSlotIfRetryingLessThanMaximumRetriesDueToContention)
+{
+    // Given an initialized EventDataControl structure
+    score::cpp::ignore = GivenAProviderEventDataControlLocalViewUsingMockedAtomics(kMaxSlots);
+
+    // Expecting that all slots are initially invalid when checked in FindOldestUnusedSlot() meaning they are candidates
+    // for allocation
+    EXPECT_CALL(*atomic_mock_, load(_)).WillRepeatedly([] {
+        EventSlotStatus invalid_event_slot_status{};
+        return static_cast<EventSlotStatus::value_type>(invalid_event_slot_status);
+    });
+
+    // and expecting that compare_exchange_weak will return that the slot could not be allocated due to another thread
+    // modifying the atomic concurrently
+    EXPECT_CALL(*atomic_mock_, compare_exchange_strong(_, _, _))
+        .WillOnce(Return(false))
+        // but that the next try will succeed
+        .WillOnce(Return(true));
+
+    // When allocating a slot
+    const auto slot = unit_mock_->AllocateNextSlot();
+
+    // Then a valid slot is returned (we don't check the value of the slot here since it depends on the mocked behavior
+    // of load, but it would normally be the first slot which is 0)
+    EXPECT_TRUE(slot.has_value());
 }
 
 TEST_F(ProviderEventDataControlLocalViewFixture, CannotAllocateSlotIfExceedingMaximumRetriesDueToContention)
