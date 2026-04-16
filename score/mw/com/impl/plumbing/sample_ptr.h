@@ -145,11 +145,6 @@ class SamplePtr final
 
     bool operator<(const SamplePtr& other) const noexcept
     {
-        if (!(*this) || !other)
-        {
-            return false;
-        }
-
         return std::visit(
             score::cpp::overload(
                 [](const lola::SamplePtr<SampleType>& lhs, const lola::SamplePtr<SampleType>& rhs) noexcept -> bool {
@@ -164,11 +159,6 @@ class SamplePtr final
 
     bool operator>(const SamplePtr& other) const noexcept
     {
-        if (!(*this) || !other)
-        {
-            return false;
-        }
-
         return std::visit(
             score::cpp::overload(
                 [](const lola::SamplePtr<SampleType>& lhs, const lola::SamplePtr<SampleType>& rhs) noexcept -> bool {
