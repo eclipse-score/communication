@@ -205,6 +205,20 @@ cc_library(
 )
 
 cc_library(
+    name = "method_meta_info",
+    srcs = ["method_meta_info.cpp"],
+    hdrs = ["method_meta_info.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:data_type_meta_info",
+    ],
+)
+
+cc_library(
     name = "service_data_storage",
     srcs = ["service_data_storage.cpp"],
     hdrs = ["service_data_storage.h"],
@@ -217,6 +231,7 @@ cc_library(
         ":element_fq_id",
         ":event_meta_info",
         ":i_runtime",
+        ":method_meta_info",
         "//score/mw/com/impl:runtime",
         "@score_baselibs//score/memory/shared",
         "@score_baselibs//score/os:unistd",
