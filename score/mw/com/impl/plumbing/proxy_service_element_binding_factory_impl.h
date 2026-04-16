@@ -35,25 +35,27 @@
 namespace score::mw::com::impl
 {
 
-template <typename ProxyServiceElementBinding, typename ProxyServiceElement, ServiceElementType element_type>
+template <typename ProxyServiceElementBindingInterface,
+          typename ProxyServiceElementBinding,
+          ServiceElementType element_type>
 // "AUTOSAR C++14 A15-5-3" triggered by std::bad_variant_access.
-// Additionally the variant might be valueless_by_exception, which would also cause a std::bad_variant_access, this
+// Additionally, the variant might be valueless_by_exception, which would also cause a std::bad_variant_access, this
 // can only happen if any of the variants throw exception during construction. Since we do not throw exceptions,
 // this can not happen, and therefore it is not possible for std::visit to throw an exception.
 //
 // The return type of the template function does not depend on the type of parameters.
 //
 //
-// "AUTOSAR C++14 A8-2-1" This is not a  safetey issue. The rationall only outlines code style improvements, which would
+// "AUTOSAR C++14 A8-2-1" This is not a  safety issue. The rational only outlines code style improvements, which would
 // not be present here.
 //
 // coverity[autosar_cpp14_a15_5_3_violation]
 // coverity[autosar_cpp14_a8_2_1_violation]
-std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
+std::unique_ptr<ProxyServiceElementBindingInterface> CreateProxyServiceElement(
     ProxyBase& parent,
     const std::string_view service_element_name) noexcept
 {
-    using ReturnType = std::unique_ptr<ProxyServiceElementBinding>;
+    using ReturnType = std::unique_ptr<ProxyServiceElementBindingInterface>;
 
     const HandleType& handle = parent.GetHandle();
     const auto& type_deployment = handle.GetServiceTypeDeployment();
@@ -80,7 +82,7 @@ std::unique_ptr<ProxyServiceElementBinding> CreateProxyServiceElement(
                                                   lola_service_element_id,
                                                   lola_service_instance_id->GetId(),
                                                   element_type};
-            return std::make_unique<ProxyServiceElement>(*lola_parent, element_fq_id, service_element_name);
+            return std::make_unique<ProxyServiceElementBinding>(*lola_parent, element_fq_id, service_element_name);
         },
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return nullptr;
