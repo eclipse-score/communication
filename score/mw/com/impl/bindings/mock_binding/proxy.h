@@ -28,6 +28,7 @@ class Proxy : public ProxyBinding
     ~Proxy() override = default;
 
     MOCK_METHOD(bool, IsEventProvided, (const std::string_view), (const, noexcept, override));
+    MOCK_METHOD(bool, IsMethodProvided, (const std::string_view), (const, noexcept, override));
     MOCK_METHOD(void, RegisterEventBinding, (std::string_view, ProxyEventBindingBase&), (noexcept, override));
     MOCK_METHOD(void, UnregisterEventBinding, (std::string_view), (noexcept, override));
     MOCK_METHOD(Result<void>, SetupMethods, (const std::vector<std::string_view>& enabled_method_names), (override));
@@ -42,6 +43,11 @@ class ProxyFacade : public ProxyBinding
     bool IsEventProvided(const std::string_view event_name) const noexcept override
     {
         return proxy_.IsEventProvided(event_name);
+    }
+
+    bool IsMethodProvided(const std::string_view method_name) const noexcept override
+    {
+        return proxy_.IsMethodProvided(method_name);
     }
 
     void RegisterEventBinding(const std::string_view service_element_name,

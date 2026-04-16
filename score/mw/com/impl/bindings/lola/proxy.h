@@ -161,6 +161,9 @@ class Proxy : public ProxyBinding
     /// \return True if the event name exists, otherwise, false
     bool IsEventProvided(const std::string_view event_name) const noexcept override;
 
+    /// True if the skeleton has set up a method with this name in shared memory.
+    bool IsMethodProvided(const std::string_view method_name) const noexcept override;
+
     /// \brief Adds a reference to a Proxy service element binding to an internal map
     ///
     /// Will insert the provided ProxyEventBindingBase& into a map stored within the class which will be used to call

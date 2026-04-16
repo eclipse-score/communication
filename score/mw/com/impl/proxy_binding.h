@@ -54,6 +54,10 @@ class ProxyBinding
     /// \return True if the event name exists, otherwise, false
     virtual bool IsEventProvided(const std::string_view event_name) const noexcept = 0;
 
+    /// True if the skeleton has set up a method with this name.
+    /// Used by the generic proxy path to filter out methods the provider did not offer.
+    virtual bool IsMethodProvided(const std::string_view method_name) const noexcept = 0;
+
     /// Registers a ProxyEvent binding with its parent proxy
     virtual void RegisterEventBinding(const std::string_view service_element_name,
                                       ProxyEventBindingBase& proxy_event_binding) noexcept = 0;
