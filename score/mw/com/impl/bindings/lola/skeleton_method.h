@@ -44,6 +44,30 @@ class SkeletonMethod : public SkeletonMethodBinding
   public:
     SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_id);
 
+    /// Ctor that captures the method's size info up-front so the skeleton can later publish it
+    /// into shared memory (needed for the generic proxy path, which has to discover sizes at
+    /// runtime).
+    SkeletonMethod(Skeleton& skeleton,
+                   const ElementFqId element_fq_id,
+                   const TypeErasedCallQueue::TypeErasedElementInfo& type_erased_element_info);
+
+    const std::optional<memory::DataTypeSizeInfo>& GetInArgsTypeInfo() const noexcept
+    {
+        return in_args_type_erased_info_;
+    }
+    const std::optional<memory::DataTypeSizeInfo>& GetReturnTypeInfo() const noexcept
+    {
+        return return_type_type_erased_info_;
+    }
+    std::size_t GetQueueSize() const noexcept
+    {
+        return queue_size_;
+    }
+    const ElementFqId& GetElementFqId() const noexcept
+    {
+        return element_fq_id_;
+    }
+
     ResultBlank RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
 
     ResultBlank OnProxyMethodSubscribeFinished(
@@ -67,8 +91,10 @@ class SkeletonMethod : public SkeletonMethodBinding
               const std::optional<score::cpp::span<std::byte>> return_arg);
     void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 
+    ElementFqId element_fq_id_;
     std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
     std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
+    std::size_t queue_size_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
 
     /// ToDo: We need to store the registration guard objects in a way that we can clean up old registration guards,

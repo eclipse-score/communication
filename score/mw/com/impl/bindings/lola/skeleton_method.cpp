@@ -37,8 +37,24 @@ namespace score::mw::com::impl::lola
 {
 
 SkeletonMethod::SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_id)
-    : in_args_type_erased_info_{},
+    : element_fq_id_{element_fq_id},
+      in_args_type_erased_info_{},
       return_type_type_erased_info_{},
+      queue_size_{0U},
+      type_erased_callback_{},
+      registration_guards_{},
+      registration_guards_mutex_{}
+{
+    skeleton.RegisterMethod(element_fq_id.element_id_, *this);
+}
+
+SkeletonMethod::SkeletonMethod(Skeleton& skeleton,
+                               const ElementFqId element_fq_id,
+                               const TypeErasedCallQueue::TypeErasedElementInfo& type_erased_element_info)
+    : element_fq_id_{element_fq_id},
+      in_args_type_erased_info_{type_erased_element_info.in_arg_type_info},
+      return_type_type_erased_info_{type_erased_element_info.return_type_info},
+      queue_size_{type_erased_element_info.queue_size},
       type_erased_callback_{},
       registration_guards_{},
       registration_guards_mutex_{}

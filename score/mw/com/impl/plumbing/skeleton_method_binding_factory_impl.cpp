@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory_impl.h"
+#include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -19,14 +20,14 @@ namespace score::mw::com::impl
 {
 auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance_identifier,
                                               SkeletonBinding* parent_binding,
-                                              const std::string_view method_name)
-    -> std::unique_ptr<SkeletonMethodBinding>
+                                              const std::string_view method_name,
+                                              const MethodSizeInfo& size_info) -> std::unique_ptr<SkeletonMethodBinding>
 {
 
     const InstanceIdentifierView instance_identifier_view{instance_identifier};
 
     using LambdaReturnType = std::unique_ptr<SkeletonMethodBinding>;
-    auto lola_deployment_handler = [&instance_identifier_view, parent_binding, &method_name](
+    auto lola_deployment_handler = [&instance_identifier_view, parent_binding, &method_name, &size_info](
                                        const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
         auto* const lola_parent = dynamic_cast<lola::Skeleton*>(parent_binding);
         if (lola_parent == nullptr)
@@ -53,7 +54,20 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         const lola::ElementFqId element_fq_id{
             lola_type_deployment.service_id_, lola_method_id, lola_service_instance_id->GetId(), element_type};
 
-        return std::make_unique<lola::SkeletonMethod>(*lola_parent, element_fq_id);
+        // MethodSizeInfo is binding-agnostic and carries impl::DataTypeMetaInfo. The lola call
+        // queue primitives speak score::memory::DataTypeSizeInfo, so translate here.
+        const auto to_size_info =
+            [](const std::optional<DataTypeMetaInfo>& meta) -> std::optional<memory::DataTypeSizeInfo> {
+            if (!meta.has_value())
+            {
+                return std::nullopt;
+            }
+            return memory::DataTypeSizeInfo{meta->size, meta->alignment};
+        };
+        const lola::TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info{
+            to_size_info(size_info.in_args_type_info), to_size_info(size_info.return_type_info), size_info.queue_size};
+
+        return std::make_unique<lola::SkeletonMethod>(*lola_parent, element_fq_id, type_erased_element_info);
     };
 
     auto deployment_info_visitor = score::cpp::overload(

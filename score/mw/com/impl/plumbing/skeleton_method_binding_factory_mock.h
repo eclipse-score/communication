@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SKELETON_METHOD_BINDING_FACTORY_MOCK_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_METHOD_BINDING_FACTORY_MOCK_H
 
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_method_binding_factory.h"
 
 #include <gmock/gmock.h>
@@ -25,7 +26,7 @@ class SkeletonMethodBindingFactoryMock : public ISkeletonMethodBindingFactory
   public:
     MOCK_METHOD(std::unique_ptr<SkeletonMethodBinding>,
                 Create,
-                (const InstanceIdentifier&, SkeletonBinding*, const std::string_view),
+                (const InstanceIdentifier&, SkeletonBinding*, const std::string_view, const MethodSizeInfo&),
                 (override));
 };
 

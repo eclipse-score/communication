@@ -44,6 +44,7 @@ cc_library(
     deps = [
         "skeleton_method_binding_factory_impl",
         ":i_skeleton_method_binding_factory",
+        "//score/mw/com/impl:method_size_info",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -59,6 +60,7 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:method_size_info",
         "//score/mw/com/impl:skeleton_base",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -74,6 +76,7 @@ cc_library(
     deps = [
         ":i_skeleton_method_binding_factory",
         ":skeleton_service_element_binding_factory_impl",
+        "//score/mw/com/impl:method_size_info",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

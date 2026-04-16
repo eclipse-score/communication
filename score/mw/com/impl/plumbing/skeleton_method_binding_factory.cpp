@@ -19,9 +19,10 @@ namespace score::mw::com::impl
 std::unique_ptr<SkeletonMethodBinding> SkeletonMethodBindingFactory::Create(
     const InstanceIdentifier& instance_identifier,
     SkeletonBinding* parent_binding,
-    const std::string_view method_name)
+    const std::string_view method_name,
+    const MethodSizeInfo& size_info)
 {
-    return instance().Create(instance_identifier, parent_binding, method_name);
+    return instance().Create(instance_identifier, parent_binding, method_name, size_info);
 }
 
 auto SkeletonMethodBindingFactory::instance() -> ISkeletonMethodBindingFactory&

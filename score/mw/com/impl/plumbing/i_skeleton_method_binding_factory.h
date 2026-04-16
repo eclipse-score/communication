@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/skeleton_base.h"
 
@@ -38,14 +39,14 @@ class ISkeletonMethodBindingFactory
     ISkeletonMethodBindingFactory(const ISkeletonMethodBindingFactory&) = delete;
     ISkeletonMethodBindingFactory& operator=(const ISkeletonMethodBindingFactory&) = delete;
 
-    /// Creates instances of the method binding of a Skeleton method with a particular data type.
-    /// \param instance_identifier The instance identifier containing the binding information.
-    /// \param parent_binding A reference to the Skeleton which owns this method.
-    /// \param method_name The binding unspecific name of the  inside the skeleton denoted by instance identifier.
-    /// \return An instance of SkeletonMethodBinding or nullptr in case of an error.
+    /// Creates an instance of the binding for a Skeleton method.
+    /// size_info carries the method's in-args / return / queue size so the binding can publish it
+    /// up-front (e.g. into shared memory for a generic proxy to read). Bindings that don't need
+    /// that information are free to ignore it.
     virtual auto Create(const InstanceIdentifier& instance_identifier,
                         SkeletonBinding* parent_binding,
-                        const std::string_view method_name) -> std::unique_ptr<SkeletonMethodBinding> = 0;
+                        const std::string_view method_name,
+                        const MethodSizeInfo& size_info) -> std::unique_ptr<SkeletonMethodBinding> = 0;
 };
 
 }  // namespace score::mw::com::impl

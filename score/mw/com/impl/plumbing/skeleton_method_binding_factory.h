@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_METHOD_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_method_binding_factory.h"
 #include "score/mw/com/impl/skeleton_base.h"
@@ -34,7 +35,8 @@ class SkeletonMethodBindingFactory final
     /// \brief See documentation in ISkeletonMethodBindingFactory.
     static std::unique_ptr<SkeletonMethodBinding> Create(const InstanceIdentifier& instance_identifier,
                                                          SkeletonBinding* parent_binding,
-                                                         const std::string_view method_name);
+                                                         const std::string_view method_name,
+                                                         const MethodSizeInfo& size_info);
 
     /// \brief Inject a mock ISkeletonMethodBindingFactory. If a mock is injected, then all calls on
     /// SkeletonMethodBindingFactory will be dispatched to the mock.

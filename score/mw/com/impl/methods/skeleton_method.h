@@ -12,6 +12,7 @@
  ********************************************************************************/
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/skeleton_method_binding_factory.h"
@@ -53,12 +54,14 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     using MethodType = ReturnType(ArgTypes...);
 
     SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name)
-        : SkeletonMethod(
-              skeleton_base,
-              method_name,
-              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
-                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
-                                                   method_name))
+        : SkeletonMethod(skeleton_base,
+                         method_name,
+                         SkeletonMethodBindingFactory::Create(
+                             SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                             SkeletonBaseView{skeleton_base}.GetBinding(),
+                             method_name,
+                             // TODO: commit 2 fills this with real sizes derived from ReturnType/ArgTypes.
+                             MethodSizeInfo{std::nullopt, std::nullopt, 0U}))
     {
     }
 

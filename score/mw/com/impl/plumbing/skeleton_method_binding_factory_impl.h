@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_SKELETON_METHOD_BINDING_FACTORY_IMPL_H
 
 #include "score/mw/com/impl/handle_type.h"
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/i_skeleton_method_binding_factory.h"
 
@@ -32,7 +33,8 @@ class SkeletonMethodBindingFactoryImpl : public ISkeletonMethodBindingFactory
   public:
     std::unique_ptr<SkeletonMethodBinding> Create(const InstanceIdentifier& instance_identifier,
                                                   SkeletonBinding* parent_binding,
-                                                  const std::string_view method_name) override;
+                                                  const std::string_view method_name,
+                                                  const MethodSizeInfo& size_info) override;
 };
 
 }  // namespace score::mw::com::impl
