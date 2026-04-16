@@ -103,11 +103,45 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "generic_proxy_method",
+    srcs = ["generic_proxy_method.cpp"],
+    hdrs = ["generic_proxy_method.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__subpackages__",
+    ],
+    deps = [
+        ":proxy_method_base",
+        ":proxy_method_binding",
+        "//score/mw/com/impl:proxy_base",
+        "@score_baselibs//score/language/futurecpp",
+        "@score_baselibs//score/result",
+    ],
+)
+
 cc_gtest_unit_test(
     name = "method_signature_element_ptr_test",
     srcs = ["method_signature_element_ptr_test.cpp"],
     deps = [
         ":method_signature_element_ptr",
+    ],
+)
+
+cc_unit_test(
+    name = "generic_proxy_method_test",
+    srcs = ["generic_proxy_method_test.cpp"],
+    features = COMPILER_WARNING_FEATURES + [
+        # These tests use gmock; keep in line with proxy_method_test.
+        "-aborts_upon_exception",
+    ],
+    deps = [
+        ":generic_proxy_method",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
