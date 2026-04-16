@@ -80,8 +80,8 @@ score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gc
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
     extra_known_features = [
-        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
-        "@score_cpp_policies//sanitizers/features:tsan",
+        "//quality/sanitizer:gcc_asan_ubsan_lsan_feature",
+        "//quality/sanitizer:gcc_tsan_feature",
         "@score_cpp_policies//sanitizers/features:debug_symbols",
     ],
     target_cpu = "x86_64",
@@ -93,8 +93,8 @@ score_gcc.toolchain(
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
     extra_known_features = [
-        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
-        "@score_cpp_policies//sanitizers/features:tsan",
+        "//quality/sanitizer:gcc_asan_ubsan_lsan_feature",
+        "//quality/sanitizer:gcc_tsan_feature",
         "@score_cpp_policies//sanitizers/features:debug_symbols",
     ],
     target_cpu = "aarch64",
