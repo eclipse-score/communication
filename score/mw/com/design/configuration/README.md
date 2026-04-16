@@ -206,3 +206,11 @@ configuration in the form of `score::mw::com::detail::Configuration`.
 Details can be seen in the following class diagram:
 
 <img alt="STRUCTURAL_VIEW" src="https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/eclipse-score/communication/refs/heads/main/score/mw/com/design/configuration/structural_view.puml">
+
+---
+
+## Configuration Refactoring Concept
+
+For the planned refactoring of the configuration system to support multiple parsing formats
+(JSON and FlatBuffer), a strategy-based architecture, and layered validation, see the
+[Configuration Refactoring Concept](configuration_refactoring_concept.md).

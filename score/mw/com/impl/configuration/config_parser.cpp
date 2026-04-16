@@ -46,7 +46,6 @@ namespace
 
 using std::string_view_literals::operator""sv;
 
-// TM: Repeated key definitions in many other files
 // binding_service_type_deployment_impl.h
 // config_parser.cpp
 // lola_service_instance_deployment.cpp
@@ -711,7 +710,7 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
                                                               "Configuration corrupted, check with json schema");
             const auto& bindingValue = bindingValue_result.value().get();
             if (bindingValue == kSomeIpBinding)
-            {   // TM: Here it logs fatal and aborts, while in 974 ParseServiceTypeDeployment() it just skips it
+            {
                 score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which can not be parsed.";
                 SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
             }
@@ -1367,7 +1366,7 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
             const auto& serviceTypeDeployment =
                 std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
             const auto search = serviceTypeDeployment.events_.find(eventInstanceElement.first);
-            if (search == serviceTypeDeployment.events_.cend()) // TM: there was no check for name duplication during parsing, only ids
+            if (search == serviceTypeDeployment.events_.cend())
             {
                 ::score::mw::log::LogFatal("lola")
                     << "Service instance " << service_instance.first << "event" << eventInstanceElement.first

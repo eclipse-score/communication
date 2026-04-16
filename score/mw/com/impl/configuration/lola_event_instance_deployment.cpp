@@ -34,7 +34,6 @@ constexpr LolaEventInstanceDeployment::TracingSlotSizeType kNumberOfIpcTracingSl
 
 }  // namespace
 
-// TM: Constructor is not checking the values (were not also checked in config_parser.cpp, e.g. number_of_sample_slots_)
 LolaEventInstanceDeployment::LolaEventInstanceDeployment(std::optional<SampleSlotCountType> number_of_sample_slots,
                                                          std::optional<SubscriberCountType> max_subscribers,
                                                          std::optional<std::uint8_t> max_concurrent_allocations,
@@ -147,7 +146,6 @@ auto LolaEventInstanceDeployment::GetNumberOfTracingSlots() const noexcept -> Tr
     return number_of_tracing_slots_;
 }
 
-// TM: SetNumberOfSampleSlots() is not validating the passed value ( 0 < value <= maxSamples).
 // Is this intended that it overwrites the json config value? if yes, at least a check against 0 value is needed
 void LolaEventInstanceDeployment::SetNumberOfSampleSlots(SampleSlotCountType number_of_sample_slots) noexcept
 {
