@@ -116,6 +116,7 @@ cc_library(
         ":proxy_method_base",
         ":proxy_method_binding",
         "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl/plumbing:generic_proxy_method_binding_factory",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
     ],

@@ -12,6 +12,8 @@
  ********************************************************************************/
 #include "score/mw/com/impl/methods/generic_proxy_method.h"
 
+#include "score/mw/com/impl/plumbing/generic_proxy_method_binding_factory.h"
+
 #include <utility>
 
 namespace score::mw::com::impl
@@ -28,6 +30,14 @@ GenericProxyMethod::GenericProxyMethod(ProxyBase& parent,
     {
         proxy_base_view.MarkServiceElementBindingInvalid();
     }
+}
+
+GenericProxyMethod::GenericProxyMethod(ProxyBase& parent, const std::string_view method_name) noexcept
+    : GenericProxyMethod(
+          parent,
+          GenericProxyMethodBindingFactory::Create(parent.GetHandle(), ProxyBaseView{parent}.GetBinding(), method_name),
+          method_name)
+{
 }
 
 GenericProxyMethod::GenericProxyMethod(GenericProxyMethod&& other) noexcept : ProxyMethodBase(std::move(other))

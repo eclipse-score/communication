@@ -447,6 +447,26 @@ cc_library(
 )
 
 cc_library(
+    name = "generic_proxy_method_binding_factory",
+    srcs = ["generic_proxy_method_binding_factory.cpp"],
+    hdrs = ["generic_proxy_method_binding_factory.h"],
+    features = COMPILER_WARNING_FEATURES,
+    implementation_deps = [
+        "//score/mw/com/impl/bindings/lola",
+    ],
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:proxy_binding",
+        "//score/mw/com/impl/methods:proxy_method_binding",
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "skeleton_binding_factory",
     srcs = ["skeleton_binding_factory.cpp"],
     hdrs = ["skeleton_binding_factory.h"],

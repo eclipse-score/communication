@@ -154,6 +154,10 @@ class Proxy : public ProxyBinding
     /// \return An event data meta info.
     const EventMetaInfo& GetEventMetaInfo(const ElementFqId element_fq_id) const noexcept;
 
+    /// Fetch the MethodMetaInfo for a method the skeleton has published into shared memory.
+    /// Returns nullopt if no entry exists (e.g. skeleton did not offer this method).
+    std::optional<MethodMetaInfo> GetMethodMetaInfo(const ElementFqId element_fq_id) const noexcept;
+
     /// Checks whether the event corresponding to event_name is provided
     ///
     /// It does this by checking whether the event corresponding to event_name exists in shared memory.
