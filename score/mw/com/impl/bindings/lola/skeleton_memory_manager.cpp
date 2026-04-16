@@ -261,6 +261,18 @@ std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEvent
     return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
 }
 
+void SkeletonMemoryManager::PublishMethodMetaInfo(const ElementFqId& element_fq_id,
+                                                  MethodMetaInfo method_meta_info) noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(storage_ != nullptr,
+                                                "PublishMethodMetaInfo: shared memory storage is not set up yet.");
+    const auto inserted = storage_->methods_metainfo_.emplace(std::piecewise_construct,
+                                                              std::forward_as_tuple(element_fq_id),
+                                                              std::forward_as_tuple(std::move(method_meta_info)));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted.second,
+                                                "PublishMethodMetaInfo: an entry already exists for this ElementFqId.");
+}
+
 void SkeletonMemoryManager::RemoveSharedMemory()
 {
     constexpr auto RemoveMemoryIfExists = [](const score::cpp::optional<std::string>& path) -> void {

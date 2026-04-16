@@ -307,6 +307,7 @@ cc_library(
         ":event",
         ":i_partial_restart_path_builder",
         ":i_shm_path_builder",
+        ":method_meta_info",
         ":partial_restart_path_builder",
         ":proxy_instance_identifier",
         ":service_data_control",

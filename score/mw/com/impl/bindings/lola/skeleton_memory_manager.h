@@ -99,6 +99,11 @@ class SkeletonMemoryManager final
     std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>> OpenEventDataFromOpenedSharedMemory(
         const ElementFqId element_fq_id);
 
+    /// Publish a MethodMetaInfo entry into ServiceDataStorage::methods_metainfo_ so generic
+    /// proxies can later read sizes + queue info for this method from shared memory. Must be
+    /// called after shared memory is set up.
+    void PublishMethodMetaInfo(const ElementFqId& element_fq_id, MethodMetaInfo method_meta_info) noexcept;
+
     void RemoveSharedMemory();
     void RemoveStaleSharedMemoryArtefacts() const;
 

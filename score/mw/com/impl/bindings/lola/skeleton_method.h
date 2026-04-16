@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/method_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -67,6 +68,10 @@ class SkeletonMethod : public SkeletonMethodBinding
     {
         return element_fq_id_;
     }
+
+    /// Build the SHM-ready MethodMetaInfo from the stored sizes. Returns an empty-sized record if
+    /// this method was constructed with the legacy ctor that did not capture any sizes.
+    MethodMetaInfo MakeMethodMetaInfo() const noexcept;
 
     ResultBlank RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
 

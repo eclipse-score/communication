@@ -62,6 +62,19 @@ SkeletonMethod::SkeletonMethod(Skeleton& skeleton,
     skeleton.RegisterMethod(element_fq_id.element_id_, *this);
 }
 
+MethodMetaInfo SkeletonMethod::MakeMethodMetaInfo() const noexcept
+{
+    const auto to_meta =
+        [](const std::optional<memory::DataTypeSizeInfo>& size_info) -> std::optional<impl::DataTypeMetaInfo> {
+        if (!size_info.has_value())
+        {
+            return std::nullopt;
+        }
+        return impl::DataTypeMetaInfo{size_info->Size(), size_info->Alignment()};
+    };
+    return MethodMetaInfo{to_meta(in_args_type_erased_info_), to_meta(return_type_type_erased_info_), queue_size_};
+}
+
 ResultBlank SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)
 {
     type_erased_callback_ = std::move(type_erased_callback);

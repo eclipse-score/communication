@@ -293,6 +293,15 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         memory_manager_.CleanupSharedMemoryAfterCrash();
     }
 
+    // Publish per-method metainfo into shared memory so a generic proxy can later discover each
+    // method's in-args / return sizes at runtime. Skipped when nothing needs publishing.
+    for (const auto& [method_id, skeleton_method_ref] : skeleton_methods_)
+    {
+        score::cpp::ignore = method_id;
+        const auto& skeleton_method = skeleton_method_ref.get();
+        memory_manager_.PublishMethodMetaInfo(skeleton_method.GetElementFqId(), skeleton_method.MakeMethodMetaInfo());
+    }
+
     // If there are no registered SkeletonMethods, then we don't need to register a method subscribed handler and can
     // therefore exit early.
     if (skeleton_methods_.empty())
