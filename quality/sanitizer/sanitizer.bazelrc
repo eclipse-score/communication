@@ -18,7 +18,9 @@
 # ASan + UBSan + LSan (Combined)
 test:asan_ubsan_lsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:asan_ubsan_lsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-test:asan_ubsan_lsan --features=asan_ubsan_lsan_link
+build:asan_ubsan_lsan --features=score_asan_ubsan_lsan
+build:asan_ubsan_lsan --features=debug_symbols
+build:asan_ubsan_lsan --strip=never
 build:asan_ubsan_lsan --platform_suffix=asan_ubsan_lsan
 test:asan_ubsan_lsan --@score_cpp_policies//sanitizers/flags:sanitizer=asan_ubsan_lsan
 test:asan_ubsan_lsan --run_under=@score_cpp_policies//sanitizers:wrapper
@@ -31,7 +33,9 @@ build:lsan  --config=asan_ubsan_lsan
 # ThreadSanitizer
 test:tsan --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 test:tsan --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-test:tsan --features=tsan_link
+build:tsan --features=score_tsan
+build:tsan --features=debug_symbols
+build:tsan --strip=never
 build:tsan --platform_suffix=tsan
 test:tsan --@score_cpp_policies//sanitizers/flags:sanitizer=tsan
 test:tsan --run_under=@score_cpp_policies//sanitizers:wrapper

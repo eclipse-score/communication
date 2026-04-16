@@ -19,7 +19,7 @@ bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_python", version = "1.5.1")
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
 bazel_dep(name = "score_baselibs", version = "0.2.5")
@@ -70,13 +70,20 @@ use_repo(gcc_toolchains, "gcc_toolchain_x86_64")
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.3.0", dev_dependency = True)
 git_override(
     module_name = "score_bazel_cpp_toolchains",
-    commit = "79982259df6dfa9d82cc458163a6d9b08bd24471",
+    # Pinned to PR #52 HEAD for feature-injection testing
+    # https://github.com/eclipse-score/bazel_cpp_toolchains/pull/52
+    commit = "bc1a15ba09022382f03198809d065b737fc3661c",
     remote = "https://github.com/eclipse-score/bazel_cpp_toolchains.git",
 )
 
 score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/features:tsan",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+    ],
     target_cpu = "x86_64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -85,6 +92,11 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/features:tsan",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+    ],
     target_cpu = "aarch64",
     target_os = "linux",
     use_base_constraints_only = True,
@@ -93,6 +105,11 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/features:tsan",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+    ],
     sdp_version = "8.0.0",
     target_cpu = "x86_64",
     target_os = "qnx",
@@ -101,6 +118,11 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
+    extra_known_features = [
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/features:tsan",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
+    ],
     sdp_version = "8.0.0",
     target_cpu = "aarch64",
     target_os = "qnx",

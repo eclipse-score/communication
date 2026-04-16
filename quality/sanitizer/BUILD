@@ -21,3 +21,49 @@ filegroup(
     ],
     visibility = ["//quality/integration_testing/sanitizer_support:__pkg__"],
 )
+
+# ==============================================================================
+# Canary tests — verify sanitizer instrumentation is actually active
+# ==============================================================================
+
+cc_binary(
+    name = "asan_canary_bin",
+    testonly = True,
+    srcs = ["asan_canary.cpp"],
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_tsan"],
+)
+
+sh_test(
+    name = "asan_canary",
+    srcs = ["verify_sanitizer_failure.sh"],
+    args = [
+        "$(location :asan_canary_bin)",
+        "55",
+    ],
+    data = [":asan_canary_bin"],
+    target_compatible_with = [
+        "@score_cpp_policies//sanitizers/constraints:no_tsan",
+        "@score_cpp_policies//sanitizers/constraints:any_sanitizer",
+    ],
+)
+
+cc_binary(
+    name = "tsan_canary_bin",
+    testonly = True,
+    srcs = ["tsan_canary.cpp"],
+    target_compatible_with = ["@score_cpp_policies//sanitizers/constraints:no_asan_ubsan_lsan"],
+)
+
+sh_test(
+    name = "tsan_canary",
+    srcs = ["verify_sanitizer_failure.sh"],
+    args = [
+        "$(location :tsan_canary_bin)",
+        "55",
+    ],
+    data = [":tsan_canary_bin"],
+    target_compatible_with = [
+        "@score_cpp_policies//sanitizers/constraints:no_asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/constraints:any_sanitizer",
+    ],
+)
