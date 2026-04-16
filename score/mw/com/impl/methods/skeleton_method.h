@@ -54,15 +54,36 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     using MethodType = ReturnType(ArgTypes...);
 
     SkeletonMethod(SkeletonBase& skeleton_base, const std::string_view method_name)
-        : SkeletonMethod(skeleton_base,
-                         method_name,
-                         SkeletonMethodBindingFactory::Create(
-                             SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
-                             SkeletonBaseView{skeleton_base}.GetBinding(),
-                             method_name,
-                             // TODO: commit 2 fills this with real sizes derived from ReturnType/ArgTypes.
-                             MethodSizeInfo{std::nullopt, std::nullopt, 0U}))
+        : SkeletonMethod(
+              skeleton_base,
+              method_name,
+              SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
+                                                   SkeletonBaseView{skeleton_base}.GetBinding(),
+                                                   method_name,
+                                                   MakeMethodSizeInfo()))
     {
+    }
+
+    /// Compute the binding-agnostic size info for this method's signature from its template args.
+    /// Queue size stays at zero on the skeleton side — it is a per-subscribing-proxy value that
+    /// flows in later via OnProxyMethodSubscribeFinished, not something the skeleton publishes.
+    static MethodSizeInfo MakeMethodSizeInfo() noexcept
+    {
+        std::optional<DataTypeMetaInfo> in_args_type_info{std::nullopt};
+        std::optional<DataTypeMetaInfo> return_type_info{std::nullopt};
+
+        if constexpr (!std::is_same_v<ReturnType, void>)
+        {
+            constexpr auto size_info = CreateDataTypeSizeInfoFromTypes<ReturnType>();
+            return_type_info = DataTypeMetaInfo{size_info.Size(), size_info.Alignment()};
+        }
+        if constexpr (sizeof...(ArgTypes) != 0U)
+        {
+            constexpr auto size_info = CreateDataTypeSizeInfoFromTypes<ArgTypes...>();
+            in_args_type_info = DataTypeMetaInfo{size_info.Size(), size_info.Alignment()};
+        }
+
+        return MethodSizeInfo{in_args_type_info, return_type_info, 0U};
     }
 
     /// \brief testonly constructor, which allows for direct injection of a mock binding
