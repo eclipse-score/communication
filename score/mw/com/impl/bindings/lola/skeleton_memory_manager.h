@@ -141,6 +141,10 @@ class SkeletonMemoryManager final
     void RollbackSkeletonTracingTransactions(SkeletonEventDataControlLocalView<>& skeleton_event_data_control_local,
                                              TransactionLogSet& transaction_log_set);
 
+    /// \brief Publishes a MethodMetaInfo entry into ServiceDataStorage::methods_metainfo
+    /// for generic proxy methods to read on the proxy side.
+    void PublishMethodMetaInfo(const ElementFqId& element_fq_id, MethodMetaInfo method_meta_info) noexcept;
+
     /// \brief Remove the control and data shared memory regions
     void RemoveSharedMemory();
 

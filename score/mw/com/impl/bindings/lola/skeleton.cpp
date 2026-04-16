@@ -295,6 +295,19 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         memory_manager_.CleanupSharedMemoryAfterCrash();
     }
 
+    // Publish metainfo into shm so that a generic proxy can later discover each
+    // method's in-args / return sizes at runtime.
+    for (const auto& [method_id, skeleton_method_ref] : skeleton_methods_)
+    {
+        const auto element_type = (method_id.method_type == ::score::mw::com::impl::MethodType::kGet ||
+                                   method_id.method_type == ::score::mw::com::impl::MethodType::kSet)
+                                      ? ServiceElementType::FIELD
+                                      : ServiceElementType::METHOD;
+        const ElementFqId element_fq_id{
+            lola_service_id_, method_id.method_or_field_id, lola_instance_id_, element_type};
+        memory_manager_.PublishMethodMetaInfo(element_fq_id, skeleton_method_ref.get().MakeMethodMetaInfo());
+    }
+
     // If there are no registered SkeletonMethods, then we don't need to register a method subscribed handler and
     // can therefore exit early.
     if (skeleton_methods_.empty())
