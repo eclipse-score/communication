@@ -56,7 +56,7 @@ const LolaServiceInstanceDeployment kLolaServiceInstanceDeployment{
     LolaServiceInstanceId{kInstanceId},
     {{kDummyEventName, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0}},
      {kDummyGenericProxyEventName, LolaEventInstanceDeployment{{1U}, {3U}, 1U, true, 0}}},
-    {{kDummyFieldName, LolaFieldInstanceDeployment{{1U}, {3U}, 1U, true, 0}}}};
+    {{kDummyFieldName, LolaFieldInstanceDeployment{{1U}, {3U}, 1U, true, 0, false, false}}}};
 const LolaServiceTypeDeployment kLolaServiceTypeDeployment{
     kServiceId,
     {{kDummyEventName, kDummyEventId}, {kDummyGenericProxyEventName, kDummyGenericProxyId}},

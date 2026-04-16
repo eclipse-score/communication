@@ -581,7 +581,14 @@ class ConfigurationFixture : public ::testing::Test
     Instance MakeLolaServiceInstanceDeployment(std::optional<SampleSlotCountType> number_of_sample_slots,
                                                const TracingSlotSizeType number_of_tracing_slots)
     {
-        return Instance(number_of_sample_slots, 1U, 1U, false, number_of_tracing_slots);
+        if constexpr (std::is_same<Instance, LolaFieldInstanceDeployment>::value)
+        {
+            return Instance(number_of_sample_slots, 1U, 1U, false, number_of_tracing_slots, false, false);
+        }
+        else
+        {
+            return Instance(number_of_sample_slots, 1U, 1U, false, number_of_tracing_slots);
+        }
     }
 
     InstanceSpecifier MakeInstanceSpecifier(std::string_view instance_specifier_sv)
