@@ -1,0 +1,169 @@
+@startuml structural_view_refactored
+title "Structural View: Configuration Refactoring"
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "Parsing Strategy" {
+
+  interface "IConfigurationParsingStrategy" {
+    + {abstract} Parse(path : std::string_view) : Configuration
+  }
+
+  class "ConfigurationJsonParsingStrategy" {
+    + Parse(path : std::string_view) : Configuration
+    ..
+    <u>Notes:</u>
+    Wraps existing JSON parsing logic.
+    Uses score::json::JsonParser internally.
+    Default strategy.
+  }
+
+  class "ConfigurationFlatbufParsingStrategy" {
+    + Parse(path : std::string_view) : Configuration
+    ..
+    <u>Notes:</u>
+    Parses FlatBuffer configuration.
+    Copies all strings on parse.
+    Gated by SCORE_MW_COM_ENABLE_FLATBUF_CONFIG.
+  }
+
+  "ConfigurationJsonParsingStrategy" .up.|> "IConfigurationParsingStrategy"
+  "ConfigurationFlatbufParsingStrategy" .up.|> "IConfigurationParsingStrategy"
+}
+
+package "Validation" {
+
+  class "ConfigurationValidator" <<(S,#FF7700) static>> {
+    {static} + ValidateConfiguration(config : const Configuration&) : void
+    ..
+    Phase 2: Generic Rule Validation
+    ----
+    - CrosscheckAsilLevels()
+    - CrosscheckServiceInstancesToTypes()
+    - AreEventFieldAndMethodIdsUnique()
+    - CheckDuplicateNames()
+  }
+}
+
+package "Typed Views" {
+
+  class "SkeletonServiceInstanceConfiguration" {
+    - instance_deployment_ : const ServiceInstanceDeployment&
+    - type_deployment_ : const ServiceTypeDeployment&
+    __
+    {static} + Create(config : const Configuration&,\n  instance_specifier : const InstanceSpecifier&)\n  : score::Result<SkeletonServiceInstanceConfiguration>
+    + GetServiceInstanceDeployment() const noexcept : const ServiceInstanceDeployment&
+    + GetServiceTypeDeployment() const noexcept : const ServiceTypeDeployment&
+    ..
+    Phase 3: Skeleton-specific checks
+    ----
+    - Offered instance completeness
+    - Provider permission validation
+  }
+
+  class "ProxyServiceInstanceConfiguration" {
+    - instance_deployment_ : const ServiceInstanceDeployment&
+    - type_deployment_ : const ServiceTypeDeployment&
+    __
+    {static} + Create(config : const Configuration&,\n  instance_specifier : const InstanceSpecifier&)\n  : score::Result<ProxyServiceInstanceConfiguration>
+    + GetServiceInstanceDeployment() const noexcept : const ServiceInstanceDeployment&
+    + GetServiceTypeDeployment() const noexcept : const ServiceTypeDeployment&
+    ..
+    Phase 3: Proxy-specific checks
+    ----
+    - Required instance validation
+    - Consumer permission validation
+  }
+}
+
+package "Configuration (unchanged core)" {
+
+  class "Configuration" {
+    - service_types_ : const ServiceTypeDeployments
+    - service_instances_ : const ServiceInstanceDeployments
+    - global_configuration_ : GlobalConfiguration
+    - tracing_configuration_ : TracingConfiguration
+    __
+    + Configuration(service_types, service_instances,\n  global_configuration, tracing_configuration)
+    + GetServiceTypes() const noexcept : const ServiceTypeDeployments&
+    + GetServiceInstances() const noexcept : const ServiceInstanceDeployments&
+    + GetGlobalConfiguration() const noexcept : const GlobalConfiguration&
+    + GetTracingConfiguration() const noexcept : const TracingConfiguration&
+    + AddServiceTypeDeployment(...) noexcept : ServiceTypeDeployment*
+    + AddServiceInstanceDeployments(...) noexcept : ServiceInstanceDeployment*
+  }
+
+  class "ServiceTypeDeployment" {
+    + binding_info_ : std::variant<LolaServiceTypeDeployment, score::cpp::blank>
+  }
+
+  class "ServiceInstanceDeployment" {
+    + service_ : ServiceIdentifierType
+    + bindingInfo_ : std::variant<LolaServiceInstanceDeployment,\n  SomeIpServiceInstanceDeployment, score::cpp::blank>
+    + asilLevel_ : QualityType
+    + instance_specifier_ : InstanceSpecifier
+  }
+
+  class "GlobalConfiguration" {
+    - process_asil_level_ : QualityType
+    - message_rx_queue_size_qm : std::int32_t
+    - message_rx_queue_size_b : std::int32_t
+    - message_tx_queue_size_b : std::int32_t
+    - shm_size_calc_mode_ : ShmSizeCalculationMode
+    - application_id_ : score::cpp::optional<uid_t>
+  }
+
+  class "TracingConfiguration" {
+    - tracing_config_ : tracing::TracingConfig
+    - service_element_tracing_enabled_map_ : Map
+  }
+
+  "Configuration" *-- "ServiceTypeDeployment" : service_types_
+  "Configuration" *-- "ServiceInstanceDeployment" : service_instances_
+  "Configuration" *-- "GlobalConfiguration"
+  "Configuration" *-- "TracingConfiguration"
+}
+
+class "score::mw::com::impl::Runtime" {
+  - configuration_ : Configuration const&
+  - parsing_strategy_ : std::unique_ptr<IConfigurationParsingStrategy>
+  __
+  {static} + Initialize() : void
+  {static} + Initialize(arguments : score::cpp::span<const score::StringLiteral>) : void
+  {static} + getInstance() : Runtime&
+  + resolve(const InstanceSpecifier&) : InstanceIdentifierContainer
+}
+
+' Relationships
+"IConfigurationParsingStrategy" ..> "Configuration" : <<creates>>
+"ConfigurationValidator" ..> "Configuration" : <<validates>>
+"SkeletonServiceInstanceConfiguration" ..> "Configuration" : <<reads>>
+"ProxyServiceInstanceConfiguration" ..> "Configuration" : <<reads>>
+"SkeletonServiceInstanceConfiguration" o-- "ServiceInstanceDeployment"
+"SkeletonServiceInstanceConfiguration" o-- "ServiceTypeDeployment"
+"ProxyServiceInstanceConfiguration" o-- "ServiceInstanceDeployment"
+"ProxyServiceInstanceConfiguration" o-- "ServiceTypeDeployment"
+"score::mw::com::impl::Runtime" *-- "Configuration"
+"score::mw::com::impl::Runtime" o-- "IConfigurationParsingStrategy" : selects strategy
+
+note right of "IConfigurationParsingStrategy"
+  Strategy selected at Runtime::Initialize()
+  based on feature flag / file extension.
+  Both strategies produce identical
+  Configuration objects.
+end note
+
+note bottom of "ConfigurationValidator"
+  Extracted from config_parser.cpp.
+  Called after parsing, before Configuration
+  is exposed to consumers.
+  Fatal on failure (current behavior).
+end note
+
+note bottom of "SkeletonServiceInstanceConfiguration"
+  Created by Skeleton constructor.
+  Returns score::Result (non-fatal).
+end note
+
+@enduml
