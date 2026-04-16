@@ -251,7 +251,7 @@ static const ServiceInstanceDeployment kValidInstanceDeploymentWithField{
     CreateLolaServiceInstanceDeployment(
         kDefaultLolaInstanceId,
         {},
-        {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0}}},
+        {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0, false, false}}},
         {},
         {},
         {},
@@ -296,7 +296,7 @@ static const ServiceInstanceDeployment kValidAsilInstanceDeploymentWithField{
     CreateLolaServiceInstanceDeployment(
         kDefaultLolaInstanceId,
         {},
-        {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0}}},
+        {{test::kFooEventName, LolaFieldInstanceDeployment{test::kMaxSlots, 10U, 1U, true, 0, false, false}}},
         {},
         {},
         {},
