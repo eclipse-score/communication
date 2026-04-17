@@ -1,4 +1,4 @@
-# Communication Module (LoLa)
+# Communication Module (LoLa) test
 
 [![Eclipse Score](https://img.shields.io/badge/Eclipse-Score-orange.svg)](https://eclipse-score.github.io/score/main/modules/communication/index.html)
 
