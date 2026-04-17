@@ -110,7 +110,6 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
   private:
     const std::string_view event_name_;
-    const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
     EventSlotStatus::EventTimeStamp current_timestamp_;
@@ -127,12 +126,12 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
       event_name_{event_name},
-      event_properties_{properties},
       event_data_storage_{nullptr},
       event_data_control_composite_{},
       current_timestamp_{1U},
       qm_disconnect_{false},
       event_shared_impl_(parent,
+                         properties,
                          event_fqn,
                          event_data_control_composite_,
                          current_timestamp_,
@@ -236,7 +235,7 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     if (!allocated_slot_result.allocated_slot_index.has_value())
     {
         // we didn't get a slot, which is a sign, that too few slots have been configured.
-        if (!event_properties_.enforce_max_samples)
+        if (!event_shared_impl_.GetEventProperties().enforce_max_samples)
         {
             ::score::mw::log::LogError("lola")
                 << "SkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
@@ -260,7 +259,7 @@ template <typename SampleType>
 ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
     const auto registration_result = event_shared_impl_.GetParent().template Register<SampleType>(
-        event_shared_impl_.GetElementFQId(), event_properties_);
+        event_shared_impl_.GetElementFQId(), event_shared_impl_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
     event_data_control_composite_ = registration_result.event_data_control_composite;
 

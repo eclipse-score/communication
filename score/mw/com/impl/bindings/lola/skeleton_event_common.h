@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/runtime.h"
@@ -52,6 +53,7 @@ class SkeletonEventCommon
 
   public:
     SkeletonEventCommon(Skeleton& parent,
+                        const SkeletonEventProperties& event_properties,
                         const ElementFqId& event_fqn,
                         std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
                         EventSlotStatus::EventTimeStamp& current_timestamp_ref,
@@ -81,13 +83,19 @@ class SkeletonEventCommon
         return parent_;
     }
 
+    [[nodiscard]] const SkeletonEventProperties& GetEventProperties() const
+    {
+        return event_properties_;
+    }
+
     // Accessors for atomic flags for derived classes' Send() method
     bool IsQmNotificationsRegistered() const noexcept;
     bool IsAsilBNotificationsRegistered() const noexcept;
 
   private:
     Skeleton& parent_;
-    const ElementFqId event_fqn_;
+    SkeletonEventProperties event_properties_;
+    ElementFqId event_fqn_;
     std::optional<EventDataControlComposite<>>&
         event_data_control_composite_ref_;                    // Reference to the optional in derived class
     EventSlotStatus::EventTimeStamp& current_timestamp_ref_;  // Reference to the timestamp in derived class
@@ -122,11 +130,13 @@ class SkeletonEventCommon
 template <typename SampleType>
 SkeletonEventCommon<SampleType>::SkeletonEventCommon(
     Skeleton& parent,
+    const SkeletonEventProperties& event_properties,
     const ElementFqId& event_fqn,
     std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
     EventSlotStatus::EventTimeStamp& current_timestamp_ref,
     impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     : parent_{parent},
+      event_properties_{event_properties},
       event_fqn_{event_fqn},
       event_data_control_composite_ref_{event_data_control_composite_ref},
       current_timestamp_ref_{current_timestamp_ref},

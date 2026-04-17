@@ -25,15 +25,22 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            const DataTypeMetaInfo& size_info,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info),
-      event_properties_(event_properties),
-      event_shared_impl_(parent, event_fqn, event_data_control_composite_, current_timestamp_, tracing_data)
+      event_shared_impl_(parent,
+                         event_properties,
+                         event_fqn,
+                         event_data_control_composite_,
+                         current_timestamp_,
+                         tracing_data)
 {
 }
 
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
-    const auto registration_result = event_shared_impl_.GetParent().RegisterGeneric(
-        event_shared_impl_.GetElementFQId(), event_properties_, size_info_.size, size_info_.alignment);
+    const auto registration_result =
+        event_shared_impl_.GetParent().RegisterGeneric(event_shared_impl_.GetElementFQId(),
+                                                       event_shared_impl_.GetEventProperties(),
+                                                       size_info_.size,
+                                                       size_info_.alignment);
 
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
     event_data_control_composite_ = registration_result.event_data_control_composite;
@@ -97,7 +104,7 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
 
     if (!allocated_slot_result.allocated_slot_index.has_value())
     {
-        if (!event_properties_.enforce_max_samples)
+        if (!event_shared_impl_.GetEventProperties().enforce_max_samples)
         {
             ::score::mw::log::LogError("lola")
                 << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
