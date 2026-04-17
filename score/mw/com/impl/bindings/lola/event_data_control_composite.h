@@ -57,13 +57,15 @@ class EventDataControlComposite
     };
 
     /// \brief Constructs a composite which will only manage a single QM control (no ASIL use-case)
-    explicit EventDataControlComposite(ProviderEventDataControlLocalView<>& asil_qm_control_local,
-                                       ConsumerEventDataControlLocalView<>* const proxy_control_local);
+    explicit EventDataControlComposite(
+        ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local,
+        ConsumerEventDataControlLocalView<AtomicIndirectorType>* const proxy_control_local);
 
     /// \brief Constructs a composite which will manage QM and ASIL control at the same time
-    explicit EventDataControlComposite(ProviderEventDataControlLocalView<>& asil_qm_control_local,
-                                       ProviderEventDataControlLocalView<>* const asil_b_control_local,
-                                       ConsumerEventDataControlLocalView<>* const proxy_control_local);
+    explicit EventDataControlComposite(
+        ProviderEventDataControlLocalView<AtomicIndirectorType>& asil_qm_control_local,
+        ProviderEventDataControlLocalView<AtomicIndirectorType>* const asil_b_control_local,
+        ConsumerEventDataControlLocalView<AtomicIndirectorType>* const proxy_control_local);
 
     /// \brief Checks for the oldest unused slot and acquires for writing (thread-safe, wait-free)
     ///
@@ -96,15 +98,15 @@ class EventDataControlComposite
     bool IsQmControlDisconnected() const noexcept;
 
     /// \brief Returns the (mandatory) ProviderEventDataControlLocalView for QM.
-    ProviderEventDataControlLocalView<>& GetQmEventDataControlLocal() const noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>& GetQmEventDataControlLocal() const noexcept;
 
     /// \brief Returns a pointer to ProviderEventDataControlLocalView for ASIL-B
     /// \return a nullptr if no ASIL-B support, otherwise, a valid pointer to the ASIL-B EventDataControl.
-    ProviderEventDataControlLocalView<>* GetAsilBEventDataControlLocal() noexcept;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>* GetAsilBEventDataControlLocal() noexcept;
 
     /// \brief Returns a reference to ConsumerEventDataControlLocalView, which is used for tracing
     /// \pre only called if EventDataControlComposite was constructed with a valid ConsumerEventDataControlLocalView
-    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView() noexcept;
+    ConsumerEventDataControlLocalView<AtomicIndirectorType>& GetConsumerEventDataControlLocalView() noexcept;
 
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot_index) const noexcept;
@@ -114,13 +116,13 @@ class EventDataControlComposite
   private:
     struct MultiSlotInfo
     {
-        ProviderEventDataControlLocalView<>::SlotInfo qm_slot_info;
-        ProviderEventDataControlLocalView<>::SlotInfo asil_b_slot_info;
+        typename ProviderEventDataControlLocalView<AtomicIndirectorType>::SlotInfo qm_slot_info;
+        typename ProviderEventDataControlLocalView<AtomicIndirectorType>::SlotInfo asil_b_slot_info;
     };
-    std::reference_wrapper<ProviderEventDataControlLocalView<>> asil_qm_control_local_;
-    ProviderEventDataControlLocalView<>* asil_b_control_local_;
+    std::reference_wrapper<ProviderEventDataControlLocalView<AtomicIndirectorType>> asil_qm_control_local_;
+    ProviderEventDataControlLocalView<AtomicIndirectorType>* asil_b_control_local_;
 
-    ConsumerEventDataControlLocalView<>* proxy_control_local_;
+    ConsumerEventDataControlLocalView<AtomicIndirectorType>* proxy_control_local_;
 
     /// \brief flag indicating, whether qm_control part shall be ignored in any public API (AllocateNextSlot(),
     /// EventReady(), Discard()()

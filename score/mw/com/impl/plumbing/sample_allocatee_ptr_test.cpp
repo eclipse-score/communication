@@ -524,7 +524,7 @@ TEST_F(SampleAllocateePtrFixture, UnderlyingLolaPtrIsFreedOnDestruction)
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
     // Given a SampleAllocateePtr with an underlying lola SampleAllocateePtr
-    lola::EventDataControlComposite event_data_ctrl{skeleton_event_data_ctrl_qm_local_, nullptr};
+    lola::EventDataControlComposite<> event_data_ctrl{skeleton_event_data_ctrl_qm_local_, nullptr};
 
     bool is_destructed{false};
     ObjectDestructionNotifier object_destruction_notifier(is_destructed);
