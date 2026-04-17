@@ -349,7 +349,7 @@ Within the `service-instance` json object, there are further binding independent
 - `events`
 - `fields`
 
-the `event` and `field` json objects, which are the items in the corresponding arrays are property-wise identical.
+the event and field json objects share most configuration properties, but fields have two additional optional properties (useGetIfAvailable, useSetIfAvailable) not present on events.
 Additionally, there is the following constraint:
 For each event or field enlisted in the `events` and `fields` arrays on the [service-type->bindings](#bindings) level of
 the `service-type` a `service-instance` is based on, a corresponding instance specific event or field object has to exist.
@@ -428,6 +428,12 @@ The properties of a field or an event object on the instance level are:
   tracing are different and the tracing subsystem has to explicitly know, how many slots/samples it is allowed to access
   in parallel at most. Furthermore, setting the value of `numberOfIpcTracingSlots` to 0 or not configuring it all,
   explicitly means, that tracing for this event or field is disabled.
+- `useGetIfAvailable`: (optional, field only, default `false`) - When `true`, the getter for this field will be
+  used if the service type declares a getter. This is a consumer/proxy side configuration hint. On the provider
+  (skeleton) side this setting has no effect.
+- `useSetIfAvailable`: (optional, field only, default `false`) - When `true`, the setter for this field will be
+  used if the service type declares a setter. This is a consumer/proxy side configuration hint. On the provider
+  (skeleton) side this setting has no effect.
 
 ###### methods within an instance
 
@@ -593,3 +599,5 @@ is being used, whether a property is mandatory or optional or irrelevant, the fo
 | _serviceInstances.instances.events.maxSubscribers_ <br> _serviceInstances.instances.fields.maxSubscribers_                   | required      | -          |                                                                                                                                                                                       |
 | _serviceInstances.instances.events.enforceMaxSamples_ <br> _serviceInstances.instances.fields.enforceMaxSamples_             | optional      | -          | if not given on skeleton side, defaults to true                                                                                                                                       |
 | _serviceInstances.instances.events.numberOfIpcTracingSlots_ <br> _serviceInstances.instances.fields.numberOfIpcTracingSlots_ | optional      | -          | if not given on skeleton side, defaults to 0, which means tracing for this event is disabled.                                                                                         |
+| _serviceInstances.instances.fields.useGetIfAvailable_                                                                        | -             | optional   | if not given, defaults to false. Signals that the field getter should be used when the service type declares one.                                                                      |
+| _serviceInstances.instances.fields.useSetIfAvailable_                                                                        | -             | optional   | if not given, defaults to false. Signals that the field setter should be used when the service type declares one.                                                                      |
