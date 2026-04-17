@@ -17,10 +17,12 @@
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 #include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_method.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -66,6 +68,9 @@ class SkeletonMemoryManager final
     SkeletonMemoryManager(SkeletonMemoryManager&& other) = delete;
     SkeletonMemoryManager& operator=(SkeletonMemoryManager&& other) = delete;
 
+    /// \brief Type alias for the map of skeleton methods, analogous to SkeletonEventBindings/SkeletonFieldBindings.
+    using SkeletonMethodBindings = std::unordered_map<UniqueMethodIdentifier, std::reference_wrapper<SkeletonMethod>>;
+
     /// \brief Create and initialize data and control shared memory segments
     ///
     /// This function is called by a Skeleton during PrepareOffer in case we aren't in a partial restart case (or we are
@@ -75,6 +80,7 @@ class SkeletonMemoryManager final
     Result<void> CreateSharedMemory(
         SkeletonBinding::SkeletonEventBindings& events,
         SkeletonBinding::SkeletonFieldBindings& fields,
+        const SkeletonMethodBindings& methods,
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
 
     /// \brief Open data and control shared memory segments that were created by a previous Skeleton
@@ -168,13 +174,14 @@ class SkeletonMemoryManager final
     /// depending on config.
     /// \return storage sizes for the different shm-objects
     ShmResourceStorageSizes CalculateShmResourceStorageSizes(SkeletonBinding::SkeletonEventBindings& events,
-                                                             SkeletonBinding::SkeletonFieldBindings& fields);
+                                                             SkeletonBinding::SkeletonFieldBindings& fields,
+                                                             const SkeletonMethodBindings& methods);
     /// \brief Calculates needed sizes for shm-objects for data and ctrl via simulation of allocations against a heap
     /// backed memory resource.
     /// \return storage sizes for the different shm-objects
-    ShmResourceStorageSizes CalculateShmResourceStorageSizesBySimulation(
-        SkeletonBinding::SkeletonEventBindings& events,
-        SkeletonBinding::SkeletonFieldBindings& fields);
+    ShmResourceStorageSizes CalculateShmResourceStorageSizesBySimulation(SkeletonBinding::SkeletonEventBindings& events,
+                                                                         SkeletonBinding::SkeletonFieldBindings& fields,
+                                                                         const SkeletonMethodBindings& methods);
 
     /// Functions for creating / opening / initializing shared memory within PrepareOffer.
     bool CreateSharedMemoryForData(

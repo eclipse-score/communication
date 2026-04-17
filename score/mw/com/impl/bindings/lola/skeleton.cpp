@@ -270,8 +270,8 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         // memory region and re-create it.
         memory_manager_.RemoveStaleSharedMemoryArtefacts();
 
-        const auto create_result =
-            memory_manager_.CreateSharedMemory(events, fields, std::move(register_shm_object_trace_callback));
+        const auto create_result = memory_manager_.CreateSharedMemory(
+            events, fields, skeleton_methods_, std::move(register_shm_object_trace_callback));
         if (!(create_result.has_value()))
         {
             score::mw::log::LogError("lola") << "Could not create shared memory region for Skeleton.";
