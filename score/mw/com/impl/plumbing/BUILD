@@ -59,7 +59,9 @@ cc_library(
     ],
     deps = [
         "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:method_size_info",
         "//score/mw/com/impl:skeleton_base",
+        "//score/mw/com/impl/methods:skeleton_method_binding",
         "@score_baselibs//score/language/futurecpp",
     ],
 )

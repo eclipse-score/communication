@@ -18,6 +18,7 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/skeleton_base.h"
 #include "score/mw/com/impl/test/dummy_instance_identifier_builder.h"
 #include <score/assert_support.hpp>
@@ -31,6 +32,7 @@ namespace score::mw::com::impl
 using TestSampleType = std::uint32_t;
 
 constexpr auto kDummyMethodName{"Method8"};
+const MethodSizeInfo kDummySizeInfo{std::nullopt, std::nullopt};
 
 constexpr std::uint16_t kDummyMethodId{6U};
 
@@ -92,7 +94,7 @@ TEST_F(SkeletonMethodFactoryFixture, CanConstructSkeletonMethod)
 
     // When creating a SkeletonMethod using MethodBindingFactory
     auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, skeleton_.get(), kDummyMethodName, MethodType::kMethod);
+        instance_identifier, skeleton_.get(), kDummyMethodName, MethodType::kMethod, kDummySizeInfo);
 
     // Then a valid binding can be created
     ASSERT_NE(skeleton_method, nullptr);
@@ -106,8 +108,8 @@ TEST_F(SkeletonMethodFactoryFixture, CannotCreateSkeletonServiceWhenSkeletonBind
     auto skeleton_base{nullptr};
 
     // When creating a SkeletonMethod using MethodBindingFactory
-    auto skeleton_method =
-        SkeletonMethodBindingFactory::Create(instance_identifier, skeleton_base, kDummyMethodName, MethodType::kMethod);
+    auto skeleton_method = SkeletonMethodBindingFactory::Create(
+        instance_identifier, skeleton_base, kDummyMethodName, MethodType::kMethod, kDummySizeInfo);
 
     // Then a nullptr is returned
     ASSERT_EQ(skeleton_method, nullptr);
@@ -122,7 +124,7 @@ TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromSomeIpBinding)
 
     // When creating a SkeletonMethod using MethodBindingFactory
     auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod);
+        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod, kDummySizeInfo);
 
     // Then a nullptr is returned
     EXPECT_EQ(skeleton_method, nullptr);
@@ -137,7 +139,7 @@ TEST_F(SkeletonMethodFactoryFixture, CannotConstructEventFromBlankBinding)
 
     // When creating a SkeletonMethod using MethodBindingFactory
     auto skeleton_method = SkeletonMethodBindingFactory::Create(
-        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod);
+        instance_identifier, skeleton_binding, kDummyMethodName, MethodType::kMethod, kDummySizeInfo);
 
     // Then a nullptr is returned
     EXPECT_EQ(skeleton_method, nullptr);

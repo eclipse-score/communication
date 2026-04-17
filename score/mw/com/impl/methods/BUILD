@@ -157,6 +157,7 @@ cc_library(
     deps = [
         ":skeleton_method_binding",
         "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:method_size_info",
         "//score/mw/com/impl:skeleton_base",
         "//score/mw/com/impl/plumbing:skeleton_method_binding_factory",
         "@score_baselibs//score/result",

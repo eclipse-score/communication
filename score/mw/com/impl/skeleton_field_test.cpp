@@ -1013,9 +1013,11 @@ TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerForwardsToMethodBinding)
     // Inject a mock SkeletonMethodBinding so that RegisterHandler is interceptable.
     mock_binding::SkeletonMethod method_binding_mock{};
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(method_binding_mock))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     // The method binding's RegisterHandler must be called exactly once and returns success.
@@ -1052,9 +1054,11 @@ TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerPropagatesBindingError)
 
     mock_binding::SkeletonMethod method_binding_mock{};
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(method_binding_mock))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     // The method binding returns an error
@@ -1092,7 +1096,7 @@ TEST(SkeletonFieldSetHandlerTest, PrepareOfferFailsWhenSetHandlerNotRegistered)
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
 
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, _))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, _, _))
         .WillOnce(Return(ByMove(nullptr)))
         .WillOnce(Return(ByMove(nullptr)));
 
@@ -1134,9 +1138,11 @@ TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
 
     mock_binding::SkeletonMethod method_binding_mock{};
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(method_binding_mock))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     // The binding's RegisterHandler returns success
@@ -1269,9 +1275,11 @@ TEST(SkeletonFieldSetHandlerTest, UserCallbackIsInvokedByWrappedHandler)
     auto& capturing_binding_ref = *capturing_binding;
 
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -1337,9 +1345,11 @@ TEST(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
     auto& capturing_binding_ref = *capturing_binding;
 
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -1401,9 +1411,11 @@ TEST(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
     auto& capturing_binding_ref = *capturing_binding;
 
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -1458,9 +1470,11 @@ TEST(SkeletonFieldSetHandlerTest, IsSetHandlerRegisteredFlagIsSetAfterRegistrati
 
     mock_binding::SkeletonMethod method_binding_mock{};
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(method_binding_mock))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
     EXPECT_CALL(method_binding_mock, RegisterHandler(_)).WillOnce(Return(Result<void>{}));
 
@@ -1516,9 +1530,11 @@ TEST(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     auto& capturing_binding_ref = *capturing_binding;
 
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kSet, _))
         .WillOnce(Return(ByMove(std::move(capturing_binding))));
-    EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
+    EXPECT_CALL(method_binding_factory_guard.factory_mock_,
+                Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet, _))
         .WillOnce(Return(ByMove(nullptr)));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};

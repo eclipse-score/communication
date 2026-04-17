@@ -86,8 +86,8 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
 
         InitialiseSkeleton(instance_identifier);
 
-        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_unique_method_id_);
-        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id_);
+        fooo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, fooo_unique_method_id_, MethodSizeInfo{});
+        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id_, MethodSizeInfo{});
 
         return *this;
     }

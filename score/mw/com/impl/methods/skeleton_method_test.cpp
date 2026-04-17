@@ -169,7 +169,7 @@ TYPED_TEST(SkeletonMethodTypedTest, TwoParameterConstructorCorrectlyCallsBinding
 
     // expecting that a binding factory cannot crete a binding
     EXPECT_CALL(skeleton_method_binding_factory_mock,
-                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/, _ /*size_info*/))
         .WillOnce(testing::Return(testing::ByMove(std::move(skeleton_method_binding))));
 
     // When the 2-parameter constructor of the SkeletonMethod class is called
@@ -204,7 +204,7 @@ TYPED_TEST(
 
     // expecting that a binding factory cannot crete a binding
     EXPECT_CALL(skeleton_method_binding_factory_mock,
-                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/))
+                Create(_ /*handle*/, _ /*parent binding*/, _ /*method_name*/, _ /*method_type*/, _ /*size_info*/))
         .WillOnce(testing::Return(testing::ByMove(nullptr)));
 
     // When the 2-parameter constructor of the SkeletonMethod class is called
