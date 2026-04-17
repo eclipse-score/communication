@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/runtime.h"
+#include "score/mw/com/impl/skeleton_event_binding.h"
 
 namespace score::mw::com::impl::lola
 {
@@ -52,74 +53,25 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 
 ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_.has_value());
-    const impl::SampleAllocateePtrView<void> view{sample};
-    auto ptr = view.template As<lola::SampleAllocateePtr<void>>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != ptr);
-
-    auto control_slot_indicator = ptr->GetReferencedSlot();
-    event_data_control_composite_.value().EventReady(control_slot_indicator, ++current_timestamp_);
-
-    // Only call NotifyEvent if there are any registered receive handlers for each quality level (QM and ASIL-B).
-    // This avoids the expensive lock operation in the common case where no handlers are registered.
-    // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
-    // handler registration, the next Send() will pick it up.
-
-    if (event_shared_impl_.IsQmNotificationsRegistered() && !qm_disconnect_)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_QM, event_shared_impl_.GetElementFQId());
-    }
-    if (event_shared_impl_.IsAsilBNotificationsRegistered() &&
-        event_shared_impl_.GetParent().GetInstanceQualityType() == QualityType::kASIL_B)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_B, event_shared_impl_.GetElementFQId());
-    }
-
-    return {};
+    return event_shared_impl_.Send(sample);
 }
 
 Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 {
-    if (!event_data_control_composite_.has_value())
+    auto allocated_slot_result = event_shared_impl_.AllocateSlot();
+    if (!allocated_slot_result.has_value())
     {
-        ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-    const auto allocated_slot_result = event_data_control_composite_.value().AllocateNextSlot();
-
-    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
-        allocated_slot_result.qm_misbehaved)
-    {
-        qm_disconnect_ = true;
-        score::mw::log::LogWarn("lola")
-            << __func__ << __LINE__
-            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: "
-            << event_shared_impl_.GetElementFQId();
-        event_shared_impl_.GetParent().DisconnectQmConsumers();
+        return MakeUnexpected<impl::SampleAllocateePtr<void>>(allocated_slot_result.error());
     }
 
-    if (!allocated_slot_result.allocated_slot_index.has_value())
-    {
-        if (!event_shared_impl_.GetEventProperties().enforce_max_samples)
-        {
-            ::score::mw::log::LogError("lola")
-                << "GenericSkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
-                   "disabled by config. Might be the root cause!";
-        }
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
+    const auto slot_index = allocated_slot_result.value();
 
     // Calculate the exact slot spacing based on alignment padding
     const auto aligned_size = memory::shared::CalculateAlignedSize(size_info_.size, size_info_.alignment);
-    std::size_t offset = static_cast<std::size_t>(*allocated_slot_result.allocated_slot_index) * aligned_size;
+    std::size_t offset = static_cast<std::size_t>(slot_index) * aligned_size;
     void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
-    auto lola_ptr = lola::SampleAllocateePtr<void>(
-        data_ptr, event_data_control_composite_.value(), *allocated_slot_result.allocated_slot_index);
+    auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, event_data_control_composite_.value(), slot_index);
     return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 
