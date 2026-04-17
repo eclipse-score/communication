@@ -116,7 +116,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     EventSlotStatus::EventTimeStamp current_timestamp_;
     bool qm_disconnect_;
 
-    SkeletonEventCommon event_shared_impl_;
+    SkeletonEventCommon<SampleType> event_shared_impl_;
 };
 
 template <typename SampleType>

@@ -66,7 +66,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     std::uint8_t* event_data_storage_{nullptr};
     bool qm_disconnect_{false};
 
-    SkeletonEventCommon event_shared_impl_;
+    SkeletonEventCommon<void> event_shared_impl_;
 };
 
 }  // namespace score::mw::com::impl::lola

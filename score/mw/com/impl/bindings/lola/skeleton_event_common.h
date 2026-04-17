@@ -15,10 +15,12 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_EVENT_COMMON_H_
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/i_runtime.h"
+#include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
+#include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
 #include "score/mw/com/impl/runtime.h"
-#include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
 #include <score/assert.hpp>
@@ -27,7 +29,6 @@
 
 #include <atomic>
 #include <optional>
-#include <string_view>
 
 namespace score::mw::com::impl::lola
 {
@@ -38,14 +39,16 @@ class SkeletonEventAttorney;
 class Skeleton;
 
 /// @brief Common implementation for LoLa skeleton events, shared between SkeletonEvent and GenericSkeletonEvent.
+///
+/// \tparam SampleType Will be the SampleType of the event for a regular SkeletonEvent and void for a
+/// GenericSkeletonEventr.
+template <typename SampleType>
 class SkeletonEventCommon
 {
     // Grant friendship to allow access to private helpers
     // The "SkeletonEventAttorney" class is a helper, which sets the internal state of "SkeletonEventCommon" accessing
     // private members and used for testing purposes only.
-
-    template <typename SampleType>
-    friend class SkeletonEventAttorney;
+    friend class SkeletonEventAttorney<SampleType>;
 
   public:
     SkeletonEventCommon(Skeleton& parent,
@@ -115,6 +118,147 @@ class SkeletonEventCommon
     void SetAsilBNotificationsRegistered(bool value);
     void ResetGuards() noexcept;
 };
+
+template <typename SampleType>
+SkeletonEventCommon<SampleType>::SkeletonEventCommon(
+    Skeleton& parent,
+    const ElementFqId& event_fqn,
+    std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
+    EventSlotStatus::EventTimeStamp& current_timestamp_ref,
+    impl::tracing::SkeletonEventTracingData tracing_data) noexcept
+    : parent_{parent},
+      event_fqn_{event_fqn},
+      event_data_control_composite_ref_{event_data_control_composite_ref},
+      current_timestamp_ref_{current_timestamp_ref},
+      tracing_data_{tracing_data}
+{
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::PrepareOfferCommon() noexcept
+{
+    const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
+                                           (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
+    if (!tracing_globally_enabled)
+    {
+        DisableAllTracePoints(tracing_data_);
+    }
+
+    const bool tracing_for_skeleton_event_enabled =
+        tracing_data_.enable_send || tracing_data_.enable_send_with_allocate;
+    // LCOV_EXCL_BR_START (Tool incorrectly marks the decision as "Decision couldn't be analyzed" despite all lines in
+    // both branches (true / false) being covered. "Decision couldn't be analyzed" only appeared after changing the code
+    // within the if statement (without changing the condition / tests). Suppression can be removed when bug is fixed in
+    // Ticket-188259).
+    if (tracing_for_skeleton_event_enabled)
+    {
+        EmplaceTransactionLogRegistrationGuard();
+        EmplaceTypeErasedSamplePtrsGuard();
+    }
+
+    UpdateCurrentTimestamp();
+
+    // Register callbacks to be notified when event notification existence changes.
+    // This allows us to optimise the Send() path by skipping NotifyEvent() when no handlers are registered.
+    // Separate callbacks for QM and ASIL-B update their respective atomic flags for lock-free access.
+    GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+        .GetLolaMessaging()
+        .RegisterEventNotificationExistenceChangedCallback(
+            QualityType::kASIL_QM, event_fqn_, [this](const bool has_handlers) noexcept {
+                SetQmNotificationsRegistered(has_handlers);
+            });
+
+    if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+            .GetLolaMessaging()
+            .RegisterEventNotificationExistenceChangedCallback(
+                QualityType::kASIL_B, event_fqn_, [this](const bool has_handlers) noexcept {
+                    SetAsilBNotificationsRegistered(has_handlers);
+                });
+    }
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::PrepareStopOfferCommon() noexcept
+{
+    // Unregister event notification existence changed callbacks
+    GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+        .GetLolaMessaging()
+        .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_QM, event_fqn_);
+
+    if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
+            .GetLolaMessaging()
+            .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_B, event_fqn_);
+    }
+
+    // Reset the flags to indicate no handlers are registered
+    SetQmNotificationsRegistered(false);
+    SetAsilBNotificationsRegistered(false);
+
+    ResetGuards();
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard()
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
+                                                "EventDataControlComposite must be initialized.");
+    score::cpp::ignore = transaction_log_registration_guard_.emplace(TransactionLogRegistrationGuard::Create(
+        event_data_control_composite_ref_.value().GetQmEventDataControlLocal()));
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::EmplaceTypeErasedSamplePtrsGuard()
+{
+    score::cpp::ignore = type_erased_sample_ptrs_guard_.emplace(tracing_data_.service_element_tracing_data);
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::UpdateCurrentTimestamp()
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
+                                                "EventDataControlComposite must be initialized.");
+    current_timestamp_ref_ = event_data_control_composite_ref_.value().GetLatestTimestamp();
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::SetQmNotificationsRegistered(bool value)
+{
+    qm_event_update_notifications_registered_.store(value);
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::SetAsilBNotificationsRegistered(bool value)
+{
+    asil_b_event_update_notifications_registered_.store(value);
+}
+
+template <typename SampleType>
+void SkeletonEventCommon<SampleType>::ResetGuards() noexcept
+{
+    type_erased_sample_ptrs_guard_.reset();
+    if (event_data_control_composite_ref_.has_value())
+    {
+        transaction_log_registration_guard_.reset();
+    }
+}
+
+template <typename SampleType>
+bool SkeletonEventCommon<SampleType>::IsQmNotificationsRegistered() const noexcept
+{
+
+    return qm_event_update_notifications_registered_.load();
+}
+
+template <typename SampleType>
+bool SkeletonEventCommon<SampleType>::IsAsilBNotificationsRegistered() const noexcept
+{
+
+    return asil_b_event_update_notifications_registered_.load();
+}
 
 }  // namespace score::mw::com::impl::lola
 
