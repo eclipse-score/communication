@@ -190,6 +190,20 @@ cc_library(
 )
 
 cc_library(
+    name = "method_size_info",
+    hdrs = ["method_size_info.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = [
+        "//score/mw/com:__pkg__",
+        "//score/mw/com/impl:__subpackages__",
+    ],
+    deps = [
+        ":data_type_meta_info",
+    ],
+)
+
+cc_library(
     name = "skeleton_event",
     srcs = ["skeleton_event.cpp"],
     hdrs = ["skeleton_event.h"],

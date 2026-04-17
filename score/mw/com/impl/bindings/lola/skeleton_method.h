@@ -15,13 +15,14 @@
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/messaging/method_call_registration_guard.h"
+#include "score/mw/com/impl/bindings/lola/method_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 
 #include "score/language/safecpp/scoped_function/scope.h"
-#include "score/memory/data_type_size_info.h"
 #include "score/result/result.h"
 
 #include <sched.h>
@@ -42,9 +43,14 @@ class Skeleton;
 class SkeletonMethod : public SkeletonMethodBinding
 {
   public:
-    SkeletonMethod(Skeleton& skeleton, const UniqueMethodIdentifier unique_method_identifier);
+    SkeletonMethod(Skeleton& skeleton,
+                   const UniqueMethodIdentifier unique_method_identifier,
+                   const MethodSizeInfo& size_info);
 
     Result<void> RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
+
+    /// Build MethodMetaInfo from the stored sizes for SHM publication.
+    MethodMetaInfo MakeMethodMetaInfo() const noexcept;
 
     Result<void> OnProxyMethodSubscribeFinished(
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
@@ -67,8 +73,7 @@ class SkeletonMethod : public SkeletonMethodBinding
               const std::optional<score::cpp::span<std::byte>> return_arg);
     void CleanUpOldHandlers(const GlobalConfiguration::ApplicationId application_id, pid_t proxy_pid);
 
-    std::optional<memory::DataTypeSizeInfo> in_args_type_erased_info_;
-    std::optional<memory::DataTypeSizeInfo> return_type_type_erased_info_;
+    MethodSizeInfo size_info_;
     std::optional<SkeletonMethodBinding::TypeErasedHandler> type_erased_callback_;
 
     /// ToDo: We need to store the registration guard objects in a way that we can clean up old registration guards,

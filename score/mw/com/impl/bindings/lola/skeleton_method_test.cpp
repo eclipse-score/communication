@@ -100,7 +100,7 @@ class SkeletonMethodFixture : public SkeletonMockedMemoryFixture
 
     SkeletonMethodFixture& GivenASkeletonMethod()
     {
-        unit_ = std::make_unique<SkeletonMethod>(*skeleton_, unique_method_identifier_);
+        unit_ = std::make_unique<SkeletonMethod>(*skeleton_, unique_method_identifier_, MethodSizeInfo{});
         return *this;
     }
 

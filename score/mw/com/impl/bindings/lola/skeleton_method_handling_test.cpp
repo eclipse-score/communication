@@ -115,8 +115,8 @@ class SkeletonMethodHandlingFixture : public SkeletonMockedMemoryFixture
 
         const UniqueMethodIdentifier foo_unique_method_id{test::kFooMethodId, MethodType::kMethod};
         const UniqueMethodIdentifier dumb_unique_method_id{test::kDumbMethodId, MethodType::kMethod};
-        foo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, foo_unique_method_id);
-        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id);
+        foo_method_ = std::make_unique<SkeletonMethod>(*skeleton_, foo_unique_method_id, MethodSizeInfo{});
+        dumb_method_ = std::make_unique<SkeletonMethod>(*skeleton_, dumb_unique_method_id, MethodSizeInfo{});
 
         std::ignore = foo_method_->RegisterHandler([this](std::optional<score::cpp::span<std::byte>> in_args,
                                                           std::optional<score::cpp::span<std::byte>> return_arg) {

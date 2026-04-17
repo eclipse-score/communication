@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/skeleton_base.h"
@@ -43,11 +44,14 @@ class ISkeletonMethodBindingFactory
     /// \param instance_identifier The instance identifier containing the binding information.
     /// \param parent_binding A reference to the Skeleton which owns this method.
     /// \param method_name The binding unspecific name of the  inside the skeleton denoted by instance identifier.
+    /// \param method_type Whether this is a standalone method or part of a field.
+    /// \param size_info Method signature sizes. Only lola uses this (to publish into SHM).
     /// \return An instance of SkeletonMethodBinding or nullptr in case of an error.
     virtual auto Create(const InstanceIdentifier& instance_identifier,
                         SkeletonBinding* parent_binding,
                         const std::string_view method_name,
-                        MethodType method_type) -> std::unique_ptr<SkeletonMethodBinding> = 0;
+                        MethodType method_type,
+                        const MethodSizeInfo& size_info) -> std::unique_ptr<SkeletonMethodBinding> = 0;
 };
 
 }  // namespace score::mw::com::impl

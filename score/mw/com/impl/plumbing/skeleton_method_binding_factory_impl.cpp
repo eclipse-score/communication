@@ -22,13 +22,14 @@ namespace score::mw::com::impl
 auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance_identifier,
                                               SkeletonBinding* parent_binding,
                                               const std::string_view method_name,
-                                              MethodType method_type) -> std::unique_ptr<SkeletonMethodBinding>
+                                              MethodType method_type,
+                                              const MethodSizeInfo& size_info) -> std::unique_ptr<SkeletonMethodBinding>
 {
 
     const InstanceIdentifierView instance_identifier_view{instance_identifier};
 
     using LambdaReturnType = std::unique_ptr<SkeletonMethodBinding>;
-    auto lola_deployment_handler = [&instance_identifier_view, parent_binding, &method_name, method_type](
+    auto lola_deployment_handler = [&instance_identifier_view, parent_binding, &method_name, method_type, &size_info](
                                        const LolaServiceTypeDeployment& lola_type_deployment) -> LambdaReturnType {
         auto* const lola_parent = dynamic_cast<lola::Skeleton*>(parent_binding);
         if (lola_parent == nullptr)
@@ -62,7 +63,7 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
         }
 
         lola::UniqueMethodIdentifier unique_method_identifier{lola_element_id, method_type};
-        return std::make_unique<lola::SkeletonMethod>(*lola_parent, unique_method_identifier);
+        return std::make_unique<lola::SkeletonMethod>(*lola_parent, unique_method_identifier, size_info);
     };
 
     auto deployment_info_visitor = score::cpp::overload(

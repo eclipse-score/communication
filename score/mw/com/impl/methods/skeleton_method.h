@@ -12,6 +12,7 @@
  ********************************************************************************/
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_H
+#include "score/mw/com/impl/method_size_info.h"
 #include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_base.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
@@ -71,7 +72,8 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
                                                    method_name,
-                                                   ::score::mw::com::impl::MethodType::kMethod),
+                                                   ::score::mw::com::impl::MethodType::kMethod,
+                                                   MakeMethodSizeInfo()),
               ::score::mw::com::impl::MethodType::kMethod)
     {
     }
@@ -86,7 +88,8 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
               SkeletonMethodBindingFactory::Create(SkeletonBaseView{skeleton_base}.GetAssociatedInstanceIdentifier(),
                                                    SkeletonBaseView{skeleton_base}.GetBinding(),
                                                    method_name,
-                                                   method_type),
+                                                   method_type,
+                                                   MakeMethodSizeInfo()),
               method_type)
     {
     }
@@ -96,6 +99,25 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
                    const std::string_view method_name,
                    std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
                    ::score::mw::com::impl::MethodType method_type = ::score::mw::com::impl::MethodType::kMethod);
+
+    static MethodSizeInfo MakeMethodSizeInfo() noexcept
+    {
+        std::optional<DataTypeMetaInfo> in_args_type_info{std::nullopt};
+        std::optional<DataTypeMetaInfo> return_type_info{std::nullopt};
+
+        if constexpr (!std::is_same_v<ReturnType, void>)
+        {
+            constexpr auto size_info = CreateDataTypeSizeInfoFromTypes<ReturnType>();
+            return_type_info = DataTypeMetaInfo{size_info.Size(), size_info.Alignment()};
+        }
+        if constexpr (sizeof...(ArgTypes) != 0U)
+        {
+            constexpr auto size_info = CreateDataTypeSizeInfoFromTypes<ArgTypes...>();
+            in_args_type_info = DataTypeMetaInfo{size_info.Size(), size_info.Alignment()};
+        }
+
+        return MethodSizeInfo{in_args_type_info, return_type_info};
+    }
 
     ~SkeletonMethod() = default;
 

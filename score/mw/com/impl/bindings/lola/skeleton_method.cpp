@@ -36,14 +36,17 @@
 namespace score::mw::com::impl::lola
 {
 
-SkeletonMethod::SkeletonMethod(Skeleton& skeleton, UniqueMethodIdentifier unique_method_identifier)
-    : in_args_type_erased_info_{},
-      return_type_type_erased_info_{},
-      type_erased_callback_{},
-      registration_guards_{},
-      registration_guards_mutex_{}
+SkeletonMethod::SkeletonMethod(Skeleton& skeleton,
+                               UniqueMethodIdentifier unique_method_identifier,
+                               const MethodSizeInfo& size_info)
+    : size_info_{size_info}, type_erased_callback_{}, registration_guards_{}, registration_guards_mutex_{}
 {
     skeleton.RegisterMethod(unique_method_identifier, *this);
+}
+
+MethodMetaInfo SkeletonMethod::MakeMethodMetaInfo() const noexcept
+{
+    return MethodMetaInfo{size_info_.in_args_type_info, size_info_.return_type_info};
 }
 
 Result<void> SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)
