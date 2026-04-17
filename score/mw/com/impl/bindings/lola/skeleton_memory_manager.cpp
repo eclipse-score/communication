@@ -149,9 +149,10 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
 auto SkeletonMemoryManager::CreateSharedMemory(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields,
+    const SkeletonMethodBindings& methods,
     std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> Result<void>
 {
-    const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields);
+    const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields, methods);
 
     if (!CreateSharedMemoryForControl(
             lola_service_instance_deployment_, QualityType::kASIL_QM, storage_size_calc_result.control_qm_size))
@@ -402,7 +403,8 @@ void SkeletonMemoryManager::Reset()
 
 SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateShmResourceStorageSizes(
     SkeletonBinding::SkeletonEventBindings& events,
-    SkeletonBinding::SkeletonFieldBindings& fields)
+    SkeletonBinding::SkeletonFieldBindings& fields,
+    const SkeletonMethodBindings& methods)
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetShmSizeCalculationMode() ==
@@ -426,7 +428,7 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
                 lola_service_instance_deployment_.control_asil_b_memory_size_.value()};
     }
 
-    auto required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields);
+    auto required_shm_storage_size = CalculateShmResourceStorageSizesBySimulation(events, fields, methods);
 
     const std::size_t control_asil_b_size_result = required_shm_storage_size.control_asil_b_size.has_value()
                                                        ? required_shm_storage_size.control_asil_b_size.value()
@@ -486,7 +488,8 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
 
 SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateShmResourceStorageSizesBySimulation(
     SkeletonBinding::SkeletonEventBindings& events,
-    SkeletonBinding::SkeletonFieldBindings& fields)
+    SkeletonBinding::SkeletonFieldBindings& fields,
+    const SkeletonMethodBindings& methods)
 {
     using NewDeleteDelegateMemoryResource = memory::shared::NewDeleteDelegateMemoryResource;
 
@@ -519,6 +522,17 @@ SkeletonMemoryManager::ShmResourceStorageSizes SkeletonMemoryManager::CalculateS
     for (auto& field : fields)
     {
         score::cpp::ignore = field.second.get().PrepareOffer();
+    }
+
+    for (const auto& [method_id, skeleton_method_ref] : methods)
+    {
+        const auto element_type = (method_id.method_type == ::score::mw::com::impl::MethodType::kGet ||
+                                   method_id.method_type == ::score::mw::com::impl::MethodType::kSet)
+                                      ? ServiceElementType::FIELD
+                                      : ServiceElementType::METHOD;
+        const ElementFqId element_fq_id{
+            lola_service_id_, method_id.method_or_field_id, lola_instance_id_, element_type};
+        PublishMethodMetaInfo(element_fq_id, skeleton_method_ref.get().MakeMethodMetaInfo());
     }
 
     const auto control_qm_size = control_qm_resource_->GetUserAllocatedBytes();
