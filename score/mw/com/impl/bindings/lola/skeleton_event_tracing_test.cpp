@@ -49,9 +49,9 @@ class SkeletonEventAttorney
         skeleton_event_.qm_disconnect_ = qm_disconnect_value;
     }
 
-    std::optional<EventDataControlComposite<>>& GetEventDataControlComposite()
+    EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        return skeleton_event_.event_data_control_composite_;
+        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
     }
 
   private:
@@ -88,10 +88,9 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
 
     EventSlotStatus::EventTimeStamp GetLastSendEventTimestamp(const SlotIndexType slot) noexcept
     {
-        auto& event_data_control_compositve =
+        auto& event_data_control_composite =
             SkeletonEventAttorney<test::TestSampleType>{*skeleton_event_}.GetEventDataControlComposite();
-        EXPECT_TRUE(event_data_control_compositve.has_value());
-        return event_data_control_compositve.value().GetEventSlotTimestamp(slot);
+        return event_data_control_composite.GetEventSlotTimestamp(slot);
     }
 
     TransactionLogSet& GetTransactionLogSet()

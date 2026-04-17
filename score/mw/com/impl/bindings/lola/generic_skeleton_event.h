@@ -60,11 +60,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
   private:
     DataTypeMetaInfo size_info_;
-    std::optional<EventDataControlComposite<>> event_data_control_composite_{};
-    EventSlotStatus::EventTimeStamp current_timestamp_{1U};
     std::uint8_t* event_data_storage_{nullptr};
-    bool qm_disconnect_{false};
-
     SkeletonEventCommon<void> skeleton_event_common_;
 };
 

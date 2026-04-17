@@ -16,6 +16,7 @@
 
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/i_message_passing_service.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
@@ -58,8 +59,6 @@ class SkeletonEventCommon
     SkeletonEventCommon(Skeleton& parent,
                         const SkeletonEventProperties& event_properties,
                         const ElementFqId& event_fqn,
-                        std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
-                        EventSlotStatus::EventTimeStamp& current_timestamp_ref,
                         impl::tracing::SkeletonEventTracingData tracing_data = {}) noexcept;
 
     SkeletonEventCommon(const SkeletonEventCommon&) = delete;
@@ -69,7 +68,7 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    void PrepareOfferCommon() noexcept;
+    void PrepareOfferCommon(const EventDataControlComposite<> event_data_control_composite) noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     Result<SlotIndexType> AllocateSlot() noexcept;
@@ -94,13 +93,18 @@ class SkeletonEventCommon
         return event_properties_;
     }
 
+    EventDataControlComposite<>& GetEventDataControlComposite()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_.has_value());
+        return event_data_control_composite_.value();
+    }
+
   private:
     Skeleton& parent_;
     SkeletonEventProperties event_properties_;
     ElementFqId event_fqn_;
-    std::optional<EventDataControlComposite<>>&
-        event_data_control_composite_ref_;                    // Reference to the optional in derived class
-    EventSlotStatus::EventTimeStamp& current_timestamp_ref_;  // Reference to the timestamp in derived class
+    std::optional<EventDataControlComposite<>> event_data_control_composite_;
+    EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
     bool qm_disconnect_;
 
@@ -131,26 +135,26 @@ class SkeletonEventCommon
 };
 
 template <typename SampleType>
-SkeletonEventCommon<SampleType>::SkeletonEventCommon(
-    Skeleton& parent,
-    const SkeletonEventProperties& event_properties,
-    const ElementFqId& event_fqn,
-    std::optional<EventDataControlComposite<>>& event_data_control_composite_ref,
-    EventSlotStatus::EventTimeStamp& current_timestamp_ref,
-    impl::tracing::SkeletonEventTracingData tracing_data) noexcept
+SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
+                                                     const SkeletonEventProperties& event_properties,
+                                                     const ElementFqId& event_fqn,
+                                                     impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     : parent_{parent},
       event_properties_{event_properties},
       event_fqn_{event_fqn},
-      event_data_control_composite_ref_{event_data_control_composite_ref},
-      current_timestamp_ref_{current_timestamp_ref},
+      event_data_control_composite_{},
+      current_timestamp_{1U},
       tracing_data_{tracing_data},
       qm_disconnect_{false}
 {
 }
 
 template <typename SampleType>
-void SkeletonEventCommon<SampleType>::PrepareOfferCommon() noexcept
+void SkeletonEventCommon<SampleType>::PrepareOfferCommon(
+    const EventDataControlComposite<> event_data_control_composite) noexcept
 {
+    event_data_control_composite_ = event_data_control_composite;
+
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
     if (!tracing_globally_enabled)
@@ -213,6 +217,8 @@ void SkeletonEventCommon<SampleType>::PrepareStopOfferCommon() noexcept
     SetAsilBNotificationsRegistered(false);
 
     ResetGuards();
+
+    event_data_control_composite_.reset();
 }
 
 template <typename SampleType>
@@ -222,12 +228,12 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<SlotIndexType> SkeletonEventCommon<SampleType>::AllocateSlot() noexcept
 {
-    if (event_data_control_composite_ref_.has_value() == false)
+    if (event_data_control_composite_.has_value() == false)
     {
         ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
         return MakeUnexpected(ComErrc::kBindingFailure);
     }
-    auto& event_data_control_composite = event_data_control_composite_ref_.value();
+    auto& event_data_control_composite = event_data_control_composite_.value();
     const auto allocated_slot_result = event_data_control_composite.AllocateNextSlot();
 
     // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
@@ -273,8 +279,8 @@ ResultBlank SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Sampl
     // not lead to data loss.".
     // The current logic will not exceed the maximum value.
     // coverity[autosar_cpp14_a4_7_1_violation]
-    ++current_timestamp_ref_;
-    event_data_control_composite_ref_->EventReady(slot, current_timestamp_ref_);
+    ++current_timestamp_;
+    event_data_control_composite_->EventReady(slot, current_timestamp_);
 
     // Only call NotifyEvent if there are any registered receive handlers for each quality level.
     // This avoids the expensive lock operation in the common case where no handlers are registered.
@@ -299,10 +305,10 @@ ResultBlank SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Sampl
 template <typename SampleType>
 void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                                                 "EventDataControlComposite must be initialized.");
-    score::cpp::ignore = transaction_log_registration_guard_.emplace(TransactionLogRegistrationGuard::Create(
-        event_data_control_composite_ref_.value().GetQmEventDataControlLocal()));
+    score::cpp::ignore = transaction_log_registration_guard_.emplace(
+        TransactionLogRegistrationGuard::Create(event_data_control_composite_.value().GetQmEventDataControlLocal()));
 }
 
 template <typename SampleType>
@@ -314,9 +320,9 @@ void SkeletonEventCommon<SampleType>::EmplaceTypeErasedSamplePtrsGuard()
 template <typename SampleType>
 void SkeletonEventCommon<SampleType>::UpdateCurrentTimestamp()
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_ref_.has_value(),
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
                                                 "EventDataControlComposite must be initialized.");
-    current_timestamp_ref_ = event_data_control_composite_ref_.value().GetLatestTimestamp();
+    current_timestamp_ = event_data_control_composite_.value().GetLatestTimestamp();
 }
 
 template <typename SampleType>
@@ -335,7 +341,7 @@ template <typename SampleType>
 void SkeletonEventCommon<SampleType>::ResetGuards() noexcept
 {
     type_erased_sample_ptrs_guard_.reset();
-    if (event_data_control_composite_ref_.has_value())
+    if (event_data_control_composite_.has_value())
     {
         transaction_log_registration_guard_.reset();
     }

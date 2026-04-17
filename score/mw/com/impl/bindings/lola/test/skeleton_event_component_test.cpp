@@ -51,8 +51,7 @@ class SkeletonEventAttorney
 
     EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(skeleton_event_.event_data_control_composite_.has_value());
-        return skeleton_event_.event_data_control_composite_.value();
+        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
     }
 
     /// \brief Set handler availability flags for testing purposes

@@ -110,31 +110,19 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     }
 
   private:
-    const std::string_view event_name_;
     EventDataStorage<SampleType>* event_data_storage_;
-    std::optional<EventDataControlComposite<>> event_data_control_composite_;
-    EventSlotStatus::EventTimeStamp current_timestamp_;
-
     SkeletonEventCommon<SampleType> skeleton_event_common_;
 };
 
 template <typename SampleType>
 SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          const ElementFqId event_fqn,
-                                         const std::string_view event_name,
+                                         const std::string_view,
                                          const SkeletonEventProperties properties,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
-      event_name_{event_name},
       event_data_storage_{nullptr},
-      event_data_control_composite_{},
-      current_timestamp_{1U},
-      skeleton_event_common_(parent,
-                         properties,
-                         event_fqn,
-                         event_data_control_composite_,
-                         current_timestamp_,
-                         skeleton_event_tracing_data)
+      skeleton_event_common_(parent, properties, event_fqn, skeleton_event_tracing_data)
 {
 }
 
@@ -191,8 +179,10 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     }
 
     const auto slot_index = allocated_slot_result.value();
-    return MakeSampleAllocateePtr(SampleAllocateePtr<SampleType>(
-        &event_data_storage_->at(static_cast<std::uint64_t>(slot_index)), *event_data_control_composite_, slot_index));
+    return MakeSampleAllocateePtr(
+        SampleAllocateePtr<SampleType>(&event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
+                                       skeleton_event_common_.GetEventDataControlComposite(),
+                                       slot_index));
 }
 
 template <typename SampleType>
@@ -207,13 +197,8 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
     const auto registration_result = skeleton_event_common_.GetParent().template Register<SampleType>(
         skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
-    event_data_control_composite_ = registration_result.event_data_control_composite;
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        event_data_control_composite_.has_value(),
-        "Defensive programming as event_data_control_composite_ is set by Register above.");
-
-    skeleton_event_common_.PrepareOfferCommon();
+    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite);
 
     return {};
 }

@@ -25,13 +25,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            const ElementFqId& event_fqn,
                                            const DataTypeMetaInfo& size_info,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
-    : size_info_(size_info),
-      skeleton_event_common_(parent,
-                         event_properties,
-                         event_fqn,
-                         event_data_control_composite_,
-                         current_timestamp_,
-                         tracing_data)
+    : size_info_(size_info), skeleton_event_common_(parent, event_properties, event_fqn, tracing_data)
 {
 }
 
@@ -39,14 +33,13 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
     const auto registration_result =
         skeleton_event_common_.GetParent().RegisterGeneric(skeleton_event_common_.GetElementFQId(),
-                                                       skeleton_event_common_.GetEventProperties(),
-                                                       size_info_.size,
-                                                       size_info_.alignment);
+                                                           skeleton_event_common_.GetEventProperties(),
+                                                           size_info_.size,
+                                                           size_info_.alignment);
 
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
-    event_data_control_composite_ = registration_result.event_data_control_composite;
 
-    skeleton_event_common_.PrepareOfferCommon();
+    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite);
 
     return {};
 }
@@ -71,7 +64,8 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     std::size_t offset = static_cast<std::size_t>(slot_index) * aligned_size;
     void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
-    auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr, event_data_control_composite_.value(), slot_index);
+    auto lola_ptr =
+        lola::SampleAllocateePtr<void>(data_ptr, skeleton_event_common_.GetEventDataControlComposite(), slot_index);
     return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 
@@ -83,7 +77,6 @@ std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 void GenericSkeletonEvent::PrepareStopOffer() noexcept
 {
     skeleton_event_common_.PrepareStopOfferCommon();
-    event_data_control_composite_.reset();
     event_data_storage_ = nullptr;
 }
 
