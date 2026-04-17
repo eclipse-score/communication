@@ -46,7 +46,7 @@ class Skeleton;
 /// @brief Common implementation for LoLa skeleton events, shared between SkeletonEvent and GenericSkeletonEvent.
 ///
 /// \tparam SampleType Will be the SampleType of the event for a regular SkeletonEvent and void for a
-/// GenericSkeletonEventr.
+/// GenericSkeletonEvent.
 template <typename SampleType>
 class SkeletonEventCommon
 {
@@ -57,6 +57,7 @@ class SkeletonEventCommon
 
   public:
     SkeletonEventCommon(Skeleton& parent,
+                        const std::string_view event_name,
                         const SkeletonEventProperties& event_properties,
                         const ElementFqId& event_fqn,
                         impl::tracing::SkeletonEventTracingData tracing_data = {}) noexcept;
@@ -75,14 +76,16 @@ class SkeletonEventCommon
     ResultBlank Send(impl::SampleAllocateePtr<SampleType>& sample) noexcept;
 
     // Accessors for members used by PrepareOfferCommon/PrepareStopOfferCommon
-    impl::tracing::SkeletonEventTracingData& GetTracingData()
+    void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     {
-        return tracing_data_;
+        tracing_data_ = tracing_data;
     }
+
     const ElementFqId& GetElementFQId() const
     {
         return event_fqn_;
     }
+
     Skeleton& GetParent()
     {
         return parent_;
@@ -101,6 +104,7 @@ class SkeletonEventCommon
 
   private:
     Skeleton& parent_;
+    std::string_view event_name_;
     SkeletonEventProperties event_properties_;
     ElementFqId event_fqn_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
@@ -136,10 +140,12 @@ class SkeletonEventCommon
 
 template <typename SampleType>
 SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
+                                                     const std::string_view event_name,
                                                      const SkeletonEventProperties& event_properties,
                                                      const ElementFqId& event_fqn,
                                                      impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     : parent_{parent},
+      event_name_{event_name},
       event_properties_{event_properties},
       event_fqn_{event_fqn},
       event_data_control_composite_{},

@@ -34,6 +34,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 {
   public:
     GenericSkeletonEvent(Skeleton& parent,
+                         const std::string_view event_name,
                          const SkeletonEventProperties& event_properties,
                          const ElementFqId& event_fqn,
                          const DataTypeMetaInfo& size_info,
@@ -50,7 +51,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     BindingType GetBindingType() const noexcept override;
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
-        skeleton_event_common_.GetTracingData() = tracing_data;
+        skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
     }
 
     std::size_t GetMaxSize() const noexcept override

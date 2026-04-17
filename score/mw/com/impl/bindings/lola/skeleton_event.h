@@ -106,7 +106,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
-        skeleton_event_common_.GetTracingData() = tracing_data;
+        skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
     }
 
   private:
@@ -117,12 +117,12 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 template <typename SampleType>
 SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
                                          const ElementFqId event_fqn,
-                                         const std::string_view,
+                                         const std::string_view event_name,
                                          const SkeletonEventProperties properties,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
       event_data_storage_{nullptr},
-      skeleton_event_common_(parent, properties, event_fqn, skeleton_event_tracing_data)
+      skeleton_event_common_{parent, event_name, properties, event_fqn, skeleton_event_tracing_data}
 {
 }
 

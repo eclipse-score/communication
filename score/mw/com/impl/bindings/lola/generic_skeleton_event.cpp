@@ -21,11 +21,12 @@
 namespace score::mw::com::impl::lola
 {
 GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
+                                           const std::string_view event_name,
                                            const SkeletonEventProperties& event_properties,
                                            const ElementFqId& event_fqn,
                                            const DataTypeMetaInfo& size_info,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
-    : size_info_(size_info), skeleton_event_common_(parent, event_properties, event_fqn, tracing_data)
+    : size_info_{size_info}, skeleton_event_common_{parent, event_name, event_properties, event_fqn, tracing_data}
 {
 }
 
