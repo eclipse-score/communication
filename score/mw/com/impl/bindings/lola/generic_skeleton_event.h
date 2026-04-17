@@ -50,7 +50,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     BindingType GetBindingType() const noexcept override;
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
-        event_shared_impl_.GetTracingData() = tracing_data;
+        skeleton_event_common_.GetTracingData() = tracing_data;
     }
 
     std::size_t GetMaxSize() const noexcept override
@@ -65,7 +65,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     std::uint8_t* event_data_storage_{nullptr};
     bool qm_disconnect_{false};
 
-    SkeletonEventCommon<void> event_shared_impl_;
+    SkeletonEventCommon<void> skeleton_event_common_;
 };
 
 }  // namespace score::mw::com::impl::lola

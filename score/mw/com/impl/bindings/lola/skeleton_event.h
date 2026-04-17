@@ -106,7 +106,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
-        event_shared_impl_.GetTracingData() = tracing_data;
+        skeleton_event_common_.GetTracingData() = tracing_data;
     }
 
   private:
@@ -115,7 +115,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
     EventSlotStatus::EventTimeStamp current_timestamp_;
 
-    SkeletonEventCommon<SampleType> event_shared_impl_;
+    SkeletonEventCommon<SampleType> skeleton_event_common_;
 };
 
 template <typename SampleType>
@@ -129,7 +129,7 @@ SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
       event_data_storage_{nullptr},
       event_data_control_composite_{},
       current_timestamp_{1U},
-      event_shared_impl_(parent,
+      skeleton_event_common_(parent,
                          properties,
                          event_fqn,
                          event_data_control_composite_,
@@ -164,7 +164,7 @@ ResultBlank SkeletonEvent<SampleType>::Send(
     impl::SampleAllocateePtr<SampleType> sample,
     score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback) noexcept
 {
-    const auto send_result = event_shared_impl_.Send(sample);
+    const auto send_result = skeleton_event_common_.Send(sample);
     if (!send_result.has_value())
     {
         return MakeUnexpected<Blank>(send_result.error());
@@ -184,7 +184,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate() noexcept
 {
-    const auto allocated_slot_result = event_shared_impl_.AllocateSlot();
+    const auto allocated_slot_result = skeleton_event_common_.AllocateSlot();
     if (!allocated_slot_result.has_value())
     {
         return MakeUnexpected<impl::SampleAllocateePtr<SampleType>>(allocated_slot_result.error());
@@ -204,8 +204,8 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
-    const auto registration_result = event_shared_impl_.GetParent().template Register<SampleType>(
-        event_shared_impl_.GetElementFQId(), event_shared_impl_.GetEventProperties());
+    const auto registration_result = skeleton_event_common_.GetParent().template Register<SampleType>(
+        skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
     event_data_control_composite_ = registration_result.event_data_control_composite;
 
@@ -213,7 +213,7 @@ ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
         event_data_control_composite_.has_value(),
         "Defensive programming as event_data_control_composite_ is set by Register above.");
 
-    event_shared_impl_.PrepareOfferCommon();
+    skeleton_event_common_.PrepareOfferCommon();
 
     return {};
 }
@@ -227,7 +227,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void SkeletonEvent<SampleType>::PrepareStopOffer() noexcept
 {
-    event_shared_impl_.PrepareStopOfferCommon();
+    skeleton_event_common_.PrepareStopOfferCommon();
 }
 
 }  // namespace score::mw::com::impl::lola

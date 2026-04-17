@@ -26,7 +26,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
                                            const DataTypeMetaInfo& size_info,
                                            impl::tracing::SkeletonEventTracingData tracing_data)
     : size_info_(size_info),
-      event_shared_impl_(parent,
+      skeleton_event_common_(parent,
                          event_properties,
                          event_fqn,
                          event_data_control_composite_,
@@ -38,27 +38,27 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
 ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
 {
     const auto registration_result =
-        event_shared_impl_.GetParent().RegisterGeneric(event_shared_impl_.GetElementFQId(),
-                                                       event_shared_impl_.GetEventProperties(),
+        skeleton_event_common_.GetParent().RegisterGeneric(skeleton_event_common_.GetElementFQId(),
+                                                       skeleton_event_common_.GetEventProperties(),
                                                        size_info_.size,
                                                        size_info_.alignment);
 
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
     event_data_control_composite_ = registration_result.event_data_control_composite;
 
-    event_shared_impl_.PrepareOfferCommon();
+    skeleton_event_common_.PrepareOfferCommon();
 
     return {};
 }
 
 ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
-    return event_shared_impl_.Send(sample);
+    return skeleton_event_common_.Send(sample);
 }
 
 Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::Allocate() noexcept
 {
-    auto allocated_slot_result = event_shared_impl_.AllocateSlot();
+    auto allocated_slot_result = skeleton_event_common_.AllocateSlot();
     if (!allocated_slot_result.has_value())
     {
         return MakeUnexpected<impl::SampleAllocateePtr<void>>(allocated_slot_result.error());
@@ -82,7 +82,7 @@ std::pair<size_t, size_t> GenericSkeletonEvent::GetSizeInfo() const noexcept
 
 void GenericSkeletonEvent::PrepareStopOffer() noexcept
 {
-    event_shared_impl_.PrepareStopOfferCommon();
+    skeleton_event_common_.PrepareStopOfferCommon();
     event_data_control_composite_.reset();
     event_data_storage_ = nullptr;
 }

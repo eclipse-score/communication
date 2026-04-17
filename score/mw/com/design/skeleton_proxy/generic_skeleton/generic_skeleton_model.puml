@@ -80,7 +80,7 @@ class "lola::SkeletonEvent<SampleType>" {
   +SkeletonEvent(lola::Skeleton& parent, const SkeletonEventProperties& event_properties, const ElementFqId& event_fqn)
   +Send(const SampleType&) : ResultBlank
   +Allocate(): Result<SampleAllocateePtr<SampleType>>
-  -event_shared_impl_ : lola::SkeletonEventCommon
+  -skeleton_event_common_ : lola::SkeletonEventCommon
 }
 
 class "GenericSkeletonEventBindingFactory" {
@@ -144,7 +144,7 @@ class "lola::GenericSkeletonEvent" #yellow {
   +GetBindingType(): BindingType
   +SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data): void
   +GetMaxSize() const : std::size_t
-  -event_shared_impl_ : lola::SkeletonEventCommon
+  -skeleton_event_common_ : lola::SkeletonEventCommon
 }
 
 class "DummySkeleton" <<generated>>  {
@@ -172,8 +172,8 @@ class "DummySkeleton" <<generated>>  {
 "mw::com::impl::GenericSkeletonEvent" ..> "GenericSkeletonEventBindingFactory" : uses
 "mw::com::impl::SkeletonEvent<SampleType>" ..> "GenericSkeletonEventBindingFactory" : uses
 
-"lola::SkeletonEvent<SampleType>" *-- "lola::SkeletonEventCommon" : event_shared_impl_
-"lola::GenericSkeletonEvent" *-- "lola::SkeletonEventCommon" : event_shared_impl_
+"lola::SkeletonEvent<SampleType>" *-- "lola::SkeletonEventCommon" : skeleton_event_common_
+"lola::GenericSkeletonEvent" *-- "lola::SkeletonEventCommon" : skeleton_event_common_
 
 "lola::SkeletonEventCommon" o-- "1" "lola::Skeleton"
 
