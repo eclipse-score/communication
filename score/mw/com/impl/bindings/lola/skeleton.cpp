@@ -514,7 +514,7 @@ std::pair<void*, EventDataControlComposite<>> Skeleton::RegisterGeneric(
             impl::Runtime::getInstance().GetTracingRuntime()->DisableTracing();
         }
 
-        return {data_storage, control_composite};
+        return {data_storage->data(), control_composite};
     }
 
     return memory_manager_.CreateEventDataFromOpenedSharedMemory(

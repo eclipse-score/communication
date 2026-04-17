@@ -267,7 +267,7 @@ std::pair<void*, EventDataControlComposite<>> SkeletonMemoryManager::CreateEvent
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(inserted_meta_info.second,
                                                 "Couldn't register/emplace event-meta-info in data-section.");
 
-    return {data_storage, CreateEventControlComposite(element_fq_id, element_properties)};
+    return {event_data_raw_array, CreateEventControlComposite(element_fq_id, element_properties)};
 }
 
 void SkeletonMemoryManager::RemoveSharedMemory()
