@@ -15,6 +15,8 @@
 #include "score/mw/com/impl/bindings/lola/methods/method_error.h"
 #include "score/mw/com/impl/com_error.h"
 
+#include <score/assert.hpp>
+
 namespace score::mw::com::impl
 {
 

@@ -945,6 +945,7 @@ cc_library(
     implementation_deps = [
         ":error",
         "//score/mw/com/impl/bindings/lola/methods:method_error",
+        "@score_baselibs//score/language/futurecpp",
     ],
     tags = ["FFI"],
     visibility = [
