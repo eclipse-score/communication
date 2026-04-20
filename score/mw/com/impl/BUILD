@@ -687,7 +687,6 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
-    deps = ["@score_baselibs//score/language/futurecpp"],
 )
 
 cc_library(
