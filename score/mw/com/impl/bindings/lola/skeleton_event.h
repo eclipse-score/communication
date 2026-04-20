@@ -175,6 +175,7 @@ Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate
     return MakeSampleAllocateePtr(
         SampleAllocateePtr<SampleType>(&event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
                                        skeleton_event_common_.GetEventDataControlComposite(),
+                                       skeleton_event_common_.GetConsumerEventDataControlLocalView(),
                                        slot_index));
 }
 

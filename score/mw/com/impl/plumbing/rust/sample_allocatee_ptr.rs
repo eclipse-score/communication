@@ -31,7 +31,6 @@ use common_rs::{
 struct EventDataControlComposite {
     _asil_qm_control_local_: *mut ProviderEventDataControlLocalView,
     _asil_b_control_local_: *mut ProviderEventDataControlLocalView,
-    _proxy_control_local_: *mut ConsumerEventDataControlLocalView,
     _ignore_qm_control_: bool,
 }
 
@@ -40,6 +39,7 @@ struct LolaSampleAllocateePtrBinding<T> {
     _managed_object: *mut T,
     _event_slot_index: SlotIndexType,
     _event_data_control: CxxOptional<EventDataControlComposite<>>,
+    _consumer_data_control_local_: *mut ConsumerEventDataControlLocalView,
 }
 
 type UniquePtrBinding<T> = UniquePtr<T, CustomDeleter>;

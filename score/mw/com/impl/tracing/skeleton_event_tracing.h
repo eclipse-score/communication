@@ -107,12 +107,8 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
     auto& binding_ptr_variant = SampleAllocateePtrMutableView{sample_data_ptr}.GetUnderlyingVariant();
     auto visitor = score::cpp::overload(
         [](lola::SampleAllocateePtr<SampleType>& lola_ptr) -> TypeErasedSamplePtr {
-            auto& event_data_control_composite_result =
-                lola::SampleAllocateePtrMutableView{lola_ptr}.GetEventDataControlComposite();
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_result.has_value());
-
             auto& consumer_event_data_control_local =
-                event_data_control_composite_result->GetConsumerEventDataControlLocalView();
+                lola::SampleAllocateePtrMutableView{lola_ptr}.GetConsumerEventDataControlLocalView();
 
             const auto event_slot_index = lola_ptr.GetReferencedSlot();
             consumer_event_data_control_local.ReferenceSpecificEvent(event_slot_index);

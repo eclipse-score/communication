@@ -68,8 +68,10 @@ Result<score::mw::com::impl::SampleAllocateePtr<void>> GenericSkeletonEvent::All
     std::size_t offset = static_cast<std::size_t>(slot_index) * aligned_size;
     void* data_ptr = static_cast<void*>(memory::shared::AddOffsetToPointer(event_data_storage_, offset));
 
-    auto lola_ptr =
-        lola::SampleAllocateePtr<void>(data_ptr, skeleton_event_common_.GetEventDataControlComposite(), slot_index);
+    auto lola_ptr = lola::SampleAllocateePtr<void>(data_ptr,
+                                                   skeleton_event_common_.GetEventDataControlComposite(),
+                                                   skeleton_event_common_.GetConsumerEventDataControlLocalView(),
+                                                   slot_index);
     return impl::MakeSampleAllocateePtr(std::move(lola_ptr));
 }
 

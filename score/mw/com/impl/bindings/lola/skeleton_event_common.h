@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/bindings/lola/type_erased_sample_ptrs_guard.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_event_binding.h"
@@ -102,6 +103,12 @@ class SkeletonEventCommon
         return event_data_control_composite_.value();
     }
 
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView()
+    {
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(consumer_control_local_view_qm_.has_value());
+        return consumer_control_local_view_qm_.value();
+    }
+
   private:
     Skeleton& parent_;
     std::string_view event_name_;
@@ -175,8 +182,8 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_con
             provider_control_local_view_asil_b_.emplace(event_control_asil_b->data_control);
         provider_control_local_view_asil_b_ptr = &provider_control_local_view_qm;
     }
-    score::cpp::ignore = event_data_control_composite_.emplace(
-        provider_control_local_view_qm, provider_control_local_view_asil_b_ptr, &consumer_control_local_view_qm);
+    score::cpp::ignore =
+        event_data_control_composite_.emplace(provider_control_local_view_qm, provider_control_local_view_asil_b_ptr);
 
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
@@ -332,10 +339,10 @@ Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Samp
 template <typename SampleType>
 void SkeletonEventCommon<SampleType>::EmplaceTransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_data_control_composite_.has_value(),
-                                                "EventDataControlComposite must be initialized.");
-    score::cpp::ignore = transaction_log_registration_guard_.emplace(transaction_log_set.RegisterSkeletonTracingElement(
-        event_data_control_composite_->GetConsumerEventDataControlLocalView()));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(consumer_control_local_view_qm_.has_value(),
+                                                "ConsumerEventDataControlLocalView must be initialized.");
+    score::cpp::ignore = transaction_log_registration_guard_.emplace(
+        transaction_log_set.RegisterSkeletonTracingElement(consumer_control_local_view_qm_.value()));
 }
 
 template <typename SampleType>

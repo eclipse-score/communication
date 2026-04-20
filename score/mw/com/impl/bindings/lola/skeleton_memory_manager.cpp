@@ -636,7 +636,6 @@ bool SkeletonMemoryManager::OpenSharedMemoryForData(
             tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback,
             memory_resource->GetFileDescriptor(),
             memory_resource->getBaseAddress());
-        /// gtodo: Add test that tracing works after restart
     }
     return true;
 }

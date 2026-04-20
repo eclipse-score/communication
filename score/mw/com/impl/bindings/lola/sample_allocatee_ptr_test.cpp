@@ -41,7 +41,8 @@ class SampleAllocateePtrFixture : public ::testing::Test
     FakeMemoryResource memory_{};
     EventDataControl control_block_{kMaxSlots, memory_};
     ProviderEventDataControlLocalView<> provider_event_data_control_local_{control_block_};
-    EventDataControlComposite<> control_composite_{provider_event_data_control_local_, nullptr, nullptr};
+    ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{control_block_};
+    EventDataControlComposite<> control_composite_{provider_event_data_control_local_, nullptr};
 };
 
 TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)
@@ -60,7 +61,8 @@ TEST_F(SampleAllocateePtrFixture, MarksSlotAsInvalidOnDestruction)
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
     {
-        auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
+        auto unit = SampleAllocateePtr<std::uint8_t>(
+            &data, control_composite_, consumer_event_data_control_local_, slot.value());
     }
     // When it goes out of scope
 
@@ -74,7 +76,8 @@ TEST_F(SampleAllocateePtrFixture, DoesNotMarkSlotAsInvalidOnMove)
     auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
-    auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
+    auto unit =
+        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When moving it
     auto unit2 = std::move(unit);
@@ -91,7 +94,8 @@ TEST_F(SampleAllocateePtrFixture, ReadySlotIsNotMarkedInvalidOnDestruction)
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
     {
-        auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
+        auto unit = SampleAllocateePtr<std::uint8_t>(
+            &data, control_composite_, consumer_event_data_control_local_, slot.value());
     }
     // When it goes out of scope
 
@@ -113,7 +117,8 @@ TEST_F(SampleAllocateePtrFixture, CanAccessUnderlyingSlot)
     ASSERT_TRUE(slot.has_value());
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
-    auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
+    auto unit =
+        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When accessing which slot is associated with the SampleAllocateePtr
     auto referenced_slot = unit.GetReferencedSlot();
@@ -138,7 +143,8 @@ TEST_F(SampleAllocateePtrFixture, MoveConstruct)
     ASSERT_TRUE(slot.has_value());
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
-    auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
+    auto unit =
+        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When move constructing another SampleAllocateePtr from it
     SampleAllocateePtr<std::uint8_t> unit2(std::move(unit));
@@ -158,7 +164,8 @@ TEST_F(SampleAllocateePtrFixture, MoveAssign)
     ASSERT_TRUE(slot.has_value());
     provider_event_data_control_local_.EventReady(slot.value(), 0x42);
     std::uint8_t data{};
-    auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
+    auto unit =
+        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When move assigning to another SampleAllocateePtr
     SampleAllocateePtr<std::uint8_t> unit2 = std::move(unit);
@@ -188,7 +195,8 @@ TEST_F(SampleAllocateePtrFixture, AssignNullptr)
     auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     std::uint8_t data{};
-    auto unit = SampleAllocateePtr<std::uint8_t>(&data, control_composite_, slot.value());
+    auto unit =
+        SampleAllocateePtr<std::uint8_t>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When assigning a nullptr to it
     unit = nullptr;
@@ -205,7 +213,8 @@ TEST_F(SampleAllocateePtrFixture, ArrayOp)
     auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     DummyStruct data{99, 42};
-    auto unit = SampleAllocateePtr<DummyStruct>(&data, control_composite_, slot.value());
+    auto unit =
+        SampleAllocateePtr<DummyStruct>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When accessing the data via ->
     auto val1 = unit->member1_;
@@ -222,7 +231,8 @@ TEST_F(SampleAllocateePtrFixture, StarOp)
     auto slot = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot.has_value());
     DummyStruct data{99, 42};
-    auto unit = SampleAllocateePtr<DummyStruct>(&data, control_composite_, slot.value());
+    auto unit =
+        SampleAllocateePtr<DummyStruct>(&data, control_composite_, consumer_event_data_control_local_, slot.value());
 
     // When accessing the data via *
     auto val1 = *unit;
@@ -238,12 +248,14 @@ TEST_F(SampleAllocateePtrFixture, SwapOp)
     auto slot1 = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot1.has_value());
     DummyStruct data1{99, 42};
-    auto unit1 = SampleAllocateePtr<DummyStruct>(&data1, control_composite_, slot1.value());
+    auto unit1 =
+        SampleAllocateePtr<DummyStruct>(&data1, control_composite_, consumer_event_data_control_local_, slot1.value());
 
     auto slot2 = provider_event_data_control_local_.AllocateNextSlot();
     ASSERT_TRUE(slot2.has_value());
     DummyStruct data2{10, 100};
-    auto unit2 = SampleAllocateePtr<DummyStruct>(&data2, control_composite_, slot2.value());
+    auto unit2 =
+        SampleAllocateePtr<DummyStruct>(&data2, control_composite_, consumer_event_data_control_local_, slot2.value());
 
     // When swapping the SampleAllocateePtrs
     swap(unit1, unit2);
