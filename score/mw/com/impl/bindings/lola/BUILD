@@ -364,6 +364,10 @@ cc_library(
     implementation_deps = [
         "//score/mw/com/impl/bindings/lola/tracing:tracing_runtime",
     ],
+    local_defines = select({
+        "@score_baselibs//score/analysis/tracing/generic_trace_library/flags:require_typed_memory": ["REQUIRE_TYPED_MEMORY"],
+        "//conditions:default": [],
+    }),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/bindings/lola/test:__pkg__",
