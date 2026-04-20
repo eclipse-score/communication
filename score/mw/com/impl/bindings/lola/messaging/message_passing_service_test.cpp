@@ -416,7 +416,8 @@ class MessagePassingServiceQMDelegationTest : public MessagePassingServiceTest
     }
 
     const ProxyInstanceIdentifier kProxyInstanceId{5U, 1U};
-    const ProxyMethodInstanceIdentifier kProxyMethodInstanceId{kProxyInstanceId, LolaMethodId{55U}};
+    const ProxyMethodInstanceIdentifier kProxyMethodInstanceId{kProxyInstanceId,
+                                                               UniqueMethodIdentifier{LolaMethodId{55U}}};
     const SkeletonInstanceIdentifier kSkeletonInstanceId{LolaServiceId{12U}, LolaServiceInstanceId::InstanceId{22U}};
     const pid_t kTargetNodeId{7};
     const uid_t kAllowedUid{42U};
