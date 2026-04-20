@@ -100,7 +100,7 @@ cc_library(
         "//score/mw/com/impl:find_service_handle",
         "//score/mw/com/impl:find_service_handler",
         "//score/mw/com/impl:handle_type",
-        "@googletest//:gtest_main",
+        "@googletest//:gtest",
         "@score_baselibs//score/filesystem",
         "@score_baselibs//score/language/futurecpp",
     ],
