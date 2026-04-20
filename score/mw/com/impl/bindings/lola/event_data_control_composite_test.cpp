@@ -58,7 +58,7 @@ bool RandomTrueOrFalse()
 
 const std::uint64_t kMemoryResourceId{10U};
 
-/// gtodo: Extract this
+/// gtodo: Extract this into a generic test utility in the atomic_indirector package.
 template <typename T>
 class AtomicIndirectorMockGuard final
 {
@@ -223,7 +223,7 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateOneSlot)
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValue)
 {
     // Given an EventDataControlComposite with 1 allocated slots that are set to ready
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+    WithQmAndAsilBEventDataControlCompositeUsingRealAtomics();
     score::cpp::ignore = unit_->AllocateNextSlot();
     const EventSlotStatus::EventTimeStamp time_stamp{2};
     unit_->EventReady(SlotIndexType{0U}, time_stamp);
@@ -252,7 +252,7 @@ TEST_F(EventDataControlCompositeFixture, CanAllocateMultipleSlots)
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfOneSlotIsMarkedAsInvalid)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+    WithQmAndAsilBEventDataControlCompositeUsingRealAtomics();
 
     // When allocating 2 slots
     auto allocation_result = unit_->AllocateNextSlot();
@@ -274,7 +274,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnCorrectValueIfO
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfAllSlotAreInvalid)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+    WithQmAndAsilBEventDataControlCompositeUsingRealAtomics();
 
     // When allocating 2 slots
     auto allocation_result = unit_->AllocateNextSlot();
@@ -293,7 +293,7 @@ TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesI
 TEST_F(EventDataControlCompositeFixture, GetLatestTimeStampReturnsDefaultValuesIfNoSlotHaveBeenAllocated)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+    WithQmAndAsilBEventDataControlCompositeUsingRealAtomics();
 
     // Then the timestamp equal to 1
     auto time_stamp = unit_->GetLatestTimestamp();
@@ -305,7 +305,7 @@ TEST_F(EventDataControlCompositeFixture,
        GetLatestTimeStampReturnsDefaultValuesIfASlotHasBeenAllocatedButNotMarkedAsReady)
 {
     // Given an EventDataControlComposite with zero used slots
-    WithQmAndAsilBEventDataControls().WithEventDataControlCompositeUsingRealAtomics();
+    WithQmAndAsilBEventDataControlCompositeUsingRealAtomics();
 
     // When allocating 1 slot
     score::cpp::ignore = unit_->AllocateNextSlot();

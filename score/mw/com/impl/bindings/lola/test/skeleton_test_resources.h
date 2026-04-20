@@ -13,11 +13,13 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_TEST_RESOURCES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_TEST_RESOURCES_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/provider_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"

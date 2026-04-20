@@ -111,6 +111,14 @@ class EventDataControlComposite
     /// \brief Returns the timestamp of the provided slot index
     EventSlotStatus::EventTimeStamp GetEventSlotTimestamp(const SlotIndexType slot_index) const noexcept;
 
+    /// \brief Returns the latest timestamp of all slots which are currently marked as ready (i.e. have been written to
+    /// by a provider and can be consumet)
+    ///
+    /// This function is used in the partial restart case in which a skeleton instance dies and restarts while there are
+    /// still proxies connected to the old shared memory region. In this case, the skeleton will open and continue to
+    /// use the old region. We must make sure that the current timestamp of the new skeleton is updated based on the
+    /// latest timestamp in the old shared memory region to ensure that the referencing semantics related to the
+    /// timestamp remain correct.
     EventSlotStatus::EventTimeStamp GetLatestTimestamp() const noexcept;
 
   private:

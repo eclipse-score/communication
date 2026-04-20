@@ -42,8 +42,8 @@ Result<void> GenericSkeletonEvent::PrepareOffer() noexcept
 
     event_data_storage_ = static_cast<std::uint8_t*>(registration_result.type_erased_event_data_storage_ptr);
 
-    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite,
-                                              registration_result.transaction_log_set);
+    skeleton_event_common_.PrepareOfferCommon(registration_result.event_control_qm,
+                                              registration_result.event_control_asil_b);
 
     return {};
 }

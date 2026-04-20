@@ -191,8 +191,8 @@ Result<void> SkeletonEvent<SampleType>::PrepareOffer() noexcept
         skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
 
-    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite,
-                                              registration_result.transaction_log_set);
+    skeleton_event_common_.PrepareOfferCommon(registration_result.event_control_qm,
+                                              registration_result.event_control_asil_b);
 
     return {};
 }

@@ -69,8 +69,7 @@ class SkeletonEventCommon
 
     ~SkeletonEventCommon() = default;
 
-    void PrepareOfferCommon(const EventDataControlComposite<> event_data_control_composite,
-                            TransactionLogSet& transaction_log_set) noexcept;
+    void PrepareOfferCommon(EventControl& event_control_qm, EventControl* event_control_asil_b) noexcept;
     void PrepareStopOfferCommon() noexcept;
 
     Result<SlotIndexType> AllocateSlot() noexcept;
@@ -108,7 +107,12 @@ class SkeletonEventCommon
     std::string_view event_name_;
     SkeletonEventProperties event_properties_;
     ElementFqId element_fq_id_;
+
+    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_qm_;
+    std::optional<ProviderEventDataControlLocalView<>> provider_control_local_view_asil_b_;
+    std::optional<ConsumerEventDataControlLocalView<>> consumer_control_local_view_qm_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
+
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
     bool qm_disconnect_;
@@ -124,8 +128,9 @@ class SkeletonEventCommon
     std::atomic<bool> qm_event_update_notifications_registered_{false};
     std::atomic<bool> asil_b_event_update_notifications_registered_{false};
 
-    /// \brief optional RAII guards for tracing transaction log registration/un-registration and cleanup of "pending"
-    /// type erased sample pointers which are created in PrepareOfferCommon() and destroyed in PrepareStopOfferCommon()
+    /// \brief optional RAII guards for tracing transaction log registration/un-registration and cleanup of
+    /// "pending" type erased sample pointers which are created in PrepareOfferCommon() and destroyed in
+    /// PrepareStopOfferCommon()
     /// - optional as only needed when tracing is enabled and when they haven't been cleaned up via a call to
     /// PrepareStopOfferCommon().
     std::optional<TransactionLogRegistrationGuard> transaction_log_registration_guard_{};
@@ -157,10 +162,21 @@ SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
 }
 
 template <typename SampleType>
-void SkeletonEventCommon<SampleType>::PrepareOfferCommon(const EventDataControlComposite<> event_data_control_composite,
-                                                         TransactionLogSet& transaction_log_set) noexcept
+void SkeletonEventCommon<SampleType>::PrepareOfferCommon(EventControl& event_control_qm,
+                                                         EventControl* event_control_asil_b) noexcept
 {
-    event_data_control_composite_ = event_data_control_composite;
+    auto& provider_control_local_view_qm = provider_control_local_view_qm_.emplace(event_control_qm.data_control);
+    auto& consumer_control_local_view_qm = consumer_control_local_view_qm_.emplace(event_control_qm.data_control);
+
+    ProviderEventDataControlLocalView<>* provider_control_local_view_asil_b_ptr{nullptr};
+    if (event_control_asil_b != nullptr)
+    {
+        auto& provider_control_local_view_qm =
+            provider_control_local_view_asil_b_.emplace(event_control_asil_b->data_control);
+        provider_control_local_view_asil_b_ptr = &provider_control_local_view_qm;
+    }
+    score::cpp::ignore = event_data_control_composite_.emplace(
+        provider_control_local_view_qm, provider_control_local_view_asil_b_ptr, &consumer_control_local_view_qm);
 
     const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
                                            (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
@@ -177,7 +193,7 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(const EventDataControlC
     // Ticket-188259).
     if (tracing_for_skeleton_event_enabled)
     {
-        EmplaceTransactionLogRegistrationGuard(transaction_log_set);
+        EmplaceTransactionLogRegistrationGuard(event_control_qm.transaction_log_set_);
         EmplaceTypeErasedSamplePtrsGuard();
     }
 
@@ -226,6 +242,9 @@ void SkeletonEventCommon<SampleType>::PrepareStopOfferCommon() noexcept
     ResetGuards();
 
     event_data_control_composite_.reset();
+    provider_control_local_view_qm_.reset();
+    provider_control_local_view_asil_b_.reset();
+    consumer_control_local_view_qm_.reset();
 }
 
 template <typename SampleType>

@@ -71,15 +71,15 @@ class Skeleton final : public SkeletonBinding
     struct RegistrationResult
     {
         EventDataStorage<SampleType>& event_data_storage;
-        EventDataControlComposite<> event_data_control_composite;
-        TransactionLogSet& transaction_log_set;
+        EventControl& event_control_qm;
+        EventControl* event_control_asil_b;
     };
 
     struct GenericRegistrationResult
     {
         void* type_erased_event_data_storage_ptr;
-        EventDataControlComposite<> event_data_control_composite;
-        TransactionLogSet& transaction_log_set;
+        EventControl& event_control_qm;
+        EventControl* event_control_asil_b;
     };
 
     static std::unique_ptr<Skeleton> Create(const InstanceIdentifier& identifier,
@@ -251,29 +251,32 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
     // EventDataStorage from the shared memory and attempt to rollback the Skeleton tracing transaction log.
     if (was_old_shm_region_reopened_)
     {
-        auto opened_result =
-            memory_manager_.OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(element_fq_id);
-        EventDataControlComposite<>& event_data_control_composite = opened_result.first;
-        auto& event_control = opened_result.second.get();
+        auto [event_data_control_qm, event_data_control_asil_b] =
+            memory_manager_.RetrieveEventControlsFromOpenedSharedMemory(element_fq_id);
 
-        // We rollback any transactions in the TransactionLog that correspond to the SkeletonEvent even if tracing is
-        // disabled in the current process. It's possible that we could have tracing disabled in this process but the
-        // crashed process had tracing enabled and therefore may have transactions that need to be rolled back. If
-        // tracing was also disabled in the previous process or if there are no transactions to rollback,
+        // We can have transactions in the TransactionLogs relating to tracing (QM only) or field getter logic (QM and /
+        // or ASIL-B). We try rolling back all TransactionLogSets which are found.
+        // We rollback any transactions in the TransactionLog that correspond to the SkeletonEvent even if
+        // tracing is disabled in the current process. It's possible that we could have tracing disabled in this process
+        // but the crashed process had tracing enabled and therefore may have transactions that need to be rolled back.
+        // If tracing was also disabled in the previous process or if there are no transactions to rollback,
         // RollbackSkeletonTracingTransactions will simply do nothing.
-        memory_manager_.RollbackSkeletonTracingTransactions(event_control);
+        memory_manager_.RollbackSkeletonTracingTransactions(event_data_control_qm);
+        if (event_data_control_asil_b != nullptr)
+        {
+            memory_manager_.RollbackSkeletonTracingTransactions(*event_data_control_asil_b);
+        }
 
-        auto& event_data_storage = memory_manager_.OpenEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
-        return {event_data_storage, event_data_control_composite, event_control.transaction_log_set_};
+        auto& event_data_storage = memory_manager_.RetrieveEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
+        return RegistrationResult<SampleType>{event_data_storage, event_data_control_qm, event_data_control_asil_b};
     }
 
     auto& event_data_storage =
         memory_manager_.CreateEventDataInCreatedSharedMemory<SampleType>(element_fq_id, element_properties);
-    auto [event_data_control_composite, transaction_log_set] =
-        memory_manager_.CreateEventDataControlCompositeAndTransactionLogSetInCreatedSharedMemory(element_fq_id,
-                                                                                                 element_properties);
+    auto [event_data_control_qm, event_data_control_asil_b] =
+        memory_manager_.CreateEventControlsInCreatedSharedMemory(element_fq_id, element_properties);
 
-    return RegistrationResult<SampleType>{event_data_storage, event_data_control_composite, transaction_log_set};
+    return RegistrationResult<SampleType>{event_data_storage, event_data_control_qm, event_data_control_asil_b};
 }
 
 }  // namespace score::mw::com::impl::lola

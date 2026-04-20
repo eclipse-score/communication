@@ -14,14 +14,11 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_MEMORY_MANAGER_H
 
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
-#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/skeleton_binding.h"
@@ -86,14 +83,14 @@ class SkeletonMemoryManager final
     Result<void> OpenExistingSharedMemory(
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
 
-    /// \brief Creates an EventDataControlComposite and TransactionLogSet for a specific event.
+    /// \brief Creates an EventControl for QM and optionally for ASIL-B (if the Skeleton is ASIL-B) for a specific
+    /// event.
     ///
-    /// The EventDataControlComposite and TransactionLogSet are emplaced into the ServiceDataControl in the shared
-    /// memory region that was created with CreateSharedMemory.
-    auto CreateEventDataControlCompositeAndTransactionLogSetInCreatedSharedMemory(
-        const ElementFqId element_fq_id,
-        const SkeletonEventProperties& element_properties)
-        -> std::pair<EventDataControlComposite<>, TransactionLogSet&>;
+    /// The EventControls are emplaced into the ServiceDataControl in the QM / ASIL-B shared memory regions that were
+    /// created with CreateSharedMemory.
+    auto CreateEventControlsInCreatedSharedMemory(const ElementFqId element_fq_id,
+                                                  const SkeletonEventProperties& element_properties)
+        -> std::pair<std::reference_wrapper<EventControl>, EventControl*>;
 
     /// \brief Creates an EventDataStorage for a specific event.
     ///
@@ -115,20 +112,20 @@ class SkeletonMemoryManager final
                                                      size_t sample_size,
                                                      size_t sample_alignment) noexcept -> void*;
 
-    /// \brief Opens an EventDataControlComposite and TransactionLogSet for a specific event that were created by a
-    /// previous skeleton.
+    /// \brief Opens an EventControl for QM and optionally for ASIL-B (if the Skeleton is ASIL-B) for a specific
+    /// event that were created by a previous skeleton.
     ///
-    /// The EventDataControlComposite and TransactionLogSet are retrieved from the ServiceDataControl in the shared
-    /// memory region that was opened with OpenExistingSharedMemory.
-    auto OpenEventDataControlCompositeAndTransactionLogSetFromOpenedSharedMemory(const ElementFqId element_fq_id)
-        -> std::pair<EventDataControlComposite<>, std::reference_wrapper<EventControl>>;
+    /// The EventControls are retrieved from the ServiceDataControl in the shared memory regions that were opened with
+    /// OpenExistingSharedMemory.
+    auto RetrieveEventControlsFromOpenedSharedMemory(const ElementFqId element_fq_id)
+        -> std::pair<std::reference_wrapper<EventControl>, EventControl*>;
 
     /// \brief Opens an EventDataStorage for a specific event that was created by a previous skeleton.
     ///
     /// The EventDataStorage are retrieved from the ServiceDataStorage in the shared memory region that was opened with
     /// OpenExistingSharedMemory.
     template <typename SampleType>
-    auto OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id) -> EventDataStorage<SampleType>&;
+    auto RetrieveEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id) -> EventDataStorage<SampleType>&;
 
     /// \brief Rolls back any existing operations in the TransactionLog corresponding to a SkeletonEvent
     ///
@@ -192,20 +189,13 @@ class SkeletonMemoryManager final
     void InitializeSharedMemoryForControl(const QualityType asil_level,
                                           const std::shared_ptr<score::memory::shared::ManagedMemoryResource>& memory);
 
-    /// Functions for creating / opening event data controls and storages for events registered via Register() or
-    /// RegisterGeneric().
-    std::pair<std::reference_wrapper<ProviderEventControlLocalView>, ProviderEventControlLocalView*>
-    EmplaceQmAndAsilBEventControlAndLocalView(const ElementFqId element_fq_id,
-                                              const SkeletonEventProperties& element_properties);
-
-    ProviderEventControlLocalView& EmplaceEventControlAndLocalView(const QualityType asil_level,
-                                                                   ElementFqId element_fq_id,
-                                                                   const SkeletonEventProperties& element_properties);
+    EventControl& EmplaceEventControl(const QualityType asil_level,
+                                      ElementFqId element_fq_id,
+                                      const SkeletonEventProperties& element_properties);
 
     template <typename SampleType>
     EventDataStorage<SampleType>& EmplaceEventDataStorage(const ElementFqId element_fq_id,
                                                           const SkeletonEventProperties& element_properties);
-    ConsumerEventControlLocalView* EmplaceTracingEventControl(const ElementFqId element_fq_id);
 
     EventMetaInfo& EmplaceEventMetaInfo(const ElementFqId element_fq_id,
                                         const DataTypeMetaInfo& sample_meta_info,
@@ -225,12 +215,6 @@ class SkeletonMemoryManager final
     ServiceDataStorage* storage_;
     ServiceDataControl* control_qm_;
     ServiceDataControl* control_asil_b_;
-    std::optional<SkeletonServiceDataControlLocalView> skeleton_control_qm_local_;
-    std::optional<SkeletonServiceDataControlLocalView> skeleton_control_asil_b_local_;
-
-    // Used for tracing. Only created if tracing is enabled in the current process. This will be used by SkeletonEvents
-    // to reference / dereference a slot when tracing that slot.
-    std::optional<ProxyServiceDataControlLocalView> proxy_control_local_;
 
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> storage_resource_;
     std::shared_ptr<score::memory::shared::ManagedMemoryResource> control_qm_resource_;
@@ -266,7 +250,7 @@ template <typename SampleType>
 // exception but we can't mark 'OffsetPtr::get()' as ''.
 // coverity[autosar_cpp14_m3_2_2_violation]
 // coverity[autosar_cpp14_a15_5_3_violation]
-auto SkeletonMemoryManager::OpenEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id)
+auto SkeletonMemoryManager::RetrieveEventDataFromOpenedSharedMemory(const ElementFqId element_fq_id)
     -> EventDataStorage<SampleType>&
 {
     // Suppress "AUTOSAR C++14 A15-5-3":
