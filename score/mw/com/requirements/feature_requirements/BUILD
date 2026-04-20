@@ -20,7 +20,7 @@ trlc_requirements(
         "//score/mw/com/requirements/assumed_system_requirements",
     ],
     spec = [
-        "@//third_party/traceability/config/trlc/score_model:requirement_metamodel",
+        "@score_tooling//bazel/rules/rules_score/trlc/config:score_requirements_model",
     ],
     visibility = ["//visibility:public"],
 )
@@ -32,21 +32,3 @@ trlc_requirements_test(
     ],
     visibility = ["//visibility:public"],
 )
-
-# lobster_trlc(
-#     name = "feature_requirements_lobster",
-#     config = "@//third_party/traceability/config/lobster:feature_reqs_conf",
-#     requirements = [
-#         ":assumed_feature_requirements_ipc",
-#     ],
-#     visibility = ["//visibility:public"],
-# )
-
-# lobster_test(
-#     name = "traceability",
-#     config = "@//third_party/traceability/config/lobster:traceability_feat_conf",
-#     inputs = [
-#         "@//score/mw/com/requirements/assumed_system_requirements:assumed_system_requirements_lobster",
-#         ":feature_requirements_lobster",
-#     ],
-# )

@@ -22,7 +22,7 @@ trlc_requirements(
         "//score/mw/com/requirements/feature_requirements:feature_requirements_ipc",
     ],
     spec = [
-        "//third_party/traceability/config/trlc/score_model:requirement_metamodel",
+        "@score_tooling//bazel/rules/rules_score/trlc/config:score_requirements_model",
     ],
     visibility = ["//visibility:public"],
 )
