@@ -17,6 +17,8 @@
 
 name: Test communication module with address and UB and leak sanitizer
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, reopened, synchronize]
   merge_group:
@@ -37,12 +39,13 @@ jobs:
           uses: eclipse-score/more-disk-space@v1
           with:
             level: 4
-        - uses: bazel-contrib/setup-bazel@0.18.0
+        - uses: castler/setup-bazel@79bc547e94dea617d8524202a81e5cbcc3b6d9ea
           with:
             bazelisk-cache: true
             disk-cache: "build_and_test_asan_ubsan_lsan"
+            disk-cache-key: "main"
             repository-cache: true
-            cache-save: ${{ github.event_name == 'merge_group' }}
+            cache-save: ${{ github.ref == 'refs/heads/main' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel test communication targets with address and UB and leak sanitizer

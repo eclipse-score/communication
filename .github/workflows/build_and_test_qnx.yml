@@ -16,6 +16,8 @@
 
 name: Bazel Build & Test communication module (target-platforms)
 on:
+  push:
+    branches: [main]
   pull_request_target:
     types: [opened, reopened, synchronize, labeled, unlabeled]
   merge_group:
@@ -123,12 +125,13 @@ jobs:
           with:
             level: 4
         - name: Setup Bazel
-          uses: bazel-contrib/setup-bazel@0.18.0
+          uses: castler/setup-bazel@79bc547e94dea617d8524202a81e5cbcc3b6d9ea
           with:
             bazelisk-cache: true
             disk-cache: build_and_test_qnx
+            disk-cache-key: "main"
             repository-cache: true
-            cache-save: ${{ github.event_name == 'merge_group' }}
+            cache-save: ${{ github.ref == 'refs/heads/main' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Setup QNX License
