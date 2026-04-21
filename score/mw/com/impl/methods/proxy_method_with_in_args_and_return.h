@@ -68,11 +68,11 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
         : ProxyMethodBase(
               proxy_base,
+              method_name,
               ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
                                                                          ProxyBaseView{proxy_base}.GetBinding(),
                                                                          method_name,
                                                                          MethodType::kMethod),
-              method_name,
               MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
@@ -86,9 +86,9 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     }
 
     ProxyMethod(ProxyBase& proxy_base,
-                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod),
+                std::string_view method_name,
+                std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
+        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
@@ -101,10 +101,10 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     }
 
     ProxyMethod(ProxyBase& proxy_base,
-                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name,
+                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 FieldOnlyConstructorEnabler) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kSet),
+        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kSet),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};

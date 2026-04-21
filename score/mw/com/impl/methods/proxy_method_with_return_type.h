@@ -61,11 +61,11 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
         : ProxyMethodBase(proxy_base,
+                          method_name,
                           ProxyMethodBindingFactory<ReturnType()>::Create(proxy_base.GetHandle(),
                                                                           ProxyBaseView{proxy_base}.GetBinding(),
                                                                           method_name,
                                                                           MethodType::kMethod),
-                          method_name,
                           MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
@@ -78,9 +78,9 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     }
 
     ProxyMethod(ProxyBase& proxy_base,
-                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
-                std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod)
+                std::string_view method_name,
+                std::unique_ptr<ProxyMethodBinding> proxy_method_binding) noexcept
+        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
@@ -92,10 +92,10 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     }
 
     ProxyMethod(ProxyBase& proxy_base,
-                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name,
+                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 FieldOnlyConstructorEnabler) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kGet)
+        : ProxyMethodBase(proxy_base, method_name, std::move(proxy_method_binding), MethodType::kGet)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         if (binding_ == nullptr)
