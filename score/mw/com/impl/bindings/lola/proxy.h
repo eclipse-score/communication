@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
+#include "score/mw/com/impl/bindings/lola/method_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
 #include "score/mw/com/impl/bindings/lola/methods/offered_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
@@ -44,6 +45,7 @@
 #include "score/result/result.h"
 
 #include <score/assert.hpp>
+#include <score/optional.hpp>
 
 #include <sched.h>
 #include <atomic>
@@ -51,6 +53,7 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -104,6 +107,31 @@ class Proxy : public ProxyBinding
         LolaServiceInstanceId::InstanceId instance_id_;
     };
 
+    /// \brief Class to convert a method name to a method fq id given the information already known to a Proxy
+    ///
+    /// We create a separate class to encapsulate the data that is only required for the conversion within this class.
+    /// Mirrors EventNameToElementFqIdConverter for symmetry.
+    class MethodNameToElementFqIdConverter
+    {
+      public:
+        MethodNameToElementFqIdConverter(const LolaServiceTypeDeployment& lola_service_type_deployment,
+                                         LolaServiceInstanceId::InstanceId instance_id) noexcept
+            : service_id_{lola_service_type_deployment.service_id_},
+              methods_{lola_service_type_deployment.methods_},
+              instance_id_{instance_id}
+        {
+        }
+
+        /// \brief Converts a method name to an ElementFqId.
+        /// \return An empty optional if the method name is not in the deployment, otherwise the ElementFqId.
+        score::cpp::optional<ElementFqId> Convert(const std::string_view method_name) const noexcept;
+
+      private:
+        const std::uint16_t service_id_;
+        const std::reference_wrapper<const LolaServiceTypeDeployment::MethodIdMapping> methods_;
+        LolaServiceInstanceId::InstanceId instance_id_;
+    };
+
     Proxy(const Proxy&) noexcept = delete;
     Proxy& operator=(const Proxy&) noexcept = delete;
     Proxy(Proxy&&) noexcept = delete;
@@ -122,6 +150,7 @@ class Proxy : public ProxyBinding
           std::shared_ptr<memory::shared::ManagedMemoryResource> data,
           const QualityType quality_type,
           EventNameToElementFqIdConverter event_name_to_element_fq_id_converter,
+          MethodNameToElementFqIdConverter method_name_to_element_fq_id_converter,
           HandleType handle,
           std::optional<memory::shared::LockFile> service_instance_usage_marker_file,
           std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
@@ -232,8 +261,15 @@ class Proxy : public ProxyBinding
     /// We use this view to avoid directly accessing objects in shared memory which negatively affects performance.
     ProxyServiceDataControlLocalView service_data_control_local_;
 
+    /// \brief Local copy of methods_metainfo_ from shared memory.
+    ///
+    /// We use this copy to avoid directly accessing objects in shared memory via OffsetPtr which negatively affects
+    /// performance. Mirroring the same pattern as service_data_control_local_ for event_controls_.
+    std::map<ElementFqId, MethodMetaInfo> methods_metainfo_local_;
+
     QualityType quality_type_;
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter_;
+    MethodNameToElementFqIdConverter method_name_to_element_fq_id_converter_;
     HandleType handle_;
     std::unordered_map<std::string_view, std::reference_wrapper<ProxyEventBindingBase>> event_bindings_;
 

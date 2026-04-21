@@ -43,6 +43,7 @@ cc_library(
     deps = [
         ":fake_memory_resource",
         "//score/mw/com/impl/bindings/lola:event",
+        "//score/mw/com/impl/bindings/lola:method_meta_info",
         "//score/mw/com/impl/bindings/lola:service_data_control",
         "//score/mw/com/impl/bindings/lola:service_data_storage",
         "//score/mw/com/impl/bindings/lola:skeleton",

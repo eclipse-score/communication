@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_data_storage.h"
+#include "score/mw/com/impl/bindings/lola/method_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
@@ -52,7 +53,18 @@ struct FakeMockedServiceData
     template <typename SampleType>
     std::tuple<EventControl*, EventDataStorage<SampleType>*> AddEvent(ElementFqId id,
                                                                       SkeletonEventProperties event_properties);
+
+    /// Publish a MethodMetaInfo entry into the fake service data, as a Lola skeleton would do during PrepareOffer.
+    void AddMethodMetaInfo(ElementFqId id, MethodMetaInfo method_meta_info);
 };
+
+inline void FakeMockedServiceData::AddMethodMetaInfo(const ElementFqId id, MethodMetaInfo method_meta_info)
+{
+    const auto inserted = data_storage->methods_metainfo_.emplace(std::piecewise_construct,
+                                                                  std::forward_as_tuple(id),
+                                                                  std::forward_as_tuple(std::move(method_meta_info)));
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(inserted.second);
+}
 
 template <typename SampleType>
 inline std::tuple<EventControl*, EventDataStorage<SampleType>*> FakeMockedServiceData::AddEvent(

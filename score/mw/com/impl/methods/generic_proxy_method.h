@@ -48,16 +48,21 @@ class GenericProxyMethod final : public ProxyMethodBase
     GenericProxyMethod(GenericProxyMethod&&) noexcept;
     GenericProxyMethod& operator=(GenericProxyMethod&&) noexcept;
 
-    /// Byte buffer for the call's in-args at the given queue position. Must not be called for methods without in-args.
-    score::Result<score::cpp::span<std::byte>> AllocateInArgs(std::size_t queue_position);
+    // There's only one call slot today, so there's no queue position for the caller to pick.
+    // Once the call queue grows past one, these will hand back a small RAII slot guard instead
+    // of a raw span -- same pattern as MethodSignatureElementPtr on the typed side.
 
-    /// Byte buffer for the call's return value at the given queue position. Must not be called for void returns.
-    score::Result<score::cpp::span<std::byte>> AllocateReturnType(std::size_t queue_position);
+    /// Byte buffer for the call's in-args. Must not be called for methods without in-args.
+    score::Result<score::cpp::span<std::byte>> AllocateInArgs(const std::size_t queue_position = 1);
+
+    /// Byte buffer for the call's return value. Must not be called for void returns.
+    score::Result<score::cpp::span<std::byte>> AllocateReturnType(const std::size_t queue_position = 1);
 
     /// Invoke the method. Caller must have written in-args and allocated the return buffer first.
-    score::ResultBlank Call(std::size_t queue_position);
+    score::ResultBlank DoCall(const std::size_t queue_position = 1);
 
-    /// No typed objects to default-construct; the user fills the byte buffer directly.
+    /// No-op on the generic path: the call buffer is just raw bytes, there are no typed
+    /// objects whose lifetime needs to be started.
     ResultBlank InitializeInArgsAndReturnValues() override
     {
         return {};

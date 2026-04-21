@@ -18,6 +18,12 @@
 
 namespace score::mw::com::impl
 {
+namespace
+{
+// The binding's queue-slot plumbing carries over from the typed path, but for now we
+// only ever use slot 0 -- the call queue is fixed at size 1.
+constexpr std::size_t kSingleQueueSlot{0U};
+}  // namespace
 
 GenericProxyMethod::GenericProxyMethod(ProxyBase& parent,
                                        std::unique_ptr<ProxyMethodBinding> binding,
@@ -69,7 +75,7 @@ score::Result<score::cpp::span<std::byte>> GenericProxyMethod::AllocateReturnTyp
     return binding_->GetReturnValueBuffer(queue_position);
 }
 
-score::ResultBlank GenericProxyMethod::Call(const std::size_t queue_position)
+score::ResultBlank GenericProxyMethod::DoCall(const std::size_t queue_position)
 {
     return binding_->DoCall(queue_position);
 }

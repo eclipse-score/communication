@@ -36,7 +36,9 @@ namespace
 using namespace ::testing;
 
 const std::string_view kMethodName{"DummyGenericMethod"};
-constexpr std::size_t kQueuePosition{0U};
+// The binding still takes a queue position; GenericProxyMethod always hands it slot 0
+// while the call queue is fixed at size 1. Tests assert that it's slot 0 that flows through.
+constexpr std::size_t kOnlyQueuePosition{0U};
 
 class TestProxyBase : public ProxyBase
 {
@@ -90,12 +92,12 @@ TEST_F(GenericProxyMethodFixture, RegistersItselfWithParentProxyOnConstruction)
 TEST_F(GenericProxyMethodFixture, AllocateInArgsDelegatesToBinding)
 {
     score::cpp::span<std::byte> expected{in_args_buffer_.data(), in_args_buffer_.size()};
-    EXPECT_CALL(proxy_method_binding_mock_, GetInArgsBuffer(kQueuePosition))
+    EXPECT_CALL(proxy_method_binding_mock_, GetInArgsBuffer(kOnlyQueuePosition))
         .WillOnce(Return(score::Result<score::cpp::span<std::byte>>{expected}));
 
     auto unit = MakeUnit();
 
-    const auto result = unit->AllocateInArgs(kQueuePosition);
+    const auto result = unit->AllocateInArgs();
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().data(), expected.data());
     EXPECT_EQ(result.value().size(), expected.size());
@@ -104,37 +106,46 @@ TEST_F(GenericProxyMethodFixture, AllocateInArgsDelegatesToBinding)
 TEST_F(GenericProxyMethodFixture, AllocateReturnTypeDelegatesToBinding)
 {
     score::cpp::span<std::byte> expected{return_buffer_.data(), return_buffer_.size()};
-    EXPECT_CALL(proxy_method_binding_mock_, GetReturnValueBuffer(kQueuePosition))
+    EXPECT_CALL(proxy_method_binding_mock_, GetReturnValueBuffer(kOnlyQueuePosition))
         .WillOnce(Return(score::Result<score::cpp::span<std::byte>>{expected}));
 
     auto unit = MakeUnit();
 
-    const auto result = unit->AllocateReturnType(kQueuePosition);
+    const auto result = unit->AllocateReturnType();
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().data(), expected.data());
     EXPECT_EQ(result.value().size(), expected.size());
 }
 
-TEST_F(GenericProxyMethodFixture, CallDelegatesToBindingDoCall)
+TEST_F(GenericProxyMethodFixture, DoCallDelegatesToBinding)
 {
-    EXPECT_CALL(proxy_method_binding_mock_, DoCall(kQueuePosition)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(proxy_method_binding_mock_, DoCall(kOnlyQueuePosition)).WillOnce(Return(ResultBlank{}));
 
     auto unit = MakeUnit();
 
-    const auto result = unit->Call(kQueuePosition);
+    const auto result = unit->DoCall();
     EXPECT_TRUE(result.has_value());
 }
 
-TEST_F(GenericProxyMethodFixture, CallPropagatesBindingError)
+TEST_F(GenericProxyMethodFixture, DoCallPropagatesBindingError)
 {
-    EXPECT_CALL(proxy_method_binding_mock_, DoCall(kQueuePosition))
+    EXPECT_CALL(proxy_method_binding_mock_, DoCall(kOnlyQueuePosition))
         .WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     auto unit = MakeUnit();
 
-    const auto result = unit->Call(kQueuePosition);
+    const auto result = unit->DoCall();
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GenericProxyMethodFixture, InvalidBindingInConstructorMarksServiceElementAsInvalid)
+{
+    // When a GenericProxyMethod is created with an invalid binding
+    GenericProxyMethod unit{proxy_base_, nullptr, kMethodName};
+
+    // Then calling AreBindingsValid returns false
+    EXPECT_FALSE(ProxyBaseView{proxy_base_}.AreBindingsValid());
 }
 
 TEST_F(GenericProxyMethodFixture, MoveConstructingUpdatesRegistrationInParentProxy)

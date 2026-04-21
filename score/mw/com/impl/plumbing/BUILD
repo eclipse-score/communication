@@ -792,6 +792,23 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "generic_proxy_method_binding_factory_test",
+    srcs = [
+        "generic_proxy_method_binding_factory_test.cpp",
+    ],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":generic_proxy_method_binding_factory",
+        "//score/mw/com/impl:data_type_meta_info",
+        "//score/mw/com/impl/bindings/lola:method_meta_info",
+        "//score/mw/com/impl/bindings/lola/test:proxy_event_test_resources",
+        "//score/mw/com/impl/bindings/lola/test_doubles:test_doubles",
+        "//score/mw/com/impl/configuration/test:configuration_store",
+        "//score/mw/com/impl/test:dummy_instance_identifier_builder",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "proxy_event_field_binding_factory_test",
     srcs = [
         "proxy_event_field_binding_factory_test.cpp",

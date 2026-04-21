@@ -11,6 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/filesystem/error.h"
+#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
+#include "score/mw/com/impl/bindings/lola/method_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 
@@ -915,6 +917,32 @@ TEST_F(ProxyMethodHandlingFixture, EnablingMethodThatDoesNotContainQueueSizeInCo
     // When calling SetupMethods with a ProxyMethod name which corresponds to the
     // registered ProxyMethod Then the program terminates
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0}));
+}
+
+TEST_F(ProxyMethodHandlingFixture, IsMethodProvidedReturnsTrueWhenMetaInfoIsPublished)
+{
+    GivenAProxy();
+
+    // Given the skeleton has published meta info for the method in SHM
+    const ElementFqId element_fq_id{kLolaServiceId, kDummyMethodId0, kLolaInstanceId, ServiceElementType::METHOD};
+    fake_data_->AddMethodMetaInfo(element_fq_id, MethodMetaInfo{std::nullopt, std::nullopt});
+
+    EXPECT_TRUE(proxy_->IsMethodProvided(kDummyMethodName0));
+}
+
+TEST_F(ProxyMethodHandlingFixture, IsMethodProvidedReturnsFalseWhenMetaInfoIsNotPublished)
+{
+    // Given a proxy whose deployment declares the method, but the skeleton has not yet published meta info
+    GivenAProxy();
+
+    EXPECT_FALSE(proxy_->IsMethodProvided(kDummyMethodName0));
+}
+
+TEST_F(ProxyMethodHandlingFixture, IsMethodProvidedReturnsFalseWhenMethodNameIsNotInDeployment)
+{
+    GivenAProxy();
+
+    EXPECT_FALSE(proxy_->IsMethodProvided("MethodThatDoesNotExist"));
 }
 
 }  // namespace

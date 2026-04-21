@@ -321,6 +321,18 @@ ElementFqId Proxy::EventNameToElementFqIdConverter::Convert(const std::string_vi
     return {service_id_, event_it->second, instance_id_, ServiceElementType::EVENT};
 }
 
+score::cpp::optional<ElementFqId> Proxy::MethodNameToElementFqIdConverter::Convert(
+    const std::string_view method_name) const noexcept
+{
+    const auto& methods = methods_.get();
+    const auto method_it = methods.find(std::string{method_name});
+    if (method_it == methods.end())
+    {
+        return score::cpp::nullopt;
+    }
+    return ElementFqId{service_id_, method_it->second, instance_id_, ServiceElementType::METHOD};
+}
+
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". The std::bad_optional_access could be thrown from 'service_instance_usage_marker_file.value()',
 // in case 'service_instance_usage_marker_file' doesn't have value but as we check before with 'has_value()'
@@ -390,11 +402,14 @@ std::unique_ptr<Proxy> Proxy::Create(const HandleType handle) noexcept
 
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter{lola_service_deployment,
                                                                           lola_service_instance_id.GetId()};
+    MethodNameToElementFqIdConverter method_name_to_element_fq_id_converter{lola_service_deployment,
+                                                                            lola_service_instance_id.GetId()};
     const auto filesystem = filesystem::FilesystemFactory{}.CreateInstance();
     return std::make_unique<Proxy>(shared_memory.first,
                                    shared_memory.second,
                                    quality_type,
                                    event_name_to_element_fq_id_converter,
+                                   method_name_to_element_fq_id_converter,
                                    handle,
                                    std::move(service_instance_usage_marker_file),
                                    std::move(service_instance_usage_mutex_and_lock),
@@ -406,6 +421,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
              std::shared_ptr<memory::shared::ManagedMemoryResource> data,
              const QualityType quality_type,
              EventNameToElementFqIdConverter event_name_to_element_fq_id_converter,
+             MethodNameToElementFqIdConverter method_name_to_element_fq_id_converter,
              HandleType handle,
              std::optional<memory::shared::LockFile> service_instance_usage_marker_file,
              std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
@@ -419,6 +435,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       service_data_control_local_{GetProxyServiceDataControlLocalView(*control_)},
       quality_type_{quality_type},
       event_name_to_element_fq_id_converter_{std::move(event_name_to_element_fq_id_converter)},
+      method_name_to_element_fq_id_converter_{std::move(method_name_to_element_fq_id_converter)},
       handle_{std::move(handle)},
       event_bindings_{},
       proxy_event_registration_mutex_{},
@@ -443,6 +460,13 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
           },
           EnrichedInstanceIdentifier{handle_})}
 {
+    // Build a local (heap-side) copy of methods_metainfo_ to avoid OffsetPtr arithmetic on every lookup.
+    // Mirrors the same pattern used for service_data_control_local_ / event_controls_.
+    const auto& service_data_storage = detail_proxy::GetServiceDataStorage(*data_);
+    for (const auto& entry : service_data_storage.methods_metainfo_)
+    {
+        methods_metainfo_local_.emplace(entry.first, entry.second);
+    }
 }
 
 Proxy::~Proxy() = default;
@@ -609,24 +633,21 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
     return event_exists;
 }
 
+// Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
+// implicitly". This is a false positive, std::less which is used by std::map::find could throw an exception if the key
+// value is not comparable and in our case the key is comparable. so no way for 'methods_metainfo_local_.count()' to
+// throw an exception.
+// coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 bool Proxy::IsMethodProvided(const std::string_view method_name) const noexcept
 {
-    // Resolve the method name against the deployment. If the name isn't there, nothing to ask for.
-    const auto& lola_type_deployment = GetLoLaServiceTypeDeployment(handle_);
-    const auto method_it = lola_type_deployment.methods_.find(std::string{method_name});
-    if (method_it == lola_type_deployment.methods_.end())
+    const auto element_fq_id = method_name_to_element_fq_id_converter_.Convert(method_name);
+    if (!element_fq_id.has_value())
     {
         return false;
     }
-
-    const auto instance_id = handle_.GetInstanceId();
-    const auto* const lola_instance_id = std::get_if<LolaServiceInstanceId>(&(instance_id.binding_info_));
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(lola_instance_id != nullptr,
-                                                "ServiceInstanceId does not contain lola binding.");
-    const ElementFqId element_fq_id{
-        lola_type_deployment.service_id_, method_it->second, lola_instance_id->GetId(), ServiceElementType::METHOD};
-
-    return GetMethodMetaInfo(element_fq_id).has_value();
+    const auto method_entry = methods_metainfo_local_.find(element_fq_id.value());
+    const bool method_exists = (method_entry != methods_metainfo_local_.end());
+    return method_exists;
 }
 
 void Proxy::RegisterEventBinding(const std::string_view service_element_name,
