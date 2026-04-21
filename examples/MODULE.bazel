@@ -5,12 +5,7 @@ local_path_override(
 )
 
 bazel_dep(name = "rules_cc", version = "0.1.5")
-bazel_dep(name = "score_baselibs", version = "0.2.5")
-git_override(
-    module_name = "score_baselibs",
-    commit = "69bd8297dc5de97db3362d8ea1da634883e7c27a",
-    remote = "https://github.com/eclipse-score/baselibs.git",
-)
+bazel_dep(name = "score_baselibs", version = "0.2.6")
 
 # Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2", dev_dependency = True)
