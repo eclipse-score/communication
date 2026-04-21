@@ -11,6 +11,11 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/test_doubles/fake_memory_resource.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log.h"
 
 #include <gtest/gtest.h>
 
@@ -24,6 +29,43 @@ namespace
 {
 
 using TestSampleType = std::uint8_t;
+constexpr std::size_t kMaxSlots{5U};
+
+class LolaForwardingSamplePtrTest : public ::testing::Test
+{
+  protected:
+    lola::FakeMemoryResource memory_{};
+    lola::EventDataControl event_data_control_{kMaxSlots, memory_};
+    lola::TransactionLog transaction_log_{kMaxSlots, memory_};
+    lola::ProviderEventDataControlLocalView<> provider_event_data_control_local_{event_data_control_};
+    lola::ConsumerEventDataControlLocalView<> consumer_event_data_control_local_{event_data_control_, transaction_log_};
+
+    lola::SlotIndexType AllocateSlot(lola::EventSlotStatus::EventTimeStamp timestamp)
+    {
+        auto slot = provider_event_data_control_local_.AllocateNextSlot();
+        EXPECT_TRUE(slot.has_value());
+        provider_event_data_control_local_.EventReady(slot.value(), timestamp);
+        return slot.value();
+    }
+
+    SamplePtr<std::uint8_t> CreateImplSamplePtr(const lola::EventSlotStatus::EventTimeStamp timestamp,
+                                                const lola::EventSlotStatus::EventTimeStamp last_search_time)
+    {
+        AllocateSlot(timestamp);
+
+        auto slot_result = consumer_event_data_control_local_.ReferenceNextEvent(last_search_time);
+        EXPECT_TRUE(slot_result.has_value());
+
+        dummy_storage_.push_back(std::make_unique<std::uint8_t>(0U));
+
+        lola::SamplePtr<std::uint8_t> lola_sample{
+            dummy_storage_.back().get(), consumer_event_data_control_local_, slot_result.value()};
+
+        return SamplePtr<std::uint8_t>{std::move(lola_sample), SampleReferenceGuard{}};
+    }
+
+    std::vector<std::unique_ptr<std::uint8_t>> dummy_storage_{};
+};
 
 /// \brief Templated test fixture for SamplePtr functionality that works for both void and non-void types
 template <typename T>
@@ -335,6 +377,38 @@ TYPED_TEST(SamplePtrGenericTypeTest, MovingSamplePtrWillMoveSampleReferenceGuard
 
     // Then the nubmer of available samples will not change.
     EXPECT_EQ(tracker.GetNumAvailableSamples(), max_num_samples - 1);
+}
+
+TEST_F(LolaForwardingSamplePtrTest, GreaterThanReturnsTrueWhenForwardedLolaSampleIsNewer)
+{
+    auto older_sample = CreateImplSamplePtr(10U, 0U);
+    auto newer_sample = CreateImplSamplePtr(42U, 1U);
+
+    EXPECT_TRUE(newer_sample > older_sample);
+}
+
+TEST_F(LolaForwardingSamplePtrTest, GreaterThanReturnsFalseWhenForwardedLolaSampleIsOlder)
+{
+    auto older_sample = CreateImplSamplePtr(10U, 0U);
+    auto newer_sample = CreateImplSamplePtr(42U, 1U);
+
+    EXPECT_FALSE(older_sample > newer_sample);
+}
+
+TEST_F(LolaForwardingSamplePtrTest, LessThanReturnsTrueWhenForwardedLolaSampleIsOlder)
+{
+    auto older_sample = CreateImplSamplePtr(10U, 0U);
+    auto newer_sample = CreateImplSamplePtr(42U, 1U);
+
+    EXPECT_TRUE(older_sample < newer_sample);
+}
+
+TEST_F(LolaForwardingSamplePtrTest, LessThanReturnsFalseWhenForwardedLolaSampleIsNewer)
+{
+    auto older_sample = CreateImplSamplePtr(10U, 0U);
+    auto newer_sample = CreateImplSamplePtr(42U, 1U);
+
+    EXPECT_FALSE(newer_sample < older_sample);
 }
 
 }  // namespace

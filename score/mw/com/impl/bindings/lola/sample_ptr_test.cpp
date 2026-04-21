@@ -53,15 +53,15 @@ class SamplePtrTest : public ::testing::Test
     }
 
     SamplePtr<std::uint8_t> CreateSamplePtr(const EventSlotStatus::EventTimeStamp timestamp,
-                                            const std::size_t slot_index)
+                                            const EventSlotStatus::EventTimeStamp last_search_time)
     {
         AllocateSlot(timestamp);
-        auto slot_indicator = event_data_control_.ReferenceNextEvent(slot_index, transaction_log_index_);
-        EXPECT_TRUE(slot_indicator.IsValid());
+        auto slot_index = consumer_event_data_control_local_.ReferenceNextEvent(last_search_time);
+        EXPECT_TRUE(slot_index.has_value());
 
         dummy_storage_.push_back(std::make_unique<std::uint8_t>(0U));
         return SamplePtr<std::uint8_t>{
-            dummy_storage_.back().get(), event_data_control_, slot_indicator, transaction_log_index_};
+            dummy_storage_.back().get(), consumer_event_data_control_local_, slot_index.value()};
     }
     std::vector<std::unique_ptr<std::uint8_t>> dummy_storage_;
 };
