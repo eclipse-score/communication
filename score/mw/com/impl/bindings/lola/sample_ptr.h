@@ -49,7 +49,7 @@ class SamplePtr final
               const SlotIndexType slot_index) noexcept
         : SamplePtr{ptr, std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index)}
     {
-        timestamp_ = (event_data_ctrl)[slot_indicator.GetIndex()].GetTimeStamp();
+        timestamp_ = (event_data_ctrl_local)[slot_index].GetTimeStamp();
     }
 
     ~SamplePtr() noexcept = default;
