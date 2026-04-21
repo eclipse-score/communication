@@ -1082,5 +1082,136 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
     EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
+/// Tests for VerifyAllMethodsRegistered skipping kGet methods and SubscribeMethods gracefully skipping
+/// field Get/Set methods that are not registered on the skeleton side.
+
+class SkeletonFieldMethodHandlingFixture : public SkeletonMethodHandlingFixture
+{
+  public:
+    SkeletonFieldMethodHandlingFixture& WithAFieldGetMethodWithoutHandler()
+    {
+        const UniqueMethodIdentifier get_method_id{test::kFooFieldId, MethodType::kGet};
+        get_field_method_ = std::make_unique<SkeletonMethod>(*skeleton_, get_method_id);
+        return *this;
+    }
+
+    SkeletonFieldMethodHandlingFixture& WithAFieldSetMethodWithoutHandler()
+    {
+        const UniqueMethodIdentifier set_method_id{test::kFooFieldId, MethodType::kSet};
+        set_field_method_ = std::make_unique<SkeletonMethod>(*skeleton_, set_method_id);
+        return *this;
+    }
+
+    std::unique_ptr<SkeletonMethod> get_field_method_{nullptr};
+    std::unique_ptr<SkeletonMethod> set_field_method_{nullptr};
+};
+
+TEST_F(SkeletonFieldMethodHandlingFixture, VerifyAllMethodsRegisteredReturnsTrueWhenGetMethodHasNoHandler)
+{
+    // TODO: flip to EXPECT_FALSE once SkeletonField auto-registers the Get handler and the kGet skip in
+    // VerifyAllMethodsRegistered goes away.
+
+    // Given a skeleton with regular methods that have handlers registered, plus a field Get method without one
+    GivenASkeletonWithTwoMethods();
+    WithAFieldGetMethodWithoutHandler();
+
+    // When verifying all methods are registered
+    const auto result = skeleton_->VerifyAllMethodsRegistered();
+
+    // Then verification succeeds because kGet methods are skipped
+    EXPECT_TRUE(result);
+}
+
+TEST_F(SkeletonFieldMethodHandlingFixture, VerifyAllMethodsRegisteredReturnsFalseWhenSetMethodHasNoHandler)
+{
+    // Given a skeleton with regular methods that have handlers registered, plus a field Set method without one
+    GivenASkeletonWithTwoMethods();
+    WithAFieldSetMethodWithoutHandler();
+
+    // When verifying all methods are registered
+    const auto result = skeleton_->VerifyAllMethodsRegistered();
+
+    // Then verification fails because kSet methods are NOT skipped, unlike kGet
+    EXPECT_FALSE(result);
+}
+
+TEST_F(SkeletonFieldMethodHandlingFixture, SubscribeMethodsSkipsFieldGetMethodNotOnSkeleton)
+{
+    // Given a skeleton with only regular methods offered
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Create fake method data that includes a field Get method not present on the skeleton
+    FakeMethodData fake_method_data_with_field_get{
+        {{foo_unique_method_id_, kFooTypeErasedElementInfo},
+         {UniqueMethodIdentifier{test::kFooFieldId, MethodType::kGet}, kDumbTypeErasedElementInfo}}};
+
+    ON_CALL(*mock_method_memory_resource_qm_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(&fake_method_data_with_field_get.method_data_)));
+
+    // When the proxy subscribes with a field Get method that doesn't exist on the skeleton
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                    proxy_instance_identifier_qm_,
+                                    test::kAllowedQmMethodConsumer,
+                                    kDummyPid);
+
+    // Then subscription succeeds because the field Get method is gracefully skipped
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonFieldMethodHandlingFixture, SubscribeMethodsSkipsFieldSetMethodNotOnSkeleton)
+{
+    // Given a skeleton with only regular methods offered
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Create fake method data that includes a field Set method not present on the skeleton
+    FakeMethodData fake_method_data_with_field_set{
+        {{foo_unique_method_id_, kFooTypeErasedElementInfo},
+         {UniqueMethodIdentifier{test::kFooFieldId, MethodType::kSet}, kDumbTypeErasedElementInfo}}};
+
+    ON_CALL(*mock_method_memory_resource_qm_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(&fake_method_data_with_field_set.method_data_)));
+
+    // When the proxy subscribes with a field Set method that doesn't exist on the skeleton
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                    proxy_instance_identifier_qm_,
+                                    test::kAllowedQmMethodConsumer,
+                                    kDummyPid);
+
+    // Then subscription succeeds because the field Set method is gracefully skipped
+    EXPECT_TRUE(result.has_value());
+}
+
+TEST_F(SkeletonFieldMethodHandlingFixture, SubscribeMethodsContinuesPastSkippedFieldMethodToRegularMethodsThatFollow)
+{
+    // Given a skeleton with foo and dumb offered
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Fake method data places a field Get BEFORE both regular methods. If the skeleton broke out of
+    // the subscribe loop on the skipped field method, foo and dumb would never be registered.
+    FakeMethodData fake_method_data_with_field_first{
+        {{UniqueMethodIdentifier{test::kFooFieldId, MethodType::kGet}, kDumbTypeErasedElementInfo},
+         {foo_unique_method_id_, kFooTypeErasedElementInfo},
+         {dumb_unique_method_id_, kDumbTypeErasedElementInfo}}};
+
+    ON_CALL(*mock_method_memory_resource_qm_, getUsableBaseAddress())
+        .WillByDefault(Return(static_cast<void*>(&fake_method_data_with_field_first.method_data_)));
+
+    // Expect both regular methods to be registered; the field Get in between must be skipped via continue, not break
+    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(_, foo_proxy_method_identifier_qm_, _, _));
+    EXPECT_CALL(message_passing_mock_, RegisterMethodCallHandler(_, dumb_proxy_method_identifier_qm_, _, _));
+
+    // When the proxy subscribes
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    const auto result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                    proxy_instance_identifier_qm_,
+                                    test::kAllowedQmMethodConsumer,
+                                    kDummyPid);
+
+    // Then subscription succeeds overall
+    EXPECT_TRUE(result.has_value());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola

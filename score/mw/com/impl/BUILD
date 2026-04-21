@@ -683,7 +683,10 @@ cc_library(
 cc_library(
     name = "method_type",
     srcs = ["method_type.cpp"],
-    hdrs = ["method_type.h"],
+    hdrs = [
+        "method_identifier.h",
+        "method_type.h",
+    ],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
@@ -1012,6 +1015,24 @@ cc_gtest_unit_test(
 )
 
 cc_gtest_unit_test(
+    name = "method_type_test",
+    srcs = ["method_type_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":method_type",
+    ],
+)
+
+cc_gtest_unit_test(
+    name = "method_identifier_test",
+    srcs = ["method_identifier_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [
+        ":method_type",
+    ],
+)
+
+cc_gtest_unit_test(
     name = "sample_reference_tracker_test",
     srcs = ["sample_reference_tracker_test.cpp"],
     deps = [
@@ -1079,9 +1100,12 @@ cc_gtest_unit_test(
     deps = [
         ":impl",
         ":runtime_mock",
+        "//score/mw/com/impl/bindings/mock_binding",
+        "//score/mw/com/impl/configuration/test:configuration_store",
         "//score/mw/com/impl/plumbing:proxy_field_binding_factory_mock",
         "//score/mw/com/impl/test:binding_factory_resources",
         "//score/mw/com/impl/test:proxy_resources",
+        "//score/mw/com/impl/test:runtime_mock_guard",
     ],
 )
 
@@ -1302,6 +1326,8 @@ cc_unit_test_suites_for_host_and_qnx(
         ":skeleton_base_test",
         ":unit_test",
         ":traits_test",
+        ":method_type_test",
+        ":method_identifier_test",
         ":unit_test_runtime_single_exec",
     ],
     test_suites_from_sub_packages = [

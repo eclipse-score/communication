@@ -65,6 +65,30 @@ ConfigurationStore kConfigStoreAsilB{kInstanceSpecifier,
                                      kLolaServiceTypeDeployment,
                                      kLolaServiceInstanceDeployment};
 
+// Deployment that includes a field alongside the method. Used by the kGet / kSet tests which
+// look up field_name through ServiceElementType::FIELD in ProxyMethodBindingFactory::Create.
+constexpr auto kDummyFieldName{"Field1"};
+constexpr std::uint16_t kDummyFieldId{6U};
+const auto kFieldInstanceSpecifier = InstanceSpecifier::Create(std::string{"/my_field_instance_specifier"}).value();
+
+const LolaServiceInstanceDeployment kLolaServiceInstanceDeploymentWithField{
+    LolaServiceInstanceId{kInstanceId},
+    {},
+    {{kDummyFieldName, LolaFieldInstanceDeployment{{1U}, {3U}, 1U, true, 0}}},
+    {{kDummyMethodName, LolaMethodInstanceDeployment{kQueueSize}}}};
+
+const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithField{
+    kServiceId,
+    {},
+    {{kDummyFieldName, kDummyFieldId}},
+    {{kDummyMethodName, kDummyMethodId}}};
+
+ConfigurationStore kConfigStoreWithFieldAsilB{kFieldInstanceSpecifier,
+                                              make_ServiceIdentifierType("/a/service/somewhere/out/there", 13U, 37U),
+                                              kQualityType,
+                                              kLolaServiceTypeDeploymentWithField,
+                                              kLolaServiceInstanceDeploymentWithField};
+
 const LolaServiceInstanceDeployment kLolaServiceInstanceDeploymentWithEmptyQueueSize{
     LolaServiceInstanceId{kInstanceId},
     {},
@@ -85,6 +109,11 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
     HandleType GetValidLoLaHandle()
     {
         return kConfigStoreAsilB.GetHandle();
+    }
+
+    HandleType GetValidLoLaHandleWithField()
+    {
+        return kConfigStoreWithFieldAsilB.GetHandle();
     }
 
     HandleType GetValidSomIpHandle()
@@ -110,9 +139,30 @@ class ProxyMethodFactoryFixture : public lola::ProxyMockedMemoryFixture
     DummyInstanceIdentifierBuilder dummy_instance_identifier_builder_{};
 };
 
-template <typename MethodType>
+template <typename Signature>
 class ProxyMethodFactoryTypedFixture : public ProxyMethodFactoryFixture
 {
+  public:
+    void AssertCreateSucceeds(const HandleType& handle,
+                              const std::string_view name,
+                              const MethodType method_type)
+    {
+        this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
+        auto proxy_binding = this->CreateBindingFromHandle(handle);
+        auto proxy_method =
+            ProxyMethodBindingFactory<Signature>::Create(handle, proxy_binding, name, method_type);
+        ASSERT_NE(proxy_method, nullptr);
+    }
+
+    void AssertCreateReturnsNullFor(const HandleType& handle,
+                                    ProxyBinding* const proxy_binding,
+                                    const std::string_view name,
+                                    const MethodType method_type)
+    {
+        auto proxy_method =
+            ProxyMethodBindingFactory<Signature>::Create(handle, proxy_binding, name, method_type);
+        ASSERT_EQ(proxy_method, nullptr);
+    }
 };
 
 using RegisteredFunctionTypes = ::testing::
@@ -122,70 +172,74 @@ TYPED_TEST_SUITE(ProxyMethodFactoryTypedFixture, RegisteredFunctionTypes, );
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructProxyMethod)
 {
-
     // Given a valid lola binding
-
-    const auto handle = this->GetValidLoLaHandle();
-    this->InitialiseProxyWithConstructor(handle.GetInstanceIdentifier());
-
-    auto proxy_binding = this->CreateBindingFromHandle(handle);
-
-    // When creating a ProxyMethod using MethodBindingFactory
-    using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
-
-    // Then a valid binding can be created
-    ASSERT_NE(proxy_method, nullptr);
+    // When Create is called for a regular method
+    // Then a non-null binding is returned
+    this->AssertCreateSucceeds(this->GetValidLoLaHandle(), kDummyMethodName, MethodType::kMethod);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotCreateProxyServiceWhenProxyBindingIsNullptr)
 {
-    const auto handle = this->GetValidLoLaHandle();
-
-    // Given a null proxy binding
-    auto proxy_binding{nullptr};
-
-    // When creating a ProxyMethod using MethodBindingFactory
-    using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
-
-    // Then a nullptr is returned
-    ASSERT_EQ(proxy_method, nullptr);
+    // Given a null parent proxy binding
+    // When Create is called
+    // Then nullptr is returned
+    this->AssertCreateReturnsNullFor(this->GetValidLoLaHandle(), nullptr, kDummyMethodName, MethodType::kMethod);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromSomeIpBinding)
 {
-
+    // Given a handle carrying a SomeIp deployment
     const auto handle = this->GetValidSomIpHandle();
 
-    // Given a valid someip binding
-    auto proxy_binding = this->CreateBindingFromHandle(handle);
-
-    // When creating a ProxyMethod using MethodBindingFactory
-    using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
-
-    // Then a nullptr is returned
-    EXPECT_EQ(proxy_method, nullptr);
+    // When Create is called
+    // Then nullptr is returned because the factory only builds lola bindings
+    this->AssertCreateReturnsNullFor(
+        handle, this->CreateBindingFromHandle(handle), kDummyMethodName, MethodType::kMethod);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructEventFromBlankBinding)
 {
+    // Given a handle carrying a blank deployment
     const auto handle = this->GetBlankBindingHandle();
 
-    // Given a blank binding
-    auto proxy_binding = this->CreateBindingFromHandle(handle);
+    // When Create is called
+    // Then nullptr is returned
+    this->AssertCreateReturnsNullFor(
+        handle, this->CreateBindingFromHandle(handle), kDummyMethodName, MethodType::kMethod);
+}
 
-    // When creating a ProxyMethod using MethodBindingFactory
-    using MethodSignature = TypeParam;
-    auto proxy_method = ProxyMethodBindingFactory<MethodSignature>::Create(
-        handle, proxy_binding, kDummyMethodName, MethodType::kMethod);
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructFieldGetMethod)
+{
+    // Given a valid lola binding with a field in the deployment
+    // When Create is called with MethodType::kGet
+    // Then a non-null binding is returned
+    this->AssertCreateSucceeds(this->GetValidLoLaHandleWithField(), kDummyFieldName, MethodType::kGet);
+}
 
-    // Then a nullptr is returned
-    EXPECT_EQ(proxy_method, nullptr);
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructFieldSetMethod)
+{
+    // Given a valid lola binding with a field in the deployment
+    // When Create is called with MethodType::kSet
+    // Then a non-null binding is returned
+    this->AssertCreateSucceeds(this->GetValidLoLaHandleWithField(), kDummyFieldName, MethodType::kSet);
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructFieldGetMethodWhenProxyBindingIsNullptr)
+{
+    // Given a null parent proxy binding
+    // When Create is called with MethodType::kGet
+    // Then nullptr is returned
+    this->AssertCreateReturnsNullFor(
+        this->GetValidLoLaHandleWithField(), nullptr, kDummyFieldName, MethodType::kGet);
+}
+
+TYPED_TEST(ProxyMethodFactoryTypedFixture, CannotConstructFieldSetMethodWhenProxyBindingIsNullptr)
+{
+    // Given a null parent proxy binding
+    // When Create is called with MethodType::kSet
+    // Then nullptr is returned
+    this->AssertCreateReturnsNullFor(
+        this->GetValidLoLaHandleWithField(), nullptr, kDummyFieldName, MethodType::kSet);
 }
 
 TYPED_TEST(ProxyMethodFactoryTypedFixture, GetQueueSizeReturnsValueForMethodInLolaDeployment)

@@ -12,8 +12,13 @@
 # *******************************************************************************
 
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
+load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@score_tooling//:defs.bzl", "copyright_checker")
+
+refresh_compile_commands(
+    name = "refresh_compile_commands",
+)
 
 compile_pip_requirements(
     name = "pip_requirements",
