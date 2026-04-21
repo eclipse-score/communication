@@ -80,8 +80,8 @@ score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gc
 score_gcc.toolchain(
     name = "score_gcc_x86_64_toolchain",
     extra_known_features = [
-        "//quality/sanitizer:gcc_asan_ubsan_lsan_feature",
-        "//quality/sanitizer:gcc_tsan_feature",
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan_gcc",
+        "@score_cpp_policies//sanitizers/features:tsan_gcc",
         "@score_cpp_policies//sanitizers/features:debug_symbols",
     ],
     target_cpu = "x86_64",
@@ -93,8 +93,8 @@ score_gcc.toolchain(
 score_gcc.toolchain(
     name = "score_gcc_aarch64_toolchain",
     extra_known_features = [
-        "//quality/sanitizer:gcc_asan_ubsan_lsan_feature",
-        "//quality/sanitizer:gcc_tsan_feature",
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan_gcc",
+        "@score_cpp_policies//sanitizers/features:tsan_gcc",
         "@score_cpp_policies//sanitizers/features:debug_symbols",
     ],
     target_cpu = "aarch64",
@@ -105,11 +105,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_x86_64_toolchain",
-    extra_known_features = [
-        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
-        "@score_cpp_policies//sanitizers/features:tsan",
-        "@score_cpp_policies//sanitizers/features:debug_symbols",
-    ],
     sdp_version = "8.0.0",
     target_cpu = "x86_64",
     target_os = "qnx",
@@ -118,11 +113,6 @@ score_gcc.toolchain(
 )
 score_gcc.toolchain(
     name = "score_qcc_aarch64_toolchain",
-    extra_known_features = [
-        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
-        "@score_cpp_policies//sanitizers/features:tsan",
-        "@score_cpp_policies//sanitizers/features:debug_symbols",
-    ],
     sdp_version = "8.0.0",
     target_cpu = "aarch64",
     target_os = "qnx",
@@ -181,8 +171,9 @@ llvm.toolchain(
     ]},
     cxx_standard = {"": "c++17"},
     extra_known_features = [
-        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan_link",
-        "@score_cpp_policies//sanitizers/features:tsan_link",
+        "@score_cpp_policies//sanitizers/features:asan_ubsan_lsan",
+        "@score_cpp_policies//sanitizers/features:tsan",
+        "@score_cpp_policies//sanitizers/features:debug_symbols",
     ],
     link_libs = {"": [
         "-lrt",
@@ -190,6 +181,8 @@ llvm.toolchain(
         "-latomic",
     ]},
     llvm_version = "19.1.7",
+    # TODO: Remove once LLVM sysroot is configured.
+    # Without a sysroot, libc++ is unavailable on runners and host tools fail to link.
     stdlib = {"": "stdc++"},
 )
 use_repo(llvm, "llvm_toolchain")

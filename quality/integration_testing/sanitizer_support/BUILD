@@ -12,13 +12,19 @@
 # *******************************************************************************
 
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@score_cpp_policies//sanitizers/private:merge_suppressions.bzl", "merge_suppressions")
 
-pkg_tar(
-    name = "suppressions_pkg",
+merge_suppressions(
+    name = "merged_suppressions",
     srcs = [
         "//quality/sanitizer:repo_suppressions",
         "@score_cpp_policies//sanitizers:suppressions",
     ],
+)
+
+pkg_tar(
+    name = "suppressions_pkg",
+    srcs = [":merged_suppressions"],
     mode = "0444",
     package_dir = "sanitizers/suppressions",
     visibility = ["//visibility:public"],
