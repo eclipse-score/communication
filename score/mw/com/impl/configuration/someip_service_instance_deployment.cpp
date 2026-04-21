@@ -32,6 +32,7 @@ constexpr auto kSerializationVersionKeySerInstDepl = "serializationVersion";
 constexpr auto kInstanceIdKeySerInstDepl = "instanceId";
 constexpr auto kEventsKeySerInstDepl = "events";
 constexpr auto kFieldsKeySerInstDepl = "fields";
+constexpr auto kMethodsKeySerInstDepl = "methods";
 
 }  // namespace
 
@@ -71,7 +72,8 @@ SomeIpServiceInstanceDeployment::SomeIpServiceInstanceDeployment(const score::js
     : SomeIpServiceInstanceDeployment{
           {},
           ConvertJsonToServiceElementMap<EventInstanceMapping>(json_object, kEventsKeySerInstDepl),
-          ConvertJsonToServiceElementMap<FieldInstanceMapping>(json_object, kFieldsKeySerInstDepl)}
+          ConvertJsonToServiceElementMap<FieldInstanceMapping>(json_object, kFieldsKeySerInstDepl),
+          ConvertJsonToServiceElementMap<MethodInstanceMapping>(json_object, kMethodsKeySerInstDepl)}
 {
     const auto instance_id_it = json_object.find(kInstanceIdKeySerInstDepl);
     if (instance_id_it != json_object.end())
@@ -99,6 +101,7 @@ score::json::Object SomeIpServiceInstanceDeployment::Serialize() const noexcept
 
     json_object[kEventsKeySerInstDepl] = ConvertServiceElementMapToJson(events_);
     json_object[kFieldsKeySerInstDepl] = ConvertServiceElementMapToJson(fields_);
+    json_object[kMethodsKeySerInstDepl] = ConvertServiceElementMapToJson(methods_);
 
     return json_object;
 }

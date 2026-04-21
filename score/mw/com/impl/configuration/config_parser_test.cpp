@@ -2475,7 +2475,7 @@ TEST(ConfigParser, InvalidQualityTypeForAllowedConsumersWillDie)
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(score::mw::com::impl::configuration::Parse(std::move(j2)));
 }
 
-TEST(ConfigParser, TerminateOnParsingSomeIP)
+TEST(ConfigParser, SuccessfullyParseSomeIP)
 {
     // Give a SOME/IP binding configuration
     auto config_with_some_ip_binding = R"(
@@ -2524,10 +2524,8 @@ TEST(ConfigParser, TerminateOnParsingSomeIP)
     const score::json::JsonParser json_parser_obj;
     auto json = json_parser_obj.FromBuffer(config_with_some_ip_binding);
 
-    // When parsing such a configuration
-    // Fail and abort
-    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(
-        score::mw::com::impl::configuration::Parse(std::move(json).value()));
+    // When parsing such a configuration, it should succeed (SOME/IP config parsing is now implemented)
+    EXPECT_NO_FATAL_FAILURE(score::mw::com::impl::configuration::Parse(std::move(json).value()));
 }
 
 class ShmSizeCalcMode : public ::testing::TestWithParam<std::tuple<std::string, ShmSizeCalculationMode>>

@@ -28,6 +28,7 @@
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
 #include "score/mw/com/impl/configuration/someip_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_field_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_instance_id.h"
 
 #include <score/optional.hpp>
@@ -68,6 +69,11 @@ LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     const score::cpp::optional<std::size_t> control_asil_b_memory_size = 3000U,
     const score::cpp::optional<std::size_t> control_qm_memory_size = 4000U) noexcept;
 
+SomeIpMethodInstanceDeployment MakeDefaultSomeIpMethodInstanceDeployment() noexcept;
+
+SomeIpMethodInstanceDeployment MakeSomeIpMethodInstanceDeployment(
+    const std::optional<SomeIpMethodInstanceDeployment::QueueSize> queue_size = 10U) noexcept;
+
 SomeIpServiceInstanceDeployment MakeSomeIpServiceInstanceDeployment(
     const score::cpp::optional<SomeIpServiceInstanceId> instance_id = 22U) noexcept;
 
@@ -90,6 +96,9 @@ class ConfigurationStructsFixture : public ::testing::Test
 
     void ExpectSomeIpFieldInstanceDeploymentObjectsEqual(const SomeIpFieldInstanceDeployment& lhs,
                                                          const SomeIpFieldInstanceDeployment& rhs) const noexcept;
+
+    void ExpectSomeIpMethodInstanceDeploymentObjectsEqual(const SomeIpMethodInstanceDeployment& lhs,
+                                                          const SomeIpMethodInstanceDeployment& rhs) const noexcept;
 
     void ExpectLolaServiceInstanceDeploymentObjectsEqual(const LolaServiceInstanceDeployment& lhs,
                                                          const LolaServiceInstanceDeployment& rhs) const noexcept;

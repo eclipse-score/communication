@@ -16,6 +16,12 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_event_id.h"
+#include "score/mw/com/impl/configuration/someip_field_id.h"
+#include "score/mw/com/impl/configuration/someip_method_id.h"
+#include "score/mw/com/impl/configuration/someip_service_id.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -533,6 +539,57 @@ auto ParseLolaMethodInstanceDeployment(const score::json::Object& json_map, Lola
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
+auto ParseSomeIpMethodInstanceDeployment(const score::json::Object& json_map, SomeIpServiceInstanceDeployment& service)
+    -> void
+{
+    const auto& methods = json_map.find(kMethodsKey.data());
+    if (methods == json_map.cend())
+    {
+        return;
+    }
+
+    const auto methods_list_result = methods->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(methods_list_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+    const auto& methods_list = methods_list_result.value().get();
+    for (const auto& method : methods_list)
+    {
+        const auto method_casted = method.As<score::json::Object>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(method_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto& method_object = method_casted.value().get();
+        const auto& method_name = GetValueFromJson<std::string>(method_object, kMethodNameKey);
+        const std::optional<SomeIpMethodInstanceDeployment::QueueSize> queue_size =
+            GetOptionalValueFromJson<SomeIpMethodInstanceDeployment::QueueSize>(method_object, kMethodQueueSizeKey);
+        const SomeIpMethodInstanceDeployment method_deployment{queue_size};
+
+        const auto emplace_result = service.methods_.emplace(
+            std::piecewise_construct, std::forward_as_tuple(method_name), std::forward_as_tuple(method_deployment));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(emplace_result.second, "Could not emplace element in map");
+    }
+}
+
+auto ParseSomeIpServiceInstanceDeployment(const score::json::Object& json_map) -> SomeIpServiceInstanceDeployment
+{
+    SomeIpServiceInstanceDeployment service{};
+
+    const auto& instance_id = json_map.find(kInstanceIdKey.data());
+    if (instance_id != json_map.cend())
+    {
+        const auto instance_id_casted = instance_id->second.As<SomeIpServiceInstanceId::InstanceId>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(instance_id_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto instance_id_value = instance_id_casted.value();
+        service.instance_id_ = SomeIpServiceInstanceId{instance_id_value};
+    }
+
+    ParseSomeIpMethodInstanceDeployment(json_map, service);
+
+    return service;
+}
+
+// See Note 1
+// coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseServiceElementTracingEnabled(const score::json::Object& json_map,
                                        TracingConfiguration& tracing_configuration,
                                        const std::string_view service_type_name_view,
@@ -701,8 +758,11 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
             const auto& bindingValue = bindingValue_result.value().get();
             if (bindingValue == kSomeIpBinding)
             {
-                score::mw::log::LogFatal("lola") << "Provided SOME/IP binding, which can not be parsed.";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+                // Return Value not needed in this context
+                score::cpp::ignore = deployments.emplace_back(service,
+                                                              ParseSomeIpServiceInstanceDeployment(deployment_map),
+                                                              asil_level.value(),
+                                                              instance_specifier);
             }
             else if (bindingValue == kShmBinding)
             {
@@ -919,6 +979,210 @@ auto ParseLolaMethodTypeDeployments(const score::json::Object& json_map, LolaSer
     return true;
 }
 
+auto ParseSomeIpMethodTypeDeployments(const score::json::Object& json_map, SomeIpServiceTypeDeployment& service) -> bool
+{
+    const auto& methods = json_map.find(kMethodsKey.data());
+    if (methods == json_map.cend())
+    {
+        return false;
+    }
+
+    auto methods_list_result = methods->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(methods_list_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+    const auto& methods_list = methods_list_result.value().get();
+    for (const auto& method : methods_list)
+    {
+        const auto& method_object_casted = method.As<score::json::Object>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(method_object_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto& method_object = method_object_casted.value().get();
+        const auto& method_name = method_object.find(kMethodNameKey.data());
+        const auto& method_id = method_object.find(kMethodIdKey.data());
+
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            (method_name != method_object.cend()) && (method_id != method_object.cend()),
+            "Configuration corrupted, check with json schema");
+
+        const auto method_name_casted = method_name->second.As<std::string>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(method_name_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto method_id_casted = method_id->second.As<std::uint16_t>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(method_id_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto result = service.methods_.emplace(std::piecewise_construct,
+                                                     std::forward_as_tuple(method_name_casted.value().get()),
+                                                     std::forward_as_tuple(method_id_casted.value()));
+
+        if (result.second != true)
+        {
+            score::mw::log::LogFatal("someip") << "A method was configured twice.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+    }
+    return true;
+}
+
+// See Note 1
+// coverity[autosar_cpp14_a15_5_3_violation]
+auto ParseSomeIpEventTypeDeployments(const score::json::Object& json_map, SomeIpServiceTypeDeployment& service) -> bool
+{
+    const auto& events = json_map.find(kEventsKey.data());
+    if (events == json_map.cend())
+    {
+        return false;
+    }
+    auto events_list_result = events->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(events_list_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+    const auto& events_list = events_list_result.value().get();
+    for (const auto& event : events_list)
+    {
+        const auto event_obj = event.As<score::json::Object>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(event_obj.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto& event_object = event_obj.value().get();
+        const auto& event_name = event_object.find(kEventNameKey.data());
+        const auto& event_id = event_object.find(kEventIdKey.data());
+
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            (event_name != event_object.cend()) && (event_id != event_object.cend()),
+            "Configuration corrupted, check with json schema");
+
+        const auto event_name_casted = event_name->second.As<std::string>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(event_name_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto event_id_casted = event_id->second.As<std::uint16_t>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(event_id_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto result = service.events_.emplace(std::piecewise_construct,
+                                                    std::forward_as_tuple(event_name_casted.value().get()),
+                                                    std::forward_as_tuple(event_id_casted.value()));
+
+        if (result.second != true)
+        {
+            score::mw::log::LogFatal("someip") << "An event was configured twice.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+    }
+    return true;
+}
+
+// See Note 1
+// coverity[autosar_cpp14_a15_5_3_violation]
+auto ParseSomeIpFieldTypeDeployments(const score::json::Object& json_map, SomeIpServiceTypeDeployment& service) -> bool
+{
+    const auto& fields = json_map.find(kFieldsKey.data());
+    if (fields == json_map.cend())
+    {
+        return false;
+    }
+
+    auto fields_list_result = fields->second.As<score::json::List>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(fields_list_result.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+    const auto& fields_list = fields_list_result.value().get();
+    for (const auto& field : fields_list)
+    {
+        auto field_obj = field.As<score::json::Object>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(field_obj.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto& field_object = field_obj.value().get();
+        const auto& field_name = field_object.find(kFieldNameKey.data());
+        const auto& field_id = field_object.find(kFieldIdKey.data());
+
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
+            (field_name != field_object.cend()) && (field_id != field_object.cend()),
+            "Configuration corrupted, check with json schema");
+
+        const auto field_name_casted = field_name->second.As<std::string>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(field_name_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto field_id_casted = field_id->second.As<std::uint16_t>();
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(field_id_casted.has_value(),
+                                                          "Configuration corrupted, check with json schema");
+        const auto result = service.fields_.emplace(std::piecewise_construct,
+                                                    std::forward_as_tuple(field_name_casted.value().get()),
+                                                    std::forward_as_tuple(field_id_casted.value()));
+
+        if (result.second != true)
+        {
+            score::mw::log::LogFatal("someip") << "A field was configured twice.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+    }
+    return true;
+}
+
+auto AreSomeIpEventFieldAndMethodIdsUnique(const SomeIpServiceTypeDeployment& someip_service_type_deployment) -> bool
+{
+    const auto& events = someip_service_type_deployment.events_;
+    const auto& fields = someip_service_type_deployment.fields_;
+    const auto& methods = someip_service_type_deployment.methods_;
+
+    static_assert(std::is_same<SomeIpEventId, SomeIpFieldId>::value,
+                  "EventId and FieldId should have the same underlying type.");
+    static_assert(std::is_same<SomeIpEventId, SomeIpMethodId>::value,
+                  "EventId and MethodId should have the same underlying type.");
+    std::set<SomeIpEventId> ids{};
+
+    for (const auto& event : events)
+    {
+        const auto result = ids.insert(event.second);
+        if (!result.second)
+        {
+            return false;
+        }
+    }
+
+    for (const auto& field : fields)
+    {
+        const auto result = ids.insert(field.second);
+        if (!result.second)
+        {
+            return false;
+        }
+    }
+
+    for (const auto& method : methods)
+    {
+        const auto result = ids.insert(method.second);
+        if (!result.second)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// See Note 1
+// coverity[autosar_cpp14_a15_5_3_violation]
+auto ParseSomeIpServiceTypeDeployments(const score::json::Object& json_map) -> SomeIpServiceTypeDeployment
+{
+    const auto& service_id = json_map.find(kServiceIdKey.data());
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(service_id != json_map.cend(),
+                                                      "Configuration corrupted, check with json schema");
+
+    const auto service_id_casted = service_id->second.As<std::uint16_t>();
+    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(service_id_casted.has_value(),
+                                                      "Configuration corrupted, check with json schema");
+    SomeIpServiceTypeDeployment someip{service_id_casted.value()};
+    const bool events_exist = ParseSomeIpEventTypeDeployments(json_map, someip);
+    const bool fields_exist = ParseSomeIpFieldTypeDeployments(json_map, someip);
+    const bool methods_exist = ParseSomeIpMethodTypeDeployments(json_map, someip);
+    if (!events_exist && !fields_exist && !methods_exist)
+    {
+        score::mw::log::LogFatal("someip") << "Configuration should contain at least one event, field, or method.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    if (!AreSomeIpEventFieldAndMethodIdsUnique(someip))
+    {
+        score::mw::log::LogFatal("someip") << "Configuration cannot contain duplicate eventId, fieldId, or methodId.";
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+    }
+    return someip;
+}
+
 auto AreEventFieldAndMethodIdsUnique(const LolaServiceTypeDeployment& lola_service_type_deployment) -> bool
 {
     const auto& events = lola_service_type_deployment.events_;
@@ -1021,7 +1285,8 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
         }
         else if (value == kSomeIpBinding)
         {
-            // we skip this, because we don't support SOME/IP right now.
+            SomeIpServiceTypeDeployment someip_deployment = ParseSomeIpServiceTypeDeployments(binding_map);
+            return ServiceTypeDeployment{someip_deployment};
         }
         else
         {
@@ -1323,61 +1588,65 @@ void CrosscheckServiceInstancesToTypes(const Configuration& config)
                 << "), which is not configured. This is invalid, terminating";
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
         }
-        // check, that binding in service type and service instance are equal. Since currently ServiceTypeDeployment
-        // only supports LolaServiceTypeDeployment, everything else than LolaServiceInstanceDeployment is an error.
-        // LCOV_EXCL_BR_START: Defensive programming: Parse() currently terminates if the ServiceInstanceDeployment
-        // contains anything other than a Lola binding. Therefore, it's impossible to reach this point without
-        // a LolaServiceInstanceDeployment.
-        if (!std::holds_alternative<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_))
+
+        if (std::holds_alternative<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_))
         {
-            // LCOV_EXCL_BR_STOP
-            // LCOV_EXCL_START defensive programming: Parse() currently terminates if the ServiceInstanceDeployment
-            // contains anything other than a Lola binding. Therefore, it's impossible to reach this point without
-            // a LolaServiceInstanceDeployment.
+            if (!std::holds_alternative<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_))
+            {
+                ::score::mw::log::LogFatal("lola")
+                    << "Service type " << service_instance.second.service_.ToString()
+                    << "refers to an not yet supported binding. This is invalid, terminating";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            }
+            // check, that for each service-element-name in the instance deployment, there exists a corresponding
+            // service-element-name in the type deployment
+            const auto& serviceInstanceDeployment =
+                std::get<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_);
+            for (const auto& eventInstanceElement : serviceInstanceDeployment.events_)
+            {
+                const auto& serviceTypeDeployment =
+                    std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
+                const auto search = serviceTypeDeployment.events_.find(eventInstanceElement.first);
+                if (search == serviceTypeDeployment.events_.cend())
+                {
+                    ::score::mw::log::LogFatal("lola")
+                        << "Service instance " << service_instance.first << "event" << eventInstanceElement.first
+                        << "refers to an event, which doesn't exist in the referenced service type ("
+                        << service_instance.second.service_.ToString() << "). This is invalid, terminating";
+                    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+                }
+            }
+            for (const auto& fieldInstanceElement : serviceInstanceDeployment.fields_)
+            {
+                const auto& serviceTypeDeployment =
+                    std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
+                const auto search = serviceTypeDeployment.fields_.find(fieldInstanceElement.first);
+                if (search == serviceTypeDeployment.fields_.cend())
+                {
+                    ::score::mw::log::LogFatal("lola")
+                        << "Service instance " << service_instance.first << "field" << fieldInstanceElement.first
+                        << "refers to a field, which doesn't exist in the referenced service type ("
+                        << service_instance.second.service_.ToString() << "). This is invalid, terminating";
+                    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+                }
+            }
+        }
+        else if (std::holds_alternative<SomeIpServiceInstanceDeployment>(service_instance.second.bindingInfo_))
+        {
+            if (!std::holds_alternative<SomeIpServiceTypeDeployment>(foundServiceType->second.binding_info_))
+            {
+                ::score::mw::log::LogFatal("someip")
+                    << "Service type " << service_instance.second.service_.ToString()
+                    << "refers to an not yet supported binding. This is invalid, terminating";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            }
+        }
+        else
+        {
             ::score::mw::log::LogFatal("lola")
                 << "Service instance " << service_instance.first
                 << "refers to an not yet supported binding. This is invalid, terminating";
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-            // LCOV_EXCL_STOP
-        }
-        if (!std::holds_alternative<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_))
-        {
-            ::score::mw::log::LogFatal("lola")
-                << "Service type " << service_instance.second.service_.ToString()
-                << "refers to an not yet supported binding. This is invalid, terminating";
-            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-        }
-        // check, that for each service-element-name in the instance deployment, there exists a corresponding
-        // service-element-name in the type deployment
-        const auto& serviceInstanceDeployment =
-            std::get<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_);
-        for (const auto& eventInstanceElement : serviceInstanceDeployment.events_)
-        {
-            const auto& serviceTypeDeployment =
-                std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
-            const auto search = serviceTypeDeployment.events_.find(eventInstanceElement.first);
-            if (search == serviceTypeDeployment.events_.cend())
-            {
-                ::score::mw::log::LogFatal("lola")
-                    << "Service instance " << service_instance.first << "event" << eventInstanceElement.first
-                    << "refers to an event, which doesn't exist in the referenced service type ("
-                    << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-            }
-        }
-        for (const auto& fieldInstanceElement : serviceInstanceDeployment.fields_)
-        {
-            const auto& serviceTypeDeployment =
-                std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
-            const auto search = serviceTypeDeployment.fields_.find(fieldInstanceElement.first);
-            if (search == serviceTypeDeployment.fields_.cend())
-            {
-                ::score::mw::log::LogFatal("lola")
-                    << "Service instance " << service_instance.first << "field" << fieldInstanceElement.first
-                    << "refers to a field, which doesn't exist in the referenced service type ("
-                    << service_instance.second.service_.ToString() << "). This is invalid, terminating";
-                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-            }
         }
     }
 }
