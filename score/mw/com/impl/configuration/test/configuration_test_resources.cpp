@@ -111,6 +111,18 @@ LolaServiceInstanceDeployment MakeLolaServiceInstanceDeployment(
     return unit;
 }
 
+SomeIpMethodInstanceDeployment MakeDefaultSomeIpMethodInstanceDeployment() noexcept
+{
+    return SomeIpMethodInstanceDeployment{std::nullopt};
+}
+
+SomeIpMethodInstanceDeployment MakeSomeIpMethodInstanceDeployment(
+    const std::optional<SomeIpMethodInstanceDeployment::QueueSize> queue_size) noexcept
+{
+    const SomeIpMethodInstanceDeployment unit{queue_size};
+    return unit;
+}
+
 SomeIpServiceInstanceDeployment MakeSomeIpServiceInstanceDeployment(
     const score::cpp::optional<SomeIpServiceInstanceId> instance_id) noexcept
 {
@@ -120,13 +132,19 @@ SomeIpServiceInstanceDeployment MakeSomeIpServiceInstanceDeployment(
     const SomeIpFieldInstanceDeployment field_instance_deployment_1{};
     const SomeIpFieldInstanceDeployment field_instance_deployment_2{};
 
+    const SomeIpMethodInstanceDeployment method_instance_deployment_1{MakeSomeIpMethodInstanceDeployment(20U)};
+    const SomeIpMethodInstanceDeployment method_instance_deployment_2{MakeSomeIpMethodInstanceDeployment(21U)};
+
     const SomeIpServiceInstanceDeployment::EventInstanceMapping events{{kDummyEventName1, event_instance_deployment_1},
                                                                        {kDummyEventName2, event_instance_deployment_2}};
 
     const SomeIpServiceInstanceDeployment::FieldInstanceMapping fields{{kDummyFieldName1, field_instance_deployment_1},
                                                                        {kDummyFieldName2, field_instance_deployment_2}};
 
-    return SomeIpServiceInstanceDeployment(instance_id, events, fields);
+    const SomeIpServiceInstanceDeployment::MethodInstanceMapping methods{
+        {kDummyMethodName1, method_instance_deployment_1}, {kDummyMethodName2, method_instance_deployment_2}};
+
+    return SomeIpServiceInstanceDeployment(instance_id, events, fields, methods);
 }
 
 LolaServiceTypeDeployment MakeLolaServiceTypeDeployment(const std::uint16_t service_id) noexcept
@@ -191,6 +209,13 @@ void ConfigurationStructsFixture::ExpectSomeIpFieldInstanceDeploymentObjectsEqua
     const SomeIpFieldInstanceDeployment& /* lhs */,
     const SomeIpFieldInstanceDeployment& /* rhs */) const noexcept
 {
+}
+
+void ConfigurationStructsFixture::ExpectSomeIpMethodInstanceDeploymentObjectsEqual(
+    const SomeIpMethodInstanceDeployment& lhs,
+    const SomeIpMethodInstanceDeployment& rhs) const noexcept
+{
+    EXPECT_EQ(lhs.queue_size_, rhs.queue_size_);
 }
 
 void ConfigurationStructsFixture::ExpectLolaServiceInstanceDeploymentObjectsEqual(
@@ -277,6 +302,14 @@ void ConfigurationStructsFixture::ExpectSomeIpServiceInstanceDeploymentObjectsEq
         auto rhs_it = rhs.fields_.find(lhs_it.first);
         ASSERT_NE(rhs_it, rhs.fields_.end());
         ExpectSomeIpFieldInstanceDeploymentObjectsEqual(lhs_it.second, rhs_it->second);
+    }
+
+    ASSERT_EQ(lhs.methods_.size(), rhs.methods_.size());
+    for (const auto& lhs_it : lhs.methods_)
+    {
+        auto rhs_it = rhs.methods_.find(lhs_it.first);
+        ASSERT_NE(rhs_it, rhs.methods_.end());
+        ExpectSomeIpMethodInstanceDeploymentObjectsEqual(lhs_it.second, rhs_it->second);
     }
 }
 
