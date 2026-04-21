@@ -50,7 +50,7 @@ class SamplePtr final
               TransactionLogIndex transaction_log_idx) noexcept
         : SamplePtr{ptr, std::make_optional<SlotDecrementer>(event_data_ctrl_local, slot_index, transaction_log_idx)}
     {
-        timestamp_ = (event_data_ctrl)[slot_indicator.GetIndex()].GetTimeStamp();
+        timestamp_ = (event_data_ctrl_local)[slot_index].GetTimeStamp();
     }
 
     ~SamplePtr() noexcept = default;
