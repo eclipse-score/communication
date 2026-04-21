@@ -70,7 +70,7 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     using typename SkeletonEventBindingBase::UnsubscribeTraceCallback;
 
     SkeletonEvent(Skeleton& parent,
-                  const ElementFqId event_fqn,
+                  const ElementFqId element_fq_id,
                   const std::string_view event_name,
                   const SkeletonEventProperties properties,
                   impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {}) noexcept;
@@ -116,13 +116,13 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
 template <typename SampleType>
 SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
-                                         const ElementFqId event_fqn,
+                                         const ElementFqId element_fq_id,
                                          const std::string_view event_name,
                                          const SkeletonEventProperties properties,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
       event_data_storage_{nullptr},
-      skeleton_event_common_{parent, event_name, properties, event_fqn, skeleton_event_tracing_data}
+      skeleton_event_common_{parent, event_name, properties, element_fq_id, skeleton_event_tracing_data}
 {
 }
 

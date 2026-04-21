@@ -45,8 +45,8 @@ class "lola::Skeleton" {
   +Skeleton(const InstanceIdentifier&, MethodCallProcessingMode)
   +PrepareOffer(): ResultBlank
   +PrepareStopOffer(): void
-  +Register(ElementFqId event_fqn, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
-  +RegisterGeneric(ElementFqId event_fqn, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
+  +Register(ElementFqId element_fq_id, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
+  +RegisterGeneric(ElementFqId element_fq_id, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
   +DisconnectQmConsumers(): void
   +GetInstanceQualityType(): QualityType
   +GetSourcePid(): pid_t
@@ -77,7 +77,7 @@ class "SampleAllocateePtr<SampleType>" {
 }
 
 class "lola::SkeletonEvent<SampleType>" {
-  +SkeletonEvent(lola::Skeleton& parent, const SkeletonEventProperties& event_properties, const ElementFqId& event_fqn)
+  +SkeletonEvent(lola::Skeleton& parent, const SkeletonEventProperties& event_properties, const ElementFqId& element_fq_id)
   +Send(const SampleType&) : ResultBlank
   +Allocate(): Result<SampleAllocateePtr<SampleType>>
   -skeleton_event_common_ : lola::SkeletonEventCommon
@@ -135,7 +135,7 @@ class "lola::SkeletonEventCommon" #yellow {
 }
 
 class "lola::GenericSkeletonEvent" #yellow {
-  +GenericSkeletonEvent(lola::Skeleton& parent, const SkeletonEventProperties& event_properties, const ElementFqId& event_fqn, const DataTypeMetaInfo& size_info, impl::tracing::SkeletonEventTracingData tracing_data)
+  +GenericSkeletonEvent(lola::Skeleton& parent, const SkeletonEventProperties& event_properties, const ElementFqId& element_fq_id, const DataTypeMetaInfo& size_info, impl::tracing::SkeletonEventTracingData tracing_data)
   +Send(score::mw::com::impl::SampleAllocateePtr<void> sample): ResultBlank
   +Allocate(): Result<score::mw::com::impl::SampleAllocateePtr<void>>
   +GetSizeInfo() const : std::pair<size_t, size_t>

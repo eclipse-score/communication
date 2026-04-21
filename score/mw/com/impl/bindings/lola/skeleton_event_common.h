@@ -59,7 +59,7 @@ class SkeletonEventCommon
     SkeletonEventCommon(Skeleton& parent,
                         const std::string_view event_name,
                         const SkeletonEventProperties& event_properties,
-                        const ElementFqId& event_fqn,
+                        const ElementFqId& element_fq_id,
                         impl::tracing::SkeletonEventTracingData tracing_data = {}) noexcept;
 
     SkeletonEventCommon(const SkeletonEventCommon&) = delete;
@@ -83,7 +83,7 @@ class SkeletonEventCommon
 
     const ElementFqId& GetElementFQId() const
     {
-        return event_fqn_;
+        return element_fq_id_;
     }
 
     Skeleton& GetParent()
@@ -106,7 +106,7 @@ class SkeletonEventCommon
     Skeleton& parent_;
     std::string_view event_name_;
     SkeletonEventProperties event_properties_;
-    ElementFqId event_fqn_;
+    ElementFqId element_fq_id_;
     std::optional<EventDataControlComposite<>> event_data_control_composite_;
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
@@ -142,12 +142,12 @@ template <typename SampleType>
 SkeletonEventCommon<SampleType>::SkeletonEventCommon(Skeleton& parent,
                                                      const std::string_view event_name,
                                                      const SkeletonEventProperties& event_properties,
-                                                     const ElementFqId& event_fqn,
+                                                     const ElementFqId& element_fq_id,
                                                      impl::tracing::SkeletonEventTracingData tracing_data) noexcept
     : parent_{parent},
       event_name_{event_name},
       event_properties_{event_properties},
-      event_fqn_{event_fqn},
+      element_fq_id_{element_fq_id},
       event_data_control_composite_{},
       current_timestamp_{1U},
       tracing_data_{tracing_data},
@@ -188,7 +188,7 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(
     GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
         .GetLolaMessaging()
         .RegisterEventNotificationExistenceChangedCallback(
-            QualityType::kASIL_QM, event_fqn_, [this](const bool has_handlers) noexcept {
+            QualityType::kASIL_QM, element_fq_id_, [this](const bool has_handlers) noexcept {
                 SetQmNotificationsRegistered(has_handlers);
             });
 
@@ -197,7 +197,7 @@ void SkeletonEventCommon<SampleType>::PrepareOfferCommon(
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
             .RegisterEventNotificationExistenceChangedCallback(
-                QualityType::kASIL_B, event_fqn_, [this](const bool has_handlers) noexcept {
+                QualityType::kASIL_B, element_fq_id_, [this](const bool has_handlers) noexcept {
                     SetAsilBNotificationsRegistered(has_handlers);
                 });
     }
@@ -209,13 +209,13 @@ void SkeletonEventCommon<SampleType>::PrepareStopOfferCommon() noexcept
     // Unregister event notification existence changed callbacks
     GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
         .GetLolaMessaging()
-        .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_QM, event_fqn_);
+        .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_QM, element_fq_id_);
 
     if (parent_.GetInstanceQualityType() == QualityType::kASIL_B)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_B, event_fqn_);
+            .UnregisterEventNotificationExistenceChangedCallback(QualityType::kASIL_B, element_fq_id_);
     }
 
     // Reset the flags to indicate no handlers are registered
@@ -253,7 +253,8 @@ Result<SlotIndexType> SkeletonEventCommon<SampleType>::AllocateSlot() noexcept
         qm_disconnect_ = true;
         score::mw::log::LogWarn("lola")
             << __func__ << __LINE__
-            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: " << event_fqn_;
+            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: "
+            << element_fq_id_;
         parent_.DisconnectQmConsumers();
     }
 
@@ -296,14 +297,14 @@ ResultBlank SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<Sampl
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_QM, event_fqn_);
+            .NotifyEvent(QualityType::kASIL_QM, element_fq_id_);
     }
     if (asil_b_event_update_notifications_registered_.load() &&
         parent_.GetInstanceQualityType() == QualityType::kASIL_B)
     {
         GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
             .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_B, event_fqn_);
+            .NotifyEvent(QualityType::kASIL_B, element_fq_id_);
     }
     return {};
 }

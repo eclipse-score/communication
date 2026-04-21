@@ -791,12 +791,12 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillCreateEventDataIfShmReg
 
     // when the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                          test::kFooEventId,
-                          test::kDefaultLolaInstanceId,
-                          ServiceElementType::EVENT};
+    ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                              test::kFooEventId,
+                              test::kDefaultLolaInstanceId,
+                              ServiceElementType::EVENT};
     auto [typed_event_data_storage_ptr, event_data_control_composite] =
-        skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+        skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
     // Then the Register call should return pointers to the created control and data sections which can be used to
     // allocate slots
@@ -1002,9 +1002,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventDataSlotsExistAfterEventI
 
     // when the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+    auto event_reg_result = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
     // Then a valid slot-vector with the right size exists and we can access/write to it:
     ASSERT_EQ(event_reg_result.event_data_storage.size(), test::kMaxSlots);
@@ -1041,9 +1041,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CanAllocateSlotAfterEventIsRegister
 
     // when the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+    auto event_reg_result = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
     // Then we can allocate and free slots on that event
     auto allocation = event_reg_result.event_data_control_composite.AllocateNextSlot();
@@ -1077,9 +1077,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, AllocateAfterCleanUp)
     std::ignore = skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback));
 
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto event_reg_result = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+    auto event_reg_result = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
 
     auto allocation = event_reg_result.event_data_control_composite.AllocateNextSlot();
 
@@ -1166,15 +1166,16 @@ TEST_P(SkeletonRegisterParamaterisedFixture, ValidEventMetaInfoExistAfterEventIs
 
     // and foo_event is registered with the skeleton with 5 slots
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId foo_event_fqn{
+    ElementFqId foo_element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    auto foo_event_reg_result = skeleton_->Register<uint8_t>(foo_event_fqn, test::kDefaultEventProperties);
+    auto foo_event_reg_result = skeleton_->Register<uint8_t>(foo_element_fq_id, test::kDefaultEventProperties);
     void* const foo_event_data_storage = foo_event_reg_result.event_data_storage.data();
 
     // and dumb_event is registered with the skeleton with 5 slots
-    ElementFqId dumb_event_fqn{
+    ElementFqId dumb_element_fq_id{
         lola_service_type_deployment->service_id_, test::kDumbEventId, test::kDefaultLolaInstanceId, element_type};
-    auto dumb_event_reg_result = skeleton_->Register<VeryComplexType>(dumb_event_fqn, test::kDefaultEventProperties);
+    auto dumb_event_reg_result =
+        skeleton_->Register<VeryComplexType>(dumb_element_fq_id, test::kDefaultEventProperties);
     void* const dumb_event_data_storage = dumb_event_reg_result.event_data_storage.data();
 
     // Expect, that we can then retrieve the meta-info of the registered events
@@ -1239,9 +1240,9 @@ TEST_P(SkeletonRegisterParamaterisedFixture, NoMetaInfoExistsForInvalidElementId
 
     // and the event is registered with the skeleton
     const auto* const lola_service_type_deployment = GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-    ElementFqId event_fqn{
+    ElementFqId element_fq_id{
         lola_service_type_deployment->service_id_, test::kFooEventId, test::kDefaultLolaInstanceId, element_type};
-    skeleton_->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+    skeleton_->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
 
     // but when retrieving meta-info for a not registered ElementFqId
     const std::uint16_t UNKNOWN_EVENT_ID{99U};
@@ -1278,14 +1279,14 @@ TEST_P(SkeletonRegisterParamaterisedFixture, CallingRegisterWithSameServiceEleme
 
         const auto* const lola_service_type_deployment =
             GetLolaServiceTypeDeployment(test::kValidMinimalTypeDeployment);
-        ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                              test::kFooEventId,
-                              test::kDefaultLolaInstanceId,
-                              ServiceElementType::EVENT};
+        ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                  test::kFooEventId,
+                                  test::kDefaultLolaInstanceId,
+                                  ServiceElementType::EVENT};
 
         // When calling register twice with the same ElementFqId
-        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
-        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(event_fqn, test::kDefaultEventProperties);
+        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
+        score::cpp::ignore = skeleton_->Register<test::TestSampleType>(element_fq_id, test::kDefaultEventProperties);
     };
     // Then we should terminate
     EXPECT_DEATH(test_function(), ".*");

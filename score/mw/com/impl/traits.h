@@ -100,8 +100,9 @@ class ProxyWrapperClassTestView;
 ///     typename Trait::template Event<DataType1> struct_event_1_{*this, event_name_0};
 ///     typename Trait::template Event<DataType2> struct_event_2_{*this, event_name_1};
 ///
-///     typename Trait::template Field<DataType1, enable_getter, enable_setter, enable_notifier> struct_field_1_{*this,
-///     field_name_0}; typename Trait::template Field<DataType2, enable_getter, enable_setter, enable_notifier>
+///     typename Trait::template Field<DataType1, true, false, true> struct_field_1_{*this,
+///     field_name_0};
+///     typename Trait::template Field<DataType2, enable_getter, enable_setter, enable_notifier>
 ///     struct_field_2_{*this, field_name_1};
 ///
 ///     typename Trait::template Method<void(InArgType1)> struct_method_1_{*this, method_name_0};

@@ -36,7 +36,7 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
     GenericSkeletonEvent(Skeleton& parent,
                          const std::string_view event_name,
                          const SkeletonEventProperties& event_properties,
-                         const ElementFqId& event_fqn,
+                         const ElementFqId& element_fq_id,
                          const DataTypeMetaInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
 
