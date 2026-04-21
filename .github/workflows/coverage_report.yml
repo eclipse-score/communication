@@ -17,7 +17,7 @@ on:
     outputs:
       artifact-name:
         description: 'Name of the coverage report artifact'
-        value: ${{ jobs.coverage-report.outputs.artifact-name }}
+        value: ${{ jobs.coverage_report.outputs.artifact-name }}
 
 permissions:
   contents: read
