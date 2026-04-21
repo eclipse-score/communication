@@ -264,20 +264,6 @@ cc_library(
 )
 
 cc_library(
-    name = "proxy_service_data_control_local_view",
-    srcs = ["proxy_service_data_control_local_view.cpp"],
-    hdrs = ["proxy_service_data_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    deps = [
-        ":application_id_pid_mapping",
-        ":consumer_event_control_local_view",
-        ":element_fq_id",
-        ":service_data_control",
-    ],
-)
-
-cc_library(
     name = "skeleton",
     srcs = [
         "skeleton.cpp",
@@ -307,7 +293,6 @@ cc_library(
         ":i_shm_path_builder",
         ":partial_restart_path_builder",
         ":proxy_instance_identifier",
-        ":proxy_service_data_control_local_view",
         ":service_data_control",
         ":service_data_storage",
         ":shm_path_builder",
@@ -362,12 +347,10 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola/test:__pkg__"],
     deps = [
-        ":consumer_event_control_local_view",
         ":event",
         ":event_control",
         ":event_subscription_control",
         ":proxy_instance_identifier",
-        ":proxy_service_data_control_local_view",
         ":service_data_control",
         ":service_data_storage",
         ":shm_path_builder",
@@ -479,11 +462,13 @@ cc_library(
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = [
-        ":consumer_event_control_local_view",
         ":consumer_event_data_control_local_view",
+        ":event_subscription_control",
         ":i_runtime",
         ":slot_collector",
         ":transaction_log_id",
+        ":transaction_log_index",
+        ":transaction_log_set",
         "//score/mw/com/impl:runtime",
         "//score/mw/com/impl:scoped_event_receive_handler",
         "//score/mw/com/impl/bindings/lola/messaging:i_message_passing_service",
@@ -613,21 +598,6 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_subscription_control",
-        ":transaction_log_set",
-    ],
-)
-
-cc_library(
-    name = "consumer_event_control_local_view",
-    srcs = ["consumer_event_control_local_view.cpp"],
-    hdrs = ["consumer_event_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-    deps = [
-        ":consumer_event_data_control_local_view",
-        ":event_control",
-        ":event_data_control",
         ":transaction_log_set",
     ],
 )
@@ -827,7 +797,7 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
     deps = [
-        ":proxy_service_data_control_local_view",
+        ":service_data_control",
         ":transaction_log_id",
         ":transaction_log_set",
         "//score/mw/com/impl:runtime",

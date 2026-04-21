@@ -14,7 +14,6 @@
 
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
-#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/register_pid_fake.h"
 #include "score/mw/com/impl/bindings/lola/rollback_synchronization.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
@@ -75,8 +74,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         service_data_control_ = std::make_unique<ServiceDataControl>(memory_resource_mock_);
         AddEvent(kDummyElementFqId, kDummySkeletonEventProperties);
 
-        score::cpp::ignore = proxy_service_data_control_local_.emplace(*service_data_control_);
-        unit_ = std::make_unique<TransactionLogRollbackExecutor>(proxy_service_data_control_local_.value(),
+        unit_ = std::make_unique<TransactionLogRollbackExecutor>(*service_data_control_,
                                                                  kSkeletonInstanceIdentifier,
                                                                  kDummyQualityType,
                                                                  kDummyProviderPid,
@@ -104,11 +102,11 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         ASSERT_EQ(result_pid.value(), pid);
     }
 
-    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id) noexcept
+    ConsumerEventDataControlLocalView<> GetConsumerEventDataControlLocalView(const ElementFqId element_fq_id) noexcept
     {
-        auto find_result = proxy_service_data_control_local_->event_controls_.find(element_fq_id);
-        EXPECT_NE(find_result, proxy_service_data_control_local_->event_controls_.cend());
-        return find_result->second.data_control;
+        auto find_result = service_data_control_->event_controls_.find(element_fq_id);
+        EXPECT_NE(find_result, service_data_control_->event_controls_.cend());
+        return {find_result->second.data_control};
     }
 
     TransactionLogSet& GetTransactionLogSet(const ElementFqId element_fq_id) noexcept
@@ -129,7 +127,7 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
         const ElementFqId& element_fq_id,
         const TransactionLogId& transaction_log_id) noexcept
     {
-        auto& consumer_event_data_control_local = GetConsumerEventDataControlLocalView(element_fq_id);
+        auto consumer_event_data_control_local = GetConsumerEventDataControlLocalView(element_fq_id);
         auto& transaction_log_set = GetTransactionLogSet(element_fq_id);
         transaction_log_registration_guards_.push_back(
             transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value());
@@ -157,7 +155,6 @@ class TransactionLogRollbackExecutorFixture : public ::testing::Test
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
     std::unique_ptr<ServiceDataControl> service_data_control_{nullptr};
-    std::optional<ProxyServiceDataControlLocalView> proxy_service_data_control_local_{};
     std::unique_ptr<TransactionLogRollbackExecutor> unit_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
     std::vector<TransactionLogRegistrationGuard> transaction_log_registration_guards_{};

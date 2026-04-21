@@ -52,8 +52,8 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
       ///   memory and ends with munmap during Proxy destruction. Therefore, the TransactionLogRegistrationGuard will
       ///   always be destroyed before the TransactionLogSet is destroyed.
       ///
-      ///   The ConsumerEventDataControlLocalView is created during Proxy creation when opening the shared memory and
-      ///   creating a ProxyServiceDataControlLocalView. It is destroyed during Proxy destruction. Therefore, the
+      ///   The ConsumerEventDataControlLocalView is created during ProxyEventCommon creation when opening the shared
+      ///   memory created by the Skeleton. It is destroyed during ProxyEvent destruction. Therefore, the
       ///   TransactionLogRegistrationGuard will always be destroyed before the ConsumerEventDataControlLocalView is
       ///   destroyed.
       ///
@@ -68,11 +68,10 @@ TransactionLogRegistrationGuard::TransactionLogRegistrationGuard(
       ///   SkeletonEvent::PrepareStopOffer. Therefore, the TransactionLogSet will always be destroyed after the
       ///   TransactionLogRegistrationGuard is destroyed.
       ///
-      ///   The ConsumerEventDataControlLocalView is created during Skeleton::Register when creating the
-      ///   EventDataControlComposite. The EventDataControlComposite is owned by the Skeleton and destroyed when
-      ///   destroying the Skeleton. Since PrepareStopOffer is always called before destroying the Skeleton, the
-      ///   TransactionLogRegistrationGuard will always be destroyed before the ConsumerEventDataControlLocalView is
-      ///   destroyed.
+      ///   The ConsumerEventDataControlLocalView is created during Skeleton::Register by SkeletonEventCommon. The
+      ///   ConsumerEventDataControlLocalView is owned by the SkeletonEventCommon and destroyed during
+      ///   PrepareStopOfferCommon after destroying this guard. Therefore, TransactionLogRegistrationGuard will always
+      ///   be destroyed before the ConsumerEventDataControlLocalView is destroyed.
       unregister_on_destruction_operation_{
           [&consumer_event_data_control_local_view, &transaction_log_set, transaction_log_index]() {
               if (!deactivate_destruction_operation_)

@@ -313,17 +313,18 @@ void SkeletonMockedMemoryFixture::ExpectServiceUsageMarkerFileCreatedOrOpenedAnd
     EXPECT_CALL(*unistd_mock_, unlink(StrEq(test::kServiceInstanceUsageFilePath))).Times(0);
 }
 
-ServiceDataControl SkeletonMockedMemoryFixture::CreateServiceDataControlWithEvent(ElementFqId element_fq_id,
-                                                                                  QualityType quality_type) noexcept
+std::unique_ptr<ServiceDataControl> SkeletonMockedMemoryFixture::CreateServiceDataControlWithEvent(
+    ElementFqId element_fq_id,
+    QualityType quality_type) noexcept
 {
     const auto created_resource = (quality_type == QualityType::kASIL_QM) ? control_qm_shared_memory_resource_mock_
                                                                           : control_asil_b_shared_memory_resource_mock_;
-    ServiceDataControl service_data_control{*created_resource};
+    auto service_data_control = std::make_unique<ServiceDataControl>(*created_resource);
 
     auto event_control =
-        service_data_control.event_controls_.emplace(std::piecewise_construct,
-                                                     std::forward_as_tuple(element_fq_id),
-                                                     std::forward_as_tuple(10U, 10U, true, *created_resource));
+        service_data_control->event_controls_.emplace(std::piecewise_construct,
+                                                      std::forward_as_tuple(element_fq_id),
+                                                      std::forward_as_tuple(10U, 10U, true, *created_resource));
     EXPECT_TRUE(event_control.second);
     return service_data_control;
 }

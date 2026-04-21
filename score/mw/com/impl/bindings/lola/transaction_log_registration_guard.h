@@ -57,7 +57,7 @@ class TransactionLogRegistrationGuard
   public:
     TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
                                     const TransactionLogIndex transaction_log_index,
-                                    ConsumerEventDataControlLocalView<>& consumer_event_control_local_view_variant);
+                                    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view);
 
     [[nodiscard]] TransactionLogIndex GetTransactionLogIndex() const;
 
