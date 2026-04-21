@@ -36,8 +36,8 @@ bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communica
 bazel_dep(name = "score_tooling", dev_dependency = True)
 git_override(
     module_name = "score_tooling",
-    commit = "80c3a0a258961157f05a4ffe176a6f1c4c48728a",
-    remote = "https://github.com/eclipse-score/tooling.git",
+    commit = "5e64960e3a9b494e9b9d4569deac4df546994b48",
+    remote = "git@github.com:eclipse-score/tooling.git",
 )
 
 # Dependencies required for development that will not get propagated to our users as transitive dependencies

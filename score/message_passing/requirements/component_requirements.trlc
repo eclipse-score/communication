@@ -1,0 +1,39 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MessagePassingComponent
+
+import ScoreReq
+import MessagePassingSEooC
+
+///////////////////////////////
+// Component Requirements
+// Server Unit and Client Unit requirements
+///////////////////////////////
+
+// TODO: Add component requirements for message passing server and client
+// Example:
+/*
+ScoreReq.CompReq REQ_MP_COMP_001 {
+    description = "The message passing server shall accept connections from clients on a configurable resource path."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.FEAT_MP_001@1]
+    version = 1
+}
+
+ScoreReq.CompReq REQ_MP_COMP_002 {
+    description = "The message passing client shall establish a connection to a server using a configured resource path."
+    safety = ScoreReq.Asil.B
+    derived_from = [MessagePassingSEooC.FEAT_MP_002@1]
+    version = 1
+}
+*/
