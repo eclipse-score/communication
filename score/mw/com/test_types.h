@@ -38,9 +38,9 @@ void InjectRuntimeMock(IRuntime& runtime_mock);
 
 using HandleType = impl::HandleType;
 
-InstanceIdentifier MakeFakeInstanceIdentifier(const std::uint16_t unique_identifier);
+InstanceIdentifier MakeDummyInstanceIdentifier(const std::uint16_t unique_identifier);
 
-HandleType MakeFakeHandle(const std::uint16_t unique_identifier);
+HandleType MakeDummyHandle(const std::uint16_t unique_identifier);
 
 /// @brief Resets the configuration objects which are used by fake InstanceIdentifiers / Handles and stored in a static
 /// context (created with MakeFakeInstanceIdentifier / MakeFakeHandler above)
