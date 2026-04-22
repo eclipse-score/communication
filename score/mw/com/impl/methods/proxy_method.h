@@ -151,7 +151,7 @@ score::Result<std::tuple<impl::MethodInArgPtr<ArgTypes>...>> AllocateImpl(
 /// This step is important to avoid undefined behaviour (interpreting uninitialized memory) and also to ensure that any
 /// non-trivially constructible types are properly initialized.
 template <typename... ArgTypes>
-ResultBlank InitializeInArgs(ProxyMethodBinding& binding, const std::size_t queue_size)
+Result<void> InitializeInArgs(ProxyMethodBinding& binding, const std::size_t queue_size)
 {
     for (std::size_t queue_index = 0U; queue_index < queue_size; ++queue_index)
     {
@@ -178,7 +178,7 @@ ResultBlank InitializeInArgs(ProxyMethodBinding& binding, const std::size_t queu
 /// This step is important to avoid undefined behaviour (interpreting uninitialized memory) and also to ensure that any
 /// non-trivially constructible types are properly initialized.
 template <typename ReturnType>
-ResultBlank InitializeReturnValue(ProxyMethodBinding& binding, const std::size_t queue_size)
+Result<void> InitializeReturnValue(ProxyMethodBinding& binding, const std::size_t queue_size)
 {
     for (std::size_t queue_index = 0U; queue_index < queue_size; ++queue_index)
     {

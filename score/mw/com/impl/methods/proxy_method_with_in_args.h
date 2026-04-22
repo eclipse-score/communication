@@ -85,7 +85,7 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyMethod&&) noexcept;
     ProxyMethod& operator=(ProxyMethod&&) noexcept;
 
-    ResultBlank InitializeInArgsAndReturnValues() override;
+    Result<void> InitializeInArgsAndReturnValues() override;
 
     /// \brief Allocates the necessary storage for the argument values and the return value of a method call.
     /// \return On success, a tuple of MethodInArgPtr for each argument type is returned. On failure, an error code is
@@ -97,13 +97,13 @@ class ProxyMethod<void(ArgTypes...)> final : public ProxyMethodBase
 
     /// \brief This is the copying call-operator of ProxyMethod for a void ReturnType.
     /// \details This call-operator variant takes the argument values as references.
-    score::ResultBlank operator()(const ArgTypes&... args);
+    score::Result<void> operator()(const ArgTypes&... args);
 
     /// \brief This is the zero-copy call-operator of ProxyMethod for a void ReturnType. It only exists if there is at
     /// least one argument.
     /// \details This call-operator variant takes the argument values as MethodInArgPtr, i.e. as pointers to the
     /// argument values, which have been allocated before via Allocate() call.
-    score::ResultBlank operator()(MethodInArgPtr<ArgTypes>... args);
+    score::Result<void> operator()(MethodInArgPtr<ArgTypes>... args);
 
   private:
     /// \brief Compile-time initialized memory::DataTypeSizeInfo for the argument types of this ProxyMethod.
@@ -150,7 +150,7 @@ auto ProxyMethod<void(ArgTypes...)>::operator=(ProxyMethod&& other) noexcept -> 
 }
 
 template <typename... ArgTypes>
-score::ResultBlank ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&... args)
+score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&... args)
 {
     auto allocate_result = Allocate();
     if (!allocate_result.has_value())
@@ -170,7 +170,7 @@ score::ResultBlank ProxyMethod<void(ArgTypes...)>::operator()(const ArgTypes&...
 }
 
 template <typename... ArgTypes>
-score::ResultBlank ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<ArgTypes>... args)
+score::Result<void> ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<ArgTypes>... args)
 {
     auto queue_position = detail::GetCommonQueuePosition(args...);
     auto call_result = binding_->DoCall(queue_position);
@@ -182,7 +182,7 @@ score::ResultBlank ProxyMethod<void(ArgTypes...)>::operator()(MethodInArgPtr<Arg
 }
 
 template <typename... ArgTypes>
-ResultBlank ProxyMethod<void(ArgTypes...)>::InitializeInArgsAndReturnValues()
+Result<void> ProxyMethod<void(ArgTypes...)>::InitializeInArgsAndReturnValues()
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
     const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(*binding_, kCallQueueSize);

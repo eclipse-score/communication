@@ -109,7 +109,7 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     /// method.
     /// \return score::cpp::blank on success and ComErrc code specified by the binding on failiure
     template <typename Callable>
-    ResultBlank RegisterHandler(Callable&& callback);
+    Result<void> RegisterHandler(Callable&& callback);
 
     void UpdateSkeletonReference(SkeletonBase& skeleton_base) noexcept;
 };
@@ -156,7 +156,7 @@ void SkeletonMethod<ReturnType(ArgTypes...)>::UpdateSkeletonReference(SkeletonBa
 
 template <typename ReturnType, typename... ArgTypes>
 template <typename Callable>
-ResultBlank SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback)
+Result<void> SkeletonMethod<ReturnType(ArgTypes...)>::RegisterHandler(Callable&& callback)
 {
     static_assert(std::is_rvalue_reference_v<decltype(callback)>,
                   "Callbeck provided to register has to be an rvalue reference");

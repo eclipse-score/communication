@@ -75,7 +75,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
 
     ~ProxyEvent() noexcept override = default;
 
-    ResultBlank Subscribe(const std::size_t max_sample_count) noexcept override
+    Result<void> Subscribe(const std::size_t max_sample_count) noexcept override
     {
         return proxy_event_common_.Subscribe(max_sample_count);
     }
@@ -91,11 +91,11 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     Result<std::size_t> GetNumNewSamplesAvailable() const noexcept override;
     Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept override;
 
-    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
     {
         return proxy_event_common_.SetReceiveHandler(std::move(handler));
     }
-    ResultBlank UnsetReceiveHandler() noexcept override
+    Result<void> UnsetReceiveHandler() noexcept override
     {
         return proxy_event_common_.UnsetReceiveHandler();
     }

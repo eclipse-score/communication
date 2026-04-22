@@ -90,7 +90,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     // State Machine Events. These are modelled by the state machine UML and cause transitions between states. The
     // thread currently processing an event will block until all queued events are processed. All other calls will be
     // non-blocking.
-    [[nodiscard]] ResultBlank SubscribeEvent(const std::size_t max_sample_count) noexcept;
+    [[nodiscard]] Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept;
     void UnsubscribeEvent() noexcept;
     void StopOfferEvent() noexcept;
     void ReOfferEvent(const pid_t new_event_source_pid) noexcept;

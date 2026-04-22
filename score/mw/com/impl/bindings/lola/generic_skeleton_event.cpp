@@ -30,7 +30,7 @@ GenericSkeletonEvent::GenericSkeletonEvent(Skeleton& parent,
 {
 }
 
-ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
+Result<void> GenericSkeletonEvent::PrepareOffer() noexcept
 {
     const auto registration_result =
         skeleton_event_common_.GetParent().RegisterGeneric(skeleton_event_common_.GetElementFQId(),
@@ -45,7 +45,7 @@ ResultBlank GenericSkeletonEvent::PrepareOffer() noexcept
     return {};
 }
 
-ResultBlank GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
+Result<void> GenericSkeletonEvent::Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept
 {
     return skeleton_event_common_.Send(sample);
 }

@@ -73,7 +73,7 @@ class SkeletonEventCommon
     void PrepareStopOfferCommon() noexcept;
 
     Result<SlotIndexType> AllocateSlot() noexcept;
-    ResultBlank Send(impl::SampleAllocateePtr<SampleType>& sample) noexcept;
+    Result<void> Send(impl::SampleAllocateePtr<SampleType>& sample) noexcept;
 
     // Accessors for members used by PrepareOfferCommon/PrepareStopOfferCommon
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept
@@ -273,7 +273,7 @@ Result<SlotIndexType> SkeletonEventCommon<SampleType>::AllocateSlot() noexcept
 }
 
 template <typename SampleType>
-ResultBlank SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<SampleType>& sample) noexcept
+Result<void> SkeletonEventCommon<SampleType>::Send(impl::SampleAllocateePtr<SampleType>& sample) noexcept
 {
     const impl::SampleAllocateePtrView<SampleType> view{sample};
     auto ptr = view.template As<lola::SampleAllocateePtr<SampleType>>();

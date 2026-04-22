@@ -76,7 +76,7 @@ class GenericSkeleton : public SkeletonBase
 
     /// @brief Offers the service instance.
     /// @return A blank result, or an error if offering fails.
-    [[nodiscard]] ResultBlank OfferService() noexcept;
+    [[nodiscard]] Result<void> OfferService() noexcept;
 
     /// @brief Stops offering the service instance.
     void StopOfferService() noexcept;

@@ -98,7 +98,7 @@ TEST_F(SkeletonEventBaseFixture, PrepareOfferDispatchesToBinding)
     CreateSkeletonEvent();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_event_->PrepareOffer();
@@ -113,7 +113,7 @@ TEST_F(SkeletonEventBaseFixture, PrepareStopOfferDispatchesToBinding)
     CreateSkeletonEvent();
 
     // Expecting that PrepareOffer() is called on the binding
-    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(*mock_event_binding_, PrepareOffer()).WillOnce(Return(Result<void>{}));
 
     // When offering the event
     const auto result = skeleton_event_->PrepareOffer();

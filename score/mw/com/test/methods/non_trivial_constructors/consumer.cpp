@@ -68,7 +68,7 @@ bool CallMethodWithInArgsAndReturn(NonTrivialConstructorProxy& proxy)
 
 bool CallMethodWithInArgsOnly(NonTrivialConstructorProxy& proxy)
 {
-    auto call_result = [&proxy]() -> ResultBlank {
+    auto call_result = [&proxy]() -> Result<void> {
         std::cout << "\n=== Test: with_in_args_only (zero-copy) ===" << std::endl;
         auto allocated_args_result = proxy.with_in_args_only.Allocate();
         if (!allocated_args_result.has_value())

@@ -75,7 +75,7 @@ class SkeletonBase
      * \return On failure, returns an error code according to the SW Component Requirements SCR-17434118 and
      * SCR-566325.
      */
-    [[nodiscard]] ResultBlank OfferService() noexcept;
+    [[nodiscard]] Result<void> OfferService() noexcept;
 
     /**
      * \api
@@ -121,8 +121,8 @@ class SkeletonBase
     ISkeletonBase* skeleton_mock_;
     FlagOwner service_offered_flag_;
 
-    [[nodiscard]] score::ResultBlank OfferServiceEvents() const noexcept;
-    [[nodiscard]] score::ResultBlank OfferServiceFields() const noexcept;
+    [[nodiscard]] score::Result<void> OfferServiceEvents() const noexcept;
+    [[nodiscard]] score::Result<void> OfferServiceFields() const noexcept;
 
     /// \brief Re-points every registered service element back-reference to \c *this.
     ///

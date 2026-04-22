@@ -35,7 +35,7 @@ class MethodCallRegistrationGuardFixture : public ::testing::Test
     MethodCallRegistrationGuardFixture()
     {
         ON_CALL(message_passing_service_mock_, UnregisterMethodCallHandler(_, _))
-            .WillByDefault(WithoutArgs(Invoke([this]() -> ResultBlank {
+            .WillByDefault(WithoutArgs(Invoke([this]() -> Result<void> {
                 unregister_method_call_handler_called_ = true;
                 return {};
             })));

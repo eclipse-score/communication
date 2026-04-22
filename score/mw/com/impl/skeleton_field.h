@@ -86,7 +86,7 @@ class SkeletonField : public SkeletonFieldBase
      * \param sample_value The field data to be sent to subscribers.
      * \return On failure, returns an error code.
      */
-    ResultBlank Update(const FieldType& sample_value) noexcept;
+    Result<void> Update(const FieldType& sample_value) noexcept;
 
     /**
      * \api
@@ -95,7 +95,7 @@ class SkeletonField : public SkeletonFieldBase
      * \param sample The pre-allocated sample pointer containing the field data to be sent.
      * \return On failure, returns an error code.
      */
-    ResultBlank Update(SampleAllocateePtr<FieldType> sample) noexcept;
+    Result<void> Update(SampleAllocateePtr<FieldType> sample) noexcept;
 
     /**
      * \api
@@ -120,7 +120,7 @@ class SkeletonField : public SkeletonFieldBase
     //         void(FieldType& new_value)
     //   - new_value : the value requested by the proxy.
     template <bool ES = EnableSet, typename std::enable_if<ES, int>::type = 0, typename CallableType>
-    ResultBlank RegisterSetHandler(CallableType&& handler)
+    Result<void> RegisterSetHandler(CallableType&& handler)
     {
         static_assert(std::is_invocable_v<CallableType, FieldType&>,
                       "RegisterSetHandler: handler must be callable as void(FieldType& value). "
@@ -151,11 +151,11 @@ class SkeletonField : public SkeletonFieldBase
     {
         return initial_field_value_ != nullptr;
     }
-    ResultBlank DoDeferredUpdate() noexcept override;
+    Result<void> DoDeferredUpdate() noexcept override;
 
     /// \brief FieldType is allocated by the user and provided to the middleware to send. Dispatches to
     /// SkeletonEvent::Send()
-    ResultBlank UpdateImpl(const FieldType& sample_value) noexcept;
+    Result<void> UpdateImpl(const FieldType& sample_value) noexcept;
 
     SkeletonEvent<FieldType>* GetTypedEvent() const noexcept;
 
@@ -347,7 +347,7 @@ auto SkeletonField<SampleDataType, EnableSet, EnableNotifier>::operator=(Skeleto
 /// callback that will update the field value with sample_value which will be called in the first call to
 /// SkeletonFieldBase::PrepareOffer().
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
-ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(const FieldType& sample_value) noexcept
+Result<void> SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(const FieldType& sample_value) noexcept
 {
     if (skeleton_field_mock_ != nullptr)
     {
@@ -357,7 +357,7 @@ ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(con
     if (!was_prepare_offer_called_)
     {
         initial_field_value_ = std::make_unique<FieldType>(sample_value);
-        return ResultBlank{};
+        return Result<void>{};
     }
     return UpdateImpl(sample_value);
 }
@@ -365,7 +365,7 @@ ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(con
 /// \brief FieldType is previously allocated by middleware and provided by the user to indicate that he is finished
 /// filling the provided pointer with live data. Dispatches to SkeletonEvent::Send()
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
-ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(
+Result<void> SkeletonField<SampleDataType, EnableSet, EnableNotifier>::Update(
     SampleAllocateePtr<FieldType> sample) noexcept
 {
     if (skeleton_field_mock_ != nullptr)
@@ -405,7 +405,7 @@ template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
 // namespace, or static function with internal linkage, or private member function shall be used.".
 // False-positive, method is used in the base class in PrepareOffer().
 // coverity[autosar_cpp14_a0_1_3_violation : FALSE]
-ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::DoDeferredUpdate() noexcept
+Result<void> SkeletonField<SampleDataType, EnableSet, EnableNotifier>::DoDeferredUpdate() noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(
         initial_field_value_ != nullptr,
@@ -418,11 +418,12 @@ ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::DoDeferred
 
     // If the Update call succeeded, then we can delete the initial value
     initial_field_value_.reset();
-    return ResultBlank{};
+    return Result<void>{};
 }
 
 template <typename SampleDataType, bool EnableSet, bool EnableNotifier>
-ResultBlank SkeletonField<SampleDataType, EnableSet, EnableNotifier>::UpdateImpl(const FieldType& sample_value) noexcept
+Result<void> SkeletonField<SampleDataType, EnableSet, EnableNotifier>::UpdateImpl(
+    const FieldType& sample_value) noexcept
 {
     return GetTypedEvent()->Send(sample_value);
 }

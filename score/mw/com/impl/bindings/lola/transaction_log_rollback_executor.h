@@ -41,7 +41,7 @@ class TransactionLogRollbackExecutor
     /// \details Besides the pure transaction rollback, there is also some preparation needed/done once for a given
     ///          service_data_control (independent from the number of local proxy instances referring to it). This
     ///          is done by an internal call to #PrepareRollback
-    ResultBlank RollbackTransactionLogs() noexcept;
+    Result<void> RollbackTransactionLogs() noexcept;
 
   private:
     /// \brief Prepares the rollback of proxy service instance specific transaction logs.

@@ -179,7 +179,7 @@ class Proxy : public ProxyBinding
     /// been destructed.
     void UnregisterEventBinding(const std::string_view service_element_name) noexcept override;
 
-    score::ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
+    score::Result<void> SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
 
     QualityType GetQualityType() const noexcept;
 

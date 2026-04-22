@@ -78,7 +78,7 @@ void TransactionLogSet::MarkTransactionLogsNeedRollback(const TransactionLogId& 
     }
 }
 
-ResultBlank TransactionLogSet::RollbackProxyTransactions(
+Result<void> TransactionLogSet::RollbackProxyTransactions(
     const TransactionLogId& transaction_log_id,
     const TransactionLog::DereferenceSlotCallback dereference_slot_callback,
     const TransactionLog::UnsubscribeCallback unsubscribe_callback)
@@ -89,7 +89,7 @@ ResultBlank TransactionLogSet::RollbackProxyTransactions(
     // Keep trying to rollback a TransactionLog. If a rollback succeeds, return. If a rollback fails, try to rollback
     // the next TransactionLog. If there are only TransactionLogs remaining which cannot be rolled back, return an
     // error.
-    ResultBlank rollback_result{};
+    Result<void> rollback_result{};
     for (const auto transaction_log_node_it : transaction_log_node_iterators_to_be_rolled_back)
     {
         rollback_result = transaction_log_node_it->GetTransactionLog().RollbackProxyElementLog(
@@ -103,7 +103,7 @@ ResultBlank TransactionLogSet::RollbackProxyTransactions(
     return rollback_result;
 }
 
-ResultBlank TransactionLogSet::RollbackSkeletonTracingTransactions(
+Result<void> TransactionLogSet::RollbackSkeletonTracingTransactions(
     const TransactionLog::DereferenceSlotCallback dereference_slot_callback)
 {
     if (!skeleton_tracing_transaction_log_.IsActive())

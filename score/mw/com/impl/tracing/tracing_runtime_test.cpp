@@ -159,7 +159,7 @@ TEST(TracingRuntime, TracingRuntimeTraceWillReceivePointerToConstShmData)
     using ShmPointerType = const void*;
 
     // Check that ShmPointerType is the type that is passed to TracingRuntime::Trace
-    constexpr auto trace_shm_signature = static_cast<score::ResultBlank (
+    constexpr auto trace_shm_signature = static_cast<score::Result<void> (
         score::mw::com::impl::tracing::TracingRuntime::*)(BindingType,
                                                           ServiceElementInstanceIdentifierView,
                                                           ITracingRuntime::TracePointType,

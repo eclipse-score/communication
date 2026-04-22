@@ -177,7 +177,7 @@ SkeletonMockedMemoryFixture::SkeletonMockedMemoryFixture()
     ON_CALL(lola_runtime_mock_, GetApplicationId()).WillByDefault(::testing::Return(kDummyApplicationId));
     ON_CALL(lola_runtime_mock_, GetLolaMessaging()).WillByDefault(::testing::ReturnRef(message_passing_mock_));
 
-    ON_CALL(filesystem_fake_.GetUtils(), CreateDirectories(_, _)).WillByDefault(Return(score::ResultBlank{}));
+    ON_CALL(filesystem_fake_.GetUtils(), CreateDirectories(_, _)).WillByDefault(Return(score::Result<void>{}));
 
     // Default behaviour for path builders
     ON_CALL(shm_path_builder_mock_, GetControlChannelShmName(_, QualityType::kASIL_QM))

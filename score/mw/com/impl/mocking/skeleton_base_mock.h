@@ -23,7 +23,7 @@ namespace score::mw::com::impl
 class SkeletonBaseMock : public ISkeletonBase
 {
   public:
-    MOCK_METHOD(ResultBlank, OfferService, (), (override));
+    MOCK_METHOD(Result<void>, OfferService, (), (override));
     MOCK_METHOD(void, StopOfferService, (), (override));
 };
 

@@ -80,7 +80,7 @@ TEST_F(SkeletonFieldMockFixture, CopyUpdateDispatchesToMockAfterInjectingMock)
     // Given a SkeletonField constructed with an empty binding and an injected mock
 
     // Expecting that Update with copy will be called on the mock which returns a valid result
-    EXPECT_CALL(skeleton_field_mock_, Update(kDummyValueToUpdate)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(skeleton_field_mock_, Update(kDummyValueToUpdate)).WillOnce(Return(Result<void>{}));
 
     // When Update with copy is called on the SkeletonField
     auto result = unit_.Update(kDummyValueToUpdate);
@@ -111,7 +111,7 @@ TEST_F(SkeletonFieldMockFixture, ZeroCopyUpdateDispatchesToMockAfterInjectingMoc
 
     // Expecting that zero-copy Update will be called on the mock which returns a valid result
     EXPECT_CALL(skeleton_field_mock_, Update(testing::Matcher<SampleAllocateePtr<TestSampleType>>(_)))
-        .WillOnce(Return(ResultBlank{}));
+        .WillOnce(Return(Result<void>{}));
 
     // When zero-copy Update is called on the SkeletonField
     auto fake_sample_allocatee_ptr = MakeFakeSampleAllocateePtr(std::make_unique<TestSampleType>());

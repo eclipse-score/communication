@@ -27,7 +27,7 @@
 namespace score::mw::com::impl::lola
 {
 
-ResultBlank SubscriptionPendingState::SubscribeEvent(const std::size_t max_sample_count) noexcept
+Result<void> SubscriptionPendingState::SubscribeEvent(const std::size_t max_sample_count) noexcept
 {
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".

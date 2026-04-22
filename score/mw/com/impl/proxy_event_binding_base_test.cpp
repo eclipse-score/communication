@@ -23,7 +23,7 @@ namespace
 class DummyProxyEventBinding final : public ProxyEventBindingBase
 {
   public:
-    ResultBlank Subscribe(std::size_t) noexcept override
+    Result<void> Subscribe(std::size_t) noexcept override
     {
         return {};
     }
@@ -32,11 +32,11 @@ class DummyProxyEventBinding final : public ProxyEventBindingBase
         return SubscriptionState::kSubscribed;
     }
     void Unsubscribe() noexcept override {}
-    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler>) noexcept override
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler>) noexcept override
     {
         return {};
     }
-    ResultBlank UnsetReceiveHandler() noexcept override
+    Result<void> UnsetReceiveHandler() noexcept override
     {
         return {};
     }

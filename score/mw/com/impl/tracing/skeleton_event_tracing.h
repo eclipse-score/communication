@@ -141,7 +141,7 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
     return std::visit(visitor, binding_ptr_variant);
 }
 
-void UpdateTracingDataFromTraceResult(const ResultBlank trace_result,
+void UpdateTracingDataFromTraceResult(const Result<void> trace_result,
                                       SkeletonEventTracingData& skeleton_event_tracing_data,
                                       bool& skeleton_event_trace_point) noexcept;
 

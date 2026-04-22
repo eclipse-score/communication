@@ -58,7 +58,7 @@ class ProxyEventCommon final
     ProxyEventCommon& operator=(const ProxyEventCommon&) = delete;
     ProxyEventCommon& operator=(ProxyEventCommon&&) noexcept = delete;
 
-    ResultBlank Subscribe(const std::size_t max_sample_count);
+    Result<void> Subscribe(const std::size_t max_sample_count);
     void Unsubscribe();
 
     SubscriptionState GetSubscriptionState() const noexcept;
@@ -79,8 +79,8 @@ class ProxyEventCommon final
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
     SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
 
-    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
-    ResultBlank UnsetReceiveHandler();
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
+    Result<void> UnsetReceiveHandler();
 
     pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept

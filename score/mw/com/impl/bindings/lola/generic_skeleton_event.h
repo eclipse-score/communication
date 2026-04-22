@@ -40,13 +40,13 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
                          const DataTypeMetaInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
 
-    ResultBlank Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
+    Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
 
     Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate() noexcept override;
 
     std::pair<size_t, size_t> GetSizeInfo() const noexcept override;
 
-    ResultBlank PrepareOffer() noexcept override;
+    Result<void> PrepareOffer() noexcept override;
     void PrepareStopOffer() noexcept override;
     BindingType GetBindingType() const noexcept override;
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override

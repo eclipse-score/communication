@@ -33,7 +33,7 @@ namespace score::mw::com::impl::lola
 // implicitly". std::terminate() is implicitly called from '.value()' in case it doesn't have value but as we check
 // before with 'has_value()' so no way for throwing std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count) noexcept
+Result<void> NotSubscribedState::SubscribeEvent(const std::size_t max_sample_count) noexcept
 {
     auto transaction_log_registration_guard_result = TransactionLogRegistrationGuard::Create(
         state_machine_.event_control_local_.data_control, state_machine_.transaction_log_id_);

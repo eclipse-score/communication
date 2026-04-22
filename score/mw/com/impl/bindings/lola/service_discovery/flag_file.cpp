@@ -94,7 +94,7 @@ auto GetMatchingFlagFilePaths(const EnrichedInstanceIdentifier& enriched_instanc
 
 auto RemoveMatchingFlagFiles(const EnrichedInstanceIdentifier& enriched_instance_identifier,
                              const FlagFile::Disambiguator offer_disambiguator,
-                             filesystem::Filesystem& filesystem) noexcept -> score::ResultBlank
+                             filesystem::Filesystem& filesystem) noexcept -> score::Result<void>
 {
     const auto matching_file_paths = GetMatchingFlagFilePaths(enriched_instance_identifier);
 
@@ -104,7 +104,7 @@ auto RemoveMatchingFlagFiles(const EnrichedInstanceIdentifier& enriched_instance
                                  << GetFlagFilePath(enriched_instance_identifier, offer_disambiguator);
     }
 
-    ResultBlank result{};
+    Result<void> result{};
     for (const auto& matching_file_path : matching_file_paths)
     {
         const auto remove_result = filesystem.standard->Remove(matching_file_path);
@@ -247,7 +247,7 @@ auto FlagFile::CreateSearchPath(const EnrichedInstanceIdentifier& enriched_insta
 {
     auto path = GetSearchPathForIdentifier(enriched_instance_identifier);
 
-    score::ResultBlank result{};
+    score::Result<void> result{};
     constexpr auto retry_count = 3;
     constexpr std::chrono::milliseconds backoff_time{10};
     for (auto i = 0; i < retry_count; ++i)
@@ -264,7 +264,7 @@ auto FlagFile::CreateSearchPath(const EnrichedInstanceIdentifier& enriched_insta
             if ((status.value().Type() == filesystem::FileType::kDirectory) &&
                 (status.value().Permissions() == ALL_PERMISSIONS))
             {
-                result = ResultBlank{};
+                result = Result<void>{};
                 break;
             }
         }

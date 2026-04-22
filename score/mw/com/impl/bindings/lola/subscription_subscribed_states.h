@@ -38,7 +38,7 @@ class SubscribedState final : public SubscriptionStateBase
 
     ~SubscribedState() noexcept override = default;
 
-    ResultBlank SubscribeEvent(const std::size_t) noexcept override;
+    Result<void> SubscribeEvent(const std::size_t) noexcept override;
     void UnsubscribeEvent() noexcept override;
     void StopOfferEvent() noexcept override;
     void ReOfferEvent(const pid_t) noexcept override;

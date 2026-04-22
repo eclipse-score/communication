@@ -107,7 +107,7 @@ class ProxyBase
      * \param handle The handle returned by StartFindService identifying the find operation to stop.
      * \return A result indicating success or failure of stopping the find operation.
      */
-    static score::ResultBlank StopFindService(const FindServiceHandle handle) noexcept;
+    static score::Result<void> StopFindService(const FindServiceHandle handle) noexcept;
 
     /**
      * \api
@@ -137,7 +137,7 @@ class ProxyBase
         return is_proxy_binding_valid && are_service_element_bindings_valid_;
     }
 
-    ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names);
+    Result<void> SetupMethods(const std::vector<std::string_view>& enabled_method_names);
 
     // Suppress "AUTOSAR C++14 M11-0-1" rule findings. This rule states: "Member data in non-POD class types shall
     // be private.". We need these data elements to exchange this information between the ProxyBase and the

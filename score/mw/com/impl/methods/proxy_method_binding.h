@@ -51,8 +51,8 @@ class ProxyMethodBinding
     /// \details The in-arguments and return type storage must have been allocated before calling this method. The
     /// in-arguments must have been filled with the correct data before calling this method.
     /// \param queue_position The call-queue position at which to perform the method call.
-    /// \return ResultBlank indicating success or failure of the method call.
-    virtual score::ResultBlank DoCall(std::size_t queue_position) = 0;
+    /// \return Result<void> indicating success or failure of the method call.
+    virtual score::Result<void> DoCall(std::size_t queue_position) = 0;
 };
 
 }  // namespace score::mw::com::impl

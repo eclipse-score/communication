@@ -106,9 +106,7 @@ cc_library(
     srcs = ["test_types.cpp"],
     hdrs = ["test_types.h"],
     features = COMPILER_WARNING_FEATURES,
-    visibility = [
-        "//score/mw/com:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":runtime",
         ":types",

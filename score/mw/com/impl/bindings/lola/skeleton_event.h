@@ -84,18 +84,18 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     /// \brief Sends a value by _copy_ towards a consumer. It will allocate the necessary space and then copy the value
     /// into Shared Memory.
-    ResultBlank Send(const SampleType& value,
-                     score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
-                         send_trace_callback) noexcept override;
+    Result<void> Send(const SampleType& value,
+                      score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
+                          send_trace_callback) noexcept override;
 
-    ResultBlank Send(impl::SampleAllocateePtr<SampleType> sample,
-                     score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
-                         send_trace_callback) noexcept override;
+    Result<void> Send(impl::SampleAllocateePtr<SampleType> sample,
+                      score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
+                          send_trace_callback) noexcept override;
 
     Result<impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override;
 
     /// @requirement SWS_CM_00700
-    ResultBlank PrepareOffer() noexcept override;
+    Result<void> PrepareOffer() noexcept override;
 
     void PrepareStopOffer() noexcept override;
 
@@ -132,7 +132,7 @@ template <typename SampleType>
 // 'allocated_slot_result' doesn't have value but as we check before with 'has_value()' so no way for throwing
 // std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank SkeletonEvent<SampleType>::Send(
+Result<void> SkeletonEvent<SampleType>::Send(
     const SampleType& value,
     score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback) noexcept
 {
@@ -148,14 +148,14 @@ ResultBlank SkeletonEvent<SampleType>::Send(
 }
 
 template <typename SampleType>
-ResultBlank SkeletonEvent<SampleType>::Send(
+Result<void> SkeletonEvent<SampleType>::Send(
     impl::SampleAllocateePtr<SampleType> sample,
     score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback) noexcept
 {
     const auto send_result = skeleton_event_common_.Send(sample);
     if (!send_result.has_value())
     {
-        return MakeUnexpected<Blank>(send_result.error());
+        return MakeUnexpected<void>(send_result.error());
     }
 
     if (send_trace_callback.has_value())
@@ -192,7 +192,7 @@ template <typename SampleType>
 // throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
+Result<void> SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
     const auto registration_result = skeleton_event_common_.GetParent().template Register<SampleType>(
         skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());

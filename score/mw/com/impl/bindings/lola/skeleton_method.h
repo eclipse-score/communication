@@ -44,9 +44,9 @@ class SkeletonMethod : public SkeletonMethodBinding
   public:
     SkeletonMethod(Skeleton& skeleton, const UniqueMethodIdentifier unique_method_identifier);
 
-    ResultBlank RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
+    Result<void> RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
 
-    ResultBlank OnProxyMethodSubscribeFinished(
+    Result<void> OnProxyMethodSubscribeFinished(
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
         const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
         const std::optional<score::cpp::span<std::byte>> return_queue_storage,

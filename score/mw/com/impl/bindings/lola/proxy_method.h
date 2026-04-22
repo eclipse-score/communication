@@ -54,7 +54,7 @@ class ProxyMethod : public ProxyMethodBinding
     /// \brief Performs the actual method call at the given call-queue position.
     ///
     /// See ProxyMethodBinding for details
-    score::ResultBlank DoCall(std::size_t queue_position) override;
+    score::Result<void> DoCall(std::size_t queue_position) override;
 
     TypeErasedCallQueue::TypeErasedElementInfo GetTypeErasedElementInfo() const;
 

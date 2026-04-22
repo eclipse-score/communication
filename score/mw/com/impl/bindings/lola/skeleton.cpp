@@ -238,7 +238,7 @@ Skeleton::Skeleton(const InstanceIdentifier& identifier,
 auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
                             SkeletonFieldBindings& fields,
                             std::optional<RegisterShmObjectTraceCallback> register_shm_object_trace_callback)
-    -> ResultBlank
+    -> Result<void>
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         partial_restart_path_builder_ != nullptr,
@@ -317,7 +317,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
             on_service_method_subscribed_handler_scope_,
             [this](const ProxyInstanceIdentifier proxy_instance_identifier,
                    const uid_t proxy_uid,
-                   const pid_t proxy_pid) -> ResultBlank {
+                   const pid_t proxy_pid) -> Result<void> {
                 return OnServiceMethodsSubscribed(
                     proxy_instance_identifier, proxy_uid, QualityType::kASIL_QM, proxy_pid);
             }},
@@ -325,7 +325,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
     if (!(qm_registration_result.has_value()))
     {
         score::mw::log::LogError("lola") << "Could not register QM service method handler. Returning error.";
-        return MakeUnexpected<Blank>(qm_registration_result.error());
+        return MakeUnexpected<void>(qm_registration_result.error());
     }
     method_subscription_registration_guard_qm_.emplace(std::move(qm_registration_result).value());
 
@@ -339,7 +339,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
                 on_service_method_subscribed_handler_scope_,
                 [this](const ProxyInstanceIdentifier proxy_instance_identifier,
                        const uid_t proxy_uid,
-                       const pid_t proxy_pid) -> ResultBlank {
+                       const pid_t proxy_pid) -> Result<void> {
                     return OnServiceMethodsSubscribed(
                         proxy_instance_identifier, proxy_uid, QualityType::kASIL_B, proxy_pid);
                 }},
@@ -348,7 +348,7 @@ auto Skeleton::PrepareOffer(SkeletonEventBindings& events,
         {
             method_subscription_registration_guard_qm_.reset();
             score::mw::log::LogError("lola") << "Could not register ASIL-B service method handler. Returning error.";
-            return MakeUnexpected<Blank>(asil_b_registration_result.error());
+            return MakeUnexpected<void>(asil_b_registration_result.error());
         }
         score::cpp::ignore =
             method_subscription_registration_guard_asil_b_.emplace(std::move(asil_b_registration_result).value());
@@ -518,10 +518,10 @@ auto Skeleton::RegisterGeneric(const ElementFqId element_fq_id,
     return GenericRegistrationResult{type_erased_event_data_storage, event_data_control_composite};
 }
 
-ResultBlank Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                                 const uid_t proxy_uid,
-                                                 const QualityType asil_level,
-                                                 const pid_t proxy_pid)
+Result<void> Skeleton::OnServiceMethodsSubscribed(const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                  const uid_t proxy_uid,
+                                                  const QualityType asil_level,
+                                                  const pid_t proxy_pid)
 {
     // Note. we currently call the entirety of the funcitonality within OnServiceMethodsSubscribed within the mutex.
     // We potentially could optimise this and call some functionality outside of the mutex. However, we haven't
@@ -570,7 +570,7 @@ auto Skeleton::SubscribeMethods(const MethodData& method_data,
                                 const ProxyInstanceIdentifier proxy_instance_identifier,
                                 const uid_t proxy_uid,
                                 const pid_t proxy_pid,
-                                const QualityType asil_level) -> std::pair<score::ResultBlank, MethodIdsToUnsubscribe>
+                                const QualityType asil_level) -> std::pair<score::Result<void>, MethodIdsToUnsubscribe>
 {
     const auto& method_call_queues = method_data.method_call_queues_;
     for (std::size_t method_idx = 0U; method_idx != method_call_queues.size(); method_idx++)

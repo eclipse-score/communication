@@ -74,7 +74,7 @@ class ProxyBaseFixture : public ::testing::Test
     {
         ON_CALL(runtime_mock_guard_.runtime_mock_, GetServiceDiscovery())
             .WillByDefault(testing::ReturnRef(service_discovery_mock_));
-        ON_CALL(service_discovery_mock_, StopFindService(_)).WillByDefault(Return(ResultBlank{}));
+        ON_CALL(service_discovery_mock_, StopFindService(_)).WillByDefault(Return(Result<void>{}));
     }
 
     ProxyBaseFixture& WithAProxyBaseWithMockBinding(const HandleType& handle_type)
@@ -337,7 +337,7 @@ TEST_F(ProxyBaseStopFindServiceFixture, StopFindServiceWillDispatchToBinding)
 
     // Expecting that StopFindService is called on the Proxy binding with the handle provided to StopFindService
     const FindServiceHandle handle{make_FindServiceHandle(0)};
-    EXPECT_CALL(service_discovery_mock_, StopFindService(handle)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(service_discovery_mock_, StopFindService(handle)).WillOnce(Return(Result<void>{}));
 
     // When calling StartFindService
     score::cpp::ignore = ProxyBase::StopFindService(handle);
@@ -562,7 +562,7 @@ class DummyProxyMethod : public ProxyMethodBase
 {
   public:
     using ProxyMethodBase::ProxyMethodBase;
-    ResultBlank InitializeInArgsAndReturnValues() override
+    Result<void> InitializeInArgsAndReturnValues() override
     {
         return {};
     }

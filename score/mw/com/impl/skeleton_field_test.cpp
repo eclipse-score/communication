@@ -139,11 +139,11 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServiceDefersCallToOff
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an empty result
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _))
-        .WillOnce(InvokeWithoutArgs([&is_send_called_on_binding]() noexcept -> ResultBlank {
+        .WillOnce(InvokeWithoutArgs([&is_send_called_on_binding]() noexcept -> Result<void> {
             is_send_called_on_binding = true;
             return {};
         }));
@@ -197,7 +197,7 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateBeforeOfferServicePropagatesBindi
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an error
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _))
@@ -253,13 +253,13 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServiceDispatchesToBind
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called a second time on the event binding with the updated value and returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock, Send(updated_value, _)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, Send(updated_value, _)).WillOnce(Return(score::Result<void>{}));
 
     // Given a skeleton created based on a Lola binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -309,10 +309,10 @@ TEST(SkeletonFieldCopyUpdateTest, CallingUpdateAfterOfferServicePropagatesBindin
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value and returns an empty result
-    EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _)).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called a second time on the event binding with the updated value and returns an error
     EXPECT_CALL(skeleton_field_binding_mock, Send(updated_value, _))
@@ -396,7 +396,7 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferDispatchesToBind
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -451,7 +451,7 @@ TEST(SkeletonFieldAllocateTest, CallingAllocateAfterPrepareOfferFailsWhenBinding
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -508,7 +508,7 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDisp
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -519,7 +519,7 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceDisp
 
     // and Send will be called a second time on the event binding with a new value which returns an empty result
     EXPECT_CALL(skeleton_field_binding_mock, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArg<0>(Invoke([new_value](SampleAllocateePtr<TestSampleType> sample_ptr) -> ResultBlank {
+        .WillOnce(WithArg<0>(Invoke([new_value](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
             EXPECT_EQ(*sample_ptr, new_value);
             return {};
         })));
@@ -583,7 +583,7 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceProp
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -594,7 +594,7 @@ TEST(SkeletonFieldZeroCopyUpdateTest, CallingZeroCopyUpdateAfterOfferServiceProp
 
     // and Send will be called a second time on the event binding with a new value which returns an error
     EXPECT_CALL(skeleton_field_binding_mock, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArg<0>(Invoke([new_value](SampleAllocateePtr<TestSampleType> sample_ptr) -> ResultBlank {
+        .WillOnce(WithArg<0>(Invoke([new_value](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
             EXPECT_EQ(*sample_ptr, new_value);
             return MakeUnexpected(ComErrc::kInvalidBindingInformation);
         })));
@@ -656,7 +656,7 @@ TEST(SkeletonFieldInitialValueFixture, LatestFieldValueWillBeSetOnPrepareOffer)
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called only once on the event binding with the latest value
     EXPECT_CALL(skeleton_field_binding_mock, Send(latest_value, _));
@@ -736,7 +736,7 @@ TEST(SkeletonFieldInitialValueFixture, MoveConstructingFieldBeforePrepareOfferWi
         .WillOnce(Return(ByMove(std::move(skeleton_field_binding_mock_ptr))));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -780,7 +780,7 @@ TEST(SkeletonFieldInitialValueFixture, MoveAssigningFieldBeforePrepareOfferWillK
     EXPECT_CALL(skeleton_field_binding_mock, GetBindingType()).WillOnce(Return(BindingType::kLoLa));
 
     // and that PrepareOffer() will be called on the event binding
-    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(skeleton_field_binding_mock, PrepareOffer()).WillOnce(Return(score::Result<void>{}));
 
     // and Send will be called on the event binding with the initial value from the moved-from field
     EXPECT_CALL(skeleton_field_binding_mock, Send(initial_value, _));
@@ -1019,7 +1019,7 @@ TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerForwardsToMethodBinding)
         .WillOnce(Return(ByMove(nullptr)));
 
     // The method binding's RegisterHandler must be called exactly once and returns success.
-    EXPECT_CALL(method_binding_mock, RegisterHandler(_)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(method_binding_mock, RegisterHandler(_)).WillOnce(Return(Result<void>{}));
 
     // Given a setter-capable skeleton
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -1140,11 +1140,11 @@ TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsAfterRegisterSetHandler)
         .WillOnce(Return(ByMove(nullptr)));
 
     // The binding's RegisterHandler returns success
-    EXPECT_CALL(method_binding_mock, RegisterHandler(_)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(method_binding_mock, RegisterHandler(_)).WillOnce(Return(Result<void>{}));
 
     // PrepareOffer on the event binding and the initial-value Send must succeed
-    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(initial_value, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(initial_value, _)).WillOnce(Return(Result<void>{}));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -1184,8 +1184,8 @@ TEST(SkeletonFieldSetHandlerTest, PrepareOfferSucceedsWithoutHandlerWhenEnableSe
                 CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(event_binding_ptr))));
 
-    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(initial_value, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(initial_value, _)).WillOnce(Return(Result<void>{}));
 
     // A non-setter skeleton (EnableSet=false)
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
@@ -1227,10 +1227,10 @@ TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerAcceptsAnyCallable)
 class CapturingSkeletonMethodBinding : public SkeletonMethodBinding
 {
   public:
-    ResultBlank RegisterHandler(TypeErasedHandler&& cb) override
+    Result<void> RegisterHandler(TypeErasedHandler&& cb) override
     {
         captured_handler_ = std::move(cb);
-        return ResultBlank{};
+        return Result<void>{};
     }
 
     TypeErasedHandler captured_handler_{};
@@ -1259,10 +1259,10 @@ TEST(SkeletonFieldSetHandlerTest, UserCallbackIsInvokedByWrappedHandler)
         .WillOnce(Return(ByMove(std::move(event_binding_ptr))));
 
     // PrepareOffer and the deferred Send for the initial value
-    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(Result<void>{}));
     // The wrapped handler also calls Update(incoming_value) → Send on the event binding
-    EXPECT_CALL(event_binding, Send(incoming_value, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, Send(incoming_value, _)).WillOnce(Return(Result<void>{}));
 
     // Use a capturing binding so that we can invoke the type-erased handler later
     auto capturing_binding = std::make_unique<CapturingSkeletonMethodBinding>();
@@ -1328,10 +1328,10 @@ TEST(SkeletonFieldSetHandlerTest, UserCallbackCanModifyValueInPlace)
                 CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(event_binding_ptr))));
 
-    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(Result<void>{}));
     // The modified value (20) must be the one forwarded to the event binding
-    EXPECT_CALL(event_binding, Send(modified_value, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, Send(modified_value, _)).WillOnce(Return(Result<void>{}));
 
     auto capturing_binding = std::make_unique<CapturingSkeletonMethodBinding>();
     auto& capturing_binding_ref = *capturing_binding;
@@ -1391,8 +1391,8 @@ TEST(SkeletonFieldSetHandlerTest, WrappedHandlerLogsWhenUpdateFails)
                 CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(event_binding_ptr))));
 
-    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(Result<void>{}));
     // Simulate Update() failure when the wrapped handler is invoked by the proxy
     EXPECT_CALL(event_binding, Send(incoming_value, _))
         .WillOnce(Return(MakeUnexpected(ComErrc::kCommunicationLinkError)));
@@ -1453,8 +1453,8 @@ TEST(SkeletonFieldSetHandlerTest, IsSetHandlerRegisteredFlagIsSetAfterRegistrati
                 CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(event_binding_ptr))));
 
-    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(initial_value, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(initial_value, _)).WillOnce(Return(Result<void>{}));
 
     mock_binding::SkeletonMethod method_binding_mock{};
     SkeletonMethodBindingFactoryMockGuard method_binding_factory_guard{};
@@ -1462,7 +1462,7 @@ TEST(SkeletonFieldSetHandlerTest, IsSetHandlerRegisteredFlagIsSetAfterRegistrati
         .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonMethodFacade>(method_binding_mock))));
     EXPECT_CALL(method_binding_factory_guard.factory_mock_, Create(kInstanceIdWithLolaBinding, _, _, MethodType::kGet))
         .WillOnce(Return(ByMove(nullptr)));
-    EXPECT_CALL(method_binding_mock, RegisterHandler(_)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(method_binding_mock, RegisterHandler(_)).WillOnce(Return(Result<void>{}));
 
     MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
 
@@ -1507,9 +1507,9 @@ TEST(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
                 CreateEventBinding(kInstanceIdWithLolaBinding, _, kFieldName))
         .WillOnce(Return(ByMove(std::move(event_binding_ptr))));
 
-    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(ResultBlank{}));
-    EXPECT_CALL(event_binding, Send(incoming_value, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(event_binding, PrepareOffer()).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(TestSampleType{1U}, _)).WillOnce(Return(Result<void>{}));
+    EXPECT_CALL(event_binding, Send(incoming_value, _)).WillOnce(Return(Result<void>{}));
 
     // The method binding is called twice (once per RegisterSetHandler)
     auto capturing_binding = std::make_unique<CapturingSkeletonMethodBinding>();
