@@ -99,7 +99,7 @@ using CommonEventTracingLocalTraceDataFixture = CommonEventTracingFixture;
 TEST_F(CommonEventTracingLocalTraceDataFixture, CallingTraceDataWillReturnSuccessIfBindingReturnsSuccess)
 {
     // Expecting that TraceData will be called on the tracing runtime binding which returns a valid result
-    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).WillByDefault(Return(ResultBlank{}));
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _)).WillByDefault(Return(Result<void>{}));
 
     // When calling TraceData with local data chunk
     const auto trace_data_result = TraceData(service_element_instance_identifier_view_,
@@ -169,7 +169,7 @@ using CommonEventTracingShmTraceDataFixture = CommonEventTracingFixture;
 TEST_F(CommonEventTracingShmTraceDataFixture, CallingTraceDataWillReturnSuccess)
 {
     // Expecting that TraceShmData will be called on the tracing runtime binding which returns a valid result
-    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).WillByDefault(Return(ResultBlank{}));
+    ON_CALL(tracing_runtime_mock_, Trace(_, _, _, _, _, _, _, _)).WillByDefault(Return(Result<void>{}));
 
     // When calling TraceShmData with a shm data chunk
     const auto trace_shm_data_result = TraceShmData(binding_type_,

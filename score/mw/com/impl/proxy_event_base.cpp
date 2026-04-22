@@ -112,7 +112,7 @@ ProxyEventBase& ProxyEventBase::operator=(ProxyEventBase&&) noexcept = default;
 // which leds to std::terminate().
 // This suppression should be removed after fixing [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank ProxyEventBase::Subscribe(const std::size_t max_sample_count) noexcept
+Result<void> ProxyEventBase::Subscribe(const std::size_t max_sample_count) noexcept
 {
     if (proxy_event_base_mock_ != nullptr)
     {
@@ -213,7 +213,7 @@ Result<std::size_t> ProxyEventBase::GetNumNewSamplesAvailable() const noexcept
     return get_num_new_samples_available_result;
 }
 
-ResultBlank ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noexcept
+Result<void> ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noexcept
 {
     if (proxy_event_base_mock_ != nullptr)
     {
@@ -246,7 +246,7 @@ ResultBlank ProxyEventBase::SetReceiveHandler(EventReceiveHandler handler) noexc
     return {};
 }
 
-ResultBlank ProxyEventBase::UnsetReceiveHandler() noexcept
+Result<void> ProxyEventBase::UnsetReceiveHandler() noexcept
 {
     if (proxy_event_base_mock_ != nullptr)
     {

@@ -25,7 +25,7 @@ class "score::mw::com::impl::tracing::ProxyEventTracingData" {
 
 class "score::mw::com::impl::SkeletonEventBase" {
   +SkeletonEventBase(std::unique_ptr<SkeletonEventBindingBase> binding)
-  +PrepareOffer(): score::ResultBlank
+  +PrepareOffer(): score::Result<void>
   +PrepareStopOffer(): void
   +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
   -binding_: std::unique_ptr<SkeletonEventBindingBase>
@@ -34,13 +34,13 @@ class "score::mw::com::impl::SkeletonEventBase" {
 
 class "score::mw::com::impl::ProxyEventBase" {
   +ProxyEventBase(proxy_event_binding: std::unique_ptr<ProxyEventBindingBase> proxy_event_binding)
-  +Subscribe(size_t max_sample_count): ResultBlank
+  +Subscribe(size_t max_sample_count): Result<void>
   +GetSubscriptionState() : SubscriptionState
   +Unsubscribe(): void
   +GetFreeSampleCount(): Result<size_t>
   +GetNumNewSamplesAvailable(): Result<std::size_t>
-  +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
-  +UnsetReceiveHandler() : ResultBlank
+  +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
+  +UnsetReceiveHandler() : Result<void>
   +IsBindingValid() : bool
   -binding_base_ : std::unique_ptr<ProxyEventBindingBase>
   -tracker_ : std::unique_ptr<SampleReferenceTracker>

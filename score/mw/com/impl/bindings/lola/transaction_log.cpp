@@ -174,8 +174,8 @@ void TransactionLog::DereferenceTransactionCommit(SlotIndexType slot_index) noex
     slot.SetTransactionEnd(false);
 }
 
-ResultBlank TransactionLog::RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
-                                                    const UnsubscribeCallback& unsubscribe_callback) noexcept
+Result<void> TransactionLog::RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
+                                                     const UnsubscribeCallback& unsubscribe_callback) noexcept
 {
     const bool was_no_subscribe_recorded{!subscribe_transactions_.GetTransactionBegin() &&
                                          !subscribe_transactions_.GetTransactionEnd()};
@@ -196,7 +196,7 @@ ResultBlank TransactionLog::RollbackProxyElementLog(const DereferenceSlotCallbac
     return rollback_subscribe_transactions_result;
 }
 
-ResultBlank TransactionLog::RollbackSkeletonTracingElementLog(
+Result<void> TransactionLog::RollbackSkeletonTracingElementLog(
     const DereferenceSlotCallback& dereference_slot_callback) noexcept
 {
     const auto rollback_increment_transactions_result = RollbackIncrementTransactions(dereference_slot_callback);
@@ -208,7 +208,7 @@ ResultBlank TransactionLog::RollbackSkeletonTracingElementLog(
 // std::out_of_range As we already do an index check before accessing, so no way for throwing std::out_of_rang which
 // leds to calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank TransactionLog::RollbackIncrementTransactions(
+Result<void> TransactionLog::RollbackIncrementTransactions(
     const DereferenceSlotCallback& dereference_slot_callback) noexcept
 {
     for (SlotIndexType slot_idx = 0U; slot_idx < reference_count_slots_.size(); ++slot_idx)
@@ -242,7 +242,7 @@ ResultBlank TransactionLog::RollbackIncrementTransactions(
     return {};
 }
 
-ResultBlank TransactionLog::RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback) noexcept
+Result<void> TransactionLog::RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback) noexcept
 {
     const bool was_subscribe_succesfully_recorded{subscribe_transactions_.GetTransactionBegin() &&
                                                   subscribe_transactions_.GetTransactionEnd()};

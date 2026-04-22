@@ -549,28 +549,28 @@ TEST_F(SkeletonBaseOfferFixture, ServiceCanBeReOfferedAfterCallingStopOfferServi
         // Expecting that PrepareOffer gets called on the skeleton binding and each event twice
         EXPECT_CALL(*binding_mock, PrepareOffer(_, _, _))
             .Times(2)
-            .WillRepeatedly(Invoke(
-                [&skeleton_offer_count](SkeletonBinding::SkeletonEventBindings&,
-                                        SkeletonBinding::SkeletonFieldBindings&,
-                                        std::optional<SkeletonBinding::RegisterShmObjectTraceCallback>) -> ResultBlank {
-                    skeleton_offer_count++;
-                    return {};
-                }));
+            .WillRepeatedly(Invoke([&skeleton_offer_count](
+                                       SkeletonBinding::SkeletonEventBindings&,
+                                       SkeletonBinding::SkeletonFieldBindings&,
+                                       std::optional<SkeletonBinding::RegisterShmObjectTraceCallback>) -> Result<void> {
+                skeleton_offer_count++;
+                return {};
+            }));
         EXPECT_CALL(*event_binding_mock_1_, PrepareOffer())
             .Times(2)
-            .WillRepeatedly(Invoke([&event_offer_count]() -> ResultBlank {
+            .WillRepeatedly(Invoke([&event_offer_count]() -> Result<void> {
                 event_offer_count++;
                 return {};
             }));
         EXPECT_CALL(*event_binding_mock_2_, PrepareOffer())
             .Times(2)
-            .WillRepeatedly(Invoke([&event_offer_count]() -> ResultBlank {
+            .WillRepeatedly(Invoke([&event_offer_count]() -> Result<void> {
                 event_offer_count++;
                 return {};
             }));
         EXPECT_CALL(*field_binding_mock_, PrepareOffer())
             .Times(2)
-            .WillRepeatedly(Invoke([&event_offer_count]() -> ResultBlank {
+            .WillRepeatedly(Invoke([&event_offer_count]() -> Result<void> {
                 event_offer_count++;
                 return {};
             }));
@@ -663,9 +663,9 @@ class DummyField : public SkeletonFieldBase
     {
         return false;
     };
-    ResultBlank DoDeferredUpdate() noexcept override
+    Result<void> DoDeferredUpdate() noexcept override
     {
-        return ResultBlank{};
+        return Result<void>{};
     };
 
     bool IsSetHandlerRegistered() const noexcept override

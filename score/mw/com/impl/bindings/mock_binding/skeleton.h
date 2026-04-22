@@ -28,7 +28,7 @@ class Skeleton : public SkeletonBinding
 
     ~Skeleton() override = default;
 
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 PrepareOffer,
                 (SkeletonEventBindings&, SkeletonFieldBindings&, std::optional<RegisterShmObjectTraceCallback>),
                 (noexcept, override, final));
@@ -43,9 +43,9 @@ class SkeletonFacade : public SkeletonBinding
     SkeletonFacade(Skeleton& skeleton) : SkeletonBinding{}, skeleton_{skeleton} {}
     ~SkeletonFacade() override = default;
 
-    ResultBlank PrepareOffer(SkeletonEventBindings& skeleton_event_binding,
-                             SkeletonFieldBindings& skeleton_field_binding,
-                             std::optional<RegisterShmObjectTraceCallback> callback) override final
+    Result<void> PrepareOffer(SkeletonEventBindings& skeleton_event_binding,
+                              SkeletonFieldBindings& skeleton_field_binding,
+                              std::optional<RegisterShmObjectTraceCallback> callback) override final
     {
         return skeleton_.PrepareOffer(skeleton_event_binding, skeleton_field_binding, std::move(callback));
     }

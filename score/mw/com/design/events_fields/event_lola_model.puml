@@ -69,8 +69,8 @@ class lola::Skeleton {
   -control_qm_: SkeletonDataControl*
   -control_asil_b_: SkeletonDataControl*
   +Skeleton(const InstanceIdentifier&, SkeletonEvents&)
-  +PrepareOffer(): ResultBlank
-  +PrepareStopOffer(): ResultBlank
+  +PrepareOffer(): Result<void>
+  +PrepareStopOffer(): Result<void>
   +Register(ElementFqId, size_t numberOfSlots): std::pair<EventDataStorage*, EventDataControlComposite<>>
   +GetInstanceQualityType() const: QualityType
 }

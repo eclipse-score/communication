@@ -39,7 +39,7 @@ abstract class "score::mw::com::impl::ProxyBase" as ScoreMwComImplProxyBase {
   +{static} FindService(InstanceIdentifier): Result<ServiceHandleContainer<HandleType>>
   +{static} StartFindService(FindServiceHandler<HandleType>, InstanceSpecifier): Result<FindServiceHandle>
   +{static} StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier): Result<FindServiceHandle>
-  +{static} StopFindService(FindServiceHandle): ResultBlank
+  +{static} StopFindService(FindServiceHandle): Result<void>
 
   +GetHandle() : const HandleType&
   --
@@ -76,13 +76,13 @@ class "lola::Proxy" as LolaProxy {
 class "score::mw::com::impl::ProxyEventBase" as ScoreMwComImplProxyEventBase {
   +ProxyEventBase(std::unique_ptr<ProxyEventBindingBase> proxy_event_binding)
 
-  +Subscribe(size_t max_sample_count): ResultBlank
+  +Subscribe(size_t max_sample_count): Result<void>
   +GetSubscriptionState() : SubscriptionState
   +Unsubscribe(): void
   +GetFreeSampleCount(): Result<size_t>
   +GetNumNewSamplesAvailable(): Result<std::size_t>
-  +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
-  +UnsetReceiveHandler() : ResultBlank
+  +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
+  +UnsetReceiveHandler() : Result<void>
   +IsBindingValid() : bool
 }
 
@@ -155,13 +155,13 @@ class "lola::SubscriptionStateMachine" as LolaSubscriptionStateMachine {
 }
 
 class "mw::com::impl::ProxyField<SampleType>" as MwComImplProxyFieldTemplate {
-  +Subscribe(size_t max_sample_count): ResultBlank
+  +Subscribe(size_t max_sample_count): Result<void>
   +GetSubscriptionState() : SubscriptionState
   +Unsubscribe(): void
   +GetFreeSampleCount(): Result<size_t>
   +GetNumNewSamplesAvailable(): Result<std::size_t>
-  +SetReceiveHandler(EventReceiveHandler handler) : ResultBlank
-  +UnsetReceiveHandler() : ResultBlank
+  +SetReceiveHandler(EventReceiveHandler handler) : Result<void>
+  +UnsetReceiveHandler() : Result<void>
   +GetNewSamples<F>(F&& receiver, size_t max_num_samples): Result<size_t>
   +Get(): Future<SampleType>
   +Set(const SampleType& value): Future<SampleType>

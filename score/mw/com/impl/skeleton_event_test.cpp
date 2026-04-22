@@ -273,7 +273,7 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendDispatchesToBinding)
 
     // and that Send(SampleAllocateePtr) is called on the event binding with the expected value
     EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<TestSampleType> sample_ptr) -> ResultBlank {
+        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
             EXPECT_EQ(*sample_ptr, 42);
             return {};
         })));
@@ -368,7 +368,7 @@ TEST(SkeletonEventSendZeroCopyTest, CallingSendWhenBindingFailsReturnsError)
 
     // and that Send(SampleAllocateePtr) is called on the event binding with the expected value
     EXPECT_CALL(skeleton_event_binding_mock, Send(An<SampleAllocateePtr<TestSampleType>>(), _))
-        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<TestSampleType> sample_ptr) -> ResultBlank {
+        .WillOnce(WithArg<0>(Invoke([](SampleAllocateePtr<TestSampleType> sample_ptr) -> Result<void> {
             EXPECT_EQ(*sample_ptr, 42);
             return MakeUnexpected(ComErrc::kInvalidConfiguration);
         })));
@@ -423,7 +423,7 @@ TEST(SkeletonEventTest, CallingSendAfterPrepareOfferDispatchesToBinding)
     EXPECT_CALL(skeleton_event_binding_mock, PrepareOffer());
 
     // and that Send() is called once on the event binding
-    EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(skeleton_event_binding_mock, Send(test_value, _)).WillOnce(Return(Result<void>{}));
 
     // Given a skeleton which has a mock skeleton-binding
     MyDummySkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};

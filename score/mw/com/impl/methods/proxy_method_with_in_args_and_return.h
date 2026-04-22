@@ -125,7 +125,7 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyMethod&&) noexcept;
     ProxyMethod& operator=(ProxyMethod&&) noexcept;
 
-    ResultBlank InitializeInArgsAndReturnValues() override;
+    Result<void> InitializeInArgsAndReturnValues() override;
 
     /// \brief Allocates the necessary storage for the argument values and the return value of a method call.
     /// \return On success, a tuple of MethodInArgPtr for each argument type is returned. On failure, an error code is
@@ -247,7 +247,7 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
 }
 
 template <typename ReturnType, typename... ArgTypes>
-ResultBlank ProxyMethod<ReturnType(ArgTypes...)>::InitializeInArgsAndReturnValues()
+Result<void> ProxyMethod<ReturnType(ArgTypes...)>::InitializeInArgsAndReturnValues()
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
     const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(*binding_, kCallQueueSize);

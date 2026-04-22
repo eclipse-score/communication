@@ -16,7 +16,7 @@ class SkeletonEventBinding<SampleType> {
 }
 
 abstract class "SkeletonEventBindingBase" as SkeletonEventBindingBase {
-    +PrepareOffer() = 0: score::ResultBlank
+    +PrepareOffer() = 0: score::Result<void>
     +PrepareStopOffer() = 0: void
     +GetMaxSize() = 0: std::size_t
 }
@@ -49,7 +49,7 @@ class SkeletonBinding {
     using SkeletonFieldBindings = std::unordered_map<std::string_view, std::tuple<SkeletonEventBindingBase&,
     SkeletonServiceMethodBinding, SkeletonServiceMethodBinding»
     --
-    +PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&) = 0 : ResultBlank
+    +PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&) = 0 : Result<void>
     +PrepareStopOffer() = 0 : void
     --
     Notes:
@@ -66,14 +66,14 @@ class "score::mw::com::impl::SkeletonField<SampleType>" as SkeletonField {
     -skeleton_service_method_dispatch_set_: SkeletonServiceMethod <void, SampleType>
 
     +SkeletonField(SkeletonBase& parent, std::string field_name)
-    +Update(const SampleType& data): ResultBlank
-    +Update(SampleAllocateePtr<SampleType>): ResultBlank
+    +Update(const SampleType& data): Result<void>
+    +Update(SampleAllocateePtr<SampleType>): Result<void>
     +Allocate(): SampleAllocateePtr<SampleType>
     +RegisterGetHandler(std::function<Future<SampleType>()> getHandler): Result<void>
     +RegisterSetHandler(std::function<Future<SampleType>(const SampleType& data)> setHandler):Result<void>
 
     -IsInitialValueSaved(): bool
-    -DoDeferredUpdate(): ResultBlank
+    -DoDeferredUpdate(): Result<void>
 
     --
     SkeletonField will dispatch update call to impl::skeletonEvent via skeleton_event_dispatch_. On moving, the
@@ -89,12 +89,12 @@ abstract class "score::mw::com::impl::SkeletonFieldBase" as SkeletonFieldBase {
     -is_initial_value_set_: bool
 
     +SkeletonFieldBase(SkeletonBase&, std::string_view field_name, std::unique_ptr<impl::SkeletonEventBase>)
-    +PrepareOffer(): ResultBlank
+    +PrepareOffer(): Result<void>
     +PrepareStopOffer(): void
     +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
 
     -IsInitialValueSaved(): bool = 0
-    -DoDeferredUpdate(): ResultBlank = 0
+    -DoDeferredUpdate(): Result<void> = 0
     --
     In production, the constructor receives a SkeletonEvent<SampleType> from impl::SkeletonField which is
     assigned to the base class pointer, skeleton_event_dispatch_.
@@ -106,7 +106,7 @@ abstract class "score::mw::com::impl::SkeletonFieldBase" as SkeletonFieldBase {
 class "score::mw::com::impl::SkeletonEventBase" as SkeletonEventBase {
     -binding_: std::unique_ptr<SkeletonEventBindingBase>
     +SkeletonEventBase(std::unique_ptr<SkeletonEventBindingBase> binding)
-    +PrepareOffer(): score::ResultBlank
+    +PrepareOffer(): score::Result<void>
     +PrepareStopOffer(): void
     +UpdateSkeletonReference(SkeletonBase& base_skeleton): void
 
@@ -146,7 +146,7 @@ class DummySkeleton <<generated>> {
 
 class "lola::Skeleton" as lola_Skeleton {
     Skeleton(InstanceIdentifier, SkeletonEvents&)
-    +PrepareOffer(SkeletonBinding::SkeletonEventBindings&, SkeletonBinding::SkeletonFieldBindings&): ResultBlank
+    +PrepareOffer(SkeletonBinding::SkeletonEventBindings&, SkeletonBinding::SkeletonFieldBindings&): Result<void>
     +PrepareStopOffer(): void
 
     template <typename SampleType>
@@ -158,7 +158,7 @@ class "lola::SkeletonEvent<SampleType>" as lola_SkeletonEvent {
     +Send(SampleType const&): void
     +Send(SampleAllocateePtr<SampleType>): void
     +Allocate(): SampleAllocateePtr<SampleType>
-    +PrepareOffer(): score::ResultBlank
+    +PrepareOffer(): score::Result<void>
     +PrepareStopOffer(): void
 }
 

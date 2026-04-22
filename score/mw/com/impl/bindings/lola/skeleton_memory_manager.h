@@ -72,7 +72,7 @@ class SkeletonMemoryManager final
     /// but there are no proxies connected to the old shared memory region). It will create the data and control shared
     /// memory regions and will initialise the ServiceDataControl and ServiceDataStorage structures in the created
     /// shared memory.
-    ResultBlank CreateSharedMemory(
+    Result<void> CreateSharedMemory(
         SkeletonBinding::SkeletonEventBindings& events,
         SkeletonBinding::SkeletonFieldBindings& fields,
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
@@ -83,7 +83,7 @@ class SkeletonMemoryManager final
     /// still proxies connected to the old shared memory region. It will open the data and control shared memory regions
     /// and will store pointers to the already existing ServiceDataControl and ServiceDataStorage structures in the
     /// opened shared memory.
-    ResultBlank OpenExistingSharedMemory(
+    Result<void> OpenExistingSharedMemory(
         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback);
 
     /// \brief Creates an EventDataControlComposite and TransactionLogSet for a specific event.

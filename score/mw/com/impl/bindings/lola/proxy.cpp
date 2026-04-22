@@ -211,10 +211,10 @@ ProxyServiceDataControlLocalView GetProxyServiceDataControlLocalView(
 // throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::ResultBlank ExecutePartialRestartLogic(const QualityType quality_type,
-                                              const SkeletonInstanceIdentifier skeleton_instance_identifier,
-                                              const memory::shared::ManagedMemoryResource& control,
-                                              const memory::shared::ManagedMemoryResource& data) noexcept
+score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
+                                               const SkeletonInstanceIdentifier skeleton_instance_identifier,
+                                               const memory::shared::ManagedMemoryResource& control,
+                                               const memory::shared::ManagedMemoryResource& data) noexcept
 {
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(data);
 
@@ -616,7 +616,7 @@ void Proxy::UnregisterEventBinding(const std::string_view service_element_name) 
     }
 }
 
-score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+score::Result<void> Proxy::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
 {
     auto enabled_method_data = GetMethodIdAndQueueSizeFromNames(enabled_method_names);
 

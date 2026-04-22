@@ -70,7 +70,7 @@ const SubscriptionStateBase& SubscriptionStateMachine::GetCurrentEventState() co
     return *states_[static_cast<std::uint8_t>(current_state_idx_)];
 }
 
-ResultBlank SubscriptionStateMachine::SubscribeEvent(const std::size_t max_sample_count) noexcept
+Result<void> SubscriptionStateMachine::SubscribeEvent(const std::size_t max_sample_count) noexcept
 {
     std::lock_guard<std::mutex> lock{state_mutex_};
     return GetCurrentEventState().SubscribeEvent(max_sample_count);

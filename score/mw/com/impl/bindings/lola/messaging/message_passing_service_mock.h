@@ -56,11 +56,11 @@ class MessagePassingServiceMock : public IMessagePassingService
                 RegisterMethodCallHandler,
                 (QualityType, ProxyMethodInstanceIdentifier, MethodCallHandler, uid_t),
                 (override));
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 SubscribeServiceMethod,
                 (QualityType, const SkeletonInstanceIdentifier&, const ProxyInstanceIdentifier&, pid_t),
                 (override));
-    MOCK_METHOD(ResultBlank,
+    MOCK_METHOD(Result<void>,
                 CallMethod,
                 (QualityType, const ProxyMethodInstanceIdentifier&, std::size_t, pid_t),
                 (override));

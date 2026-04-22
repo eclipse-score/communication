@@ -62,7 +62,7 @@ class SkeletonEventBase
 
     /// \brief Used to indicate that the event shall be available to consumer
     /// Performs binding independent functionality and then dispatches to the binding
-    score::ResultBlank PrepareOffer() noexcept
+    score::Result<void> PrepareOffer() noexcept
     {
         const auto result = binding_->PrepareOffer();
         if (result.has_value())

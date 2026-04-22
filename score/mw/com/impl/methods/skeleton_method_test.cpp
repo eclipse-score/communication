@@ -107,7 +107,7 @@ class SkeletonMethodTypedTest : public ::testing::Test
 
     void SetUp() override
     {
-        ON_CALL(skeleton_method_binding_mock_, RegisterHandler(_)).WillByDefault(Return(ResultBlank{}));
+        ON_CALL(skeleton_method_binding_mock_, RegisterHandler(_)).WillByDefault(Return(Result<void>{}));
     }
     mock_binding::SkeletonMethod skeleton_method_binding_mock_;
 };
@@ -287,7 +287,7 @@ TEST_F(SkeletonMethodThingStuffFixture, DataTransferBetweenTypedAndTypeErasedCal
 
     // Expecting that the register call is dispatched to the binding without an error
     EXPECT_CALL(mock_method_binding_, RegisterHandler(_))
-        .WillOnce(Invoke([this](auto&& type_erased_callable) -> ResultBlank {
+        .WillOnce(Invoke([this](auto&& type_erased_callable) -> Result<void> {
             typeerased_callback_.emplace(std::move(type_erased_callable));
             return {};
         }));
@@ -317,7 +317,7 @@ TEST_F(SkeletonMethodThingVoidFixture, DataTransferBetweenTypedAndTypeErasedCall
 
     // Expecting that the register call is dispatched to the binding without an error
     EXPECT_CALL(mock_method_binding_, RegisterHandler(_))
-        .WillOnce(Invoke([this](auto&& type_erased_callable) -> ResultBlank {
+        .WillOnce(Invoke([this](auto&& type_erased_callable) -> Result<void> {
             typeerased_callback_.emplace(std::move(type_erased_callable));
             return {};
         }));
@@ -345,7 +345,7 @@ TEST_F(SkeletonMethodVoidStuffFixture, DataTransferBetweenTypedAndTypeErasedCall
 
     // Expecting that the register call is dispatched to the binding without an error
     EXPECT_CALL(mock_method_binding_, RegisterHandler(_))
-        .WillOnce(Invoke([this](auto&& type_erased_callable) -> ResultBlank {
+        .WillOnce(Invoke([this](auto&& type_erased_callable) -> Result<void> {
             typeerased_callback_.emplace(std::move(type_erased_callable));
             return {};
         }));
@@ -371,7 +371,7 @@ TEST_F(SkeletonMethodVoidVoidFixture, DataTransferBetweenTypedAndTypeErasedCallb
 
     // Expecting that the register call is dispatched to the binding without an error
     EXPECT_CALL(mock_method_binding_, RegisterHandler(_))
-        .WillOnce(Invoke([this](auto&& type_erased_callable) -> ResultBlank {
+        .WillOnce(Invoke([this](auto&& type_erased_callable) -> Result<void> {
             typeerased_callback_.emplace(std::move(type_erased_callable));
             return {};
         }));

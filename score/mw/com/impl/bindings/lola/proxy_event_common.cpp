@@ -43,7 +43,7 @@ ProxyEventCommon::~ProxyEventCommon()
     Unsubscribe();
 }
 
-ResultBlank ProxyEventCommon::Subscribe(const std::size_t max_sample_count)
+Result<void> ProxyEventCommon::Subscribe(const std::size_t max_sample_count)
 {
     std::stringstream sstream{};
     sstream << "Max sample count of" << max_sample_count << "is too large: Lola only supports up to 255 samples.";
@@ -98,13 +98,13 @@ SlotCollector::SlotIndices ProxyEventCommon::GetNewSamplesSlotIndices(const std:
     return slot_collector.value().GetNewSamplesSlotIndices(max_count);
 }
 
-ResultBlank ProxyEventCommon::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler)
+Result<void> ProxyEventCommon::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler)
 {
     subscription_event_state_machine_.SetReceiveHandler(std::move(handler));
     return {};
 }
 
-ResultBlank ProxyEventCommon::UnsetReceiveHandler()
+Result<void> ProxyEventCommon::UnsetReceiveHandler()
 {
     subscription_event_state_machine_.UnsetReceiveHandler();
     return {};

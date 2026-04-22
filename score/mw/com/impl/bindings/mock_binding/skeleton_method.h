@@ -23,7 +23,7 @@ namespace score::mw::com::impl::mock_binding
 class SkeletonMethod : public SkeletonMethodBinding
 {
   public:
-    MOCK_METHOD(ResultBlank, RegisterHandler, (TypeErasedHandler&&), (override));
+    MOCK_METHOD(Result<void>, RegisterHandler, (TypeErasedHandler&&), (override));
 };
 
 class SkeletonMethodFacade : public SkeletonMethodBinding
@@ -33,7 +33,7 @@ class SkeletonMethodFacade : public SkeletonMethodBinding
         : SkeletonMethodBinding(), skeleton_method_{skeleton_method} {};
     ~SkeletonMethodFacade() override = default;
 
-    ResultBlank RegisterHandler(TypeErasedHandler&& cb) override
+    Result<void> RegisterHandler(TypeErasedHandler&& cb) override
     {
         return skeleton_method_.RegisterHandler(std::move(cb));
     }
