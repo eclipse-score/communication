@@ -171,6 +171,12 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
     {
         providers = std::make_optional(score::cpp::span<const uid_t>{found->second});
     }
+    else if (instance_deployment.strict_permissions_)
+    {
+        // With strict permission-checks, an absent allowedProvider is treated the same as an empty list:
+        // no provider is accepted. Without strict, an absent allowedProvider means no restriction (nullopt).
+        providers = std::make_optional(score::cpp::span<const uid_t>{});
+    }
 
     ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_};
     const auto control_shm = shm_path_builder.GetControlChannelShmName(lola_service_instance_id.GetId(), quality_type);
