@@ -39,8 +39,10 @@ class LolaMethodInstanceDeployment
      * @brief Construct LolaMethodInstanceDeployment with optional queue size, because LolaMethodInstanceDeployment for
      * a consumer will have a value while one for a provider will not.
      * @param queue_size The maximum number of pending method requests that can be queued.
+     * @param enabled Optional flag to disable/enable the method. Default value is true, which means the method is
+     * enabled.
      */
-    explicit LolaMethodInstanceDeployment(std::optional<QueueSize> queue_size);
+    explicit LolaMethodInstanceDeployment(std::optional<QueueSize> queue_size, bool enabled = true);
 
     explicit LolaMethodInstanceDeployment(const score::json::Object& serialized_lola_method_instance_deployment);
 
@@ -70,11 +72,12 @@ class LolaMethodInstanceDeployment
      * @brief The maximum number of method requests that can be queued on the server side.
      */
     std::optional<QueueSize> queue_size_{std::nullopt};
+    bool enabled_{true};
 };
 
 inline bool operator==(const LolaMethodInstanceDeployment& lhs, const LolaMethodInstanceDeployment& rhs) noexcept
 {
-    return lhs.queue_size_ == rhs.queue_size_;
+    return lhs.queue_size_ == rhs.queue_size_ && lhs.enabled_ == rhs.enabled_;
 }
 
 }  // namespace score::mw::com::impl

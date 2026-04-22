@@ -61,7 +61,7 @@ class MethodConsumer
         WITH_COPY
     };
 
-    bool CreateProxy(InstanceSpecifier instance_specifier, const std::vector<std::string_view>& enabled_method_names);
+    bool CreateProxy(InstanceSpecifier instance_specifier);
 
     bool CallMethodWithInArgsAndReturn(const std::int32_t input_argument_a,
                                        const std::int32_t input_argument_b,
@@ -80,10 +80,9 @@ class MethodConsumer
 };
 
 template <typename Proxy>
-bool MethodConsumer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier,
-                                        const std::vector<std::string_view>& enabled_method_names)
+bool MethodConsumer<Proxy>::CreateProxy(InstanceSpecifier instance_specifier)
 {
-    return proxy_container_.CreateProxy(std::move(instance_specifier), enabled_method_names);
+    return proxy_container_.CreateProxy(std::move(instance_specifier));
 }
 
 template <typename Proxy>

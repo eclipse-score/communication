@@ -126,7 +126,7 @@ class ProxyCreationFixture : public ::testing::Test
             .WillByDefault(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
 
         // By default that the proxy_binding can successfully call SetupMethods
-        ON_CALL(proxy_binding_mock_, SetupMethods(_)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(proxy_binding_mock_, SetupMethods()).WillByDefault(Return(score::ResultBlank{}));
 
         // By default the runtime configuration resolves instance identifiers
         resolved_instance_identifiers_.push_back(identifier_with_valid_binding_);
@@ -288,7 +288,7 @@ TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyWithNoProx
 TEST_F(GeneratedProxyCreationTestFixture, ReturnErrorWhenCreatingProxyProxyBindingCanNotSuccessfullySetUpMethods)
 {
     // Expecting that the Create call on the ProxyMethodBindingFactory returns an invalid binding for the method.
-    EXPECT_CALL(proxy_binding_mock_, SetupMethods(_)).WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
+    EXPECT_CALL(proxy_binding_mock_, SetupMethods()).WillOnce(Return(MakeUnexpected(ComErrc::kBindingFailure)));
 
     // When constructing a proxy with a handle
     const auto unit = MyProxy::Create(std::move(handle_));

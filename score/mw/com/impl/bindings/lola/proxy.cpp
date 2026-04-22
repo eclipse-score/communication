@@ -616,9 +616,9 @@ void Proxy::UnregisterEventBinding(const std::string_view service_element_name) 
     }
 }
 
-score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+score::ResultBlank Proxy::SetupMethods()
 {
-    auto enabled_method_data = GetMethodIdAndQueueSizeFromNames(enabled_method_names);
+    auto enabled_method_data = GetMethodIdAndQueueSizeFromNames();
 
     // Add field Get/Set methods to the enabled method data.
     // TODO(Ticket-250429): Replace these constants with actual per-field configuration flags
@@ -634,15 +634,16 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
     const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
     for (const auto& [field_name, field_instance_deployment] : lola_service_instance_deployment.fields_)
     {
+        score::cpp::ignore = field_instance_deployment;
         const auto field_id = GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
 
         if (kUseGetIfAvailable && proxy_methods_.count({field_id, MethodType::kGet}) != 0U)
         {
-            enabled_method_data.push_back({{field_id, MethodType::kGet}, kFieldMethodQueueSize});
+            enabled_method_data.emplace_back(UniqueMethodIdentifier{field_id, MethodType::kGet}, kFieldMethodQueueSize);
         }
         if (kUseSetIfAvailable && proxy_methods_.count({field_id, MethodType::kSet}) != 0U)
         {
-            enabled_method_data.push_back({{field_id, MethodType::kSet}, kFieldMethodQueueSize});
+            enabled_method_data.emplace_back(UniqueMethodIdentifier{field_id, MethodType::kSet}, kFieldMethodQueueSize);
         }
     }
     // This check has be done after looping over the fields to add the field methods to the enabled method data because,
@@ -731,29 +732,28 @@ memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermis
 }
 
 std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>
-Proxy::GetMethodIdAndQueueSizeFromNames(const std::vector<std::string_view>& enabled_method_names) const
+Proxy::GetMethodIdAndQueueSizeFromNames() const
 {
     std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>> method_data{};
-    std::transform(
-        enabled_method_names.cbegin(),
-        enabled_method_names.cend(),
-        std::back_inserter(method_data),
-        [this](const auto& method_name) -> std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize> {
-            const std::string method_name_string{method_name};
-            const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
+    const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
+    const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
+
+    // Get enabled methods from config and build method data
+    for (const auto& [method_name, method_deployment] : lola_service_instance_deployment.methods_)
+    {
+        if (method_deployment.enabled_)
+        {
             const auto method_id =
-                GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment, method_name_string);
+                GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment, method_name);
 
-            const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
-            const auto& method_instance_deployment = GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(
-                lola_service_instance_deployment, method_name_string);
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                method_instance_deployment.queue_size_.has_value(),
+                method_deployment.queue_size_.has_value(),
                 "Method instance deployment must contain queue_size on proxy side!");
-            const auto queue_size = method_instance_deployment.queue_size_.value();
+            const auto queue_size = method_deployment.queue_size_.value();
 
-            return {{method_id, MethodType::kMethod}, queue_size};
-        });
+            method_data.emplace_back(UniqueMethodIdentifier{method_id, MethodType::kMethod}, queue_size);
+        }
+    }
 
     return method_data;
 }

@@ -91,6 +91,46 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutQueueSi
     EXPECT_EQ(unit.queue_size_, std::nullopt);
 }
 
+TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithoutEnabledByDefaultSetsEnableToTrue)
+{
+    // Given a JSON object without enabled
+    const LolaMethodInstanceDeployment::QueueSize queue_size{20U};
+    score::json::Object json_object{};
+    json_object["queueSize"] = score::json::Any{queue_size};
+
+    // When creating from JSON
+    auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
+
+    // Then the method instance should be enabled by default
+    EXPECT_TRUE(unit.enabled_);
+}
+
+TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledFalseDisablesMethod)
+{
+    // Given a JSON object with enabled set to false
+    score::json::Object json_object{};
+    json_object["enabled"] = score::json::Any{false};
+
+    // When creating from JSON
+    auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
+
+    // Then the method instance should be disabled
+    EXPECT_FALSE(unit.enabled_);
+}
+
+TEST(LolaMethodInstanceDeploymentSerializationTest, CreateFromJsonWithEnabledTrueEnablesMethod)
+{
+    // Given a JSON object with enabled set to true
+    score::json::Object json_object{};
+    json_object["enabled"] = score::json::Any{true};
+
+    // When creating from JSON
+    auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
+
+    // Then the method instance should be enabled
+    EXPECT_TRUE(unit.enabled_);
+}
+
 TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeAndDeserializePreservesQueueSize)
 {
     // Given a LolaMethodInstanceDeployment with custom queue size
@@ -123,6 +163,38 @@ TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeIncludesQueueSize)
     auto queue_size_iter = serialized.find("queueSize");
     ASSERT_NE(queue_size_iter, serialized.end());
     EXPECT_EQ(queue_size_iter->second.As<LolaMethodInstanceDeployment::QueueSize>().value(), queue_size);
+}
+
+TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeAndDeserializePreservesEnabled)
+{
+    // Given a LolaMethodInstanceDeployment with enabled set to false
+    score::json::Object json_object{};
+    json_object["enabled"] = score::json::Any{false};
+    auto original_unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
+
+    // When serializing and deserializing
+    auto serialized = original_unit.Serialize();
+    auto reconstructed_unit = LolaMethodInstanceDeployment::CreateFromJson(serialized);
+
+    // Then the enabled state should be preserved
+    EXPECT_FALSE(reconstructed_unit.enabled_);
+    EXPECT_EQ(reconstructed_unit, original_unit);
+}
+
+TEST(LolaMethodInstanceDeploymentSerializationTest, SerializeIncludesEnabled)
+{
+    // Given a LolaMethodInstanceDeployment with enabled set to false
+    score::json::Object json_object{};
+    json_object["enabled"] = score::json::Any{false};
+    auto unit = LolaMethodInstanceDeployment::CreateFromJson(json_object);
+
+    // When serializing
+    auto serialized = unit.Serialize();
+
+    // Then the serialized object should contain the enabled key and the value is correct
+    auto enabled_iter = serialized.find("enabled");
+    ASSERT_NE(enabled_iter, serialized.end());
+    EXPECT_FALSE(enabled_iter->second.As<bool>().value());
 }
 
 }  // namespace
