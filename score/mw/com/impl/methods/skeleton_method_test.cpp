@@ -99,6 +99,50 @@ TEST(SkeletonMethodTest, ClassTypeDependsOnMethodType)
                   "Class type does not depend on event data type");
 }
 
+TEST(SkeletonMethodMakeSizeInfoTest, VoidReturnAndNoArgsLeavesBothFieldsEmpty)
+{
+    // Given a method with signature void()
+    // When MakeMethodSizeInfo is called
+    // Then neither in-args nor return-type info is populated
+    const auto info = SkeletonMethod<void()>::MakeMethodSizeInfo();
+    EXPECT_FALSE(info.in_args_type_info.has_value());
+    EXPECT_FALSE(info.return_type_info.has_value());
+}
+
+TEST(SkeletonMethodMakeSizeInfoTest, VoidReturnWithArgsPopulatesInArgsOnly)
+{
+    // Given a method with signature void(std::uint32_t)
+    // When MakeMethodSizeInfo is called
+    // Then only in-args is populated
+    const auto info = SkeletonMethod<void(std::uint32_t)>::MakeMethodSizeInfo();
+    ASSERT_TRUE(info.in_args_type_info.has_value());
+    EXPECT_EQ(info.in_args_type_info->size, sizeof(std::uint32_t));
+    EXPECT_FALSE(info.return_type_info.has_value());
+}
+
+TEST(SkeletonMethodMakeSizeInfoTest, NonVoidReturnAndNoArgsPopulatesReturnOnly)
+{
+    // Given a method with signature std::uint32_t()
+    // When MakeMethodSizeInfo is called
+    // Then only return-type info is populated
+    const auto info = SkeletonMethod<std::uint32_t()>::MakeMethodSizeInfo();
+    EXPECT_FALSE(info.in_args_type_info.has_value());
+    ASSERT_TRUE(info.return_type_info.has_value());
+    EXPECT_EQ(info.return_type_info->size, sizeof(std::uint32_t));
+}
+
+TEST(SkeletonMethodMakeSizeInfoTest, NonVoidReturnWithArgsPopulatesBothFields)
+{
+    // Given a method with signature std::uint32_t(std::uint64_t)
+    // When MakeMethodSizeInfo is called
+    // Then both in-args and return-type info are populated
+    const auto info = SkeletonMethod<std::uint32_t(std::uint64_t)>::MakeMethodSizeInfo();
+    ASSERT_TRUE(info.in_args_type_info.has_value());
+    EXPECT_EQ(info.in_args_type_info->size, sizeof(std::uint64_t));
+    ASSERT_TRUE(info.return_type_info.has_value());
+    EXPECT_EQ(info.return_type_info->size, sizeof(std::uint32_t));
+}
+
 template <typename T>
 class SkeletonMethodTypedTest : public ::testing::Test
 {

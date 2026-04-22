@@ -1082,5 +1082,63 @@ TEST_F(SkeletonOnServiceMethodsSubscribedFixture,
     EXPECT_TRUE(scoped_handler_result.has_value());
 }
 
+TEST_F(SkeletonPrepareOfferFixture, PublishesMethodMetaInfoForEachRegisteredMethod)
+{
+    // Given a skeleton with two regular methods registered
+    GivenASkeletonWithTwoMethods();
+
+    // When the service is offered
+    score::cpp::ignore = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then the SHM storage contains one MethodMetaInfo entry per registered method, keyed by ElementFqId with
+    // ServiceElementType::METHOD
+    SkeletonAttorney skeleton_attorney{*skeleton_};
+    EXPECT_EQ(skeleton_attorney.GetMethodMetaInfoCount(), 2U);
+
+    const ElementFqId foo_element_fq_id{
+        test::kLolaServiceId, test::kFooMethodId, test::kDefaultLolaInstanceId, ServiceElementType::METHOD};
+    const ElementFqId dumb_element_fq_id{
+        test::kLolaServiceId, test::kDumbMethodId, test::kDefaultLolaInstanceId, ServiceElementType::METHOD};
+    EXPECT_TRUE(skeleton_attorney.GetMethodMetaInfo(foo_element_fq_id).has_value());
+    EXPECT_TRUE(skeleton_attorney.GetMethodMetaInfo(dumb_element_fq_id).has_value());
+}
+
+TEST_F(SkeletonPrepareOfferFixture, PublishesFieldGetMethodWithFieldElementType)
+{
+    // Given a skeleton with a field Get method registered
+    InitialiseSkeletonWithRealPathBuilders(GetValidInstanceIdentifierWithMethods());
+    const UniqueMethodIdentifier get_field_method_id{test::kFooFieldId, MethodType::kGet};
+    auto get_field_method = std::make_unique<SkeletonMethod>(*skeleton_, get_field_method_id, MethodSizeInfo{});
+
+    // When the service is offered
+    score::cpp::ignore = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then the published MethodMetaInfo is keyed by ElementFqId with ServiceElementType::FIELD, not METHOD
+    SkeletonAttorney skeleton_attorney{*skeleton_};
+    const ElementFqId field_element_fq_id{
+        test::kLolaServiceId, test::kFooFieldId, test::kDefaultLolaInstanceId, ServiceElementType::FIELD};
+    EXPECT_TRUE(skeleton_attorney.GetMethodMetaInfo(field_element_fq_id).has_value());
+}
+
+TEST_F(SkeletonPrepareOfferFixture, PublishesFieldSetMethodWithFieldElementType)
+{
+    // Given a skeleton with a field Set method registered
+    InitialiseSkeletonWithRealPathBuilders(GetValidInstanceIdentifierWithMethods());
+    const UniqueMethodIdentifier set_field_method_id{test::kFooFieldId, MethodType::kSet};
+    auto set_field_method = std::make_unique<SkeletonMethod>(*skeleton_, set_field_method_id, MethodSizeInfo{});
+
+    // When the service is offered
+    score::cpp::ignore = skeleton_->PrepareOffer(
+        kEmptyEventBindings, kEmptyFieldBindings, std::move(kEmptyRegisterShmObjectTraceCallback));
+
+    // Then the published MethodMetaInfo is keyed by ElementFqId with ServiceElementType::FIELD, not METHOD
+    SkeletonAttorney skeleton_attorney{*skeleton_};
+    const ElementFqId field_element_fq_id{
+        test::kLolaServiceId, test::kFooFieldId, test::kDefaultLolaInstanceId, ServiceElementType::FIELD};
+    EXPECT_TRUE(skeleton_attorney.GetMethodMetaInfo(field_element_fq_id).has_value());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl::lola
