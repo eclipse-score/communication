@@ -15,6 +15,7 @@
 
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
+#include "score/mw/com/impl/bindings/lola/method_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
@@ -398,6 +399,21 @@ class SkeletonMemoryManagerTestAttorney
         }
     }
 
+    score::cpp::optional<MethodMetaInfo> GetMethodMetaInfo(const ElementFqId element_fq_id) const
+    {
+        auto search = skeleton_memory_manager_.storage_->methods_metainfo_.find(element_fq_id);
+        if (search == skeleton_memory_manager_.storage_->methods_metainfo_.cend())
+        {
+            return score::cpp::nullopt;
+        }
+        return search->second;
+    }
+
+    std::size_t GetMethodMetaInfoCount() const
+    {
+        return skeleton_memory_manager_.storage_->methods_metainfo_.size();
+    }
+
   private:
     SkeletonMemoryManager& skeleton_memory_manager_;
 };
@@ -415,6 +431,16 @@ class SkeletonAttorney
     score::cpp::optional<EventMetaInfo> GetEventMetaInfo(const ElementFqId element_fq_id) const
     {
         return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetEventMetaInfo(element_fq_id);
+    }
+
+    score::cpp::optional<MethodMetaInfo> GetMethodMetaInfo(const ElementFqId element_fq_id) const
+    {
+        return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetMethodMetaInfo(element_fq_id);
+    }
+
+    std::size_t GetMethodMetaInfoCount() const
+    {
+        return SkeletonMemoryManagerTestAttorney{skeleton_.memory_manager_}.GetMethodMetaInfoCount();
     }
 
   private:
