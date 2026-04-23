@@ -14,6 +14,15 @@
 load("@lobster//:lobster.bzl", "lobster_trlc")
 load("@trlc//:trlc.bzl", "trlc_requirements", "trlc_requirements_test")
 
+filegroup(
+    name = "fta_metamodel",
+    srcs = [
+        "fta_metamodel.puml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+
 # Failures Modes
 trlc_requirements(
     name = "failure_modes",

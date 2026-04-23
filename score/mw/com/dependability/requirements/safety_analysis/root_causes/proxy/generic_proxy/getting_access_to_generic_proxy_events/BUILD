@@ -14,6 +14,7 @@
 filegroup(
     name = "map_containing_nonexistent_events_fta",
     srcs = [
+        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
         "map_containing_nonexistent_events_fta.puml",
     ],
     visibility = ["//visibility:public"],

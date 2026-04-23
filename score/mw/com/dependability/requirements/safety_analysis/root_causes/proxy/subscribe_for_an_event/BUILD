@@ -14,6 +14,7 @@
 filegroup(
     name = "subscribe_to_wrong_event_fta",
     srcs = [
+        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
         "subscribe_to_wrong_event_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -22,6 +23,7 @@ filegroup(
 filegroup(
     name = "subscribe_with_wrong_max_sample_count_fta",
     srcs = [
+        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
         "subscribe_with_wrong_max_sample_count_fta.puml",
     ],
     visibility = ["//visibility:public"],

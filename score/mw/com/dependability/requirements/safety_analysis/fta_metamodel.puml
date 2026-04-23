@@ -1,0 +1,21 @@
+' *******************************************************************************
+' Copyright (c) 2025 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+' FTA Metamodel - Fault Tree Analysis macros
+
+!define $TopEvent(label, id) object $id [ label: <size:14><b>$label</b></size>\nid: $id ]
+!define $OrGate(id, parent) object $id [ label: <size:12><b>OR Gate</b></size>\nid: $id ]\n$parent --> $id
+!define $AndGate(id, parent) object $id [ label: <size:12><b>AND Gate</b></size>\nid: $id ]\n$parent --> $id
+!define $BasicEvent(label, id, parent) object $id [ label: <size:12><b>$label</b></size>\nid: $id ]\n$parent --> $id
+!define $IntermediateEvent(label, id, parent) object $id [ label: <size:12><i>$label</i></size>\nid: $id ]\n$parent --> $id
+!define $TransferIn(id, parent) note right of $parent\n<size:10>Transfer in from <b>$id</b></size>\nend note

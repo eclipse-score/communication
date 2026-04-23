@@ -14,6 +14,7 @@
 filegroup(
     name = "no_resources_freed_fta",
     srcs = [
+        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
         "no_resources_freed_fta.puml",
     ],
     visibility = ["//visibility:public"],
@@ -22,6 +23,7 @@ filegroup(
 filegroup(
     name = "wrong_resources_freed_fta",
     srcs = [
+        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
         "wrong_resources_freed_fta.puml",
     ],
     visibility = ["//visibility:public"],

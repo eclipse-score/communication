@@ -14,6 +14,7 @@
 filegroup(
     name = "start_find_service_callback_is_redundantly_called_fta",
     srcs = [
+        "//score/mw/com/dependability/requirements/safety_analysis:fta_metamodel",
         "start_find_service_callback_is_redundantly_called_fta.puml",
     ],
     visibility = ["//visibility:public"],
