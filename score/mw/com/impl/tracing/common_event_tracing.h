@@ -18,9 +18,8 @@
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
 #include "score/mw/com/impl/tracing/tracing_runtime.h"
 
-#include <score/optional.hpp>
-
 #include <cstdint>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -39,7 +38,7 @@ Result<void> TraceData(const ServiceElementInstanceIdentifierView service_elemen
                        const TracingRuntime::TracePointType trace_point,
                        const BindingType binding_type,
                        const std::pair<const void*, std::size_t>& local_data_chunk = {nullptr, 0U},
-                       const score::cpp::optional<TracingRuntime::TracePointDataId> trace_point_data_id = {}) noexcept;
+                       const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id = {}) noexcept;
 
 Result<void> TraceShmData(const BindingType binding_type,
                           const ServiceElementTracingData service_element_tracing_data,

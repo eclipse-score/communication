@@ -38,10 +38,10 @@ trlc_requirements_test(
 filegroup(
     name = "root_causes",
     srcs = [
-        "@//score/mw/com/requirements/safety_analysis/root_causes:general",
-        "@//score/mw/com/requirements/safety_analysis/root_causes/proxy:root_causes_proxy",
-        "@//score/mw/com/requirements/safety_analysis/root_causes/skeleton:root_causes_skeleton",
-        "@//score/mw/com/requirements/safety_analysis/root_causes/smart_pointer_sample_allocate_ptr:smart_pointer_sample_allocate_ptr",
+        "@//score/mw/com/dependability/requirements/safety_analysis/root_causes:general",
+        "@//score/mw/com/dependability/requirements/safety_analysis/root_causes/proxy:root_causes_proxy",
+        "@//score/mw/com/dependability/requirements/safety_analysis/root_causes/skeleton:root_causes_skeleton",
+        "@//score/mw/com/dependability/requirements/safety_analysis/root_causes/smart_pointer:smart_pointer_fta",
     ],
     visibility = ["//visibility:public"],
 )

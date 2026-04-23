@@ -351,3 +351,22 @@ ScoreReq.AoU EnsureTheIntegrityAndReliabilityOfCommunication {
     version = 1
     mitigates = ""
 }
+
+/* added for method FMEA */
+
+ScoreReq.AoU NoGuaranteesForTimelyMethodCallExecution {
+    description = "It shall be ensured that a blocking method call will not harm a safety goal."
+    safety = ScoreReq.Asil.B
+    note = "It is not guaranteed that a method call initiated by the caller will arrive at the callee, neither in which latency this will happen. It is also not guaranteed, that the completion of the call is notified to the caller at all, neither in which latency this will happen. This is caused by underlying OS/HW safety claims - see also [NoGuaranteesForNotifications]. The runtime of a user-provided method-handler is not supervised at all."
+    version = 1
+    mitigates = "Communication.CallBlocksOnCaller, Communication.CallBlocksOnCallee, Communication.CallBlocksOnUserHandler"
+}
+
+/* @ToDo - this is not an AoU but a PreventiveMeasure: Update, when our schema supports this differentiation */
+ScoreReq.AoU MethodInArgPtrMatches {
+    description = "It shall be ensured that the memory locations of the method call in-arguments provided at the caller side are exactly the same as the memory locations as used at the callee side."
+    safety = ScoreReq.Asil.B
+    note = "It is not guaranteed that a method call initiated by the caller will arrive at the callee, neither in which latency this will happen. It is also not guaranteed, that the completion of the call is notified to the caller at all, neither in which latency this will happen. This is caused by underlying OS/HW safety claims - see also [NoGuaranteesForNotifications]."
+    version = 1
+    mitigates = "Communication.CallBlocksOnCaller, Communication.CallBlocksOnCallee, Communication.CallBlocksOnUserHandler"
+}

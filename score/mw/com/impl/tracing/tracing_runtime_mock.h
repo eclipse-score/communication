@@ -49,7 +49,7 @@ class TracingRuntimeMock : public ITracingRuntime
                 (BindingType,
                  ServiceElementInstanceIdentifierView,
                  TracePointType,
-                 score::cpp::optional<TracePointDataId>,
+                 std::optional<TracePointDataId>,
                  const void*,
                  std::size_t),
                 (noexcept, override));

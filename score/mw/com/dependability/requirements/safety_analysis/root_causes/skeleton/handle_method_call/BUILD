@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2024 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,24 +11,26 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@trlc//:trlc.bzl", "trlc_requirements", "trlc_requirements_test")
-
-trlc_requirements(
-    name = "feature_requirements_ipc",
+filegroup(
+    name = "wrong_in_args_used_fta",
     srcs = [
-        "feature_requirements_ipc.trlc",
-        "//score/mw/com/requirements/assumed_system_requirements",
-    ],
-    spec = [
-        "@score_tooling//bazel/rules/rules_score/trlc/config:score_requirements_model",
+        "wrong_in_args_used_fta.puml",
     ],
     visibility = ["//visibility:public"],
 )
 
-trlc_requirements_test(
-    name = "feature_requirements_ipc_test",
-    reqs = [
-        ":feature_requirements_ipc",
+filegroup(
+    name = "wrong_method_called_fta",
+    srcs = [
+        "wrong_method_called_fta.puml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "wrong_results_provided_fta",
+    srcs = [
+        "wrong_results_provided_fta.puml",
     ],
     visibility = ["//visibility:public"],
 )

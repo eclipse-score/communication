@@ -14,6 +14,10 @@
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
+load(
+    "@score_tooling//bazel/rules/rules_score:rules_score.bzl",
+    "sphinx_module",
+)
 load("//docs/sphinx/utils:defs.bzl", "generate_api_rst")
 
 # Create the sphinx-build binary with required dependencies
@@ -92,4 +96,18 @@ sphinx_docs(
         ":doxygen_xml",
         "//score/mw/com:readme_md",
     ],
+)
+
+sphinx_module(
+    name = "sphinx_doc",
+    srcs =
+        [
+            "how_to_document.rst",
+            "index.rst",
+            "introduction.rst",
+            "message_passing.rst",
+            "//score/mw/com:readme_md",
+        ],
+    index = "index.rst",
+    visibility = ["//visibility:public"],
 )

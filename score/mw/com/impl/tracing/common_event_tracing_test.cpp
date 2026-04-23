@@ -22,13 +22,13 @@
 
 #include "score/result/result.h"
 
-#include <score/optional.hpp>
 #include <score/utility.hpp>
 
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -119,7 +119,7 @@ TEST_F(CommonEventTracingLocalTraceDataFixture, CallingTraceDataWillDispatchToBi
                 Trace(binding_type_,
                       service_element_instance_identifier_view_,
                       trace_point_,
-                      score::cpp::optional<TracingRuntime::TracePointDataId>{trace_point_data_id_},
+                      std::optional<TracingRuntime::TracePointDataId>{trace_point_data_id_},
                       local_data_chunk_.first,
                       local_data_chunk_.second));
 

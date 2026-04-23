@@ -30,7 +30,7 @@ bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communica
 bazel_dep(name = "score_tooling", dev_dependency = True)
 git_override(
     module_name = "score_tooling",
-    commit = "80c3a0a258961157f05a4ffe176a6f1c4c48728a",
+    commit = "ef7659a233722e07d7cd227c10fb3584bfd37e71",
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 
@@ -331,4 +331,9 @@ git_repository(
     build_file = "//third_party/codeql:codeql_coding_standards.BUILD",
     commit = "781f1eecfa2fc9970fb08447588a0b4d19a7908d",
     remote = "https://github.com/github/codeql-coding-standards.git",
+)
+
+register_toolchains(
+    "//bazel/toolchains:sphinx_toolchain",
+    dev_dependency = True,
 )

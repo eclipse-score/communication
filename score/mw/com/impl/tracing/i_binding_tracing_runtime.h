@@ -21,9 +21,9 @@
 #include "score/mw/com/impl/tracing/type_erased_sample_ptr.h"
 
 #include <score/callback.hpp>
-#include <score/optional.hpp>
 
 #include <cstdint>
+#include <optional>
 
 namespace score::mw::com::impl::tracing
 {
@@ -84,10 +84,10 @@ class IBindingTracingRuntime
     virtual void UnregisterShmObject(const impl::tracing::ServiceElementInstanceIdentifierView&
                                          service_element_instance_identifier_view) noexcept = 0;
 
-    virtual score::cpp::optional<analysis::tracing::ShmObjectHandle> GetShmObjectHandle(
+    virtual std::optional<analysis::tracing::ShmObjectHandle> GetShmObjectHandle(
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view)
         const noexcept = 0;
-    virtual score::cpp::optional<void*> GetShmRegionStartAddress(
+    virtual std::optional<void*> GetShmRegionStartAddress(
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view)
         const noexcept = 0;
 
@@ -95,7 +95,7 @@ class IBindingTracingRuntime
         const impl::tracing::ServiceElementInstanceIdentifierView& service_element_instance_identifier_view,
         const memory::shared::ISharedMemoryResource::FileDescriptor shm_file_descriptor,
         void* const shm_memory_start_address) noexcept = 0;
-    virtual score::cpp::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>
+    virtual std::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>
     GetCachedFileDescriptorForReregisteringShmObject(const impl::tracing::ServiceElementInstanceIdentifierView&
                                                          service_element_instance_identifier_view) const noexcept = 0;
     virtual void ClearCachedFileDescriptorForReregisteringShmObject(

@@ -24,6 +24,10 @@ on:
         required: true
         type: string
 
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
 jobs:
   create-draft-release:
     runs-on: ubuntu-24.04

@@ -171,6 +171,12 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
     {
         providers = std::make_optional(score::cpp::span<const uid_t>{found->second});
     }
+    else if (instance_deployment.strict_permissions_)
+    {
+        // With strict permission-checks, an absent allowedProvider is treated the same as an empty list:
+        // no provider is accepted. Without strict, an absent allowedProvider means no restriction (nullopt).
+        providers = std::make_optional(score::cpp::span<const uid_t>{});
+    }
 
     ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_};
     const auto control_shm = shm_path_builder.GetControlChannelShmName(lola_service_instance_id.GetId(), quality_type);
@@ -475,6 +481,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
     // dispatching to message passing and allows more specific error handling / logging).
     if (offered_state_machine_.GetCurrentState() == OfferedStateMachine::State::STOP_OFFERED)
     {
+        std::lock_guard lock{proxy_method_registration_mutex_};
         for (auto& proxy_method : proxy_methods_)
         {
             proxy_method.second.get().MarkUnsubscribed();
@@ -510,6 +517,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
         }
         else
         {
+            std::lock_guard lock{proxy_method_registration_mutex_};
             for (auto& proxy_method : proxy_methods_)
             {
                 proxy_method.second.get().MarkSubscribed();
@@ -632,17 +640,21 @@ score::Result<void> Proxy::SetupMethods(const std::vector<std::string_view>& ena
 
     const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
     const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
-    for (const auto& [field_name, field_instance_deployment] : lola_service_instance_deployment.fields_)
     {
-        const auto field_id = GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
+        std::lock_guard lock{proxy_method_registration_mutex_};
+        for (const auto& [field_name, field_instance_deployment] : lola_service_instance_deployment.fields_)
+        {
+            const auto field_id =
+                GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
 
-        if (kUseGetIfAvailable && proxy_methods_.count({field_id, MethodType::kGet}) != 0U)
-        {
-            enabled_method_data.push_back({{field_id, MethodType::kGet}, kFieldMethodQueueSize});
-        }
-        if (kUseSetIfAvailable && proxy_methods_.count({field_id, MethodType::kSet}) != 0U)
-        {
-            enabled_method_data.push_back({{field_id, MethodType::kSet}, kFieldMethodQueueSize});
+            if (kUseGetIfAvailable && proxy_methods_.count({field_id, MethodType::kGet}) != 0U)
+            {
+                enabled_method_data.push_back({{field_id, MethodType::kGet}, kFieldMethodQueueSize});
+            }
+            if (kUseSetIfAvailable && proxy_methods_.count({field_id, MethodType::kSet}) != 0U)
+            {
+                enabled_method_data.push_back({{field_id, MethodType::kSet}, kFieldMethodQueueSize});
+            }
         }
     }
     // This check has be done after looping over the fields to add the field methods to the enabled method data because,
@@ -710,6 +722,7 @@ score::Result<void> Proxy::SetupMethods(const std::vector<std::string_view>& ena
         quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
     if (subscription_result.has_value())
     {
+        std::lock_guard lock{proxy_method_registration_mutex_};
         for (auto& proxy_method : proxy_methods_)
         {
             proxy_method.second.get().MarkSubscribed();
@@ -868,6 +881,7 @@ pid_t Proxy::GetSourcePid() const noexcept
 
 void Proxy::RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept
 {
+    std::lock_guard lock{proxy_method_registration_mutex_};
     const auto [ignorable, was_inserted] = proxy_methods_.insert({method_id, proxy_method});
     score::cpp::ignore = ignorable;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");

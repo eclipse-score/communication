@@ -469,7 +469,7 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture, SubscribeCallsAreTracedWhenEnabled
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       _,
                       _))
         .WillOnce(WithArgs<4, 5>(
@@ -539,7 +539,7 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       _,
                       _))
         .WillOnce(WithArgs<4, 5>(
@@ -617,7 +617,7 @@ TYPED_TEST(ProxyEventTracingSubscribeFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       _,
                       _))
         .WillOnce(WithArgs<4, 5>(
@@ -733,7 +733,7 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture, UnsubscribeCallsAreTracedWhenEna
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(Result<void>{}));
@@ -794,7 +794,7 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
@@ -863,7 +863,7 @@ TYPED_TEST(ProxyEventTracingUnsubscribeFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
@@ -969,7 +969,7 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture, SetReceiveHandlerCallsAreT
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(Result<void>{}));
@@ -1026,7 +1026,7 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
@@ -1090,7 +1090,7 @@ TYPED_TEST(ProxyEventTracingSetReceiveHandlerFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
@@ -1198,7 +1198,7 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture, ReceiveHandlerCallbac
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U));
 
@@ -1266,7 +1266,7 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
@@ -1342,7 +1342,7 @@ TYPED_TEST(ProxyEventTracingReceiveHandlerCallbackFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
@@ -1456,7 +1456,7 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture, UnsetReceiveHandlerCalls
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U));
 
@@ -1515,7 +1515,7 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
@@ -1582,7 +1582,7 @@ TYPED_TEST(ProxyEventTracingUnsetReceiveHandlerFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));
@@ -1689,7 +1689,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture, GetNewSamplesCallsAreTracedWhe
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U));
 
@@ -1743,7 +1743,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableTracePointInstance)));
@@ -1806,7 +1806,7 @@ TYPED_TEST(ProxyEventTracingGetNewSamplesFixture,
                 Trace(BindingType::kLoLa,
                       expected_service_element_instance_identifier_view,
                       trace_point_type,
-                      score::cpp::optional<tracing::ITracingRuntime::TracePointDataId>{},
+                      std::optional<tracing::ITracingRuntime::TracePointDataId>{},
                       nullptr,
                       0U))
         .WillOnce(Return(MakeUnexpected(tracing::TraceErrorCode::TraceErrorDisableAllTracePoints)));

@@ -46,7 +46,7 @@ Result<void> TraceData(const ServiceElementInstanceIdentifierView service_elemen
                        const TracingRuntime::TracePointType trace_point,
                        const BindingType binding_type,
                        const std::pair<const void*, std::size_t>& local_data_chunk,
-                       const score::cpp::optional<TracingRuntime::TracePointDataId> trace_point_data_id) noexcept
+                       const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id) noexcept
 {
     auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(tracing_runtime != nullptr);

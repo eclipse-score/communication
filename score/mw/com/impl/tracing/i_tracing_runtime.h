@@ -26,6 +26,7 @@
 #include "score/result/result.h"
 
 #include <cstdint>
+#include <optional>
 #include <variant>
 
 namespace score::mw::com::impl::tracing
@@ -72,7 +73,7 @@ class ITracingRuntime
     virtual Result<void> Trace(const BindingType binding_type,
                                const ServiceElementInstanceIdentifierView service_element_instance_identifier,
                                const TracePointType trace_point_type,
-                               const score::cpp::optional<TracePointDataId> trace_point_data_id,
+                               const std::optional<TracePointDataId> trace_point_data_id,
                                const void* const local_data_ptr,
                                const std::size_t local_data_size) noexcept = 0;
 
