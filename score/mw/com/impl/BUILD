@@ -287,6 +287,7 @@ cc_library(
     ],
     deps = [
         ":method_type",
+        ":field_tags",
         ":proxy_event",
         ":proxy_event_binding",
         ":proxy_field_base",
@@ -688,6 +689,16 @@ cc_library(
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
 )
+
+cc_library(
+    name = "field_tags",
+    srcs = ["field_tags.cpp"],
+    hdrs = ["field_tags.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
 
 cc_library(
     name = "service_element_type",

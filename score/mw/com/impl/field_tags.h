@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
-#define PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
+#ifndef PLATFORM_AAS_MW_COM_IMPL_FIELD_TAGS_H
+#define PLATFORM_AAS_MW_COM_IMPL_FIELD_TAGS_H
 
 #include <cstdint>
 #include <string_view>
@@ -19,17 +19,16 @@
 namespace score::mw::com::impl
 {
 
-/// \brief Enum used to differentiate between regular service methods and field Get/Set methods.
-enum class MethodType : std::uint8_t
+/// \brief Tag types used on ProxyField/SkeletonField level to accomplish overload-resolution for various signatures,
+/// which depend on the availability of Get/Set/Notifier.
+struct WithGetter
 {
-    kUnknown = 0U,
-    kMethod,
-    kGet,
-    kSet
 };
 
-std::string_view to_string(MethodType method_type) noexcept;
+struct WithSetter
+{
+};
 
 }  // namespace score::mw::com::impl
 
-#endif  // PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
+#endif  // PLATFORM_AAS_MW_COM_IMPL_FIELD_TAGS_H

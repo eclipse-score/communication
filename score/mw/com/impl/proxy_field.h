@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_FIELD_H
 #define SCORE_MW_COM_IMPL_PROXY_FIELD_H
 
+#include "score/mw/com/impl/field_tags.h"
 #include "score/mw/com/impl/methods/proxy_method_with_in_args_and_return.h"
 #include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
@@ -34,6 +35,26 @@
 
 namespace score::mw::com::impl
 {
+namespace detail
+{
+
+template <typename TargetType, typename... Tags>
+struct contains_type : std::disjunction<std::is_same<TargetType, Tags>...>
+{
+};
+
+template <typename FieldType, typename ClassFieldType, typename TargetTag, typename... Tags>
+struct is_tag_enabled : std::conjunction<contains_type<TargetTag, Tags...>,
+                                         // SFINAE only works when the condition depends on the fuction template
+                                         // parameters, not the class template parameters. By adding this line below
+                                         // which uses a function template parameter, it delays the substitution of
+                                         // args (and sfinae error checking) until the function template argument is
+                                         // evaluated.
+                                         std::is_same<FieldType, ClassFieldType>>
+{
+};
+
+}  // namespace detail
 
 // Suppress "AUTOSAR C++14 M3-2-3" rule finding. This rule states: "An identifier with external linkage shall have
 // exactly one definition". This a forward class declaration.
@@ -49,10 +70,8 @@ class ProxyFieldAttorney;
 /// \tparam EnableSet Whether the set method shall be enabled for this field. If true, a Set() method will be available.
 /// \tparam EnableNotifier Whether the notifier functionality shall be enabled for this field. Whether this has an
 /// effect, depends on the binding that is used. The LoLa/shm-binding ignores this template parameter.
-template <typename SampleDataType,
-          const bool EnableGet = false,
-          const bool EnableSet = false,
-          const bool EnableNotifier = false>
+/// gtodo: update docs
+template <typename SampleDataType, typename... Tags>
 class ProxyField final : public ProxyFieldBase
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -72,8 +91,7 @@ class ProxyField final : public ProxyFieldBase
                const std::string_view field_name,
                std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
                std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr,
-               std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr,
-               detail::EnableBothTag = {})
+               std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr)
         : ProxyField{
               proxy_base,
               field_name,
@@ -98,8 +116,10 @@ class ProxyField final : public ProxyFieldBase
 
     /// \brief Constructs a ProxyField (both EnableGet and EnableSet are true). Normal ctor that is used in production
     /// code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableBothTag = {})
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, WithGetter = {}, WithSetter = {})
         : ProxyField{proxy_base,
                      field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
@@ -121,8 +141,10 @@ class ProxyField final : public ProxyFieldBase
     }
 
     /// \brief Constructs a ProxyField (only EnableGet is true). Normal ctor that is used in production code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableGetOnlyTag = {})
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          !detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, WithGetter = {})
         : ProxyField{proxy_base,
                      field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
@@ -140,8 +162,10 @@ class ProxyField final : public ProxyFieldBase
     }
 
     /// \brief Constructs a ProxyField (only EnableSet is true). Normal ctor that is used in production code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableSetOnlyTag = {})
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<!detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, WithSetter = {})
         : ProxyField{proxy_base,
                      field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
@@ -160,8 +184,10 @@ class ProxyField final : public ProxyFieldBase
 
     /// \brief Constructs a ProxyField (both EnableGet and EnableSet are false). Normal ctor that is used in production
     /// code.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
-    ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableNeitherTag = {})
+    template <typename U = SampleDataType,
+              typename = std::enable_if_t<!detail::is_tag_enabled<U, SampleDataType, WithGetter, Tags...>::value &&
+                                          !detail::is_tag_enabled<U, SampleDataType, WithSetter, Tags...>::value>>
+    ProxyField(ProxyBase& proxy_base, const std::string_view field_name)
         : ProxyField{proxy_base,
                      field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
@@ -204,14 +230,26 @@ class ProxyField final : public ProxyFieldBase
     }
 
     template <typename T = SampleDataType,
-              typename = std::enable_if_t<EnableGet && std::is_same<T, SampleDataType>::value>>
+              typename = std::enable_if_t<detail::contains_type<WithGetter, Tags...>::value &&
+                                          // SFINAE only works when the condition depends on the fuction template
+                                          // parameters, not the class template parameters. By adding this line below
+                                          // which uses a function template parameter, it delays the substitution of
+                                          // args (and sfinae error checking) until the function template argument is
+                                          // evaluated.
+                                          std::is_same_v<T, SampleDataType>>>
     score::Result<MethodReturnTypePtr<T>> Get() noexcept
     {
         return proxy_method_get_dispatch_->operator()();
     }
 
     template <typename T = SampleDataType,
-              typename = std::enable_if_t<EnableSet && std::is_same<T, SampleDataType>::value>>
+              typename = std::enable_if_t<detail::contains_type<WithSetter, Tags...>::value &&
+                                          // SFINAE only works when the condition depends on the fuction template
+                                          // parameters, not the class template parameters. By adding this line below
+                                          // which uses a function template parameter, it delays the substitution of
+                                          // args (and sfinae error checking) until the function template argument is
+                                          // evaluated.
+                                          std::is_same_v<T, SampleDataType>>>
     score::Result<MethodReturnTypePtr<T>> Set(SampleDataType& new_field_value) noexcept
     {
         return proxy_method_set_dispatch_->operator()(new_field_value);
@@ -249,8 +287,9 @@ class ProxyField final : public ProxyFieldBase
                   "we must ensure that it doesn't move when the ProxyField is moved to avoid dangling references. ");
 };
 
-template <typename FieldType, const bool EnableGet, const bool EnableSet, const bool EnableNotifier>
-ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>::ProxyField(ProxyField&& other) noexcept
+// template <typename FieldType, const bool EnableGet, const bool EnableSet, const bool EnableNotifier>
+template <typename SampleDataType, typename... Tags>
+ProxyField<SampleDataType, Tags...>::ProxyField(ProxyField&& other) noexcept
     : ProxyFieldBase(std::move(static_cast<ProxyFieldBase&&>(other))),
       proxy_event_dispatch_(std::move(other.proxy_event_dispatch_)),
       proxy_method_get_dispatch_(std::move(other.proxy_method_get_dispatch_)),
@@ -260,14 +299,14 @@ ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>::ProxyField(ProxyFie
     proxy_base_view.UpdateField(field_name_, *this);
 }
 
-template <typename FieldType, const bool EnableGet, const bool EnableSet, const bool EnableNotifier>
+template <typename SampleDataType, typename... Tags>
 // Suppress "AUTOSAR C++14 A6-2-1" rule violation. The rule states "Move and copy assignment operators shall either move
 // or respectively copy base classes and data members of a class, without any side effects."
 // Rationale: The parent proxy stores a reference to the ProxyEvent. The address that is pointed to must be
 // updated when the ProxyField is moved. Therefore, side effects are required.
 // coverity[autosar_cpp14_a6_2_1_violation]
-auto ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>::operator=(ProxyField&& other) & noexcept
-    -> ProxyField<FieldType, EnableGet, EnableSet, EnableNotifier>&
+auto ProxyField<SampleDataType, Tags...>::operator=(ProxyField&& other) & noexcept
+    -> ProxyField<SampleDataType, Tags...>&
 {
     if (this != &other)
     {

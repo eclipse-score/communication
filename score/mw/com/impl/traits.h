@@ -103,6 +103,7 @@ class ProxyWrapperClassTestView;
 ///     typename Trait::template Field<DataType1, enable_getter, enable_setter, enable_notifier> struct_field_1_{*this,
 ///     field_name_0}; typename Trait::template Field<DataType2, enable_getter, enable_setter, enable_notifier>
 ///     struct_field_2_{*this, field_name_1};
+// gtodo: update docs and examples
 ///
 ///     typename Trait::template Method<void(InArgType1)> struct_method_1_{*this, method_name_0};
 ///     typename Trait::template Method<ReturnType()> struct_method_2_{*this, method_name_1};
