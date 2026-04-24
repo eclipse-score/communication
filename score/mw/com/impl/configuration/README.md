@@ -94,8 +94,9 @@ support cross-ECU communication.
 However, the `service-type` on which the `service-instance` is based on, needs to support the technical transport
 mechanism (`binding`) and needs to configure the instance `independent` parts of the binding.
 
-Currently, the only supported binding is the shared-memory binding, which is represented as `SHM` in the json.
-The other binding `SOME/IP`, which the schema allows, is only a placeholder right now.
+Currently, the fully functional end-to-end binding is the shared-memory binding, which is represented as `SHM` in the json.
+The `SOME/IP` binding configuration layer (schema, parsing, and deployment classes) is also implemented and supported in the json.
+However, the `SOME/IP` transport layer implementation is still pending.
 In the corresponding snippet from our example configuration:
 
     "bindings": [
@@ -593,3 +594,5 @@ is being used, whether a property is mandatory or optional or irrelevant, the fo
 | _serviceInstances.instances.events.maxSubscribers_ <br> _serviceInstances.instances.fields.maxSubscribers_                   | required      | -          |                                                                                                                                                                                       |
 | _serviceInstances.instances.events.enforceMaxSamples_ <br> _serviceInstances.instances.fields.enforceMaxSamples_             | optional      | -          | if not given on skeleton side, defaults to true                                                                                                                                       |
 | _serviceInstances.instances.events.numberOfIpcTracingSlots_ <br> _serviceInstances.instances.fields.numberOfIpcTracingSlots_ | optional      | -          | if not given on skeleton side, defaults to 0, which means tracing for this event is disabled.                                                                                         |
+| _serviceInstances.instances.methods.methodName_                                                                              | required      | required   |                                                                                                                                                                                       |
+| _serviceInstances.instances.methods.queueSize_                                                                               | optional      | -          | if not given on skeleton side, defaults to 1. Currently only queue sizes of 1 are supported.                                                                                          |

@@ -27,8 +27,25 @@ package "configuration" {
   }
 
   class "score::mw::com::impl::SomeIpServiceInstanceDeployment" {
-    + instanceId: score::cpp::optional<std::uint16_t> const
-    + ToString() const : std::string
+    + instance_id_: score::cpp::optional<SomeIpServiceInstanceId>
+    + events_ : std::unordered_map<std::string, SomeIpEventInstanceDeployment>
+    + fields_ : std::unordered_map<std::string, SomeIpFieldInstanceDeployment>
+    + methods_ : std::unordered_map<std::string, SomeIpMethodInstanceDeployment>
+    + SomeIpServiceInstanceDeployment(instance_id : score::cpp::optional<SomeIpServiceInstanceId>, events : EventInstanceMapping, fields : FieldInstanceMapping, methods : MethodInstanceMapping)
+    + Serialize() const : score::json::Object
+  }
+
+  class "score::mw::com::impl::SomeIpMethodInstanceDeployment" {
+    {static} + constexpr serializationVersion : std::uint8_t
+    + queue_size_: std::optional<QueueSize>
+    __
+    + SomeIpMethodInstanceDeployment(queue_size : std::optional<QueueSize>)
+    + SomeIpMethodInstanceDeployment(json_object : const score::json::Object&)
+    {static} + CreateFromJson(json_object : const score::json::Object&) : SomeIpMethodInstanceDeployment
+    + Serialize() const : score::json::Object
+    --
+    <u>Type Aliases:</u>
+    using QueueSize as std::uint8_t
   }
 
   class "score::mw::com::impl::LolaServiceInstanceDeployment" {
@@ -228,6 +245,7 @@ class "score::mw::com::impl::Runtime" {
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaEventInstanceDeployment" : 0..1
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaFieldInstanceDeployment" : 0..1
 "score::mw::com::impl::LolaServiceInstanceDeployment" *-- "score::mw::com::impl::LolaMethodInstanceDeployment" : 0..1
+"score::mw::com::impl::SomeIpServiceInstanceDeployment" *-- "score::mw::com::impl::SomeIpMethodInstanceDeployment" : 0..1
 "score::mw::com::impl::Configuration" *-- "score::mw::com::ServiceIdentifierType"
 "score::mw::com::impl::Configuration" *-- "score::mw::com::impl::ServiceInstanceDeployment"
 "score::mw::com::impl::Configuration" *-- "GlobalConfiguration"

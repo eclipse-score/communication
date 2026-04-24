@@ -50,6 +50,7 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
+        ":someip_method_instance_deployment",
         ":someip_service_instance_deployment",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/quality/compiler_warnings",
@@ -210,6 +211,39 @@ cc_library(
 )
 
 cc_library(
+    name = "someip_event_id",
+    srcs = ["someip_event_id.cpp"],
+    hdrs = ["someip_event_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+)
+
+cc_library(
+    name = "someip_field_id",
+    srcs = ["someip_field_id.cpp"],
+    hdrs = ["someip_field_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = [":someip_event_id"],
+)
+
+cc_library(
+    name = "someip_method_id",
+    srcs = ["someip_method_id.cpp"],
+    hdrs = ["someip_method_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+)
+
+cc_library(
+    name = "someip_service_id",
+    srcs = ["someip_service_id.cpp"],
+    hdrs = ["someip_service_id.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+)
+
+cc_library(
     name = "lola_field_instance_deployment",
     srcs = ["lola_field_instance_deployment.cpp"],
     hdrs = ["lola_field_instance_deployment.h"],
@@ -231,6 +265,15 @@ cc_library(
     name = "lola_method_instance_deployment",
     srcs = ["lola_method_instance_deployment.cpp"],
     hdrs = ["lola_method_instance_deployment.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = ["@score_baselibs//score/json"],
+)
+
+cc_library(
+    name = "someip_method_instance_deployment",
+    srcs = ["someip_method_instance_deployment.cpp"],
+    hdrs = ["someip_method_instance_deployment.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     deps = ["@score_baselibs//score/json"],
@@ -268,6 +311,21 @@ cc_library(
         ":lola_field_id",
         ":lola_method_id",
         ":lola_service_id",
+    ],
+)
+
+cc_library(
+    name = "someip_service_type_deployment",
+    srcs = ["someip_service_type_deployment.cpp"],
+    hdrs = ["someip_service_type_deployment.h"],
+    features = COMPILER_WARNING_FEATURES,
+    tags = ["FFI"],
+    deps = [
+        ":binding_service_type_deployment",
+        ":someip_event_id",
+        ":someip_field_id",
+        ":someip_method_id",
+        ":someip_service_id",
     ],
 )
 
@@ -350,6 +408,7 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
+        ":someip_service_type_deployment",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -378,6 +437,7 @@ cc_library(
         ":configuration_common_resources",
         ":someip_event_instance_deployment",
         ":someip_field_instance_deployment",
+        ":someip_method_instance_deployment",
         ":someip_service_instance_id",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
@@ -443,6 +503,7 @@ cc_library(
         ":service_type_deployment",
         ":service_version_type",
         ":shm_size_calc_mode",
+        ":someip_method_instance_deployment",
         ":someip_service_instance_deployment",
     ],
 )
