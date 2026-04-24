@@ -80,8 +80,8 @@ class ProxyEvent final : public ProxyEventBase
     ///
     /// \param proxy_binding The binding that shall be associated with this proxy.
     ProxyEvent(ProxyBase& base,
-               std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding,
-               const std::string_view event_name);
+               const std::string_view event_name,
+               std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding);
 
     /// \brief Constructor that allows to set the binding directly.
     ///
@@ -89,8 +89,8 @@ class ProxyEvent final : public ProxyEventBase
     ///
     /// \param proxy_binding The binding that shall be associated with this proxy.
     ProxyEvent(ProxyBase& base,
-               std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
                const std::string_view event_name,
+               std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
                FieldOnlyConstructorEnabler);
 
     /// \brief Constructs a ProxyEvent by querying the base proxie's ProxyBinding for the respective ProxyEventBinding.
@@ -143,9 +143,9 @@ class ProxyEvent final : public ProxyEventBase
 
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
-                                   std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding,
-                                   const std::string_view event_name)
-    : ProxyEventBase{base, ProxyBaseView{base}.GetBinding(), std::move(proxy_event_binding), event_name},
+                                   const std::string_view event_name,
+                                   std::unique_ptr<ProxyEventBinding<SampleType>> proxy_event_binding)
+    : ProxyEventBase{base, event_name, ProxyBaseView{base}.GetBinding(), std::move(proxy_event_binding)},
       proxy_event_mock_{nullptr}
 {
     ProxyBaseView proxy_base_view{base};
@@ -158,7 +158,7 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
 
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event_name)
-    : ProxyEvent{base, ProxyEventBindingFactory<SampleType>::Create(base, event_name), event_name}
+    : ProxyEvent{base, event_name, ProxyEventBindingFactory<SampleType>::Create(base, event_name)}
 {
     if (GetTypedEventBinding() != nullptr)
     {
@@ -171,10 +171,10 @@ ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base, const std::string_view event
 
 template <typename SampleType>
 ProxyEvent<SampleType>::ProxyEvent(ProxyBase& base,
-                                   std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
                                    const std::string_view event_name,
+                                   std::unique_ptr<ProxyEventBinding<SampleType>> proxy_binding,
                                    FieldOnlyConstructorEnabler)
-    : ProxyEvent{base, std::move(proxy_binding), event_name}
+    : ProxyEvent{base, event_name, std::move(proxy_binding)}
 {
     // This is the specific ctor that is used by ProxyField for its "dispatch event" composite. Therefore, we do not
     // register the event in the ProxyBase's event map, since registration in the correct field map is done by

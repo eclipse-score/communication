@@ -59,9 +59,9 @@ class ProxyEventBase
     /// \param proxy_event_binding The binding that shall be associated with this proxy event.
     /// \param event_name Event name of the event.
     ProxyEventBase(ProxyBase& proxy_base,
+                   std::string_view event_name,
                    ProxyBinding* proxy_binding_ptr,
-                   std::unique_ptr<ProxyEventBindingBase> proxy_event_binding,
-                   std::string_view event_name) noexcept;
+                   std::unique_ptr<ProxyEventBindingBase> proxy_event_binding) noexcept;
 
     /// \brief A ProxyEventBase shall not be copyable
     ProxyEventBase(const ProxyEventBase&) = delete;

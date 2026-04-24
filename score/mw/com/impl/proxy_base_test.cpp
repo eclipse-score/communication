@@ -593,27 +593,27 @@ class ProxyBaseServiceElementReferencesFixture : public ::testing::Test
     MyProxy proxy_{std::make_unique<mock_binding::ProxyFacade>(proxy_binding_mock_), handle_};
 
     ProxyEventBase event_0_{proxy_,
+                            event_name_0_,
                             &proxy_binding_mock_,
-                            std::make_unique<mock_binding::ProxyEventBase>(),
-                            event_name_0_};
+                            std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyEventBase event_1_{proxy_,
+                            event_name_1_,
                             &proxy_binding_mock_,
-                            std::make_unique<mock_binding::ProxyEventBase>(),
-                            event_name_1_};
+                            std::make_unique<mock_binding::ProxyEventBase>()};
 
     ProxyEventBase field_event_dispatch_0_{proxy_,
+                                           field_name_0_,
                                            &proxy_binding_mock_,
-                                           std::make_unique<mock_binding::ProxyEventBase>(),
-                                           field_name_0_};
+                                           std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyEventBase field_event_dispatch_1_{proxy_,
+                                           field_name_1_,
                                            &proxy_binding_mock_,
-                                           std::make_unique<mock_binding::ProxyEventBase>(),
-                                           field_name_1_};
-    ProxyFieldBase field_0_{proxy_, &field_event_dispatch_0_, field_name_0_};
-    ProxyFieldBase field_1_{proxy_, &field_event_dispatch_1_, field_name_1_};
+                                           std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyFieldBase field_0_{proxy_, field_name_0_, &field_event_dispatch_0_};
+    ProxyFieldBase field_1_{proxy_, field_name_1_, &field_event_dispatch_1_};
 
-    DummyProxyMethod method_0_{proxy_, std::make_unique<mock_binding::ProxyMethod>(), method_name_0_};
-    DummyProxyMethod method_1_{proxy_, std::make_unique<mock_binding::ProxyMethod>(), method_name_1_};
+    DummyProxyMethod method_0_{proxy_, method_name_0_, std::make_unique<mock_binding::ProxyMethod>()};
+    DummyProxyMethod method_1_{proxy_, method_name_1_, std::make_unique<mock_binding::ProxyMethod>()};
 };
 
 TEST_F(ProxyBaseServiceElementReferencesFixture, RegisteringServiceElementStoresReferenceInMap)
@@ -707,11 +707,11 @@ TEST_F(ProxyBaseServiceElementReferencesFixture, MoveAssigningUpdatesReferencesT
 
     // and given that an Event, Field and Method were registered on the second proxy
     ProxyEventBase event{
-        proxy_2, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>(), other_event_name};
+        proxy_2, other_event_name, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>()};
     ProxyEventBase field_event_dispatch{
-        proxy_2, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>(), other_field_name};
-    ProxyFieldBase field{proxy_2, &field_event_dispatch, other_field_name};
-    DummyProxyMethod method{proxy_2, std::make_unique<mock_binding::ProxyMethod>(), other_method_name};
+        proxy_2, other_field_name, &proxy_binding_mock, std::make_unique<mock_binding::ProxyEventBase>()};
+    ProxyFieldBase field{proxy_2, other_field_name, &field_event_dispatch};
+    DummyProxyMethod method{proxy_2, other_method_name, std::make_unique<mock_binding::ProxyMethod>()};
     ProxyBaseView{proxy_2}.RegisterEvent(other_event_name, event);
     ProxyBaseView{proxy_2}.RegisterField(other_field_name, field);
     ProxyBaseView{proxy_2}.RegisterMethod(other_method_name, method);
