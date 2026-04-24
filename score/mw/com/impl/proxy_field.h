@@ -16,7 +16,6 @@
 #include "score/mw/com/impl/methods/proxy_method_with_in_args_and_return.h"
 #include "score/mw/com/impl/methods/proxy_method_with_return_type.h"
 #include "score/mw/com/impl/plumbing/proxy_field_binding_factory.h"
-#include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_event.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 #include "score/mw/com/impl/proxy_field_base.h"
@@ -69,83 +68,31 @@ class ProxyField final : public ProxyFieldBase
     ///
     /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
     /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
     ProxyField(ProxyBase& proxy_base,
                const std::string_view field_name,
                std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               std::unique_ptr<ProxyMethodBinding> get_method_binding,
-               std::unique_ptr<ProxyMethodBinding> set_method_binding,
+               std::unique_ptr<ProxyMethodBinding> get_method_binding = nullptr,
+               std::unique_ptr<ProxyMethodBinding> set_method_binding = nullptr,
                detail::EnableBothTag = {})
-        : ProxyField{proxy_base,
-                     field_name,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
-                     std::make_unique<ProxyMethod<FieldType()>>(
-                         proxy_base,
-                         field_name,
-                         std::move(get_method_binding),
-                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
-                     std::make_unique<ProxyMethod<FieldType(FieldType)>>(
-                         proxy_base,
-                         field_name,
-                         std::move(set_method_binding),
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
-    {
-    }
-
-    /// Constructor that allows to set the binding directly (only EnableGet is true).
-    ///
-    /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
-    /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               std::unique_ptr<ProxyMethodBinding> get_method_binding,
-               detail::EnableGetOnlyTag = {})
-        : ProxyField{proxy_base,
-                     field_name,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
-                     std::make_unique<ProxyMethod<FieldType()>>(
-                         proxy_base,
-                         field_name,
-                         std::move(get_method_binding),
-                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{})}
-    {
-    }
-
-    /// Constructor that allows to set the binding directly (only EnableSet is true).
-    ///
-    /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
-    /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               std::unique_ptr<ProxyMethodBinding> set_method_binding,
-               detail::EnableSetOnlyTag = {})
-        : ProxyField{proxy_base,
-                     field_name,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
-                     std::make_unique<ProxyMethod<FieldType(FieldType)>>(
-                         proxy_base,
-                         field_name,
-                         std::move(set_method_binding),
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
-    {
-    }
-
-    /// Constructor that allows to set the binding directly (both EnableGet and EnableSet are false).
-    ///
-    /// This is used for testing only. Allows for directly setting the bindings, and usually the mock binding is used
-    /// here.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
-               detail::EnableNeitherTag = {})
-        : ProxyField{proxy_base,
-                     field_name,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding))}
+        : ProxyField{
+              proxy_base,
+              field_name,
+              std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
+              // If a binding is not provided, then we don't create the method. This ensures that the ProxyMethod
+              // doesn't report that the binding is invalid (via proxy_base_view.MarkServiceElementBindingInvalid())
+              get_method_binding == nullptr ? nullptr
+                                            : std::make_unique<ProxyMethod<FieldType()>>(
+                                                  proxy_base,
+                                                  field_name,
+                                                  std::move(get_method_binding),
+                                                  typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
+              set_method_binding == nullptr
+                  ? nullptr
+                  : std::make_unique<ProxyMethod<FieldType(FieldType)>>(
+                        proxy_base,
+                        field_name,
+                        std::move(set_method_binding),
+                        typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -187,7 +134,8 @@ class ProxyField final : public ProxyFieldBase
                          proxy_base,
                          field_name,
                          ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
-                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{})}
+                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
+                     nullptr}
     {
     }
 
@@ -201,6 +149,7 @@ class ProxyField final : public ProxyFieldBase
                          field_name,
                          ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+                     nullptr,
                      std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                          proxy_base,
                          field_name,
@@ -219,7 +168,9 @@ class ProxyField final : public ProxyFieldBase
                          proxy_base,
                          field_name,
                          ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
-                         typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{})}
+                         typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
+                     nullptr,
+                     nullptr}
     {
     }
 
@@ -272,8 +223,6 @@ class ProxyField final : public ProxyFieldBase
     }
 
   private:
-    /// \brief Private constructor overload for when both EnableGet and EnableSet are true.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
     ProxyField(ProxyBase& proxy_base,
                const std::string_view field_name,
                std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
@@ -290,63 +239,10 @@ class ProxyField final : public ProxyFieldBase
         proxy_base_view.RegisterField(field_name, *this);
     }
 
-    /// \brief Private constructor overload for when only EnableGet is true.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
-        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
-          proxy_event_dispatch_{std::move(proxy_event_dispatch)},
-          proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);
-
-        ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, *this);
-    }
-
-    /// \brief Private constructor overload for when only EnableSet is true.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch)
-        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
-          proxy_event_dispatch_{std::move(proxy_event_dispatch)},
-          proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)}
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);
-
-        ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, *this);
-    }
-
-    /// \brief Private constructor overload for when both EnableGet and EnableSet are false.
-    template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
-    ProxyField(ProxyBase& proxy_base,
-               const std::string_view field_name,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch)
-        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
-          proxy_event_dispatch_{std::move(proxy_event_dispatch)}
-    {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);
-
-        ProxyBaseView proxy_base_view{proxy_base};
-        proxy_base_view.RegisterField(field_name, *this);
-    }
-
     std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch_;
 
-    struct empty
-    {
-    };
-
-    using ProxyGetMethodType = std::conditional_t<EnableGet, std::unique_ptr<ProxyMethod<FieldType()>>, empty>;
-    using ProxySetMethodType = std::conditional_t<EnableSet, std::unique_ptr<ProxyMethod<FieldType(FieldType)>>, empty>;
-
-    ProxyGetMethodType proxy_method_get_dispatch_;
-    ProxySetMethodType proxy_method_set_dispatch_;
+    std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch_;
+    std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch_;
 
     static_assert(std::is_same<decltype(proxy_event_dispatch_), std::unique_ptr<ProxyEvent<FieldType>>>::value,
                   "proxy_event_dispatch_ needs to be a unique_ptr since we pass a pointer to it to ProxyFieldBase, so "
