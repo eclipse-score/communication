@@ -1552,5 +1552,30 @@ TEST(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     EXPECT_TRUE(second_callback_called);
 }
 
+TEST(SkeletonFieldGetSetMemberTest, SkeletonFieldDoesNotRegisterGetSetMethodsAsRegularMethods)
+{
+    // Given the field and method binding factories are mocked
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
+    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
+
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(_, _, _))
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(_, _, _, MethodType::kGet))
+        .WillOnce(Return(ByMove(nullptr)));
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(_, _, _, MethodType::kSet))
+        .WillOnce(Return(ByMove(nullptr)));
+
+    // When constructing a SkeletonField<T, WithSetter> which internally creates get_method_ and set_method_
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // Then the field is registered, but its Get/Set SkeletonMethods do not appear in the skeleton's
+    // regular method map,they are field-only and tracked by the field itself
+    SkeletonBaseView skeleton_view{unit};
+    EXPECT_EQ(skeleton_view.GetFields().size(), 1U);
+    EXPECT_TRUE(skeleton_view.GetMethods().empty());
+}
+
 }  // namespace
 }  // namespace score::mw::com::impl
