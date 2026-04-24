@@ -55,10 +55,15 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyMethodView;
 
-    friend class ProxyField<ReturnType, true, true, true>;
-    friend class ProxyField<ReturnType, true, true, false>;
+    /// gtodo: check this.
+    friend class ProxyField<ReturnType, false, false, false>;
+    friend class ProxyField<ReturnType, false, false, true>;
     friend class ProxyField<ReturnType, false, true, false>;
     friend class ProxyField<ReturnType, false, true, true>;
+    friend class ProxyField<ReturnType, true, false, false>;
+    friend class ProxyField<ReturnType, true, false, true>;
+    friend class ProxyField<ReturnType, true, true, false>;
+    friend class ProxyField<ReturnType, true, true, true>;
 
     struct FieldOnlyConstructorEnabler
     {
