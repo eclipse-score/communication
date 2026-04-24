@@ -11,18 +11,18 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control_test_resources.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
 #include "score/filesystem/filesystem.h"
 
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 namespace score::mw::com::impl::lola
@@ -169,6 +169,34 @@ TEST_F(SkeletonEventAllocateFixture, AllocateReturnsUniquePointersForMultipleCal
 }
 
 using SkeletonEventPrepareOfferFixture = SkeletonEventFixture;
+TEST_F(SkeletonEventPrepareOfferFixture, RegisterEventNotificationExistenceChangedCallback)
+{
+    constexpr bool enforce_max_samples{true};
+    constexpr std::size_t max_samples{5U};
+
+    // Given a valid skeleton event with max. sample count of 5, which as per default enforces the max sample count
+    // in subscriptions.
+    InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples, max_subscribers_, enforce_max_samples);
+
+    // Expect, that it registers a callback for tracking changes of existence of event-notifications for QM
+    EXPECT_CALL(message_passing_mock_,
+                RegisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_, _))
+        .Times(1);
+
+    // Expect, that in case the service has ASIL-B quality, it also registers a callback for tracking changes of
+    // existence of event-notifications for ASIL-B
+    if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        EXPECT_CALL(
+            message_passing_mock_,
+            RegisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_B, fake_element_fq_id_, _))
+            .Times(1);
+    }
+
+    // When offering a skeleton event
+    std::ignore = skeleton_event_->PrepareOffer();
+}
+
 TEST_F(SkeletonEventPrepareOfferFixture, SubscriptionsAcceptedIfMaxSamplesCanBeProvided)
 {
     RecordProperty("Verifies", "SCR-7088394, SCR-21269964, SCR-14137270, SCR-17292398, SCR-14033248");
@@ -342,12 +370,27 @@ TEST_F(SkeletonEventPrepareOfferFixture, UnsubscribeIncreasesAvailableSampleSlot
 }
 
 using SkeletonEventPrepareStopOfferFixture = SkeletonEventFixture;
-TEST_F(SkeletonEventPrepareStopOfferFixture, StopOfferSkeletonEvent)
+TEST_F(SkeletonEventPrepareStopOfferFixture, UnregisterEventNotificationExistenceChangedCallback)
 {
     const bool enforce_max_samples{true};
 
     // Given an un-offered event in an offered service
     InitialiseSkeletonEvent(fake_element_fq_id_, fake_event_name_, max_samples_, max_subscribers_, enforce_max_samples);
+
+    // Expect, that it unregisters the callback for tracking changes of existence of event-notifications for QM
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_QM, fake_element_fq_id_))
+        .Times(1);
+
+    // Expect, that in case the service has ASIL-B quality, it also unregisters the callback for tracking changes of
+    // existence of event-notifications for ASIL-B
+    if (skeleton_->GetInstanceQualityType() == QualityType::kASIL_B)
+    {
+        EXPECT_CALL(
+            message_passing_mock_,
+            UnregisterEventNotificationExistenceChangedCallback(impl::QualityType::kASIL_B, fake_element_fq_id_))
+            .Times(1);
+    }
 
     // When stop offering a skeleton event
     skeleton_event_->PrepareStopOffer();
@@ -371,13 +414,15 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 
     const impl::SampleAllocateePtrView<test::TestSampleType> first_view{first_allocated_slot};
     auto* first_lola_ptr = first_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
-    auto first_slot_indicator = first_lola_ptr->GetReferencedSlot();
+    auto first_slot_index = first_lola_ptr->GetReferencedSlot();
 
-    auto first_send_result = skeleton_event_->Send(std::move(first_allocated_slot), score::cpp::nullopt);
+    auto first_send_result = skeleton_event_->Send(std::move(first_allocated_slot), std::nullopt);
     ASSERT_TRUE(first_send_result.has_value());
 
     // THEN its timestamp should be a valid, non-zero value
-    const EventSlotStatus first_final_slot_status{first_slot_indicator.GetSlotQM().load()};
+    auto* event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
+    SkeletonEventDataControlLocalView<> skeleton_event_data_control_local{event_control->data_control};
+    const EventSlotStatus first_final_slot_status{skeleton_event_data_control_local[first_slot_index]};
     // AND the first timestamp should be 2, as it's the first one after initialization.
     const auto first_timestamp = first_final_slot_status.GetTimeStamp();
     EXPECT_EQ(first_timestamp, 2U);
@@ -389,12 +434,12 @@ TEST_F(SkeletonEventTimestampFixture, SendUpdatesTimestampInControlData)
 
     const impl::SampleAllocateePtrView<test::TestSampleType> second_view{second_allocated_slot};
     auto* second_lola_ptr = second_view.template As<lola::SampleAllocateePtr<test::TestSampleType>>();
-    auto second_slot_indicator = second_lola_ptr->GetReferencedSlot();
-    auto second_send_result = skeleton_event_->Send(std::move(second_allocated_slot), score::cpp::nullopt);
+    auto second_slot_index = second_lola_ptr->GetReferencedSlot();
+    auto second_send_result = skeleton_event_->Send(std::move(second_allocated_slot), std::nullopt);
     ASSERT_TRUE(second_send_result.has_value());
 
     // THEN its timestamp should be exactly one greater than the first one
-    const EventSlotStatus second_final_slot_status{second_slot_indicator.GetSlotQM().load()};
+    const EventSlotStatus second_final_slot_status{skeleton_event_data_control_local[second_slot_index]};
     const auto second_timestamp = second_final_slot_status.GetTimeStamp();
     EXPECT_EQ(second_timestamp, first_timestamp + 1U)
         << "The second timestamp should be exactly one greater than the first.";

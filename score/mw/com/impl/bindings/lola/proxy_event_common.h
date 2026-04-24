@@ -17,6 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
@@ -57,7 +58,7 @@ class ProxyEventCommon final
     ProxyEventCommon& operator=(const ProxyEventCommon&) = delete;
     ProxyEventCommon& operator=(ProxyEventCommon&&) noexcept = delete;
 
-    ResultBlank Subscribe(const std::size_t max_sample_count);
+    Result<void> Subscribe(const std::size_t max_sample_count);
     void Unsubscribe();
 
     SubscriptionState GetSubscriptionState() const noexcept;
@@ -71,27 +72,27 @@ class ProxyEventCommon final
     Result<std::size_t> GetNumNewSamplesAvailable() const noexcept;
 
     /// \brief Get the indicators of the slots containing samples that are pending for reception in ascending order.
-    ///        I.e. returned SlotIndicators begin with the oldest slots/events (lowest timestamp) first and end at the
+    ///        I.e. returned SlotIndices begin with the oldest slots/events (lowest timestamp) first and end at the
     ///        newest/youngest (largest timestamp) slots.
     ///
     /// The call is dispatched to SlotCollector. It is the responsibility of the calling code to ensure that
     /// GetNewSamplesSlotIndices() is only called when the event is in the subscribed state.
-    SlotCollector::SlotIndicators GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
+    SlotCollector::SlotIndices GetNewSamplesSlotIndices(const std::size_t max_count) noexcept;
 
-    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
-    ResultBlank UnsetReceiveHandler();
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler);
+    Result<void> UnsetReceiveHandler();
 
     pid_t GetEventSourcePid() const noexcept;
     ElementFqId GetElementFQId() const noexcept
     {
         return event_fq_id_;
     };
-    EventControl& GetEventControl() const noexcept
+    ProxyEventControlLocalView& GetEventControl() const noexcept
     {
-        return event_control_;
+        return event_control_local_;
     };
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept;
-    score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept;
+    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept;
     void NotifyServiceInstanceChangedAvailability(const bool is_available, const pid_t new_event_source_pid) noexcept;
 
   private:
@@ -110,7 +111,7 @@ class ProxyEventCommon final
     ElementFqId event_fq_id_;
     const std::string_view event_name_;
     TransactionLogId transaction_log_id_;
-    EventControl& event_control_;
+    ProxyEventControlLocalView& event_control_local_;
     SubscriptionStateMachine subscription_event_state_machine_;
 };
 

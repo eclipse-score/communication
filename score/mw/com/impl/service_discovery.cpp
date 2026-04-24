@@ -61,7 +61,7 @@ ServiceDiscovery::~ServiceDiscovery()
 }
 
 auto ServiceDiscovery::OfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) noexcept
-    -> ResultBlank
+    -> Result<void>
 {
     auto& service_discovery_client = GetServiceDiscoveryClient(instance_identifier);
 
@@ -69,13 +69,13 @@ auto ServiceDiscovery::OfferService(score::mw::com::impl::InstanceIdentifier ins
 }
 
 auto ServiceDiscovery::StopOfferService(score::mw::com::impl::InstanceIdentifier instance_identifier) noexcept
-    -> ResultBlank
+    -> Result<void>
 {
     return StopOfferService(instance_identifier, QualityTypeSelector::kBoth);
 }
 
 auto ServiceDiscovery::StopOfferService(score::mw::com::impl::InstanceIdentifier instance_identifier,
-                                        QualityTypeSelector quality_type) noexcept -> ResultBlank
+                                        QualityTypeSelector quality_type) noexcept -> Result<void>
 {
     auto& service_discovery_client = GetServiceDiscoveryClient(instance_identifier);
 
@@ -174,7 +174,7 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
 }
 
 [[nodiscard]] auto ServiceDiscovery::StopFindService(const FindServiceHandle find_service_handle) noexcept
-    -> ResultBlank
+    -> Result<void>
 {
     // Make a copy of the EnrichedInstanceIdentifiers for which we need to call StopFindService. We make a copy under
     // lock to ensure that the map isn't modified while we're accessing it. However, StopFindService is called on the
@@ -192,7 +192,7 @@ auto ServiceDiscovery::StartFindService(FindServiceHandler<HandleType> handler,
     score::cpp::ignore = handle_to_instances_.erase(find_service_handle);
     lock.unlock();
 
-    ResultBlank result{};
+    Result<void> result{};
     for (const auto& enriched_instance_identifier : enriched_instance_identifiers)
     {
         auto& service_discovery_client =
@@ -310,7 +310,7 @@ auto ServiceDiscovery::GetServiceDiscoveryClient(const InstanceIdentifier& insta
 auto ServiceDiscovery::BindingSpecificStartFindService(
     FindServiceHandle search_handle,
     std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
-    const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> ResultBlank
+    const EnrichedInstanceIdentifier& enriched_instance_identifier) noexcept -> Result<void>
 {
     auto& service_discovery_client = GetServiceDiscoveryClient(enriched_instance_identifier.GetInstanceIdentifier());
 

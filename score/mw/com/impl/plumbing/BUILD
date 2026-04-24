@@ -174,6 +174,7 @@ cc_library(
     deps = [
         "//score/mw/com/impl:instance_identifier",
         "//score/mw/com/impl:proxy_base",
+        "//score/mw/com/impl/methods:proxy_method_binding",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -260,9 +261,9 @@ cc_library(
 )
 
 cc_library(
-    name = "proxy_service_element_binding_factory_impl",
-    srcs = ["proxy_service_element_binding_factory_impl.cpp"],
-    hdrs = ["proxy_service_element_binding_factory_impl.h"],
+    name = "lola_proxy_element_building_blocks",
+    srcs = ["lola_proxy_element_building_blocks.cpp"],
+    hdrs = ["lola_proxy_element_building_blocks.h"],
     features = COMPILER_WARNING_FEATURES,
     tags = ["FFI"],
     visibility = [
@@ -288,7 +289,7 @@ cc_library(
     ],
     deps = [
         ":i_proxy_event_binding_factory",
-        ":proxy_service_element_binding_factory_impl",
+        ":lola_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -302,7 +303,9 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":i_proxy_field_binding_factory",
-        ":proxy_service_element_binding_factory_impl",
+        ":lola_proxy_element_building_blocks",
+        ":proxy_method_binding_factory",
+        "//score/mw/com/impl:method_type",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -319,7 +322,7 @@ cc_library(
     ],
     deps = [
         ":i_proxy_method_binding_factory",
-        ":proxy_service_element_binding_factory_impl",
+        ":lola_proxy_element_building_blocks",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -333,7 +336,7 @@ cc_library(
         "//score/mw/com/impl/bindings/lola",
         "//score/mw/com/impl/bindings/lola:partial_restart_path_builder",
         "//score/mw/com/impl/bindings/lola:shm_path_builder",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
     deps = [
@@ -879,8 +882,8 @@ cc_test(
         "//score/mw/com/impl/test:runtime_mock_guard",
         "@googletest//:gtest_main",
         "@score_baselibs//score/language/safecpp/coverage_termination_handler",
+        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/os/mocklib:fcntl_mock",
-        "@score_logging//score/mw/log",
     ],
 )
 

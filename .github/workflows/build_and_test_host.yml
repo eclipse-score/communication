@@ -16,6 +16,8 @@
 
 name: Bazel Build & Test communication module
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, reopened, synchronize]
   merge_group:
@@ -28,8 +30,11 @@ on:
         type: boolean
         default: true
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: build_and_test_host-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request'}}
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
 jobs:
     prepare_build_and_test_host_matrix:
       runs-on: ubuntu-24.04
@@ -86,15 +91,18 @@ jobs:
         contents: read
       steps:
         - name: Checkout repository
-          uses: actions/checkout@v4.2.2
+          uses: actions/checkout@v6.0.2
         - name: Free Disk Space (Ubuntu)
-          uses: eclipse-score/cicd-workflows/.github/actions/free_disk_space@7e109c9e97670ec621adaea1c21721c18212a96d
-        - uses: bazel-contrib/setup-bazel@0.18.0
+          uses: eclipse-score/more-disk-space@v1
+          with:
+            level: 4
+        - uses: castler/setup-bazel@79bc547e94dea617d8524202a81e5cbcc3b6d9ea
           with:
             bazelisk-cache: true
             disk-cache: build_and_test_host${{ matrix.identifier }}
+            disk-cache-key: "main"
             repository-cache: true
-            cache-save: ${{ github.event_name == 'merge_group' }}
+            cache-save: ${{ github.ref == 'refs/heads/main' }}
         - name: Allow linux-sandbox
           uses: ./actions/unblock_user_namespace_for_linux_sandbox
         - name: Bazel build communication targets
@@ -103,3 +111,7 @@ jobs:
         - name: Bazel test communication targets
           run: |
             bazel test ${{ matrix.config }} //... --build_tests_only
+        - name: Bazel test integration as module
+          run: |
+            # for the beginning, we do this only with the default configuration
+            cd examples && bazel build //... && bazel mod deps --lockfile_mode=update

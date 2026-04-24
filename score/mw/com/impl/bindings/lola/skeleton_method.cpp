@@ -36,23 +36,23 @@
 namespace score::mw::com::impl::lola
 {
 
-SkeletonMethod::SkeletonMethod(Skeleton& skeleton, const ElementFqId element_fq_id)
+SkeletonMethod::SkeletonMethod(Skeleton& skeleton, UniqueMethodIdentifier unique_method_identifier)
     : in_args_type_erased_info_{},
       return_type_type_erased_info_{},
       type_erased_callback_{},
       registration_guards_{},
       registration_guards_mutex_{}
 {
-    skeleton.RegisterMethod(element_fq_id.element_id_, *this);
+    skeleton.RegisterMethod(unique_method_identifier, *this);
 }
 
-ResultBlank SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)
+Result<void> SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)
 {
     type_erased_callback_ = std::move(type_erased_callback);
     return {};
 }
 
-ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
+Result<void> SkeletonMethod::OnProxyMethodSubscribeFinished(
     const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,
     const std::optional<score::cpp::span<std::byte>> in_arg_queue_storage,
     const std::optional<score::cpp::span<std::byte>> return_queue_storage,
@@ -99,7 +99,7 @@ ResultBlank SkeletonMethod::OnProxyMethodSubscribeFinished(
         asil_level, proxy_method_instance_identifier, std::move(method_call_callback), allowed_proxy_uid);
     if (!(registration_result.has_value()))
     {
-        return MakeUnexpected<Blank>(registration_result.error());
+        return MakeUnexpected<void>(registration_result.error());
     }
 
     const std::lock_guard lock{registration_guards_mutex_};

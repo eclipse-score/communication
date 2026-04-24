@@ -22,6 +22,7 @@
 #include "score/mw/com/impl/bindings/lola/methods/type_erased_call_queue.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -38,6 +39,7 @@
 #include "score/memory/shared/lock_file.h"
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/shared_memory_factory.h"
+#include "score/mw/com/impl/bindings/lola/methods/unique_method_identifier.h"
 #include "score/mw/log/logging.h"
 #include "score/result/result.h"
 
@@ -133,7 +135,7 @@ class Proxy : public ProxyBinding
     ///
     /// \param element_fq_id The Event ID.
     /// \return A reference to the event control structure.
-    EventControl& GetEventControl(const ElementFqId element_fq_id) noexcept;
+    ProxyEventControlLocalView& GetEventControlLocal(const ElementFqId element_fq_id) noexcept;
 
     /// Retrieves a reference to the event data storage area for a given ElementFqId.
     ///
@@ -177,7 +179,7 @@ class Proxy : public ProxyBinding
     /// been destructed.
     void UnregisterEventBinding(const std::string_view service_element_name) noexcept override;
 
-    score::ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
+    score::Result<void> SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
 
     QualityType GetQualityType() const noexcept;
 
@@ -190,7 +192,7 @@ class Proxy : public ProxyBinding
         return proxy_instance_identifier_;
     }
 
-    void RegisterMethod(const ElementFqId::ElementId method_id, ProxyMethod& proxy_method) noexcept;
+    void RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept;
 
   private:
     static std::atomic<ProxyInstanceIdentifier::ProxyInstanceCounter> current_proxy_instance_counter_;
@@ -198,7 +200,7 @@ class Proxy : public ProxyBinding
     void ServiceAvailabilityChangeHandler(const bool is_service_available);
     void InitializeSharedMemoryForMethods(
         memory::shared::ManagedMemoryResource& memory_resource,
-        const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& method_data,
+        const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& method_data,
         const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos);
 
     static bool DoElementInfosContainInArgsOrReturn(
@@ -207,15 +209,21 @@ class Proxy : public ProxyBinding
         std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos);
 
     memory::shared::SharedMemoryFactory::UserPermissions GetSkeletonShmPermissions() const;
-    std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>> GetMethodIdAndQueueSizeFromNames(
-        const std::vector<std::string_view>& enabled_method_names) const;
+    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>
+    GetMethodIdAndQueueSizeFromNames(const std::vector<std::string_view>& enabled_method_names) const;
     std::vector<TypeErasedCallQueue::TypeErasedElementInfo> GetTypeErasedElementInfoForEnabledMethods(
-        const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& enabled_method_data) const;
+        const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>&
+            enabled_method_data) const;
     std::string GetMethodChannelShmName() const;
 
     std::shared_ptr<memory::shared::ManagedMemoryResource> control_;
     std::shared_ptr<memory::shared::ManagedMemoryResource> data_;
     std::shared_ptr<memory::shared::ManagedMemoryResource> method_shm_resource_;
+
+    /// \brief Local view of ServiceDataControl which is stored in shared memory.
+    ///
+    /// We use this view to avoid directly accessing objects in shared memory which negatively affects performance.
+    ProxyServiceDataControlLocalView service_data_control_local_;
 
     QualityType quality_type_;
     EventNameToElementFqIdConverter event_name_to_element_fq_id_converter_;
@@ -230,14 +238,19 @@ class Proxy : public ProxyBinding
     std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
         service_instance_usage_flock_mutex_and_lock_;
-    std::unordered_map<LolaMethodId, std::reference_wrapper<ProxyMethod>> proxy_methods_;
+    /// Mutex which synchronises registration of Proxy methods via Proxy::RegisterMethod with the
+    /// FindServiceHandler in find_service_guard_ which will call ServiceAvailabilityChangeHandler iterating over
+    /// proxy_methods_.
+    std::mutex proxy_method_registration_mutex_;
+    std::unordered_map<score::mw::com::impl::lola::UniqueMethodIdentifier, std::reference_wrapper<ProxyMethod>>
+        proxy_methods_;
     MethodData* method_data_;
     ProxyInstanceIdentifier proxy_instance_identifier_;
     OfferedStateMachine offered_state_machine_;
 
     /// Flag which is set once the proxy methods are fully setup in Proxy::SetupMethods(). This is checked in the
     /// ServiceAvailabilityChangeHandler so that it doesn't send a notification to the Skeleton before the shared memory
-    /// has been setup. See platform/aas/docs/features/ipc/lola/method/README.md for details about the full methods
+    /// has been setup. See score/docs/features/ipc/lola/method/README.md for details about the full methods
     /// logic related to proxy autoreconnect.
     ///
     /// We use an atomic instead of a mutex because we don't care if SubscribeServiceMethod is called multiple times

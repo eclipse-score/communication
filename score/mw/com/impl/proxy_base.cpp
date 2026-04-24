@@ -148,7 +148,7 @@ auto ProxyBase::StartFindService(FindServiceHandler<HandleType> handler, Instanc
     return start_find_service_result;
 }
 
-score::ResultBlank ProxyBase::StopFindService(const FindServiceHandle handle) noexcept
+score::Result<void> ProxyBase::StopFindService(const FindServiceHandle handle) noexcept
 {
     const auto stop_find_service_result = Runtime::getInstance().GetServiceDiscovery().StopFindService(handle);
     if (!(stop_find_service_result.has_value()))
@@ -156,6 +156,22 @@ score::ResultBlank ProxyBase::StopFindService(const FindServiceHandle handle) no
         return MakeUnexpected(ComErrc::kInvalidHandle, stop_find_service_result.error().UserMessage());
     }
     return stop_find_service_result;
+}
+
+Result<void> ProxyBase::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+{
+    const auto result = proxy_binding_->SetupMethods(enabled_method_names);
+    if (!result.has_value())
+    {
+        return MakeUnexpected<void>(result.error());
+    }
+
+    for (auto& method_key_value_pair : methods_)
+    {
+        auto& method = method_key_value_pair.second.get();
+        method.InitializeInArgsAndReturnValues();
+    }
+    return {};
 }
 
 ProxyBaseView::ProxyBaseView(ProxyBase& proxy_base) noexcept : proxy_base_(proxy_base) {}

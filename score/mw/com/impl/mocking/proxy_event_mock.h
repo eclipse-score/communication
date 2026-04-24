@@ -26,13 +26,13 @@ class ProxyEventMock : public IProxyEvent<SampleType>
   public:
     using Callback = typename IProxyEvent<SampleType>::Callback;
 
-    MOCK_METHOD(ResultBlank, Subscribe, (const std::size_t), (override));
+    MOCK_METHOD(Result<void>, Subscribe, (const std::size_t), (override));
     MOCK_METHOD(void, Unsubscribe, (), (override));
     MOCK_METHOD(SubscriptionState, GetSubscriptionState, (), (const, override));
     MOCK_METHOD(std::size_t, GetFreeSampleCount, (), (const, override));
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (override));
-    MOCK_METHOD(ResultBlank, SetReceiveHandler, (EventReceiveHandler), (override));
-    MOCK_METHOD(ResultBlank, UnsetReceiveHandler, (), (override));
+    MOCK_METHOD(Result<void>, SetReceiveHandler, (EventReceiveHandler), (override));
+    MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (override));
 
     MOCK_METHOD(Result<std::size_t>, GetNewSamples, (Callback&&, const std::size_t), (override));
 };

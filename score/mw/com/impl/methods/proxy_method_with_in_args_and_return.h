@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_AND_RETURN_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_IN_ARGS_AND_RETURN_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
@@ -39,6 +40,9 @@
 namespace score::mw::com::impl
 {
 
+template <typename, bool, bool, bool>
+class ProxyField;
+
 /// \brief Partial specialization of ProxyMethod for function signatures with arguments and non-void return
 /// \tparam ReturnType return type of the method
 /// \tparam ArgTypes argument types of the method
@@ -51,14 +55,25 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyMethodView;
 
+    friend class ProxyField<ReturnType, true, true, true>;
+    friend class ProxyField<ReturnType, true, true, false>;
+    friend class ProxyField<ReturnType, false, true, false>;
+    friend class ProxyField<ReturnType, false, true, true>;
+
+    struct FieldOnlyConstructorEnabler
+    {
+    };
+
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
         : ProxyMethodBase(
               proxy_base,
               ProxyMethodBindingFactory<ReturnType(ArgTypes...)>::Create(proxy_base.GetHandle(),
                                                                          ProxyBaseView{proxy_base}.GetBinding(),
-                                                                         method_name),
-              method_name),
+                                                                         method_name,
+                                                                         MethodType::kMethod),
+              method_name,
+              MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
@@ -73,11 +88,26 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name),
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod),
           are_in_arg_ptrs_active_(kCallQueueSize)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
+    ProxyMethod(ProxyBase& proxy_base,
+                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
+                std::string_view method_name,
+                FieldOnlyConstructorEnabler) noexcept
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kSet),
+          are_in_arg_ptrs_active_(kCallQueueSize)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -94,6 +124,8 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     /// \brief A ProxyMethod shall be moveable.
     ProxyMethod(ProxyMethod&&) noexcept;
     ProxyMethod& operator=(ProxyMethod&&) noexcept;
+
+    Result<void> InitializeInArgsAndReturnValues() override;
 
     /// \brief Allocates the necessary storage for the argument values and the return value of a method call.
     /// \return On success, a tuple of MethodInArgPtr for each argument type is returned. On failure, an error code is
@@ -154,7 +186,7 @@ auto ProxyMethod<ReturnType(ArgTypes...)>::operator=(ProxyMethod&& other) noexce
         ProxyMethodBase::operator=(std::move(other));
         are_in_arg_ptrs_active_ = std::move(other.are_in_arg_ptrs_active_);
 
-        // Since the address of this method has changed, we need update the address stored in the parent proxy.
+        // Since the address of this method has changed, we need update the address stored in the parent proxy
         ProxyBaseView proxy_base_view{proxy_base_.get()};
         proxy_base_view.UpdateMethod(method_name_, *this);
     }
@@ -186,7 +218,7 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
     MethodInArgPtr<ArgTypes>... args)
 {
     auto queue_position = detail::GetCommonQueuePosition(args...);
-    auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
+    auto allocated_return_type_storage = binding_->GetReturnValueBuffer(queue_position);
     if (!allocated_return_type_storage.has_value())
     {
         return Unexpected(allocated_return_type_storage.error());
@@ -212,6 +244,24 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType(ArgTypes..
         *(reinterpret_cast<ReturnType*>(allocated_return_type_storage.value().data())),
         is_return_type_ptr_active_[queue_position],
         queue_position};
+}
+
+template <typename ReturnType, typename... ArgTypes>
+Result<void> ProxyMethod<ReturnType(ArgTypes...)>::InitializeInArgsAndReturnValues()
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    const auto init_in_args_result = detail::InitializeInArgs<ArgTypes...>(*binding_, kCallQueueSize);
+    if (!init_in_args_result.has_value())
+    {
+        return Unexpected(init_in_args_result.error());
+    }
+
+    const auto init_return_result = detail::InitializeReturnValue<ReturnType>(*binding_, kCallQueueSize);
+    if (!init_return_result.has_value())
+    {
+        return Unexpected(init_return_result.error());
+    }
+    return {};
 }
 
 }  // namespace score::mw::com::impl

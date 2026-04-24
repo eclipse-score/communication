@@ -18,10 +18,11 @@ common --http_connector_attempts=10
 common --http_connector_retry_max_timeout=1s
 common --http_timeout_scaling=2.0
 
+# Do not use automatically C++ generated toolchains
+build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 common --@score_baselibs//score/json:base_library=nlohmann
 common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
-common --@score_logging//score/mw/log/flags:KRemote_Logging=False
 common --//score/mw/com/flags:tracing_library=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation
 common --extra_toolchains=@gcc_toolchain_x86_64//:cc_toolchain
 common --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_unknown_linux_gnu
@@ -33,6 +34,7 @@ common:linux_x86_64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:
 common:linux_x86_64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_x86_64_toolchain//:x86_64-linux
 common:linux_aarch64_score_gcc_12_2_0_posix --platforms=@score_bazel_platforms//:aarch64-linux-gcc_12.2.0-posix
 common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_gcc_aarch64_toolchain//:aarch64-linux
+common:linux_aarch64_score_gcc_12_2_0_posix --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_aarch64_unknown_linux_gnu
 
 # In order to build for QNX, you need:
 # * An account on qnx.com
@@ -73,39 +75,10 @@ common --registry=https://bcr.bazel.build
 # Enable colored output for gtest
 build --test_env="GTEST_COLOR=1"
 
-# With this instrumentation filter for our two main components, we ensure that `bazel coverage //...` is yielding the correct results
-coverage --instrumentation_filter="^//score/message_passing[/:],^//score/mw/com[/:],-//score/mw/com/performance_benchmarks[/:],-//score/mw/.*/test[/:]".
-coverage --experimental_generate_llvm_lcov
-coverage --experimental_use_llvm_covmap
-coverage --combined_report=lcov
-coverage --coverage_report_generator=@bazel_tools//tools/test/CoverageOutputGenerator/java/com/google/devtools/coverageoutputgenerator:Main
-coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-coverage --test_env=COVERAGE_GCOV_OPTIONS=-bcu
-# TODO set toolchain feature once possible
-# These compile time options are required to cover abnormal termination cases. In GCC one can use `__gcc_dump()`, but this does not work with LLVM
-# LLVM provided these compile-time options in combination with a specific profile setting which is enabled in bazel via `LLVM_PROFILE_CONTINUOUS_MODE`
-coverage --test_env=LLVM_PROFILE_CONTINUOUS_MODE=1
-coverage --cxxopt -mllvm
-coverage --cxxopt -runtime-counter-relocation
-
-# Clang-tidy configuration
-# Run clang-tidy on all C++ targets with: bazel test --config=clang-tidy //...
-test:clang-tidy --aspects=//:tools/lint/linters.bzl%clang_tidy_aspect
-test:clang-tidy --output_groups=+rules_lint_report
-# Use LLVM toolchain for clang-tidy so it can find system headers
-test:clang-tidy --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-test:clang-tidy --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
-
+# Configuration options required for quality assurance
+import %workspace%/quality/coverage.bazelrc
 import %workspace%/quality/sanitizer/sanitizer.bazelrc
-
-common:codeql --platform_suffix=codeql
-common:codeql --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-common:codeql --sandbox_writable_path=/var/tmp
-common:codeql --nouse_action_cache
-common:codeql --noremote_accept_cached
-common:codeql --noremote_upload_local_results
-common:codeql --disk_cache=
+import %workspace%/quality/static_analysis/static_analysis.bazelrc
 
 # Use native sphinx_build_binary instead of the wrapper
 build --//docs/sphinx/utils:use_native_sphinx_build

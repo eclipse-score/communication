@@ -72,7 +72,7 @@ class SkeletonBase
      * \return On failure, returns an error code according to the SW Component Requirements SCR-17434118 and
      * SCR-566325.
      */
-    [[nodiscard]] ResultBlank OfferService() noexcept;
+    [[nodiscard]] Result<void> OfferService() noexcept;
 
     /**
      * \api
@@ -108,8 +108,8 @@ class SkeletonBase
 
     ISkeletonBase* skeleton_mock_;
 
-    [[nodiscard]] score::ResultBlank OfferServiceEvents() const noexcept;
-    [[nodiscard]] score::ResultBlank OfferServiceFields() const noexcept;
+    [[nodiscard]] score::Result<void> OfferServiceEvents() const noexcept;
+    [[nodiscard]] score::Result<void> OfferServiceFields() const noexcept;
 
     FlagOwner service_offered_flag_;
 };
@@ -183,14 +183,14 @@ class SkeletonBaseView
 
     void UpdateMethod(const std::string_view method_name, SkeletonMethodBase& method) noexcept
     {
-        auto method_name_it = skeleton_base_.methods_.find(method_name);
-        if (method_name_it == skeleton_base_.methods_.cend())
+        auto method_it = skeleton_base_.methods_.find(method_name);
+        if (method_it == skeleton_base_.methods_.cend())
         {
             score::mw::log::LogError("lola")
                 << "SkeletonBaseView::UpdateMethod failed to update method because the requested method doesn't exist";
             std::terminate();
         }
-        method_name_it->second = method;
+        method_it->second = method;
     }
 
     const SkeletonBase::SkeletonEvents& GetEvents() const noexcept

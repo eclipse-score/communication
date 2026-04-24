@@ -24,6 +24,10 @@ on:
         required: true
         type: string
 
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
 jobs:
   create-draft-release:
     runs-on: ubuntu-24.04
@@ -35,7 +39,7 @@ jobs:
       release-tag: ${{ steps.release-tag.outputs.release-tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Set release tag from workflow dispatch input
         id: release-tag
@@ -67,6 +71,7 @@ jobs:
     uses: ./.github/workflows/build_and_test_qnx.yml
     permissions:
       contents: read
+      pull-requests: read
     secrets:
       SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
       SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}
@@ -99,7 +104,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Download coverage report artifact
         uses: actions/download-artifact@v4
@@ -128,7 +133,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Report success
         run: |
@@ -149,7 +154,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Delete draft release due to failure
         run: |

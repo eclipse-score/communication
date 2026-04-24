@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BASE_H
 #define SCORE_MW_COM_IMPL_METHODS_SKELETON_METHOD_BASE_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/skeleton_method_binding.h"
 
 #include <functional>
@@ -37,8 +38,12 @@ class SkeletonMethodBase
   public:
     SkeletonMethodBase(SkeletonBase& skeleton_base,
                        const std::string_view method_name,
-                       std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding)
-        : method_name_{method_name}, binding_{std::move(skeleton_method_binding)}, skeleton_base_{skeleton_base}
+                       std::unique_ptr<SkeletonMethodBinding> skeleton_method_binding,
+                       MethodType method_type = MethodType::kMethod)
+        : method_name_{method_name},
+          method_type_{method_type},
+          binding_{std::move(skeleton_method_binding)},
+          skeleton_base_{skeleton_base}
     {
     }
 
@@ -54,6 +59,7 @@ class SkeletonMethodBase
 
   protected:
     std::string_view method_name_;
+    MethodType method_type_;
     std::unique_ptr<SkeletonMethodBinding> binding_;
     std::reference_wrapper<SkeletonBase> skeleton_base_;
 };

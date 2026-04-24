@@ -84,7 +84,7 @@ class IMessagePassingService
     ///        the new shared memory region and close all methods shared memory regions that were in the process that
     ///        restarted.
     using ServiceMethodSubscribedHandler = safecpp::CopyableScopedFunction<
-        score::ResultBlank(ProxyInstanceIdentifier proxy_instance_identifier, uid_t proxy_uid, pid_t proxy_pid)>;
+        score::Result<void>(ProxyInstanceIdentifier proxy_instance_identifier, uid_t proxy_uid, pid_t proxy_pid)>;
 
     /// \brief Handler which will be called when the proxy process sends a message that it has called a method.
     ///
@@ -278,10 +278,10 @@ class IMessagePassingService
     /// \param proxy_instance_identifier See arguments documentation for ServiceMethodSubscribedHandler.
     /// \param target_node_id Since this function is called by the Proxy process, target_node_id is the PID of the
     ///        Skeleton process which the subscribe call is sent to (i.e. which contains the corresponding Skeleton)
-    virtual ResultBlank SubscribeServiceMethod(const QualityType asil_level,
-                                               const SkeletonInstanceIdentifier& skeleton_instance_identifier,
-                                               const ProxyInstanceIdentifier& proxy_instance_identifier,
-                                               const pid_t target_node_id) = 0;
+    virtual Result<void> SubscribeServiceMethod(const QualityType asil_level,
+                                                const SkeletonInstanceIdentifier& skeleton_instance_identifier,
+                                                const ProxyInstanceIdentifier& proxy_instance_identifier,
+                                                const pid_t target_node_id) = 0;
 
     /// \brief Blocking call which is called on Proxy side to trigger the Skeleton to process a method call. The
     /// callback registered with RegisterOnServiceMethodSubscribed will be called on the Skeleton side and a response
@@ -296,10 +296,10 @@ class IMessagePassingService
     ///        call. Until asynchronous method calls are supported, this will always be 0.
     /// \param target_node_id Since this function is called by the Proxy process, target_node_id is the PID of the
     ///        Skeleton process which the method call is sent to (i.e. which contains the corresponding Skeleton)
-    virtual ResultBlank CallMethod(const QualityType asil_level,
-                                   const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
-                                   const std::size_t queue_position,
-                                   const pid_t target_node_id) = 0;
+    virtual Result<void> CallMethod(const QualityType asil_level,
+                                    const ProxyMethodInstanceIdentifier& proxy_method_instance_identifier,
+                                    const std::size_t queue_position,
+                                    const pid_t target_node_id) = 0;
 
   private:
     /// \brief Unregister handler that was registered with RegisterOnServiceMethodSubscribedHandler

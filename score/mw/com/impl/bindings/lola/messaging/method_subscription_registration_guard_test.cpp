@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_instance_identifier.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
+
 #include <gtest/gtest.h>
 
 namespace score::mw::com::impl::lola::detail
@@ -35,14 +36,8 @@ class MethodSubscriptionRegistrationGuardFixture : public ::testing::Test
     MethodSubscriptionRegistrationGuardFixture()
     {
         ON_CALL(message_passing_service_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _))
-            .WillByDefault(WithoutArgs(Invoke([this]() -> ResultBlank {
+            .WillByDefault(WithoutArgs(Invoke([this]() -> Result<void> {
                 unregister_on_service_method_subscribed_handler_called_ = true;
-                return {};
-            })));
-
-        ON_CALL(message_passing_service_mock_2_, UnregisterOnServiceMethodSubscribedHandler(_, _))
-            .WillByDefault(WithoutArgs(Invoke([this]() -> ResultBlank {
-                unregister_on_service_method_subscribed_handler_called_2_ = true;
                 return {};
             })));
     }
@@ -55,32 +50,31 @@ class MethodSubscriptionRegistrationGuardFixture : public ::testing::Test
         return *this;
     }
 
-    MethodSubscriptionRegistrationGuardFixture& GivenTwoMethodSubscriptionRegistrationGuards()
-    {
-        score::cpp::ignore =
-            method_subscription_registration_guard_.emplace(MethodSubscriptionRegistrationGuardFactory::Create(
-                message_passing_service_mock_, kAsilLevel, kSkeletonInstanceIdentifier, scope_));
-        score::cpp::ignore =
-            method_subscription_registration_guard_2_.emplace(MethodSubscriptionRegistrationGuardFactory::Create(
-                message_passing_service_mock_2_, kAsilLevel, kSkeletonInstanceIdentifier, scope_));
-        return *this;
-    }
-
     MessagePassingServiceMock message_passing_service_mock_{};
     std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_{};
     bool unregister_on_service_method_subscribed_handler_called_{false};
 
-    MessagePassingServiceMock message_passing_service_mock_2_{};
-    std::optional<MethodSubscriptionRegistrationGuard> method_subscription_registration_guard_2_{};
-    bool unregister_on_service_method_subscribed_handler_called_2_{false};
-
     safecpp::Scope<> scope_{};
 };
+
+TEST_F(MethodSubscriptionRegistrationGuardFixture, MethodSubscriptionRegistrationGuardUsesScopeExit)
+{
+    // Expecting that MethodSubscriptionRegistrationGuard is a type alias for utils::ScopeExit. If this is
+    // the case, then we only add basic tests here that UnregisterOnServiceMethodSubscribedHandler is called on
+    // destruction of the guard and that the scope of the guard is correctly handled. The more complex tests about
+    // testing whether the handler is called when move constructing / move assigning the guard is handled in the tests
+    // for ScopeExit.
+    static_assert(
+        std::is_same_v<MethodSubscriptionRegistrationGuard, utils::ScopeExit<safecpp::MoveOnlyScopedFunction<void()>>>);
+}
 
 TEST_F(MethodSubscriptionRegistrationGuardFixture, CreatingGuardDoesNotCallUnregister)
 {
     // When creating a MethodSubscriptionRegistrationGuard
     GivenAMethodSubscriptionRegistrationGuard();
+
+    // Expecting that UnregisterOnServiceMethodSubscribedHandler is never called
+    EXPECT_CALL(message_passing_service_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _)).Times(0);
 
     // Then UnregisterOnServiceMethodSubscribedHandler is not called
     EXPECT_FALSE(unregister_on_service_method_subscribed_handler_called_);
@@ -109,90 +103,14 @@ TEST_F(MethodSubscriptionRegistrationGuardFixture, DestroyingGuardAfterScopeHasE
     // and given that the scope has expired
     scope_.Expire();
 
+    // Expecting that UnregisterOnServiceMethodSubscribedHandler is never called
+    EXPECT_CALL(message_passing_service_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _)).Times(0);
+
     // When destroying the MethodSubscriptionRegistrationGuard
     method_subscription_registration_guard_.reset();
 
     // Then UnregisterOnServiceMethodSubscribedHandler is not called
     EXPECT_FALSE(unregister_on_service_method_subscribed_handler_called_);
-}
-
-TEST_F(MethodSubscriptionRegistrationGuardFixture, MoveConstructingGuardDoesNotCallUnregister)
-{
-    GivenAMethodSubscriptionRegistrationGuard();
-
-    // When move constructing a new MethodSubscriptionRegistrationGuard
-    MethodSubscriptionRegistrationGuard moved_to_guard{std::move(method_subscription_registration_guard_).value()};
-
-    // Then UnregisterOnServiceMethodSubscribedHandler is not called
-    EXPECT_FALSE(unregister_on_service_method_subscribed_handler_called_);
-}
-
-TEST_F(MethodSubscriptionRegistrationGuardFixture, DestroyingMoveConstructedMovedFromGuardDoesNotCallUnregister)
-{
-    GivenAMethodSubscriptionRegistrationGuard();
-
-    // and given a new MethodSubscriptionRegistrationGuard move constructed from another
-    MethodSubscriptionRegistrationGuard moved_to_guard{std::move(method_subscription_registration_guard_).value()};
-
-    // When destroying the moved_from guard
-    method_subscription_registration_guard_.reset();
-
-    // Then UnregisterOnServiceMethodSubscribedHandler is not called
-    EXPECT_FALSE(unregister_on_service_method_subscribed_handler_called_);
-}
-
-TEST_F(MethodSubscriptionRegistrationGuardFixture, DestroyingMoveConstructedMovedToGuardCallsUnregister)
-{
-    GivenAMethodSubscriptionRegistrationGuard();
-
-    // and given a new MethodSubscriptionRegistrationGuard move constructed from another
-    MethodSubscriptionRegistrationGuard moved_to_guard{std::move(method_subscription_registration_guard_).value()};
-
-    // When destroying the moved_to guard
-    moved_to_guard.reset();
-
-    // Then UnregisterOnServiceMethodSubscribedHandler is called
-    EXPECT_TRUE(unregister_on_service_method_subscribed_handler_called_);
-}
-
-TEST_F(MethodSubscriptionRegistrationGuardFixture, MoveAssigningGuardCallsUnregisterOnMovedToGuard)
-{
-    GivenTwoMethodSubscriptionRegistrationGuards();
-
-    // When move assigning one MethodSubscriptionRegistrationGuard to another
-    method_subscription_registration_guard_.value() = std::move(method_subscription_registration_guard_2_).value();
-
-    // Then UnregisterOnServiceMethodSubscribedHandler is only called on the moved-to guard
-    EXPECT_TRUE(unregister_on_service_method_subscribed_handler_called_);
-    EXPECT_FALSE(unregister_on_service_method_subscribed_handler_called_2_);
-}
-
-TEST_F(MethodSubscriptionRegistrationGuardFixture, DestroyingMoveAssignedMovedFromGuardDoesNotCallUnregister)
-{
-    GivenTwoMethodSubscriptionRegistrationGuards();
-
-    // and given that one MethodSubscriptionRegistrationGuard to was move assigned to another
-    method_subscription_registration_guard_.value() = std::move(method_subscription_registration_guard_2_).value();
-
-    // When destroying the moved-from guard
-    method_subscription_registration_guard_2_.reset();
-
-    // Then UnregisterOnServiceMethodSubscribedHandler is not called on the moved-from guard
-    EXPECT_FALSE(unregister_on_service_method_subscribed_handler_called_2_);
-}
-
-TEST_F(MethodSubscriptionRegistrationGuardFixture, DestroyingMoveAssignedMovedToGuardCallsUnregister)
-{
-    GivenTwoMethodSubscriptionRegistrationGuards();
-
-    // and given that one MethodSubscriptionRegistrationGuard to was move assigned to another
-    method_subscription_registration_guard_.value() = std::move(method_subscription_registration_guard_2_).value();
-
-    // When destroying the moved-to guard
-    method_subscription_registration_guard_.reset();
-
-    // Then UnregisterOnServiceMethodSubscribedHandler is not called on the moved-to guard
-    EXPECT_TRUE(unregister_on_service_method_subscribed_handler_called_2_);
 }
 
 }  // namespace

@@ -17,8 +17,10 @@
 #include "score/mw/com/impl/bindings/lola/i_shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
 #include "score/mw/com/impl/bindings/lola/methods/offered_state_machine.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/proxy_instance_identifier.h"
+#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 #include "score/mw/com/impl/bindings/lola/service_data_storage.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
@@ -38,6 +40,7 @@
 #include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/service_element_type.h"
 
+#include "score/filesystem/factory/filesystem_factory.h"
 #include "score/language/safecpp/safe_atomics/try_atomic_add.h"
 #include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/flock/flock_mutex_and_lock.h"
@@ -168,6 +171,12 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
     {
         providers = std::make_optional(score::cpp::span<const uid_t>{found->second});
     }
+    else if (instance_deployment.strict_permissions_)
+    {
+        // With strict permission-checks, an absent allowedProvider is treated the same as an empty list:
+        // no provider is accepted. Without strict, an absent allowedProvider means no restriction (nullopt).
+        providers = std::make_optional(score::cpp::span<const uid_t>{});
+    }
 
     ShmPathBuilder shm_path_builder{lola_service_deployment.service_id_};
     const auto control_shm = shm_path_builder.GetControlChannelShmName(lola_service_instance_id.GetId(), quality_type);
@@ -186,16 +195,20 @@ OpenSharedMemory(const LolaServiceInstanceDeployment& instance_deployment,
     return std::make_pair(control, data);
 }
 
-ServiceDataControl& GetServiceDataControlProxySide(const memory::shared::ManagedMemoryResource& control) noexcept
+ProxyServiceDataControlLocalView GetProxyServiceDataControlLocalView(
+    const memory::shared::ManagedMemoryResource& control_memory_resource) noexcept
 {
+    auto* const usable_base_address = control_memory_resource.getUsableBaseAddress();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+        usable_base_address != nullptr,
+        "invalid memory resource for service_data_control -> has no usable base adress!");
+
     // Suppress "AUTOSAR C++14 M5-2-8" rule. The rule declares:
     // An object with integer type or pointer to void type shall not be converted to an object with pointer type.
     // The "ServiceDataStorage" type is strongly defined as shared IPC data between Proxy and Skeleton.
     // coverity[autosar_cpp14_m5_2_8_violation]
-    auto* const service_data_control = static_cast<ServiceDataControl*>(control.getUsableBaseAddress());
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(service_data_control != nullptr,
-                                                "Could not retrieve service data control.");
-    return *service_data_control;
+    auto* const service_data_control = static_cast<ServiceDataControl*>(usable_base_address);
+    return ProxyServiceDataControlLocalView{*service_data_control};
 }
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
@@ -204,10 +217,10 @@ ServiceDataControl& GetServiceDataControlProxySide(const memory::shared::Managed
 // throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-score::ResultBlank ExecutePartialRestartLogic(const QualityType quality_type,
-                                              const SkeletonInstanceIdentifier skeleton_instance_identifier,
-                                              const memory::shared::ManagedMemoryResource& control,
-                                              const memory::shared::ManagedMemoryResource& data) noexcept
+score::Result<void> ExecutePartialRestartLogic(const QualityType quality_type,
+                                               const SkeletonInstanceIdentifier skeleton_instance_identifier,
+                                               const memory::shared::ManagedMemoryResource& control,
+                                               const memory::shared::ManagedMemoryResource& data) noexcept
 {
     auto& service_data_storage = detail_proxy::GetServiceDataStorage(data);
 
@@ -216,8 +229,8 @@ score::ResultBlank ExecutePartialRestartLogic(const QualityType quality_type,
     // The transaction log is identified by the application's unique identifier, which is either the configured
     // 'applicationID' or the process UID as a fallback.
     const TransactionLogId transaction_log_id{static_cast<TransactionLogId>(lola_runtime.GetApplicationId())};
-    auto& service_data_control = GetServiceDataControlProxySide(control);
-    TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control,
+    auto service_data_control_local = GetProxyServiceDataControlLocalView(control);
+    TransactionLogRollbackExecutor transaction_log_rollback_executor{service_data_control_local,
                                                                      skeleton_instance_identifier,
                                                                      quality_type,
                                                                      service_data_storage.skeleton_pid_,
@@ -403,6 +416,7 @@ Proxy::Proxy(std::shared_ptr<memory::shared::ManagedMemoryResource> control,
       control_{std::move(control)},
       data_{std::move(data)},
       method_shm_resource_{nullptr},
+      service_data_control_local_{GetProxyServiceDataControlLocalView(*control_)},
       quality_type_{quality_type},
       event_name_to_element_fq_id_converter_{std::move(event_name_to_element_fq_id_converter)},
       handle_{std::move(handle)},
@@ -467,6 +481,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
     // dispatching to message passing and allows more specific error handling / logging).
     if (offered_state_machine_.GetCurrentState() == OfferedStateMachine::State::STOP_OFFERED)
     {
+        std::lock_guard lock{proxy_method_registration_mutex_};
         for (auto& proxy_method : proxy_methods_)
         {
             proxy_method.second.get().MarkUnsubscribed();
@@ -502,6 +517,7 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
         }
         else
         {
+            std::lock_guard lock{proxy_method_registration_mutex_};
             for (auto& proxy_method : proxy_methods_)
             {
                 proxy_method.second.get().MarkSubscribed();
@@ -515,13 +531,12 @@ void Proxy::ServiceAvailabilityChangeHandler(const bool is_service_available)
 // value is not comparable and in our case the key is comparable. so no way for 'event_controls_.find()' to throw an
 // exception.
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-EventControl& Proxy::GetEventControl(const ElementFqId element_fq_id) noexcept
+ProxyEventControlLocalView& Proxy::GetEventControlLocal(const ElementFqId element_fq_id) noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "Proxy::GetEventControl: Managed memory control pointer is Null");
-    auto& service_data_control = GetServiceDataControlProxySide(*control_);
-    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
-    if (event_entry == service_data_control.event_controls_.end())
+    const auto event_entry = service_data_control_local_.event_controls_.find(element_fq_id);
+    if (event_entry == service_data_control_local_.event_controls_.end())
     {
         score::mw::log::LogFatal("lola") << __func__ << __LINE__
                                          << "Unable to find control channel for given event instance. Terminating.";
@@ -577,10 +592,9 @@ bool Proxy::IsEventProvided(const std::string_view event_name) const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(control_ != nullptr,
                                                       "IsEventProvided: Managed memory control pointer is Null");
-    auto& service_data_control = GetServiceDataControlProxySide(*control_);
     const auto element_fq_id = event_name_to_element_fq_id_converter_.Convert(event_name);
-    const auto event_entry = service_data_control.event_controls_.find(element_fq_id);
-    const bool event_exists = (event_entry != service_data_control.event_controls_.end());
+    const auto event_entry = service_data_control_local_.event_controls_.find(element_fq_id);
+    const bool event_exists = (event_entry != service_data_control_local_.event_controls_.end());
     return event_exists;
 }
 
@@ -610,13 +624,48 @@ void Proxy::UnregisterEventBinding(const std::string_view service_element_name) 
     }
 }
 
-score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
+score::Result<void> Proxy::SetupMethods(const std::vector<std::string_view>& enabled_method_names)
 {
-    if (enabled_method_names.empty())
+    auto enabled_method_data = GetMethodIdAndQueueSizeFromNames(enabled_method_names);
+
+    // Add field Get/Set methods to the enabled method data.
+    // TODO(Ticket-250429): Replace these constants with actual per-field configuration flags
+    // once the field get/set availability is added to the deployment configuration.
+    constexpr bool kUseGetIfAvailable = true;
+    constexpr bool kUseSetIfAvailable = true;
+
+    // TODO : This would also be replaced with the actual queue size configuration from the config files once we support
+    // queue size > 1.
+    constexpr LolaMethodInstanceDeployment::QueueSize kFieldMethodQueueSize{1U};
+
+    const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
+    const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
     {
+        std::lock_guard lock{proxy_method_registration_mutex_};
+        for (const auto& [field_name, field_instance_deployment] : lola_service_instance_deployment.fields_)
+        {
+            const auto field_id =
+                GetServiceElementId<ServiceElementType::FIELD>(lola_service_type_deployment, field_name);
+
+            if (kUseGetIfAvailable && proxy_methods_.count({field_id, MethodType::kGet}) != 0U)
+            {
+                enabled_method_data.push_back({{field_id, MethodType::kGet}, kFieldMethodQueueSize});
+            }
+            if (kUseSetIfAvailable && proxy_methods_.count({field_id, MethodType::kSet}) != 0U)
+            {
+                enabled_method_data.push_back({{field_id, MethodType::kSet}, kFieldMethodQueueSize});
+            }
+        }
+    }
+    // This check has be done after looping over the fields to add the field methods to the enabled method data because,
+    // if we did this before then even when the fields are configured and when the enabled_method_names are empty we
+    // would do an early return and miss setting up the fields shm.
+    if (enabled_method_data.empty())
+    {
+        score::mw::log::LogDebug("lola")
+            << "No enabled methods or field methods for this Proxy. Skipping method setup.";
         return {};
     }
-    const auto enabled_method_data = GetMethodIdAndQueueSizeFromNames(enabled_method_names);
 
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& lola_message_passing = lola_runtime.GetLolaMessaging();
@@ -673,6 +722,7 @@ score::ResultBlank Proxy::SetupMethods(const std::vector<std::string_view>& enab
         quality_type_, skeleton_instance_identifier, proxy_instance_identifier_, GetSourcePid());
     if (subscription_result.has_value())
     {
+        std::lock_guard lock{proxy_method_registration_mutex_};
         for (auto& proxy_method : proxy_methods_)
         {
             proxy_method.second.get().MarkSubscribed();
@@ -693,30 +743,31 @@ memory::shared::SharedMemoryFactory::UserPermissions Proxy::GetSkeletonShmPermis
     return {permissions_map};
 }
 
-std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>> Proxy::GetMethodIdAndQueueSizeFromNames(
-    const std::vector<std::string_view>& enabled_method_names) const
+std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>
+Proxy::GetMethodIdAndQueueSizeFromNames(const std::vector<std::string_view>& enabled_method_names) const
 {
-    std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>> method_data{};
-    std::transform(enabled_method_names.cbegin(),
-                   enabled_method_names.cend(),
-                   std::back_inserter(method_data),
-                   [this](const auto& method_name) -> std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize> {
-                       const std::string method_name_string{method_name};
-                       const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
-                       const auto method_id = GetServiceElementId<ServiceElementType::METHOD>(
-                           lola_service_type_deployment, method_name_string);
+    std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>> method_data{};
+    std::transform(
+        enabled_method_names.cbegin(),
+        enabled_method_names.cend(),
+        std::back_inserter(method_data),
+        [this](const auto& method_name) -> std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize> {
+            const std::string method_name_string{method_name};
+            const auto& lola_service_type_deployment = GetLoLaServiceTypeDeployment(handle_);
+            const auto method_id =
+                GetServiceElementId<ServiceElementType::METHOD>(lola_service_type_deployment, method_name_string);
 
-                       const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
-                       const auto& method_instance_deployment =
-                           GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(
-                               lola_service_instance_deployment, method_name_string);
-                       SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-                           method_instance_deployment.queue_size_.has_value(),
-                           "Method instance deployment must contain queue_size on proxy side!");
-                       const auto queue_size = method_instance_deployment.queue_size_.value();
+            const auto& lola_service_instance_deployment = GetLoLaInstanceDeployment(handle_);
+            const auto& method_instance_deployment = GetServiceElementInstanceDeployment<ServiceElementType::METHOD>(
+                lola_service_instance_deployment, method_name_string);
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
+                method_instance_deployment.queue_size_.has_value(),
+                "Method instance deployment must contain queue_size on proxy side!");
+            const auto queue_size = method_instance_deployment.queue_size_.value();
 
-                       return {method_id, queue_size};
-                   });
+            return {{method_id, MethodType::kMethod}, queue_size};
+        });
+
     return method_data;
 }
 
@@ -763,7 +814,7 @@ std::size_t Proxy::CalculateRequiredShmSize(
 
 void Proxy::InitializeSharedMemoryForMethods(
     memory::shared::ManagedMemoryResource& memory_resource,
-    const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& method_data,
+    const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& method_data,
     const std::vector<TypeErasedCallQueue::TypeErasedElementInfo>& type_erased_element_infos)
 {
     const auto number_of_method_ids = type_erased_element_infos.size();
@@ -788,14 +839,15 @@ void Proxy::InitializeSharedMemoryForMethods(
 }
 
 std::vector<TypeErasedCallQueue::TypeErasedElementInfo> Proxy::GetTypeErasedElementInfoForEnabledMethods(
-    const std::vector<std::pair<LolaMethodId, LolaMethodInstanceDeployment::QueueSize>>& enabled_method_data) const
+    const std::vector<std::pair<UniqueMethodIdentifier, LolaMethodInstanceDeployment::QueueSize>>& enabled_method_data)
+    const
 {
     std::vector<TypeErasedCallQueue::TypeErasedElementInfo> type_erased_element_infos{};
-    for (auto [method_id, queue_size] : enabled_method_data)
+    for (const auto& [unique_method_id, queue_size] : enabled_method_data)
     {
         score::cpp::ignore = queue_size;
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_methods_.count(method_id) != 0U);
-        auto& proxy_method = proxy_methods_.at(method_id).get();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_methods_.count(unique_method_id) != 0U);
+        auto& proxy_method = proxy_methods_.at(unique_method_id).get();
 
         const auto type_erased_data_info = proxy_method.GetTypeErasedElementInfo();
         type_erased_element_infos.push_back(type_erased_data_info);
@@ -827,8 +879,9 @@ pid_t Proxy::GetSourcePid() const noexcept
     return service_data_storage.skeleton_pid_;
 }
 
-void Proxy::RegisterMethod(const ElementFqId::ElementId method_id, ProxyMethod& proxy_method) noexcept
+void Proxy::RegisterMethod(const UniqueMethodIdentifier method_id, ProxyMethod& proxy_method) noexcept
 {
+    std::lock_guard lock{proxy_method_registration_mutex_};
     const auto [ignorable, was_inserted] = proxy_methods_.insert({method_id, proxy_method});
     score::cpp::ignore = ignorable;
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(was_inserted, "Method IDs must be unique!");

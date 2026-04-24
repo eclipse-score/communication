@@ -398,7 +398,7 @@ TYPED_TEST(LolaProxyEventGetNewSamplesFixture, TransmitEventInShmArea)
         [this, slot_index](impl::SamplePtr<typename LolaProxyEventFixture<TypeParam>::SampleType>,
                            const tracing::ITracingRuntime::TracePointDataId timestamp) {
             // Then the retrieved data is pointing to the same valid slot
-            const auto& slot = (this->event_control_->data_control)[slot_index];
+            const auto& slot = (this->proxy_event_control_local_->data_control)[slot_index];
             EXPECT_FALSE(slot.IsInvalid());
             EXPECT_EQ(slot.GetTimeStamp(), timestamp);
         },

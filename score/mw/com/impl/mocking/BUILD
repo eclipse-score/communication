@@ -79,7 +79,6 @@ cc_library(
         "//score/mw/com/impl:__subpackages__",
     ],
     deps = [
-        "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
     ],
 )

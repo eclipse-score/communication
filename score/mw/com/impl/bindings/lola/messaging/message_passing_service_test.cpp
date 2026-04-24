@@ -416,7 +416,8 @@ class MessagePassingServiceQMDelegationTest : public MessagePassingServiceTest
     }
 
     const ProxyInstanceIdentifier kProxyInstanceId{5U, 1U};
-    const ProxyMethodInstanceIdentifier kProxyMethodInstanceId{kProxyInstanceId, LolaMethodId{55U}};
+    const ProxyMethodInstanceIdentifier kProxyMethodInstanceId{kProxyInstanceId,
+                                                               UniqueMethodIdentifier{LolaMethodId{55U}}};
     const SkeletonInstanceIdentifier kSkeletonInstanceId{LolaServiceId{12U}, LolaServiceInstanceId::InstanceId{22U}};
     const pid_t kTargetNodeId{7};
     const uid_t kAllowedUid{42U};
@@ -436,7 +437,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, RegisterOnServiceMethodSubscribedH
     // instance
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
                 RegisterOnServiceMethodSubscribedHandler(kSkeletonInstanceId, _, allowed_uids))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, RegisterOnServiceMethodSubscribedHandler(_, _, _))
         .Times(0);
 
@@ -456,7 +457,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, RegisterMethodCallHandlerCallRetur
     // Expecting a call to RegisterMethodCallHandler of ASIL-QM mock instance
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
                 RegisterMethodCallHandler(kProxyMethodInstanceId, _, kAllowedUid))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, RegisterMethodCallHandler(_, _, _)).Times(0);
 
     // When calling RegisterMethodCallHandler
@@ -472,7 +473,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, SubscribeServiceMethodReturnsAValu
     // Expecting a call to SubscribeServiceMethod of ASIL-QM mock instance
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
                 SubscribeServiceMethod(kSkeletonInstanceId, kProxyInstanceId, kTargetNodeId))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, SubscribeServiceMethod(_, _, _)).Times(0);
 
     // When calling SubscribeServiceMethod
@@ -488,7 +489,7 @@ TEST_F(MessagePassingServiceQMDelegationTest, CallMethodReturnsAValue)
     // Expecting a call to CallMethod of ASIL-QM mock instance
     EXPECT_CALL(*asil_qm_message_passing_service_instance_mock_,
                 CallMethod(kProxyMethodInstanceId, kQueuePosition, kTargetNodeId))
-        .WillOnce(Return(score::ResultBlank{}));
+        .WillOnce(Return(score::Result<void>{}));
     EXPECT_CALL(*asil_b_message_passing_service_instance_mock_, CallMethod(_, _, _)).Times(0);
 
     // When calling CallMethod

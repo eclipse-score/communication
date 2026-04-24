@@ -46,7 +46,7 @@ class GenericProxyEvent : public GenericProxyEventBinding
 
     MOCK_METHOD(SubscriptionState, GetSubscriptionState, (), (const, noexcept, override));
     MOCK_METHOD(void, Unsubscribe, (), (noexcept, override));
-    MOCK_METHOD(ResultBlank, Subscribe, (std::size_t), (noexcept, override));
+    MOCK_METHOD(Result<void>, Subscribe, (std::size_t), (noexcept, override));
     MOCK_METHOD(Result<std::size_t>, GetNumNewSamplesAvailable, (), (const, noexcept, override));
     MOCK_METHOD(std::size_t, GetSampleSize, (), (const, noexcept, override));
     MOCK_METHOD(bool, HasSerializedFormat, (), (const, noexcept, override));
@@ -54,8 +54,8 @@ class GenericProxyEvent : public GenericProxyEventBinding
                 GetNewSamples,
                 (typename GenericProxyEventBinding::Callback&&, TrackerGuardFactory&),
                 (noexcept, override));
-    MOCK_METHOD(ResultBlank, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
-    MOCK_METHOD(ResultBlank, UnsetReceiveHandler, (), (noexcept, override));
+    MOCK_METHOD(Result<void>, SetReceiveHandler, (std::weak_ptr<ScopedEventReceiveHandler>), (noexcept, override));
+    MOCK_METHOD(Result<void>, UnsetReceiveHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
     MOCK_METHOD(void, NotifyServiceInstanceChangedAvailability, (bool, pid_t), (noexcept, override));

@@ -198,7 +198,7 @@ TEST_F(SkeletonBaseRegisterShmTracingFixture, RegisterShmObjectIsTracedIfTracing
     EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _))
         .WillOnce(WithArg<2>(Invoke([&register_shm_object_trace_callback_result](
                                         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback>
-                                            provided_register_shm_object_trace_callback_result) -> ResultBlank {
+                                            provided_register_shm_object_trace_callback_result) -> Result<void> {
             register_shm_object_trace_callback_result = std::move(provided_register_shm_object_trace_callback_result);
             return {};
         })));
@@ -260,7 +260,7 @@ TEST_F(SkeletonBaseRegisterShmTracingFixture, RegisterShmObjectIsNotTracedIfTrac
     EXPECT_CALL(*binding_mock_, PrepareOffer(_, _, _))
         .WillOnce(WithArg<2>(Invoke([&register_shm_object_trace_callback_result](
                                         std::optional<SkeletonBinding::RegisterShmObjectTraceCallback>
-                                            provided_register_shm_object_trace_callback_result) -> ResultBlank {
+                                            provided_register_shm_object_trace_callback_result) -> Result<void> {
             register_shm_object_trace_callback_result = std::move(provided_register_shm_object_trace_callback_result);
             return {};
         })));
@@ -322,12 +322,11 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsTracedIfTra
 
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister shm
     // object trace call
-    score::cpp::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
-        unregister_shm_object_trace_callback_result{};
+    std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> unregister_shm_object_trace_callback_result{};
     EXPECT_CALL(*binding_mock_, PrepareStopOffer(_))
         .WillOnce(Invoke([&unregister_shm_object_trace_callback_result](
-                             score::cpp::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
-                                 provided_unregister_shm_object_trace_callback_result) -> ResultBlank {
+                             std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
+                                 provided_unregister_shm_object_trace_callback_result) -> Result<void> {
             unregister_shm_object_trace_callback_result =
                 std::move(provided_unregister_shm_object_trace_callback_result);
             return {};
@@ -382,12 +381,11 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsNotTracedIf
 
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister shm
     // object trace call
-    score::cpp::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
-        unregister_shm_object_trace_callback_result{};
+    std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback> unregister_shm_object_trace_callback_result{};
     EXPECT_CALL(*binding_mock_, PrepareStopOffer(_))
         .WillOnce(Invoke([&unregister_shm_object_trace_callback_result](
-                             score::cpp::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
-                                 provided_unregister_shm_object_trace_callback_result) -> ResultBlank {
+                             std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
+                                 provided_unregister_shm_object_trace_callback_result) -> Result<void> {
             unregister_shm_object_trace_callback_result =
                 std::move(provided_unregister_shm_object_trace_callback_result);
             return {};
@@ -447,8 +445,8 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture, UnregisterShmObjectIsTracedOnDes
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister shm
     // object trace call
     EXPECT_CALL(*binding_mock_, PrepareStopOffer(_))
-        .WillOnce(Invoke([](score::cpp::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
-                                provided_unregister_shm_object_trace_callback_result) -> ResultBlank {
+        .WillOnce(Invoke([](std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
+                                provided_unregister_shm_object_trace_callback_result) -> Result<void> {
             // Expect that the unregister shm object tracing callback is not empty
             EXPECT_TRUE(provided_unregister_shm_object_trace_callback_result.has_value());
 
@@ -504,8 +502,8 @@ TEST_F(SkeletonBaseUnregisterShmTracingFixture,
     // and that PrepareStopOffer will be called on the binding with the wrapped handler containing the unregister shm
     // object trace call
     EXPECT_CALL(*binding_mock_, PrepareStopOffer(_))
-        .WillOnce(Invoke([](score::cpp::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
-                                provided_unregister_shm_object_trace_callback_result) -> ResultBlank {
+        .WillOnce(Invoke([](std::optional<SkeletonBinding::UnregisterShmObjectTraceCallback>
+                                provided_unregister_shm_object_trace_callback_result) -> Result<void> {
             // Expect that the unregister shm object tracing callback is empty
             EXPECT_FALSE(provided_unregister_shm_object_trace_callback_result.has_value());
             return {};

@@ -100,16 +100,28 @@ class ProxyWrapperClassTestView;
 ///     typename Trait::template Event<DataType1> struct_event_1_{*this, event_name_0};
 ///     typename Trait::template Event<DataType2> struct_event_2_{*this, event_name_1};
 ///
-///     typename Trait::template Field<DataType1> struct_field_1_{*this, field_name_0};
-///     typename Trait::template Field<DataType2> struct_field_2_{*this, field_name_1};
+///     typename Trait::template Field<DataType1, true, false, true> struct_field_1_{*this,
+///     field_name_0};
+///     typename Trait::template Field<DataType2, enable_getter, enable_setter, enable_notifier>
+///     struct_field_2_{*this, field_name_1};
 ///
-///     typename Trait::template Method<DataType1> struct_method_1_{*this, method_name_0};
-///     typename Trait::template Method<DataType2> struct_method_2_{*this, method_name_1};
+///     typename Trait::template Method<void(InArgType1)> struct_method_1_{*this, method_name_0};
+///     typename Trait::template Method<ReturnType()> struct_method_2_{*this, method_name_1};
 ///
 /// };
+/// Notes regarding template args: A field has (besides its data type arg) three bool template args (enable_getter,
+/// enable_setter and enable_notifier). The enable_notifier template parameter is only relevant for certain bindings,
+/// e.g. the LoLa binding does not distinguish between true/false of this template parameter.
+/// A method has a template arg describing the method signature in the form ReturnType(InArgType1, InArgType2, ...).
+/// InArgs and ReturnType are optional. Therefore, these are valid signatures:
+/// - void()
+/// - ReturnType1()
+/// - void(InArgType1, InArgType2)
+/// - ReturnType1(InArgType1)
 ///
-/// It is then possible to interpret this interface as proxy or skeleton as `using TheProxy = AsProxy<TheInterface>`.
-/// It shall be noted, that the data types used, need to by PolymorphicOffsetPtrAllocator aware.
+/// Having a defined interface, it is then possible to interpret this interface as proxy via
+/// `using TheProxy = AsProxy<TheInterface>`, respectively as skeleton via `using TheSkeleton =
+/// AsSkeleton<TheInterface>`.
 
 /**
  * \api
@@ -127,7 +139,9 @@ class ProxyTrait
     template <typename SampleType>
     using Event = ProxyEvent<SampleType>;
 
-    template <typename SampleType>
+    // Note : at the moment the SkeletonField::Get implementation is not in the branch which means the skeleton and
+    // proxy side does not have same template parameters.
+    template <typename SampleType, bool EnableSet = false, bool EnableGet = false, bool EnableNotifier = false>
     using Field = ProxyField<SampleType>;
 
     template <typename MethodSignature>

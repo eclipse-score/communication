@@ -28,7 +28,7 @@ cc_binary(
         "//score/mw/com/test/common_test_resources:sample_sender_receiver",
         "//score/mw/com/test/common_test_resources:sctf_test_runner",
         "//score/mw/com/test/common_test_resources:shared_memory_object_guard",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_RETURN_TYPE_H
 #define SCORE_MW_COM_IMPL_METHODS_PROXY_METHOD_WITH_RETURN_TYPE_H
 
+#include "score/mw/com/impl/method_type.h"
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/methods/proxy_method.h"
 #include "score/mw/com/impl/methods/proxy_method_base.h"
@@ -35,6 +36,9 @@
 namespace score::mw::com::impl
 {
 
+template <typename, bool, bool, bool>
+class ProxyField;
+
 /// \brief Partial specialization of ProxyMethod for function signatures with no arguments and non-void return
 /// \tparam ReturnType return type of the method
 template <typename ReturnType>
@@ -45,14 +49,24 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     // This enables us to hide unnecessary internals from the end-user.
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyMethodView;
+    friend class ProxyField<ReturnType, true, true, true>;
+    friend class ProxyField<ReturnType, true, false, false>;
+    friend class ProxyField<ReturnType, true, true, false>;
+    friend class ProxyField<ReturnType, true, false, true>;
+
+    struct FieldOnlyConstructorEnabler
+    {
+    };
 
   public:
     ProxyMethod(ProxyBase& proxy_base, std::string_view method_name) noexcept
         : ProxyMethodBase(proxy_base,
                           ProxyMethodBindingFactory<ReturnType()>::Create(proxy_base.GetHandle(),
                                                                           ProxyBaseView{proxy_base}.GetBinding(),
-                                                                          method_name),
-                          method_name)
+                                                                          method_name,
+                                                                          MethodType::kMethod),
+                          method_name,
+                          MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
@@ -66,10 +80,24 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     ProxyMethod(ProxyBase& proxy_base,
                 std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                 std::string_view method_name) noexcept
-        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name)
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kMethod)
     {
         auto proxy_base_view = ProxyBaseView{proxy_base};
         proxy_base_view.RegisterMethod(method_name_, *this);
+        if (binding_ == nullptr)
+        {
+            proxy_base_view.MarkServiceElementBindingInvalid();
+            return;
+        }
+    }
+
+    ProxyMethod(ProxyBase& proxy_base,
+                std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
+                std::string_view method_name,
+                FieldOnlyConstructorEnabler) noexcept
+        : ProxyMethodBase(proxy_base, std::move(proxy_method_binding), method_name, MethodType::kGet)
+    {
+        auto proxy_base_view = ProxyBaseView{proxy_base};
         if (binding_ == nullptr)
         {
             proxy_base_view.MarkServiceElementBindingInvalid();
@@ -86,6 +114,8 @@ class ProxyMethod<ReturnType()> final : public ProxyMethodBase
     /// \brief A ProxyMethod shall be moveable.
     ProxyMethod(ProxyMethod&&) noexcept;
     ProxyMethod& operator=(ProxyMethod&&) noexcept;
+
+    Result<void> InitializeInArgsAndReturnValues() override;
 
     /// \brief This is the call-operator of ProxyMethod with no arguments for a non-void ReturnType.
     score::Result<MethodReturnTypePtr<ReturnType>> operator()();
@@ -135,7 +165,7 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
     }
 
     const auto queue_position = queue_position_result.value();
-    auto allocated_return_type_storage = binding_->AllocateReturnType(queue_position);
+    auto allocated_return_type_storage = binding_->GetReturnValueBuffer(queue_position);
     if (!allocated_return_type_storage.has_value())
     {
         return Unexpected(allocated_return_type_storage.error());
@@ -161,6 +191,18 @@ score::Result<MethodReturnTypePtr<ReturnType>> ProxyMethod<ReturnType()>::operat
         *(reinterpret_cast<ReturnType*>(allocated_return_type_storage.value().data())),
         is_return_type_ptr_active_[queue_position],
         queue_position};
+}
+
+template <typename ReturnType>
+Result<void> ProxyMethod<ReturnType()>::InitializeInArgsAndReturnValues()
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(binding_ != nullptr);
+    const auto init_return_result = detail::InitializeReturnValue<ReturnType>(*binding_, kCallQueueSize);
+    if (!init_return_result.has_value())
+    {
+        return Unexpected(init_return_result.error());
+    }
+    return {};
 }
 
 }  // namespace score::mw::com::impl

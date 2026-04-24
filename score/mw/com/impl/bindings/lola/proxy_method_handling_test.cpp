@@ -15,13 +15,13 @@
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 
 #include "score/mw/com/impl/binding_type.h"
-#include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/methods/method_data.h"
+#include "score/mw/com/impl/bindings/lola/methods/proxy_method_instance_identifier.h"
 #include "score/mw/com/impl/bindings/lola/proxy_method.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/com_error.h"
-#include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
+#include "score/mw/com/impl/configuration/lola_service_element_id.h"
 #include "score/mw/com/impl/configuration/lola_service_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
@@ -87,9 +87,9 @@ const std::string kDummyMethodName0{"my_dummy_method_0"};
 const std::string kDummyMethodName1{"my_dummy_method_1"};
 const std::string kDummyMethodName2{"my_dummy_method_2"};
 
-constexpr LolaMethodId kDummyMethodId0{10U};
-constexpr LolaMethodId kDummyMethodId1{11U};
-constexpr LolaMethodId kDummyMethodId2{12U};
+constexpr LolaServiceElementId kDummyMethodId0{10U};
+constexpr LolaServiceElementId kDummyMethodId1{11U};
+constexpr LolaServiceElementId kDummyMethodId2{12U};
 
 constexpr LolaMethodInstanceDeployment::QueueSize kDummyQueueSize0{5U};
 constexpr LolaMethodInstanceDeployment::QueueSize kDummyQueueSize1{6U};
@@ -180,12 +180,13 @@ class ProxyMethodHandlingFixture : public ProxyMockedMemoryFixture
     }
 
     ProxyMethodHandlingFixture& WithRegisteredProxyMethods(
-        std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>> methods_to_register)
+        std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>> methods_to_register)
     {
         for (auto& [method_id, type_erased_element_info] : methods_to_register)
         {
-            const ElementFqId element_fq_id{kLolaServiceId, method_id, kLolaInstanceId, ServiceElementType::METHOD};
-            proxy_method_storage_.emplace_back(*proxy_, element_fq_id, type_erased_element_info);
+            const ProxyMethodInstanceIdentifier proxy_method_instance_identifier{proxy_->GetProxyInstanceIdentifier(),
+                                                                                 {method_id, MethodType::kMethod}};
+            proxy_method_storage_.emplace_back(*proxy_, proxy_method_instance_identifier, type_erased_element_info);
         }
         return *this;
     }
@@ -297,8 +298,10 @@ TEST_F(ProxyMethodHandlingFixture, CreatesMethodCallQueueForEachMethodInShm)
     // for each method
     const auto& method_data = GetMethodDataFromShm();
     ASSERT_EQ(method_data.method_call_queues_.size(), 2U);
-    EXPECT_THAT(method_data.method_call_queues_.at(0).first, kDummyMethodId0);
-    EXPECT_THAT(method_data.method_call_queues_.at(1).first, kDummyMethodId1);
+    const UniqueMethodIdentifier expected_method_0{kDummyMethodId0, MethodType::kMethod};
+    const UniqueMethodIdentifier expected_method_1{kDummyMethodId1, MethodType::kMethod};
+    EXPECT_EQ(method_data.method_call_queues_.at(0).first, expected_method_0);
+    EXPECT_EQ(method_data.method_call_queues_.at(1).first, expected_method_1);
 }
 
 TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm)
@@ -319,7 +322,7 @@ TEST_F(ProxyMethodHandlingFixture, SetsInArgsAndReturnStoragesForEachMethodInShm
     // can allocate InArgs without crashing, since the allocation is using the inserted storages)
     for (auto& method : proxy_method_storage_)
     {
-        score::cpp::ignore = method.AllocateInArgs(0);
+        score::cpp::ignore = method.GetInArgsBuffer(0);
     }
 }
 
@@ -490,7 +493,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
     // handler when the service has been reoffered which succeeds
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
         .Times(2)
-        .WillRepeatedly(Return(score::ResultBlank{}));
+        .WillRepeatedly(Return(score::Result<void>{}));
 
     // Given that SetupMethods was called
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
@@ -591,7 +594,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesCalls
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
-        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> Result<void> {
             // Then SubscribeServiceMethod is called with a
             // SkeletonInstanceIdentifier taking values from the configuration
             EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);
@@ -636,7 +639,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, ProxyMethodsMarkedAsSubscribedWhe
               kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called and returns a valid result
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::Result<void>{}));
 
     // When calling SetupMethods with the name of the registered ProxyMethods
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
@@ -710,7 +713,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingMethodsWithoutArgsOrRetur
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
-        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> Result<void> {
             // Then SubscribeServiceMethod is called with a
             // SkeletonInstanceIdentifier taking values from the configuration
             EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);
@@ -743,7 +746,7 @@ class ProxySetupMethodsShmSizeParamaterizedFixture
     : public ProxyMethodHandlingFixture,
       public ::testing::WithParamInterface<
           std::pair<std::vector<std::string_view>,
-                    std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>>
+                    std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>>
 {
 };
 
@@ -754,7 +757,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Single method containing InArgs and Return Type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
@@ -763,7 +766,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Multiple methods containing InArgs and Return Type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
@@ -780,7 +783,7 @@ INSTANTIATE_TEST_SUITE_P(
         // InArgs / Return types. However, the amount of padding between Method0 and
         // Method1 will be different to the test above).
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{24, 8}},
@@ -793,7 +796,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Method with empty InArgs
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},
@@ -806,7 +809,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Method with empty Return type
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{
@@ -821,7 +824,7 @@ INSTANTIATE_TEST_SUITE_P(
         // Method with empty InArg and Return type (this method will be ignored in
         // size calculations)
         std::make_pair<std::vector<std::string_view>,
-                       std::vector<std::pair<LolaMethodId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
+                       std::vector<std::pair<LolaServiceElementId, TypeErasedCallQueue::TypeErasedElementInfo>>>(
             {kDummyMethodName0, kDummyMethodName1, kDummyMethodName2},
             {std::make_pair(kDummyMethodId0,
                             TypeErasedCallQueue::TypeErasedElementInfo{std::optional<DataTypeSizeInfo>{{32, 8}},

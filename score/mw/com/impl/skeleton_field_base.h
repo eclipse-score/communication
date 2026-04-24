@@ -56,7 +56,7 @@ class SkeletonFieldBase
     }
 
     /// \brief Used to indicate that the field shall be available to consumer (e.g. binding specific preparation)
-    ResultBlank PrepareOffer() noexcept
+    Result<void> PrepareOffer() noexcept
     {
         // If PrepareOffer() has not been called yet on this field, then we have to set the initial value immediately
         // after calling PrepareOffer() on the binding
@@ -138,7 +138,7 @@ class SkeletonFieldBase
     ///
     /// The existence of the value is a precondition of this function, so IsInitialValueSaved() should be checked before
     /// calling DoDeferredUpdate()
-    virtual ResultBlank DoDeferredUpdate() noexcept = 0;
+    virtual Result<void> DoDeferredUpdate() noexcept = 0;
 };
 
 class SkeletonFieldBaseView

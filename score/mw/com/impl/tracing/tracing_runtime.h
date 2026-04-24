@@ -131,14 +131,14 @@ class TracingRuntime : public ITracingRuntime
     /// \param shm_data_size size of the data, where shm_data_ptr points to
     /// \return blank in case of success, else either an error with code TraceErrorDisableAllTracePoints or
     ///         TraceErrorDisableTracePointInstance
-    ResultBlank Trace(const BindingType binding_type,
-                      const ServiceElementTracingData service_element_tracing_data,
-                      const ServiceElementInstanceIdentifierView service_element_instance_identifier,
-                      const TracePointType trace_point_type,
-                      const TracePointDataId trace_point_data_id,
-                      TypeErasedSamplePtr sample_ptr,
-                      const void* const shm_data_ptr,
-                      const std::size_t shm_data_size) noexcept override;
+    Result<void> Trace(const BindingType binding_type,
+                       const ServiceElementTracingData service_element_tracing_data,
+                       const ServiceElementInstanceIdentifierView service_element_instance_identifier,
+                       const TracePointType trace_point_type,
+                       const TracePointDataId trace_point_data_id,
+                       TypeErasedSamplePtr sample_ptr,
+                       const void* const shm_data_ptr,
+                       const std::size_t shm_data_size) noexcept override;
 
     /// \brief Trace call for data residing locally (not in shared-memory) being synchronously copied for tracing.
     /// \param binding_type identification of binding, which does the call.
@@ -151,12 +151,12 @@ class TracingRuntime : public ITracingRuntime
     /// \param local_data_size size of the data, where local_data_ptr points to
     /// \return blank in case of success, else either an error with code TraceErrorDisableAllTracePoints or
     ///         TraceErrorDisableTracePointInstance
-    ResultBlank Trace(const BindingType binding_type,
-                      const ServiceElementInstanceIdentifierView service_element_instance_identifier,
-                      const TracePointType trace_point_type,
-                      const score::cpp::optional<TracePointDataId> trace_point_data_id,
-                      const void* const local_data_ptr,
-                      const std::size_t local_data_size) noexcept override;
+    Result<void> Trace(const BindingType binding_type,
+                       const ServiceElementInstanceIdentifierView service_element_instance_identifier,
+                       const TracePointType trace_point_type,
+                       const std::optional<TracePointDataId> trace_point_data_id,
+                       const void* const local_data_ptr,
+                       const std::size_t local_data_size) noexcept override;
 
     IBindingTracingRuntime& GetBindingTracingRuntime(const BindingType binding_type) const noexcept override;
 
@@ -167,9 +167,9 @@ class TracingRuntime : public ITracingRuntime
     ///        to many consecutive recoverable errors. Will be called after each call to Trace with the given result.
     /// \param trace_call_result result of last call to Generic Trace API trace method.
     /// \return Result to be forwarded to the caller of Trace()
-    ResultBlank ProcessTraceCallResult(const ServiceElementInstanceIdentifierView& service_element_instance_identifier,
-                                       const analysis::tracing::TraceResult& trace_call_result,
-                                       IBindingTracingRuntime& binding_tracing_runtime) noexcept;
+    Result<void> ProcessTraceCallResult(const ServiceElementInstanceIdentifierView& service_element_instance_identifier,
+                                        const analysis::tracing::TraceResult& trace_call_result,
+                                        IBindingTracingRuntime& binding_tracing_runtime) noexcept;
 
     Result<analysis::tracing::ShmObjectHandle> GetRegisteredShmObject(
         IBindingTracingRuntime& binding_runtime,

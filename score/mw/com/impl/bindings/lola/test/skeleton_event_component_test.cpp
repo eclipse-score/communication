@@ -10,6 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
@@ -49,15 +51,14 @@ class SkeletonEventAttorney
 
     EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        SCORE_LANGUAGE_FUTURECPP_ASSERT_DBG(skeleton_event_.event_data_control_composite_.has_value());
-        return skeleton_event_.event_data_control_composite_.value();
+        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
     }
 
     /// \brief Set handler availability flags for testing purposes
     void SetHandlerAvailability(bool qm_available, bool asil_b_available)
     {
-        skeleton_event_.event_shared_impl_.SetQmNotificationsRegistered(qm_available);
-        skeleton_event_.event_shared_impl_.SetAsilBNotificationsRegistered(asil_b_available);
+        skeleton_event_.skeleton_event_common_.SetQmNotificationsRegistered(qm_available);
+        skeleton_event_.skeleton_event_common_.SetAsilBNotificationsRegistered(asil_b_available);
     }
 
   private:
@@ -143,10 +144,12 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
 
         auto& event_data_control = control_storage->event_controls_.find(fake_element_fq_id_)->second.data_control;
-        event_data_control.GetTransactionLogSet().RegisterSkeletonTracingElement();
-        auto slot_indicator = event_data_control.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
-        EXPECT_TRUE(slot_indicator.IsValid());
-        return values->at(slot_indicator.GetIndex());
+        ProxyEventDataControlLocalView<> proxy_event_data_control_local{event_data_control};
+        proxy_event_data_control_local.GetTransactionLogSet().RegisterSkeletonTracingElement();
+        auto slot_index =
+            proxy_event_data_control_local.ReferenceNextEvent(0, TransactionLogSet::kSkeletonIndexSentinel);
+        EXPECT_TRUE(slot_index.has_value());
+        return values->at(slot_index.value());
     }
 
     std::size_t GetFreeSampleSlots() const
@@ -165,11 +168,12 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
         auto* control_storage = static_cast<ServiceDataControl*>(memory_control->getUsableBaseAddress());
         const auto search = control_storage->event_controls_.find(fake_element_fq_id_);
         EXPECT_TRUE(search != control_storage->event_controls_.cend());
-        const auto* event_control = &search->second;
+        auto& event_control = search->second;
+        ProxyEventControlLocalView proxy_event_control_local{event_control};
 
         for (SlotIndexType i = 0U; i < MaxSamples; i++)
         {
-            if ((*event_control).data_control[i].IsInvalid())
+            if (proxy_event_control_local.data_control[i].IsInvalid())
             {
                 result++;
             }
@@ -180,11 +184,11 @@ class SkeletonEventComponentTestTemplateFixture : public ::testing::Test
     void AllocateQmSlots(const std::size_t number_of_slots_to_allocate)
     {
         auto& event_data_control_composite = SkeletonEventAttorney{skeleton_event_}.GetEventDataControlComposite();
-        auto& qm_event_data_control = event_data_control_composite.GetQmEventDataControl();
+        auto& qm_event_data_control_local = event_data_control_composite.GetQmEventDataControlLocal();
 
         for (std::size_t counter = 0U; counter < number_of_slots_to_allocate; ++counter)
         {
-            score::cpp::ignore = qm_event_data_control.AllocateNextSlot();
+            score::cpp::ignore = qm_event_data_control_local.AllocateNextSlot();
         }
     }
 
@@ -312,7 +316,7 @@ TEST_F(SkeletonEventComponentTestFixture, SkeletonWillCalculateEventMetaInfoFrom
     ASSERT_TRUE(prepare_offer_result.has_value());
 
     // When getting the EventMetaInfo for the skeleton event
-    const auto event_meta_info = parent_skeleton_->GetEventMetaInfo(fake_element_fq_id_);
+    const auto event_meta_info = SkeletonAttorney{*parent_skeleton_}.GetEventMetaInfo(fake_element_fq_id_);
 
     // Then the event meta info should correspond to the type of the skeleton event
     ASSERT_TRUE(event_meta_info.has_value());

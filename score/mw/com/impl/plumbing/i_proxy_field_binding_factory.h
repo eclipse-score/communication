@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_PLUMBING_I_PROXY_FIELD_BINDING_FACTORY_H
 
 #include "score/mw/com/impl/instance_identifier.h"
+#include "score/mw/com/impl/methods/proxy_method_binding.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event_binding.h"
 
@@ -45,6 +46,20 @@ class IProxyFieldBindingFactory
     /// \return An instance of ProxyEventBinding or nullptr in case of an error.
     virtual auto CreateEventBinding(ProxyBase& parent, const std::string_view field_name) noexcept
         -> std::unique_ptr<ProxyEventBinding<SampleType>> = 0;
+
+    /// Creates an instance of the method binding for the get-method of a proxy field.
+    /// \param parent The proxy base that contains this field.
+    /// \param field_name The binding unspecific name of the field inside the proxy.
+    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
+    virtual auto CreateGetMethodBinding(ProxyBase& parent, const std::string_view field_name) noexcept
+        -> std::unique_ptr<ProxyMethodBinding> = 0;
+
+    /// Creates an instance of the method binding for the set-method of a proxy field.
+    /// \param parent The proxy base that contains this field.
+    /// \param field_name The binding unspecific name of the field inside the proxy.
+    /// \return An instance of ProxyMethodBinding or nullptr in case of an error.
+    virtual auto CreateSetMethodBinding(ProxyBase& parent, const std::string_view field_name) noexcept
+        -> std::unique_ptr<ProxyMethodBinding> = 0;
 };
 }  // namespace score::mw::com::impl
 

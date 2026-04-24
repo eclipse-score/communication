@@ -88,9 +88,9 @@ class ServiceDiscoveryTest : public Test
 
         ON_CALL(lola_runtime_, GetServiceDiscoveryClient()).WillByDefault(ReturnRef(service_discovery_client_));
 
-        ON_CALL(service_discovery_client_, StartFindService(_, _, _)).WillByDefault(Return(ResultBlank{}));
+        ON_CALL(service_discovery_client_, StartFindService(_, _, _)).WillByDefault(Return(Result<void>{}));
 
-        ON_CALL(service_discovery_client_, StopFindService(_)).WillByDefault(Return(ResultBlank{}));
+        ON_CALL(service_discovery_client_, StopFindService(_)).WillByDefault(Return(Result<void>{}));
     }
 
     ServiceDiscoveryTest& WithAServiceContainingOneInstances() noexcept
@@ -369,11 +369,11 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
 
     // Expecting that StartFindService will be called on each instance, with the last one returning an error
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::Result<void>{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle2), Return(score::ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle2), Return(score::Result<void>{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[2].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle3), Return(score::ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle3), Return(score::Result<void>{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[3].GetEnrichedInstanceIdentifier()))
         .WillOnce(DoAll(SaveArg<0>(&handle4), Return(Unexpected{ComErrc::kBindingFailure})));
 
@@ -421,7 +421,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
 
     // Expecting that StartFindService will be called on each instance, with the second one returning an error
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle1), Return(score::Result<void>{})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
         .WillOnce(DoAll(SaveArg<0>(&handle2), Return(Unexpected{ComErrc::kBindingFailure})));
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[2].GetEnrichedInstanceIdentifier()))
@@ -444,7 +444,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServic
 
     ON_CALL(service_discovery_client_, StartFindService(_, _, _)).WillByDefault([](auto handle, auto handler, auto) {
         handler({}, handle);
-        return ResultBlank{};
+        return Result<void>{};
     });
 
     std::int32_t value{0};
@@ -467,7 +467,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServic
         .WillByDefault([this](auto handle, auto handler, auto) {
             score::cpp::ignore = this->unit_->StopFindService(handle);
             handler({}, handle);
-            return ResultBlank{};
+            return Result<void>{};
         });
 
     std::int32_t value{7};
@@ -489,10 +489,10 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture, StartFindServic
 
     FindServiceHandle handle_1{make_FindServiceHandle(0)};
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(Result<void>{})));
     EXPECT_CALL(service_discovery_client_,
                 StartFindService(Eq(ByRef(handle_1)), _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillOnce(Return(ResultBlank{}));
+        .WillOnce(Return(Result<void>{}));
     EXPECT_CALL(service_discovery_client_, StopFindService(Eq(ByRef(handle_1)))).Times(2);
 
     auto start_result = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
@@ -511,9 +511,9 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
     score::cpp::optional<FindServiceHandle> find_service_handle_1{};
     score::cpp::optional<FindServiceHandle> find_service_handle_2{};
     ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillByDefault(DoAll(SaveArg<0>(&find_service_handle_1), Return(ResultBlank{})));
+        .WillByDefault(DoAll(SaveArg<0>(&find_service_handle_1), Return(Result<void>{})));
     ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillByDefault(DoAll(SaveArg<0>(&find_service_handle_2), Return(ResultBlank{})));
+        .WillByDefault(DoAll(SaveArg<0>(&find_service_handle_2), Return(Result<void>{})));
 
     // When calling StartFindService with an InstanceSpecifier and a handler
     auto returned_find_service_handle = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
@@ -619,7 +619,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture, StartFindServi
     ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
         .WillByDefault([](auto handle, auto handler, auto) {
             handler({}, handle);
-            return ResultBlank{};
+            return Result<void>{};
         });
 
     bool value{false};
@@ -638,7 +638,7 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture, StartFindServi
 
     FindServiceHandle handle_1{make_FindServiceHandle(0)};
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(Result<void>{})));
     EXPECT_CALL(service_discovery_client_, StopFindService(Eq(ByRef(handle_1))));
 
     auto start_result = unit_->StartFindService([](auto, auto) noexcept {}, config_stores_[0].GetInstanceIdentifier());
@@ -684,10 +684,10 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceInvokedIfForgotten
 
     FindServiceHandle handle_1{make_FindServiceHandle(0)};
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(Result<void>{})));
     EXPECT_CALL(service_discovery_client_,
                 StartFindService(handle_1, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillOnce(Return(ResultBlank{}));
+        .WillOnce(Return(Result<void>{}));
     EXPECT_CALL(service_discovery_client_, StopFindService(handle_1)).Times(2);
 
     auto start_result = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
@@ -701,10 +701,10 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture,
 
     FindServiceHandle handle_1{make_FindServiceHandle(0)};
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(Result<void>{})));
     EXPECT_CALL(service_discovery_client_,
                 StartFindService(Eq(ByRef(handle_1)), _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillOnce(Return(ResultBlank{}));
+        .WillOnce(Return(Result<void>{}));
     EXPECT_CALL(service_discovery_client_, StopFindService(Eq(ByRef(handle_1)))).Times(2);
 
     auto start_result = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
@@ -719,10 +719,10 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceCallsBindingSpecif
 
     FindServiceHandle handle_1{make_FindServiceHandle(0)};
     EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
-        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(ResultBlank{})));
+        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(Result<void>{})));
     EXPECT_CALL(service_discovery_client_,
                 StartFindService(handle_1, _, config_stores_[1].GetEnrichedInstanceIdentifier()))
-        .WillOnce(Return(ResultBlank{}));
+        .WillOnce(Return(Result<void>{}));
     EXPECT_CALL(service_discovery_client_, StopFindService(Eq(ByRef(handle_1))))
         .Times(2)
         .WillOnce(Return(Unexpected{ComErrc::kBindingFailure}));
@@ -805,7 +805,7 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture, CallingStopFindServiceInHandlerWi
     ON_CALL(service_discovery_client_, StartFindService(_, _, _))
         .WillByDefault(Invoke(WithArgs<1>([handler_promise](auto handler) {
             handler_promise->set_value(std::move(handler));
-            return ResultBlank{};
+            return Result<void>{};
         })));
 
     DestructorNotifier destructor_notifier{};
@@ -849,7 +849,7 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture, CallingStopFindServiceInHandlerWi
     ON_CALL(service_discovery_client_, StartFindService(_, _, _))
         .WillByDefault(Invoke(WithArgs<1>([handler_promise](auto handler) {
             handler_promise->set_value(std::move(handler));
-            return ResultBlank{};
+            return Result<void>{};
         })));
 
     DestructorNotifier destructor_notifier{};
@@ -909,7 +909,7 @@ TEST_F(ServiceDiscoveryStopOfferServiceFixture, StopOfferServiceWithoutQualityTy
     // Expecting that StopOfferService is called on the binding with both quality types
     auto instance_id = config_stores_[0].GetInstanceIdentifier();
     EXPECT_CALL(service_discovery_client_, StopOfferService(instance_id, IServiceDiscovery::QualityTypeSelector::kBoth))
-        .WillOnce(Return(ResultBlank{}));
+        .WillOnce(Return(Result<void>{}));
 
     // When calling StopOfferService without specifying a quality type
     auto result = unit_->StopOfferService(instance_id);
@@ -924,7 +924,8 @@ TEST_F(ServiceDiscoveryStopOfferServiceFixture, StopOfferServiceWithQualityTypeI
     // Expecting that StopOfferService is called on the binding with QM quality type
     auto instance_id = config_stores_[0].GetInstanceIdentifier();
     auto quality_type = IServiceDiscovery::QualityTypeSelector::kAsilQm;
-    EXPECT_CALL(service_discovery_client_, StopOfferService(instance_id, quality_type)).WillOnce(Return(ResultBlank{}));
+    EXPECT_CALL(service_discovery_client_, StopOfferService(instance_id, quality_type))
+        .WillOnce(Return(Result<void>{}));
 
     // When calling StopOfferService with QM quality type
     auto result = unit_->StopOfferService(instance_id, quality_type);

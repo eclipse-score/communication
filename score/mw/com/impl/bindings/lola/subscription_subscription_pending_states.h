@@ -14,6 +14,7 @@
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_SUBSCRIPTION_PENDING_STATES_H
 
 #include "score/mw/com/impl/bindings/lola/subscription_state_base.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
 #include <score/optional.hpp>
@@ -38,7 +39,7 @@ class SubscriptionPendingState final : public SubscriptionStateBase
 
     ~SubscriptionPendingState() noexcept override = default;
 
-    ResultBlank SubscribeEvent(const std::size_t max_sample_count) noexcept override;
+    Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept override;
     void UnsubscribeEvent() noexcept override;
     void StopOfferEvent() noexcept override;
     void ReOfferEvent(const pid_t new_event_source_pid) noexcept override;
@@ -48,7 +49,7 @@ class SubscriptionPendingState final : public SubscriptionStateBase
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     score::cpp::optional<SlotCollector>& GetSlotCollector() noexcept override;
     const score::cpp::optional<SlotCollector>& GetSlotCollector() const noexcept override;
-    score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept override;
+    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept override;
 };
 
 }  // namespace score::mw::com::impl::lola

@@ -13,9 +13,12 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_TRANSACTION_LOG_REGISTRATION_GUARD_H
 
-#include "score/mw/com/impl/bindings/lola/event_data_control.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/skeleton_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
+
 #include "score/result/result.h"
 
 #include <functional>
@@ -35,12 +38,15 @@ class TransactionLogRegistrationGuard
     /// \param event_data_control event data control for the service element
     /// \param transaction_log_id transaction log is identifying the proxy instance
     /// \return
-    static score::Result<TransactionLogRegistrationGuard> Create(EventDataControl& event_data_control,
-                                                                 const TransactionLogId& transaction_log_id) noexcept;
+    static score::Result<TransactionLogRegistrationGuard> Create(
+        ProxyEventDataControlLocalView<>& event_data_control_local,
+        const TransactionLogId& transaction_log_id) noexcept;
+
     /// \brief Create func for TransactionLogRegistrationGuard for SkeletonServiceElementTracingTransactionLog
     /// \param event_data_control event_data_control event data control for the service element
     /// \return
-    static TransactionLogRegistrationGuard Create(EventDataControl& event_data_control) noexcept;
+    static TransactionLogRegistrationGuard Create(
+        SkeletonEventDataControlLocalView<>& event_data_control_local) noexcept;
 
     ~TransactionLogRegistrationGuard() noexcept;
 
@@ -51,14 +57,14 @@ class TransactionLogRegistrationGuard
     // The TransactionLogRegistrationGuard must be move constructible so that it can be wrapped in an std::optional.
     TransactionLogRegistrationGuard(TransactionLogRegistrationGuard&& other) noexcept;
 
-    TransactionLogSet::TransactionLogIndex GetTransactionLogIndex() const noexcept;
+    TransactionLogIndex GetTransactionLogIndex() const noexcept;
 
   private:
-    TransactionLogRegistrationGuard(EventDataControl& event_data_control,
-                                    const TransactionLogSet::TransactionLogIndex transaction_log_index) noexcept;
+    TransactionLogRegistrationGuard(TransactionLogSet& transaction_log_set,
+                                    const TransactionLogIndex transaction_log_index) noexcept;
 
-    std::reference_wrapper<EventDataControl> event_data_control_;
-    std::optional<TransactionLogSet::TransactionLogIndex> transaction_log_index_;
+    std::reference_wrapper<TransactionLogSet> transaction_log_set_;
+    std::optional<TransactionLogIndex> transaction_log_index_;
 };
 
 }  // namespace score::mw::com::impl::lola

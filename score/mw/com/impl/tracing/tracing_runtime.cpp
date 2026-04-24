@@ -20,6 +20,7 @@
 #include "score/mw/com/impl/tracing/trace_error.h"
 
 #include <score/assert.hpp>
+#include <score/optional.hpp>
 #include <score/overload.hpp>
 
 #include <utility>
@@ -172,14 +173,17 @@ analysis::tracing::TracePointType InternalToExternalTracePointType(
 analysis::tracing::AraComMetaInfo CreateMetaInfo(
     const ServiceElementInstanceIdentifierView& service_element_instance_identifier,
     const TracingRuntime::TracePointType& trace_point_type,
-    const score::cpp::optional<TracingRuntime::TracePointDataId> trace_point_data_id,
+    const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id,
     const IBindingTracingRuntime& binding_runtime) noexcept
 {
     const analysis::tracing::TracePointType ext_trace_point_type = InternalToExternalTracePointType(trace_point_type);
+    // Convert std::optional to score::cpp::optional for baselibs API compatibility
+    const score::cpp::optional<TracingRuntime::TracePointDataId> converted_trace_point_data_id =
+        trace_point_data_id.has_value() ? score::cpp::make_optional(*trace_point_data_id) : score::cpp::nullopt;
     analysis::tracing::AraComMetaInfo result{analysis::tracing::AraComProperties(
         ext_trace_point_type,
         binding_runtime.ConvertToTracingServiceInstanceElement(service_element_instance_identifier),
-        trace_point_data_id)};
+        converted_trace_point_data_id)};
     if (binding_runtime.GetDataLossFlag())
     {
         result.SetDataLossBit();
@@ -250,7 +254,7 @@ ServiceElementTracingData TracingRuntime::RegisterServiceElement(const BindingTy
     return binding_runtime.RegisterServiceElement(number_of_ipc_tracing_slots);
 }
 
-ResultBlank TracingRuntime::ProcessTraceCallResult(
+Result<void> TracingRuntime::ProcessTraceCallResult(
     const ServiceElementInstanceIdentifierView& service_element_instance_identifier,
     const analysis::tracing::TraceResult& trace_call_result,
     IBindingTracingRuntime& binding_tracing_runtime) noexcept
@@ -504,14 +508,14 @@ Result<analysis::tracing::ShmObjectHandle> TracingRuntime::GetRegisteredShmObjec
 // throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank TracingRuntime::Trace(const BindingType binding_type,
-                                  const ServiceElementTracingData service_element_tracing_data,
-                                  const ServiceElementInstanceIdentifierView service_element_instance_identifier,
-                                  const TracePointType trace_point_type,
-                                  const TracePointDataId trace_point_data_id,
-                                  TypeErasedSamplePtr sample_ptr,
-                                  const void* const shm_data_ptr,
-                                  const std::size_t shm_data_size) noexcept
+Result<void> TracingRuntime::Trace(const BindingType binding_type,
+                                   const ServiceElementTracingData service_element_tracing_data,
+                                   const ServiceElementInstanceIdentifierView service_element_instance_identifier,
+                                   const TracePointType trace_point_type,
+                                   const TracePointDataId trace_point_data_id,
+                                   TypeErasedSamplePtr sample_ptr,
+                                   const void* const shm_data_ptr,
+                                   const std::size_t shm_data_size) noexcept
 {
     if (!atomic_state_.is_tracing_enabled)
     {
@@ -599,12 +603,12 @@ ResultBlank TracingRuntime::Trace(const BindingType binding_type,
     return ProcessTraceCallResult(service_element_instance_identifier, trace_result, binding_runtime);
 }
 
-ResultBlank TracingRuntime::Trace(const BindingType binding_type,
-                                  const ServiceElementInstanceIdentifierView service_element_instance_identifier,
-                                  const TracePointType trace_point_type,
-                                  const score::cpp::optional<TracePointDataId> trace_point_data_id,
-                                  const void* const local_data_ptr,
-                                  const std::size_t local_data_size) noexcept
+Result<void> TracingRuntime::Trace(const BindingType binding_type,
+                                   const ServiceElementInstanceIdentifierView service_element_instance_identifier,
+                                   const TracePointType trace_point_type,
+                                   const std::optional<TracePointDataId> trace_point_data_id,
+                                   const void* const local_data_ptr,
+                                   const std::size_t local_data_size) noexcept
 {
     if (!atomic_state_.is_tracing_enabled)
     {

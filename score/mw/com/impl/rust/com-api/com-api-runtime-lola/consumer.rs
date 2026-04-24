@@ -16,7 +16,7 @@
 //! that can subscribe to events and receive data samples.
 //! It uses FFI to interact with the underlying C++ implementation.
 //! Main components include `LolaConsumerInfo`, `SubscribableImpl`,
-//! `SubscriberImpl`, `SampleConsumerDiscovery`, and `SampleConsumerBuilder`.
+//! `SubscriberImpl`, `LolaConsumerDiscovery`, and `LolaConsumerBuilder`.
 //! These components work together to enable consumers to discover services,
 //! subscribe to events, and receive data samples in a type-safe manner.
 //! The implementation ensures proper memory management and resource handling
@@ -35,6 +35,7 @@ use core::marker::PhantomData;
 use core::mem::ManuallyDrop;
 use core::ops::{Deref, DerefMut};
 use core::panic;
+use core::ptr::NonNull;
 use futures::task::{AtomicWaker, Context, Poll};
 use std::cmp::Ordering;
 use std::pin::Pin;
@@ -197,7 +198,7 @@ impl std::fmt::Debug for ProxyInstanceManager {
 /// it must not expose any mutable access to the proxy instance
 /// Or must not provide any method to access the proxy instance directly
 pub struct NativeProxyBase {
-    proxy: *mut ProxyBase, // Stores the proxy instance
+    proxy: NonNull<ProxyBase>, // Stores the proxy instance
 }
 
 //SAFETY: NativeProxyBase is safe to share between threads because:
@@ -213,7 +214,7 @@ impl Drop for NativeProxyBase {
         //SAFETY: It is safe to destroy the proxy because it was created by FFI
         // and proxy pointer received at the time of create_proxy called
         unsafe {
-            bridge_ffi_rs::destroy_proxy(self.proxy);
+            bridge_ffi_rs::destroy_proxy(self.proxy.as_ptr());
         }
     }
 }
@@ -228,12 +229,10 @@ impl NativeProxyBase {
     pub fn new(interface_id: &str, handle: &HandleType) -> Result<Self> {
         //SAFETY: It is safe to create the proxy because interface_id and handle are valid
         //Handle received at the time of get_avaible_instances called with correct interface_id
-        let proxy = unsafe { bridge_ffi_rs::create_proxy(interface_id, handle) };
-        if proxy.is_null() {
-            return Err(Error::ConsumerError(
-                ConsumerFailedReason::ProxyCreationFailed,
-            ));
-        }
+        let raw_proxy_ptr = unsafe { bridge_ffi_rs::create_proxy(interface_id, handle) };
+        let proxy = std::ptr::NonNull::new(raw_proxy_ptr).ok_or(Error::ConsumerError(
+            ConsumerFailedReason::ProxyCreationFailed,
+        ))?;
         Ok(Self { proxy })
     }
 }
@@ -245,7 +244,7 @@ impl NativeProxyBase {
 /// And the proxy event lifetime is managed safely through Drop of the parent proxy instance
 /// user can get the raw pointer using 'get_proxy_event_base' method
 pub struct NativeProxyEventBase {
-    proxy_event_ptr: *mut ProxyEventBase,
+    proxy_event_ptr: NonNull<ProxyEventBase>,
 }
 
 //SAFETY: NativeProxyEventBase is to send between threads because:
@@ -256,14 +255,13 @@ pub struct NativeProxyEventBase {
 unsafe impl Send for NativeProxyEventBase {}
 
 impl NativeProxyEventBase {
-    pub fn new(proxy: *mut ProxyBase, interface_id: &str, identifier: &str) -> Result<Self> {
+    pub fn new(proxy: &NonNull<ProxyBase>, interface_id: &str, identifier: &str) -> Result<Self> {
         //SAFETY: It is safe as we are passing valid proxy pointer and interface id to get event
         // proxy pointer is created during consumer creation
-        let proxy_event_ptr =
-            unsafe { bridge_ffi_rs::get_event_from_proxy(proxy, interface_id, identifier) };
-        if proxy_event_ptr.is_null() {
-            return Err(Error::EventError(EventFailedReason::EventCreationFailed));
-        }
+        let raw_event_ptr =
+            unsafe { bridge_ffi_rs::get_event_from_proxy(proxy.as_ptr(), interface_id, identifier) };
+        let proxy_event_ptr = std::ptr::NonNull::new(raw_event_ptr)
+            .ok_or(Error::EventError(EventFailedReason::EventCreationFailed))?;
         Ok(Self { proxy_event_ptr })
     }
 
@@ -271,11 +269,7 @@ impl NativeProxyEventBase {
     pub fn get_proxy_event_base(&self) -> &ProxyEventBase {
         // SAFETY: proxy_event_ptr is valid for the entire lifetime of NativeProxyEventBase
         // and was created by FFI during get_event_from_proxy()
-        unsafe {
-            self.proxy_event_ptr
-                .as_ref()
-                .expect("Event pointer is null")
-        }
+        unsafe { self.proxy_event_ptr.as_ref() }
     }
 }
 
@@ -311,7 +305,7 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
     fn subscribe(self, max_num_samples: usize) -> Result<Self::Subscription> {
         let instance_info = self.instance_info.clone();
         let event_instance = NativeProxyEventBase::new(
-            self.proxy_instance.0.proxy,
+            &self.proxy_instance.0.proxy,
             self.instance_info.interface_id,
             self.identifier,
         )?;
@@ -335,8 +329,8 @@ impl<T: CommData + Debug> Subscriber<T, LolaRuntimeImpl> for SubscribableImpl<T>
             max_num_samples,
             instance_info,
             waker_storage: Arc::default(),
+            async_init_status: std::sync::Once::new(),
             _proxy: self.proxy_instance.clone(),
-            async_init_status: AtomicBool::new(false),
             _phantom: PhantomData,
         })
     }
@@ -441,21 +435,26 @@ where
     max_num_samples: usize,
     instance_info: LolaConsumerInfo,
     waker_storage: Arc<AtomicWaker>,
+    async_init_status: std::sync::Once,
     _proxy: ProxyInstanceManager,
-    async_init_status: AtomicBool,
     _phantom: PhantomData<T>,
 }
 
 impl<T: CommData + Debug> Drop for SubscriberImpl<T> {
     fn drop(&mut self) {
-        //SAFETY: it is safe to clear the event receive handler because event ptr is valid
-        // which was obtained from valid proxy instance and the callback set for this event stream
-        // will be dropped after this, so it won't be called after the handler is cleared
+        // SAFETY: It is safe to unsubscribe from the event because the event pointer is valid
+        // and was created during subscription.
+        // Exculsive access to the event pointer is guaranteed by the ProxyEventManagerGuard.
+        // Unset the receive handler to release the async callback,
+        // and then unsubscribe from the event to clean up resources on the C++ side.
+        let mut guard = self.event.get_proxy_event();
         unsafe {
-            bridge_ffi_rs::clear_event_receive_handler(
-                self.event.get_proxy_event().deref_mut(),
-                T::ID,
-            );
+            if self.async_init_status.is_completed()
+            // Check if the async receive callback was initialized
+            {
+                bridge_ffi_rs::clear_event_receive_handler(guard.deref_mut(), T::ID);
+            }
+            bridge_ffi_rs::unsubscribe_to_event(guard.deref_mut());
         }
     }
 }
@@ -489,7 +488,32 @@ where
     type Subscriber = SubscribableImpl<T>;
     type Sample<'a> = Sample<T>;
 
+    /// The unsubscribe method consumes the subscription and returns the subscribable instance.
+    /// Calling `unsubscribe` while a `SampleContainer` holding samples whose lifetime
+    /// is tied to the subscription is still in scope so it must not compile.
+    ///
+    /// `try_receive` fills the container with `S::Sample<'a>` where `'a` is the
+    /// borrow lifetime of `self`.  The borrow checker therefore prevents moving
+    /// `self` (via `unsubscribe`) while the container and the samples it may hold
+    /// are still in scope.
+    ///
+    /// ``` compile_fail
+    /// use com_api_concept::{CommData, SampleContainer, Subscription};
+    /// use com_api_runtime_lola::LolaRuntimeImpl;
+    ///
+    /// fn demonstrate_sample_container_lifetime_borrow<T, S>(sub: S)
+    /// where
+    ///     T: CommData + std::fmt::Debug,
+    ///     S: Subscription<T, LolaRuntimeImpl>,
+    /// {
+    ///     let mut container = SampleContainer::new(2);
+    ///     let _ = sub.try_receive(&mut container, 2);
+    ///     sub.unsubscribe(); // ERROR: cannot move `sub` while `container` borrows it
+    ///     drop(container);
+    /// }
+    /// ```
     fn unsubscribe(self) -> Self::Subscriber {
+        //Unsubscribe FFI call will be triggered in Drop implementation of SubscriberImpl.
         SubscribableImpl {
             identifier: self.event_id,
             instance_info: self.instance_info.clone(),
@@ -533,18 +557,11 @@ where
             // on the same subscriber instance.
             let mut event_guard = self.event.get_proxy_event();
             // Initialize the async receive callback only once when the first receive call is made
-            if !self
-                .async_init_status
-                .load(std::sync::atomic::Ordering::Relaxed)
-            {
-                if let Err(_e) = self.init_async_receive(&mut event_guard) {
-                    return Err(Error::ReceiveError(
-                        ReceiveFailedReason::InitializationFailed,
-                    ));
-                }
-                self.async_init_status
-                    .store(true, std::sync::atomic::Ordering::Relaxed);
-            }
+            // We are using std::sync::Once to ensure that the callback is set only once.
+            self.async_init_status.call_once(|| {
+                self.init_async_receive(&mut event_guard)
+                    .expect("Failed to initialize async receive callback");
+            });
             ReceiveFuture {
                 event_guard: Some(event_guard),
                 waker_storage: Arc::clone(&self.waker_storage),
@@ -656,12 +673,12 @@ impl std::fmt::Debug for DiscoveryStateData {
     }
 }
 
-pub struct SampleConsumerDiscovery<I> {
+pub struct LolaConsumerDiscovery<I> {
     pub instance_specifier: InstanceSpecifier,
     pub _interface: PhantomData<I>,
 }
 
-impl<I: Interface> SampleConsumerDiscovery<I> {
+impl<I: Interface> LolaConsumerDiscovery<I> {
     pub fn new(_runtime: &LolaRuntimeImpl, instance_specifier: InstanceSpecifier) -> Self {
         Self {
             instance_specifier,
@@ -670,12 +687,12 @@ impl<I: Interface> SampleConsumerDiscovery<I> {
     }
 }
 
-impl<I: Interface + Send> ServiceDiscovery<I, LolaRuntimeImpl> for SampleConsumerDiscovery<I>
+impl<I: Interface + Send> ServiceDiscovery<I, LolaRuntimeImpl> for LolaConsumerDiscovery<I>
 where
-    SampleConsumerBuilder<I>: ConsumerBuilder<I, LolaRuntimeImpl>,
+    LolaConsumerBuilder<I>: ConsumerBuilder<I, LolaRuntimeImpl>,
 {
-    type ConsumerBuilder = SampleConsumerBuilder<I>;
-    type ServiceEnumerator = Vec<SampleConsumerBuilder<I>>;
+    type ConsumerBuilder = LolaConsumerBuilder<I>;
+    type ServiceEnumerator = Vec<LolaConsumerBuilder<I>>;
 
     fn get_available_instances(&self) -> Result<Self::ServiceEnumerator> {
         //If ANY Support is added in Lola, then we need to return all available instances
@@ -695,7 +712,7 @@ where
                     handle_index,
                     interface_id: I::INTERFACE_ID,
                 };
-                SampleConsumerBuilder {
+                LolaConsumerBuilder {
                     instance_info,
                     _interface: PhantomData,
                 }
@@ -817,7 +834,7 @@ impl<I: Interface> Drop for ServiceDiscoveryFuture<I> {
 }
 
 impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
-    type Output = Result<Vec<SampleConsumerBuilder<I>>>;
+    type Output = Result<Vec<LolaConsumerBuilder<I>>>;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
@@ -850,7 +867,7 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
                         handle_index,
                         interface_id: I::INTERFACE_ID,
                     };
-                    SampleConsumerBuilder {
+                    LolaConsumerBuilder {
                         instance_info,
                         _interface: PhantomData,
                     }
@@ -864,20 +881,20 @@ impl<I: Interface> Future for ServiceDiscoveryFuture<I> {
     }
 }
 
-impl<I: Interface> ConsumerBuilder<I, LolaRuntimeImpl> for SampleConsumerBuilder<I> {}
+impl<I: Interface> ConsumerBuilder<I, LolaRuntimeImpl> for LolaConsumerBuilder<I> {}
 
-impl<I: Interface> Builder<I::Consumer<LolaRuntimeImpl>> for SampleConsumerBuilder<I> {
+impl<I: Interface> Builder<I::Consumer<LolaRuntimeImpl>> for LolaConsumerBuilder<I> {
     fn build(self) -> Result<I::Consumer<LolaRuntimeImpl>> {
         Ok(Consumer::new(self.instance_info))
     }
 }
 
-pub struct SampleConsumerBuilder<I: Interface> {
+pub struct LolaConsumerBuilder<I: Interface> {
     pub instance_info: LolaConsumerInfo,
     pub _interface: PhantomData<I>,
 }
 
-impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for SampleConsumerBuilder<I> {
+impl<I: Interface> ConsumerDescriptor<LolaRuntimeImpl> for LolaConsumerBuilder<I> {
     fn get_instance_identifier(&self) -> &InstanceSpecifier {
         //if InstanceSpecifier::ANY support enable by lola
         //then this API should get InstanceSpecifier from FFI Call
@@ -1061,34 +1078,26 @@ mod test {
     #[test]
     fn test_discovery_state_data_creation() {
         // Test that DiscoveryStateData can be created with None values
-        let state = super::DiscoveryStateData {
-            find_handle: None,
-            handles: None,
-        };
-        assert!(state.find_handle.is_none());
+        let state = super::DiscoveryStateData { handles: None };
         assert!(state.handles.is_none());
     }
 
     #[test]
     fn test_discovery_state_data_debug() {
         // Test that DiscoveryStateData debug formatting works
-        let state = super::DiscoveryStateData {
-            find_handle: None,
-            handles: None,
-        };
+        let state = super::DiscoveryStateData { handles: None };
         let debug_string = format!("{:?}", state);
         assert!(debug_string.contains("DiscoveryStateData"));
-        assert!(debug_string.contains("find_handle"));
         assert!(debug_string.contains("handles"));
     }
 
     #[test]
     fn test_sample_consumer_discovery_creation() {
-        // Test that SampleConsumerDiscovery can be created with valid interface
+        // Test that LolaConsumerDiscovery can be created with valid interface
         let instance_specifier = com_api_concept::InstanceSpecifier::new("/test/vehicle")
             .expect("Failed to create instance specifier");
 
-        let _discovery = super::SampleConsumerDiscovery::<TestVehicleInterface>::new(
+        let _discovery = super::LolaConsumerDiscovery::<TestVehicleInterface>::new(
             &super::super::LolaRuntimeImpl {},
             instance_specifier,
         );
@@ -1102,7 +1111,7 @@ mod test {
         let instance_specifier = com_api_concept::InstanceSpecifier::new("/test/vehicle")
             .expect("Failed to create instance specifier");
 
-        let discovery = super::SampleConsumerDiscovery::<TestVehicleInterface>::new(
+        let discovery = super::LolaConsumerDiscovery::<TestVehicleInterface>::new(
             &super::super::LolaRuntimeImpl {},
             instance_specifier,
         );

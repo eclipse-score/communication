@@ -27,9 +27,8 @@
 #include "score/mw/com/impl/tracing/configuration/service_element_instance_identifier_view.h"
 #include "score/mw/com/impl/tracing/skeleton_event_tracing_data.h"
 
-#include <score/optional.hpp>
-
 #include <cstdint>
+#include <optional>
 #include <string_view>
 
 namespace score::mw::com::impl::tracing
@@ -68,8 +67,7 @@ TracingData ExtractBindingTracingData(const impl::SampleAllocateePtr<SampleType>
                 lola::SampleAllocateePtrView{lola_ptr}.GetEventDataControlComposite();
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite.has_value());
             const auto referenced_slot = lola_ptr.GetReferencedSlot();
-            const auto sample_timestamp =
-                event_data_control_composite->GetEventSlotTimestamp(referenced_slot.GetIndex());
+            const auto sample_timestamp = event_data_control_composite->GetEventSlotTimestamp(referenced_slot);
             static_assert(
                 sizeof(lola::EventSlotStatus::EventTimeStamp) ==
                     sizeof(impl::tracing::ITracingRuntime::TracePointDataId),
@@ -113,18 +111,18 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
                 lola::SampleAllocateePtrMutableView{lola_ptr}.GetEventDataControlComposite();
             SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(event_data_control_composite_result.has_value());
 
-            auto& event_data_control = event_data_control_composite_result->GetQmEventDataControl();
+            auto& proxy_event_data_control_local =
+                event_data_control_composite_result->GetProxyEventDataControlLocalView();
 
-            auto slot_indicator = lola_ptr.GetReferencedSlot();
-            event_data_control.ReferenceSpecificEvent(slot_indicator.GetIndex(),
-                                                      lola::TransactionLogSet::kSkeletonIndexSentinel);
+            const auto event_slot_index = lola_ptr.GetReferencedSlot();
+            proxy_event_data_control_local.ReferenceSpecificEvent(event_slot_index,
+                                                                  lola::TransactionLogSet::kSkeletonIndexSentinel);
             const auto* const managed_object = lola::SampleAllocateePtrView{lola_ptr}.GetManagedObject();
 
-            lola::SamplePtr<SampleType> sample_ptr{
-                managed_object,
-                event_data_control,
-                lola::ControlSlotIndicator(slot_indicator.GetIndex(), slot_indicator.GetSlotQM()),
-                lola::TransactionLogSet::kSkeletonIndexSentinel};
+            lola::SamplePtr<SampleType> sample_ptr{managed_object,
+                                                   proxy_event_data_control_local,
+                                                   event_slot_index,
+                                                   lola::TransactionLogSet::kSkeletonIndexSentinel};
             return impl::tracing::TypeErasedSamplePtr{std::move(sample_ptr)};
         },
         [](mock_binding::SampleAllocateePtr<SampleType>& ptr) -> TypeErasedSamplePtr {
@@ -142,7 +140,7 @@ TypeErasedSamplePtr CreateTypeErasedSamplePtr(impl::SampleAllocateePtr<SampleTyp
     return std::visit(visitor, binding_ptr_variant);
 }
 
-void UpdateTracingDataFromTraceResult(const ResultBlank trace_result,
+void UpdateTracingDataFromTraceResult(const Result<void> trace_result,
                                       SkeletonEventTracingData& skeleton_event_tracing_data,
                                       bool& skeleton_event_trace_point) noexcept;
 
@@ -250,9 +248,9 @@ void TraceSendWithAllocate(SkeletonEventTracingData& skeleton_event_tracing_data
 template <typename SampleType>
 auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                const SkeletonEventBindingBase& skeleton_event_binding_base) noexcept
-    -> score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
+    -> std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
 {
-    score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{};
+    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send)
     {
         tracing_handler = [&skeleton_event_tracing_data, &skeleton_event_binding_base](
@@ -266,9 +264,9 @@ auto CreateTracingSendCallback(SkeletonEventTracingData& skeleton_event_tracing_
 template <typename SampleType>
 auto CreateTracingSendWithAllocateCallback(SkeletonEventTracingData& skeleton_event_tracing_data,
                                            const SkeletonEventBindingBase& skeleton_event_binding_base) noexcept
-    -> score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
+    -> std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
 {
-    score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{};
+    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> tracing_handler{};
     if (skeleton_event_tracing_data.enable_send_with_allocate)
     {
         tracing_handler = [&skeleton_event_tracing_data, &skeleton_event_binding_base](

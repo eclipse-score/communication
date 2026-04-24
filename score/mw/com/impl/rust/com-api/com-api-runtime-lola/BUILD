@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
 
 rust_library(
     name = "com-api-runtime-lola",
@@ -38,5 +38,11 @@ rust_test(
     name = "com-api-runtime-lola-tests",
     crate = ":com-api-runtime-lola",
     tags = ["manual"],
+    deps = [":com-api-runtime-lola"],
+)
+
+rust_doc_test(
+    name = "com-api-runtime-lola-doc-tests",
+    crate = ":com-api-runtime-lola",
     deps = [":com-api-runtime-lola"],
 )

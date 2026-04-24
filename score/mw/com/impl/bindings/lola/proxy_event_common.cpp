@@ -29,11 +29,11 @@ ProxyEventCommon::ProxyEventCommon(Proxy& parent, const ElementFqId element_fq_i
       // The transaction log is identified by the application's unique identifier.
       transaction_log_id_{
           static_cast<TransactionLogId>(GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa).GetApplicationId())},
-      event_control_{parent_.GetEventControl(event_fq_id_)},
+      event_control_local_{parent_.GetEventControlLocal(event_fq_id_)},
       subscription_event_state_machine_{parent_.GetQualityType(),
                                         event_fq_id_,
                                         GetEventSourcePid(),
-                                        event_control_,
+                                        event_control_local_,
                                         transaction_log_id_}
 {
 }
@@ -43,7 +43,7 @@ ProxyEventCommon::~ProxyEventCommon()
     Unsubscribe();
 }
 
-ResultBlank ProxyEventCommon::Subscribe(const std::size_t max_sample_count)
+Result<void> ProxyEventCommon::Subscribe(const std::size_t max_sample_count)
 {
     std::stringstream sstream{};
     sstream << "Max sample count of" << max_sample_count << "is too large: Lola only supports up to 255 samples.";
@@ -87,7 +87,7 @@ Result<std::size_t> ProxyEventCommon::GetNumNewSamplesAvailable() const noexcept
     return slot_collector.value().GetNumNewSamplesAvailable();
 }
 
-SlotCollector::SlotIndicators ProxyEventCommon::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
+SlotCollector::SlotIndices ProxyEventCommon::GetNewSamplesSlotIndices(const std::size_t max_count) noexcept
 {
     auto& slot_collector = test_slot_collector_.has_value()
                                ? test_slot_collector_
@@ -98,13 +98,13 @@ SlotCollector::SlotIndicators ProxyEventCommon::GetNewSamplesSlotIndices(const s
     return slot_collector.value().GetNewSamplesSlotIndices(max_count);
 }
 
-ResultBlank ProxyEventCommon::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler)
+Result<void> ProxyEventCommon::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler)
 {
     subscription_event_state_machine_.SetReceiveHandler(std::move(handler));
     return {};
 }
 
-ResultBlank ProxyEventCommon::UnsetReceiveHandler()
+Result<void> ProxyEventCommon::UnsetReceiveHandler()
 {
     subscription_event_state_machine_.UnsetReceiveHandler();
     return {};
@@ -120,7 +120,7 @@ std::optional<std::uint16_t> ProxyEventCommon::GetMaxSampleCount() const noexcep
     return subscription_event_state_machine_.GetMaxSampleCount();
 }
 
-score::cpp::optional<TransactionLogSet::TransactionLogIndex> ProxyEventCommon::GetTransactionLogIndex() const noexcept
+score::cpp::optional<TransactionLogIndex> ProxyEventCommon::GetTransactionLogIndex() const noexcept
 {
     return subscription_event_state_machine_.GetTransactionLogIndex();
 }

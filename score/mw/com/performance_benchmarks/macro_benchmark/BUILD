@@ -20,21 +20,13 @@ load("//score/mw/com/performance_benchmarks/macro_benchmark/config_generator:con
 alias(
     name = "logging.json",
     actual = "//score/mw/com/performance_benchmarks/macro_benchmark/config:logging_json",
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 alias(
     name = "mw_com_config.json",
     actual = "//score/mw/com/performance_benchmarks/macro_benchmark/config:mw_com_config_json",
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 alias(
@@ -69,7 +61,7 @@ cc_library(
         "//score/mw/com/performance_benchmarks/common_test_resources:stop_token_sig_term_handler",
         "@boost.program_options",
         "@score_baselibs//score/language/futurecpp",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -84,7 +76,7 @@ cc_library(
     deps = [
         ":common_resources",
         "@score_baselibs//score/json",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -102,7 +94,7 @@ cc_library(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:stop_token_sig_term_handler",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -131,11 +123,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "config_parser",
         ":common_resources",
@@ -143,7 +131,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_guard",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
@@ -164,11 +152,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":common_resources",
         ":config_parser",
@@ -176,7 +160,7 @@ cc_binary(
         "//score/mw/com",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_creator",
         "//score/mw/com/performance_benchmarks/common_test_resources:shared_memory_object_guard",
-        "@score_logging//score/mw/log",
+        "@score_baselibs//score/mw/log",
     ],
 )
 

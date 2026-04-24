@@ -24,8 +24,8 @@ template <typename SampleType>
 class SkeletonFieldMock : public ISkeletonField<SampleType>
 {
   public:
-    MOCK_METHOD(ResultBlank, Update, (const SampleType&), (override));
-    MOCK_METHOD(ResultBlank, Update, (SampleAllocateePtr<SampleType>), (override));
+    MOCK_METHOD(Result<void>, Update, (const SampleType&), (override));
+    MOCK_METHOD(Result<void>, Update, (SampleAllocateePtr<SampleType>), (override));
     MOCK_METHOD(Result<SampleAllocateePtr<SampleType>>, Allocate, (), (override));
 };
 

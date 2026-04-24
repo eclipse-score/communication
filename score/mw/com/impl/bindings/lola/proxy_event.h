@@ -75,7 +75,7 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
 
     ~ProxyEvent() noexcept override = default;
 
-    ResultBlank Subscribe(const std::size_t max_sample_count) noexcept override
+    Result<void> Subscribe(const std::size_t max_sample_count) noexcept override
     {
         return proxy_event_common_.Subscribe(max_sample_count);
     }
@@ -91,11 +91,11 @@ class ProxyEvent final : public ProxyEventBinding<SampleType>
     Result<std::size_t> GetNumNewSamplesAvailable() const noexcept override;
     Result<std::size_t> GetNewSamples(Callback&& receiver, TrackerGuardFactory& tracker) noexcept override;
 
-    ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
+    Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept override
     {
         return proxy_event_common_.SetReceiveHandler(std::move(handler));
     }
-    ResultBlank UnsetReceiveHandler() noexcept override
+    Result<void> UnsetReceiveHandler() noexcept override
     {
         return proxy_event_common_.UnsetReceiveHandler();
     }
@@ -180,7 +180,7 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
                                                                      TrackerGuardFactory& tracker) noexcept
 {
     const auto max_sample_count = tracker.GetNumAvailableGuards();
-    const auto slot_indicators = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
+    const auto slot_indices = proxy_event_common_.GetNewSamplesSlotIndices(max_sample_count);
 
     auto& event_control = proxy_event_common_.GetEventControl();
     auto transaction_log_index = proxy_event_common_.GetTransactionLogIndex();
@@ -188,14 +188,14 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
         transaction_log_index.has_value(),
         "GetNewSamplesImpl should only be called after a TransactionLog has been registered.");
 
-    for (auto slot_indicator_it = slot_indicators.begin; slot_indicator_it != slot_indicators.end; ++slot_indicator_it)
+    for (auto slot_index_it = slot_indices.begin; slot_index_it != slot_indices.end; ++slot_index_it)
     {
-        const SampleType& sample_data{samples_.at(static_cast<std::size_t>(slot_indicator_it->GetIndex()))};
-        const EventSlotStatus event_slot_status{slot_indicator_it->GetSlot().load()};
+        const SampleType& sample_data{samples_.at(static_cast<std::size_t>(*slot_index_it))};
+        const EventSlotStatus event_slot_status{event_control.data_control[*slot_index_it]};
         const EventSlotStatus::EventTimeStamp sample_timestamp{event_slot_status.GetTimeStamp()};
 
         SamplePtr<SampleType> sample{
-            &sample_data, event_control.data_control, *slot_indicator_it, transaction_log_index.value()};
+            &sample_data, event_control.data_control, *slot_index_it, transaction_log_index.value()};
 
         auto guard = std::move(*tracker.TakeGuard());
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));
@@ -211,8 +211,7 @@ inline Result<std::size_t> ProxyEvent<SampleType>::GetNewSamplesImpl(Callback&& 
                  static_cast<impl::tracing::ITracingRuntime::TracePointDataId>(sample_timestamp));
     }
 
-    const auto num_collected_slots =
-        static_cast<std::size_t>(std::distance(slot_indicators.begin, slot_indicators.end));
+    const auto num_collected_slots = static_cast<std::size_t>(std::distance(slot_indices.begin, slot_indices.end));
     return num_collected_slots;
 }
 

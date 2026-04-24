@@ -15,6 +15,8 @@
 
 #include "score/result/result.h"
 
+#include <score/assert.hpp>
+
 namespace score::mw::com::impl::lola
 {
 

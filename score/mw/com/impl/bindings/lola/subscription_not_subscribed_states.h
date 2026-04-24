@@ -36,7 +36,7 @@ class NotSubscribedState final : public SubscriptionStateBase
 
     ~NotSubscribedState() noexcept override = default;
 
-    ResultBlank SubscribeEvent(const std::size_t max_sample_count) noexcept override;
+    Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept override;
     void UnsubscribeEvent() noexcept override;
     void StopOfferEvent() noexcept override;
     void ReOfferEvent(const pid_t new_event_source_pid) noexcept override;
@@ -46,7 +46,7 @@ class NotSubscribedState final : public SubscriptionStateBase
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept override;
     score::cpp::optional<SlotCollector>& GetSlotCollector() noexcept override;
     const score::cpp::optional<SlotCollector>& GetSlotCollector() const noexcept override;
-    score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept override;
+    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept override;
 
     void OnEntry() noexcept override;
 };

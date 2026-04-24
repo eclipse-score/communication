@@ -1,0 +1,26 @@
+bazel_dep(name = "score_communication", version = "0.0.0")
+local_path_override(
+    module_name = "score_communication",
+    path = "..",
+)
+
+bazel_dep(name = "rules_cc", version = "0.1.5")
+bazel_dep(name = "score_baselibs", version = "0.2.6")
+
+# Only required to build the example, shall be replaceable with nearly every other C++ Toolchain setup
+bazel_dep(name = "score_bazel_platforms", version = "0.1.2", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.3.0", dev_dependency = True)
+
+score_gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
+score_gcc.toolchain(
+    name = "score_gcc_x86_64_toolchain",
+    target_cpu = "x86_64",
+    target_os = "linux",
+    use_base_constraints_only = True,
+    use_default_package = True,
+    version = "12.2.0",
+)
+use_repo(
+    score_gcc,
+    "score_gcc_x86_64_toolchain",
+)

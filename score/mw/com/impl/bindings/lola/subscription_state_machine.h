@@ -13,12 +13,13 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SUBSCRIPTION_STATE_MACHINE_H
 
-#include "score/mw/com/impl/bindings/lola/event_control.h"
+#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_helpers.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_base.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine_states.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_index.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_registration_guard.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
 
@@ -70,7 +71,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     SubscriptionStateMachine(const QualityType quality_type,
                              const ElementFqId element_fq_id,
                              const pid_t event_source_pid,
-                             EventControl& event_control,
+                             ProxyEventControlLocalView& event_control_local,
                              const TransactionLogId& transaction_log_id) noexcept;
 
     SubscriptionStateMachine(SubscriptionStateMachine&&) noexcept = delete;
@@ -89,7 +90,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     // State Machine Events. These are modelled by the state machine UML and cause transitions between states. The
     // thread currently processing an event will block until all queued events are processed. All other calls will be
     // non-blocking.
-    [[nodiscard]] ResultBlank SubscribeEvent(const std::size_t max_sample_count) noexcept;
+    [[nodiscard]] Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept;
     void UnsubscribeEvent() noexcept;
     void StopOfferEvent() noexcept;
     void ReOfferEvent(const pid_t new_event_source_pid) noexcept;
@@ -113,7 +114,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     /// of this lock-free optimisation.
     score::cpp::optional<SlotCollector>& GetSlotCollectorLockFree() noexcept;
     const score::cpp::optional<SlotCollector>& GetSlotCollectorLockFree() const noexcept;
-    score::cpp::optional<TransactionLogSet::TransactionLogIndex> GetTransactionLogIndex() const noexcept;
+    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept;
     [[nodiscard]] const ElementFqId& GetElementFqId() const noexcept;
 
   private:
@@ -135,7 +136,7 @@ class SubscriptionStateMachine : public std::enable_shared_from_this<Subscriptio
     SubscriptionData subscription_data_;
     std::optional<std::weak_ptr<ScopedEventReceiveHandler>> event_receiver_handler_;
     EventReceiveHandlerManager event_receive_handler_manager_;
-    EventControl& event_control_;
+    ProxyEventControlLocalView& event_control_local_;
     bool provider_service_instance_is_available_;
 
     const TransactionLogId& transaction_log_id_;

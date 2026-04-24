@@ -14,58 +14,14 @@ use core::fmt::Debug;
 use std::mem::ManuallyDrop;
 
 use common_rs::{
-    BlankBinding, ControlSlotType, CxxOptional, EventDataControl, SlotIndexType,
+    BlankBinding, 
+    CxxOptional,
+    EventDataControl,
+    SlotIndexType,
     TransactionLogIndex,
+    UniquePtr,
+    CustomDeleter,
 };
-
-#[cfg(target_os = "nto")]
-mod util_nto {
-    #![allow(non_camel_case_types)]
-
-    // There is no canonical definition of c_longdouble in Rust. For both AArch64 and x86_64,
-    // however, the size and alignment properties are that of the gcc __int128 which corresponds (at
-    // least on rustc 1.78+ with LLVM 18, see
-    // https://blog.rust-lang.org/2024/03/30/i128-layout-update/) to u128. Use this instead until we
-    // get native f128 support.
-    #[repr(C)]
-    #[derive(Copy, Clone, Default, Debug)]
-    pub struct max_align_t {
-        _ll: libc::c_longlong,
-        _ld: u128,
-    }
-}
-
-#[cfg(not(target_os = "nto"))]
-use libc::max_align_t;
-#[cfg(target_os = "nto")]
-use util_nto::max_align_t;
-
-// @todo check whether we can get this info "somehow" from C++ code
-type CustomDeleterAlignment = max_align_t;
-const CUSTOM_DELETER_SIZE: usize = 32;
-
-#[repr(C)]
-union CustomDeleterInner {
-    _callback: [u8; CUSTOM_DELETER_SIZE],
-    _align: [CustomDeleterAlignment; 0],
-}
-
-#[repr(C)]
-struct WrapperBase {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-struct CustomDeleter {
-    _inner: CustomDeleterInner,
-    _wrapper: *mut WrapperBase,
-}
-
-#[repr(C)]
-struct UniquePtr<T, D = ()> {
-    _deleter: D,
-    _ptr: *mut T,
-}
 
 type MockBinding<T> = UniquePtr<T, CustomDeleter>;
 
@@ -75,15 +31,9 @@ union MockVariant<T> {
 }
 
 #[repr(C)]
-struct ControlSlotIndicator {
-    _slot_index: SlotIndexType,
-    _slot_pointer: *mut ControlSlotType,
-}
-
-#[repr(C)]
 struct SlotDecrementer {
     _event_data_control: *mut EventDataControl,
-    _control_slot_indicator: ControlSlotIndicator,
+    _event_slot_index: SlotIndexType,
     _transaction_log_idx: TransactionLogIndex,
 }
 
@@ -165,12 +115,6 @@ mod tests {
     fn test_sample_ptr_variant_user_defined_type_size() {
         let cpp_size = SamplePtrLola::get_variant_user_defined_type();
         verify_size_and_align!(SamplePtr<UserType>, cpp_size, "SamplePtr<UserType>");
-    }
-
-    #[test]
-    fn test_control_slot_indicator_size() {
-        let cpp_size = SamplePtrLola::get_control_slot_indicator_size();
-        verify_size_and_align!(ControlSlotIndicator, cpp_size, "ControlSlotIndicator");
     }
 
     #[test]

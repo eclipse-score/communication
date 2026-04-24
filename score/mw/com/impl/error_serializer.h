@@ -56,7 +56,7 @@ class ErrorSerializer
     ///        (e.g. a score::Result::has_value() == false)
     static SerializedErrorType SerializeError(const ErrorCode error_code);
 
-    static score::ResultBlank Deserialize(const SerializedErrorType serialized_error);
+    static score::Result<void> Deserialize(const SerializedErrorType serialized_error);
 };
 
 }  // namespace score::mw::com::impl

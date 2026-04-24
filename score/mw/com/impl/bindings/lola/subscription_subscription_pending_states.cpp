@@ -27,7 +27,7 @@
 namespace score::mw::com::impl::lola
 {
 
-ResultBlank SubscriptionPendingState::SubscribeEvent(const std::size_t max_sample_count) noexcept
+Result<void> SubscriptionPendingState::SubscribeEvent(const std::size_t max_sample_count) noexcept
 {
     // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
     // not lead to data loss.".
@@ -113,8 +113,7 @@ const score::cpp::optional<SlotCollector>& SubscriptionPendingState::GetSlotColl
     return state_machine_.subscription_data_.slot_collector_;
 }
 
-score::cpp::optional<TransactionLogSet::TransactionLogIndex> SubscriptionPendingState::GetTransactionLogIndex()
-    const noexcept
+score::cpp::optional<TransactionLogIndex> SubscriptionPendingState::GetTransactionLogIndex() const noexcept
 {
     SCORE_LANGUAGE_FUTURECPP_ASSERT_MESSAGE(state_machine_.transaction_log_registration_guard_.has_value(),
                                             "TransactionLogRegistrationGuard should be initialised on subscription.");

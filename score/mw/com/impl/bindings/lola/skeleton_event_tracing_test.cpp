@@ -11,7 +11,6 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/tracing/skeleton_event_tracing.h"
-#include "score/mw/com/impl/bindings/lola/event_data_control_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
 #include "score/mw/com/impl/bindings/lola/test/skeleton_event_test_resources.h"
 #include "score/mw/com/impl/bindings/lola/test/transaction_log_test_resources.h"
@@ -50,9 +49,9 @@ class SkeletonEventAttorney
         skeleton_event_.qm_disconnect_ = qm_disconnect_value;
     }
 
-    std::optional<EventDataControlComposite<>>& GetEventDataControlComposite()
+    EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        return skeleton_event_.event_data_control_composite_;
+        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
     }
 
   private:
@@ -89,10 +88,17 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
 
     EventSlotStatus::EventTimeStamp GetLastSendEventTimestamp(const SlotIndexType slot) noexcept
     {
-        auto& event_data_control_compositve =
+        auto& event_data_control_composite =
             SkeletonEventAttorney<test::TestSampleType>{*skeleton_event_}.GetEventDataControlComposite();
-        EXPECT_TRUE(event_data_control_compositve.has_value());
-        return event_data_control_compositve.value().GetEventSlotTimestamp(slot);
+        return event_data_control_composite.GetEventSlotTimestamp(slot);
+    }
+
+    TransactionLogSet& GetTransactionLogSet()
+    {
+        auto* const event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
+        SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control != nullptr);
+        SkeletonEventControlLocalView event_control_local{*event_control};
+        return event_control_local.data_control.GetTransactionLogSet();
     }
 };
 
@@ -137,7 +143,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
         .WillOnce(WithArgs<4, 6, 7>(
             Invoke([&sample_data, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                         const void* data_ptr,
-                                        std::size_t data_size) -> ResultBlank {
+                                        std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(0U);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 
@@ -206,7 +212,7 @@ TEST_F(SkeletonEventTracingSendFixture, MultipleSendCallsUsesCorrectTracePointDa
         .WillRepeatedly(WithArgs<4, 6, 7>(Invoke(
             [&sample_data, &slot_index, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                               const void* data_ptr,
-                                              std::size_t data_size) -> ResultBlank {
+                                              std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(slot_index);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 
@@ -322,7 +328,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendWithAllocateCallsAreTrac
         .WillOnce(WithArgs<4, 6, 7>(
             Invoke([&sample_data, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                         const void* data_ptr,
-                                        std::size_t data_size) -> ResultBlank {
+                                        std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(0U);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 
@@ -399,7 +405,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
         .WillRepeatedly(WithArgs<4, 6, 7>(Invoke(
             [&sample_data, &slot_index, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                               const void* data_ptr,
-                                              std::size_t data_size) -> ResultBlank {
+                                              std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(slot_index);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 
@@ -469,8 +475,7 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, DisablingTracingWillNotRegisterT
     std::ignore = skeleton_event_->PrepareOffer();
 
     // Then a TransactionLog is not registered
-    auto& transaction_log_set =
-        GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM)->data_control.GetTransactionLogSet();
+    auto& transaction_log_set = GetTransactionLogSet();
     const auto skeleton_transaction_log_result =
         TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
     ASSERT_FALSE(skeleton_transaction_log_result.has_value());
@@ -496,8 +501,7 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, EnablingSendTracingWillRegisterT
     std::ignore = skeleton_event_->PrepareOffer();
 
     // Then a TransactionLog is registered
-    auto& transaction_log_set =
-        GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM)->data_control.GetTransactionLogSet();
+    auto& transaction_log_set = GetTransactionLogSet();
     const auto skeleton_transaction_log_result =
         TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
     ASSERT_TRUE(skeleton_transaction_log_result.has_value());
@@ -523,8 +527,7 @@ TEST_F(SkeletonEventTracingPrepareOfferFixture, EnablingSendWithAllocateTracingW
     std::ignore = skeleton_event_->PrepareOffer();
 
     // Then a TransactionLog is registered
-    auto& transaction_log_set =
-        GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM)->data_control.GetTransactionLogSet();
+    auto& transaction_log_set = GetTransactionLogSet();
     const auto skeleton_transaction_log_result =
         TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog();
     ASSERT_TRUE(skeleton_transaction_log_result.has_value());
@@ -551,8 +554,7 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillRemoveRe
     std::ignore = skeleton_event_->PrepareOffer();
 
     // Then a TransactionLog is registered
-    auto& transaction_log_set =
-        GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM)->data_control.GetTransactionLogSet();
+    auto& transaction_log_set = GetTransactionLogSet();
     ASSERT_TRUE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
 
     // and when calling PrepareStopOffer
@@ -582,8 +584,7 @@ TEST_F(SkeletonEventTracingPrepareStopOfferFixture, PrepareStopOfferWillNotRemov
 
     // Then a TransactionLog is not registered, because expected_enabled_trace_points has no corresponding trace points
     // enabled
-    auto& transaction_log_set =
-        GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM)->data_control.GetTransactionLogSet();
+    auto& transaction_log_set = GetTransactionLogSet();
     ASSERT_FALSE(TransactionLogSetAttorney{transaction_log_set}.GetSkeletonTransactionLog().has_value());
 
     // and when calling PrepareStopOffer
