@@ -151,8 +151,7 @@ class ProxyFieldGetSetFixture : public ::testing::Test
             std::make_unique<mock_binding::ProxyMethodFacade>(set_method_binding_mock_)};
     }
 
-    ProxyField<TestSampleType, WithGetter, WithSetter> MakeFieldWithGetAndSet(
-        const std::string_view name = "TestField")
+    ProxyField<TestSampleType, WithGetter, WithSetter> MakeFieldWithGetAndSet(const std::string_view name = "TestField")
     {
         return ProxyField<TestSampleType, WithGetter, WithSetter>{
             proxy_base_,

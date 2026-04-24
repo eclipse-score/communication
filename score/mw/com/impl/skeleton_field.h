@@ -211,9 +211,9 @@ class SkeletonField : public SkeletonFieldBase
 
 template <typename SampleDataType, typename... Tags>
 SkeletonField<SampleDataType, Tags...>::SkeletonField(SkeletonBase& parent,
-                                                       std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-                                                       const std::string_view field_name,
-                                                       WithSetter)
+                                                      std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+                                                      const std::string_view field_name,
+                                                      WithSetter)
     : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr}
@@ -229,8 +229,8 @@ SkeletonField<SampleDataType, Tags...>::SkeletonField(SkeletonBase& parent,
 
 template <typename SampleDataType, typename... Tags>
 SkeletonField<SampleDataType, Tags...>::SkeletonField(SkeletonBase& parent,
-                                                       std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
-                                                       const std::string_view field_name)
+                                                      std::unique_ptr<SkeletonEvent<FieldType>> skeleton_event_dispatch,
+                                                      const std::string_view field_name)
     : SkeletonFieldBase{parent, field_name, std::move(skeleton_event_dispatch)},
       initial_field_value_{nullptr},
       skeleton_field_mock_{nullptr}

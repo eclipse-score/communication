@@ -248,7 +248,8 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructFieldGetMethod)
     ASSERT_NE(proxy_method, nullptr);
     auto* const lola_method = dynamic_cast<lola::ProxyMethod*>(proxy_method.get());
     ASSERT_NE(lola_method, nullptr);
-    const auto& unique_id = lola::ProxyMethodAttorney{*lola_method}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
+    const auto& unique_id =
+        lola::ProxyMethodAttorney{*lola_method}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
     EXPECT_EQ(unique_id.method_or_field_id, kDummyFieldId);
     EXPECT_EQ(unique_id.method_type, MethodType::kGet);
 }
@@ -269,7 +270,8 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, CanConstructFieldSetMethod)
     ASSERT_NE(proxy_method, nullptr);
     auto* const lola_method = dynamic_cast<lola::ProxyMethod*>(proxy_method.get());
     ASSERT_NE(lola_method, nullptr);
-    const auto& unique_id = lola::ProxyMethodAttorney{*lola_method}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
+    const auto& unique_id =
+        lola::ProxyMethodAttorney{*lola_method}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
     EXPECT_EQ(unique_id.method_or_field_id, kDummyFieldId);
     EXPECT_EQ(unique_id.method_type, MethodType::kSet);
 }
@@ -296,8 +298,10 @@ TYPED_TEST(ProxyMethodFactoryTypedFixture, GetAndSetForSameFieldProduceDistinctU
     ASSERT_NE(lola_get, nullptr);
     ASSERT_NE(lola_set, nullptr);
 
-    const auto& get_id = lola::ProxyMethodAttorney{*lola_get}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
-    const auto& set_id = lola::ProxyMethodAttorney{*lola_set}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
+    const auto& get_id =
+        lola::ProxyMethodAttorney{*lola_get}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
+    const auto& set_id =
+        lola::ProxyMethodAttorney{*lola_set}.GetProxyMethodInstanceIdentifier().unique_method_identifier;
     EXPECT_EQ(get_id.method_or_field_id, set_id.method_or_field_id);
     EXPECT_NE(get_id.method_type, set_id.method_type);
     EXPECT_EQ(get_id.method_type, MethodType::kGet);
