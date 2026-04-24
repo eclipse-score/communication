@@ -31,6 +31,7 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::AtomicUsize;
+use futures::stream::{self, Stream};
 use std::collections::VecDeque;
 use std::path::Path;
 
@@ -335,6 +336,14 @@ where
         _max_samples: usize,
     ) -> impl Future<Output = Result<SampleContainer<Self::Sample<'a>>>> + 'a {
         async { todo!() }
+    }
+
+    #[allow(clippy::manual_async_fn)]
+    fn to_stream<'a>(
+        &'a self,
+        _max_samples: usize,
+    ) -> impl Stream<Item = Result<Self::Sample<'a>>> + 'a {
+        stream::empty()
     }
 }
 
