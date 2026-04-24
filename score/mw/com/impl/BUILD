@@ -1203,6 +1203,13 @@ cc_unit_test(
 )
 
 cc_unit_test(
+    name = "method_type_test",
+    srcs = ["method_type_test.cpp"],
+    features = COMPILER_WARNING_FEATURES,
+    deps = [":method_type"],
+)
+
+cc_unit_test(
     name = "sample_reference_tracker_test",
     srcs = ["sample_reference_tracker_test.cpp"],
     deps = [
