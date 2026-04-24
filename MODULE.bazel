@@ -16,6 +16,7 @@ module(name = "score_communication")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boost.interprocess", version = "1.83.0.bcr.4")
 bazel_dep(name = "boost.program_options", version = "1.83.0.bcr.4")
+bazel_dep(name = "download_utils", version = "1.2.2")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.11.3")
 bazel_dep(name = "platforms", version = "1.0.0")
@@ -26,6 +27,15 @@ bazel_dep(name = "score_baselibs", version = "0.2.6")
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.2")
 bazel_dep(name = "score_crates", version = "0.0.9", repo_name = "score_communication_crate_index")
+
+download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
+
+download_archive(
+    name = "jsonschema",
+    build = "//third_party/jsonschema:jsonschema.BUILD",
+    strip_prefix = "jsonschema-4.23.0",
+    urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
+)
 
 bazel_dep(name = "score_tooling", dev_dependency = True)
 git_override(
@@ -195,7 +205,6 @@ download_file(
 bazel_dep(name = "aspect_rules_lint", version = "2.2.0", dev_dependency = True)
 bazel_dep(name = "google_benchmark", version = "1.9.5", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
-bazel_dep(name = "download_utils", version = "1.2.2", dev_dependency = True)
 bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
@@ -203,22 +212,12 @@ git_override(
     remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
 )
 
-download_archive = use_repo_rule("@download_utils//download/archive:defs.bzl", "download_archive")
-
 download_archive(
     name = "json_schema_validator",
     build = "//third_party/json_schema_validator:json_schema_validator.BUILD",
     dev_dependency = True,
     strip_prefix = "json-schema-validator-2.1.0",
     urls = ["https://github.com/pboettch/json-schema-validator/archive/refs/tags/2.1.0.tar.gz"],
-)
-
-download_archive(
-    name = "jsonschema",
-    build = "//third_party/jsonschema:jsonschema.BUILD",
-    dev_dependency = True,
-    strip_prefix = "jsonschema-4.23.0",
-    urls = ["https://github.com/python-jsonschema/jsonschema/archive/refs/tags/v4.23.0.tar.gz"],
 )
 
 bazel_dep(name = "rules_doxygen", version = "2.6.1", dev_dependency = True)
