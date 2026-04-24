@@ -13,9 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_ALLOCATEE_PTR_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SAMPLE_ALLOCATEE_PTR_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/control_slot_types.h"
 #include "score/mw/com/impl/bindings/lola/event_data_control_composite.h"
 
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -67,7 +69,10 @@ class SampleAllocateePtr
     // reference. So we need to have two different class initializations. coverity[autosar_cpp14_m3_2_2_violation]
     // coverity[autosar_cpp14_a12_1_5_violation]
     explicit SampleAllocateePtr(std::nullptr_t /* ptr */) noexcept
-        : managed_object_{nullptr}, event_slot_index_{kUninitialisedEventSlotIndex}, event_data_control_{std::nullopt}
+        : managed_object_{nullptr},
+          event_slot_index_{kUninitialisedEventSlotIndex},
+          event_data_control_{std::nullopt},
+          consumer_event_data_control_local_view_{nullptr}
     {
     }
 
@@ -77,8 +82,12 @@ class SampleAllocateePtr
     /// \param slot_index index of event slot
     SampleAllocateePtr(pointer ptr,
                        const EventDataControlComposite<>& event_data_ctrl,
+                       ConsumerEventDataControlLocalView<>& consumer_event_data_control_local_view,
                        const SlotIndexType slot_index) noexcept
-        : managed_object_{ptr}, event_slot_index_{slot_index}, event_data_control_{event_data_ctrl}
+        : managed_object_{ptr},
+          event_slot_index_{slot_index},
+          event_data_control_{event_data_ctrl},
+          consumer_event_data_control_local_view_{&consumer_event_data_control_local_view}
     {
     }
 
@@ -120,6 +129,7 @@ class SampleAllocateePtr
         swap(this->managed_object_, other.managed_object_);
         swap(this->event_slot_index_, other.event_slot_index_);
         swap(this->event_data_control_, other.event_data_control_);
+        swap(this->consumer_event_data_control_local_view_, other.consumer_event_data_control_local_view_);
     }
 
     /// \brief check validity.
@@ -187,6 +197,7 @@ class SampleAllocateePtr
     pointer managed_object_;
     SlotIndexType event_slot_index_;
     std::optional<EventDataControlComposite<>> event_data_control_;
+    ConsumerEventDataControlLocalView<>* consumer_event_data_control_local_view_;
 };
 
 /// \brief Specializes the std::swap algorithm for SampleAllocateePtr. Swaps the contents of lhs and rhs. Calls
@@ -233,6 +244,13 @@ class SampleAllocateePtrMutableView
     std::optional<EventDataControlComposite<>>& GetEventDataControlComposite() noexcept
     {
         return ptr_.event_data_control_;
+    }
+
+    [[nodiscard]]
+    ConsumerEventDataControlLocalView<>& GetConsumerEventDataControlLocalView()
+    {
+        SCORE_LANGUAGE_FUTURECPP_PRECONDITION(ptr_.consumer_event_data_control_local_view_ != nullptr);
+        return *ptr_.consumer_event_data_control_local_view_;
     }
 
   private:

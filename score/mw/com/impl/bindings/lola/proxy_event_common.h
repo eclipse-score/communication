@@ -13,11 +13,11 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_COMMON_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_PROXY_EVENT_COMMON_H
 
+#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/event_meta_info.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/slot_collector.h"
 #include "score/mw/com/impl/bindings/lola/subscription_state_machine.h"
 #include "score/mw/com/impl/bindings/lola/transaction_log_id.h"
@@ -87,12 +87,11 @@ class ProxyEventCommon final
     {
         return event_fq_id_;
     };
-    ProxyEventControlLocalView& GetEventControl() const noexcept
+    ConsumerEventControlLocalView& GetEventControl() const noexcept
     {
         return event_control_local_;
     };
     std::optional<std::uint16_t> GetMaxSampleCount() const noexcept;
-    score::cpp::optional<TransactionLogIndex> GetTransactionLogIndex() const noexcept;
     void NotifyServiceInstanceChangedAvailability(const bool is_available, const pid_t new_event_source_pid) noexcept;
 
   private:
@@ -111,7 +110,7 @@ class ProxyEventCommon final
     ElementFqId event_fq_id_;
     const std::string_view event_name_;
     TransactionLogId transaction_log_id_;
-    ProxyEventControlLocalView& event_control_local_;
+    ConsumerEventControlLocalView& event_control_local_;
     SubscriptionStateMachine subscription_event_state_machine_;
 };
 

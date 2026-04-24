@@ -14,8 +14,8 @@
 #define SCORE_AAS_MW_COM_IMPL_BINDINGS_LOLA_PROXY_SERVICE_DATA_CONTROL_LOCAL_VIEW_H
 
 #include "score/mw/com/impl/bindings/lola/application_id_pid_mapping.h"
+#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/element_fq_id.h"
-#include "score/mw/com/impl/bindings/lola/proxy_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/service_data_control.h"
 
 #include <score/assert.hpp>
@@ -60,7 +60,7 @@ class ProxyServiceDataControlLocalView
     // be private.". There are no class invariants to maintain which could be violated by directly accessing member
     // variables.
     // coverity[autosar_cpp14_m11_0_1_violation]
-    score::memory::shared::Map<ElementFqId, ProxyEventControlLocalView> event_controls_;
+    score::memory::shared::Map<ElementFqId, ConsumerEventControlLocalView> event_controls_;
 
     /// \brief mapping of a proxy's application identifier to its process ID (pid).
     /// \details Every proxy instance for this service shall register itself in this mapping. The identifier used is

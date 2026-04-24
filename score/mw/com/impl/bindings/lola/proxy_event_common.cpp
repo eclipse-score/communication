@@ -120,11 +120,6 @@ std::optional<std::uint16_t> ProxyEventCommon::GetMaxSampleCount() const noexcep
     return subscription_event_state_machine_.GetMaxSampleCount();
 }
 
-score::cpp::optional<TransactionLogIndex> ProxyEventCommon::GetTransactionLogIndex() const noexcept
-{
-    return subscription_event_state_machine_.GetTransactionLogIndex();
-}
-
 void ProxyEventCommon::NotifyServiceInstanceChangedAvailability(const bool is_available,
                                                                 const pid_t new_event_source_pid) noexcept
 {

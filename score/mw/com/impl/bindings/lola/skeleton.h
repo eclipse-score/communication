@@ -28,11 +28,11 @@
 #include "score/mw/com/impl/bindings/lola/skeleton_event_properties.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_method.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/configuration/lola_method_id.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
-#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
 #include "score/filesystem/filesystem.h"
@@ -54,8 +54,10 @@ namespace score::mw::com::impl::lola
 {
 
 /// \brief LoLa Skeleton implement all binding specific functionalities that are needed by a Skeleton.
+///
 /// This includes all actions that need to be performed on Service offerings, as also the possibility to register
-/// events dynamically at this skeleton.
+/// events dynamically at this skeleton. All functionality related to shared memory is managed by SkeletonMemoryManager
+/// which is owned by Skeleton.
 class Skeleton final : public SkeletonBinding
 {
     // Suppress "AUTOSAR C++14 A11-3-1", The rule declares: "Friend declarations shall not be used".
@@ -69,13 +71,15 @@ class Skeleton final : public SkeletonBinding
     struct RegistrationResult
     {
         EventDataStorage<SampleType>& event_data_storage;
-        EventDataControlComposite<> event_data_control_composite;
+        EventControl& event_control_qm;
+        EventControl* event_control_asil_b;
     };
 
     struct GenericRegistrationResult
     {
         void* type_erased_event_data_storage_ptr;
-        EventDataControlComposite<> event_data_control_composite;
+        EventControl& event_control_qm;
+        EventControl* event_control_asil_b;
     };
 
     static std::unique_ptr<Skeleton> Create(const InstanceIdentifier& identifier,
@@ -247,23 +251,32 @@ auto Skeleton::Register(const ElementFqId element_fq_id, SkeletonEventProperties
     // EventDataStorage from the shared memory and attempt to rollback the Skeleton tracing transaction log.
     if (was_old_shm_region_reopened_)
     {
-        auto event_data_control_composite =
-            memory_manager_.OpenEventDataControlCompositeFromOpenedSharedMemory(element_fq_id);
+        auto [event_data_control_qm, event_data_control_asil_b] =
+            memory_manager_.RetrieveEventControlsFromOpenedSharedMemory(element_fq_id);
 
-        auto& skeleton_event_data_control_local_qm = event_data_control_composite.GetQmEventDataControlLocal();
-        memory_manager_.RollbackSkeletonTracingTransactions(
-            skeleton_event_data_control_local_qm, skeleton_event_data_control_local_qm.GetTransactionLogSet());
+        // We can have transactions in the TransactionLogs relating to tracing (QM only) or field getter logic (QM and /
+        // or ASIL-B). We try rolling back all TransactionLogSets which are found.
+        // We rollback any transactions in the TransactionLog that correspond to the SkeletonEvent even if
+        // tracing is disabled in the current process. It's possible that we could have tracing disabled in this process
+        // but the crashed process had tracing enabled and therefore may have transactions that need to be rolled back.
+        // If tracing was also disabled in the previous process or if there are no transactions to rollback,
+        // RollbackSkeletonTracingTransactions will simply do nothing.
+        memory_manager_.RollbackSkeletonTracingTransactions(event_data_control_qm);
+        if (event_data_control_asil_b != nullptr)
+        {
+            memory_manager_.RollbackSkeletonTracingTransactions(*event_data_control_asil_b);
+        }
 
-        auto& event_data_storage = memory_manager_.OpenEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
-        return {event_data_storage, event_data_control_composite};
+        auto& event_data_storage = memory_manager_.RetrieveEventDataFromOpenedSharedMemory<SampleType>(element_fq_id);
+        return RegistrationResult<SampleType>{event_data_storage, event_data_control_qm, event_data_control_asil_b};
     }
 
     auto& event_data_storage =
         memory_manager_.CreateEventDataInCreatedSharedMemory<SampleType>(element_fq_id, element_properties);
-    auto event_data_control_composite =
-        memory_manager_.CreateEventDataControlCompositeInCreatedSharedMemory(element_fq_id, element_properties);
+    auto [event_data_control_qm, event_data_control_asil_b] =
+        memory_manager_.CreateEventControlsInCreatedSharedMemory(element_fq_id, element_properties);
 
-    return RegistrationResult<SampleType>{event_data_storage, event_data_control_composite};
+    return RegistrationResult<SampleType>{event_data_storage, event_data_control_qm, event_data_control_asil_b};
 }
 
 }  // namespace score::mw::com::impl::lola

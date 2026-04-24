@@ -39,9 +39,8 @@ void MarkTransactionLogsNeedRollback(ProxyServiceDataControlLocalView& service_d
 {
     for (auto& element : service_data_control.event_controls_)
     {
-        auto& event_data_control = element.second.data_control;
-        auto& transaction_log_set = event_data_control.GetTransactionLogSet();
-        transaction_log_set.MarkTransactionLogsNeedRollback(transaction_log_id);
+        auto& transaction_log_set = element.second.transaction_log_set;
+        transaction_log_set.get().MarkTransactionLogsNeedRollback(transaction_log_id);
     }
 }
 
@@ -120,8 +119,8 @@ Result<void> TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
     for (auto& element : service_data_control_local_.event_controls_)
     {
         auto& event_control = element.second;
-        auto& transaction_log_set = event_control.data_control.GetTransactionLogSet();
-        const auto rollback_result = transaction_log_set.RollbackProxyTransactions(
+        auto& transaction_log_set = event_control.transaction_log_set;
+        const auto rollback_result = transaction_log_set.get().RollbackProxyTransactions(
             transaction_log_id_,
             [&event_control](const TransactionLog::SlotIndexType slot_index) noexcept {
                 event_control.data_control.DereferenceEventWithoutTransactionLogging(slot_index);

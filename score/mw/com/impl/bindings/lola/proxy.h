@@ -135,7 +135,7 @@ class Proxy : public ProxyBinding
     ///
     /// \param element_fq_id The Event ID.
     /// \return A reference to the event control structure.
-    ProxyEventControlLocalView& GetEventControlLocal(const ElementFqId element_fq_id) noexcept;
+    ConsumerEventControlLocalView& GetEventControlLocal(const ElementFqId element_fq_id) noexcept;
 
     /// Retrieves a reference to the event data storage area for a given ElementFqId.
     ///
