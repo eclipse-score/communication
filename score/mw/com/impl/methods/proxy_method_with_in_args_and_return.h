@@ -40,7 +40,7 @@
 namespace score::mw::com::impl
 {
 
-template <typename, bool, bool, bool>
+template <typename, typename...>
 class ProxyField;
 
 /// \brief Partial specialization of ProxyMethod for function signatures with arguments and non-void return
@@ -55,15 +55,10 @@ class ProxyMethod<ReturnType(ArgTypes...)> final : public ProxyMethodBase
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class ProxyMethodView;
 
-    /// gtodo: check this.
-    friend class ProxyField<ReturnType, false, false, false>;
-    friend class ProxyField<ReturnType, false, false, true>;
-    friend class ProxyField<ReturnType, false, true, false>;
-    friend class ProxyField<ReturnType, false, true, true>;
-    friend class ProxyField<ReturnType, true, false, false>;
-    friend class ProxyField<ReturnType, true, false, true>;
-    friend class ProxyField<ReturnType, true, true, false>;
-    friend class ProxyField<ReturnType, true, true, true>;
+    // ProxyField needs to instantiate ProxyMethod via the private FieldOnlyConstructorEnabler tag.
+    // coverity[autosar_cpp14_a11_3_1_violation]
+    template <typename, typename...>
+    friend class ProxyField;
 
     struct FieldOnlyConstructorEnabler
     {
