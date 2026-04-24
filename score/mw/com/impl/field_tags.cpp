@@ -10,26 +10,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
-#ifndef PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
-#define PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
-
-#include <cstdint>
-#include <string_view>
-
-namespace score::mw::com::impl
-{
-
-/// \brief Enum used to differentiate between regular service methods and field Get/Set methods.
-enum class MethodType : std::uint8_t
-{
-    kUnknown = 0U,
-    kMethod,
-    kGet,
-    kSet
-};
-
-std::string_view to_string(MethodType method_type) noexcept;
-
-}  // namespace score::mw::com::impl
-
-#endif  // PLATFORM_AAS_MW_COM_IMPL_METHOD_TYPE_H
+#include "score/mw/com/impl/field_tags.h"
