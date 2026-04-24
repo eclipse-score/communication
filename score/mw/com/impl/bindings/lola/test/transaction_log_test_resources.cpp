@@ -38,7 +38,9 @@ void AddSubscriptionToEventSubscriptionControl(EventSubscriptionControl<>& subsc
 }
 
 void InsertProxyTransactionLogWithValidTransactions(
-    ConsumerEventControlLocalView& consumer_event_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    EventSubscriptionControl<>& subscription_control,
+    TransactionLogSet& transaction_log_set,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept
 {
@@ -49,16 +51,13 @@ void InsertProxyTransactionLogWithValidTransactions(
     // TransactionLog.
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
-    TransactionLogSet& transaction_log_set = consumer_event_control_local.transaction_log_set.get();
-
     // Modify the SubscriptionControl so that it currently has a record of a single subscriber which subscribed with
     // a sample count of subscription_max_sample_count_
     const EventSubscriptionControl<>::SubscriberCountType subscriber_count{1U};
-    AddSubscriptionToEventSubscriptionControl(
-        consumer_event_control_local.subscription_control, subscriber_count, subscription_max_sample_count);
+    AddSubscriptionToEventSubscriptionControl(subscription_control, subscriber_count, subscription_max_sample_count);
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_control_local.data_control).value();
+        transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value();
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);
@@ -93,7 +92,9 @@ void InsertSkeletonTransactionLogWithValidTransactions(
 }
 
 void InsertProxyTransactionLogWithInvalidTransactions(
-    ConsumerEventControlLocalView& consumer_event_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    EventSubscriptionControl<>& subscription_control,
+    TransactionLogSet& transaction_log_set,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept
 {
@@ -104,16 +105,13 @@ void InsertProxyTransactionLogWithInvalidTransactions(
     // TransactionLog.
     TransactionLogRegistrationGuardDeactiveDestructionOperationGuard guard{};
 
-    TransactionLogSet& transaction_log_set = consumer_event_control_local.transaction_log_set.get();
-
     // Modify the SubscriptionControl so that it currently has a record of a single subscriber which subscribed with
     // a sample count of subscription_max_sample_count_
     const EventSubscriptionControl<>::SubscriberCountType subscriber_count{1U};
-    AddSubscriptionToEventSubscriptionControl(
-        consumer_event_control_local.subscription_control.get(), subscriber_count, subscription_max_sample_count);
+    AddSubscriptionToEventSubscriptionControl(subscription_control, subscriber_count, subscription_max_sample_count);
 
     auto transaction_registration_guard =
-        transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_control_local.data_control).value();
+        transaction_log_set.RegisterProxyElement(transaction_log_id, consumer_event_data_control_local).value();
     const auto transaction_log_index = transaction_registration_guard.GetTransactionLogIndex();
 
     TransactionLogLocalView transaction_log_local_view = transaction_log_set.GetTransactionLog(transaction_log_index);

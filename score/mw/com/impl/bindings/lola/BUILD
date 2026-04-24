@@ -264,19 +264,6 @@ cc_library(
 )
 
 cc_library(
-    name = "skeleton_service_data_control_local_view",
-    srcs = ["skeleton_service_data_control_local_view.cpp"],
-    hdrs = ["skeleton_service_data_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    deps = [
-        ":element_fq_id",
-        ":provider_event_control_local_view",
-        ":service_data_control",
-    ],
-)
-
-cc_library(
     name = "proxy_service_data_control_local_view",
     srcs = ["proxy_service_data_control_local_view.cpp"],
     hdrs = ["proxy_service_data_control_local_view.h"],
@@ -325,7 +312,6 @@ cc_library(
         ":service_data_storage",
         ":shm_path_builder",
         ":skeleton_instance_identifier",
-        ":skeleton_service_data_control_local_view",
         ":type_erased_sample_ptrs_guard",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:generic_skeleton_event_binding",
@@ -627,20 +613,6 @@ cc_library(
         ":control_slot_types",
         ":event_data_control",
         ":event_subscription_control",
-        ":transaction_log_set",
-    ],
-)
-
-cc_library(
-    name = "provider_event_control_local_view",
-    srcs = ["provider_event_control_local_view.cpp"],
-    hdrs = ["provider_event_control_local_view.h"],
-    features = COMPILER_WARNING_FEATURES,
-    tags = ["FFI"],
-    visibility = ["//score/mw/com/impl/bindings/lola:__subpackages__"],
-    deps = [
-        ":event_control",
-        ":provider_event_data_control_local_view",
         ":transaction_log_set",
     ],
 )

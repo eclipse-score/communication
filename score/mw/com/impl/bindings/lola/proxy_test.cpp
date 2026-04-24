@@ -740,8 +740,11 @@ TEST_F(ProxyTransactionLogRollbackFixture, RollbackWillBeCalledOnExistingTransac
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains valid transactions
-    InsertProxyTransactionLogWithValidTransactions(
-        *consumer_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
+    InsertProxyTransactionLogWithValidTransactions(*consumer_event_data_control_local_,
+                                                   event_control_->subscription_control,
+                                                   event_control_->transaction_log_set_,
+                                                   subscription_max_sample_count_,
+                                                   transaction_log_id_);
     EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     ON_CALL(binding_runtime_, GetApplicationId()).WillByDefault(Return(transaction_log_id_));
@@ -783,8 +786,11 @@ TEST_F(ProxyTransactionLogRollbackFixture, FailureInRollingBackExistingTransacti
     // Given a fake Skeleton and SkeletonEvent which sets up an EventDataControl containing a TransactionLogSet
 
     // When inserting a TransactionLog into the created TransactionLogSet which contains invalid transactions
-    InsertProxyTransactionLogWithInvalidTransactions(
-        *consumer_event_control_local_, subscription_max_sample_count_, transaction_log_id_);
+    InsertProxyTransactionLogWithInvalidTransactions(*consumer_event_data_control_local_,
+                                                     event_control_->subscription_control,
+                                                     event_control_->transaction_log_set_,
+                                                     subscription_max_sample_count_,
+                                                     transaction_log_id_);
     EXPECT_TRUE(IsProxyTransactionLogIdRegistered(*transaction_log_set_, transaction_log_id_));
 
     EXPECT_CALL(binding_runtime_, GetApplicationId()).WillOnce(Return(transaction_log_id_));

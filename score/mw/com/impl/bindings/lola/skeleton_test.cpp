@@ -104,11 +104,6 @@ class SkeletonTestMockedSharedMemoryFixture : public SkeletonMockedMemoryFixture
     ServiceDataStorage existing_service_data_storage_{
         CreateServiceDataStorageWithEvent<test::TestSampleType>(test::kDummyElementFqId)};
 
-    SkeletonServiceDataControlLocalView existing_skeleton_service_data_control_qm_local_{
-        existing_service_data_control_qm_};
-    SkeletonServiceDataControlLocalView existing_skeleton_service_data_control_b_local_{
-        existing_service_data_control_b_};
-
     ProxyServiceDataControlLocalView existing_proxy_service_data_control_qm_local_{existing_service_data_control_qm_};
     ProxyServiceDataControlLocalView existing_proxy_service_data_control_b_local_{existing_service_data_control_b_};
 
@@ -397,10 +392,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferFailsIfOpeningServiceUsageMarker
 
 TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemoryIfFLockingServiceUsageMarkerFilefails)
 {
-    auto& skeleton_event_control_qm_local = GetSkeletonEventControlLocalFromServiceDataControlLocal(
-        test::kDummyElementFqId, existing_skeleton_service_data_control_qm_local_);
-    auto& skeleton_event_control_asil_b_local = GetSkeletonEventControlLocalFromServiceDataControlLocal(
-        test::kDummyElementFqId, existing_skeleton_service_data_control_b_local_);
+    auto skeleton_event_data_control_qm = GetProviderEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, existing_service_data_control_qm_);
+    auto skeleton_event_data_control_asil_b = GetProviderEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, existing_service_data_control_b_);
 
     // Given a Skeleton constructed from a valid identifier referencing an ASIL-B deployment
     InitialiseSkeleton(GetValidASILInstanceIdentifier());
@@ -410,10 +405,10 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
         .WillOnce(Return(score::cpp::make_unexpected(os::Error::createFromErrno(EWOULDBLOCK))));
 
     // and given that QM and ASIL B control segments contain (previously) allocated slots that are in writing
-    auto first_allocation_qm = skeleton_event_control_qm_local.data_control.AllocateNextSlot();
+    auto first_allocation_qm = skeleton_event_data_control_qm.AllocateNextSlot();
     ASSERT_TRUE(first_allocation_qm.has_value());
 
-    auto first_allocation_asil_b = skeleton_event_control_asil_b_local.data_control.AllocateNextSlot();
+    auto first_allocation_asil_b = skeleton_event_data_control_asil_b.AllocateNextSlot();
     ASSERT_TRUE(first_allocation_asil_b.has_value());
 
     EXPECT_CALL(shared_memory_factory_mock_, Open(test::kControlChannelPathQm, true, _));
@@ -425,11 +420,11 @@ TEST_F(SkeletonPrepareOfferFixture, PrepareOfferOpensAndCleansExistingSharedMemo
     EXPECT_TRUE(skeleton_->PrepareOffer(events_, fields_, std::move(kEmptyRegisterShmObjectTraceCallback)).has_value());
 
     // And a new allocation will return the same slot as before, as it was cleaned up
-    auto second_allocation_qm = skeleton_event_control_qm_local.data_control.AllocateNextSlot();
+    auto second_allocation_qm = skeleton_event_data_control_qm.AllocateNextSlot();
     ASSERT_TRUE(second_allocation_qm.has_value());
     EXPECT_EQ(first_allocation_qm.value(), second_allocation_qm.value());
 
-    auto second_allocation_asil_b = skeleton_event_control_asil_b_local.data_control.AllocateNextSlot();
+    auto second_allocation_asil_b = skeleton_event_data_control_asil_b.AllocateNextSlot();
     ASSERT_TRUE(second_allocation_asil_b.has_value());
     EXPECT_EQ(first_allocation_asil_b.value(), second_allocation_asil_b.value());
 }
@@ -802,8 +797,7 @@ class SkeletonRegisterParamaterisedFixture : public SkeletonTestMockedSharedMemo
 
         ProviderEventDataControlLocalView<>* event_control_asil_b_local_view =
             registration_result.event_control_asil_b != nullptr ? &event_control_asil_b_local_view_.value() : nullptr;
-        return EventDataControlComposite<>{
-            event_control_qm_local_view_.value(), event_control_asil_b_local_view, nullptr};
+        return EventDataControlComposite<>{event_control_qm_local_view_.value(), event_control_asil_b_local_view};
     }
 
   private:
@@ -890,10 +884,11 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RegisterWillOpenEventDataIfShmRegio
 TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledOnQmTransactionLogIfShmRegionWasOpened)
 {
     // Given a QM ServiceDataControl which contains a TransactionLogSet with valid transactions
-    auto& proxy_event_control_qm_local = GetProxyEventControlLocalFromServiceDataControlLocal(
-        test::kDummyElementFqId, existing_proxy_service_data_control_qm_local_);
-    auto& transaction_log_set = proxy_event_control_qm_local.transaction_log_set.get();
-    InsertSkeletonTransactionLogWithValidTransactions(proxy_event_control_qm_local.data_control, transaction_log_set);
+    auto proxy_event_data_control_qm_local = GetConsumerEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, existing_service_data_control_qm_);
+    auto& transaction_log_set =
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
+    InsertSkeletonTransactionLogWithValidTransactions(proxy_event_data_control_qm_local, transaction_log_set);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
     const ServiceElementType element_type = GetParam();
@@ -927,11 +922,11 @@ TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledOnQmTransaction
 TEST_P(SkeletonRegisterParamaterisedFixture, RollbackWillBeCalledOnAsilBTransactionLogIfShmRegionWasOpened)
 {
     // Given an Asil B ServiceDataControl which contains a TransactionLogSet with valid transactions
-    auto& proxy_event_control_asil_b_local = GetProxyEventControlLocalFromServiceDataControlLocal(
-        test::kDummyElementFqId, existing_proxy_service_data_control_b_local_);
-    auto& transaction_log_set = proxy_event_control_asil_b_local.transaction_log_set.get();
-    InsertSkeletonTransactionLogWithValidTransactions(proxy_event_control_asil_b_local.data_control,
-                                                      transaction_log_set);
+    auto proxy_event_data_control_asil_b_local = GetConsumerEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, existing_service_data_control_b_);
+    auto& transaction_log_set =
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_b_);
+    InsertSkeletonTransactionLogWithValidTransactions(proxy_event_data_control_asil_b_local, transaction_log_set);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
     const ServiceElementType element_type = GetParam();
@@ -968,10 +963,11 @@ TEST_P(SkeletonRegisterParamaterisedFixture, TracingWillBeDisabledAndTransaction
     ON_CALL(runtime_mock_, GetTracingRuntime()).WillByDefault(Return(&tracing_runtime_mock));
 
     // Given a QM ServiceDataControl which contains a TransactionLogSet with invalid transactions
-    auto& proxy_event_control_qm_local = GetProxyEventControlLocalFromServiceDataControlLocal(
-        test::kDummyElementFqId, existing_proxy_service_data_control_qm_local_);
-    auto& transaction_log_set = proxy_event_control_qm_local.transaction_log_set.get();
-    InsertSkeletonTransactionLogWithInvalidTransactions(proxy_event_control_qm_local.data_control, transaction_log_set);
+    auto proxy_event_data_control_qm_local = GetConsumerEventDataControlLocalFromServiceDataControl(
+        test::kDummyElementFqId, existing_service_data_control_qm_);
+    auto& transaction_log_set =
+        GetTransactionLogSetFromServiceDataControl(test::kDummyElementFqId, existing_service_data_control_qm_);
+    InsertSkeletonTransactionLogWithInvalidTransactions(proxy_event_data_control_qm_local, transaction_log_set);
     EXPECT_TRUE(IsSkeletonTransactionLogRegistered(transaction_log_set));
 
     const ServiceElementType element_type = GetParam();

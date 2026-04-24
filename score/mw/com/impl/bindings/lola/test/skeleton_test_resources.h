@@ -13,43 +13,31 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_TEST_RESOURCES_H
 #define SCORE_MW_COM_IMPL_BINDINGS_LOLA_SKELETON_TEST_RESOURCES_H
 
-#include "score/mw/com/impl/bindings/lola/consumer_event_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/event_control.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
-#include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/partial_restart_path_builder_mock.h"
-#include "score/mw/com/impl/bindings/lola/provider_event_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/proxy_service_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/runtime_mock.h"
-#include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/bindings/lola/shm_path_builder_mock.h"
 #include "score/mw/com/impl/bindings/lola/skeleton.h"
 #include "score/mw/com/impl/bindings/lola/skeleton_memory_manager.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/transaction_log_set.h"
 #include "score/mw/com/impl/bindings/mock_binding/tracing/tracing_runtime.h"
 #include "score/mw/com/impl/configuration/lola_event_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
-#include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
-#include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/instance_identifier.h"
-#include "score/mw/com/impl/runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
-#include "score/mw/com/impl/skeleton_binding.h"
 #include "score/mw/com/impl/tracing/tracing_runtime_mock.h"
 
 #include "score/filesystem/factory/filesystem_factory_fake.h"
-#include "score/filesystem/filesystem.h"
-#include "score/memory/shared/i_shared_memory_resource.h"
-#include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/shared_memory_factory.h"
 #include "score/memory/shared/shared_memory_factory_mock.h"
 #include "score/memory/shared/shared_memory_resource_heap_allocator_mock.h"
-#include "score/memory/shared/shared_memory_resource_mock.h"
 #include "score/os/mocklib/fcntl_mock.h"
 #include "score/os/mocklib/stat_mock.h"
 #include "score/os/mocklib/unistdmock.h"
@@ -59,12 +47,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/types.h>
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -453,12 +439,15 @@ class SkeletonMockedMemoryFixture : public ::testing::Test
     ServiceDataControl CreateServiceDataControlWithEvent(ElementFqId element_fq_id, QualityType quality_type) noexcept;
     static EventControl& GetEventControlFromServiceDataControl(ElementFqId element_fq_id,
                                                                ServiceDataControl& service_data_control) noexcept;
-    static ProviderEventControlLocalView& GetSkeletonEventControlLocalFromServiceDataControlLocal(
+    static ProviderEventDataControlLocalView<> GetProviderEventDataControlLocalFromServiceDataControl(
         ElementFqId element_fq_id,
-        SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept;
-    static ConsumerEventControlLocalView& GetProxyEventControlLocalFromServiceDataControlLocal(
+        ServiceDataControl& service_data_control) noexcept;
+    static ConsumerEventDataControlLocalView<> GetConsumerEventDataControlLocalFromServiceDataControl(
         ElementFqId element_fq_id,
-        ProxyServiceDataControlLocalView& proxy_service_data_control_local) noexcept;
+        ServiceDataControl& service_data_control) noexcept;
+    static TransactionLogSet& GetTransactionLogSetFromServiceDataControl(
+        ElementFqId element_fq_id,
+        ServiceDataControl& service_data_control) noexcept;
 
     template <typename SampleType>
     ServiceDataStorage CreateServiceDataStorageWithEvent(ElementFqId element_fq_id) noexcept

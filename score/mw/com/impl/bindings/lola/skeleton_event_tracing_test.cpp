@@ -97,8 +97,7 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
     {
         auto* const event_control = GetEventControl(fake_element_fq_id_, QualityType::kASIL_QM);
         SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control != nullptr);
-        ProviderEventControlLocalView event_control_local{*event_control};
-        return event_control_local.transaction_log_set.get();
+        return event_control->transaction_log_set_;
     }
 };
 

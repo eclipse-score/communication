@@ -12,8 +12,9 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/test/skeleton_test_resources.h"
 
-#include "score/mw/com/impl/bindings/lola/provider_event_control_local_view.h"
-#include "score/mw/com/impl/bindings/lola/skeleton_service_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/partial_restart_path_builder.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/shm_path_builder.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 
 #include "score/memory/shared/memory_resource_proxy.h"
@@ -337,24 +338,37 @@ EventControl& SkeletonMockedMemoryFixture::GetEventControlFromServiceDataControl
     return event_control;
 }
 
-ProviderEventControlLocalView& SkeletonMockedMemoryFixture::GetSkeletonEventControlLocalFromServiceDataControlLocal(
+ProviderEventDataControlLocalView<> SkeletonMockedMemoryFixture::GetProviderEventDataControlLocalFromServiceDataControl(
     ElementFqId element_fq_id,
-    SkeletonServiceDataControlLocalView& skeleton_service_data_control_local) noexcept
+    ServiceDataControl& service_data_control) noexcept
 {
-    auto event_control_local_it = skeleton_service_data_control_local.event_controls_.find(element_fq_id);
-    EXPECT_NE(event_control_local_it, skeleton_service_data_control_local.event_controls_.cend());
-    auto& event_control_local = event_control_local_it->second;
-    return event_control_local;
+    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
+
+    auto& event_control = event_control_it->second;
+    return ProviderEventDataControlLocalView{event_control.data_control};
 }
 
-ConsumerEventControlLocalView& SkeletonMockedMemoryFixture::GetProxyEventControlLocalFromServiceDataControlLocal(
+ConsumerEventDataControlLocalView<> SkeletonMockedMemoryFixture::GetConsumerEventDataControlLocalFromServiceDataControl(
     ElementFqId element_fq_id,
-    ProxyServiceDataControlLocalView& proxy_service_data_control_local) noexcept
+    ServiceDataControl& service_data_control) noexcept
 {
-    auto event_control_local_it = proxy_service_data_control_local.event_controls_.find(element_fq_id);
-    EXPECT_NE(event_control_local_it, proxy_service_data_control_local.event_controls_.cend());
-    auto& event_control_local = event_control_local_it->second;
-    return event_control_local;
+    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
+
+    auto& event_control = event_control_it->second;
+    return ConsumerEventDataControlLocalView{event_control.data_control};
+}
+
+TransactionLogSet& SkeletonMockedMemoryFixture::GetTransactionLogSetFromServiceDataControl(
+    ElementFqId element_fq_id,
+    ServiceDataControl& service_data_control) noexcept
+{
+    auto event_control_it = service_data_control.event_controls_.find(element_fq_id);
+    EXPECT_NE(event_control_it, service_data_control.event_controls_.cend());
+
+    auto& event_control = event_control_it->second;
+    return event_control.transaction_log_set_;
 }
 
 void SkeletonMockedMemoryFixture::CleanUpSkeleton()

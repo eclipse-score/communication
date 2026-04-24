@@ -124,8 +124,9 @@ void ProxyMockedMemoryFixture::InitialiseDummySkeletonEvent(const ElementFqId el
 {
     std::tie(event_control_, event_data_storage_) =
         fake_data_->AddEvent<SampleType>(element_fq_id, skeleton_event_properties);
-    provider_event_control_local_.emplace(*event_control_);
-    consumer_event_control_local_.emplace(*event_control_);
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(event_control_ != nullptr);
+    consumer_event_data_control_local_.emplace(event_control_->data_control);
+    provider_event_data_control_local_.emplace(event_control_->data_control);
 }
 
 LolaProxyEventResources::LolaProxyEventResources() : ProxyMockedMemoryFixture{}
@@ -185,12 +186,12 @@ void LolaProxyEventResources::ExpectUnregisterEventNotification(score::cpp::opti
 SlotIndexType LolaProxyEventResources::PutData(const std::uint32_t value,
                                                const EventSlotStatus::EventTimeStamp timestamp)
 {
-    SCORE_LANGUAGE_FUTURECPP_ASSERT(provider_event_control_local_.has_value());
-    auto slot_result = provider_event_control_local_->data_control.AllocateNextSlot();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT(provider_event_data_control_local_.has_value());
+    auto slot_result = provider_event_data_control_local_->AllocateNextSlot();
     EXPECT_TRUE(slot_result.has_value());
     auto slot_index = slot_result.value();
     event_data_storage_->at(slot_index) = value;
-    provider_event_control_local_->data_control.EventReady(slot_index, timestamp);
+    provider_event_data_control_local_->EventReady(slot_index, timestamp);
     return slot_index;
 }
 

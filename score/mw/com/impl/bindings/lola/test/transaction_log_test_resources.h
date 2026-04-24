@@ -121,7 +121,9 @@ void AddSubscriptionToEventSubscriptionControl(EventSubscriptionControl<>& subsc
                                                const EventSubscriptionControl<>::SubscriberCountType subscriber_count,
                                                const TransactionLog::MaxSampleCountType max_sample_count) noexcept;
 void InsertProxyTransactionLogWithValidTransactions(
-    ConsumerEventControlLocalView& consumer_event_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    EventSubscriptionControl<>& subscription_control,
+    TransactionLogSet& transaction_log_set,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
 void InsertSkeletonTransactionLogWithValidTransactions(
@@ -129,7 +131,9 @@ void InsertSkeletonTransactionLogWithValidTransactions(
     TransactionLogSet& transaction_log_set) noexcept;
 
 void InsertProxyTransactionLogWithInvalidTransactions(
-    ConsumerEventControlLocalView& consumer_event_data_control_local,
+    ConsumerEventDataControlLocalView<>& consumer_event_data_control_local,
+    EventSubscriptionControl<>& subscription_control,
+    TransactionLogSet& transaction_log_set,
     const TransactionLog::MaxSampleCountType subscription_max_sample_count,
     const TransactionLogId transaction_log_id) noexcept;
 void InsertSkeletonTransactionLogWithInvalidTransactions(

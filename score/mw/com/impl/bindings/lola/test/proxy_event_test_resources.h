@@ -17,7 +17,7 @@
 #include "score/mw/com/impl/bindings/lola/generic_proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/i_runtime.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_mock.h"
-#include "score/mw/com/impl/bindings/lola/provider_event_control_local_view.h"
+#include "score/mw/com/impl/bindings/lola/provider_event_data_control_local_view.h"
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/proxy_event.h"
 #include "score/mw/com/impl/bindings/lola/test_doubles/fake_mocked_service_data.h"
@@ -204,8 +204,8 @@ class ProxyMockedMemoryFixture : public ::testing::Test
 
     std::unique_ptr<FakeMockedServiceData> fake_data_{nullptr};
     EventControl* event_control_{nullptr};
-    std::optional<ProviderEventControlLocalView> provider_event_control_local_{};
-    std::optional<ConsumerEventControlLocalView> consumer_event_control_local_{};
+    std::optional<ProviderEventDataControlLocalView<>> provider_event_data_control_local_{};
+    std::optional<ConsumerEventDataControlLocalView<>> consumer_event_data_control_local_{};
     EventDataStorage<SampleType>* event_data_storage_{nullptr};
     RollbackSynchronization rollback_synchronization_{};
 
