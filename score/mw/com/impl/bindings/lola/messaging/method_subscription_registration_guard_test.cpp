@@ -36,7 +36,7 @@ class MethodSubscriptionRegistrationGuardFixture : public ::testing::Test
     MethodSubscriptionRegistrationGuardFixture()
     {
         ON_CALL(message_passing_service_mock_, UnregisterOnServiceMethodSubscribedHandler(_, _))
-            .WillByDefault(WithoutArgs(Invoke([this]() -> ResultBlank {
+            .WillByDefault(WithoutArgs(Invoke([this]() -> Result<void> {
                 unregister_on_service_method_subscribed_handler_called_ = true;
                 return {};
             })));

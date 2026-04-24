@@ -126,7 +126,7 @@ class ProxyCreationFixture : public ::testing::Test
             .WillByDefault(Return(ByMove(std::move(proxy_method_binding_mock_ptr))));
 
         // By default that the proxy_binding can successfully call SetupMethods
-        ON_CALL(proxy_binding_mock_, SetupMethods(_)).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(proxy_binding_mock_, SetupMethods(_)).WillByDefault(Return(score::Result<void>{}));
 
         // By default the runtime configuration resolves instance identifiers
         resolved_instance_identifiers_.push_back(identifier_with_valid_binding_);
@@ -502,9 +502,9 @@ class SkeletonCreationFixture : public ::testing::Test
         ON_CALL(skeleton_binding_mock_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
-        ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
-        ON_CALL(skeleton_event_binding_mock_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
-        ON_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(skeleton_binding_mock_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_event_binding_mock_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_field_binding_mock_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
     }
 
     std::vector<InstanceIdentifier> resolved_instance_identifiers_{};
@@ -814,7 +814,7 @@ TEST_F(GeneratedSkeletonCreationInstanceIdentifierTestFixture, CanInterpretAsSke
         .WillOnce(
             Invoke([](SkeletonBinding::SkeletonEventBindings& events,
                       SkeletonBinding::SkeletonFieldBindings& fields,
-                      std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> trace_callback) -> ResultBlank {
+                      std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> trace_callback) -> Result<void> {
                 EXPECT_EQ(events.size(), 1);
                 const auto& event_it = events.begin();
                 EXPECT_EQ(event_it->first, kEventName);
@@ -884,9 +884,9 @@ class GeneratedSkeletonStopOfferServiceRaiiFixture : public SkeletonCreationFixt
         ON_CALL(skeleton_binding_mock_2_, VerifyAllMethodsRegistered()).WillByDefault(Return(true));
 
         // By default the skeleton and service element bindings will report that offer service preparation succeeded
-        ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::ResultBlank{}));
-        ON_CALL(skeleton_event_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
-        ON_CALL(skeleton_field_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::ResultBlank{}));
+        ON_CALL(skeleton_binding_mock_2_, PrepareOffer(_, _, _)).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_event_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
+        ON_CALL(skeleton_field_binding_mock_2_, PrepareOffer()).WillByDefault(Return(score::Result<void>{}));
     }
 
     MySkeleton CreateService()

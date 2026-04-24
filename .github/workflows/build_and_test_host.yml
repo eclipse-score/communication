@@ -30,8 +30,11 @@ on:
         type: boolean
         default: true
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: build_and_test_host-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request'}}
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
 jobs:
     prepare_build_and_test_host_matrix:
       runs-on: ubuntu-24.04

@@ -160,7 +160,7 @@ SkeletonBase& SkeletonBase::operator=(SkeletonBase&& other) noexcept
     return *this;
 }
 
-score::ResultBlank SkeletonBase::OfferServiceEvents() const noexcept
+score::Result<void> SkeletonBase::OfferServiceEvents() const noexcept
 {
     for (auto& event : events_)
     {
@@ -178,7 +178,7 @@ score::ResultBlank SkeletonBase::OfferServiceEvents() const noexcept
     return {};
 }
 
-score::ResultBlank SkeletonBase::OfferServiceFields() const noexcept
+score::Result<void> SkeletonBase::OfferServiceFields() const noexcept
 {
     for (auto& field : fields_)
     {
@@ -200,7 +200,7 @@ score::ResultBlank SkeletonBase::OfferServiceFields() const noexcept
     return {};
 }
 
-auto SkeletonBase::OfferService() noexcept -> ResultBlank
+auto SkeletonBase::OfferService() noexcept -> Result<void>
 {
     if (skeleton_mock_ != nullptr)
     {

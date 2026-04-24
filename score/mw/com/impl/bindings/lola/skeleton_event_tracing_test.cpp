@@ -49,9 +49,9 @@ class SkeletonEventAttorney
         skeleton_event_.qm_disconnect_ = qm_disconnect_value;
     }
 
-    std::optional<EventDataControlComposite<>>& GetEventDataControlComposite()
+    EventDataControlComposite<>& GetEventDataControlComposite()
     {
-        return skeleton_event_.event_data_control_composite_;
+        return skeleton_event_.skeleton_event_common_.GetEventDataControlComposite();
     }
 
   private:
@@ -88,10 +88,9 @@ class SkeletonEventTracingFixture : public SkeletonEventFixture
 
     EventSlotStatus::EventTimeStamp GetLastSendEventTimestamp(const SlotIndexType slot) noexcept
     {
-        auto& event_data_control_compositve =
+        auto& event_data_control_composite =
             SkeletonEventAttorney<test::TestSampleType>{*skeleton_event_}.GetEventDataControlComposite();
-        EXPECT_TRUE(event_data_control_compositve.has_value());
-        return event_data_control_compositve.value().GetEventSlotTimestamp(slot);
+        return event_data_control_composite.GetEventSlotTimestamp(slot);
     }
 
     TransactionLogSet& GetTransactionLogSet()
@@ -144,7 +143,7 @@ TEST_F(SkeletonEventTracingSendFixture, SendCallsAreTracedWhenEnabled)
         .WillOnce(WithArgs<4, 6, 7>(
             Invoke([&sample_data, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                         const void* data_ptr,
-                                        std::size_t data_size) -> ResultBlank {
+                                        std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(0U);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 
@@ -213,7 +212,7 @@ TEST_F(SkeletonEventTracingSendFixture, MultipleSendCallsUsesCorrectTracePointDa
         .WillRepeatedly(WithArgs<4, 6, 7>(Invoke(
             [&sample_data, &slot_index, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                               const void* data_ptr,
-                                              std::size_t data_size) -> ResultBlank {
+                                              std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(slot_index);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 
@@ -329,7 +328,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, SendWithAllocateCallsAreTrac
         .WillOnce(WithArgs<4, 6, 7>(
             Invoke([&sample_data, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                         const void* data_ptr,
-                                        std::size_t data_size) -> ResultBlank {
+                                        std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(0U);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 
@@ -406,7 +405,7 @@ TEST_F(SkeletonEventTracingSendWithAllocateFixture, MultipleSendCallsUsesCorrect
         .WillRepeatedly(WithArgs<4, 6, 7>(Invoke(
             [&sample_data, &slot_index, this](impl::tracing::ITracingRuntime::TracePointDataId trace_point_data_id,
                                               const void* data_ptr,
-                                              std::size_t data_size) -> ResultBlank {
+                                              std::size_t data_size) -> Result<void> {
                 const auto timestamp = GetLastSendEventTimestamp(slot_index);
                 EXPECT_EQ(timestamp, trace_point_data_id);
 

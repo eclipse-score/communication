@@ -36,11 +36,11 @@ class TracingRuntime : public IBindingTracingRuntime
                 UnregisterShmObject,
                 (const impl::tracing::ServiceElementInstanceIdentifierView&),
                 (noexcept, override));
-    MOCK_METHOD(score::cpp::optional<analysis::tracing::ShmObjectHandle>,
+    MOCK_METHOD(std::optional<analysis::tracing::ShmObjectHandle>,
                 GetShmObjectHandle,
                 (const impl::tracing::ServiceElementInstanceIdentifierView&),
                 (const, noexcept, override));
-    MOCK_METHOD(score::cpp::optional<void*>,
+    MOCK_METHOD(std::optional<void*>,
                 GetShmRegionStartAddress,
                 (const impl::tracing::ServiceElementInstanceIdentifierView&),
                 (const, noexcept, override));
@@ -50,7 +50,7 @@ class TracingRuntime : public IBindingTracingRuntime
                  memory::shared::ISharedMemoryResource::FileDescriptor,
                  void*),
                 (noexcept, override));
-    MOCK_METHOD((score::cpp::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>),
+    MOCK_METHOD((std::optional<std::pair<memory::shared::ISharedMemoryResource::FileDescriptor, void*>>),
                 GetCachedFileDescriptorForReregisteringShmObject,
                 (const impl::tracing::ServiceElementInstanceIdentifierView&),
                 (const, noexcept, override));

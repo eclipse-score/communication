@@ -12,26 +12,10 @@
 # *******************************************************************************
 
 filegroup(
-    name = "does_not_free_resources_on_destruction_fta",
+    name = "smart_pointer_fta",
     srcs = [
-        "does_not_free_resources_on_destruction_fta.puml",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "returns_wrong_data_fta",
-    srcs = [
-        "returns_wrong_data_fta.puml",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "smart_pointer_sample_allocate_ptr",
-    srcs = [
-        ":does_not_free_resources_on_destruction_fta",
-        ":returns_wrong_data_fta",
+        "//score/mw/com/dependability/requirements/safety_analysis/root_causes/smart_pointer/method_signature_element_ptr:method_signature_element_ptr_fta",
+        "//score/mw/com/dependability/requirements/safety_analysis/root_causes/smart_pointer/sample_ptr_sample_allocate_ptr",
     ],
     visibility = ["//visibility:public"],
 )

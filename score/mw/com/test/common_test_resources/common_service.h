@@ -56,7 +56,7 @@ class Service
         return score::Result<Service>(Service(std::move(service_result.value())));
     }
 
-    [[nodiscard]] ResultBlank OfferService(const std::int32_t test_value)
+    [[nodiscard]] Result<void> OfferService(const std::int32_t test_value)
     {
         std::cout << "Start offering service, with value " << test_value << "\n";
         const auto update_result = lola_service_.test_field.Update(test_value);

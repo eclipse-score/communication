@@ -24,8 +24,8 @@ template <typename SampleType>
 class SkeletonEventMock : public ISkeletonEvent<SampleType>
 {
   public:
-    MOCK_METHOD(ResultBlank, Send, (const SampleType&), (override));
-    MOCK_METHOD(ResultBlank, Send, (SampleAllocateePtr<SampleType>), (override));
+    MOCK_METHOD(Result<void>, Send, (const SampleType&), (override));
+    MOCK_METHOD(Result<void>, Send, (SampleAllocateePtr<SampleType>), (override));
     MOCK_METHOD(Result<SampleAllocateePtr<SampleType>>, Allocate, (), (override));
 };
 

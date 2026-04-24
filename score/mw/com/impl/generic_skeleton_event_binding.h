@@ -27,7 +27,7 @@ namespace score::mw::com::impl
 class GenericSkeletonEventBinding : public SkeletonEventBindingBase
 {
   public:
-    virtual ResultBlank Send(SampleAllocateePtr<void> sample) noexcept = 0;
+    virtual Result<void> Send(SampleAllocateePtr<void> sample) noexcept = 0;
 
     virtual Result<SampleAllocateePtr<void>> Allocate() noexcept = 0;
 

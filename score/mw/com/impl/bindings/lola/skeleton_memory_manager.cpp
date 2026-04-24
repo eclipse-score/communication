@@ -149,7 +149,7 @@ SkeletonMemoryManager::SkeletonMemoryManager(QualityType quality_type,
 auto SkeletonMemoryManager::CreateSharedMemory(
     SkeletonBinding::SkeletonEventBindings& events,
     SkeletonBinding::SkeletonFieldBindings& fields,
-    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> ResultBlank
+    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> Result<void>
 {
     const auto storage_size_calc_result = CalculateShmResourceStorageSizes(events, fields);
 
@@ -178,7 +178,7 @@ auto SkeletonMemoryManager::CreateSharedMemory(
 }
 
 auto SkeletonMemoryManager::OpenExistingSharedMemory(
-    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> ResultBlank
+    std::optional<SkeletonBinding::RegisterShmObjectTraceCallback> register_shm_object_trace_callback) -> Result<void>
 {
     if (!OpenSharedMemoryForControl(QualityType::kASIL_QM))
     {

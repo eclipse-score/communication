@@ -83,7 +83,7 @@ score::Result<score::cpp::span<std::byte>> ProxyMethod::GetReturnValueBuffer(std
     return GetReturnValueElementStorage(queue_position, return_storage_.value(), type_erased_element_info_);
 }
 
-score::ResultBlank ProxyMethod::DoCall(std::size_t queue_position)
+score::Result<void> ProxyMethod::DoCall(std::size_t queue_position)
 {
     if (!is_subscribed_)
     {

@@ -318,6 +318,42 @@ TEST_F(ProxyCreationDeathTest, GettingEventDataControlWithoutInitialisedEventDat
     EXPECT_DEATH(proxy_->GetEventControlLocal(uninitialised_element_fq_id), ".*");
 }
 
+TEST_F(ProxyCreationFixture, ProxyCreationOpensSharedMemoryWithEmptyProvidersWhenStrictAndNoAllowedProviderConfigured)
+{
+    // Given a deployment with strict permission-checks but no allowedProvider configured
+    LolaServiceInstanceDeployment lola_service_instance_deployment{LolaServiceInstanceId{kLolaServiceInstanceId}};
+    lola_service_instance_deployment.strict_permissions_ = true;
+    // Note: allowed_provider_ is intentionally left empty to test that strict_permissions_ being true causes an empty
+    // provider list to be used when opening shared memory
+
+    const auto service_instance_deployment_strict =
+        ServiceInstanceDeployment{service, lola_service_instance_deployment, QualityType::kASIL_QM, kInstanceSpecifier};
+    const auto identifier = make_InstanceIdentifier(service_instance_deployment_strict, kServiceTypeDeployment);
+
+    // Expecting that shared memory is opened with an empty (not nullopt) provider list,
+    // so that the factory rejects any provider, consistent with an explicit empty allowedProvider list
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Open(StartsWith(kShmControlPathPrefix), true, _))
+        .WillOnce(
+            WithArg<2>(Invoke([](const auto& provider_list) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                EXPECT_TRUE(provider_list.has_value());
+                EXPECT_TRUE(provider_list.value().empty());
+                return nullptr;
+            })));
+    EXPECT_CALL(shared_memory_factory_mock_guard_.mock_, Open(StartsWith(kShmDataPathPrefix), false, _))
+        .WillOnce(
+            WithArg<2>(Invoke([](const auto& provider_list) -> std::shared_ptr<memory::shared::ISharedMemoryResource> {
+                EXPECT_TRUE(provider_list.has_value());
+                EXPECT_TRUE(provider_list.value().empty());
+                return nullptr;
+            })));
+
+    // When creating a proxy
+    InitialiseProxyWithCreate(identifier);
+
+    // Then no proxy is created (same behaviour as an explicit empty allowedProvider list with strict)
+    EXPECT_EQ(proxy_, nullptr);
+}
+
 TEST_F(ProxyCreationDeathTest, GettingRawDataStorageWithoutInitialisedEventDataStorageTerminates)
 {
     // Given a fake Skeleton which creates an empty ServiceDataStorage

@@ -49,7 +49,7 @@ class ProxyEventBindingBase
     ///
     /// \param max_sample_count Specify the maximum number of concurrent samples that this event shall
     ///                         be able to offer to the using application.
-    virtual ResultBlank Subscribe(const std::size_t max_sample_count) noexcept = 0;
+    virtual Result<void> Subscribe(const std::size_t max_sample_count) noexcept = 0;
 
     /// \brief Get the subscription state of this event.
     ///
@@ -68,10 +68,10 @@ class ProxyEventBindingBase
     /// The handler must not throw an exception and it must not terminate.
     ///
     /// \param handler The callback to be called on event reception.
-    virtual ResultBlank SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept = 0;
+    virtual Result<void> SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept = 0;
 
     /// \brief Remove any receive handler registered via SetReceiveHandler()
-    virtual ResultBlank UnsetReceiveHandler() noexcept = 0;
+    virtual Result<void> UnsetReceiveHandler() noexcept = 0;
 
     /// \brief Returns the number of new samples a call to GetNewSamples() would currently provide if the
     /// max_sample_count set in the Subscribe call and GetNewSamples call were both infinitely high.

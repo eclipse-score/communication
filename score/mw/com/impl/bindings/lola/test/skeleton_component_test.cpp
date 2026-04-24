@@ -410,21 +410,21 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_QM)
 
     // Expecting that the event and field are offered during the simulation dry run
     ON_CALL(mock_event_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooEventId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::EVENT};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooEventId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::EVENT};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
     ON_CALL(mock_field_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooFieldId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::FIELD};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooFieldId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::FIELD};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
 
@@ -470,21 +470,21 @@ TEST_F(SkeletonComponentTestFixture, DataShmObjectSizeCalc_Simulation_AsilB)
 
     // Expecting that the event and field are offered during the simulation dry run
     ON_CALL(mock_event_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooEventId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::EVENT};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooEventId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::EVENT};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
     ON_CALL(mock_field_binding_, PrepareOffer())
-        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> ResultBlank {
-            ElementFqId event_fqn{lola_service_type_deployment->service_id_,
-                                  test::kFooFieldId,
-                                  test::kDefaultLolaInstanceId,
-                                  ServiceElementType::FIELD};
-            unit->Register<uint8_t>(event_fqn, test::kDefaultEventProperties);
+        .WillByDefault(testing::Invoke([&unit, lola_service_type_deployment]() -> Result<void> {
+            ElementFqId element_fq_id{lola_service_type_deployment->service_id_,
+                                      test::kFooFieldId,
+                                      test::kDefaultLolaInstanceId,
+                                      ServiceElementType::FIELD};
+            unit->Register<uint8_t>(element_fq_id, test::kDefaultEventProperties);
             return {};
         }));
 

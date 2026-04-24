@@ -33,7 +33,7 @@ GenericProxyEvent::GenericProxyEvent(Proxy& parent, const ElementFqId element_fq
 {
 }
 
-ResultBlank GenericProxyEvent::Subscribe(const std::size_t max_sample_count) noexcept
+Result<void> GenericProxyEvent::Subscribe(const std::size_t max_sample_count) noexcept
 {
     return proxy_event_common_.Subscribe(max_sample_count);
 }
@@ -87,12 +87,12 @@ bool GenericProxyEvent::HasSerializedFormat() const noexcept
     return false;
 }
 
-ResultBlank GenericProxyEvent::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept
+Result<void> GenericProxyEvent::SetReceiveHandler(std::weak_ptr<ScopedEventReceiveHandler> handler) noexcept
 {
     return proxy_event_common_.SetReceiveHandler(std::move(handler));
 }
 
-ResultBlank GenericProxyEvent::UnsetReceiveHandler() noexcept
+Result<void> GenericProxyEvent::UnsetReceiveHandler() noexcept
 {
     return proxy_event_common_.UnsetReceiveHandler();
 }

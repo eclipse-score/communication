@@ -42,7 +42,7 @@ auto ErrorSerializer<ErrorCode>::SerializeError(const ErrorCode error_code) -> S
 }
 
 template <typename ErrorCode>
-auto ErrorSerializer<ErrorCode>::Deserialize(const SerializedErrorType serialized_error_code) -> score::ResultBlank
+auto ErrorSerializer<ErrorCode>::Deserialize(const SerializedErrorType serialized_error_code) -> score::Result<void>
 {
     SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
         ((static_cast<SerializedErrorType>(ErrorCode::kInvalid) <= serialized_error_code) &&

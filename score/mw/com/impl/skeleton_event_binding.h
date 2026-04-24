@@ -20,10 +20,10 @@
 #include "score/result/result.h"
 
 #include <score/callback.hpp>
-#include <score/optional.hpp>
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
 namespace score::mw::com::impl
 {
@@ -51,7 +51,7 @@ class SkeletonEventBindingBase
     virtual ~SkeletonEventBindingBase();
 
     /// \brief Used to indicate that the event shall be available to consumer (e.g. binding specific preparation)
-    virtual ResultBlank PrepareOffer() noexcept = 0;
+    virtual Result<void> PrepareOffer() noexcept = 0;
 
     /// \brief Used to indicate that the event shall no longer be available to consumer (e.g. binding specific
     /// de-initialization)
@@ -78,12 +78,12 @@ class SkeletonEventBinding : public SkeletonEventBindingBase
 
     /// \brief SampleType is allocated by the user and provided to the middleware to send
     /// \return On failure, returns an error code.
-    virtual ResultBlank Send(const SampleType&, score::cpp::optional<SendTraceCallback>) noexcept = 0;
+    virtual Result<void> Send(const SampleType&, std::optional<SendTraceCallback>) noexcept = 0;
 
     /// \brief SampleType is previously allocated by middleware and provided by the user to indicate that he is finished
     /// filling the provided pointer with live.
     /// \return On failure, returns an error code.
-    virtual ResultBlank Send(SampleAllocateePtr<SampleType>, score::cpp::optional<SendTraceCallback>) noexcept = 0;
+    virtual Result<void> Send(SampleAllocateePtr<SampleType>, std::optional<SendTraceCallback>) noexcept = 0;
 
     /// \brief Allocates memory for SampleType for the user to fill it. This is especially necessary for Zero-Copy
     /// implementations.

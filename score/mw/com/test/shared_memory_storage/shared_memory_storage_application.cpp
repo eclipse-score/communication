@@ -46,8 +46,8 @@ class SkeletonEventAttorney
   public:
     static ElementFqId GetElementFQId(const SkeletonEvent<SampleType>& event) noexcept
     {
-        // Access the private event_shared_impl_ and call its public GetElementFQId()
-        return event.event_shared_impl_.GetElementFQId();
+        // Access the private skeleton_event_common_ and call its public GetElementFQId()
+        return event.skeleton_event_common_.GetElementFQId();
     }
 };
 }  // namespace score::mw::com::impl::lola

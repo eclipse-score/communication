@@ -61,7 +61,7 @@ class ProxyBinding
     /// Unregisters a ProxyEvent binding with its parent proxy
     virtual void UnregisterEventBinding(const std::string_view service_element_name) noexcept = 0;
 
-    virtual ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names) = 0;
+    virtual Result<void> SetupMethods(const std::vector<std::string_view>& enabled_method_names) = 0;
 };
 
 }  // namespace score::mw::com::impl

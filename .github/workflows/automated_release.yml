@@ -24,6 +24,10 @@ on:
         required: true
         type: string
 
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
+
 jobs:
   create-draft-release:
     runs-on: ubuntu-24.04
@@ -67,6 +71,7 @@ jobs:
     uses: ./.github/workflows/build_and_test_qnx.yml
     permissions:
       contents: read
+      pull-requests: read
     secrets:
       SCORE_QNX_LICENSE: ${{ secrets.SCORE_QNX_LICENSE }}
       SCORE_QNX_USER: ${{ secrets.SCORE_QNX_USER }}

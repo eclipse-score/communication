@@ -25,8 +25,11 @@ on:
     types: [checks_requested]
   workflow_call:
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  group: address_undefined_behavior_leak_sanitizer-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request'}}
+env:
+  ANDROID_HOME: ""
+  ANDROID_SDK_ROOT: ""
 jobs:
     build_and_test_asan_ubsan_lsan:
       runs-on: ubuntu-24.04

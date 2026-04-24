@@ -32,7 +32,7 @@ class GenericSkeletonEvent : public SkeletonEventBase
                          const std::string_view event_name,
                          std::unique_ptr<GenericSkeletonEventBinding> binding);
 
-    ResultBlank Send(SampleAllocateePtr<void> sample) noexcept;
+    Result<void> Send(SampleAllocateePtr<void> sample) noexcept;
 
     Result<SampleAllocateePtr<void>> Allocate() noexcept;
 

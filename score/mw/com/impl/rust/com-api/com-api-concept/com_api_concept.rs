@@ -269,7 +269,9 @@ impl InstanceSpecifier {
                 specifier: service_name.to_string(),
             })
         } else {
-            Err(Error::ServiceError(ServiceFailedReason::InstanceSpecifierInvalid))
+            Err(Error::ServiceError(
+                ServiceFailedReason::InstanceSpecifierInvalid,
+            ))
         }
     }
 }
@@ -705,9 +707,9 @@ impl<S> SampleContainer<S> {
     /// # Errors
     /// Returns 'Error::AllocateError' if container is already full.
     pub fn push_back(&mut self, new: S) -> Result<()> {
-        self.inner.push_back(new).map_err(|_| {
-            Error::AllocateError(AllocationFailureReason::OutOfMemory)
-        })?;
+        self.inner
+            .push_back(new)
+            .map_err(|_| Error::AllocateError(AllocationFailureReason::OutOfMemory))?;
         Ok(())
     }
 
@@ -735,6 +737,22 @@ impl<S> SampleContainer<S> {
 ///
 /// Represents a live subscription to an event source with methods for both
 /// non-blocking polling and asynchronous waiting for new events.
+///
+/// # Sample Selection Algorithm
+///
+/// The internal algorithm for sample delivery works as follows:
+/// - Searches for the slot with the largest timestamp in the range `(last_reference_time, upper_limit)`
+/// - On each successive call within the same receive operation, `upper_limit` is narrowed to the
+///   previously found timestamp, ensuring the next search returns the next-newest sample
+/// - After the call completes, `last_reference_time` is advanced to the newest delivered timestamp,
+///   preventing those samples from being returned again
+///
+/// **Example**: If the producer sent samples with timestamps T1 < T2 < T3 before the first receive,
+/// and `max_samples = 2`:
+/// - 1st iteration: search `(0, MAX)` → finds T3
+/// - 2nd iteration: search `(0, T3)` → finds T2
+/// - **Result**: Delivers 2 newest samples (T3 and T2). Sample T1 is permanently skipped because
+///   `last_reference_time` advances to T3 after this receive call.
 ///
 /// # Type Parameters
 /// * `T` - The relocatable event data type

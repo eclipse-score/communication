@@ -40,7 +40,7 @@ abstract class SkeletonBinding {
 class lola::SkeletonEvent<SampleType> {
   -event_data_storage: EventDataStorage<SampleType>*
   -event_data_control: score::cpp::optional<EventDataControlComposite<>>
-  +SkeletonEvent(parent: Skeleton&, event_fqn: const ElementFqId, max_number_of_slots: const std::size_t, enforce_max_samples: const bool)
+  +SkeletonEvent(parent: Skeleton&, element_fq_id: const ElementFqId, max_number_of_slots: const std::size_t, enforce_max_samples: const bool)
   +Send(SampleType const&): void
   +Send(SampleAllocateePtr<SampleType>): void
   +Allocate(): SampleAllocateePtr<SampleType>
@@ -69,8 +69,8 @@ class lola::Skeleton {
   -control_qm_: SkeletonDataControl*
   -control_asil_b_: SkeletonDataControl*
   +Skeleton(const InstanceIdentifier&, SkeletonEvents&)
-  +PrepareOffer(): ResultBlank
-  +PrepareStopOffer(): ResultBlank
+  +PrepareOffer(): Result<void>
+  +PrepareStopOffer(): Result<void>
   +Register(ElementFqId, size_t numberOfSlots): std::pair<EventDataStorage*, EventDataControlComposite<>>
   +GetInstanceQualityType() const: QualityType
 }

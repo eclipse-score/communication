@@ -33,7 +33,6 @@
 #include "score/mw/log/logging.h"
 
 #include <score/assert.hpp>
-#include <score/optional.hpp>
 #include <score/utility.hpp>
 
 #include <atomic>
@@ -66,12 +65,11 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
     friend class SkeletonEventAttorney;
 
   public:
-    using typename SkeletonEventBinding<SampleType>::SendTraceCallback;
     using typename SkeletonEventBindingBase::SubscribeTraceCallback;
     using typename SkeletonEventBindingBase::UnsubscribeTraceCallback;
 
     SkeletonEvent(Skeleton& parent,
-                  const ElementFqId event_fqn,
+                  const ElementFqId element_fq_id,
                   const std::string_view event_name,
                   const SkeletonEventProperties properties,
                   impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data = {}) noexcept;
@@ -85,16 +83,18 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     /// \brief Sends a value by _copy_ towards a consumer. It will allocate the necessary space and then copy the value
     /// into Shared Memory.
-    ResultBlank Send(const SampleType& value,
-                     score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept override;
+    Result<void> Send(const SampleType& value,
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
+                          send_trace_callback) noexcept override;
 
-    ResultBlank Send(impl::SampleAllocateePtr<SampleType> sample,
-                     score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept override;
+    Result<void> Send(impl::SampleAllocateePtr<SampleType> sample,
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>
+                          send_trace_callback) noexcept override;
 
     Result<impl::SampleAllocateePtr<SampleType>> Allocate() noexcept override;
 
     /// @requirement SWS_CM_00700
-    ResultBlank PrepareOffer() noexcept override;
+    Result<void> PrepareOffer() noexcept override;
 
     void PrepareStopOffer() noexcept override;
 
@@ -105,38 +105,23 @@ class SkeletonEvent final : public SkeletonEventBinding<SampleType>
 
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
-        event_shared_impl_.GetTracingData() = tracing_data;
+        skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
     }
 
   private:
-    const std::string_view event_name_;
-    const SkeletonEventProperties event_properties_;
     EventDataStorage<SampleType>* event_data_storage_;
-    std::optional<EventDataControlComposite<>> event_data_control_composite_;
-    EventSlotStatus::EventTimeStamp current_timestamp_;
-    bool qm_disconnect_;
-
-    SkeletonEventCommon event_shared_impl_;
+    SkeletonEventCommon<SampleType> skeleton_event_common_;
 };
 
 template <typename SampleType>
 SkeletonEvent<SampleType>::SkeletonEvent(Skeleton& parent,
-                                         const ElementFqId event_fqn,
+                                         const ElementFqId element_fq_id,
                                          const std::string_view event_name,
                                          const SkeletonEventProperties properties,
                                          impl::tracing::SkeletonEventTracingData skeleton_event_tracing_data) noexcept
     : SkeletonEventBinding<SampleType>{},
-      event_name_{event_name},
-      event_properties_{properties},
       event_data_storage_{nullptr},
-      event_data_control_composite_{},
-      current_timestamp_{1U},
-      qm_disconnect_{false},
-      event_shared_impl_(parent,
-                         event_fqn,
-                         event_data_control_composite_,
-                         current_timestamp_,
-                         skeleton_event_tracing_data)
+      skeleton_event_common_{parent, event_name, properties, element_fq_id, skeleton_event_tracing_data}
 {
 }
 
@@ -146,8 +131,9 @@ template <typename SampleType>
 // 'allocated_slot_result' doesn't have value but as we check before with 'has_value()' so no way for throwing
 // std::bad_optional_access which leds to std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank SkeletonEvent<SampleType>::Send(const SampleType& value,
-                                            score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept
+Result<void> SkeletonEvent<SampleType>::Send(
+    const SampleType& value,
+    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback) noexcept
 {
     auto allocated_slot_result = Allocate();
     if (!(allocated_slot_result.has_value()))
@@ -161,46 +147,21 @@ ResultBlank SkeletonEvent<SampleType>::Send(const SampleType& value,
 }
 
 template <typename SampleType>
-ResultBlank SkeletonEvent<SampleType>::Send(impl::SampleAllocateePtr<SampleType> sample,
-                                            score::cpp::optional<SendTraceCallback> send_trace_callback) noexcept
+Result<void> SkeletonEvent<SampleType>::Send(
+    impl::SampleAllocateePtr<SampleType> sample,
+    std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback> send_trace_callback) noexcept
 {
-    const impl::SampleAllocateePtrView<SampleType> view{sample};
-    auto ptr = view.template As<lola::SampleAllocateePtr<SampleType>>();
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(nullptr != ptr);
-    // Suppress The rule AUTOSAR C++14 A5-3-2: "Null pointers shall not be dereferenced.".
-    // The "ptr" variable is checked before dereferencing.
-    // coverity[autosar_cpp14_a5_3_2_violation]
-    auto slot = ptr->GetReferencedSlot();
-    // Suppress "AUTOSAR C++14 A4-7-1" rule finding. This rule states: "An integer expression shall
-    // not lead to data loss.".
-    // The current logic will not exceed the maximum value.
-    // coverity[autosar_cpp14_a4_7_1_violation]
-    ++current_timestamp_;
-    event_data_control_composite_->EventReady(slot, current_timestamp_);
+    const auto send_result = skeleton_event_common_.Send(sample);
+    if (!send_result.has_value())
+    {
+        return MakeUnexpected<void>(send_result.error());
+    }
 
     if (send_trace_callback.has_value())
     {
         (*send_trace_callback)(sample);
     }
-
-    // Only call NotifyEvent if there are any registered receive handlers for each quality level.
-    // This avoids the expensive lock operation in the common case where no handlers are registered.
-    // Using memory_order_relaxed is safe here as this is an optimisation, if we miss a very recent
-    // handler registration, the next Send() will pick it up.
-    if (event_shared_impl_.IsQmNotificationsRegistered() && !qm_disconnect_)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_QM, event_shared_impl_.GetElementFQId());
-    }
-    if (event_shared_impl_.IsAsilBNotificationsRegistered() &&
-        event_shared_impl_.GetParent().GetInstanceQualityType() == QualityType::kASIL_B)
-    {
-        GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa)
-            .GetLolaMessaging()
-            .NotifyEvent(QualityType::kASIL_B, event_shared_impl_.GetElementFQId());
-    }
-    return {};
+    return send_result;
 }
 
 template <typename SampleType>
@@ -210,44 +171,17 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 Result<impl::SampleAllocateePtr<SampleType>> SkeletonEvent<SampleType>::Allocate() noexcept
 {
-    if (event_data_control_composite_.has_value() == false)
+    const auto allocated_slot_result = skeleton_event_common_.AllocateSlot();
+    if (!allocated_slot_result.has_value())
     {
-        ::score::mw::log::LogError("lola") << "Tried to allocate event, but the EventDataControl does not exist!";
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-    const auto allocated_slot_result = event_data_control_composite_->AllocateNextSlot();
-
-    // Suppress "AUTOSAR C++14 A5-2-6" rule finding. This rule states:"The operands of a logical && or \\ shall be
-    // parenthesized if the operands contain binary operators".
-    // This suppression is unnecessary as the operands do not contain binary operators.
-    // A bug ticket has been created to track this: [Ticket-165315](broken_link_j/Ticket-165315)
-    // coverity[autosar_cpp14_a5_2_6_violation : FALSE]
-    if (!qm_disconnect_ && (event_data_control_composite_->GetAsilBEventDataControlLocal() != nullptr) &&
-        allocated_slot_result.qm_misbehaved)
-    {
-        qm_disconnect_ = true;
-        score::mw::log::LogWarn("lola")
-            << __func__ << __LINE__
-            << "Disconnecting unsafe QM consumers as slot allocation failed on an ASIL-B enabled event: "
-            << event_shared_impl_.GetElementFQId();
-        event_shared_impl_.GetParent().DisconnectQmConsumers();
+        return MakeUnexpected<impl::SampleAllocateePtr<SampleType>>(allocated_slot_result.error());
     }
 
-    if (!allocated_slot_result.allocated_slot_index.has_value())
-    {
-        // we didn't get a slot, which is a sign, that too few slots have been configured.
-        if (!event_properties_.enforce_max_samples)
-        {
-            ::score::mw::log::LogError("lola")
-                << "SkeletonEvent: Allocation of event slot failed. Hint: enforceMaxSamples was "
-                   "disabled by config. Might be the root cause!";
-        }
-        return MakeUnexpected(ComErrc::kBindingFailure);
-    }
-    return MakeSampleAllocateePtr(SampleAllocateePtr<SampleType>(
-        &event_data_storage_->at(static_cast<std::uint64_t>(*allocated_slot_result.allocated_slot_index)),
-        *event_data_control_composite_,
-        allocated_slot_result.allocated_slot_index.value()));
+    const auto slot_index = allocated_slot_result.value();
+    return MakeSampleAllocateePtr(
+        SampleAllocateePtr<SampleType>(&event_data_storage_->at(static_cast<std::uint64_t>(slot_index)),
+                                       skeleton_event_common_.GetEventDataControlComposite(),
+                                       slot_index));
 }
 
 template <typename SampleType>
@@ -257,18 +191,13 @@ template <typename SampleType>
 // throwing std::bad_optional_access which leds to std::terminate(). This suppression should be removed after fixing
 // [Ticket-173043](broken_link_j/Ticket-173043)
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank SkeletonEvent<SampleType>::PrepareOffer() noexcept
+Result<void> SkeletonEvent<SampleType>::PrepareOffer() noexcept
 {
-    const auto registration_result = event_shared_impl_.GetParent().template Register<SampleType>(
-        event_shared_impl_.GetElementFQId(), event_properties_);
+    const auto registration_result = skeleton_event_common_.GetParent().template Register<SampleType>(
+        skeleton_event_common_.GetElementFQId(), skeleton_event_common_.GetEventProperties());
     event_data_storage_ = &registration_result.event_data_storage;
-    event_data_control_composite_ = registration_result.event_data_control_composite;
 
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
-        event_data_control_composite_.has_value(),
-        "Defensive programming as event_data_control_composite_ is set by Register above.");
-
-    event_shared_impl_.PrepareOfferCommon();
+    skeleton_event_common_.PrepareOfferCommon(registration_result.event_data_control_composite);
 
     return {};
 }
@@ -282,7 +211,7 @@ template <typename SampleType>
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void SkeletonEvent<SampleType>::PrepareStopOffer() noexcept
 {
-    event_shared_impl_.PrepareStopOfferCommon();
+    skeleton_event_common_.PrepareStopOfferCommon();
 }
 
 }  // namespace score::mw::com::impl::lola

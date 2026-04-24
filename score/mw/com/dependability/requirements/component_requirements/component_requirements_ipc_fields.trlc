@@ -116,7 +116,7 @@ section "com" {
         }
 
         ScoreReq.CompReq RegisterSetHandlerSignature {
-            description=""" The signature of the `RegisterSetHandler` method shall be: `score::ResultBlank RegisterSetHandler(SetHandlerType)`"""
+            description=""" The signature of the `RegisterSetHandler` method shall be: `score::Result<void> RegisterSetHandler(SetHandlerType)`"""
             derived_from = [Communication.Field@1]
             version = 1
         }

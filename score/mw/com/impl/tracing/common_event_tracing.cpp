@@ -42,11 +42,11 @@ std::string_view GetInstanceSpecifier(const InstanceIdentifier& instance_identif
 
 }  // namespace
 
-ResultBlank TraceData(const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
-                      const TracingRuntime::TracePointType trace_point,
-                      const BindingType binding_type,
-                      const std::pair<const void*, std::size_t>& local_data_chunk,
-                      const score::cpp::optional<TracingRuntime::TracePointDataId> trace_point_data_id) noexcept
+Result<void> TraceData(const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
+                       const TracingRuntime::TracePointType trace_point,
+                       const BindingType binding_type,
+                       const std::pair<const void*, std::size_t>& local_data_chunk,
+                       const std::optional<TracingRuntime::TracePointDataId> trace_point_data_id) noexcept
 {
     auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(tracing_runtime != nullptr);
@@ -58,13 +58,13 @@ ResultBlank TraceData(const ServiceElementInstanceIdentifierView service_element
                                   local_data_chunk.second);
 }
 
-ResultBlank TraceShmData(const BindingType binding_type,
-                         const ServiceElementTracingData service_element_tracing_data,
-                         const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
-                         const TracingRuntime::TracePointType trace_point,
-                         TracingRuntime::TracePointDataId trace_point_data_id,
-                         TypeErasedSamplePtr sample_ptr,
-                         const std::pair<const void*, std::size_t>& data_chunk) noexcept
+Result<void> TraceShmData(const BindingType binding_type,
+                          const ServiceElementTracingData service_element_tracing_data,
+                          const ServiceElementInstanceIdentifierView service_element_instance_identifier_view,
+                          const TracingRuntime::TracePointType trace_point,
+                          TracingRuntime::TracePointDataId trace_point_data_id,
+                          TypeErasedSamplePtr sample_ptr,
+                          const std::pair<const void*, std::size_t>& data_chunk) noexcept
 {
     auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(tracing_runtime != nullptr);

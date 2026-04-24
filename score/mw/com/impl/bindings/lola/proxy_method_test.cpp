@@ -321,11 +321,11 @@ TEST_F(ProxyMethodDoCallFixture, DispatchesToMessagePassingBinding)
 
     // Expecting that CallMethod is called on the message passing binding which returns success
     EXPECT_CALL(*mock_service_, CallMethod(_, _, kDummyQueuePosition, _))
-        .WillOnce(WithArg<1>(Invoke([](auto proxy_method_instance_identifier) -> ResultBlank {
+        .WillOnce(WithArg<1>(Invoke([](auto proxy_method_instance_identifier) -> Result<void> {
             // Then CallMethod is called with a ProxyMethodInstanceIdentifier containing the application id from the
             // configuration
             EXPECT_EQ(proxy_method_instance_identifier.proxy_instance_identifier.application_id, kDummyApplicationId);
-            return ResultBlank{};
+            return Result<void>{};
         })));
 
     // When calling DoCall

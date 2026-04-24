@@ -159,11 +159,11 @@ TEST(TracingRuntime, TracingRuntimeTraceWillReceivePointerToConstShmData)
     using ShmPointerType = const void*;
 
     // Check that ShmPointerType is the type that is passed to TracingRuntime::Trace
-    constexpr auto trace_shm_signature = static_cast<score::ResultBlank (
+    constexpr auto trace_shm_signature = static_cast<score::Result<void> (
         score::mw::com::impl::tracing::TracingRuntime::*)(BindingType,
                                                           ServiceElementInstanceIdentifierView,
                                                           ITracingRuntime::TracePointType,
-                                                          score::cpp::optional<ITracingRuntime::TracePointDataId>,
+                                                          std::optional<ITracingRuntime::TracePointDataId>,
                                                           ShmPointerType,
                                                           std::size_t)>(&TracingRuntime::Trace);
     static_assert(std::is_member_function_pointer_v<decltype(trace_shm_signature)>,
@@ -449,7 +449,7 @@ TEST_F(TracingRuntimeUnregisterShmObjectFixture,
 
     // and that UuT calls GetShmObjectHandle on the binding specific tracing runtime, which returns an empty optional
     ON_CALL(binding_tracing_runtime_mock_, GetShmObjectHandle(dummy_service_element_instance_identifier_view_))
-        .WillByDefault(Return(score::cpp::optional<analysis::tracing::ShmObjectHandle>{}));
+        .WillByDefault(Return(std::optional<analysis::tracing::ShmObjectHandle>{}));
 
     // Expecting that UuT calls ClearCachedFileDescriptorForReregisteringShmObject on the binding specific tracing
     // runtime
@@ -467,7 +467,7 @@ TEST_F(TracingRuntimeUnregisterShmObjectFixture,
 
     // and that UuT calls GetShmObjectHandle on the binding specific tracing runtime, which returns an empty optional
     ON_CALL(binding_tracing_runtime_mock_, GetShmObjectHandle(dummy_service_element_instance_identifier_view_))
-        .WillByDefault(Return(score::cpp::optional<analysis::tracing::ShmObjectHandle>{}));
+        .WillByDefault(Return(std::optional<analysis::tracing::ShmObjectHandle>{}));
 
     // when calling UnregisterShmObject on the UuT.
     unit_under_test_->UnregisterShmObject(BindingType::kLoLa, dummy_service_element_instance_identifier_view_);

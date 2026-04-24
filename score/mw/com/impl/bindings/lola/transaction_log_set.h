@@ -179,12 +179,12 @@ class TransactionLogSet
     /// rollbacks. This prevents one thread calling RollbackProxyTransactions and then registering a new TransactionLog.
     /// Then another thread with the same transaction_log_id calls RollbackProxyTransactions which would rollback and
     /// destroy the newly created TransactionLog.
-    ResultBlank RollbackProxyTransactions(const TransactionLogId& transaction_log_id,
-                                          const TransactionLog::DereferenceSlotCallback dereference_slot_callback,
-                                          const TransactionLog::UnsubscribeCallback unsubscribe_callback);
+    Result<void> RollbackProxyTransactions(const TransactionLogId& transaction_log_id,
+                                           const TransactionLog::DereferenceSlotCallback dereference_slot_callback,
+                                           const TransactionLog::UnsubscribeCallback unsubscribe_callback);
 
     /// \brief If a Skeleton TransactionLog exists, performs a rollback on it.
-    ResultBlank RollbackSkeletonTracingTransactions(
+    Result<void> RollbackSkeletonTracingTransactions(
         const TransactionLog::DereferenceSlotCallback dereference_slot_callback);
 
     /// \brief Creates a new transaction log in the DynamicArray of transaction logs.

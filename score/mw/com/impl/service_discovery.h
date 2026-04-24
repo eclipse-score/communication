@@ -44,15 +44,15 @@ class ServiceDiscovery final : public IServiceDiscovery
     ServiceDiscovery& operator=(ServiceDiscovery&&) noexcept = delete;
     ~ServiceDiscovery() override;
 
-    [[nodiscard]] ResultBlank OfferService(InstanceIdentifier) noexcept override;
-    [[nodiscard]] ResultBlank StopOfferService(InstanceIdentifier) noexcept override;
-    [[nodiscard]] ResultBlank StopOfferService(InstanceIdentifier, QualityTypeSelector quality_type) noexcept override;
+    [[nodiscard]] Result<void> OfferService(InstanceIdentifier) noexcept override;
+    [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier) noexcept override;
+    [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier, QualityTypeSelector quality_type) noexcept override;
     Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
                                                const InstanceSpecifier) noexcept override;
     Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>, InstanceIdentifier) noexcept override;
     Result<FindServiceHandle> StartFindService(FindServiceHandler<HandleType>,
                                                const EnrichedInstanceIdentifier) noexcept override;
-    [[nodiscard]] ResultBlank StopFindService(const FindServiceHandle) noexcept override;
+    [[nodiscard]] Result<void> StopFindService(const FindServiceHandle) noexcept override;
     [[nodiscard]] Result<ServiceHandleContainer<HandleType>> FindService(
         InstanceIdentifier instance_identifier) noexcept override;
     [[nodiscard]] Result<ServiceHandleContainer<HandleType>> FindService(
@@ -92,9 +92,9 @@ class ServiceDiscovery final : public IServiceDiscovery
     /// This functionality within this function itself is threadsafe. HOWEVER, the thread safety of the binding specific
     /// StartFindService call depends on the binding itself. For a Lola binding, this function is completely thread
     /// safe.
-    ResultBlank BindingSpecificStartFindService(FindServiceHandle,
-                                                std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
-                                                const EnrichedInstanceIdentifier&) noexcept;
+    Result<void> BindingSpecificStartFindService(FindServiceHandle,
+                                                 std::weak_ptr<FindServiceHandler<HandleType>> handler_weak_ptr,
+                                                 const EnrichedInstanceIdentifier&) noexcept;
 
     /// \brief Removes any InstanceIdentifiers which were added to handle_to_instances_ but were never processed since
     /// StartFindService on another binding failed and we returned early.

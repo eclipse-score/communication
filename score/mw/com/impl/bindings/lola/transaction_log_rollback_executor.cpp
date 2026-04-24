@@ -96,7 +96,7 @@ void TransactionLogRollbackExecutor::PrepareRollback(lola::IRuntime& lola_runtim
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be called
 // implicitly". This is a false positive, no way for implicit calling std::terminate().
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
-ResultBlank TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
+Result<void> TransactionLogRollbackExecutor::RollbackTransactionLogs() noexcept
 {
     auto& lola_runtime = GetBindingRuntime<lola::IRuntime>(BindingType::kLoLa);
     auto& rollback_synchronization = lola_runtime.GetRollbackSynchronization();

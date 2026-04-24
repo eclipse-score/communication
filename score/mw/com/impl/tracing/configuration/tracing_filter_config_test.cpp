@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -704,7 +705,7 @@ class ConfigurationFixture : public ::testing::Test
         PrepareMinimalConfiguration(valid_instance_specifier, service_type_, events, fields);
     }
 
-    score::cpp::optional<Configuration> configuration_{};
+    std::optional<Configuration> configuration_{};
     TracingFilterConfig tracing_filter_config_{};
     const std::string_view service_type_ = "/score/ncar/services/TirePressureService";
     const std::string event_name_ = "CurrentPressureFrontLeft";

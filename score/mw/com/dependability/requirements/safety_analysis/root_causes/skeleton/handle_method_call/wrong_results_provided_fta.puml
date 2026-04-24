@@ -1,0 +1,32 @@
+' *******************************************************************************
+' Copyright (c) {year} Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include ../../../../../../../../third_party/traceability/doc/sample_library/safety_analysis/fta_metamodel.puml
+
+$TopEvent("Wrong call result provided", "Communication.WrongResultsProvided")
+$OrGate("Gate1", "TopEvent")
+$IntermediateEvent("Callee did provide no result", "Event3", "Gate1")
+$IntermediateEvent("Callee did provide wrong result", "Event4", "Gate1")
+$OrGate("Gate3", "Event3")
+$OrGate("Gate4", "Event4")
+$BasicEvent("Callee signalled call finished before or without providing result completely", "Event5", "Gate3")
+$BasicEvent("Callee provided result in wrong location", "Event8", "Gate3")
+
+$BasicEvent("Callee provided result in wrong layout", "Event9", "Gate4")
+$BasicEvent("Callee concurrently updates result after signaling it", "Event11", "Gate4")
+
+
+
+@enduml

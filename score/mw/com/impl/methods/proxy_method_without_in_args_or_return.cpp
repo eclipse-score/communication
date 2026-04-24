@@ -34,7 +34,7 @@ auto ProxyMethod<void()>::operator=(ProxyMethod&& other) noexcept -> ProxyMethod
     return *this;
 }
 
-score::ResultBlank ProxyMethod<void()>::operator()()
+score::Result<void> ProxyMethod<void()>::operator()()
 {
     auto queue_position = detail::DetermineNextAvailableQueueSlot(is_return_type_ptr_active_);
     if (!queue_position.has_value())

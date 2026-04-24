@@ -179,7 +179,7 @@ class Proxy : public ProxyBinding
     /// been destructed.
     void UnregisterEventBinding(const std::string_view service_element_name) noexcept override;
 
-    score::ResultBlank SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
+    score::Result<void> SetupMethods(const std::vector<std::string_view>& enabled_method_names) override;
 
     QualityType GetQualityType() const noexcept;
 
@@ -238,6 +238,10 @@ class Proxy : public ProxyBinding
     std::optional<memory::shared::LockFile> service_instance_usage_marker_file_;
     std::unique_ptr<score::memory::shared::FlockMutexAndLock<score::memory::shared::SharedFlockMutex>>
         service_instance_usage_flock_mutex_and_lock_;
+    /// Mutex which synchronises registration of Proxy methods via Proxy::RegisterMethod with the
+    /// FindServiceHandler in find_service_guard_ which will call ServiceAvailabilityChangeHandler iterating over
+    /// proxy_methods_.
+    std::mutex proxy_method_registration_mutex_;
     std::unordered_map<score::mw::com::impl::lola::UniqueMethodIdentifier, std::reference_wrapper<ProxyMethod>>
         proxy_methods_;
     MethodData* method_data_;

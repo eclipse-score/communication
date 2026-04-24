@@ -493,7 +493,7 @@ TEST_F(ProxySetupMethodsProxyAutoReconnectFixture,
     // handler when the service has been reoffered which succeeds
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
         .Times(2)
-        .WillRepeatedly(Return(score::ResultBlank{}));
+        .WillRepeatedly(Return(score::Result<void>{}));
 
     // Given that SetupMethods was called
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0});
@@ -594,7 +594,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, MethodsWithArgsOrReturnTypesCalls
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
-        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> Result<void> {
             // Then SubscribeServiceMethod is called with a
             // SkeletonInstanceIdentifier taking values from the configuration
             EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);
@@ -639,7 +639,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, ProxyMethodsMarkedAsSubscribedWhe
               kValidInArgsTypeErasedDataInfo, kValidReturnTypeTypeErasedDataInfo, kDummyQueueSize1}}});
 
     // Expecting that SubscribeServiceMethod will be called and returns a valid result
-    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::ResultBlank{}));
+    EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _)).WillOnce(Return(score::Result<void>{}));
 
     // When calling SetupMethods with the name of the registered ProxyMethods
     score::cpp::ignore = proxy_->SetupMethods({kDummyMethodName0, kDummyMethodName1});
@@ -713,7 +713,7 @@ TEST_F(ProxySetupMethodsMessagePassingFixture, EnablingMethodsWithoutArgsOrRetur
 
     // Expecting that SubscribeServiceMethod will be called
     EXPECT_CALL(*mock_service_, SubscribeServiceMethod(_, _, _, _))
-        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> ResultBlank {
+        .WillOnce(WithArg<1>(Invoke([](auto skeleton_instance_identifier) -> Result<void> {
             // Then SubscribeServiceMethod is called with a
             // SkeletonInstanceIdentifier taking values from the configuration
             EXPECT_EQ(skeleton_instance_identifier.service_id, kLolaServiceId);

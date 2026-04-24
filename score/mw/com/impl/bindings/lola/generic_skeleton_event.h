@@ -34,23 +34,24 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 {
   public:
     GenericSkeletonEvent(Skeleton& parent,
+                         const std::string_view event_name,
                          const SkeletonEventProperties& event_properties,
-                         const ElementFqId& event_fqn,
+                         const ElementFqId& element_fq_id,
                          const DataTypeMetaInfo& size_info,
                          impl::tracing::SkeletonEventTracingData tracing_data = {});
 
-    ResultBlank Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
+    Result<void> Send(score::mw::com::impl::SampleAllocateePtr<void> sample) noexcept override;
 
     Result<score::mw::com::impl::SampleAllocateePtr<void>> Allocate() noexcept override;
 
     std::pair<size_t, size_t> GetSizeInfo() const noexcept override;
 
-    ResultBlank PrepareOffer() noexcept override;
+    Result<void> PrepareOffer() noexcept override;
     void PrepareStopOffer() noexcept override;
     BindingType GetBindingType() const noexcept override;
     void SetSkeletonEventTracingData(impl::tracing::SkeletonEventTracingData tracing_data) noexcept override
     {
-        event_shared_impl_.GetTracingData() = tracing_data;
+        skeleton_event_common_.SetSkeletonEventTracingData(tracing_data);
     }
 
     std::size_t GetMaxSize() const noexcept override
@@ -60,13 +61,8 @@ class GenericSkeletonEvent : public GenericSkeletonEventBinding
 
   private:
     DataTypeMetaInfo size_info_;
-    const SkeletonEventProperties event_properties_;
-    std::optional<EventDataControlComposite<>> event_data_control_composite_{};
-    EventSlotStatus::EventTimeStamp current_timestamp_{1U};
     std::uint8_t* event_data_storage_{nullptr};
-    bool qm_disconnect_{false};
-
-    SkeletonEventCommon event_shared_impl_;
+    SkeletonEventCommon<void> skeleton_event_common_;
 };
 
 }  // namespace score::mw::com::impl::lola

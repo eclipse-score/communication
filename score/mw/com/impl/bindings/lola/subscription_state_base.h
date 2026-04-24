@@ -42,7 +42,7 @@ class SubscriptionStateBase
     SubscriptionStateBase(SubscriptionStateBase&&) noexcept = delete;
     SubscriptionStateBase& operator=(SubscriptionStateBase&&) & noexcept = delete;
 
-    virtual ResultBlank SubscribeEvent(const std::size_t max_sample_count) noexcept = 0;
+    virtual Result<void> SubscribeEvent(const std::size_t max_sample_count) noexcept = 0;
     virtual void UnsubscribeEvent() noexcept = 0;
     virtual void StopOfferEvent() noexcept = 0;
     virtual void ReOfferEvent(const pid_t new_event_source_pid) noexcept = 0;

@@ -31,15 +31,15 @@ class IServiceDiscoveryClient
     virtual ~IServiceDiscoveryClient() noexcept = default;
     IServiceDiscoveryClient() = default;
 
-    [[nodiscard]] virtual ResultBlank OfferService(const InstanceIdentifier instance_identifier) noexcept = 0;
-    [[nodiscard]] virtual ResultBlank StopOfferService(
+    [[nodiscard]] virtual Result<void> OfferService(const InstanceIdentifier instance_identifier) noexcept = 0;
+    [[nodiscard]] virtual Result<void> StopOfferService(
         const InstanceIdentifier instance_identifier,
         const IServiceDiscovery::QualityTypeSelector quality_type_selector) noexcept = 0;
-    [[nodiscard]] virtual ResultBlank StartFindService(
+    [[nodiscard]] virtual Result<void> StartFindService(
         const FindServiceHandle find_service_handle,
         FindServiceHandler<HandleType> handler,
         const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept = 0;
-    [[nodiscard]] virtual ResultBlank StopFindService(const FindServiceHandle find_service_handle) noexcept = 0;
+    [[nodiscard]] virtual Result<void> StopFindService(const FindServiceHandle find_service_handle) noexcept = 0;
     [[nodiscard]] virtual Result<ServiceHandleContainer<HandleType>> FindService(
         const EnrichedInstanceIdentifier enriched_instance_identifier) noexcept = 0;
 

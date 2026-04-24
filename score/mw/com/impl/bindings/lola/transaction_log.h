@@ -96,8 +96,8 @@ class TransactionLog
     /// This function should be called when trying to create a Proxy service element that had previously crashed. It
     /// will decrement all reference counts that the old Proxy had incremented in the EventDataControl which were
     /// recorded in this TransactionLog.
-    ResultBlank RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
-                                        const UnsubscribeCallback& unsubscribe_callback) noexcept;
+    Result<void> RollbackProxyElementLog(const DereferenceSlotCallback& dereference_slot_callback,
+                                         const UnsubscribeCallback& unsubscribe_callback) noexcept;
 
     /// \brief Rollback all previous increments that were recorded in the transaction log.
     /// \param dereference_slot_callback Callback which will decrement the slot in EventDataControl with the provided
@@ -106,7 +106,7 @@ class TransactionLog
     /// This function should be called when trying to create a Skeleton service element that had previously crashed. It
     /// will decrement all reference counts that the old Skeleton (due to tracing) had incremented in the
     /// EventDataControl which were recorded in this TransactionLog.
-    ResultBlank RollbackSkeletonTracingElementLog(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
+    Result<void> RollbackSkeletonTracingElementLog(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
 
     /// \brief Checks whether the TransactionLog contains any transactions
     /// \return Returns true if there is at least one Subscribe transaction or Reference transaction that hasn't been
@@ -114,8 +114,8 @@ class TransactionLog
     bool ContainsTransactions() const noexcept;
 
   private:
-    ResultBlank RollbackIncrementTransactions(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
-    ResultBlank RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback) noexcept;
+    Result<void> RollbackIncrementTransactions(const DereferenceSlotCallback& dereference_slot_callback) noexcept;
+    Result<void> RollbackSubscribeTransactions(const UnsubscribeCallback& unsubscribe_callback) noexcept;
 
     /// \brief Vector containing one TransactionLogSlot for each slot in the corresponding control vector.
     TransactionLogSlots reference_count_slots_;

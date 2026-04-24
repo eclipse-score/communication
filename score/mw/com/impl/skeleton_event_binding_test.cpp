@@ -27,20 +27,18 @@ template <typename SampleType>
 class MyEvent final : public SkeletonEventBinding<SampleType>
 {
   public:
-    ResultBlank PrepareOffer() noexcept override
+    Result<void> PrepareOffer() noexcept override
     {
         return {};
     }
     void PrepareStopOffer() noexcept override {}
-    ResultBlank Send(
-        const SampleType&,
-        score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
+    Result<void> Send(const SampleType&,
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
     {
         return {};
     }
-    ResultBlank Send(
-        SampleAllocateePtr<SampleType>,
-        score::cpp::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
+    Result<void> Send(SampleAllocateePtr<SampleType>,
+                      std::optional<typename SkeletonEventBinding<SampleType>::SendTraceCallback>) noexcept override
     {
         return {};
     }
