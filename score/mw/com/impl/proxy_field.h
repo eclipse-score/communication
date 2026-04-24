@@ -71,24 +71,24 @@ class ProxyField final : public ProxyFieldBase
     /// here.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
     ProxyField(ProxyBase& proxy_base,
+               const std::string_view field_name,
                std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
                std::unique_ptr<ProxyMethodBinding> get_method_binding,
                std::unique_ptr<ProxyMethodBinding> set_method_binding,
-               const std::string_view field_name,
                detail::EnableBothTag = {})
         : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
+                     field_name,
+                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
                      std::make_unique<ProxyMethod<FieldType()>>(
                          proxy_base,
-                         std::move(get_method_binding),
                          field_name,
+                         std::move(get_method_binding),
                          typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                          proxy_base,
-                         std::move(set_method_binding),
                          field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         std::move(set_method_binding),
+                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -98,18 +98,18 @@ class ProxyField final : public ProxyFieldBase
     /// here.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
     ProxyField(ProxyBase& proxy_base,
+               const std::string_view field_name,
                std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
                std::unique_ptr<ProxyMethodBinding> get_method_binding,
-               const std::string_view field_name,
                detail::EnableGetOnlyTag = {})
         : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
+                     field_name,
+                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
                      std::make_unique<ProxyMethod<FieldType()>>(
                          proxy_base,
-                         std::move(get_method_binding),
                          field_name,
-                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         std::move(get_method_binding),
+                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -119,18 +119,18 @@ class ProxyField final : public ProxyFieldBase
     /// here.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
     ProxyField(ProxyBase& proxy_base,
+               const std::string_view field_name,
                std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
                std::unique_ptr<ProxyMethodBinding> set_method_binding,
-               const std::string_view field_name,
                detail::EnableSetOnlyTag = {})
         : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
+                     field_name,
+                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding)),
                      std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                          proxy_base,
-                         std::move(set_method_binding),
                          field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         std::move(set_method_binding),
+                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -140,12 +140,12 @@ class ProxyField final : public ProxyFieldBase
     /// here.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
     ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
                const std::string_view field_name,
+               std::unique_ptr<ProxyEventBinding<FieldType>> event_binding,
                detail::EnableNeitherTag = {})
         : ProxyField{proxy_base,
-                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, std::move(event_binding), field_name),
-                     field_name}
+                     field_name,
+                     std::make_unique<ProxyEvent<FieldType>>(proxy_base, field_name, std::move(event_binding))}
     {
     }
 
@@ -154,22 +154,22 @@ class ProxyField final : public ProxyFieldBase
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
     ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableBothTag = {})
         : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType()>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
                          typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
                          field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
+                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -177,17 +177,17 @@ class ProxyField final : public ProxyFieldBase
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
     ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableGetOnlyTag = {})
         : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType()>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
                          field_name,
-                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         ProxyFieldBindingFactory<FieldType>::CreateGetMethodBinding(proxy_base, field_name),
+                         typename ProxyMethod<FieldType()>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -195,17 +195,17 @@ class ProxyField final : public ProxyFieldBase
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
     ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableSetOnlyTag = {})
         : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
                      std::make_unique<ProxyMethod<FieldType(FieldType)>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
                          field_name,
-                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         ProxyFieldBindingFactory<FieldType>::CreateSetMethodBinding(proxy_base, field_name),
+                         typename ProxyMethod<FieldType(FieldType)>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -214,12 +214,12 @@ class ProxyField final : public ProxyFieldBase
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
     ProxyField(ProxyBase& proxy_base, const std::string_view field_name, detail::EnableNeitherTag = {})
         : ProxyField{proxy_base,
+                     field_name,
                      std::make_unique<ProxyEvent<FieldType>>(
                          proxy_base,
-                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
                          field_name,
-                         typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{}),
-                     field_name}
+                         ProxyFieldBindingFactory<FieldType>::CreateEventBinding(proxy_base, field_name),
+                         typename ProxyEvent<FieldType>::FieldOnlyConstructorEnabler{})}
     {
     }
 
@@ -275,11 +275,11 @@ class ProxyField final : public ProxyFieldBase
     /// \brief Private constructor overload for when both EnableGet and EnableSet are true.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && ES>>
     ProxyField(ProxyBase& proxy_base,
+               const std::string_view field_name,
                std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
                std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
+               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch)
+        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)},
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)}
@@ -293,10 +293,10 @@ class ProxyField final : public ProxyFieldBase
     /// \brief Private constructor overload for when only EnableGet is true.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<EG && !ES>>
     ProxyField(ProxyBase& proxy_base,
+               const std::string_view field_name,
                std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
+               std::unique_ptr<ProxyMethod<FieldType()>> proxy_method_get_dispatch)
+        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_get_dispatch_{std::move(proxy_method_get_dispatch)}
     {
@@ -309,10 +309,10 @@ class ProxyField final : public ProxyFieldBase
     /// \brief Private constructor overload for when only EnableSet is true.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && ES>>
     ProxyField(ProxyBase& proxy_base,
+               const std::string_view field_name,
                std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
+               std::unique_ptr<ProxyMethod<FieldType(FieldType)>> proxy_method_set_dispatch)
+        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)},
           proxy_method_set_dispatch_{std::move(proxy_method_set_dispatch)}
     {
@@ -325,9 +325,9 @@ class ProxyField final : public ProxyFieldBase
     /// \brief Private constructor overload for when both EnableGet and EnableSet are false.
     template <bool EG = EnableGet, bool ES = EnableSet, typename = std::enable_if_t<!EG && !ES>>
     ProxyField(ProxyBase& proxy_base,
-               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch,
-               const std::string_view field_name)
-        : ProxyFieldBase{proxy_base, proxy_event_dispatch.get(), field_name},
+               const std::string_view field_name,
+               std::unique_ptr<ProxyEvent<FieldType>> proxy_event_dispatch)
+        : ProxyFieldBase{proxy_base, field_name, proxy_event_dispatch.get()},
           proxy_event_dispatch_{std::move(proxy_event_dispatch)}
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(proxy_event_dispatch_ != nullptr);

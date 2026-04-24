@@ -32,8 +32,8 @@ class ProxyMethodBase
 {
   public:
     ProxyMethodBase(ProxyBase& proxy_base,
-                    std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                     std::string_view method_name,
+                    std::unique_ptr<ProxyMethodBinding> proxy_method_binding,
                     MethodType method_type = MethodType::kMethod) noexcept
         : proxy_base_{proxy_base},
           method_name_{method_name},
