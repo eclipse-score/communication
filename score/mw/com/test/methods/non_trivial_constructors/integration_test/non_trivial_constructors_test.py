@@ -11,7 +11,20 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-def test_signature_variations(sut):
+"""Integration test for non-trivial constructors."""
+
+
+def provider(target, **kwargs):
+    args = []
+    return target.wrap_exec("bin/main_provider", args, cwd="/opt/MainProviderApp/", wait_on_exit=True, **kwargs)
+
+
+def consumer(target, **kwargs):
+    args = []
+    return target.wrap_exec("bin/main_consumer", args, cwd="/opt/MainConsumerApp/", wait_on_exit=True, **kwargs)
+
+
+def test_signature_variations(target):
     """
     Test method call functionality for different method signature variations between provider and consumer which are run in different processes. Each method signature contains a type which is not trivially constructible.
 
@@ -28,7 +41,6 @@ def test_signature_variations(sut):
 
     Test is successful if all previous checks return true and we have no crashes.
     """
-    with sut.start_process("./bin/main_provider", cwd="/opt/MainProviderApp/") as sender:
-        with sut.start_process("./bin/main_consumer", cwd="/opt/MainConsumerApp/") as receiver:
-            assert receiver.wait_for_exit(timeout=120) == 0
-            assert sender.wait_for_exit(timeout=120) == 0
+    with provider(target, wait_timeout=120):
+        with consumer(target, wait_timeout=120):
+            pass

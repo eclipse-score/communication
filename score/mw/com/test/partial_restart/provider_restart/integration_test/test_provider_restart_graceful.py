@@ -11,13 +11,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration test for provider_restart_max_subscribers."""
+"""Integration test for provider_restart (graceful shutdown with proxy)."""
+
+from provider_restart_test_fixture import partial_restart_provider
+
+# Test configuration
+NUMBER_RESTART_CYCLES = 3
+CREATE_PROXY = 1
+KILL_PROVIDER = 0
 
 
-def test_provider_restart_max_subscribers(sut):
-    """Test provider restart with maximum subscribers functionality."""
-    with sut.start_process(
-        "./bin/provider_restart_max_subscribers_application -service_instance_manifest ./etc/mw_com_config.json -t 1",
-        cwd="/opt/provider_restart_max_subscribers",
-    ) as process:
-        assert process.wait_for_exit() == 0
+def test_provider_restart_graceful(target):
+    """Test provider restart with graceful shutdown."""
+    with partial_restart_provider(target, NUMBER_RESTART_CYCLES, CREATE_PROXY, KILL_PROVIDER):
+        pass

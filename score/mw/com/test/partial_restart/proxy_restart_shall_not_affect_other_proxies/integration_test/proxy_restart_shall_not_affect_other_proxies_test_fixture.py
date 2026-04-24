@@ -11,20 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration tests for service discovery offer and search."""
 
-
-def client(target):
-    args = []
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True)
-
-
-def service(target):
-    args = ["-t", "250"]
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp")
-
-
-def test_service_discovery_offer_and_search(target):
-    """Test service discovery where service offers first, then client searches."""
-    with service(target), client(target):
-        pass
+def proxy_restart_shall_not_affect_other_proxies(target, number_of_consumer_restarts, kill_consumer, **kwargs):
+    args = ["--kill", f"{kill_consumer}", "--number-consumer-restarts", f"{number_of_consumer_restarts}"]
+    return target.wrap_exec(
+        "bin/proxy_restart_shall_not_affect_other_proxies",
+        args,
+        cwd="/opt/proxy_restart_shall_not_affect_other_proxies",
+        wait_on_exit=True,
+        **kwargs,
+    )

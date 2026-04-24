@@ -14,8 +14,18 @@
 """Integration tests for find any semantics service discovery."""
 
 
-def test_find_any_semantics(sut):
+def client(target, **kwargs):
+    args = ["-r", "20", "-b", "50"]
+    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True, **kwargs)
+
+
+def service(target, **kwargs):
+    args = ["-t", "250"]
+    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp", **kwargs)
+
+
+def test_find_any_semantics(target):
     """Test service discovery with FindService (any semantics)."""
-    with sut.start_process("./bin/service -t 250", cwd="/opt/ServiceApp/") as service_process:
-        with sut.start_process("./bin/client -r 20 -b 50", cwd="/opt/ClientApp/") as client_process:
-            assert client_process.wait_for_exit() == 0
+    with service(target):
+        with client(target):
+            pass

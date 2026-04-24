@@ -11,20 +11,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration tests for service discovery offer and search."""
 
-
-def client(target):
-    args = []
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True)
-
-
-def service(target):
-    args = ["-t", "250"]
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp")
-
-
-def test_service_discovery_offer_and_search(target):
-    """Test service discovery where service offers first, then client searches."""
-    with service(target), client(target):
-        pass
+def partial_restart_consumer(target, number_restart_cycles, kill_consumer, **kwargs):
+    args = [
+        "--kill",
+        f"{kill_consumer}",
+        "--iterations",
+        f"{number_restart_cycles}",
+        "--service_instance_manifest",
+        "etc/mw_com_config.json",
+    ]
+    return target.wrap_exec(
+        "bin/consumer_restart_application",
+        args,
+        cwd="/opt/consumer_restart",
+        wait_on_exit=True,
+        wait_timeout=120,
+        **kwargs,
+    )

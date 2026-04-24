@@ -11,13 +11,16 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration test for consumer_restart."""
+"""Integration test for proxy_restart_shall_not_affect_other_proxies (kill)."""
+
+from proxy_restart_shall_not_affect_other_proxies_test_fixture import proxy_restart_shall_not_affect_other_proxies
+
+# Test configuration
+NUMBER_OF_CONSUMER_RESTARTS = 20
+KILL_CONSUMER = 1
 
 
-def test_consumer_restart(sut):
-    """Test consumer restart functionality."""
-    with sut.start_process(
-        "./bin/consumer_restart_application -service_instance_manifest ./etc/mw_com_config.json -t 1 --kill false",
-        cwd="/opt/consumer_restart",
-    ) as process:
-        assert process.wait_for_exit() == 0
+def test_proxy_restart_shall_not_affect_other_proxies_kill(target):
+    """Test that proxy restart via kill does not affect other proxies."""
+    with proxy_restart_shall_not_affect_other_proxies(target, NUMBER_OF_CONSUMER_RESTARTS, KILL_CONSUMER):
+        pass

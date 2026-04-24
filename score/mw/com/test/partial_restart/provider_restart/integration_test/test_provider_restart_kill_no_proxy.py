@@ -11,20 +11,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration tests for service discovery offer and search."""
+"""Integration test for provider_restart (kill without proxy)."""
+
+from provider_restart_test_fixture import partial_restart_provider
+
+# Test configuration
+NUMBER_RESTART_CYCLES = 3
+CREATE_PROXY = 0
+KILL_PROVIDER = 1
 
 
-def client(target):
-    args = []
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True)
-
-
-def service(target):
-    args = ["-t", "250"]
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp")
-
-
-def test_service_discovery_offer_and_search(target):
-    """Test service discovery where service offers first, then client searches."""
-    with service(target), client(target):
+def test_provider_restart_kill_no_proxy(target):
+    """Test provider restart with kill (SIGKILL) signal and no proxy."""
+    with partial_restart_provider(target, NUMBER_RESTART_CYCLES, CREATE_PROXY, KILL_PROVIDER):
         pass

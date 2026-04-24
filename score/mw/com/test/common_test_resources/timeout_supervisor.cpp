@@ -18,11 +18,24 @@
 namespace score::mw::com::test
 {
 
+void TimeoutSupervisor::CreateExecutor()
+{
+    executor_ = score::cpp::pmr::make_unique<score::concurrency::ConcurrentTimedExecutor<std::chrono::steady_clock>>(
+        score::cpp::pmr::new_delete_resource(),
+        score::cpp::pmr::new_delete_resource(),
+        score::cpp::pmr::make_unique<score::concurrency::ThreadPool>(score::cpp::pmr::new_delete_resource(), 1U));
+}
+
+TimeoutSupervisor::TimeoutSupervisor()
+{
+    CreateExecutor();
+}
+
 TimeoutSupervisor::~TimeoutSupervisor()
 {
     const std::scoped_lock lock{mutex_};
     abort_source_.request_stop();
-    executor_.Shutdown();
+    executor_->Shutdown();
 }
 
 void TimeoutSupervisor::StartSupervision(std::chrono::milliseconds timeout_milliseconds,
@@ -41,13 +54,15 @@ void TimeoutSupervisor::StartSupervision(std::chrono::milliseconds timeout_milli
 
             timeout_callback();
         });
-    executor_.Post(std::move(task));
+    executor_->Post(std::move(task));
 }
 
 void TimeoutSupervisor::StopSupervision()
 {
     const std::scoped_lock lock{mutex_};
     abort_source_.request_stop();
+    executor_->Shutdown();
+    CreateExecutor();
     abort_source_ = score::cpp::stop_source{};
 }
 

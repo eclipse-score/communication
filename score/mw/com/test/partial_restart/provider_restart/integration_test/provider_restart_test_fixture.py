@@ -11,13 +11,23 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration test for proxy_restart_shall_not_affect_other_proxies."""
 
-
-def test_proxy_restart_shall_not_affect_other_proxies(sut):
-    """Test proxy restart shall not affect other proxies functionality."""
-    with sut.start_process(
-        "./bin/proxy_restart_shall_not_affect_other_proxies --number-consumer-restarts 1 --kill false",
-        cwd="/opt/proxy_restart_shall_not_affect_other_proxies",
-    ) as process:
-        assert process.wait_for_exit() == 0
+def partial_restart_provider(target, number_restart_cycles, create_proxy, kill_provider, **kwargs):
+    args = [
+        "--kill",
+        f"{kill_provider}",
+        "--turns",
+        f"{number_restart_cycles}",
+        "--create-proxy",
+        f"{create_proxy}",
+        "--service_instance_manifest",
+        "etc/mw_com_config.json",
+    ]
+    return target.wrap_exec(
+        "bin/provider_restart_application",
+        args,
+        cwd="/opt/provider_restart",
+        wait_on_exit=True,
+        wait_timeout=120,
+        **kwargs,
+    )

@@ -117,7 +117,9 @@ TEST_P(MessagePassingClientCacheTest,
 TEST_P(MessagePassingClientCacheTest, GetMessagePassingClientReturnsSameClientConectionForSameTargetNodeId)
 {
     // Given an empty MessagePassingClientCache
-    // and factory that returns new ClientConnectionMock
+    // and factory that returns new ClientConnectionMock in kReady state
+    EXPECT_CALL(*client_connection_mock_, GetState())
+        .WillRepeatedly(::testing::Return(IClientConnection::State::kReady));
     // Expect that factory will be invoked once to create of a new client connection
     EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
@@ -189,6 +191,113 @@ TEST(MessagePassingClientCacheDeathTest, RemoveMessagePassingClientTerminatesWhe
     // When RemoveMessagePassingClient is called with the same target_node_id
     // Expect it to terminate
     EXPECT_DEATH(client_cache.RemoveMessagePassingClient(target_node_id), ".*");
+}
+
+TEST_P(MessagePassingClientCacheTest, GetMessagePassingClientEvictsStoppedClient)
+{
+    // Given a cached client connection that transitions to kStopped state
+    EXPECT_CALL(*client_connection_mock_, GetState())
+        .WillOnce(::testing::Return(IClientConnection::State::kReady))    // during CreateNewClient polling
+        .WillOnce(::testing::Return(IClientConnection::State::kStopped))  // during eviction check
+        ;
+    EXPECT_CALL(*client_connection_mock_, GetStopReason())
+        .WillOnce(::testing::Return(IClientConnection::StopReason::kIoError));
+    EXPECT_CALL(*client_connection_mock_, Stop()).Times(1);
+
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+
+    auto client1 = client_cache_.GetMessagePassingClient(pid_);
+
+    // When GetMessagePassingClient is called again for the same node_id
+    // Expect the factory to be called again (stale client was evicted)
+    auto fresh_connection =
+        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource());
+    auto* fresh_connection_ptr = fresh_connection.get();
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(fresh_connection))));
+
+    auto client2 = client_cache_.GetMessagePassingClient(pid_);
+
+    // Then the returned client is the new one, not the stale one
+    EXPECT_NE(client1, client2);
+    EXPECT_EQ(client2.get(), fresh_connection_ptr);
+}
+
+TEST_P(MessagePassingClientCacheTest, GetMessagePassingClientEvictsStoppingClient)
+{
+    // Given a cached client connection that transitions to kStopping state
+    EXPECT_CALL(*client_connection_mock_, GetState())
+        .WillOnce(::testing::Return(IClientConnection::State::kReady))     // during CreateNewClient polling
+        .WillOnce(::testing::Return(IClientConnection::State::kStopping))  // during eviction check
+        ;
+    EXPECT_CALL(*client_connection_mock_, GetStopReason())
+        .WillOnce(::testing::Return(IClientConnection::StopReason::kClosedByPeer));
+    EXPECT_CALL(*client_connection_mock_, Stop()).Times(1);
+
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+
+    auto client1 = client_cache_.GetMessagePassingClient(pid_);
+
+    // When GetMessagePassingClient is called again for the same node_id
+    // Expect the factory to be called again (stale client was evicted)
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(
+            ::testing::Return(::testing::ByMove(score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(
+                score::cpp::pmr::new_delete_resource()))));
+
+    auto client2 = client_cache_.GetMessagePassingClient(pid_);
+
+    // Then a new client is returned
+    EXPECT_NE(client1, client2);
+}
+
+TEST_P(MessagePassingClientCacheTest, GetMessagePassingClientDoesNotEvictReadyClient)
+{
+    // Given a cached client connection in kReady state
+    EXPECT_CALL(*client_connection_mock_, GetState())
+        .WillRepeatedly(::testing::Return(IClientConnection::State::kReady));
+
+    // Expect factory is called only once
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+
+    auto client1 = client_cache_.GetMessagePassingClient(pid_);
+    auto client2 = client_cache_.GetMessagePassingClient(pid_);
+
+    // Then the same client is returned both times
+    EXPECT_EQ(client1, client2);
+}
+
+TEST_P(MessagePassingClientCacheTest, GetMessagePassingClientEvictsStartingClient)
+{
+    // Given a cached client connection that is stuck in kStarting state
+    // (CreateNewClient hit its 500ms timeout and returned a still-connecting client)
+    EXPECT_CALL(*client_connection_mock_, GetState())
+        .WillRepeatedly(::testing::Return(IClientConnection::State::kStarting));
+    EXPECT_CALL(*client_connection_mock_, GetStopReason())
+        .WillRepeatedly(::testing::Return(IClientConnection::StopReason::kNone));
+    EXPECT_CALL(*client_connection_mock_, Stop()).Times(1);
+
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(client_connection_mock_))));
+
+    auto client1 = client_cache_.GetMessagePassingClient(pid_);
+
+    // When GetMessagePassingClient is called again for the same node_id
+    // Expect the factory to be called again (stuck client was evicted)
+    auto fresh_connection =
+        score::cpp::pmr::make_unique<::testing::NiceMock<ClientConnectionMock>>(score::cpp::pmr::new_delete_resource());
+    auto* fresh_connection_ptr = fresh_connection.get();
+    EXPECT_CALL(client_factory_mock_, Create(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(::testing::ByMove(std::move(fresh_connection))));
+
+    auto client2 = client_cache_.GetMessagePassingClient(pid_);
+
+    // Then the returned client is the new one, not the stuck one
+    EXPECT_NE(client1, client2);
+    EXPECT_EQ(client2.get(), fresh_connection_ptr);
 }
 
 }  // namespace

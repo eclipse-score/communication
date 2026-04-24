@@ -12,8 +12,21 @@
 # *******************************************************************************
 
 
-def test_check_values_created_from_config(sut):
+def check_values_created_from_config(target, mode, **kwargs):
+    args = ["-service_instance_manifest", "./etc/mw_com_config.json", "--mode", mode]
+    return target.wrap_exec(
+        "bin/check_values_created_from_config",
+        args,
+        cwd="/opt/check_values_created_from_config",
+        wait_on_exit=True,
+        **kwargs,
+    )
+
+
+def test_check_values_created_from_config(target):
     """Test that config values are correctly created and exchanged."""
-    with sut.start_process("./bin/check_values_created_from_config -service_instance_manifest ./etc/mw_com_config.json --mode send", cwd="/opt/check_values_created_from_config/") as sender_process:
-        with sut.start_process("./bin/check_values_created_from_config -service_instance_manifest ./etc/mw_com_config.json --mode recv", cwd="/opt/check_values_created_from_config/") as receiver_process:
-            assert receiver_process.wait_for_exit() == 0
+    with (
+        check_values_created_from_config(target, mode="send", wait_timeout=15),
+        check_values_created_from_config(target, mode="recv", wait_timeout=15),
+    ):
+        pass

@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -11,6 +11,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-[pytest]
+"""Integration test for provider_restart (kill with proxy)."""
 
-log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+from provider_restart_test_fixture import partial_restart_provider
+
+# Test configuration
+NUMBER_RESTART_CYCLES = 3
+CREATE_PROXY = 1
+KILL_PROVIDER = 1
+
+
+def test_provider_restart_kill(target):
+    """Test provider restart with kill (SIGKILL) signal."""
+    with partial_restart_provider(target, NUMBER_RESTART_CYCLES, CREATE_PROXY, KILL_PROVIDER):
+        pass

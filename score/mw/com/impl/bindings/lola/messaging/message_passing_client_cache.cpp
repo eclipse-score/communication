@@ -58,7 +58,24 @@ std::shared_ptr<score::message_passing::IClientConnection> MessagePassingClientC
     auto search = clients_.find(target_node_id);
     if (search != clients_.end())
     {
-        return search->second;
+        const auto state = search->second->GetState();
+        if (state == score::message_passing::IClientConnection::State::kReady)
+        {
+            return search->second;
+        }
+        // Evict a cached client that is not in kReady state. This covers:
+        // - kStopped/kStopping: connection was lost (e.g. peer was SIGKILL'd)
+        // - kStarting: connection was cached after CreateNewClient's 500ms timeout but never became ready
+        score::mw::log::LogWarn("lola") << "MessagePassingClientCache: Evicting non-ready client for node "
+                                        << target_node_id
+                                        << " (state=" << static_cast<std::uint32_t>(score::cpp::to_underlying(state))
+                                        << ", reason="
+                                        << static_cast<std::uint32_t>(
+                                               score::cpp::to_underlying(search->second->GetStopReason()))
+                                        << ")";
+        search->second->Stop();
+        score::cpp::ignore = clients_.erase(search);
+        // Fall through to create a new client below
     }
 
     // create the OS specific sender

@@ -11,20 +11,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Integration tests for service discovery offer and search."""
+"""Integration test for provider_restart_max_subscribers (no proxy connected)."""
+
+from provider_restart_max_subscribers_test_fixture import provider_restart_max_subscribers
+
+# Test configuration
+IS_PROXY_CONNECTED_DURING_RESTART = 0
 
 
-def client(target):
-    args = []
-    return target.wrap_exec("bin/client", args, cwd="/opt/ClientApp", wait_on_exit=True)
-
-
-def service(target):
-    args = ["-t", "250"]
-    return target.wrap_exec("bin/service", args, cwd="/opt/ServiceApp")
-
-
-def test_service_discovery_offer_and_search(target):
-    """Test service discovery where service offers first, then client searches."""
-    with service(target), client(target):
+def test_provider_restart_max_subscribers_no_proxy(target):
+    """Test provider restart with maximum subscribers and no proxy connected during restart."""
+    with provider_restart_max_subscribers(target, IS_PROXY_CONNECTED_DURING_RESTART):
         pass
