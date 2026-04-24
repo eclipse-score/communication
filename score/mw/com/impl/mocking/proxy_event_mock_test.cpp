@@ -52,8 +52,8 @@ class ProxyEventFieldMockFixture : public ::testing::Test
     ProxyEventFieldMock proxy_service_element_mock_{};
     ProxyBase proxy_base_{nullptr, MakeFakeHandle(1U)};
     ProxyEventField unit_{proxy_base_,
-                          std::unique_ptr<ProxyEventBinding<TestSampleType>>{nullptr},
-                          kDummyEventFieldName};
+                          kDummyEventFieldName,
+                          std::unique_ptr<ProxyEventBinding<TestSampleType>>{nullptr}};
 };
 
 struct ProxyEventStruct

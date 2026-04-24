@@ -31,7 +31,7 @@
 namespace score::mw::com::impl
 {
 
-template <typename, bool, bool>
+template <typename, typename...>
 class SkeletonField;
 
 template <typename Signature>
@@ -53,7 +53,7 @@ class SkeletonMethod<ReturnType(ArgTypes...)> final : public SkeletonMethodBase
     static_assert(return_value_is_not_a_pointer,
                   "Return value can not be a pointer, since we can not put them in shared memory.");
 
-    template <typename, bool, bool>
+    template <typename, typename...>
     // coverity[autosar_cpp14_a11_3_1_violation]
     friend class SkeletonField;
 

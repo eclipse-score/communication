@@ -959,35 +959,32 @@ TEST(SkeletonFieldDeathTest, UpdateWithInvalidFieldNameTriggersTermination)
     EXPECT_DEATH(SkeletonBaseView{unit}.UpdateField("non_existing_test_field_name", field);, ".*");
 }
 
-// Helper skeleton that holds an EnableSet=true field (setter-capable field)
+// Helper skeleton that holds a setter-capable field (tagged WithSetter).
 
 class MySetterSkeleton : public SkeletonBase
 {
   public:
     using SkeletonBase::SkeletonBase;
 
-    SkeletonField<TestSampleType, /*EnableSet=*/true> my_setter_field_{*this, kFieldName};
+    SkeletonField<TestSampleType, WithSetter> my_setter_field_{*this, kFieldName};
 };
 
 // Static type-trait tests for RegisterSetHandler availability
 
-TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerOnlyExistsWhenEnableSetIsTrue)
+TEST(SkeletonFieldSetHandlerTest, RegisterSetHandlerOnlyExistsWhenWithSetterTagPresent)
 {
     RecordProperty("Description",
-                   "RegisterSetHandler() shall only exist on SkeletonField<T, EnableSet=true>. "
-                   "Verify via has_member detection that it is absent when EnableSet=false.");
+                   "RegisterSetHandler() shall only exist on SkeletonField tagged WithSetter. "
+                   "Verify that the tag distinguishes the two types.");
     RecordProperty("TestType", "Requirements-based test");
     RecordProperty("Priority", "1");
     RecordProperty("DerivationTechnique", "Analysis of requirements");
 
-    // RegisterSetHandler should be callable on EnableSet=true
-    static_assert(std::is_same_v<SkeletonField<TestSampleType, true>::FieldType, TestSampleType>,
+    static_assert(std::is_same_v<SkeletonField<TestSampleType, WithSetter>::FieldType, TestSampleType>,
                   "Setter-capable field must expose FieldType");
 
-    // EnableSet=false field must not expose SetHandlerType at the member function level. We verify
-    // indirectly that the EnableSet template parameter distinguishes the types.
-    static_assert(!std::is_same_v<SkeletonField<TestSampleType, false>, SkeletonField<TestSampleType, true>>,
-                  "EnableSet=false and EnableSet=true fields must be different types");
+    static_assert(!std::is_same_v<SkeletonField<TestSampleType>, SkeletonField<TestSampleType, WithSetter>>,
+                  "Tagged and untagged fields must be different types");
 }
 
 // RegisterSetHandler – happy-path: handler forwarded to method binding
@@ -1553,6 +1550,31 @@ TEST(SkeletonFieldSetHandlerTest, SecondRegisterSetHandlerReplacesHandler)
     // Only the second callback must have been called
     EXPECT_FALSE(first_callback_called);
     EXPECT_TRUE(second_callback_called);
+}
+
+TEST(SkeletonFieldGetSetMemberTest, SkeletonFieldDoesNotRegisterGetSetMethodsAsRegularMethods)
+{
+    // Given the field and method binding factories are mocked
+    RuntimeMockGuard runtime_mock_guard{};
+    ON_CALL(runtime_mock_guard.runtime_mock_, GetTracingFilterConfig()).WillByDefault(Return(nullptr));
+    SkeletonMethodBindingFactoryMockGuard skeleton_method_binding_factory_mock_guard{};
+    SkeletonFieldBindingFactoryMockGuard<TestSampleType> skeleton_field_binding_factory_mock_guard{};
+
+    EXPECT_CALL(skeleton_field_binding_factory_mock_guard.factory_mock_, CreateEventBinding(_, _, _))
+        .WillOnce(Return(ByMove(std::make_unique<mock_binding::SkeletonEvent<TestSampleType>>())));
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(_, _, _, MethodType::kGet))
+        .WillOnce(Return(ByMove(nullptr)));
+    EXPECT_CALL(skeleton_method_binding_factory_mock_guard.factory_mock_, Create(_, _, _, MethodType::kSet))
+        .WillOnce(Return(ByMove(nullptr)));
+
+    // When constructing a SkeletonField<T, WithSetter> which internally creates get_method_ and set_method_
+    MySetterSkeleton unit{std::make_unique<mock_binding::Skeleton>(), kInstanceIdWithLolaBinding};
+
+    // Then the field is registered, but its Get/Set SkeletonMethods do not appear in the skeleton's
+    // regular method map,they are field-only and tracked by the field itself
+    SkeletonBaseView skeleton_view{unit};
+    EXPECT_EQ(skeleton_view.GetFields().size(), 1U);
+    EXPECT_TRUE(skeleton_view.GetMethods().empty());
 }
 
 }  // namespace
