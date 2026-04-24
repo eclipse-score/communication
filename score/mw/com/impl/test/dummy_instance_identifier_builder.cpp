@@ -49,7 +49,8 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdenti
 
 InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdentifierWithField()
 {
-    return CreateValidLolaInstanceIdentifierWithField({{"test_field", LolaFieldInstanceDeployment{1, 1, 1, true, 0}}});
+    return CreateValidLolaInstanceIdentifierWithField(
+        {{"test_field", LolaFieldInstanceDeployment{1, 1, 1, true, 0, false, false}}});
 }
 
 InstanceIdentifier DummyInstanceIdentifierBuilder::CreateValidLolaInstanceIdentifierWithEvent(

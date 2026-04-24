@@ -186,7 +186,7 @@ class SkeletonComponentTestFixture : public ::testing::Test
             {test::kFooEventName, LolaEventInstanceDeployment{kNumberOfSlots, 10U, 1U, true, 0}});
         fields_.emplace(test::kFooFieldName, mock_field_binding_);
         lola_field_instance_deployments_.push_back(
-            {test::kFooFieldName, LolaEventInstanceDeployment{kNumberOfSlots, 10U, 1U, true, 0}});
+            {test::kFooFieldName, LolaFieldInstanceDeployment{kNumberOfSlots, 10U, 1U, true, 0, false, false}});
         service_instance_deployment_ = std::make_unique<ServiceInstanceDeployment>(
             test::kFooService,
             CreateLolaServiceInstanceDeployment(test::kDefaultLolaInstanceId,

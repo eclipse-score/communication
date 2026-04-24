@@ -2103,6 +2103,262 @@ TEST(ConfigParser, LolaFieldOptionalEnforceMaxSamples)
     EXPECT_EQ(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").enforce_max_samples_, false);
 }
 
+TEST(ConfigParser, LolaFieldUseGetIfAvailableSetToTrue)
+{
+    // Given a JSON with optional attribute `useGetIfAvailable` set to true for a field
+    auto j2 = R"(
+  {
+    "serviceTypes": [
+        {
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
+          "version": {
+              "major": 12,
+              "minor": 34
+          },
+          "bindings": [
+              {
+                  "binding": "SHM",
+                  "serviceId": 1234,
+                  "fields": [
+                      {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "fieldId": 20
+                      }
+                  ]
+              }
+          ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                  "instanceId": 1234,
+                  "asil-level": "QM",
+                  "binding": "SHM",
+                  "events": [],
+                  "fields": [
+                    {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "numberOfSampleSlots": 50,
+                          "maxSubscribers": 5,
+                          "useGetIfAvailable": true
+                      }
+                  ]
+                }
+            ]
+        }
+    ]
+  }
+)"_json;
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+
+    const auto deployment =
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
+    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+}
+
+TEST(ConfigParser, LolaFieldUseSetIfAvailableSetToTrue)
+{
+    // Given a JSON with optional attribute `useSetIfAvailable` set to true for a field
+    auto j2 = R"(
+  {
+    "serviceTypes": [
+        {
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
+          "version": {
+              "major": 12,
+              "minor": 34
+          },
+          "bindings": [
+              {
+                  "binding": "SHM",
+                  "serviceId": 1234,
+                  "fields": [
+                      {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "fieldId": 20
+                      }
+                  ]
+              }
+          ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                  "instanceId": 1234,
+                  "asil-level": "QM",
+                  "binding": "SHM",
+                  "events": [],
+                  "fields": [
+                    {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "numberOfSampleSlots": 50,
+                          "maxSubscribers": 5,
+                          "useSetIfAvailable": true
+                      }
+                  ]
+                }
+            ]
+        }
+    ]
+  }
+)"_json;
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+
+    const auto deployment =
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
+    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+}
+
+TEST(ConfigParser, LolaFieldOmittingBothFlagsDefaultsBothToFalse)
+{
+    // Given a JSON for a field without `useGetIfAvailable` or `useSetIfAvailable`
+    auto j2 = R"(
+  {
+    "serviceTypes": [
+        {
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
+          "version": {
+              "major": 12,
+              "minor": 34
+          },
+          "bindings": [
+              {
+                  "binding": "SHM",
+                  "serviceId": 1234,
+                  "fields": [
+                      {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "fieldId": 20
+                      }
+                  ]
+              }
+          ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                  "instanceId": 1234,
+                  "asil-level": "QM",
+                  "binding": "SHM",
+                  "events": [],
+                  "fields": [
+                    {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "numberOfSampleSlots": 50,
+                          "maxSubscribers": 5
+                      }
+                  ]
+                }
+            ]
+        }
+    ]
+  }
+)"_json;
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+
+    const auto deployment =
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
+    EXPECT_FALSE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+}
+
+TEST(ConfigParser, LolaFieldBothFlagsSetToTrue)
+{
+    // Given a JSON with both `useGetIfAvailable` and `useSetIfAvailable` set to true for a field
+    auto j2 = R"(
+  {
+    "serviceTypes": [
+        {
+          "serviceTypeName": "/score/ncar/services/TirePressureService",
+          "version": {
+              "major": 12,
+              "minor": 34
+          },
+          "bindings": [
+              {
+                  "binding": "SHM",
+                  "serviceId": 1234,
+                  "fields": [
+                      {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "fieldId": 20
+                      }
+                  ]
+              }
+          ]
+        }
+    ],
+    "serviceInstances": [
+        {
+            "instanceSpecifier": "abc/abc/TirePressurePort",
+            "serviceTypeName": "/score/ncar/services/TirePressureService",
+            "version": {
+                "major": 12,
+                "minor": 34
+            },
+            "instances": [
+                {
+                  "instanceId": 1234,
+                  "asil-level": "QM",
+                  "binding": "SHM",
+                  "events": [],
+                  "fields": [
+                    {
+                          "fieldName": "CurrentTemperatureFrontLeft",
+                          "numberOfSampleSlots": 50,
+                          "maxSubscribers": 5,
+                          "useGetIfAvailable": true,
+                          "useSetIfAvailable": true
+                      }
+                  ]
+                }
+            ]
+        }
+    ]
+  }
+)"_json;
+    const auto config = score::mw::com::impl::configuration::Parse(std::move(j2));
+
+    const auto deployment =
+        config.GetServiceInstances().at(InstanceSpecifier::Create(std::string{"abc/abc/TirePressurePort"}).value());
+
+    const auto deploymentInfo = std::get<LolaServiceInstanceDeployment>(deployment.bindingInfo_);
+    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_get_if_available_);
+    EXPECT_TRUE(deploymentInfo.fields_.at("CurrentTemperatureFrontLeft").use_set_if_available_);
+}
+
 TEST(ConfigParser, EmptyServiceTypes)
 {
     // Given a JSON with necessary attribute `serviceTypes` being empty (which is allowed)

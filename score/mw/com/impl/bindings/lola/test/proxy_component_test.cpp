@@ -111,7 +111,7 @@ class ProxyWithRealMemFixture : public ::testing::Test
         LolaServiceInstanceDeployment lola_service_instance_deployment{
             LolaServiceInstanceId{kElementFqId.instance_id_},
             {{kEventName, LolaEventInstanceDeployment{10U, 10U, 2U, true, 0}},
-             {kNonProvidedEventName, LolaFieldInstanceDeployment{10U, 10U, 2U, true, 0}}}};
+             {kNonProvidedEventName, LolaEventInstanceDeployment{10U, 10U, 2U, true, 0}}}};
         LolaServiceTypeDeployment lola_service_type_deployment{
             kElementFqId.service_id_,
             {{kEventName, LolaEventId{kElementFqId.element_id_}},

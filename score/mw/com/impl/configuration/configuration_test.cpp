@@ -184,7 +184,8 @@ TEST_F(ConfigurationFixture, ConfigIsCorrectlyParsedFromFile)
     const std::vector<uid_t> allowed_provider_ids_b{15};
 
     const LolaEventInstanceDeployment lola_event_instance{event_max_samples, event_max_subscribers, 1U, true, 0};
-    const LolaFieldInstanceDeployment lola_field_instance{field_max_samples, field_max_subscribers, 1U, true, 7};
+    const LolaFieldInstanceDeployment lola_field_instance{
+        field_max_samples, field_max_subscribers, 1U, true, 7, false, false};
     const LolaMethodInstanceDeployment lola_method_instance{method_queue_size};
 
     const LolaServiceInstanceDeployment::EventInstanceMapping instance_events{

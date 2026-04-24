@@ -51,7 +51,7 @@ const std::string kDummyFieldName{"my_dummy_field"};
 const LolaServiceInstanceDeployment kLolaServiceInstanceDeploymentWithEventAndField{
     LolaServiceInstanceId{1U},
     {{kDummyEventName, LolaEventInstanceDeployment{10U, 10U, 2U, true, 0}}},
-    {{kDummyFieldName, LolaFieldInstanceDeployment{10U, 10U, 2U, true, 0}}}
+    {{kDummyFieldName, LolaFieldInstanceDeployment{10U, 10U, 2U, true, 0, false, false}}}
 
 };
 const LolaServiceTypeDeployment kLolaServiceTypeDeploymentWithEventAndField{2U,
