@@ -110,6 +110,17 @@ class ProviderEventDataControlLocalView final
     /// \return if an unused slot is found, returns its index, otherwise, an empty optional is returned.
     std::optional<ProviderEventDataControlLocalView::SlotInfo> FindOldestUnusedSlot() const noexcept;
 
+    /// \brief Logs performance metrics for slot allocation attempts.
+    void LogPerformanceMetrics(std::uint64_t retry_counter) noexcept
+    {
+        score::cpp::ignore = num_alloc_retries.fetch_add(retry_counter);
+
+        if ((retry_counter >= 100U))
+        {
+            ++num_alloc_misses;
+        }
+    }
+
     /// \brief Sets the slot value for the given slot index.
     ///
     /// This is a helper function which is used by EventDataControlComposite to reset the value of a slot in case of a
