@@ -33,6 +33,7 @@ namespace score::mw::com::impl::lola
 {
 
 class Proxy;
+class ProxyMethodAttorney;
 
 class ProxyMethod : public ProxyMethodBinding
 {
@@ -72,6 +73,8 @@ class ProxyMethod : public ProxyMethodBinding
     bool IsSubscribed() const;
 
   private:
+    friend class ProxyMethodAttorney;
+
     QualityType asil_level_;
     IRuntime& lola_runtime_;
     TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info_;
