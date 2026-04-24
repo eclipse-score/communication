@@ -20,21 +20,13 @@ load("//score/mw/com/performance_benchmarks/macro_benchmark/config_generator:con
 alias(
     name = "logging.json",
     actual = "//score/mw/com/performance_benchmarks/macro_benchmark/config:logging_json",
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 alias(
     name = "mw_com_config.json",
     actual = "//score/mw/com/performance_benchmarks/macro_benchmark/config:mw_com_config_json",
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__pkg__",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 alias(
@@ -131,11 +123,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "config_parser",
         ":common_resources",
@@ -164,11 +152,7 @@ cc_binary(
     features = COMPILER_WARNING_FEATURES + [
         "aborts_upon_exception",
     ],
-    visibility = [
-        "//platform/aas/performance/tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//platform/aas/test/pas/perf_tests/tools/artificial_load/apps/lola_ipc:__pkg__",
-        "//score/mw/com/performance_benchmarks/macro_benchmark:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":common_resources",
         ":config_parser",
