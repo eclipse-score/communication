@@ -14,11 +14,17 @@
 #include "score/mw/com/test/common_test_resources/sctf_test_runner.h"
 
 #include "score/mw/com/runtime.h"
+#include "score/mw/com/test/common_test_resources/command_line_parser.h"
 #include "score/mw/com/test/common_test_resources/stop_token_sig_term_handler.h"
 
 #include <boost/program_options.hpp>
+#include <chrono>
+#include <cstddef>
+#include <cstdlib>
 #include <stdexcept>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace score::mw::com::test
 {
@@ -29,44 +35,51 @@ namespace
 using Parameters = SctfTestRunner::RunParameters::Parameters;
 
 template <typename ParsedType, typename SavedType = ParsedType>
-score::cpp::optional<SavedType> GetValueIfProvided(const boost::program_options::variables_map& args,
-                                                   std::string arg_string)
+auto ParseAndPackage(const std::unordered_map<std::string, std::string>& args, const std::string& name)
+    -> score::cpp::optional<SavedType>
 {
-    return (args.count(arg_string) > 0U) ? static_cast<SavedType>(args[arg_string].as<ParsedType>())
-                                         : score::cpp::optional<SavedType>();
+    auto result = GetValueIfProvided<ParsedType>(args, name);
+    if (!result.has_value())
+    {
+        std::cerr << "Optional parameter " << name << " not provided... continuing\n";
+        return score::cpp::optional<SavedType>{};
+    }
+    return static_cast<SavedType>(result.value());
 }
 
-std::string ParameterToString(const Parameters parameter)
+auto ParameterToNameAndDescription(const Parameters parameter) -> std::pair<std::string, std::string>
 {
     switch (parameter)
     {
         case Parameters::CYCLE_TIME:
-            return "cycle_time";
+            return {"cycle-time", "Cycle time in milliseconds for sending/polling"};
         case Parameters::MODE:
-            return "mode";
+            return {"mode", "Set to either send/skeleton or recv/proxy to determine the role of the process"};
         case Parameters::NUM_CYCLES:
-            return "num_cycles";
+            return {"num-cycles",
+                    "Number of cycles that are executed before determining success or failure. 0 indicates no limit."};
         case Parameters::SERVICE_INSTANCE_MANIFEST:
-            return "service_instance_manifest";
+            return {"service_instance_manifest", "Path to the com configuration file"};
         case Parameters::UID:
-            return "uid";
+            return {"uid", "UID to setuid to before the actual test run."};
         case Parameters::NUM_RETRIES:
-            return "num_retries";
+            return {"num-retries", "Number of retries done before determining success or failure."};
         case Parameters::RETRY_BACKOFF_TIME:
-            return "retry_backoff_time";
+            return {"backoff-time", "Waiting time in milliseconds before a retry is attempted."};
         case Parameters::SHOULD_MODIFY_DATA_SEGMENT:
-            return "should_modify_data_segment";
+            return {"should-modify-data-segment", "Whether the test should try to modify the data segment."};
         default:
             throw std::runtime_error("Invalid parameter, terminating.");
     }
 }
 
 template <typename T>
-void AssertParameterExists(const score::cpp::optional<T> value, const Parameters parameter)
+void AssertParameterExists(const score::cpp::optional<T>& value, const Parameters parameter)
 {
     if (!value.has_value())
     {
-        throw std::runtime_error(ParameterToString(parameter) + " not specified as run parameter, terminating.");
+        throw std::runtime_error(ParameterToNameAndDescription(parameter).first +
+                                 " not specified as run parameter, terminating.");
     }
 }
 
@@ -74,7 +87,7 @@ void AssertParameterInAllowList(const Parameters parameter, const std::vector<Pa
 {
     if (std::find(allowed_parameters.begin(), allowed_parameters.end(), parameter) == allowed_parameters.cend())
     {
-        throw std::runtime_error(ParameterToString(parameter) +
+        throw std::runtime_error(ParameterToNameAndDescription(parameter).first +
                                  " not specified in allowed parameter list, terminating.");
     }
 }
@@ -234,84 +247,23 @@ SctfTestRunner::RunParameters SctfTestRunner::ParseCommandLineArguments(
     std::vector<Parameters> allowed_parameters_with_uid(allowed_parameters.begin(), allowed_parameters.end());
     allowed_parameters_with_uid.push_back(Parameters::UID);
 
-    namespace po = boost::program_options;
-
-    po::options_description options;
-    // clang-format off
-    options.add_options()
-        ("help,h", "Display the help message");
+    std::vector<std::pair<std::string, std::string>> prameter_descriptor_pairs{{"help", "Display the help message"}};
 
     for (const auto& parameter : allowed_parameters_with_uid)
     {
-        if (parameter == Parameters::CYCLE_TIME)
-        {
-            options.add_options()
-                ("cycle-time,t", po::value<std::size_t>(), "Cycle time in milliseconds for sending/polling");
-        }
-        else if (parameter == Parameters::MODE)
-        {
-            options.add_options()
-                ("mode,m", po::value<std::string>(), "Set to either send/skeleton or recv/proxy to determine the "
-                                                     "role of the process");
-        }
-        else if (parameter == Parameters::NUM_CYCLES)
-        {
-            options.add_options()
-                ("num-cycles,n", po::value<std::size_t>()->default_value(0U),
-                "Number of cycles that are executed before determining success or failure. 0 indicates no limit.");
-        }
-        else if (parameter == Parameters::SERVICE_INSTANCE_MANIFEST)
-        {
-            options.add_options()
-                ("service_instance_manifest,s", po::value<std::string>(), "Path to the com configuration file");
-        }
-        else if (parameter == Parameters::UID)
-        {
-            options.add_options()
-                ("uid,u", po::value<uid_t>(), "UID to setuid to before the actual test run.");
-        }
-        else if (parameter == Parameters::NUM_RETRIES)
-        {
-            options.add_options()
-                ("num-retries,r", po::value<std::size_t>(), "Number of retries done before determining success or failure.");
-        }
-        else if (parameter == Parameters::RETRY_BACKOFF_TIME)
-        {
-            options.add_options()
-                ("backoff-time,b", po::value<std::size_t>(), "Waiting time in milliseconds before a retry is attempted.");
-        }
-        else if (parameter == Parameters::SHOULD_MODIFY_DATA_SEGMENT)
-        {
-            options.add_options()
-                ("should-modify-data-segment", po::value<bool>(), "Whether the test should try to modify the data segment.");
-        }
-    }
-    // clang-format on
-
-    po::variables_map args;
-    const auto parsed_args =
-        po::command_line_parser{argc, argv}
-            .options(options)
-            .style(po::command_line_style::unix_style | po::command_line_style::allow_long_disguise)
-            .run();
-    po::store(parsed_args, args);
-
-    if (args.count("help") > 0U)
-    {
-        std::cerr << options << std::endl;
-        throw std::runtime_error("Could not parse command line arguments");
+        prameter_descriptor_pairs.emplace_back(ParameterToNameAndDescription(parameter));
     }
 
-    po::notify(args);
+    auto args = score::mw::com::test::ParseCommandLineArguments(argc, argv, prameter_descriptor_pairs);
 
-    auto cycle_time = GetValueIfProvided<std::size_t, std::chrono::milliseconds>(args, "cycle-time");
-    auto mode = GetValueIfProvided<std::string>(args, "mode");
-    auto num_cycles = GetValueIfProvided<std::size_t>(args, "num-cycles");
-    auto service_instance_manifest = GetValueIfProvided<std::string>(args, "service_instance_manifest");
-    auto uid = GetValueIfProvided<uid_t>(args, "uid");
-    auto num_retry = GetValueIfProvided<std::size_t>(args, "num-retries");
-    auto retry_backoff_time = GetValueIfProvided<std::size_t, std::chrono::milliseconds>(args, "backoff-time");
-    auto should_modify_data_segment = GetValueIfProvided<bool>(args, "should-modify-data-segment");
+    auto cycle_time = ParseAndPackage<std::size_t, std::chrono::milliseconds>(args, "cycle-time");
+    auto mode = ParseAndPackage<std::string>(args, "mode");
+    auto num_cycles = ParseAndPackage<std::size_t>(args, "num-cycles");
+    auto service_instance_manifest = ParseAndPackage<std::string>(args, "service_instance_manifest");
+    auto uid = ParseAndPackage<uid_t>(args, "uid");
+    auto num_retry = ParseAndPackage<std::size_t>(args, "num-retries");
+    auto retry_backoff_time = ParseAndPackage<std::size_t, std::chrono::milliseconds>(args, "backoff-time");
+    auto should_modify_data_segment = ParseAndPackage<bool>(args, "should-modify-data-segment");
 
     RunParameters run_parameters(allowed_parameters_with_uid,
                                  std::move(cycle_time),
@@ -324,7 +276,7 @@ SctfTestRunner::RunParameters SctfTestRunner::ParseCommandLineArguments(
                                  std::move(should_modify_data_segment));
 
     return run_parameters;
-}
+}  // namespace
 
 int SctfTestRunner::WaitForAsyncTestResults(std::vector<std::future<int>>& future_return_values)
 {

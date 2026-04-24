@@ -17,6 +17,6 @@
 def test_multiple_proxies(sut):
     """Test multiple proxy instances with sender and receiver."""
     # Sender runs for 30 cycles at 40ms intervals, Receiver receives 25 cycles
-    with sut.start_process("./bin/multiple_proxies -m send -t 40 -n 30", cwd="/opt/multiple_proxies/") as sender:
-        with sut.start_process("./bin/multiple_proxies -m recv -n 25", cwd="/opt/multiple_proxies/") as receiver:
+    with sut.start_process("./bin/multiple_proxies --mode send --cycle-time 40 --num-cycles 30", cwd="/opt/multiple_proxies/") as sender:
+        with sut.start_process("./bin/multiple_proxies --mode recv --num-cycles 25", cwd="/opt/multiple_proxies/") as receiver:
             assert receiver.wait_for_exit(timeout=120) == 0

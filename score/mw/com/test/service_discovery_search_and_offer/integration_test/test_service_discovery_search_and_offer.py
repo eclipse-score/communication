@@ -16,6 +16,6 @@
 
 def test_service_discovery_search_and_offer(sut):
     """Test service discovery where client searches first, then service offers."""
-    with sut.start_process("./bin/service -t 250", cwd="/opt/ServiceApp/") as service_process:
+    with sut.start_process("./bin/service --cycle-time 250", cwd="/opt/ServiceApp/") as service_process:
         with sut.start_process("./bin/client", cwd="/opt/ClientApp/") as client_process:
             assert client_process.wait_for_exit() == 0
