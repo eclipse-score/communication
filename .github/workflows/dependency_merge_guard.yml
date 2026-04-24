@@ -1,0 +1,38 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Workflow that blocks merging a PR until all Depends-On dependency PRs are merged.
+# Add this workflow's job name ("dependency_merge_guard") as a required status check
+# in your branch protection rules to enforce the merge gate.
+
+name: Dependency Merge Guard
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+  merge_group:
+    types: [checks_requested]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request'}}
+jobs:
+    dependency_merge_guard:
+      runs-on: ubuntu-24.04
+      permissions:
+        contents: read
+        pull-requests: read
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v6.0.2
+
+        - name: Check dependency PRs are merged
+          uses: ./actions/check_dependency_merged
